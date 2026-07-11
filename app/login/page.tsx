@@ -88,27 +88,26 @@ localStorage.setItem('currentTenantId', data.session.tenantId);
         </p>
 
         <form className="form-grid" onSubmit={onSubmit}>
-          <div className="field">
-            <label>User ID / Email</label>
-            <input
-              className="input"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="example: mahendra@test.com"
-            />
-          </div>
-
-          <div className="field">
-            <label>Password</label>
-            <input
-              className="input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-            />
-          </div>
-
+         <input
+  id="userId"
+  name="userId"
+  autoComplete="username"
+  className="input"
+  value={userId}
+  onChange={(e) => setUserId(e.target.value)}
+  placeholder="example: jay"
+/>
+          
+<input
+  id="password"
+  name="password"
+  autoComplete="current-password"
+  className="input"
+  type="password"
+  value={password}
+  onChange={(e) => setPassword(e.target.value)}
+  placeholder="Enter password"
+/>
           {error ? <div className="alert-card" style={{ margin: 0 }}>{error}</div> : null}
 
           <button className="primary-button full" type="submit" disabled={loading}>
