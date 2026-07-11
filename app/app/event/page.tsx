@@ -10,7 +10,6 @@ export default function EventPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
-  const [message, setMessage] = useState('');
 
   useEffect(() => {
     const current = getSession();
@@ -28,19 +27,6 @@ export default function EventPage() {
     saveWork(session.tenantId, next);
   }
 
-  async function handleFile(file?: File) {
-    if (!file || !work || !session) return;
-    updateEvent('uploadFileName', file.name);
-    if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
-      const text = await file.text();
-      const next = { ...work, event: { ...work.event, uploadFileName: file.name, rawMenuText: text } };
-      setWork(next);
-      saveWork(session.tenantId, next);
-    } else {
-      setMessage('PDF/image file selected. Paste menu text below for dish detection, or add dishes manually on next page.');
-    }
-  }
-
   function detectAndNext() {
     if (!work || !session) return;
     const detected = parseMenuText(work.event.rawMenuText);
@@ -51,7 +37,7 @@ export default function EventPage() {
   }
 
   return (
-    <AppShell title="Event Details + Upload Menu" subtitle="First page: client details, pax and menu upload">
+    <AppShell title="Event Details + Menu" subtitle="First page: client details, pax and pasted menu text">
       <section className="content-grid">
 
         <div className="glass-card">
@@ -72,18 +58,12 @@ export default function EventPage() {
         </div>
 
         <div className="glass-card">
-          <h2>Upload Menu</h2>
+          <h2>Paste Menu</h2>
           <div className="form-grid">
-            <div className="field">
-              <label>Menu File</label>
-              <input className="input" type="file" accept=".txt,.csv,.pdf,image/*" onChange={(e) => handleFile(e.target.files?.[0])} />
-              {work.event.uploadFileName ? <p className="muted">Selected: <b>{work.event.uploadFileName}</b></p> : null}
-            </div>
             <div className="field">
               <label>Paste Menu Text</label>
               <textarea className="textarea" value={work.event.rawMenuText} onChange={(e) => updateEvent('rawMenuText', e.target.value)} placeholder="Paste menu here: Orange Juice / Manchow Soup / Paneer Tikka / Paneer Butter Masala / Naan / Dal Fry / Jeera Rice / Gulab Jamun" />
             </div>
-            {message ? <p className="muted"><b>{message}</b></p> : null}
             <div className="action-row">
               <button className="primary-button" onClick={detectAndNext}>Next: Check Menu</button>
               <button
@@ -101,13 +81,11 @@ export default function EventPage() {
                       city: '',
                       venue: '',
                       rawMenuText: '',
-                      uploadFileName: '',
                     },
                     menu: [],
                   };
                   setWork(next);
                   saveWork(session.tenantId, next);
-                  setMessage('Old event and menu data cleared.');
                 }}
               >
                 Clear Page Data
