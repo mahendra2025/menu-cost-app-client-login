@@ -1,143 +1,275 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import AppShell from '../../components/AppShell';
-import { deleteClient, getClients, getSession, saveClients, uid, upsertClient } from '../../../lib/store';
-import type { ClientUser } from '../../../lib/types';
+import { useRouter } from 'next/navigation';
 
-const emptyClient: ClientUser = {
-  id: '',
-  userId: '',
-  password: '',
-  businessName: '',
-  ownerName: '',
-  phone: '',
-  city: '',
-  planName: 'PRO_999',
-  status: 'ACTIVE',
-  expiryDate: '',
-  createdAt: '',
+type ClientUser = {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  plan: string;
+  status: string;
+  createdAt: string;
 };
 
 export default function AdminUsersPage() {
-  const [clients, setClients] = useState<ClientUser[]>([]);
-  const [form, setForm] = useState<ClientUser>(emptyClient);
-  const [message, setMessage] = useState('');
+  const router = useRouter();
+  const [users, setUsers] = useState<ClientUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    plan: 'PRO',
+    status: 'ACTIVE',
+  });
 
   useEffect(() => {
-    const session = getSession();
-    if (session?.role !== 'ADMIN') return;
-    setClients(getClients());
-  }, []);
+    const sessionRaw = localStorage.getItem('menu_cost_session');
+    const session = sessionRaw ? JSON.parse(sessionRaw) : null;
 
-  function resetForm() {
-    setForm(emptyClient);
+    if (!session || session.role !== 'ADMIN') {
+      router.push('/login');
+      return;
+    }
+
+    loadUsers();
+  }, [router]);
+
+  async function loadUsers() {
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to load users');
+        return;
+      }
+
+      setUsers(data.users || []);
+    } catch {
+      setError('Server connection failed');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function createUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.userId.trim() || !form.password.trim() || !form.businessName.trim()) {
-      setMessage('User ID, password and business name are required.');
-      return;
+    setSaving(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to create user');
+        return;
+      }
+
+      setForm({
+        name: '',
+        email: '',
+        password: '',
+        plan: 'PRO',
+        status: 'ACTIVE',
+      });
+
+      await loadUsers();
+    } catch {
+      setError('Server connection failed');
+    } finally {
+      setSaving(false);
     }
-    const allClients = getClients();
-    const duplicate = allClients.find((client) => client.userId === form.userId.trim() && client.id !== form.id);
-    if (duplicate) {
-      setMessage('This user ID already exists. Use another ID.');
-      return;
-    }
-    const client: ClientUser = {
-      ...form,
-      id: form.id || uid('client'),
-      userId: form.userId.trim(),
-      password: form.password.trim(),
-      status: form.status,
-      expiryDate: form.expiryDate || new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().slice(0, 10),
-      createdAt: form.createdAt || new Date().toISOString(),
-    };
-    upsertClient(client);
-    setClients(getClients());
-    setMessage(form.id ? 'Client updated.' : 'Client user created. Give this ID and password to your client.');
-    resetForm();
   }
 
-  function toggleStatus(client: ClientUser) {
-    const next = { ...client, status: client.status === 'ACTIVE' ? 'EXPIRED' : 'ACTIVE' } as ClientUser;
-    upsertClient(next);
-    setClients(getClients());
+  async function updateStatus(id: string, status: string) {
+    await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+
+    await loadUsers();
   }
 
-  function clearAllClients() {
-    if (!confirm('Remove all client users from this browser?')) return;
-    saveClients([]);
-    setClients([]);
-    setMessage('All client users removed.');
+  async function deleteUser(id: string) {
+    const ok = confirm('Delete this client user? Their saved work will also be deleted.');
+    if (!ok) return;
+
+    await fetch(`/api/admin/users?id=${id}`, {
+      method: 'DELETE',
+    });
+
+    await loadUsers();
+  }
+
+  function logout() {
+    localStorage.removeItem('menu_cost_session');
+    router.push('/login');
   }
 
   return (
-    <AppShell title="Admin Users" subtitle="Create ID and password for each client">
-      <section className="content-grid">
-        <div className="stat-grid">
-          <div className="stat-card"><small>Total Clients</small><strong>{clients.length}</strong><span>No default client data</span></div>
-          <div className="stat-card"><small>Active</small><strong>{clients.filter((c) => c.status === 'ACTIVE').length}</strong><span>Can use app</span></div>
-          <div className="stat-card"><small>Expired</small><strong>{clients.filter((c) => c.status === 'EXPIRED').length}</strong><span>Locked</span></div>
-          <div className="stat-card"><small>Plan</small><strong>₹999</strong><span>Monthly Pro</span></div>
+    <main className="page-shell">
+      <section className="hero">
+        <div>
+          <p className="eyebrow">Super Admin</p>
+          <h1>Client User Control</h1>
+          <p className="muted">
+            Create client login ID and password. Active clients can login. Inactive clients cannot login.
+          </p>
         </div>
 
-        <div className="glass-card">
-          <h2>{form.id ? 'Edit Client' : 'Add New Client'}</h2>
-          <form className="form-grid" onSubmit={handleSubmit}>
-            <div className="three-grid">
-              <div className="field"><label>Business Name</label><input className="input" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} placeholder="Kalash Caterers" /></div>
-              <div className="field"><label>User ID</label><input className="input" value={form.userId} onChange={(e) => setForm({ ...form, userId: e.target.value })} placeholder="kalash001" /></div>
-              <div className="field"><label>Password</label><input className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="123456" /></div>
-            </div>
-            <div className="three-grid">
-              <div className="field"><label>Owner Name</label><input className="input" value={form.ownerName} onChange={(e) => setForm({ ...form, ownerName: e.target.value })} /></div>
-              <div className="field"><label>Phone</label><input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-              <div className="field"><label>City</label><input className="input" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-            </div>
-            <div className="two-grid">
-              <div className="field"><label>Status</label><select className="select" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ClientUser['status'] })}><option>ACTIVE</option><option>EXPIRED</option></select></div>
-              <div className="field"><label>Expiry Date</label><input className="input" type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} /></div>
-            </div>
-            {message ? <p className="muted"><b>{message}</b></p> : null}
-            <div className="action-row">
-              <button className="primary-button" type="submit">{form.id ? 'Save Client' : 'Create Client Login'}</button>
-              <button className="ghost-button" type="button" onClick={resetForm}>Clear Form</button>
-              <button className="danger-button" type="button" onClick={clearAllClients}>Remove All Clients</button>
-            </div>
-          </form>
-        </div>
+        <button className="secondary-button" onClick={logout}>
+          Logout
+        </button>
+      </section>
 
-        <div className="glass-card">
-          <h2>Client Login List</h2>
-          {clients.length === 0 ? <p className="muted">No client users yet. Create one above, then give them the user ID and password.</p> : null}
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Business</th><th>User ID</th><th>Password</th><th>Status</th><th>Expiry</th><th>Action</th></tr></thead>
+      {error ? <div className="alert-card">{error}</div> : null}
+
+      <section className="panel" style={{ marginBottom: 20 }}>
+        <h2>Add New Client</h2>
+
+        <form className="form-grid" onSubmit={createUser}>
+          <div className="field">
+            <label>Client / Company Name</label>
+            <input
+              className="input"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Kalash Caterers"
+            />
+          </div>
+
+          <div className="field">
+            <label>User ID / Email</label>
+            <input
+              className="input"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              placeholder="client@test.com"
+            />
+          </div>
+
+          <div className="field">
+            <label>Password</label>
+            <input
+              className="input"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              placeholder="123456"
+            />
+          </div>
+
+          <div className="field">
+            <label>Plan</label>
+            <select
+              className="input"
+              value={form.plan}
+              onChange={(e) => setForm({ ...form, plan: e.target.value })}
+            >
+              <option value="PRO">PRO ₹999/month</option>
+              <option value="WHITE_LABEL">WHITE LABEL</option>
+            </select>
+          </div>
+
+          <div className="field">
+            <label>Status</label>
+            <select
+              className="input"
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+            >
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </div>
+
+          <button className="primary-button full" type="submit" disabled={saving}>
+            {saving ? 'Creating...' : 'Create Client User'}
+          </button>
+        </form>
+      </section>
+
+      <section className="panel">
+        <h2>All Client Users</h2>
+
+        {loading ? (
+          <p className="muted">Loading users...</p>
+        ) : users.length === 0 ? (
+          <p className="muted">No client users yet.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: 'left', padding: 12 }}>Client</th>
+                  <th style={{ textAlign: 'left', padding: 12 }}>User ID</th>
+                  <th style={{ textAlign: 'left', padding: 12 }}>Password</th>
+                  <th style={{ textAlign: 'left', padding: 12 }}>Plan</th>
+                  <th style={{ textAlign: 'left', padding: 12 }}>Status</th>
+                  <th style={{ textAlign: 'left', padding: 12 }}>Action</th>
+                </tr>
+              </thead>
+
               <tbody>
-                {clients.map((client) => (
-                  <tr key={client.id}>
-                    <td><b>{client.businessName}</b><br /><small>{client.ownerName} {client.phone ? `• ${client.phone}` : ''}</small></td>
-                    <td>{client.userId}</td>
-                    <td>{client.password}</td>
-                    <td><span className={`badge ${client.status === 'ACTIVE' ? 'green' : 'red'}`}>{client.status}</span></td>
-                    <td>{client.expiryDate}</td>
-                    <td>
-                      <div className="action-row">
-                        <button className="ghost-button" onClick={() => setForm(client)}>Edit</button>
-                        <button className="ghost-button" onClick={() => toggleStatus(client)}>{client.status === 'ACTIVE' ? 'Expire' : 'Activate'}</button>
-                        <button className="danger-button" onClick={() => { deleteClient(client.id); setClients(getClients()); }}>Delete</button>
-                      </div>
+                {users.map((user) => (
+                  <tr key={user.id} style={{ borderTop: '1px solid rgba(148,163,184,.25)' }}>
+                    <td style={{ padding: 12 }}>
+                      <b>{user.name}</b>
+                    </td>
+                    <td style={{ padding: 12 }}>{user.email}</td>
+                    <td style={{ padding: 12 }}>{user.password}</td>
+                    <td style={{ padding: 12 }}>{user.plan}</td>
+                    <td style={{ padding: 12 }}>
+                      <b>{user.status}</b>
+                    </td>
+                    <td style={{ padding: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {user.status === 'ACTIVE' ? (
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          onClick={() => updateStatus(user.id, 'INACTIVE')}
+                        >
+                          Block
+                        </button>
+                      ) : (
+                        <button
+                          className="primary-button"
+                          type="button"
+                          onClick={() => updateStatus(user.id, 'ACTIVE')}
+                        >
+                          Activate
+                        </button>
+                      )}
+
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => deleteUser(user.id)}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        )}
       </section>
-    </AppShell>
+    </main>
   );
 }
