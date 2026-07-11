@@ -51,14 +51,23 @@ export default function LoginPage() {
         setError(data.error || 'Wrong user ID or password');
         return;
       }
+const clientSession = {
+  ...data.session,
+  role: 'CLIENT',
+  userId: data.session.email,
+  name: data.session.tenantName,
+  clientName: data.session.tenantName,
+  tenantId: data.session.tenantId,
+  tenantName: data.session.tenantName,
+  email: data.session.email,
+  plan: data.session.plan,
+  status: data.session.status,
+};
 
-      localStorage.setItem(
-        'menu_cost_session',
-        JSON.stringify({
-          ...data.session,
-          role: 'CLIENT',
-        })
-      );
+localStorage.setItem('menu_cost_session', JSON.stringify(clientSession));
+localStorage.setItem('menuCostSession', JSON.stringify(clientSession));
+localStorage.setItem('currentTenantId', data.session.tenantId);
+      
 
       router.push('/app/event');
     } catch {
