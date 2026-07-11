@@ -79,30 +79,45 @@ export default function MenuPage() {
         </div>
 
         <div className="glass-card">
+          <div className="section-kicker">Quick Add</div>
           <h2>Add Dish</h2>
+          <div className="helper-card" style={{ marginBottom: 16 }}>
+            <b>Adjust before pricing</b>
+            <p>Rename dishes, fix categories, or add missing items here. This is the easiest place to clean up the menu on mobile.</p>
+          </div>
           <div className="three-grid">
-            <div className="field"><label>Dish Name</label><input className="input" value={newDish} onChange={(e) => setNewDish(e.target.value)} placeholder="Paneer Butter Masala" /></div>
-            <div className="field"><label>Category</label><select className="select" value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>{CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></div>
-            <div className="field"><label>&nbsp;</label><button className="primary-button" onClick={addDish}>Add Dish</button></div>
+            <div className="field"><label>Dish Name</label><input className="input input-large" value={newDish} onChange={(e) => setNewDish(e.target.value)} placeholder="Paneer Butter Masala" /></div>
+            <div className="field"><label>Category</label><select className="select select-large" value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>{CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></div>
+            <div className="field"><label>&nbsp;</label><button className="primary-button full" onClick={addDish}>Add Dish</button></div>
           </div>
         </div>
 
         <div className="glass-card">
+          <div className="section-kicker">Review Items</div>
           <h2>Menu Items</h2>
           {work.menu.length === 0 ? <p className="muted">No dishes yet. Go to Event page, paste menu text, then click “Next: Check Menu”, or add manually here.</p> : null}
           <div className="menu-list">
             {work.menu.map((item) => (
               <div className="menu-row" key={item.id}>
-                <input className="input" value={item.name} onChange={(e) => updateItem(item.id, { name: e.target.value })} />
-                <select className="select" value={item.category} onChange={(e) => updateItem(item.id, { category: e.target.value })}>
-                  {CATEGORIES.map((category) => <option key={category}>{category}</option>)}
-                </select>
-                <input className="input" type="number" value={item.costPerPlate} onChange={(e) => updateItem(item.id, { costPerPlate: Number(e.target.value) })} />
+                <div className="menu-cell">
+                  <span className="mobile-field-label">Dish</span>
+                  <input className="input input-large" value={item.name} onChange={(e) => updateItem(item.id, { name: e.target.value })} />
+                </div>
+                <div className="menu-cell">
+                  <span className="mobile-field-label">Category</span>
+                  <select className="select select-large" value={item.category} onChange={(e) => updateItem(item.id, { category: e.target.value })}>
+                    {CATEGORIES.map((category) => <option key={category}>{category}</option>)}
+                  </select>
+                </div>
+                <div className="menu-cell">
+                  <span className="mobile-field-label">Cost / Plate</span>
+                  <input className="input input-large" type="number" value={item.costPerPlate} onChange={(e) => updateItem(item.id, { costPerPlate: Number(e.target.value) })} />
+                </div>
                 <button className="danger-button" onClick={() => removeDish(item.id)}>Remove</button>
               </div>
             ))}
           </div>
-          <div className="action-row" style={{ marginTop: 18 }}>
+          <div className="action-row page-actions">
             <button className="primary-button" onClick={() => router.push('/app/cost')}>Next: Calculate Cost</button>
             <button className="ghost-button" onClick={() => router.push('/app/event')}>Back to Event</button>
           </div>

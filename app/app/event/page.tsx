@@ -39,32 +39,41 @@ export default function EventPage() {
   return (
     <AppShell title="Event Details + Menu" subtitle="First page: client details, pax and pasted menu text">
       <section className="content-grid">
-
         <div className="glass-card">
+          <div className="section-kicker">Step 1 of 5</div>
           <h2>Event Information</h2>
+          <div className="helper-card" style={{ marginBottom: 16 }}>
+            <b>Start with the basics</b>
+            <p>Fill the event details first, then paste the full menu below in one block. We will split and detect dishes for you on the next step.</p>
+          </div>
           <div className="form-grid">
             <div className="three-grid">
-              <div className="field"><label>Client Name</label><input className="input" value={work.event.clientName} onChange={(e) => updateEvent('clientName', e.target.value)} placeholder="Client name" /></div>
-              <div className="field"><label>Event Name</label><input className="input" value={work.event.eventName} onChange={(e) => updateEvent('eventName', e.target.value)} placeholder="Wedding / Birthday / Corporate" /></div>
-              <div className="field"><label>Event Date</label><input className="input" type="date" value={work.event.eventDate} onChange={(e) => updateEvent('eventDate', e.target.value)} /></div>
+              <div className="field"><label>Client Name</label><input className="input input-large" value={work.event.clientName} onChange={(e) => updateEvent('clientName', e.target.value)} placeholder="Client name" /></div>
+              <div className="field"><label>Event Name</label><input className="input input-large" value={work.event.eventName} onChange={(e) => updateEvent('eventName', e.target.value)} placeholder="Wedding / Birthday / Corporate" /></div>
+              <div className="field"><label>Event Date</label><input className="input input-large" type="date" value={work.event.eventDate} onChange={(e) => updateEvent('eventDate', e.target.value)} /></div>
             </div>
             <div className="three-grid">
-              <div className="field"><label>Function Type</label><input className="input" value={work.event.functionType} onChange={(e) => updateEvent('functionType', e.target.value)} placeholder="Lunch / Dinner / Breakfast" /></div>
-              <div className="field"><label>Pax / Guests</label><input className="input" type="number" value={work.event.pax || ''} onChange={(e) => updateEvent('pax', Number(e.target.value))} placeholder="300" /></div>
-              <div className="field"><label>City</label><input className="input" value={work.event.city} onChange={(e) => updateEvent('city', e.target.value)} placeholder="Silvassa" /></div>
+              <div className="field"><label>Function Type</label><input className="input input-large" value={work.event.functionType} onChange={(e) => updateEvent('functionType', e.target.value)} placeholder="Lunch / Dinner / Breakfast" /></div>
+              <div className="field"><label>Pax / Guests</label><input className="input input-large" type="number" value={work.event.pax || ''} onChange={(e) => updateEvent('pax', Number(e.target.value))} placeholder="300" /></div>
+              <div className="field"><label>City</label><input className="input input-large" value={work.event.city} onChange={(e) => updateEvent('city', e.target.value)} placeholder="Silvassa" /></div>
             </div>
-            <div className="field"><label>Venue</label><input className="input" value={work.event.venue} onChange={(e) => updateEvent('venue', e.target.value)} placeholder="Venue / Address" /></div>
+            <div className="field"><label>Venue</label><input className="input input-large" value={work.event.venue} onChange={(e) => updateEvent('venue', e.target.value)} placeholder="Venue / Address" /></div>
           </div>
         </div>
 
         <div className="glass-card">
+          <div className="section-kicker">Paste Only</div>
           <h2>Paste Menu</h2>
+          <div className="helper-card" style={{ marginBottom: 16 }}>
+            <b>One message is enough</b>
+            <p>Paste the full menu from WhatsApp, notes, or email. Separate items with new lines, commas, or slashes.</p>
+          </div>
           <div className="form-grid">
             <div className="field">
               <label>Paste Menu Text</label>
-              <textarea className="textarea" value={work.event.rawMenuText} onChange={(e) => updateEvent('rawMenuText', e.target.value)} placeholder="Paste menu here: Orange Juice / Manchow Soup / Paneer Tikka / Paneer Butter Masala / Naan / Dal Fry / Jeera Rice / Gulab Jamun" />
+              <textarea className="textarea textarea-large" value={work.event.rawMenuText} onChange={(e) => updateEvent('rawMenuText', e.target.value)} placeholder="Paste menu here: Orange Juice / Manchow Soup / Paneer Tikka / Paneer Butter Masala / Naan / Dal Fry / Jeera Rice / Gulab Jamun" />
             </div>
-            <div className="action-row">
+            <div className="action-row page-actions">
               <button className="primary-button" onClick={detectAndNext}>Next: Check Menu</button>
               <button
                 className="ghost-button"
@@ -88,7 +97,7 @@ export default function EventPage() {
                   saveWork(session.tenantId, next);
                 }}
               >
-                Clear Page Data
+                Clear This Page
               </button>
             </div>
           </div>
