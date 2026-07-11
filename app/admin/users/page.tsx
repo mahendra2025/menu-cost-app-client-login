@@ -2,12 +2,12 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { SESSION_KEY } from '../../../lib/store';
 
 type ClientUser = {
   id: string;
   name: string;
   email: string;
-  password: string;
   plan: string;
   status: string;
   createdAt: string;
@@ -28,7 +28,7 @@ export default function AdminUsersPage() {
   });
 
   useEffect(() => {
-    const sessionRaw = localStorage.getItem('menu_cost_session');
+    const sessionRaw = localStorage.getItem(SESSION_KEY);
     const session = sessionRaw ? JSON.parse(sessionRaw) : null;
 
     if (!session || session.role !== 'ADMIN') {
@@ -117,8 +117,10 @@ export default function AdminUsersPage() {
   }
 
   function logout() {
-    localStorage.removeItem('menu_cost_session');
-    router.push('/login');
+    localStorage.removeItem(SESSION_KEY);
+    fetch('/api/admin/session', { method: 'DELETE' }).finally(() => {
+      router.push('/login');
+    });
   }
 
   return (
@@ -167,6 +169,8 @@ export default function AdminUsersPage() {
             <label>Password</label>
             <input
               className="input"
+              type="password"
+              autoComplete="new-password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="123456"
@@ -217,7 +221,6 @@ export default function AdminUsersPage() {
                 <tr>
                   <th style={{ textAlign: 'left', padding: 12 }}>Client</th>
                   <th style={{ textAlign: 'left', padding: 12 }}>User ID</th>
-                  <th style={{ textAlign: 'left', padding: 12 }}>Password</th>
                   <th style={{ textAlign: 'left', padding: 12 }}>Plan</th>
                   <th style={{ textAlign: 'left', padding: 12 }}>Status</th>
                   <th style={{ textAlign: 'left', padding: 12 }}>Action</th>
@@ -231,7 +234,6 @@ export default function AdminUsersPage() {
                       <b>{user.name}</b>
                     </td>
                     <td style={{ padding: 12 }}>{user.email}</td>
-                    <td style={{ padding: 12 }}>{user.password}</td>
                     <td style={{ padding: 12 }}>{user.plan}</td>
                     <td style={{ padding: 12 }}>
                       <b>{user.status}</b>

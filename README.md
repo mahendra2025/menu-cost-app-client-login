@@ -16,8 +16,7 @@ This is a ready-to-run Next.js app for your 5-page Menu Cost workflow.
 Admin login:
 
 ```txt
-User ID: admin
-Password: admin123
+Set ADMIN_USER_ID and ADMIN_PASSWORD in your environment.
 ```
 
 Client login:
@@ -41,6 +40,19 @@ cd menu-cost-app-client-login
 npm install
 npm run dev
 ```
+
+Recommended environment:
+
+```bash
+ADMIN_USER_ID=admin
+ADMIN_PASSWORD=change-this-now
+ADMIN_SESSION_SECRET=change-this-too
+DATABASE_URL=your-database-url
+```
+
+You can copy `.env.example` to `.env.local` and fill in your real values.
+
+If `ADMIN_USER_ID`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, or `DATABASE_URL` are missing, the server will now fail with a clear error instead of silently misbehaving.
 
 Open:
 

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { SESSION_KEY } from '../../lib/store';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,23 +14,6 @@ export default function LoginPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
-
-    if (userId.trim() === 'admin' && password.trim() === 'admin123') {
-      localStorage.setItem(
-        'menu_cost_session',
-        JSON.stringify({
-          role: 'ADMIN',
-          tenantId: 'admin',
-          tenantName: 'Admin',
-          email: 'admin',
-          plan: 'ADMIN',
-          status: 'ACTIVE',
-        })
-      );
-
-      router.push('/admin/users');
-      return;
-    }
 
     try {
       setLoading(true);
@@ -51,23 +35,31 @@ export default function LoginPage() {
         setError(data.error || 'Wrong user ID or password');
         return;
       }
-const clientSession = {
-  ...data.session,
-  role: 'CLIENT',
-  userId: data.session.email,
-  name: data.session.tenantName,
-  clientName: data.session.tenantName,
-  tenantId: data.session.tenantId,
-  tenantName: data.session.tenantName,
-  email: data.session.email,
-  plan: data.session.plan,
-  status: data.session.status,
-};
 
-localStorage.setItem('menu_cost_session', JSON.stringify(clientSession));
-localStorage.setItem('menuCostSession', JSON.stringify(clientSession));
-localStorage.setItem('currentTenantId', data.session.tenantId);
-      
+      if (data.session.role === 'ADMIN') {
+        localStorage.setItem(
+          SESSION_KEY,
+          JSON.stringify({
+            role: 'ADMIN',
+            tenantId: 'admin',
+            userId: 'admin',
+            businessName: 'Super Admin',
+            status: 'ACTIVE',
+          })
+        );
+        router.push('/admin/users');
+        return;
+      }
+
+      const clientSession = {
+        role: 'CLIENT' as const,
+        tenantId: data.session.tenantId,
+        userId: data.session.email,
+        businessName: data.session.tenantName,
+        status: data.session.status,
+      };
+
+      localStorage.setItem(SESSION_KEY, JSON.stringify(clientSession));
 
       router.push('/app/event');
     } catch {
@@ -118,7 +110,7 @@ localStorage.setItem('currentTenantId', data.session.tenantId);
         <div className="panel" style={{ marginTop: 16, padding: 16 }}>
           <b>Admin login</b>
           <p className="muted" style={{ marginBottom: 0 }}>
-            User ID: <b>admin</b> / Password: <b>admin123</b>
+            Use the admin credentials configured in your environment settings.
           </p>
         </div>
       </section>

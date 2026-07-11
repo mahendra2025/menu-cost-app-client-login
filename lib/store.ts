@@ -4,9 +4,7 @@ import { CATEGORY_BASE_COST, detectCategory, detectCost } from './dishCostMaster
 import type { ClientUser, EventDetails, ExtraCost, MenuItem, Session, WorkState } from './types';
 
 const CLIENTS_KEY = 'menu_cost_clients_v1';
-const SESSION_KEY = 'menu_cost_session_v1';
-const ADMIN_USER_ID = 'admin';
-const ADMIN_PASSWORD = 'admin123';
+export const SESSION_KEY = 'menu_cost_session';
 
 export const emptyEvent: EventDetails = {
   clientName: '',
@@ -61,34 +59,6 @@ export function upsertClient(client: ClientUser) {
 
 export function deleteClient(id: string) {
   saveClients(getClients().filter((client) => client.id !== id));
-}
-
-export function login(userId: string, password: string): { ok: true; session: Session } | { ok: false; message: string } {
-  const cleanUser = userId.trim();
-  if (cleanUser === ADMIN_USER_ID && password === ADMIN_PASSWORD) {
-    const session: Session = {
-      role: 'ADMIN',
-      tenantId: 'admin',
-      userId: ADMIN_USER_ID,
-      businessName: 'Super Admin',
-      status: 'ACTIVE',
-    };
-    window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    return { ok: true, session };
-  }
-
-  const client = getClients().find((item) => item.userId === cleanUser && item.password === password);
-  if (!client) return { ok: false, message: 'Wrong user ID or password.' };
-
-  const session: Session = {
-    role: 'CLIENT',
-    tenantId: client.id,
-    userId: client.userId,
-    businessName: client.businessName,
-    status: client.status,
-  };
-  window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  return { ok: true, session };
 }
 
 export function logout() {
