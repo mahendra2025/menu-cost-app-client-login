@@ -75,11 +75,11 @@ export const CATEGORY_BASE_COST: Record<Category, number> = {
   Condiments: 6,
 };
 
-export const DISH_COST_ITEMS: readonly DishCostItem[] = [
+const DISH_COST_ITEMS_PART_1: readonly DishCostItem[] = [
   
 
 // Welcome Drink
-{ name: 'Orange Juice', category: 'Welcome Drink', rate: 18, aliases: ['orange juice', 'fresh orange juice', 'santra juice'] } as const,
+{ name: 'Orange Juice', category: 'Welcome Drink', rate: 18, aliases: ['orange juice', 'fresh orange juice', 'santra juice'] },
 { name: 'Apple Juice', category: 'Welcome Drink', rate: 22, aliases: ['apple juice', 'fresh apple juice', 'seb juice'] },
 { name: 'Pineapple Juice', category: 'Welcome Drink', rate: 20, aliases: ['pineapple juice', 'ananas juice'] },
 { name: 'Watermelon Juice', category: 'Welcome Drink', rate: 18, aliases: ['watermelon juice', 'tarbooj juice'] },
@@ -723,6 +723,10 @@ export const DISH_COST_ITEMS: readonly DishCostItem[] = [
 { name: 'Mini Kachori', category: 'Starter', rate: 38, aliases: ['mini kachori', 'cocktail kachori'] },
 { name: 'Rajasthani Mirchi Vada', category: 'Starter', rate: 46, aliases: ['rajasthani mirchi vada', 'jodhpuri mirchi vada'] },
 { name: 'Makai Chevdo Cups', category: 'Starter', rate: 48, aliases: ['makai chevdo cups', 'corn chevda cups'] },
+
+];
+
+const DISH_COST_ITEMS_PART_2: readonly DishCostItem[] = [
 
 // Chinese — Noodles
 
@@ -1438,6 +1442,11 @@ export const DISH_COST_ITEMS: readonly DishCostItem[] = [
 { name: 'Tawa Sabji', category: 'Sabji', rate: 60, aliases: ['tawa sabji', 'assorted tawa vegetables'] },
 
   
+];
+
+export const DISH_COST_ITEMS: DishCostItem[] = [
+  ...DISH_COST_ITEMS_PART_1,
+  ...DISH_COST_ITEMS_PART_2,
 ];
 
 function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishCostItem | null {
