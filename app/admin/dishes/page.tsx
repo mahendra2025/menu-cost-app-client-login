@@ -17,6 +17,8 @@ type DishRowErrors = {
   aliases?: string;
 };
 
+const DISHES_PER_PAGE = 50;
+
 function toEditableDish(item: DishCostItem): EditableDish {
   return {
     ...item,
@@ -116,6 +118,7 @@ export default function AdminDishesPage() {
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
   const rowErrors = useMemo(() => validateRows(rows), [rows]);
 
   useEffect(() => {
@@ -146,6 +149,19 @@ export default function AdminDishesPage() {
       return matchesCategory && matchesSearch;
     });
   }, [rows, query, categoryFilter]);
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / DISHES_PER_PAGE));
+  const visibleRows = useMemo(
+    () => filteredRows.slice((page - 1) * DISHES_PER_PAGE, page * DISHES_PER_PAGE),
+    [filteredRows, page],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, categoryFilter]);
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
 
   function updateRow(id: string, patch: Partial<EditableDish>) {
     setMessage('');
@@ -273,7 +289,7 @@ export default function AdminDishesPage() {
             <div className="dish-list-heading"><div><h2>Dish List</h2><p className="muted">Edit any field, then save all changes.</p></div><span className="badge">{filteredRows.length} dishes</span></div>
             {filteredRows.length === 0 ? <div className="admin-empty"><strong>No dishes found</strong><span>Try another search or category.</span></div> : null}
             <div className="admin-dish-list">
-              {filteredRows.map((row) => (
+              {visibleRows.map((row) => (
                 <div className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`} key={row.id}>
                   <div className="field">
                     <label>Dish Name</label>
@@ -300,6 +316,13 @@ export default function AdminDishesPage() {
                 </div>
               ))}
             </div>
+            {filteredRows.length > DISHES_PER_PAGE ? (
+              <div className="dish-pagination">
+                <button className="ghost-button" disabled={page === 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Previous</button>
+                <span>Page <strong>{page}</strong> of {pageCount}</span>
+                <button className="ghost-button" disabled={page === pageCount} onClick={() => setPage((current) => Math.min(pageCount, current + 1))}>Next</button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </section>

@@ -206,6 +206,9 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .dish-list-heading p { margin-top: 5px; font-size: 13px; }
 .dish-unsaved { display: flex; align-items: center; gap: 8px; margin-top: 14px; color: #9a5a0a; font-size: 12px; font-weight: 800; }
 .dish-unsaved span { width: 8px; height: 8px; border-radius: 50%; background: #ff9500; box-shadow: 0 0 0 4px rgba(255,149,0,.13); }
+.dish-pagination { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 22px; }
+.dish-pagination span { color: var(--muted); font-size: 13px; }
+.dish-pagination .ghost-button { min-width: 100px; }
 .ghost-button:disabled { opacity: .55; cursor: default; }
 .admin-dish-row {
   display: grid;
