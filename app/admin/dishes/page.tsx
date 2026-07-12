@@ -149,16 +149,18 @@ export default function AdminDishesPage() {
   }, [rows, query]);
 
   function updateRow(id: string, patch: Partial<EditableDish>) {
+    setMessage('');
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   }
 
   function addRow() {
+    setMessage('');
     setRows((current) => [
       {
         id: uid('dish_master'),
         name: '',
         category: 'Sabji',
-        rate: 0,
+        rate: 1,
         aliases: [],
         aliasesText: '',
       },
@@ -167,6 +169,7 @@ export default function AdminDishesPage() {
   }
 
   function removeRow(id: string) {
+    setMessage('');
     setRows((current) => current.filter((row) => row.id !== id));
   }
 
@@ -196,6 +199,7 @@ export default function AdminDishesPage() {
   }
 
   async function resetAll() {
+    setMessage('');
     const response = await fetch('/api/admin/dishes', { method: 'DELETE' });
     if (!response.ok) {
       setMessage('Could not reset dish master. Please try again.');
