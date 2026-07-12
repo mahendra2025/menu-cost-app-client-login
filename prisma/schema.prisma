@@ -26,3 +26,13 @@ model MenuWork {
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }
+
+model DishMasterItem {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  rate      Float
+  aliases   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

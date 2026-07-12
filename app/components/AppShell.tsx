@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { syncDishCostItemsFromServer } from '../../lib/dishCostMaster';
 import { getSession, logout, refreshSessionFromClient } from '../../lib/store';
 import type { Session } from '../../lib/types';
 
@@ -16,6 +17,7 @@ const clientNav = [
 
 const adminNav = [
   { href: '/admin/users', label: 'Users', icon: '👥' },
+  { href: '/admin/dishes', label: 'Dishes', icon: '🍽️' },
   { href: '/app/profile', label: 'Profile', icon: '👤' },
 ];
 
@@ -34,6 +36,11 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
     setSession(current);
     setReady(true);
   }, [router]);
+
+  useEffect(() => {
+    if (!ready) return;
+    void syncDishCostItemsFromServer();
+  }, [ready]);
 
   const nav = useMemo(() => (session?.role === 'ADMIN' ? adminNav : clientNav), [session]);
 

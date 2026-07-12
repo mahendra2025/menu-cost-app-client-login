@@ -38,6 +38,8 @@ export type DishCostItem = {
   aliases?: string[];
 };
 
+const DISH_MASTER_STORAGE_KEY = 'menu_cost_dish_master_v1';
+
 export const CATEGORY_BASE_COST: Record<Category, number> = {
   'Welcome Drink': 18,
   Mocktail: 35,
@@ -146,6 +148,68 @@ export const DISH_COST_ITEMS: DishCostItem[] = [
   { name: 'Pickle', category: 'Condiments', rate: 6, aliases: ['pickle'] },
 ];
 
+function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishCostItem | null {
+  if (!item?.name || !item?.category) return null;
+  if (!CATEGORIES.includes(item.category)) return null;
+
+  const cleanAliases = Array.isArray(item.aliases)
+    ? item.aliases.map((alias) => alias.trim()).filter(Boolean)
+    : [];
+
+  return {
+    name: item.name.trim(),
+    category: item.category,
+    rate: Math.max(Number(item.rate) || 0, 0),
+    aliases: cleanAliases,
+  };
+}
+
+export function getDishCostItems(): DishCostItem[] {
+  if (typeof window === 'undefined') return DISH_COST_ITEMS;
+
+  try {
+    const raw = window.localStorage.getItem(DISH_MASTER_STORAGE_KEY);
+    if (!raw) return DISH_COST_ITEMS;
+    const parsed = JSON.parse(raw) as Array<Partial<DishCostItem>>;
+    const cleaned = parsed.map((item) => sanitizeDishItem(item)).filter((item): item is DishCostItem => item !== null);
+    return cleaned.length ? cleaned : DISH_COST_ITEMS;
+  } catch {
+    return DISH_COST_ITEMS;
+  }
+}
+
+export function saveDishCostItems(items: DishCostItem[]) {
+  if (typeof window === 'undefined') return;
+  const cleaned = items.map((item) => sanitizeDishItem(item)).filter((item): item is DishCostItem => item !== null);
+  window.localStorage.setItem(DISH_MASTER_STORAGE_KEY, JSON.stringify(cleaned));
+}
+
+export function resetDishCostItems() {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(DISH_MASTER_STORAGE_KEY);
+}
+
+export async function syncDishCostItemsFromServer() {
+  if (typeof window === 'undefined') return DISH_COST_ITEMS;
+
+  try {
+    const response = await fetch('/api/dishes', { cache: 'no-store' });
+    if (!response.ok) return getDishCostItems();
+    const data = await response.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    const cleaned = (items as Array<Partial<DishCostItem>>)
+      .map((item) => sanitizeDishItem(item))
+      .filter((item): item is DishCostItem => item !== null);
+    if (cleaned.length) {
+      saveDishCostItems(cleaned);
+      return cleaned;
+    }
+    return DISH_COST_ITEMS;
+  } catch {
+    return getDishCostItems();
+  }
+}
+
 const categoryAliases: Record<Category, string[]> = {
   'Welcome Drink': ['welcome drink', 'juice', 'sharbat', 'jaljeera', 'thandai', 'kokum', 'aam panna'],
   Mocktail: ['mocktail', 'mojito', 'blue lagoon', 'pina', 'punch'],
@@ -201,13 +265,14 @@ function isAliasContained(input: string, candidate: string) {
 }
 
 export function findDishByName(name: string): DishCostItem | null {
-  const exactMatch = DISH_COST_ITEMS.find((dish) =>
+  const dishItems = getDishCostItems();
+  const exactMatch = dishItems.find((dish) =>
     isExactAliasMatch(name, dish.name) || (dish.aliases ?? []).some((alias) => isExactAliasMatch(name, alias)),
   );
   if (exactMatch) return exactMatch;
 
   const tokenizedInput = tokenizeDishName(name);
-  return DISH_COST_ITEMS.find((dish) => {
+  return dishItems.find((dish) => {
     const candidates = [dish.name, ...(dish.aliases ?? [])];
     return candidates.some((candidate) => {
       if (!isAliasContained(name, candidate)) return false;
@@ -227,7 +292,7 @@ export function suggestDishesByName(name: string, limit = 5): DishCostItem[] {
 
   const inputTokens = tokenizeDishName(name);
 
-  return DISH_COST_ITEMS
+  return getDishCostItems()
     .map((dish) => {
       const candidates = [dish.name, ...(dish.aliases ?? [])];
       const score = Math.max(

@@ -191,6 +191,17 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   background: rgba(255,255,255,0.86);
   border: 1px solid var(--border);
 }
+.admin-dish-list { display: grid; gap: 14px; }
+.admin-dish-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 140px 1.4fr auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid var(--border);
+}
 .menu-cell { display: grid; gap: 6px; }
 .mobile-field-label {
   display: none;
@@ -322,6 +333,7 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .ghost-button, .primary-button, .secondary-button, .danger-button { min-height: 48px; }
   .action-row > * { flex: 1 1 100%; }
   .menu-row { grid-template-columns: 1fr; gap: 12px; padding: 14px; }
+  .admin-dish-row { grid-template-columns: 1fr; }
   .mobile-field-label { display: inline-block; }
   .table-wrap { margin-inline: -6px; }
   table { min-width: 560px; }
