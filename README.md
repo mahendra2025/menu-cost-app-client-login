@@ -1,6 +1,6 @@
 # Menu Cost App - Client Login Version
 
-This is a ready-to-run Next.js app for your 5-page Menu Cost workflow.
+This is a Next.js app for the Menu Cost workflow with client login backed by PostgreSQL through Prisma.
 
 ## Pages
 
@@ -35,8 +35,29 @@ Expired client can only open Profile and Logout. Event upload, menu, cost and PD
 
 ## Run locally
 
+### Option 1: Local Docker database
+
+1. Start PostgreSQL:
+
 ```bash
-cd menu-cost-app-client-login
+docker compose up -d
+```
+
+2. Create your env file:
+
+```bash
+cp .env.example .env
+```
+
+3. Push the Prisma schema into the database:
+
+```bash
+npm run db:push
+```
+
+4. Start the app:
+
+```bash
 npm install
 npm run dev
 ```
@@ -60,7 +81,24 @@ Open:
 http://localhost:3000
 ```
 
+### Option 2: Existing PostgreSQL server
+
+Set `DATABASE_URL` in `.env` to your existing PostgreSQL instance, then run:
+
+```bash
+npm install
+npm run db:push
+npm run dev
+```
+
+Open:
+
+```txt
+http://localhost:3000
+```
+
 ## Important
 
-This version uses browser `localStorage`, so it is good for demo and testing.
-For real SaaS paid users, connect Supabase database/auth next, otherwise data is saved only inside one browser.
+- Admin login is hard-coded as `admin / admin123`.
+- Client accounts are stored in PostgreSQL and managed from `/admin/users`.
+- Client-side work data is still stored in browser `localStorage`, so each browser keeps its own event/menu/cost draft data.
