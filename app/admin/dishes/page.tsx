@@ -116,7 +116,11 @@ export default function AdminDishesPage() {
   const [ready, setReady] = useState(false);
   const [rows, setRows] = useState<EditableDish[]>([]);
   const [query, setQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | Category>('ALL');
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
   const rowErrors = useMemo(() => validateRows(rows), [rows]);
 
   useEffect(() => {
@@ -140,22 +144,25 @@ export default function AdminDishesPage() {
 
   const filteredRows = useMemo(() => {
     const search = query.trim().toLowerCase();
-    if (!search) return rows;
-    return rows.filter((row) =>
-      row.name.toLowerCase().includes(search) ||
-      row.category.toLowerCase().includes(search) ||
-      row.aliasesText.toLowerCase().includes(search),
-    );
-  }, [rows, query]);
+    return rows.filter((row) => {
+      const matchesCategory = categoryFilter === 'ALL' || row.category === categoryFilter;
+      const matchesSearch = !search || row.name.toLowerCase().includes(search) ||
+        row.category.toLowerCase().includes(search) || row.aliasesText.toLowerCase().includes(search);
+      return matchesCategory && matchesSearch;
+    });
+  }, [rows, query, categoryFilter]);
 
   function updateRow(id: string, patch: Partial<EditableDish>) {
     setMessage('');
+    setDirty(true);
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   }
 
   function addRow() {
     setMessage('');
     setQuery('');
+    setCategoryFilter('ALL');
+    setDirty(true);
     setRows((current) => [
       {
         id: uid('dish_master'),
@@ -171,39 +178,49 @@ export default function AdminDishesPage() {
 
   function removeRow(id: string) {
     setMessage('');
+    setDirty(true);
     setRows((current) => current.filter((row) => row.id !== id));
   }
 
   async function saveAll() {
     if (rowErrors.size > 0) {
       setMessage('Please fix the highlighted dish rows before saving.');
+      setMessageType('error');
       return;
     }
 
+    setSaving(true);
+    setMessage('');
     const cleaned = rows
       .map(toDishCostItem)
       .filter((row) => row.name && CATEGORIES.includes(row.category as Category));
-    const response = await fetch('/api/admin/dishes', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: cleaned }),
-    });
-
-    if (!response.ok) {
+    try {
+      const response = await fetch('/api/admin/dishes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cleaned }),
+      });
+      if (!response.ok) throw new Error();
+      saveDishCostItems(cleaned);
+      setRows(cleaned.map(toEditableDish));
+      setDirty(false);
+      setMessageType('success');
+      setMessage('Dish catalog saved. Client menus now use these dishes and rates.');
+    } catch {
+      setMessageType('error');
       setMessage('Could not save dish master. Please try again.');
-      return;
+    } finally {
+      setSaving(false);
     }
-
-    saveDishCostItems(cleaned);
-    setRows(cleaned.map(toEditableDish));
-    setMessage('Dish master saved. Menu detection and rates now use the shared admin list.');
   }
 
   async function resetAll() {
+    if (!confirm('Reset every dish and rate to the default catalog? Your custom changes will be removed.')) return;
     setMessage('');
     const response = await fetch('/api/admin/dishes', { method: 'DELETE' });
     if (!response.ok) {
       setMessage('Could not reset dish master. Please try again.');
+      setMessageType('error');
       return;
     }
 
@@ -212,6 +229,8 @@ export default function AdminDishesPage() {
     const defaults = parseDishItems(data.items).map(toEditableDish);
     saveDishCostItems(defaults.map(toDishCostItem));
     setRows(defaults);
+    setDirty(false);
+    setMessageType('success');
     setMessage('Dish master reset to the default shared catalog.');
   }
 
@@ -223,18 +242,26 @@ export default function AdminDishesPage() {
           <h2>Manage Dish Catalog</h2>
           <p className="muted">This master list controls dish matching, category auto-fill, and default rate detection in the Menu page.</p>
           <div className="action-row" style={{ marginTop: 16 }}>
-            <button className="primary-button" onClick={addRow}>Add Dish</button>
-            <button className="ghost-button" onClick={saveAll}>Save All Changes</button>
+            <button className="primary-button" onClick={addRow}>+ Add Dish</button>
+            <button className="ghost-button" onClick={saveAll} disabled={saving || !dirty}>{saving ? 'Saving…' : dirty ? 'Save All Changes' : 'All Changes Saved'}</button>
             <button className="danger-button" onClick={resetAll}>Reset Default Catalog</button>
           </div>
-          {message ? <p className="muted" style={{ marginTop: 12 }}>{message}</p> : null}
+          {dirty ? <div className="dish-unsaved"><span />You have unsaved catalog changes</div> : null}
+          {message ? <div className={`admin-message ${messageType}`} style={{ marginTop: 12, marginBottom: 0 }}>{message}</div> : null}
         </div>
 
         <div className="glass-card">
-          <div className="two-grid">
+          <div className="dish-filter-grid">
             <div className="field">
               <label>Search Dish</label>
               <input className="input input-large" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Paneer, biryani, live counter..." />
+            </div>
+            <div className="field">
+              <label>Category</label>
+              <select className="select select-large" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as 'ALL' | Category)}>
+                <option value="ALL">All categories</option>
+                {CATEGORIES.map((category) => <option value={category} key={category}>{category}</option>)}
+              </select>
             </div>
             <div className="stat-card">
               <small>Total Dishes</small>
@@ -248,7 +275,8 @@ export default function AdminDishesPage() {
 
         {ready ? (
           <div className="glass-card">
-            <h2>Dish List</h2>
+            <div className="dish-list-heading"><div><h2>Dish List</h2><p className="muted">Edit any field, then save all changes.</p></div><span className="badge">{filteredRows.length} dishes</span></div>
+            {filteredRows.length === 0 ? <div className="admin-empty"><strong>No dishes found</strong><span>Try another search or category.</span></div> : null}
             <div className="admin-dish-list">
               {filteredRows.map((row) => (
                 <div className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`} key={row.id}>
