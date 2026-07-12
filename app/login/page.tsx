@@ -75,12 +75,12 @@ export default function LoginPage() {
         <div className="app-mark">MC</div>
         <p className="eyebrow">Client Login</p>
         <h1>Menu Cost App</h1>
-        <p className="muted">
-          Admin creates user ID and password. Client logs in and sees only their own menu costing data.
-        </p>
+        <p className="muted">Sign in to prepare menus, calculate plate costs, and create client-ready estimates.</p>
 
         <form className="form-grid" onSubmit={onSubmit}>
-         <input
+          <div className="field">
+          <label htmlFor="userId">Email or user ID</label>
+          <input
   id="userId"
   name="userId"
   autoComplete="username"
@@ -89,8 +89,10 @@ export default function LoginPage() {
   onChange={(e) => setUserId(e.target.value)}
   placeholder="example: jay"
 />
-          
-<input
+          </div>
+          <div className="field">
+          <label htmlFor="password">Password</label>
+          <input
   id="password"
   name="password"
   autoComplete="current-password"
@@ -100,19 +102,15 @@ export default function LoginPage() {
   onChange={(e) => setPassword(e.target.value)}
   placeholder="Enter password"
 />
-          {error ? <div className="alert-card" style={{ margin: 0 }}>{error}</div> : null}
+          </div>
+          {error ? <div className="form-alert" role="alert">{error}</div> : null}
 
           <button className="primary-button full" type="submit" disabled={loading}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
-        <div className="panel" style={{ marginTop: 16, padding: 16 }}>
-          <b>Admin login</b>
-          <p className="muted" style={{ marginBottom: 0 }}>
-            Use the admin credentials configured in your environment settings.
-          </p>
-        </div>
+        <p className="login-help">Need access? Contact your account administrator.</p>
       </section>
     </main>
   );

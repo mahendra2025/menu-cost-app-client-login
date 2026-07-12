@@ -185,7 +185,7 @@ export default function MenuPage() {
                 </div>
                 <div className="menu-cell">
                   <span className="mobile-field-label">Cost / Plate</span>
-                  <input className="input input-large" type="number" value={item.costPerPlate} onChange={(e) => updateItem(item.id, { costPerPlate: Number(e.target.value) })} />
+                  <input className="input input-large" type="number" min="0" inputMode="decimal" value={item.costPerPlate} onChange={(e) => updateItem(item.id, { costPerPlate: Math.max(0, Number(e.target.value)) })} />
                 </div>
                 <button className="danger-button" onClick={() => removeDish(item.id)}>Remove</button>
               </div>

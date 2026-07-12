@@ -92,12 +92,12 @@ export default function CostPage() {
           <h2>Extra Cost</h2>
           <div className="three-grid">
             <div className="field"><label>Staff Cost</label><input className="input" type="number" readOnly value={work.extras.staff || ''} placeholder="0" /></div>
-            <div className="field"><label>Transport</label><input className="input" type="number" value={work.extras.transport || ''} onChange={(e) => updateExtra('transport', Number(e.target.value))} placeholder="0" /></div>
-            <div className="field"><label>Gas / Fuel</label><input className="input" type="number" value={work.extras.gasFuel || ''} onChange={(e) => updateExtra('gasFuel', Number(e.target.value))} placeholder="0" /></div>
+            <div className="field"><label>Transport</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.transport || ''} onChange={(e) => updateExtra('transport', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
+            <div className="field"><label>Gas / Fuel</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.gasFuel || ''} onChange={(e) => updateExtra('gasFuel', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
           </div>
           <div className="two-grid" style={{ marginTop: 14 }}>
-            <div className="field"><label>Disposable</label><input className="input" type="number" value={work.extras.disposable || ''} onChange={(e) => updateExtra('disposable', Number(e.target.value))} placeholder="0" /></div>
-            <div className="field"><label>Other Extra</label><input className="input" type="number" value={work.extras.other || ''} onChange={(e) => updateExtra('other', Number(e.target.value))} placeholder="0" /></div>
+            <div className="field"><label>Disposable</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.disposable || ''} onChange={(e) => updateExtra('disposable', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
+            <div className="field"><label>Other Extra</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.other || ''} onChange={(e) => updateExtra('other', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
           </div>
           <div className="staff-cost-panel" style={{ marginTop: 18 }}>
             <div className="section-head">
@@ -172,7 +172,7 @@ export default function CostPage() {
         <div className="glass-card">
           <h2>Final Price</h2>
           <div className="two-grid">
-            <div className="field"><label>Selling Price / Plate</label><input className="input" type="number" value={work.sellingPricePerPlate || ''} onChange={(e) => persist({ ...work, sellingPricePerPlate: Number(e.target.value) })} placeholder="Example: 350" /></div>
+            <div className="field"><label>Selling Price / Plate</label><input className="input" type="number" min="0" inputMode="decimal" value={work.sellingPricePerPlate || ''} onChange={(e) => persist({ ...work, sellingPricePerPlate: Math.max(0, Number(e.target.value)) })} placeholder="Example: 350" /></div>
             <div className="field"><label>Total Selling Amount</label><input className="input" readOnly value={money(result.totalSelling)} /></div>
           </div>
           <div className="stat-grid" style={{ marginTop: 16 }}>
