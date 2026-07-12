@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { DISH_COST_ITEMS } from '../../../lib/dishCostMaster';
+import { DISH_COST_ITEMS, mergeDishCatalog, type Category } from '../../../lib/dishCostMaster';
 
 export async function GET() {
   try {
@@ -14,18 +14,16 @@ export async function GET() {
       },
     });
 
-    if (!items.length) {
-      return NextResponse.json({ items: DISH_COST_ITEMS });
-    }
-
-    return NextResponse.json({
-      items: items.map((item) => ({
+    const mergedItems = items.length
+      ? mergeDishCatalog(items.map((item) => ({
         name: item.name,
-        category: item.category,
+        category: item.category as Category,
         rate: item.rate,
-        aliases: Array.isArray(item.aliases) ? item.aliases : [],
-      })),
-    });
+        aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
+      })))
+      : DISH_COST_ITEMS;
+
+    return NextResponse.json({ items: mergedItems });
   } catch {
     return NextResponse.json({ items: DISH_COST_ITEMS });
   }

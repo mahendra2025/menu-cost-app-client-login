@@ -38,6 +38,10 @@ export type DishCostItem = {
   aliases?: string[];
 };
 
+function normalizeCatalogKey(value: string) {
+  return value.trim().toLowerCase();
+}
+
 const DISH_MASTER_STORAGE_KEY = 'menu_cost_dish_master_v1';
 
 export const CATEGORY_BASE_COST: Record<Category, number> = {
@@ -182,6 +186,22 @@ export function saveDishCostItems(items: DishCostItem[]) {
   if (typeof window === 'undefined') return;
   const cleaned = items.map((item) => sanitizeDishItem(item)).filter((item): item is DishCostItem => item !== null);
   window.localStorage.setItem(DISH_MASTER_STORAGE_KEY, JSON.stringify(cleaned));
+}
+
+export function mergeDishCatalog(items: Array<Partial<DishCostItem> | null | undefined>) {
+  const merged = new Map<string, DishCostItem>();
+
+  DISH_COST_ITEMS.forEach((item) => {
+    merged.set(normalizeCatalogKey(item.name), item);
+  });
+
+  items.forEach((item) => {
+    const clean = sanitizeDishItem(item);
+    if (!clean) return;
+    merged.set(normalizeCatalogKey(clean.name), clean);
+  });
+
+  return Array.from(merged.values()).sort((left, right) => left.name.localeCompare(right.name));
 }
 
 export function resetDishCostItems() {
