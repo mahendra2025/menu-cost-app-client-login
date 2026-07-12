@@ -54,7 +54,7 @@ export default function EventPage() {
             </div>
             <div className="three-grid">
               <div className="field"><label>Function Type</label><input className="input input-large" value={work.event.functionType} onChange={(e) => updateEvent('functionType', e.target.value)} placeholder="Lunch / Dinner / Breakfast" /></div>
-              <div className="field"><label>Pax / Guests</label><input className="input input-large" type="number" value={work.event.pax || ''} onChange={(e) => updateEvent('pax', Number(e.target.value))} placeholder="300" /></div>
+              <div className="field"><label>Pax / Guests</label><input className="input input-large" type="number" min="1" inputMode="numeric" value={work.event.pax || ''} onChange={(e) => updateEvent('pax', Math.max(0, Number(e.target.value)))} placeholder="300" /></div>
               <div className="field"><label>City</label><input className="input input-large" value={work.event.city} onChange={(e) => updateEvent('city', e.target.value)} placeholder="Silvassa" /></div>
             </div>
             <div className="field"><label>Venue</label><input className="input input-large" value={work.event.venue} onChange={(e) => updateEvent('venue', e.target.value)} placeholder="Venue / Address" /></div>

@@ -63,7 +63,8 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
           </span>
         </Link>
         <button
-          className="ghost-button"
+          className="ghost-button logout-button"
+          aria-label="Log out of Menu Cost"
           onClick={() => {
             logout();
             router.replace('/login');
@@ -88,8 +89,8 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
 
       <nav className="bottom-nav no-print">
         {nav.map((item) => (
-          <Link key={item.href} href={item.href} className={pathname === item.href ? 'active' : ''}>
-            <span>{item.icon}</span>
+          <Link key={item.href} href={item.href} className={pathname === item.href ? 'active' : ''} aria-current={pathname === item.href ? 'page' : undefined}>
+            <span aria-hidden="true">{item.icon}</span>
             <small>{item.label}</small>
           </Link>
         ))}
