@@ -1444,10 +1444,186 @@ const DISH_COST_ITEMS_PART_2: readonly DishCostItem[] = [
   
 ];
 
-export const DISH_COST_ITEMS: DishCostItem[] = [
-  ...DISH_COST_ITEMS_PART_1,
-  ...DISH_COST_ITEMS_PART_2,
+const DISH_COST_ITEMS_PART_3: readonly DishCostItem[] = [
+  // Chaat
+  { name: 'Pani Puri', category: 'Chaat', rate: 32, aliases: ['golgappa', 'puchka'] },
+  { name: 'Sev Puri', category: 'Chaat', rate: 38 },
+  { name: 'Dahi Puri', category: 'Chaat', rate: 42 },
+  { name: 'Bhel Puri', category: 'Chaat', rate: 36, aliases: ['bhel'] },
+  { name: 'Papdi Chaat', category: 'Chaat', rate: 42 },
+  { name: 'Aloo Tikki Chaat', category: 'Chaat', rate: 44 },
+  { name: 'Dahi Bhalla', category: 'Chaat', rate: 46, aliases: ['dahi vada chaat'] },
+  { name: 'Ragda Pattice', category: 'Chaat', rate: 48 },
+
+  // Punjabi
+  { name: 'Chole Bhature', category: 'Punjabi', rate: 72 },
+  { name: 'Amritsari Kulcha', category: 'Punjabi', rate: 68 },
+  { name: 'Rajma Masala', category: 'Punjabi', rate: 58 },
+  { name: 'Sarson Ka Saag', category: 'Punjabi', rate: 68 },
+  { name: 'Punjabi Chole', category: 'Punjabi', rate: 62 },
+  { name: 'Matar Mushroom Masala', category: 'Punjabi', rate: 72 },
+  { name: 'Veg Kolhapuri', category: 'Punjabi', rate: 68 },
+  { name: 'Malai Kofta', category: 'Punjabi', rate: 78 },
+
+  // Paneer
+  { name: 'Paneer Butter Masala', category: 'Paneer', rate: 82, aliases: ['pbm'] },
+  { name: 'Kadai Paneer', category: 'Paneer', rate: 80 },
+  { name: 'Shahi Paneer', category: 'Paneer', rate: 84 },
+  { name: 'Palak Paneer', category: 'Paneer', rate: 76 },
+  { name: 'Paneer Tikka Masala', category: 'Paneer', rate: 86 },
+  { name: 'Paneer Lababdar', category: 'Paneer', rate: 86 },
+  { name: 'Matar Paneer', category: 'Paneer', rate: 76 },
+  { name: 'Paneer Bhurji', category: 'Paneer', rate: 78 },
+
+  // Kathiyawadi
+  { name: 'Sev Tameta', category: 'Kathiyawadi', rate: 48 },
+  { name: 'Lasaniya Bataka', category: 'Kathiyawadi', rate: 46 },
+  { name: 'Ringan No Olo', category: 'Kathiyawadi', rate: 48, aliases: ['baingan bharta kathiyawadi'] },
+  { name: 'Bajra Rotla', category: 'Kathiyawadi', rate: 22 },
+  { name: 'Kathiyawadi Khichdi', category: 'Kathiyawadi', rate: 44 },
+  { name: 'Vagharelo Rotlo', category: 'Kathiyawadi', rate: 42 },
+
+  // Rajasthani
+  { name: 'Dal Baati Churma', category: 'Rajasthani', rate: 78 },
+  { name: 'Gatte Ki Sabji', category: 'Rajasthani', rate: 58 },
+  { name: 'Ker Sangri', category: 'Rajasthani', rate: 64 },
+  { name: 'Papad Ki Sabji', category: 'Rajasthani', rate: 52 },
+  { name: 'Rajasthani Kadhi', category: 'Rajasthani', rate: 42 },
+  { name: 'Panchmel Dal', category: 'Rajasthani', rate: 48 },
+
+  // Gujarati
+  { name: 'Gujarati Dal', category: 'Gujarati', rate: 32 },
+  { name: 'Undhiyu', category: 'Gujarati', rate: 62 },
+  { name: 'Bharela Ringan Bataka', category: 'Gujarati', rate: 48 },
+  { name: 'Gujarati Kadhi', category: 'Gujarati', rate: 30 },
+  { name: 'Dal Dhokli', category: 'Gujarati', rate: 48 },
+  { name: 'Handvo', category: 'Gujarati', rate: 42 },
+
+  // Dal / Kadhi
+  { name: 'Dal Tadka', category: 'Dal / Kadhi', rate: 30 },
+  { name: 'Dal Fry', category: 'Dal / Kadhi', rate: 28 },
+  { name: 'Dal Makhani', category: 'Dal / Kadhi', rate: 42 },
+  { name: 'Kadhi Pakora', category: 'Dal / Kadhi', rate: 34 },
+  { name: 'Moong Dal', category: 'Dal / Kadhi', rate: 26 },
+  { name: 'Mix Dal', category: 'Dal / Kadhi', rate: 32 },
+
+  // Rice
+  { name: 'Steamed Rice', category: 'Rice', rate: 22 },
+  { name: 'Jeera Rice', category: 'Rice', rate: 26 },
+  { name: 'Veg Pulao', category: 'Rice', rate: 38 },
+  { name: 'Veg Biryani', category: 'Rice', rate: 52 },
+  { name: 'Peas Pulao', category: 'Rice', rate: 34 },
+  { name: 'Kashmiri Pulao', category: 'Rice', rate: 48 },
+
+  // Bread
+  { name: 'Tandoori Roti', category: 'Bread', rate: 14 },
+  { name: 'Butter Roti', category: 'Bread', rate: 18 },
+  { name: 'Plain Naan', category: 'Bread', rate: 22 },
+  { name: 'Butter Naan', category: 'Bread', rate: 26 },
+  { name: 'Lachha Paratha', category: 'Bread', rate: 28 },
+  { name: 'Missi Roti', category: 'Bread', rate: 22 },
+
+  // Sweet
+  { name: 'Gulab Jamun', category: 'Sweet', rate: 28 },
+  { name: 'Rasmalai', category: 'Sweet', rate: 44 },
+  { name: 'Jalebi', category: 'Sweet', rate: 32 },
+  { name: 'Moong Dal Halwa', category: 'Sweet', rate: 52 },
+  { name: 'Gajar Halwa', category: 'Sweet', rate: 48 },
+  { name: 'Shrikhand', category: 'Sweet', rate: 42 },
+  { name: 'Basundi', category: 'Sweet', rate: 46 },
+  { name: 'Kaju Katli', category: 'Sweet', rate: 58 },
+
+  // Ice Cream
+  { name: 'Vanilla Ice Cream', category: 'Ice Cream', rate: 26 },
+  { name: 'Chocolate Ice Cream', category: 'Ice Cream', rate: 30 },
+  { name: 'Butterscotch Ice Cream', category: 'Ice Cream', rate: 32 },
+  { name: 'Kesar Pista Ice Cream', category: 'Ice Cream', rate: 36 },
+  { name: 'Rajbhog Ice Cream', category: 'Ice Cream', rate: 38 },
+  { name: 'Kulfi', category: 'Ice Cream', rate: 34 },
+
+  // Salad
+  { name: 'Green Salad', category: 'Salad', rate: 10 },
+  { name: 'Kachumber Salad', category: 'Salad', rate: 12 },
+  { name: 'Russian Salad', category: 'Salad', rate: 28 },
+  { name: 'Sprout Salad', category: 'Salad', rate: 22 },
+  { name: 'Fruit Salad', category: 'Salad', rate: 32 },
+
+  // Papad
+  { name: 'Roasted Papad', category: 'Papad', rate: 4 },
+  { name: 'Fried Papad', category: 'Papad', rate: 6 },
+  { name: 'Masala Papad', category: 'Papad', rate: 12 },
+  { name: 'Khichiya Papad', category: 'Papad', rate: 8 },
+
+  // Farsan
+  { name: 'Khaman Dhokla', category: 'Farsan', rate: 24 },
+  { name: 'Khandvi Farsan', category: 'Farsan', rate: 28 },
+  { name: 'Patra', category: 'Farsan', rate: 28 },
+  { name: 'Samosa', category: 'Farsan', rate: 20 },
+  { name: 'Lilva Kachori Farsan', category: 'Farsan', rate: 30 },
+  { name: 'Fafda', category: 'Farsan', rate: 24 },
+
+  // Beverage
+  { name: 'Masala Chaas', category: 'Beverage', rate: 14, aliases: ['buttermilk'] },
+  { name: 'Sweet Lassi', category: 'Beverage', rate: 26 },
+  { name: 'Masala Tea', category: 'Beverage', rate: 12 },
+  { name: 'Coffee', category: 'Beverage', rate: 18 },
+  { name: 'Mineral Water', category: 'Beverage', rate: 10 },
+
+  // Live Counter
+  { name: 'Live Dosa Counter', category: 'Live Counter', rate: 72 },
+  { name: 'Live Pasta Counter', category: 'Live Counter', rate: 82 },
+  { name: 'Live Chaat Counter', category: 'Live Counter', rate: 68 },
+  { name: 'Live Tawa Sabji Counter', category: 'Live Counter', rate: 86 },
+  { name: 'Live Jalebi Counter', category: 'Live Counter', rate: 64 },
+  { name: 'Live Pizza Counter', category: 'Live Counter', rate: 92 },
+
+  // Breakfast
+  { name: 'Poha', category: 'Breakfast', rate: 34 },
+  { name: 'Upma Breakfast', category: 'Breakfast', rate: 36 },
+  { name: 'Thepla Breakfast', category: 'Breakfast', rate: 38 },
+  { name: 'Puri Bhaji', category: 'Breakfast', rate: 48 },
+  { name: 'Aloo Paratha', category: 'Breakfast', rate: 52 },
+  { name: 'Bread Pakora', category: 'Breakfast', rate: 40 },
+
+  // Jain
+  { name: 'Jain Paneer Masala', category: 'Jain', rate: 78 },
+  { name: 'Jain Veg Handi', category: 'Jain', rate: 64 },
+  { name: 'Jain Dal Tadka', category: 'Jain', rate: 32 },
+  { name: 'Jain Pulao', category: 'Jain', rate: 42 },
+  { name: 'Jain Pav Bhaji', category: 'Jain', rate: 58 },
+  { name: 'Jain Chole', category: 'Jain', rate: 56 },
+
+  // Kids
+  { name: 'Mini Burger', category: 'Kids', rate: 46 },
+  { name: 'French Fries', category: 'Kids', rate: 38 },
+  { name: 'Cheese Sandwich', category: 'Kids', rate: 44 },
+  { name: 'Mini Samosa', category: 'Kids', rate: 28 },
+  { name: 'Smileys', category: 'Kids', rate: 36 },
+  { name: 'Chocolate Milkshake', category: 'Kids', rate: 42 },
+
+  // Condiments
+  { name: 'Mint Chutney', category: 'Condiments', rate: 6 },
+  { name: 'Tamarind Chutney', category: 'Condiments', rate: 6 },
+  { name: 'Mango Pickle', category: 'Condiments', rate: 5 },
+  { name: 'Lemon Pickle', category: 'Condiments', rate: 5 },
+  { name: 'Boondi Raita', category: 'Condiments', rate: 18 },
+  { name: 'Plain Curd', category: 'Condiments', rate: 14 },
 ];
+
+function buildDefaultDishCatalog(...parts: ReadonlyArray<readonly DishCostItem[]>) {
+  const uniqueItems = new Map<string, DishCostItem>();
+  parts.flat().forEach((item) => {
+    const key = normalizeCatalogKey(item.name);
+    if (!uniqueItems.has(key)) uniqueItems.set(key, item);
+  });
+  return Array.from(uniqueItems.values());
+}
+
+export const DISH_COST_ITEMS: DishCostItem[] = buildDefaultDishCatalog(
+  DISH_COST_ITEMS_PART_1,
+  DISH_COST_ITEMS_PART_2,
+  DISH_COST_ITEMS_PART_3,
+);
 
 function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishCostItem | null {
   if (!item?.name || !item?.category) return null;
