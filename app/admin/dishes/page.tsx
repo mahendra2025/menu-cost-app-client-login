@@ -155,6 +155,7 @@ export default function AdminDishesPage() {
 
   function addRow() {
     setMessage('');
+    setQuery('');
     setRows((current) => [
       {
         id: uid('dish_master'),
