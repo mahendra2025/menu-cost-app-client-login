@@ -11,6 +11,11 @@ import {
 import { getSession, uid } from '../../../lib/store';
 
 type EditableDish = DishCostItem & { id: string; aliasesText: string };
+type DishRowErrors = {
+  name?: string;
+  rate?: string;
+  aliases?: string;
+};
 
 function toEditableDish(item: DishCostItem): EditableDish {
   return {
@@ -49,11 +54,70 @@ function toDishCostItem(item: EditableDish): DishCostItem {
   };
 }
 
+function normalizeToken(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function validateRows(rows: EditableDish[]) {
+  const errors = new Map<string, DishRowErrors>();
+  const nameOwners = new Map<string, string[]>();
+  const aliasOwners = new Map<string, string[]>();
+
+  rows.forEach((row) => {
+    const rowErrors: DishRowErrors = {};
+    const name = row.name.trim();
+    const aliases = row.aliasesText.split(',').map((alias) => alias.trim()).filter(Boolean);
+
+    if (!name) rowErrors.name = 'Dish name is required.';
+    if (!(Number(row.rate) > 0)) rowErrors.rate = 'Rate must be greater than 0.';
+
+    const duplicateAliasesInRow = aliases.filter((alias, index) => aliases.findIndex((item) => normalizeToken(item) === normalizeToken(alias)) !== index);
+    if (duplicateAliasesInRow.length) rowErrors.aliases = 'Aliases in the same row must be unique.';
+
+    const normalizedName = normalizeToken(name);
+    if (normalizedName) {
+      nameOwners.set(normalizedName, [...(nameOwners.get(normalizedName) ?? []), row.id]);
+    }
+
+    aliases.forEach((alias) => {
+      const normalizedAlias = normalizeToken(alias);
+      aliasOwners.set(normalizedAlias, [...(aliasOwners.get(normalizedAlias) ?? []), row.id]);
+    });
+
+    if (Object.keys(rowErrors).length) errors.set(row.id, rowErrors);
+  });
+
+  rows.forEach((row) => {
+    const rowErrors = errors.get(row.id) ?? {};
+    const normalizedName = normalizeToken(row.name);
+
+    if (normalizedName && (nameOwners.get(normalizedName)?.length ?? 0) > 1) {
+      rowErrors.name = 'Dish names must be unique.';
+    }
+
+    const aliases = row.aliasesText.split(',').map((alias) => alias.trim()).filter(Boolean);
+    const hasConflictingAlias = aliases.some((alias) => (aliasOwners.get(normalizeToken(alias))?.length ?? 0) > 1);
+    if (hasConflictingAlias) {
+      rowErrors.aliases = 'Aliases must be unique across all dishes.';
+    }
+
+    const aliasMatchesDishName = aliases.some((alias) => normalizeToken(alias) === normalizedName);
+    if (aliasMatchesDishName) {
+      rowErrors.aliases = 'Do not repeat the dish name inside aliases.';
+    }
+
+    if (Object.keys(rowErrors).length) errors.set(row.id, rowErrors);
+  });
+
+  return errors;
+}
+
 export default function AdminDishesPage() {
   const [ready, setReady] = useState(false);
   const [rows, setRows] = useState<EditableDish[]>([]);
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState('');
+  const rowErrors = useMemo(() => validateRows(rows), [rows]);
 
   useEffect(() => {
     const session = getSession();
@@ -107,6 +171,11 @@ export default function AdminDishesPage() {
   }
 
   async function saveAll() {
+    if (rowErrors.size > 0) {
+      setMessage('Please fix the highlighted dish rows before saving.');
+      return;
+    }
+
     const cleaned = rows
       .map(toDishCostItem)
       .filter((row) => row.name && CATEGORIES.includes(row.category as Category));
@@ -177,10 +246,11 @@ export default function AdminDishesPage() {
             <h2>Dish List</h2>
             <div className="admin-dish-list">
               {filteredRows.map((row) => (
-                <div className="admin-dish-row" key={row.id}>
+                <div className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`} key={row.id}>
                   <div className="field">
                     <label>Dish Name</label>
                     <input className="input input-large" value={row.name} onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Paneer Butter Masala" />
+                    {rowErrors.get(row.id)?.name ? <span className="field-error">{rowErrors.get(row.id)?.name}</span> : null}
                   </div>
                   <div className="field">
                     <label>Category</label>
@@ -191,10 +261,12 @@ export default function AdminDishesPage() {
                   <div className="field">
                     <label>Rate / Plate</label>
                     <input className="input input-large" type="number" min="0" value={row.rate || ''} onChange={(e) => updateRow(row.id, { rate: Number(e.target.value) })} placeholder="0" />
+                    {rowErrors.get(row.id)?.rate ? <span className="field-error">{rowErrors.get(row.id)?.rate}</span> : null}
                   </div>
                   <div className="field">
                     <label>Aliases</label>
                     <input className="input input-large" value={row.aliasesText} onChange={(e) => updateRow(row.id, { aliasesText: e.target.value })} placeholder="pbm, butter paneer, paneer butter masala" />
+                    {rowErrors.get(row.id)?.aliases ? <span className="field-error">{rowErrors.get(row.id)?.aliases}</span> : null}
                   </div>
                   <button className="danger-button" onClick={() => removeRow(row.id)}>Delete</button>
                 </div>
