@@ -1,6 +1,6 @@
 'use client';
 
-import { CATEGORY_BASE_COST, detectCategory, detectCost } from './dishCostMaster';
+import { CATEGORY_BASE_COST, CATEGORIES, detectCategory, detectCost } from './dishCostMaster';
 import type { ClientUser, EventDetails, ExtraCost, MenuItem, Session, WorkState } from './types';
 
 const CLIENTS_KEY = 'menu_cost_clients_v1';
@@ -148,9 +148,38 @@ export function parseMenuText(text: string): MenuItem[] {
   });
 }
 
+export function buildMenuCostBreakdown(menu: MenuItem[]) {
+  const getCategoryBaseCost = (category: string) => {
+    return CATEGORIES.includes(category as (typeof CATEGORIES)[number])
+      ? CATEGORY_BASE_COST[category as (typeof CATEGORIES)[number]]
+      : 0;
+  };
+
+  const categoryCounts = menu.reduce<Record<string, number>>((counts, item) => {
+    counts[item.category] = (counts[item.category] ?? 0) + 1;
+    return counts;
+  }, {});
+
+  return menu.map((item) => {
+    const categoryCount = categoryCounts[item.category] ?? 1;
+    const baseCost = Number(item.costPerPlate) || getCategoryBaseCost(item.category);
+    const portionFactor = categoryCount > 1 ? 1 / categoryCount : 1;
+    const adjustedCostPerPlate = baseCost * portionFactor;
+
+    return {
+      ...item,
+      baseCostPerPlate: baseCost,
+      categoryCount,
+      portionFactor,
+      adjustedCostPerPlate,
+    };
+  });
+}
+
 export function calculate(work: WorkState) {
   const pax = Math.max(Number(work.event.pax) || 0, 0);
-  const menuCostPerPlate = work.menu.reduce((sum, item) => sum + (Number(item.costPerPlate) || CATEGORY_BASE_COST[item.category] || 0), 0);
+  const menuBreakdown = buildMenuCostBreakdown(work.menu);
+  const menuCostPerPlate = menuBreakdown.reduce((sum, item) => sum + item.adjustedCostPerPlate, 0);
   const extrasTotal = Object.values(work.extras).reduce((sum, value) => sum + (Number(value) || 0), 0);
   const extraPerPlate = pax > 0 ? extrasTotal / pax : 0;
   const finalCostPerPlate = menuCostPerPlate + extraPerPlate;
@@ -162,6 +191,7 @@ export function calculate(work: WorkState) {
 
   return {
     pax,
+    menuBreakdown,
     menuCostPerPlate,
     extrasTotal,
     extraPerPlate,

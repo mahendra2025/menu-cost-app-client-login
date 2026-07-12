@@ -56,16 +56,18 @@ export default function PdfPage() {
 
           <section className="print-section">
             <h3>Menu</h3>
+            <p>If one category has multiple dishes, that category is treated as one shared portion and dish cost is split equally.</p>
             {work.menu.length === 0 ? <p>No menu items added.</p> : null}
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Dish</th><th>Category</th><th>Cost / Plate</th></tr></thead>
+                <thead><tr><th>Dish</th><th>Category</th><th>Portion</th><th>Adjusted Cost / Plate</th></tr></thead>
                 <tbody>
-                  {work.menu.map((item) => (
+                  {result.menuBreakdown.map((item) => (
                     <tr key={item.id}>
                       <td><b>{item.name}</b></td>
                       <td>{item.category}</td>
-                      <td>{money(item.costPerPlate)}</td>
+                      <td>{item.categoryCount > 1 ? `1/${item.categoryCount}` : 'Full'}</td>
+                      <td>{money(item.adjustedCostPerPlate)}</td>
                     </tr>
                   ))}
                 </tbody>

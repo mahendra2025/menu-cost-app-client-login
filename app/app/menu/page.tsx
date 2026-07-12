@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
-import { CATEGORIES, detectCost } from '../../../lib/dishCostMaster';
+import { CATEGORIES, detectCategory, detectCost, findDishByName, suggestDishesByName } from '../../../lib/dishCostMaster';
 import { getSession, loadWork, saveWork, uid } from '../../../lib/store';
 import type { MenuItem, Session, WorkState } from '../../../lib/types';
 
@@ -28,6 +28,38 @@ export default function MenuPage() {
     return Array.from(map.entries());
   }, [work]);
 
+  const newDishPreview = useMemo(() => {
+    const trimmedName = newDish.trim();
+    if (!trimmedName) return null;
+
+    const matchedDish = findDishByName(trimmedName);
+    if (matchedDish) {
+      return {
+        mode: 'matched' as const,
+        dishName: matchedDish.name,
+        category: matchedDish.category,
+        rate: matchedDish.rate,
+      };
+    }
+
+    const category = detectCategory(trimmedName);
+    return {
+      mode: 'fallback' as const,
+      dishName: trimmedName,
+      category,
+      rate: detectCost(trimmedName, category),
+    };
+  }, [newDish]);
+
+  const newDishSuggestions = useMemo(() => {
+    const trimmedName = newDish.trim();
+    if (!trimmedName) return [];
+    if (findDishByName(trimmedName)) return [];
+    return suggestDishesByName(trimmedName, 4);
+  }, [newDish]);
+
+  const isNewDishMatched = newDishPreview?.mode === 'matched';
+
   if (!work || !session) return <AppShell title="Menu"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
   if (session.status === 'EXPIRED') return <AppShell title="Menu"><LockedCard /></AppShell>;
 
@@ -44,6 +76,16 @@ export default function MenuPage() {
       menu: work.menu.map((item) => {
         if (item.id !== id) return item;
         const updated = { ...item, ...patch };
+        if (typeof patch.name === 'string') {
+          const matchedDish = findDishByName(updated.name);
+          if (matchedDish) {
+            updated.category = matchedDish.category;
+            if (patch.costPerPlate === undefined) updated.costPerPlate = matchedDish.rate;
+          } else {
+            updated.category = detectCategory(updated.name);
+            if (patch.costPerPlate === undefined) updated.costPerPlate = detectCost(updated.name, updated.category);
+          }
+        }
         if (patch.category && !patch.costPerPlate) updated.costPerPlate = detectCost(updated.name, updated.category);
         return updated;
       }),
@@ -53,14 +95,17 @@ export default function MenuPage() {
 
   function addDish() {
     if (!newDish.trim() || !work) return;
+    const trimmedName = newDish.trim();
+    const detectedCategory = detectCategory(trimmedName);
     const item: MenuItem = {
       id: uid('dish'),
-      name: newDish.trim(),
-      category: newCategory,
-      costPerPlate: detectCost(newDish.trim(), newCategory),
+      name: trimmedName,
+      category: detectedCategory || newCategory,
+      costPerPlate: detectCost(trimmedName, detectedCategory || newCategory),
     };
     persist({ ...work, menu: [...work.menu, item] });
     setNewDish('');
+    setNewCategory('Sabji');
   }
 
   function removeDish(id: string) {
@@ -87,14 +132,43 @@ export default function MenuPage() {
           </div>
           <div className="three-grid">
             <div className="field"><label>Dish Name</label><input className="input input-large" value={newDish} onChange={(e) => setNewDish(e.target.value)} placeholder="Paneer Butter Masala" /></div>
-            <div className="field"><label>Category</label><select className="select select-large" value={newCategory} onChange={(e) => setNewCategory(e.target.value)}>{CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></div>
+            <div className="field"><label>Category</label><select className={`select select-large ${isNewDishMatched ? 'select-locked' : ''}`} value={isNewDishMatched ? newDishPreview.category : newCategory} onChange={(e) => setNewCategory(e.target.value)} disabled={isNewDishMatched}>{CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></div>
             <div className="field"><label>&nbsp;</label><button className="primary-button full" onClick={addDish}>Add Dish</button></div>
           </div>
+          {newDishPreview ? (
+            <div className={`dish-preview ${newDishPreview.mode === 'matched' ? 'matched' : 'fallback'}`}>
+              <strong>{newDishPreview.mode === 'matched' ? 'Matched dish' : 'Category fallback'}</strong>
+              <span>{newDishPreview.dishName}</span>
+              <small>{newDishPreview.category} • ₹{newDishPreview.rate}</small>
+            </div>
+          ) : null}
+          {isNewDishMatched ? <p className="muted" style={{ marginTop: 10 }}>Category is locked because this dish matched your catalog exactly.</p> : null}
+          {newDishSuggestions.length ? (
+            <div className="dish-suggestions">
+              <strong>Suggestions</strong>
+              <div className="action-row">
+                {newDishSuggestions.map((dish) => (
+                  <button
+                    key={dish.name}
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => {
+                      setNewDish(dish.name);
+                      setNewCategory(dish.category);
+                    }}
+                  >
+                    {dish.name} • {dish.category} • ₹{dish.rate}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="glass-card">
           <div className="section-kicker">Review Items</div>
           <h2>Menu Items</h2>
+          <p className="muted">If one category has multiple dishes, that category will be treated as one shared portion and the dish cost will be split equally on the Cost page.</p>
           {work.menu.length === 0 ? <p className="muted">No dishes yet. Go to Event page, paste menu text, then click “Next: Check Menu”, or add manually here.</p> : null}
           <div className="menu-list">
             {work.menu.map((item) => (
@@ -126,8 +200,14 @@ export default function MenuPage() {
         {grouped.length ? (
           <div className="glass-card">
             <h2>Category Summary</h2>
+            <p className="muted">Categories with more than one dish will use a shared portion rule during costing.</p>
             <div className="action-row">
-              {grouped.map(([category, items]) => <span className="badge" key={category}>{category}: {items.length}</span>)}
+              {grouped.map(([category, items]) => (
+                <span className={`badge ${items.length > 1 ? 'orange' : 'green'}`} key={category}>
+                  {category}: {items.length}
+                  {items.length > 1 ? ' • Shared Portion' : ' • Full Portion'}
+                </span>
+              ))}
             </div>
           </div>
         ) : null}
