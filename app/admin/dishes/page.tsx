@@ -101,11 +101,6 @@ function validateRows(rows: EditableDish[]) {
       rowErrors.aliases = 'Aliases must be unique across all dishes.';
     }
 
-    const aliasMatchesDishName = aliases.some((alias) => normalizeToken(alias) === normalizedName);
-    if (aliasMatchesDishName) {
-      rowErrors.aliases = 'Do not repeat the dish name inside aliases.';
-    }
-
     if (Object.keys(rowErrors).length) errors.set(row.id, rowErrors);
   });
 
