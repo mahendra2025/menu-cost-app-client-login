@@ -1738,7 +1738,7 @@ function normalizeDishName(value: string) {
   return value
     .toLowerCase()
     .replace(/&/g, ' and ')
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -1748,13 +1748,15 @@ function tokenizeDishName(value: string) {
 }
 
 function isExactAliasMatch(input: string, candidate: string) {
-  return normalizeDishName(input) === normalizeDishName(candidate);
+  const normalizedInput = normalizeDishName(input);
+  const normalizedCandidate = normalizeDishName(candidate);
+  return Boolean(normalizedInput && normalizedCandidate && normalizedInput === normalizedCandidate);
 }
 
 function isAliasContained(input: string, candidate: string) {
   const normalizedInput = normalizeDishName(input);
   const normalizedCandidate = normalizeDishName(candidate);
-  return normalizedInput.includes(normalizedCandidate);
+  return Boolean(normalizedInput && normalizedCandidate && normalizedInput.includes(normalizedCandidate));
 }
 
 export function findDishByName(name: string): DishCostItem | null {

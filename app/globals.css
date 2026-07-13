@@ -222,6 +222,7 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   background: rgba(255,255,255,0.86);
   border: 1px solid var(--border);
 }
+.admin-alias-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .admin-dish-row-error {
   border-color: rgba(255, 59, 48, 0.28);
   background: rgba(255, 59, 48, 0.05);
@@ -486,6 +487,7 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .section-kicker { margin-bottom: 8px; }
   .menu-row { grid-template-columns: 1fr; gap: 12px; padding: 14px; }
   .admin-dish-row { grid-template-columns: 1fr; }
+  .admin-alias-grid { grid-template-columns: 1fr; }
   .dish-filter-grid { grid-template-columns: 1fr; }
   .dish-list-heading { align-items: flex-start; }
   .recipe-studio-shell { width: 100%; border-radius: 20px; }

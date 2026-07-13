@@ -10,7 +10,12 @@ import {
 } from '../../../lib/dishCostMaster';
 import { getSession, uid } from '../../../lib/store';
 
-type EditableDish = DishCostItem & { id: string; aliasesText: string };
+type EditableDish = DishCostItem & {
+  id: string;
+  aliasesText: string;
+  hindiAliasesText: string;
+  gujaratiAliasesText: string;
+};
 type DishRowErrors = {
   name?: string;
   rate?: string;
@@ -18,12 +23,29 @@ type DishRowErrors = {
 };
 
 const DISHES_PER_PAGE = 50;
+const HINDI_SCRIPT = /[\u0900-\u097F]/u;
+const GUJARATI_SCRIPT = /[\u0A80-\u0AFF]/u;
+
+function parseAliases(value: string) {
+  return value.split(',').map((alias) => alias.trim()).filter(Boolean);
+}
+
+function allRowAliases(item: EditableDish) {
+  return [
+    ...parseAliases(item.aliasesText),
+    ...parseAliases(item.hindiAliasesText),
+    ...parseAliases(item.gujaratiAliasesText),
+  ];
+}
 
 function toEditableDish(item: DishCostItem): EditableDish {
+  const aliases = item.aliases ?? [];
   return {
     ...item,
     id: uid('dish_master'),
-    aliasesText: (item.aliases ?? []).join(', '),
+    aliasesText: aliases.filter((alias) => !HINDI_SCRIPT.test(alias) && !GUJARATI_SCRIPT.test(alias)).join(', '),
+    hindiAliasesText: aliases.filter((alias) => HINDI_SCRIPT.test(alias)).join(', '),
+    gujaratiAliasesText: aliases.filter((alias) => GUJARATI_SCRIPT.test(alias)).join(', '),
   };
 }
 
@@ -52,7 +74,7 @@ function toDishCostItem(item: EditableDish): DishCostItem {
     name: item.name.trim(),
     category: item.category,
     rate: Math.max(Number(item.rate) || 0, 0),
-    aliases: item.aliasesText.split(',').map((alias) => alias.trim()).filter(Boolean),
+    aliases: allRowAliases(item),
   };
 }
 
@@ -68,7 +90,7 @@ function validateRows(rows: EditableDish[]) {
   rows.forEach((row) => {
     const rowErrors: DishRowErrors = {};
     const name = row.name.trim();
-    const aliases = row.aliasesText.split(',').map((alias) => alias.trim()).filter(Boolean);
+    const aliases = allRowAliases(row);
 
     if (!name) rowErrors.name = 'Dish name is required.';
     if (!(Number(row.rate) > 0)) rowErrors.rate = 'Rate must be greater than 0.';
@@ -97,7 +119,7 @@ function validateRows(rows: EditableDish[]) {
       rowErrors.name = 'Dish names must be unique.';
     }
 
-    const aliases = row.aliasesText.split(',').map((alias) => alias.trim()).filter(Boolean);
+    const aliases = allRowAliases(row);
     const hasConflictingAlias = aliases.some((alias) => (aliasOwners.get(normalizeToken(alias))?.length ?? 0) > 1);
     if (hasConflictingAlias) {
       rowErrors.aliases = 'Aliases must be unique across all dishes.';
@@ -145,7 +167,7 @@ export default function AdminDishesPage() {
     return rows.filter((row) => {
       const matchesCategory = categoryFilter === 'ALL' || row.category === categoryFilter;
       const matchesSearch = !search || row.name.toLowerCase().includes(search) ||
-        row.category.toLowerCase().includes(search) || row.aliasesText.toLowerCase().includes(search);
+        row.category.toLowerCase().includes(search) || allRowAliases(row).some((alias) => alias.toLowerCase().includes(search));
       return matchesCategory && matchesSearch;
     });
   }, [rows, query, categoryFilter]);
@@ -182,6 +204,8 @@ export default function AdminDishesPage() {
         rate: 1,
         aliases: [],
         aliasesText: '',
+        hindiAliasesText: '',
+        gujaratiAliasesText: '',
       },
       ...current,
     ]);
@@ -307,10 +331,20 @@ export default function AdminDishesPage() {
                     <input className="input input-large" type="number" min="0" value={row.rate || ''} onChange={(e) => updateRow(row.id, { rate: Number(e.target.value) })} placeholder="0" />
                     {rowErrors.get(row.id)?.rate ? <span className="field-error">{rowErrors.get(row.id)?.rate}</span> : null}
                   </div>
-                  <div className="field">
-                    <label>Aliases</label>
-                    <input className="input input-large" value={row.aliasesText} onChange={(e) => updateRow(row.id, { aliasesText: e.target.value })} placeholder="pbm, butter paneer, paneer butter masala" />
-                    {rowErrors.get(row.id)?.aliases ? <span className="field-error">{rowErrors.get(row.id)?.aliases}</span> : null}
+                  <div className="admin-alias-grid">
+                    <div className="field">
+                      <label>English / Roman Aliases</label>
+                      <input className="input input-large" value={row.aliasesText} onChange={(e) => updateRow(row.id, { aliasesText: e.target.value })} placeholder="pbm, butter paneer" />
+                      {rowErrors.get(row.id)?.aliases ? <span className="field-error">{rowErrors.get(row.id)?.aliases}</span> : null}
+                    </div>
+                    <div className="field">
+                      <label>Hindi Aliases</label>
+                      <input className="input input-large" lang="hi" value={row.hindiAliasesText} onChange={(e) => updateRow(row.id, { hindiAliasesText: e.target.value })} placeholder="पनीर बटर मसाला" />
+                    </div>
+                    <div className="field">
+                      <label>Gujarati Aliases</label>
+                      <input className="input input-large" lang="gu" value={row.gujaratiAliasesText} onChange={(e) => updateRow(row.id, { gujaratiAliasesText: e.target.value })} placeholder="પનીર બટર મસાલા" />
+                    </div>
                   </div>
                   <button className="danger-button" onClick={() => removeRow(row.id)}>Delete</button>
                 </div>
