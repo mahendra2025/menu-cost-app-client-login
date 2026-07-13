@@ -1332,10 +1332,13 @@
     "category": "Punjabi",
     "name": "Chole Masala",
     "baseGuests": 100,
+    "servingSize": 180,
+    "servingUnit": "g",
+    "catalogRate": 28.2,
     "ingredients": [
       {
         "name": "Kabuli Chana",
-        "qty": 12,
+        "qty": 10,
         "unit": "kg",
         "rate": 140,
         "rateUnit": "kg",
@@ -1343,7 +1346,7 @@
       },
       {
         "name": "Onion",
-        "qty": 5,
+        "qty": 4,
         "unit": "kg",
         "rate": 30,
         "rateUnit": "kg",
@@ -1358,40 +1361,148 @@
         "rateKey": "tomato__kg"
       },
       {
-        "name": "Oil",
-        "qty": 3,
+        "name": "Ginger",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.5,
         "unit": "ltr",
         "rate": 140,
         "rateUnit": "ltr",
-        "rateKey": "oil__ltr"
+        "rateKey": "cooking oil__ltr"
       },
       {
-        "name": "Spices",
-        "qty": 1.2,
+        "name": "Chole Masala",
+        "qty": 0.45,
         "unit": "kg",
-        "rate": 350,
+        "rate": 360,
         "rateUnit": "kg",
-        "rateKey": "spices__kg"
+        "rateKey": "chole masala__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin powder__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Dry Mango Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "dry mango powder__kg"
+      },
+      {
+        "name": "Kasuri Methi",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 500,
+        "rateUnit": "kg",
+        "rateKey": "kasuri methi__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.22,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
       }
-    ]
+    ],
+    "catalogVersion": 9
   },
   {
     "id": "dish_18",
     "category": "Punjabi",
     "name": "Rajma Masala",
     "baseGuests": 100,
+    "servingSize": 180,
+    "servingUnit": "g",
+    "catalogRate": 29.4,
     "ingredients": [
       {
         "name": "Rajma",
-        "qty": 12,
+        "qty": 10,
         "unit": "kg",
-        "rate": 150,
+        "rate": 160,
         "rateUnit": "kg",
         "rateKey": "rajma__kg"
       },
       {
         "name": "Onion",
-        "qty": 5,
+        "qty": 4,
         "unit": "kg",
         "rate": 30,
         "rateUnit": "kg",
@@ -1406,22 +1517,119 @@
         "rateKey": "tomato__kg"
       },
       {
-        "name": "Oil",
-        "qty": 3,
+        "name": "Ginger",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.5,
         "unit": "ltr",
         "rate": 140,
         "rateUnit": "ltr",
-        "rateKey": "oil__ltr"
+        "rateKey": "cooking oil__ltr"
       },
       {
-        "name": "Spices",
-        "qty": 1.2,
+        "name": "Cumin",
+        "qty": 0.12,
         "unit": "kg",
-        "rate": 350,
+        "rate": 420,
         "rateUnit": "kg",
-        "rateKey": "spices__kg"
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Kasuri Methi",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 500,
+        "rateUnit": "kg",
+        "rateKey": "kasuri methi__kg"
+      },
+      {
+        "name": "Fresh Cream",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "fresh cream__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.22,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
       }
-    ]
+    ],
+    "catalogVersion": 9
   },
   {
     "id": "dish_19",
@@ -72786,5 +72994,861 @@
       }
     ],
     "catalogVersion": 8
+  },
+  {
+    "id": "dish_import_chole_bhature",
+    "category": "Punjabi",
+    "name": "Chole Bhature",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "plate",
+    "catalogRate": 72,
+    "ingredients": [
+      {
+        "name": "Kabuli Chana",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "kabuli chana__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Chole Masala",
+        "qty": 0.45,
+        "unit": "kg",
+        "rate": 360,
+        "rateUnit": "kg",
+        "rateKey": "chole masala__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin powder__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Dry Mango Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "dry mango powder__kg"
+      },
+      {
+        "name": "Kasuri Methi",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 500,
+        "rateUnit": "kg",
+        "rateKey": "kasuri methi__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.22,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Maida",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Rava",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 55,
+        "rateUnit": "kg",
+        "rateKey": "rava__kg"
+      },
+      {
+        "name": "Curd",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Baking Soda",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "baking soda__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      }
+    ],
+    "catalogVersion": 9
+  },
+  {
+    "id": "dish_import_amritsari_kulcha",
+    "category": "Punjabi",
+    "name": "Amritsari Kulcha",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "catalogRate": 68,
+    "ingredients": [
+      {
+        "name": "Maida",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Potato",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Ajwain",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "ajwain__kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin powder__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Dry Mango Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "dry mango powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Curd",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Baking Soda",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "baking soda__kg"
+      },
+      {
+        "name": "Butter",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 520,
+        "rateUnit": "kg",
+        "rateKey": "butter__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Kabuli Chana",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "kabuli chana__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Chole Masala",
+        "qty": 0.45,
+        "unit": "kg",
+        "rate": 360,
+        "rateUnit": "kg",
+        "rateKey": "chole masala__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin powder__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Dry Mango Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "dry mango powder__kg"
+      },
+      {
+        "name": "Kasuri Methi",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 500,
+        "rateUnit": "kg",
+        "rateKey": "kasuri methi__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.22,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      }
+    ],
+    "catalogVersion": 9
+  },
+  {
+    "id": "dish_import_punjabi_chole",
+    "category": "Punjabi",
+    "name": "Punjabi Chole",
+    "baseGuests": 100,
+    "servingSize": 180,
+    "servingUnit": "g",
+    "catalogRate": 62,
+    "ingredients": [
+      {
+        "name": "Kabuli Chana",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "kabuli chana__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Chole Masala",
+        "qty": 0.45,
+        "unit": "kg",
+        "rate": 360,
+        "rateUnit": "kg",
+        "rateKey": "chole masala__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin powder__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Dry Mango Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "dry mango powder__kg"
+      },
+      {
+        "name": "Kasuri Methi",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 500,
+        "rateUnit": "kg",
+        "rateKey": "kasuri methi__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.22,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Tea Leaves",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 500,
+        "rateUnit": "kg",
+        "rateKey": "tea leaves__kg"
+      },
+      {
+        "name": "Pomegranate Seed Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "pomegranate seed powder__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      }
+    ],
+    "catalogVersion": 9
+  },
+  {
+    "id": "dish_import_matar_mushroom_masala",
+    "category": "Punjabi",
+    "name": "Matar Mushroom Masala",
+    "baseGuests": 100,
+    "servingSize": 180,
+    "servingUnit": "g",
+    "catalogRate": 58,
+    "ingredients": [
+      {
+        "name": "Mushroom",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Green Peas",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "green peas__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Cashew",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 800,
+        "rateUnit": "kg",
+        "rateKey": "cashew__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Fresh Cream",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "fresh cream__kg"
+      },
+      {
+        "name": "Cumin",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.05,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Kasuri Methi",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 500,
+        "rateUnit": "kg",
+        "rateKey": "kasuri methi__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      }
+    ],
+    "catalogVersion": 9
   }
 ]
