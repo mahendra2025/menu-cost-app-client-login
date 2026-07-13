@@ -10,6 +10,8 @@ This is a Next.js app for the Menu Cost workflow with client login backed by Pos
 4. `/app/pdf` - Print / Save as PDF
 5. `/app/profile` - Business profile, plan status, logout
 6. `/admin/users` - Admin creates client user ID and password
+7. `/admin/dishes` - Admin manages shared dishes and rates
+8. `/admin/recipes` - Admin manages recipes and ingredient costing
 
 ## Login
 
@@ -75,6 +77,26 @@ You can copy `.env.example` to `.env.local` and fill in your real values.
 
 If `ADMIN_USER_ID`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, or `DATABASE_URL` are missing, the server will now fail with a clear error instead of silently misbehaving.
 
+## Razorpay subscriptions
+
+Create a monthly ₹999 plan in the Razorpay Dashboard, then configure:
+
+```bash
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_your_key_id
+RAZORPAY_KEY_SECRET=your_test_key_secret
+RAZORPAY_PLAN_PRO_ID=plan_your_monthly_plan_id
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
+RAZORPAY_SUBSCRIPTION_CYCLES=12
+```
+
+Set the Razorpay webhook URL to:
+
+```txt
+https://www.menu-costing.com/api/webhooks/razorpay
+```
+
+Subscribe to subscription authenticated, activated, charged, pending, halted, cancelled, and completed events. Use separate keys, plan IDs, and webhook secrets for Test and Live modes.
+
 Open:
 
 ```txt
@@ -99,6 +121,6 @@ http://localhost:3000
 
 ## Important
 
-- Admin login is hard-coded as `admin / admin123`.
+- Admin login is configured through environment variables.
 - Client accounts are stored in PostgreSQL and managed from `/admin/users`.
 - Client-side work data is still stored in browser `localStorage`, so each browser keeps its own event/menu/cost draft data.

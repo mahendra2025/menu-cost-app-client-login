@@ -16,6 +16,11 @@ model Tenant {
   status    String     @default("ACTIVE")
   works     MenuWork[]
   createdAt DateTime   @default(now())
+  razorpayCustomerId     String?
+  razorpaySubscriptionId String?    @unique
+  subscriptionStatus     String?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean    @default(false)
 }
 
 model MenuWork {
@@ -35,4 +40,10 @@ model DishMasterItem {
   aliases   Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model RazorpayWebhookEvent {
+  id        String   @id
+  eventType String
+  createdAt DateTime @default(now())
 }

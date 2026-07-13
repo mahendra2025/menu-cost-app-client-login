@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminSessionToken, getAdminCookieName } from '../../../lib/adminAuth';
 import { hashPassword, isPasswordHash, verifyPassword } from '../../../lib/passwords';
 import { prisma } from '../../../lib/prisma';
+import { createClientSessionToken, getClientCookieName } from '../../../lib/clientAuth';
 
 export async function POST(request: Request) {
   try {
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
         secure: process.env.NODE_ENV === 'production',
         path: '/',
       });
+      response.cookies.set({ name: getClientCookieName(), value: '', path: '/', maxAge: 0 });
       return response;
     }
 
@@ -53,7 +55,7 @@ export async function POST(request: Request) {
       });
     }
 
-    if (tenant.status !== 'ACTIVE') {
+    if (tenant.status === 'INACTIVE') {
       return NextResponse.json({ error: 'Account inactive' }, { status: 403 });
     }
 
@@ -63,8 +65,16 @@ export async function POST(request: Request) {
         tenantName: tenant.name,
         email: tenant.email,
         plan: tenant.plan,
-        status: tenant.status,
+        status: tenant.status === 'ACTIVE' ? 'ACTIVE' : 'EXPIRED',
       },
+    });
+    response.cookies.set({
+      name: getClientCookieName(),
+      value: createClientSessionToken(tenant.id),
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
     });
     response.cookies.set({
       name: getAdminCookieName(),

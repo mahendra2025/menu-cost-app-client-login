@@ -68,6 +68,7 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
           aria-label="Log out of Menu Cost"
           onClick={() => {
             logout();
+            void fetch('/api/client/session', { method: 'DELETE' });
             router.replace('/login');
           }}
         >
