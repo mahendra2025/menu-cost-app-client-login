@@ -631,20 +631,29 @@ async function importDishCatalog(){
     showToast(`${items.length} Dish Master rates imported`);
   }catch{}
 }
-async function syncRecipeCostToDishCatalog(dish){
+async function syncRecipeCostsToDishCatalog(dishList){
   try{
-    const response=await fetch("/api/admin/dishes",{cache:"no-store"});
-    if(!response.ok)throw new Error();
-    const data=await response.json(),items=Array.isArray(data.items)?data.items:[];
-    const key=String(dish.name).trim().toLowerCase(),rate=dishCost(dish)/(Number(dish.baseGuests)||100);
-    const match=items.find(item=>String(item.name||"").trim().toLowerCase()===key);
-    if(match){match.rate=Math.round(rate*100)/100;match.category=dish.category}
-    else items.push({name:dish.name,category:dish.category,rate:Math.round(rate*100)/100,aliases:[]});
-    const saved=await fetch("/api/admin/dishes",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({items})});
+    const calculated=dishList.map(dish=>({
+      name:dish.name,
+      category:dish.category,
+      rate:Math.round((dishCost(dish)/(Number(dish.baseGuests)||100))*100)/100
+    }));
+    const saved=await fetch("/api/admin/dishes",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:calculated})});
     if(!saved.ok)throw new Error();
-    dish.catalogRate=rate;
-    setStatus("Recipe saved and Dish Master rate updated.","ok");showToast("Recipe cost synced to Dish Master");
-  }catch{setStatus("Recipe saved locally, but Dish Master sync failed.","error")}
+    calculated.forEach(item=>{
+      const dish=dishList.find(entry=>entry.name===item.name);
+      if(dish)dish.catalogRate=item.rate;
+    });
+    return calculated.length;
+  }catch{return 0}
+}
+async function syncRecipeCostToDishCatalog(dish){
+  const updated=await syncRecipeCostsToDishCatalog([dish]);
+  if(updated){
+    setStatus("Recipe saved and Dish Master shows the same per-person cost.","ok");showToast("Dish cost synced to Dish Master");
+  }else{
+    setStatus("Recipe saved locally, but Dish Master sync failed.","error");
+  }
 }
 function saveState(){
   safeStorageSet(DISH_STORAGE,JSON.stringify(dishes));
@@ -813,12 +822,16 @@ $("applyJson").addEventListener("click",applyJson);
 document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.view)));
 $("rateSearch").addEventListener("input",renderRateTable);$("unitFilter").addEventListener("change",renderRateTable);$("rateSort").addEventListener("change",renderRateTable);
 $("rateRows").addEventListener("click",e=>{const row=e.target.closest("[data-rate-id]");if(!row)return;selectedRateId=row.dataset.rateId;renderRateTable();renderSelectedRate()});
-$("saveSelectedRate").addEventListener("click",()=>{
+$("saveSelectedRate").addEventListener("click",async()=>{
   const r=selectedRate();if(!r)return;
   const newUnit=$("selectedRateUnit").value,newRate=Math.max(0,Number($("selectedRateValue").value)||0);
   const oldId=r.id,newId=normalizeKey(r.name,newUnit);r.rate=newRate;r.unit=newUnit;r.id=newId;
+  const affected=dishes.filter(d=>d.ingredients?.some(i=>i.rateKey===oldId));
   dishes.forEach(d=>d.ingredients?.forEach(i=>{if(i.rateKey===oldId){i.rateKey=newId;i.rate=newRate;i.rateUnit=newUnit}}));
-  selectedRateId=newId;saveState();renderRateTable();renderSelectedRate();loadSelectedDish();showToast("Market rate updated");
+  selectedRateId=newId;saveState();renderRateTable();renderSelectedRate();loadSelectedDish();
+  const updated=await syncRecipeCostsToDishCatalog(affected);
+  if(updated){setStatus(`${updated} Dish Master cost${updated===1?"":"s"} updated from this market rate.`,"ok");showToast(`${updated} dish cost${updated===1?"":"s"} synced`)}
+  else{setStatus("Market rate saved locally, but Dish Master sync failed.","error");showToast("Market rate saved")}
 });
 $("newRate").addEventListener("click",()=>{
   const name=prompt("Ingredient name");if(!name?.trim())return;

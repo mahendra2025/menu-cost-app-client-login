@@ -39,6 +39,22 @@ function normalizeItems(items: unknown) {
     .filter(Boolean);
 }
 
+function normalizeRateUpdates(items: unknown) {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const row = item as Record<string, unknown>;
+      const name = String(row.name || '').trim();
+      const category = String(row.category || '').trim();
+      const rate = Math.max(Number(row.rate) || 0, 0);
+      if (!name || !CATEGORIES.includes(category as (typeof CATEGORIES)[number])) return null;
+      return { name, category, rate };
+    })
+    .filter((item): item is { name: string; category: string; rate: number } => item !== null);
+}
+
 export async function GET() {
   try {
     const authError = await requireAdmin();
@@ -96,6 +112,49 @@ export async function PUT(request: Request) {
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: 'Failed to save dishes' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const authError = await requireAdmin();
+    if (authError) return authError;
+
+    const body = await request.json();
+    const updates = normalizeRateUpdates(body.items);
+    if (!updates.length) {
+      return NextResponse.json({ error: 'At least one valid dish rate is required' }, { status: 400 });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (const item of updates) {
+        const existing = await tx.dishMasterItem.findFirst({
+          where: { name: { equals: item.name, mode: 'insensitive' } },
+          select: { id: true },
+        });
+
+        if (existing) {
+          await tx.dishMasterItem.update({
+            where: { id: existing.id },
+            data: { name: item.name, category: item.category, rate: item.rate },
+          });
+        } else {
+          const defaultDish = DISH_COST_ITEMS.find((dish) => dish.name.toLowerCase() === item.name.toLowerCase());
+          await tx.dishMasterItem.create({
+            data: {
+              name: item.name,
+              category: item.category,
+              rate: item.rate,
+              aliases: defaultDish?.aliases ?? [],
+            },
+          });
+        }
+      }
+    });
+
+    return NextResponse.json({ ok: true, updated: updates.length });
+  } catch {
+    return NextResponse.json({ error: 'Failed to update dish rates' }, { status: 500 });
   }
 }
 
