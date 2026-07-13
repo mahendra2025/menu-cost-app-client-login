@@ -609,7 +609,43 @@ function ingredientCost(i){
   const rateUnit=live?.unit||i.rateUnit||i.unit;
   return convertQuantity(i.qty,i.unit,rateUnit)*rate;
 }
-function dishCost(d){return (d?.ingredients||[]).reduce((sum,i)=>sum+ingredientCost(i),0)}
+function dishCost(d){
+  const items=d?.ingredients||[];
+  return items.length?items.reduce((sum,i)=>sum+ingredientCost(i),0):(Number(d?.catalogRate)||0)*(Number(d?.baseGuests)||100);
+}
+async function importDishCatalog(){
+  try{
+    const response=await fetch("/api/admin/dishes",{cache:"no-store"});
+    if(!response.ok)return;
+    const data=await response.json(),items=Array.isArray(data.items)?data.items:[];
+    const known=new Map(dishes.map(d=>[String(d.name).trim().toLowerCase(),d]));
+    items.forEach((item,index)=>{
+      const name=String(item.name||"").trim(),key=name.toLowerCase();
+      if(!name)return;
+      const current=known.get(key);
+      if(current){current.catalogRate=Math.max(0,Number(item.rate)||0);return}
+      const dish={id:`catalog_${index}_${key.replace(/[^a-z0-9]+/g,"_")}`,name,category:String(item.category||"Sabji"),baseGuests:100,catalogRate:Math.max(0,Number(item.rate)||0),ingredients:[]};
+      dishes.push(dish);known.set(key,dish);
+    });
+    saveState();renderDishList();loadSelectedDish();
+    showToast(`${items.length} Dish Master rates imported`);
+  }catch{}
+}
+async function syncRecipeCostToDishCatalog(dish){
+  try{
+    const response=await fetch("/api/admin/dishes",{cache:"no-store"});
+    if(!response.ok)throw new Error();
+    const data=await response.json(),items=Array.isArray(data.items)?data.items:[];
+    const key=String(dish.name).trim().toLowerCase(),rate=dishCost(dish)/(Number(dish.baseGuests)||100);
+    const match=items.find(item=>String(item.name||"").trim().toLowerCase()===key);
+    if(match){match.rate=Math.round(rate*100)/100;match.category=dish.category}
+    else items.push({name:dish.name,category:dish.category,rate:Math.round(rate*100)/100,aliases:[]});
+    const saved=await fetch("/api/admin/dishes",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({items})});
+    if(!saved.ok)throw new Error();
+    dish.catalogRate=rate;
+    setStatus("Recipe saved and Dish Master rate updated.","ok");showToast("Recipe cost synced to Dish Master");
+  }catch{setStatus("Recipe saved locally, but Dish Master sync failed.","error")}
+}
 function saveState(){
   safeStorageSet(DISH_STORAGE,JSON.stringify(dishes));
   safeStorageSet(RATE_STORAGE,JSON.stringify(rates));
@@ -639,6 +675,7 @@ function dishToJson(d){
     dishName:d.name,
     category:d.category,
     baseGuests:d.baseGuests||100,
+    dishRate:Number(d.catalogRate)||0,
     ingredients:(d.ingredients||[]).map(i=>{
       const live=getRate(i.rateKey);
       return {
@@ -702,7 +739,8 @@ function renderJsonSummary(){
     $("costState").className="validationPill invalid";$("costState").textContent="JSON error";return;
   }
   const items=Array.isArray(data.ingredients)?data.ingredients:[];
-  const total=items.reduce((s,i)=>s+jsonIngredientCost(i),0),guests=Math.max(1,Number(data.baseGuests)||100);
+  const guests=Math.max(1,Number(data.baseGuests)||100);
+  const total=items.length?items.reduce((s,i)=>s+jsonIngredientCost(i),0):(Number(data.dishRate)||0)*guests;
   $("totalCost").textContent=money(total);$("perPerson").textContent=money(total/guests);
   $("ingredientCount").textContent=items.length;$("recipeCountBadge").textContent=`${items.length} rows`;
   $("costState").className="validationPill valid";$("costState").textContent="Live";
@@ -747,7 +785,7 @@ function switchView(view){
   document.querySelectorAll("[data-mobile]").forEach(b=>b.classList.toggle("active",b.dataset.mobile===view));
   if(view==="index"){renderRateTable();renderSelectedRate()}
 }
-function applyJson(){
+async function applyJson(){
   try{
     const data=parseJson(),errors=validateDishJson(data);
     if(errors.length){setValidation("invalid",`${errors.length} issue${errors.length>1?"s":""}`);setStatus(errors[0],"error");return}
@@ -759,9 +797,10 @@ function applyJson(){
       else rates.push({id,name:String(item.name).trim(),rate:Number(item.marketRate),unit:item.rateUnit});
       return {name:String(item.name).trim(),qty:Number(item.quantity),unit:item.unit,rateKey:id,rate:Number(item.marketRate),rateUnit:item.rateUnit}
     });
-    dishes[dishIndex]={...dishes[dishIndex],name:String(data.dishName).trim(),category:String(data.category).trim(),baseGuests:Number(data.baseGuests),ingredients:mapped};
+    dishes[dishIndex]={...dishes[dishIndex],name:String(data.dishName).trim(),category:String(data.category).trim(),baseGuests:Number(data.baseGuests),catalogRate:Math.max(0,Number(data.dishRate)||0),ingredients:mapped};
     saveState();setDirty(false);setValidation("valid","Valid");setStatus("Recipe and market rates saved.","ok");
     loadSelectedDish();renderRateTable();renderSelectedRate();showToast("Recipe saved");
+    await syncRecipeCostToDishCatalog(dishes[dishIndex]);
   }catch(error){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${error.message}`,"error")}
 }
 $("dishList").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(!b)return;selectedDishId=b.dataset.id;loadSelectedDish();$("sidebar").classList.remove("open")});
@@ -810,7 +849,7 @@ document.addEventListener("keydown",e=>{
 });
 window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
 document.documentElement.dataset.theme=safeStorageGet(THEME_STORAGE)||"light";
-renderDishList();loadSelectedDish();renderRateTable();renderSelectedRate();
+renderDishList();loadSelectedDish();renderRateTable();renderSelectedRate();importDishCatalog();
 </script>
 </body>
 </html>
