@@ -2524,18 +2524,13 @@
     "category": "Rajasthani",
     "name": "Dal Baati",
     "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "plate",
+    "catalogRate": 50.65,
     "ingredients": [
       {
-        "name": "Wheat Flour",
-        "qty": 15,
-        "unit": "kg",
-        "rate": 45,
-        "rateUnit": "kg",
-        "rateKey": "wheat flour__kg"
-      },
-      {
         "name": "Toor Dal",
-        "qty": 4,
+        "qty": 3,
         "unit": "kg",
         "rate": 150,
         "rateUnit": "kg",
@@ -2543,39 +2538,243 @@
       },
       {
         "name": "Moong Dal",
-        "qty": 3,
+        "qty": 2.5,
         "unit": "kg",
         "rate": 130,
         "rateUnit": "kg",
         "rateKey": "moong dal__kg"
       },
       {
+        "name": "Chana Dal",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 95,
+        "rateUnit": "kg",
+        "rateKey": "chana dal__kg"
+      },
+      {
+        "name": "Masoor Dal",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "masoor dal__kg"
+      },
+      {
+        "name": "Urad Dal",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "urad dal__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cumin",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mustard seeds__kg"
+      },
+      {
+        "name": "Asafoetida",
+        "qty": 0.012,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "asafoetida__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
         "name": "Ghee",
-        "qty": 5,
+        "qty": 0.8,
         "unit": "kg",
         "rate": 620,
         "rateUnit": "kg",
         "rateKey": "ghee__kg"
       },
       {
-        "name": "Spices",
-        "qty": 1,
+        "name": "Cooking Oil",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 20,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Wheat Flour",
+        "qty": 14,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "wheat flour__kg"
+      },
+      {
+        "name": "Rava",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 55,
+        "rateUnit": "kg",
+        "rateKey": "rava__kg"
+      },
+      {
+        "name": "Besan",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "besan__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Ajwain",
+        "qty": 0.1,
         "unit": "kg",
         "rate": 300,
         "rateUnit": "kg",
-        "rateKey": "spices__kg"
+        "rateKey": "ajwain__kg"
+      },
+      {
+        "name": "Baking Soda",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "baking soda__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
       }
-    ]
+    ],
+    "catalogVersion": 13
   },
   {
     "id": "dish_26",
     "category": "Rajasthani",
     "name": "Gatte Ki Sabji",
     "baseGuests": 100,
+    "servingSize": 180,
+    "servingUnit": "g",
+    "catalogRate": 21.8,
     "ingredients": [
       {
         "name": "Besan",
-        "qty": 10,
+        "qty": 8,
         "unit": "kg",
         "rate": 90,
         "rateUnit": "kg",
@@ -2583,29 +2782,142 @@
       },
       {
         "name": "Curd",
-        "qty": 8,
+        "qty": 7,
         "unit": "kg",
         "rate": 70,
         "rateUnit": "kg",
         "rateKey": "curd__kg"
       },
       {
-        "name": "Oil",
+        "name": "Onion",
         "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.2,
         "unit": "ltr",
         "rate": 140,
         "rateUnit": "ltr",
-        "rateKey": "oil__ltr"
+        "rateKey": "cooking oil__ltr"
       },
       {
-        "name": "Spices",
-        "qty": 1,
+        "name": "Cumin",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Ajwain",
+        "qty": 0.08,
         "unit": "kg",
         "rate": 300,
         "rateUnit": "kg",
-        "rateKey": "spices__kg"
+        "rateKey": "ajwain__kg"
+      },
+      {
+        "name": "Asafoetida",
+        "qty": 0.012,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "asafoetida__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
       }
-    ]
+    ],
+    "catalogVersion": 13
   },
   {
     "id": "dish_27",
@@ -99950,5 +100262,913 @@
       }
     ],
     "catalogVersion": 12
+  },
+  {
+    "id": "dish_import_dal_baati_churma",
+    "category": "Rajasthani",
+    "name": "Dal Baati Churma",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "plate",
+    "catalogRate": 78,
+    "ingredients": [
+      {
+        "name": "Toor Dal",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "toor dal__kg"
+      },
+      {
+        "name": "Moong Dal",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "moong dal__kg"
+      },
+      {
+        "name": "Chana Dal",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 95,
+        "rateUnit": "kg",
+        "rateKey": "chana dal__kg"
+      },
+      {
+        "name": "Masoor Dal",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "masoor dal__kg"
+      },
+      {
+        "name": "Urad Dal",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "urad dal__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cumin",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mustard seeds__kg"
+      },
+      {
+        "name": "Asafoetida",
+        "qty": 0.012,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "asafoetida__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 20,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Wheat Flour",
+        "qty": 14,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "wheat flour__kg"
+      },
+      {
+        "name": "Rava",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 55,
+        "rateUnit": "kg",
+        "rateKey": "rava__kg"
+      },
+      {
+        "name": "Besan",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "besan__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Ajwain",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "ajwain__kg"
+      },
+      {
+        "name": "Baking Soda",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "baking soda__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Wheat Flour",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "wheat flour__kg"
+      },
+      {
+        "name": "Rava",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 55,
+        "rateUnit": "kg",
+        "rateKey": "rava__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 4.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Jaggery",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "jaggery__kg"
+      },
+      {
+        "name": "Almond",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 850,
+        "rateUnit": "kg",
+        "rateKey": "almond__kg"
+      },
+      {
+        "name": "Cashew",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 800,
+        "rateUnit": "kg",
+        "rateKey": "cashew__kg"
+      },
+      {
+        "name": "Raisin",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 320,
+        "rateUnit": "kg",
+        "rateKey": "raisin__kg"
+      },
+      {
+        "name": "Cardamom Powder",
+        "qty": 0.04,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "cardamom powder__kg"
+      }
+    ],
+    "catalogVersion": 13
+  },
+  {
+    "id": "dish_import_ker_sangri",
+    "category": "Rajasthani",
+    "name": "Ker Sangri",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 64,
+    "ingredients": [
+      {
+        "name": "Ker",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 500,
+        "rateUnit": "kg",
+        "rateKey": "ker__kg"
+      },
+      {
+        "name": "Sangri",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "sangri__kg"
+      },
+      {
+        "name": "Curd",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Cumin",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Fennel Seeds",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "fennel seeds__kg"
+      },
+      {
+        "name": "Ajwain",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "ajwain__kg"
+      },
+      {
+        "name": "Asafoetida",
+        "qty": 0.012,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "asafoetida__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.05,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Dry Mango Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "dry mango powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Raisin",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 320,
+        "rateUnit": "kg",
+        "rateKey": "raisin__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ],
+    "catalogVersion": 13
+  },
+  {
+    "id": "dish_import_papad_ki_sabji",
+    "category": "Rajasthani",
+    "name": "Papad Ki Sabji",
+    "baseGuests": 100,
+    "servingSize": 180,
+    "servingUnit": "g",
+    "catalogRate": 52,
+    "ingredients": [
+      {
+        "name": "Papad",
+        "qty": 180,
+        "unit": "piece",
+        "rate": 5,
+        "rateUnit": "piece",
+        "rateKey": "papad__piece"
+      },
+      {
+        "name": "Curd",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 0.9,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Cumin",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mustard seeds__kg"
+      },
+      {
+        "name": "Asafoetida",
+        "qty": 0.012,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "asafoetida__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.05,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "coriander powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      }
+    ],
+    "catalogVersion": 13
+  },
+  {
+    "id": "dish_import_rajasthani_kadhi",
+    "category": "Rajasthani",
+    "name": "Rajasthani Kadhi",
+    "baseGuests": 100,
+    "servingSize": 180,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Curd",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Besan",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "besan__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mustard seeds__kg"
+      },
+      {
+        "name": "Cumin",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Fenugreek Seeds",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "fenugreek seeds__kg"
+      },
+      {
+        "name": "Asafoetida",
+        "qty": 0.012,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "asafoetida__kg"
+      },
+      {
+        "name": "Curry Leaves",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "curry leaves__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 15,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      }
+    ],
+    "catalogVersion": 13
+  },
+  {
+    "id": "dish_import_panchmel_dal",
+    "category": "Rajasthani",
+    "name": "Panchmel Dal",
+    "baseGuests": 100,
+    "servingSize": 180,
+    "servingUnit": "ml",
+    "catalogRate": 48,
+    "ingredients": [
+      {
+        "name": "Toor Dal",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "toor dal__kg"
+      },
+      {
+        "name": "Moong Dal",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "moong dal__kg"
+      },
+      {
+        "name": "Chana Dal",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 95,
+        "rateUnit": "kg",
+        "rateKey": "chana dal__kg"
+      },
+      {
+        "name": "Masoor Dal",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "masoor dal__kg"
+      },
+      {
+        "name": "Urad Dal",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "urad dal__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cumin",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mustard seeds__kg"
+      },
+      {
+        "name": "Asafoetida",
+        "qty": 0.012,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "asafoetida__kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "turmeric powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Garam Masala",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 450,
+        "rateUnit": "kg",
+        "rateKey": "garam masala__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 20,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      }
+    ],
+    "catalogVersion": 13
   }
 ]
