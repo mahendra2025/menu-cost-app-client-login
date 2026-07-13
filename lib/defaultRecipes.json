@@ -86,46 +86,58 @@
     "baseGuests": 100,
     "ingredients": [
       {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
         "name": "Lemon",
-        "qty": 4,
+        "qty": 2,
         "unit": "kg",
-        "rate": 90,
+        "rate": 60,
         "rateUnit": "kg",
         "rateKey": "lemon__kg"
       },
       {
-        "name": "Mint",
-        "qty": 1.2,
+        "name": "Mint Leaves",
+        "qty": 0.5,
         "unit": "kg",
-        "rate": 160,
+        "rate": 100,
         "rateUnit": "kg",
-        "rateKey": "mint__kg"
+        "rateKey": "mint leaves__kg"
       },
       {
         "name": "Sugar Syrup",
-        "qty": 6,
+        "qty": 1.2,
         "unit": "ltr",
-        "rate": 80,
+        "rate": 70,
         "rateUnit": "ltr",
         "rateKey": "sugar syrup__ltr"
       },
       {
-        "name": "Soda",
-        "qty": 25,
-        "unit": "ltr",
-        "rate": 35,
-        "rateUnit": "ltr",
-        "rateKey": "soda__ltr"
-      },
-      {
         "name": "Ice",
-        "qty": 10,
+        "qty": 4,
         "unit": "kg",
         "rate": 10,
         "rateUnit": "kg",
         "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
       }
-    ]
+    ],
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 18.87,
+    "catalogVersion": 2
   },
   {
     "id": "dish_4",
@@ -135,45 +147,57 @@
     "ingredients": [
       {
         "name": "Blue Curacao Syrup",
-        "qty": 3,
+        "qty": 2,
         "unit": "ltr",
-        "rate": 260,
+        "rate": 250,
         "rateUnit": "ltr",
         "rateKey": "blue curacao syrup__ltr"
       },
       {
-        "name": "Lemon",
-        "qty": 3,
-        "unit": "kg",
-        "rate": 90,
-        "rateUnit": "kg",
-        "rateKey": "lemon__kg"
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
       },
       {
-        "name": "Soda",
-        "qty": 25,
+        "name": "Lemon Juice",
+        "qty": 1.5,
         "unit": "ltr",
-        "rate": 35,
+        "rate": 80,
         "rateUnit": "ltr",
-        "rateKey": "soda__ltr"
+        "rateKey": "lemon juice__ltr"
       },
       {
         "name": "Sugar Syrup",
-        "qty": 4,
+        "qty": 1,
         "unit": "ltr",
-        "rate": 80,
+        "rate": 70,
         "rateUnit": "ltr",
         "rateKey": "sugar syrup__ltr"
       },
       {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
         "name": "Ice",
-        "qty": 10,
+        "qty": 4,
         "unit": "kg",
         "rate": 10,
         "rateUnit": "kg",
         "rateKey": "ice__kg"
       }
-    ]
+    ],
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 22.55,
+    "catalogVersion": 2
   },
   {
     "id": "dish_5",
@@ -2686,5 +2710,6109 @@
         "rateKey": "mixed pickle__kg"
       }
     ]
+  },
+  {
+    "id": "dish_import_badam_sharbat",
+    "category": "Welcome Drink",
+    "name": "Badam Sharbat",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 26.58,
+    "ingredients": [
+      {
+        "name": "Milk",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "milk__ltr"
+      },
+      {
+        "name": "Almond",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 850,
+        "rateUnit": "kg",
+        "rateKey": "almond__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Cardamom Powder",
+        "qty": 0.05,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "cardamom powder__kg"
+      },
+      {
+        "name": "Saffron",
+        "qty": 0.003,
+        "unit": "kg",
+        "rate": 250000,
+        "rateUnit": "kg",
+        "rateKey": "saffron__kg"
+      },
+      {
+        "name": "Rose Water",
+        "qty": 0.1,
+        "unit": "ltr",
+        "rate": 250,
+        "rateUnit": "ltr",
+        "rateKey": "rose water__ltr"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_kesar_sharbat",
+    "category": "Welcome Drink",
+    "name": "Kesar Sharbat",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 19.36,
+    "ingredients": [
+      {
+        "name": "Milk",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "milk__ltr"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Saffron",
+        "qty": 0.004,
+        "unit": "kg",
+        "rate": 250000,
+        "rateUnit": "kg",
+        "rateKey": "saffron__kg"
+      },
+      {
+        "name": "Cardamom Powder",
+        "qty": 0.04,
+        "unit": "kg",
+        "rate": 1200,
+        "rateUnit": "kg",
+        "rateKey": "cardamom powder__kg"
+      },
+      {
+        "name": "Rose Water",
+        "qty": 0.1,
+        "unit": "ltr",
+        "rate": 250,
+        "rateUnit": "ltr",
+        "rateKey": "rose water__ltr"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_fruit_punch",
+    "category": "Mocktail",
+    "name": "Fruit Punch",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 36,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Apple Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Mango Pulp",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "mango pulp__kg"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_green_apple_mojito",
+    "category": "Mocktail",
+    "name": "Green Apple Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 20,
+    "ingredients": [
+      {
+        "name": "Green Apple Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "green apple syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_watermelon_mojito",
+    "category": "Mocktail",
+    "name": "Watermelon Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Watermelon Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "watermelon pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_strawberry_mojito",
+    "category": "Mocktail",
+    "name": "Strawberry Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Strawberry Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "strawberry pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_kiwi_mojito",
+    "category": "Mocktail",
+    "name": "Kiwi Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Kiwi Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 250,
+        "rateUnit": "kg",
+        "rateKey": "kiwi pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_orange_mojito",
+    "category": "Mocktail",
+    "name": "Orange Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_pineapple_mojito",
+    "category": "Mocktail",
+    "name": "Pineapple Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Pineapple Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_mango_mojito",
+    "category": "Mocktail",
+    "name": "Mango Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Mango Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "mango pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_peach_mojito",
+    "category": "Mocktail",
+    "name": "Peach Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Peach Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "peach pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_lychee_mojito",
+    "category": "Mocktail",
+    "name": "Lychee Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Lychee Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "lychee pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_pomegranate_mojito",
+    "category": "Mocktail",
+    "name": "Pomegranate Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 44,
+    "ingredients": [
+      {
+        "name": "Pomegranate Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "pomegranate juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_passion_fruit_mojito",
+    "category": "Mocktail",
+    "name": "Passion Fruit Mojito",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Passion Fruit Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "passion fruit pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_virgin_pina_colada",
+    "category": "Mocktail",
+    "name": "Virgin Pina Colada",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Pineapple Juice",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Coconut Milk",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 180,
+        "rateUnit": "ltr",
+        "rateKey": "coconut milk__ltr"
+      },
+      {
+        "name": "Fresh Cream",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "fresh cream__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Fresh Coconut Flesh",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "fresh coconut flesh__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_virgin_mary",
+    "category": "Mocktail",
+    "name": "Virgin Mary",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Tomato Juice",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "tomato juice__ltr"
+      },
+      {
+        "name": "Lemon Juice",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lemon juice__ltr"
+      },
+      {
+        "name": "Vegetarian Worcestershire Sauce",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 300,
+        "rateUnit": "ltr",
+        "rateKey": "vegetarian worcestershire sauce__ltr"
+      },
+      {
+        "name": "Tabasco Sauce",
+        "qty": 0.05,
+        "unit": "ltr",
+        "rate": 900,
+        "rateUnit": "ltr",
+        "rateKey": "tabasco sauce__ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.05,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_virgin_sangria",
+    "category": "Mocktail",
+    "name": "Virgin Sangria",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Apple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Orange Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Grape Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "grape juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Fresh Fruit Mix",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "fresh fruit mix__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_virgin_margarita",
+    "category": "Mocktail",
+    "name": "Virgin Margarita",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Lime Juice",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lime juice__ltr"
+      },
+      {
+        "name": "Orange Juice",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_virgin_cosmopolitan",
+    "category": "Mocktail",
+    "name": "Virgin Cosmopolitan",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Cranberry Juice",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Orange Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Lime Juice",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lime juice__ltr"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_virgin_sunrise",
+    "category": "Mocktail",
+    "name": "Virgin Sunrise",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 9,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_virgin_daiquiri",
+    "category": "Mocktail",
+    "name": "Virgin Daiquiri",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Lime Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lime juice__ltr"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 7,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_mango_tango",
+    "category": "Mocktail",
+    "name": "Mango Tango",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Mango Pulp",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "mango pulp__kg"
+      },
+      {
+        "name": "Orange Juice",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_orange_blossom",
+    "category": "Mocktail",
+    "name": "Orange Blossom",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Rose Syrup",
+        "qty": 0.6,
+        "unit": "ltr",
+        "rate": 180,
+        "rateUnit": "ltr",
+        "rateKey": "rose syrup__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_pineapple_punch",
+    "category": "Mocktail",
+    "name": "Pineapple Punch",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Pineapple Juice",
+        "qty": 9,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Orange Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_mango_punch",
+    "category": "Mocktail",
+    "name": "Mango Punch",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Mango Pulp",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "mango pulp__kg"
+      },
+      {
+        "name": "Orange Juice",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 0.6,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_berry_blast",
+    "category": "Mocktail",
+    "name": "Berry Blast",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Mixed Berry Crush",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "mixed berry crush__kg"
+      },
+      {
+        "name": "Cranberry Juice",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Apple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_tropical_punch",
+    "category": "Mocktail",
+    "name": "Tropical Punch",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Pineapple Juice",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Orange Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Mango Pulp",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "mango pulp__kg"
+      },
+      {
+        "name": "Passion Fruit Pulp",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "passion fruit pulp__kg"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_citrus_punch",
+    "category": "Mocktail",
+    "name": "Citrus Punch",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 7,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Lemon Juice",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lemon juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_summer_punch",
+    "category": "Mocktail",
+    "name": "Summer Punch",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Watermelon Pulp",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "watermelon pulp__kg"
+      },
+      {
+        "name": "Orange Juice",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_royal_fruit_punch",
+    "category": "Mocktail",
+    "name": "Royal Fruit Punch",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 48,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Apple Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Pomegranate Juice",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "pomegranate juice__ltr"
+      },
+      {
+        "name": "Mango Pulp",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "mango pulp__kg"
+      },
+      {
+        "name": "Mixed Berry Crush",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "mixed berry crush__kg"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_green_apple_cooler",
+    "category": "Mocktail",
+    "name": "Green Apple Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Green Apple Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "green apple syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_watermelon_cooler",
+    "category": "Mocktail",
+    "name": "Watermelon Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Watermelon Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "watermelon pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_mint_cooler",
+    "category": "Mocktail",
+    "name": "Mint Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 35,
+    "ingredients": [
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_cucumber_cooler",
+    "category": "Mocktail",
+    "name": "Cucumber Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 36,
+    "ingredients": [
+      {
+        "name": "Cucumber",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 40,
+        "rateUnit": "kg",
+        "rateKey": "cucumber__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_lemon_mint_cooler",
+    "category": "Mocktail",
+    "name": "Lemon Mint Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 36,
+    "ingredients": [
+      {
+        "name": "Lemon Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lemon juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_orange_cooler",
+    "category": "Mocktail",
+    "name": "Orange Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_pineapple_cooler",
+    "category": "Mocktail",
+    "name": "Pineapple Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Pineapple Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_mango_cooler",
+    "category": "Mocktail",
+    "name": "Mango Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Mango Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "mango pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_kiwi_cooler",
+    "category": "Mocktail",
+    "name": "Kiwi Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Kiwi Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 250,
+        "rateUnit": "kg",
+        "rateKey": "kiwi pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_strawberry_cooler",
+    "category": "Mocktail",
+    "name": "Strawberry Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Strawberry Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "strawberry pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_lychee_cooler",
+    "category": "Mocktail",
+    "name": "Lychee Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Lychee Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "lychee pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_peach_cooler",
+    "category": "Mocktail",
+    "name": "Peach Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Peach Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "peach pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_passion_fruit_cooler",
+    "category": "Mocktail",
+    "name": "Passion Fruit Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Passion Fruit Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "passion fruit pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_rose_lemonade",
+    "category": "Mocktail",
+    "name": "Rose Lemonade",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 36,
+    "ingredients": [
+      {
+        "name": "Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_strawberry_lemonade",
+    "category": "Mocktail",
+    "name": "Strawberry Lemonade",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Strawberry Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "strawberry pulp__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_watermelon_lemonade",
+    "category": "Mocktail",
+    "name": "Watermelon Lemonade",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Watermelon Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "watermelon pulp__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_blueberry_lemonade",
+    "category": "Mocktail",
+    "name": "Blueberry Lemonade",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 44,
+    "ingredients": [
+      {
+        "name": "Blueberry Syrup",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 300,
+        "rateUnit": "ltr",
+        "rateKey": "blueberry syrup__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_peach_lemonade",
+    "category": "Mocktail",
+    "name": "Peach Lemonade",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Peach Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "peach pulp__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_lychee_lemonade",
+    "category": "Mocktail",
+    "name": "Lychee Lemonade",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Lychee Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "lychee pulp__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_pink_lemonade",
+    "category": "Mocktail",
+    "name": "Pink Lemonade",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Water",
+        "qty": 9.5,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Rose Syrup",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 180,
+        "rateUnit": "ltr",
+        "rateKey": "rose syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_masala_lemonade",
+    "category": "Mocktail",
+    "name": "Masala Lemonade",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 35,
+    "ingredients": [
+      {
+        "name": "Water",
+        "qty": 10,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_blue_curacao_fizz",
+    "category": "Mocktail",
+    "name": "Blue Curacao Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Blue Curacao Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 250,
+        "rateUnit": "ltr",
+        "rateKey": "blue curacao syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_green_apple_fizz",
+    "category": "Mocktail",
+    "name": "Green Apple Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Green Apple Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "green apple syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_orange_fizz",
+    "category": "Mocktail",
+    "name": "Orange Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_lemon_fizz",
+    "category": "Mocktail",
+    "name": "Lemon Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 35,
+    "ingredients": [
+      {
+        "name": "Lemon Juice",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lemon juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_strawberry_fizz",
+    "category": "Mocktail",
+    "name": "Strawberry Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Strawberry Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "strawberry pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_kiwi_fizz",
+    "category": "Mocktail",
+    "name": "Kiwi Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Kiwi Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 250,
+        "rateUnit": "kg",
+        "rateKey": "kiwi pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_rose_fizz",
+    "category": "Mocktail",
+    "name": "Rose Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Rose Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 180,
+        "rateUnit": "ltr",
+        "rateKey": "rose syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_ginger_fizz",
+    "category": "Mocktail",
+    "name": "Ginger Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_kala_khatta_mocktail",
+    "category": "Mocktail",
+    "name": "Kala Khatta Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 35,
+    "ingredients": [
+      {
+        "name": "Kala Khatta Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 180,
+        "rateUnit": "ltr",
+        "rateKey": "kala khatta syrup__ltr"
+      },
+      {
+        "name": "Apple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Cranberry Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_kokum_fizz",
+    "category": "Mocktail",
+    "name": "Kokum Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Kokum Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "kokum syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_jaljeera_fizz",
+    "category": "Mocktail",
+    "name": "Jaljeera Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 35,
+    "ingredients": [
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Jaljeera Powder",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "jaljeera powder__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_aam_panna_fizz",
+    "category": "Mocktail",
+    "name": "Aam Panna Fizz",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Soda Water",
+        "qty": 9,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Raw Mango Pulp",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "raw mango pulp__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_masala_cola",
+    "category": "Mocktail",
+    "name": "Masala Cola",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 32,
+    "ingredients": [
+      {
+        "name": "Cola",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 45,
+        "rateUnit": "ltr",
+        "rateKey": "cola__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_jeera_cola",
+    "category": "Mocktail",
+    "name": "Jeera Cola",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 32,
+    "ingredients": [
+      {
+        "name": "Cola",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 45,
+        "rateUnit": "ltr",
+        "rateKey": "cola__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.04,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_nimbu_masala_soda",
+    "category": "Mocktail",
+    "name": "Nimbu Masala Soda",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 32,
+    "ingredients": [
+      {
+        "name": "Soda Water",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_khus_lime_soda",
+    "category": "Mocktail",
+    "name": "Khus Lime Soda",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 35,
+    "ingredients": [
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Khus Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "khus syrup__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_rose_lime_soda",
+    "category": "Mocktail",
+    "name": "Rose Lime Soda",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 35,
+    "ingredients": [
+      {
+        "name": "Soda Water",
+        "qty": 11,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Rose Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 180,
+        "rateUnit": "ltr",
+        "rateKey": "rose syrup__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_black_currant_mocktail",
+    "category": "Mocktail",
+    "name": "Black Currant Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Black Currant Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 260,
+        "rateUnit": "ltr",
+        "rateKey": "black currant syrup__ltr"
+      },
+      {
+        "name": "Apple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Cranberry Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_cranberry_mocktail",
+    "category": "Mocktail",
+    "name": "Cranberry Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Cranberry Juice",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Apple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Cranberry Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_blueberry_mocktail",
+    "category": "Mocktail",
+    "name": "Blueberry Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Blueberry Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 300,
+        "rateUnit": "ltr",
+        "rateKey": "blueberry syrup__ltr"
+      },
+      {
+        "name": "Apple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Cranberry Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_raspberry_mocktail",
+    "category": "Mocktail",
+    "name": "Raspberry Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 46,
+    "ingredients": [
+      {
+        "name": "Raspberry Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 300,
+        "rateUnit": "ltr",
+        "rateKey": "raspberry syrup__ltr"
+      },
+      {
+        "name": "Apple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Cranberry Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_mixed_berry_mocktail",
+    "category": "Mocktail",
+    "name": "Mixed Berry Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 48,
+    "ingredients": [
+      {
+        "name": "Mixed Berry Crush",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "mixed berry crush__kg"
+      },
+      {
+        "name": "Apple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "apple juice__ltr"
+      },
+      {
+        "name": "Cranberry Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_guava_chilli_mocktail",
+    "category": "Mocktail",
+    "name": "Guava Chilli Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Guava Pulp",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "guava pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 7,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_pineapple_chilli_mocktail",
+    "category": "Mocktail",
+    "name": "Pineapple Chilli Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Pineapple Juice",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_mango_chilli_mocktail",
+    "category": "Mocktail",
+    "name": "Mango Chilli Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Mango Pulp",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "mango pulp__kg"
+      },
+      {
+        "name": "Orange Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_watermelon_basil_mocktail",
+    "category": "Mocktail",
+    "name": "Watermelon Basil Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Watermelon Pulp",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "watermelon pulp__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Fresh Basil Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "fresh basil leaves__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_cucumber_basil_cooler",
+    "category": "Mocktail",
+    "name": "Cucumber Basil Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 40,
+    "ingredients": [
+      {
+        "name": "Cucumber",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 40,
+        "rateUnit": "kg",
+        "rateKey": "cucumber__kg"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 7,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Fresh Basil Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "fresh basil leaves__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_orange_basil_cooler",
+    "category": "Mocktail",
+    "name": "Orange Basil Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Fresh Basil Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "fresh basil leaves__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.7,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_cinderella_mocktail",
+    "category": "Mocktail",
+    "name": "Cinderella Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Lemon Juice",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lemon juice__ltr"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_shirley_temple",
+    "category": "Mocktail",
+    "name": "Shirley Temple",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Ginger Ale",
+        "qty": 9,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "ginger ale__ltr"
+      },
+      {
+        "name": "Lemon-Lime Soda",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 55,
+        "rateUnit": "ltr",
+        "rateKey": "lemon-lime soda__ltr"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Cherries",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 400,
+        "rateUnit": "kg",
+        "rateKey": "cherries__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_purple_rain_mocktail",
+    "category": "Mocktail",
+    "name": "Purple Rain Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Black Currant Syrup",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 260,
+        "rateUnit": "ltr",
+        "rateKey": "black currant syrup__ltr"
+      },
+      {
+        "name": "Blue Curacao Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 250,
+        "rateUnit": "ltr",
+        "rateKey": "blue curacao syrup__ltr"
+      },
+      {
+        "name": "Cranberry Juice",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_ocean_blue_mocktail",
+    "category": "Mocktail",
+    "name": "Ocean Blue Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Blue Curacao Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 250,
+        "rateUnit": "ltr",
+        "rateKey": "blue curacao syrup__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Lemon-Lime Soda",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 55,
+        "rateUnit": "ltr",
+        "rateKey": "lemon-lime soda__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_sunset_mocktail",
+    "category": "Mocktail",
+    "name": "Sunset Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 8,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_rainbow_mocktail",
+    "category": "Mocktail",
+    "name": "Rainbow Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 48,
+    "ingredients": [
+      {
+        "name": "Orange Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 100,
+        "rateUnit": "ltr",
+        "rateKey": "orange juice__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Cranberry Juice",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Blue Curacao Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 250,
+        "rateUnit": "ltr",
+        "rateKey": "blue curacao syrup__ltr"
+      },
+      {
+        "name": "Grenadine Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "grenadine syrup__ltr"
+      },
+      {
+        "name": "Green Apple Syrup",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "green apple syrup__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_electric_lemonade",
+    "category": "Mocktail",
+    "name": "Electric Lemonade",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Blue Curacao Syrup",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 250,
+        "rateUnit": "ltr",
+        "rateKey": "blue curacao syrup__ltr"
+      },
+      {
+        "name": "Lemon Juice",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lemon juice__ltr"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Lemon-Lime Soda",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 55,
+        "rateUnit": "ltr",
+        "rateKey": "lemon-lime soda__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_red_velvet_mocktail",
+    "category": "Mocktail",
+    "name": "Red Velvet Mocktail",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 48,
+    "ingredients": [
+      {
+        "name": "Cranberry Juice",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "cranberry juice__ltr"
+      },
+      {
+        "name": "Strawberry Pulp",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "strawberry pulp__kg"
+      },
+      {
+        "name": "Rose Syrup",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 180,
+        "rateUnit": "ltr",
+        "rateKey": "rose syrup__ltr"
+      },
+      {
+        "name": "Vanilla Syrup",
+        "qty": 0.6,
+        "unit": "ltr",
+        "rate": 220,
+        "rateUnit": "ltr",
+        "rateKey": "vanilla syrup__ltr"
+      },
+      {
+        "name": "Lemon Juice",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "lemon juice__ltr"
+      },
+      {
+        "name": "Soda Water",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 30,
+        "rateUnit": "ltr",
+        "rateKey": "soda water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_tender_coconut_cooler",
+    "category": "Mocktail",
+    "name": "Tender Coconut Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 48,
+    "ingredients": [
+      {
+        "name": "Coconut Water",
+        "qty": 13,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "coconut water__ltr"
+      },
+      {
+        "name": "Fresh Coconut Flesh",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "fresh coconut flesh__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_coconut_pineapple_cooler",
+    "category": "Mocktail",
+    "name": "Coconut Pineapple Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 48,
+    "ingredients": [
+      {
+        "name": "Coconut Water",
+        "qty": 7,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "coconut water__ltr"
+      },
+      {
+        "name": "Pineapple Juice",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "pineapple juice__ltr"
+      },
+      {
+        "name": "Coconut Milk",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 180,
+        "rateUnit": "ltr",
+        "rateKey": "coconut milk__ltr"
+      },
+      {
+        "name": "Fresh Coconut Flesh",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "fresh coconut flesh__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
+  },
+  {
+    "id": "dish_import_coconut_mint_cooler",
+    "category": "Mocktail",
+    "name": "Coconut Mint Cooler",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "ml",
+    "catalogRate": 45,
+    "ingredients": [
+      {
+        "name": "Coconut Water",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "coconut water__ltr"
+      },
+      {
+        "name": "Fresh Coconut Flesh",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "fresh coconut flesh__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 0.6,
+        "unit": "ltr",
+        "rate": 70,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.05,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Ice",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ],
+    "catalogVersion": 2
   }
 ]
