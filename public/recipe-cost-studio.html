@@ -136,6 +136,7 @@ svg{display:block}
 .sidebarTitle h2{margin:0;font-size:19px;letter-spacing:-.025em}
 .countBadge{padding:5px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:850}
 .searchStack{display:grid;gap:8px;margin-top:13px}
+.newRecipeButton{width:100%}
 .field,.select{
   width:100%;border:1px solid var(--line);border-radius:12px;
   background:var(--surface);color:var(--text);padding:10px 11px;outline:none;
@@ -392,6 +393,10 @@ tbody tr.selected{background:var(--brand-soft)}
         <span class="countBadge"><span id="visibleDishCount">56</span> / <span id="totalDishCount">56</span></span>
       </div>
       <div class="searchStack">
+        <button class="btn btnPrimary newRecipeButton" id="newRecipe" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          New recipe
+        </button>
         <label class="searchField">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <input class="field" id="dishSearch" placeholder="Search dishes">
@@ -812,6 +817,25 @@ async function applyJson(){
     await syncRecipeCostToDishCatalog(dishes[dishIndex]);
   }catch(error){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${error.message}`,"error")}
 }
+$("newRecipe").addEventListener("click",()=>{
+  if(dirty&&!confirm("Discard the unsaved recipe changes and create a new recipe?"))return;
+  const name=prompt("New dish name");
+  if(!name?.trim())return;
+  if(dishes.some(d=>d.name.trim().toLowerCase()===name.trim().toLowerCase())){
+    showToast("A recipe with this dish name already exists");return;
+  }
+  const selectedCategory=$("categoryFilter").value;
+  const category=prompt("Dish category",selectedCategory==="All"?"Sabji":selectedCategory);
+  if(!category?.trim())return;
+  const id=`recipe_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  dishes.push({id,name:name.trim(),category:category.trim(),baseGuests:100,catalogRate:0,ingredients:[]});
+  selectedDishId=id;
+  $("dishSearch").value="";$("categoryFilter").value="All";
+  saveState();switchView("editor");loadSelectedDish();setDirty(true);
+  setStatus("New recipe ready. Add ingredients in the JSON, then select Apply & save.","ok");
+  showToast("New recipe created");
+  $("sidebar").classList.remove("open");$("jsonEditor").focus();
+});
 $("dishList").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(!b)return;selectedDishId=b.dataset.id;loadSelectedDish();$("sidebar").classList.remove("open")});
 $("dishSearch").addEventListener("input",renderDishList);$("categoryFilter").addEventListener("change",renderDishList);
 $("jsonEditor").addEventListener("input",()=>{setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");updateLineNumbers();renderJsonSummary()});
