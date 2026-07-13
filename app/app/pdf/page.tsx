@@ -56,17 +56,15 @@ export default function PdfPage() {
 
           <section className="print-section">
             <h3>Menu</h3>
-            <p>If one category has multiple dishes, that category is treated as one shared portion and dish cost is split equally.</p>
             {work.menu.length === 0 ? <p>No menu items added.</p> : null}
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Dish</th><th>Category</th><th>Portion</th><th>Adjusted Cost / Plate</th></tr></thead>
+                <thead><tr><th>Dish</th><th>Category</th><th>Cost / Plate</th></tr></thead>
                 <tbody>
                   {result.menuBreakdown.map((item) => (
                     <tr key={item.id}>
                       <td><b>{item.name}</b></td>
                       <td>{item.category}</td>
-                      <td>{item.categoryCount > 1 ? `1/${item.categoryCount}` : 'Full'}</td>
                       <td>{money(item.adjustedCostPerPlate)}</td>
                     </tr>
                   ))}
@@ -77,11 +75,7 @@ export default function PdfPage() {
 
           <section className="print-section">
             <h3>Cost Summary</h3>
-            <div className="summary-line"><span>Menu Cost / Plate</span><b>{money(result.menuCostPerPlate)}</b></div>
-            <div className="summary-line"><span>Extra Cost Total</span><b>{money(result.extrasTotal)}</b></div>
-            <div className="summary-line"><span>Extra Cost / Plate</span><b>{money(result.extraPerPlate)}</b></div>
-            <div className="summary-line"><span>Final Cost / Plate</span><b>{money(result.finalCostPerPlate)}</b></div>
-            <div className="summary-line"><span>Selling Price / Plate</span><b>{money(result.sellingPricePerPlate)}</b></div>
+            <div className="summary-line"><span>Per Plate Cost</span><b>{money(result.sellingPricePerPlate)}</b></div>
             <div className="summary-line total"><span>Total Amount</span><b>{money(result.totalSelling)}</b></div>
           </section>
 
