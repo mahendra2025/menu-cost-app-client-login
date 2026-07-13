@@ -18,6 +18,7 @@ const clientNav = [
 const adminNav = [
   { href: '/admin/users', label: 'Users', icon: '👥' },
   { href: '/admin/dishes', label: 'Dishes', icon: '🍽️' },
+  { href: '/admin/recipes', label: 'Recipes', icon: '🧮' },
   { href: '/app/profile', label: 'Profile', icon: '👤' },
 ];
 

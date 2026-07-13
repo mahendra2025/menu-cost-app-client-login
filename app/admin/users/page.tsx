@@ -174,6 +174,7 @@ export default function AdminUsersPage() {
         <nav className="admin-nav" aria-label="Super admin navigation">
           <Link className="active" href="/admin/users">Clients</Link>
           <Link href="/admin/dishes">Dish catalog</Link>
+          <Link href="/admin/recipes">Recipe Studio</Link>
         </nav>
         <button className="admin-logout" onClick={logout}><Icon name="logout" /> Sign out</button>
       </header>

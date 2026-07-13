@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CatererOS Recipe Cost Studio</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg:#f4f5f7;
+  --surface:#ffffff;
+  --surface-2:#f8fafc;
+  --surface-3:#fff7ed;
+  --text:#101828;
+  --muted:#667085;
+  --subtle:#98a2b3;
+  --line:#e4e7ec;
+  --line-strong:#d0d5dd;
+  --brand:#f97316;
+  --brand-strong:#ea580c;
+  --brand-soft:#fff7ed;
+  --blue:#2563eb;
+  --green:#15803d;
+  --red:#dc2626;
+  --purple:#7c3aed;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+  --shadow-md:0 10px 30px rgba(16,24,40,.08);
+  --shadow-lg:0 24px 60px rgba(16,24,40,.12);
+  --radius-sm:10px;
+  --radius-md:16px;
+  --radius-lg:22px;
+  --sidebar:292px;
+  --inspector:332px;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:#0b0f17;
+  --surface:#111827;
+  --surface-2:#161f2f;
+  --surface-3:#2b1b12;
+  --text:#f8fafc;
+  --muted:#a9b2c3;
+  --subtle:#788397;
+  --line:#293347;
+  --line-strong:#3a465d;
+  --brand-soft:#2b1b12;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.25);
+  --shadow-md:0 14px 36px rgba(0,0,0,.26);
+  --shadow-lg:0 28px 70px rgba(0,0,0,.34);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 0 0,rgba(249,115,22,.10),transparent 26rem),
+    radial-gradient(circle at 100% 100%,rgba(37,99,235,.07),transparent 28rem),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:3px solid rgba(249,115,22,.24);
+  outline-offset:2px;
+}
+svg{display:block}
+.app{min-height:100vh}
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  min-height:68px;padding:10px 18px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(18px);
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brandMark{
+  width:40px;height:40px;border-radius:13px;
+  display:grid;place-items:center;color:#fff;
+  background:linear-gradient(145deg,var(--brand),#fb923c);
+  box-shadow:0 10px 22px rgba(249,115,22,.24);
+  flex:0 0 auto;
+}
+.brandText{min-width:0}
+.brandTitle{font-weight:850;letter-spacing:-.025em;white-space:nowrap}
+.brandSub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topActions{display:flex;align-items:center;gap:8px}
+.iconBtn,.btn{
+  border:1px solid var(--line);background:var(--surface);color:var(--text);
+  border-radius:12px;font-weight:780;box-shadow:var(--shadow-sm);
+  transition:transform .15s ease,border-color .15s ease,background .15s ease;
+}
+.iconBtn:hover,.btn:hover{transform:translateY(-1px);border-color:var(--line-strong)}
+.iconBtn{width:40px;height:40px;display:grid;place-items:center;padding:0}
+.btn{padding:10px 13px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btnPrimary{background:linear-gradient(135deg,var(--brand),#fb923c);color:white;border-color:transparent}
+.btnSoft{background:var(--surface-2)}
+.btnDanger{color:var(--red);background:color-mix(in srgb,var(--red) 8%,var(--surface))}
+.livePill{
+  display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border-radius:999px;
+  background:color-mix(in srgb,var(--green) 8%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--green) 18%,var(--line));
+  color:var(--green);font-size:12px;font-weight:800;
+}
+.liveDot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 15%,transparent)}
+.mobileMenu{display:none}
+.workspace{
+  display:grid;
+  grid-template-columns:var(--sidebar) minmax(0,1fr) var(--inspector);
+  gap:14px;
+  width:min(1720px,100%);
+  margin:0 auto;
+  padding:14px;
+}
+.sidebar,.inspector,.mainPanel{
+  min-width:0;
+}
+.panelCard{
+  background:color-mix(in srgb,var(--surface) 96%,transparent);
+  border:1px solid var(--line);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md);
+}
+.sidebar{
+  position:sticky;top:82px;height:calc(100vh - 96px);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebarHead{padding:16px;border-bottom:1px solid var(--line)}
+.sectionLabel{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--subtle);font-weight:850}
+.sidebarTitle{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:5px}
+.sidebarTitle h2{margin:0;font-size:19px;letter-spacing:-.025em}
+.countBadge{padding:5px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:850}
+.searchStack{display:grid;gap:8px;margin-top:13px}
+.field,.select{
+  width:100%;border:1px solid var(--line);border-radius:12px;
+  background:var(--surface);color:var(--text);padding:10px 11px;outline:none;
+}
+.searchField{position:relative}
+.searchField svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--subtle)}
+.searchField .field{padding-left:36px}
+.dishList{padding:10px;overflow:auto;overscroll-behavior:contain}
+.dishItem{
+  width:100%;display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;
+  text-align:left;border:1px solid transparent;border-radius:14px;
+  background:transparent;color:var(--text);padding:11px 10px;margin-bottom:4px;
+}
+.dishItem:hover{background:var(--surface-2)}
+.dishItem.active{
+  background:var(--brand-soft);border-color:color-mix(in srgb,var(--brand) 26%,var(--line));
+}
+.dishItemMain{min-width:0}
+.dishName{font-weight:780;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dishMeta{font-size:12px;color:var(--muted);margin-top:3px}
+.dishCost{font-size:12px;font-weight:850;color:var(--brand);white-space:nowrap}
+.mainPanel{display:grid;gap:14px}
+.heroCard{
+  padding:20px;
+  background:
+    linear-gradient(125deg,color-mix(in srgb,var(--surface) 96%,transparent),color-mix(in srgb,var(--brand-soft) 60%,var(--surface))),
+    var(--surface);
+}
+.breadcrumb{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;font-weight:700}
+.heroRow{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-top:10px}
+.heroInfo{min-width:0}
+.heroInfo h1{margin:0;font-size:clamp(26px,3vw,38px);letter-spacing:-.045em;line-height:1.05}
+.heroInfo p{margin:8px 0 0;color:var(--muted);font-size:14px}
+.heroActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.segmented{
+  display:flex;align-items:center;gap:4px;padding:4px;border:1px solid var(--line);
+  border-radius:13px;background:var(--surface-2);
+}
+.segmented button{
+  border:0;background:transparent;color:var(--muted);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:820;
+}
+.segmented button.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.editorCard{overflow:hidden}
+.editorToolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:12px 14px;border-bottom:1px solid var(--line);background:var(--surface);
+}
+.editorMeta{display:flex;align-items:center;gap:8px;min-width:0}
+.fileName{font-size:13px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.unsavedBadge{
+  display:none;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:850;
+  color:#b45309;background:#fffbeb;border:1px solid #fde68a;
+}
+.unsavedBadge.show{display:inline-flex}
+.validationPill{
+  display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;
+  font-size:11px;font-weight:850;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);
+}
+.validationPill.valid{color:var(--green);background:color-mix(in srgb,var(--green) 8%,var(--surface));border-color:color-mix(in srgb,var(--green) 18%,var(--line))}
+.validationPill.invalid{color:var(--red);background:color-mix(in srgb,var(--red) 7%,var(--surface));border-color:color-mix(in srgb,var(--red) 18%,var(--line))}
+.editorActions{display:flex;gap:7px;flex-wrap:wrap}
+.codeShell{
+  display:grid;grid-template-columns:54px minmax(0,1fr);
+  min-height:580px;background:#0b1220;
+}
+.lineNumbers{
+  padding:15px 10px 24px;text-align:right;user-select:none;
+  color:#526078;background:#09101c;border-right:1px solid #1c2738;
+  font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  overflow:hidden;
+}
+.codeEditor{
+  width:100%;min-height:580px;resize:vertical;border:0;outline:0;padding:15px 18px 24px;
+  background:#0b1220;color:#d9e2f0;caret-color:#fb923c;
+  font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  tab-size:2;white-space:pre;overflow:auto;
+}
+.editorFooter{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:11px 14px;border-top:1px solid var(--line);background:var(--surface);
+}
+.statusText{min-height:18px;color:var(--muted);font-size:12px}
+.statusText.ok{color:var(--green)}
+.statusText.error{color:var(--red)}
+.shortcut{color:var(--subtle);font-size:11px;white-space:nowrap}
+kbd{padding:2px 5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--surface-2);font:10px ui-monospace,monospace;color:var(--muted)}
+.inspector{
+  position:sticky;top:82px;display:grid;gap:14px;align-self:start;
+  max-height:calc(100vh - 96px);overflow:auto;padding-bottom:2px;
+}
+.inspectorCard{padding:16px}
+.inspectorTitle{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.inspectorTitle h3{margin:0;font-size:16px;letter-spacing:-.02em}
+.metricGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.metric{
+  padding:13px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);
+}
+.metric.full{grid-column:1/-1;background:var(--brand-soft);border-color:color-mix(in srgb,var(--brand) 22%,var(--line))}
+.metricLabel{font-size:11px;color:var(--muted);font-weight:750}
+.metricValue{margin-top:5px;font-size:21px;font-weight:900;letter-spacing:-.035em}
+.metric.full .metricValue{font-size:27px;color:var(--brand-strong)}
+.recipeList{display:grid;gap:7px;margin-top:12px}
+.recipeRow{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;
+  padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);
+}
+.recipeRowName{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recipeRowMeta{font-size:11px;color:var(--muted);margin-top:2px}
+.recipeRowCost{font-size:12px;font-weight:900;white-space:nowrap}
+.emptyState{padding:26px;text-align:center;color:var(--muted);font-size:13px}
+.indexLayout{
+  display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px;
+}
+.indexMain{padding:18px;min-width:0}
+.indexHeader{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.indexHeader h2{margin:5px 0 0;font-size:28px;letter-spacing:-.04em}
+.indexTools{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.indexFilterRow{display:grid;grid-template-columns:minmax(220px,1fr) 150px 160px;gap:9px;margin-top:16px}
+.tableWrap{overflow:auto;margin-top:14px;border:1px solid var(--line);border-radius:16px}
+table{width:100%;min-width:760px;border-collapse:collapse}
+th{
+  position:sticky;top:0;z-index:1;text-align:left;padding:11px 12px;
+  background:var(--surface-2);border-bottom:1px solid var(--line);
+  color:var(--muted);font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+}
+td{padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px}
+tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr.selected{background:var(--brand-soft)}
+.rateName{font-weight:800}
+.rateKey{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted);font-size:11px}
+.rateCell{font-weight:900}
+.unitChip{display:inline-flex;padding:4px 7px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:10px;font-weight:850}
+.indexInspector{position:sticky;top:82px;align-self:start;padding:17px}
+.selectedRateTitle{font-size:23px;font-weight:900;letter-spacing:-.035em;margin-top:6px}
+.rateEditGrid{display:grid;grid-template-columns:1fr 100px;gap:8px;margin-top:14px}
+.codeBox{
+  margin-top:14px;padding:13px;border-radius:14px;background:#0b1220;color:#d9e2f0;
+  font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;overflow:auto;
+}
+.usedIn{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.usedChip{padding:6px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:10px;font-weight:750}
+.mobileTabs{display:none}
+.toast{
+  position:fixed;right:18px;bottom:18px;z-index:100;
+  display:flex;align-items:center;gap:9px;padding:12px 14px;border-radius:14px;
+  background:#111827;color:white;box-shadow:var(--shadow-lg);
+  opacity:0;transform:translateY(14px);pointer-events:none;transition:.22s ease;
+  font-size:13px;font-weight:750;
+}
+.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:1220px){
+  :root{--inspector:300px;--sidebar:260px}
+  .shortcut{display:none}
+}
+@media(max-width:1020px){
+  .workspace{grid-template-columns:250px minmax(0,1fr)}
+  .inspector{grid-column:1/-1;position:static;max-height:none;display:grid;grid-template-columns:320px minmax(0,1fr)}
+  .indexLayout{grid-template-columns:1fr}
+  .indexInspector{position:static}
+}
+@media(max-width:760px){
+  .topbar{padding:9px 10px}
+  .livePill,.brandSub{display:none}
+  .mobileMenu{display:grid}
+  .workspace{display:block;padding:10px 10px 82px}
+  .sidebar{
+    display:none;position:fixed;left:10px;right:10px;top:76px;bottom:82px;z-index:70;
+    height:auto;box-shadow:var(--shadow-lg)
+  }
+  .sidebar.open{display:flex}
+  .mainPanel{gap:10px}
+  .heroCard{padding:16px}
+  .heroRow{display:block}
+  .heroActions{margin-top:14px;justify-content:flex-start}
+  .codeShell{grid-template-columns:42px minmax(0,1fr);min-height:510px}
+  .codeEditor{min-height:510px;padding-left:12px}
+  .lineNumbers{padding-left:6px;padding-right:7px}
+  .editorToolbar{align-items:flex-start;flex-direction:column}
+  .editorActions{width:100%}
+  .editorActions .btn{flex:1}
+  .editorFooter{align-items:flex-start;flex-direction:column}
+  .inspector{display:block;max-height:none;margin-top:10px}
+  .inspectorCard{margin-bottom:10px}
+  .indexLayout{display:block}
+  .indexMain{padding:14px}
+  .indexHeader{display:block}
+  .indexTools{margin-top:12px;justify-content:flex-start}
+  .indexFilterRow{grid-template-columns:1fr}
+  .indexInspector{margin-top:10px}
+  .indexLayout .tableWrap{overflow:visible;border:0}
+  .indexLayout table{display:block;min-width:0}
+  .indexLayout thead{display:none}
+  .indexLayout tbody{display:grid;gap:8px}
+  .indexLayout tbody tr{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;
+    padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);
+  }
+  .indexLayout tbody tr.selected{background:var(--brand-soft)}
+  .indexLayout tbody td{
+    padding:0;border:0!important;background:transparent!important;min-width:0;
+  }
+  .indexLayout tbody td:nth-child(1){display:none}
+  .indexLayout tbody td:nth-child(2){grid-column:1;grid-row:1;font-size:14px}
+  .indexLayout tbody td:nth-child(3){grid-column:1;grid-row:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .indexLayout tbody td:nth-child(4){grid-column:2;grid-row:1;text-align:right}
+  .indexLayout tbody td:nth-child(5){grid-column:2;grid-row:2;text-align:right}
+  .indexLayout tbody td:nth-child(6){grid-column:1/-1;grid-row:3;color:var(--muted);font-size:11px;margin-top:3px}
+  .indexLayout tbody td:nth-child(6)::before{content:"Used in ";font-weight:750}
+  .mobileTabs{
+    position:fixed;left:10px;right:10px;bottom:10px;z-index:80;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:5px;padding:5px;
+    border:1px solid var(--line);border-radius:17px;background:color-mix(in srgb,var(--surface) 92%,transparent);
+    backdrop-filter:blur(18px);box-shadow:var(--shadow-lg);
+  }
+  .mobileTabs button{
+    border:0;border-radius:12px;background:transparent;color:var(--muted);
+    padding:10px 5px;font-size:11px;font-weight:850;
+  }
+  .mobileTabs button.active{background:var(--brand-soft);color:var(--brand-strong)}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand">
+    <button class="iconBtn mobileMenu" id="mobileMenu" aria-label="Open dish library">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="brandMark">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 4h10a2 2 0 0 1 2 2v12H5V6a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+    <div class="brandText">
+      <div class="brandTitle">CatererOS Recipe Cost Studio</div>
+      <div class="brandSub">One-dish JSON editing and shared market-rate control</div>
+    </div>
+  </div>
+  <div class="topActions">
+    <div class="livePill"><span class="liveDot"></span>Saved locally</div>
+    <button class="iconBtn" id="themeToggle" aria-label="Toggle dark mode">
+      <svg id="themeIcon" width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M20 15.5A8.5 8.5 0 1 1 8.5 4 7 7 0 0 0 20 15.5Z" stroke="currentColor" stroke-width="2"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="workspace">
+  <aside class="sidebar panelCard" id="sidebar">
+    <div class="sidebarHead">
+      <div class="sectionLabel">Recipe library</div>
+      <div class="sidebarTitle">
+        <h2>Dishes</h2>
+        <span class="countBadge"><span id="visibleDishCount">56</span> / <span id="totalDishCount">56</span></span>
+      </div>
+      <div class="searchStack">
+        <label class="searchField">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input class="field" id="dishSearch" placeholder="Search dishes">
+        </label>
+        <select class="select" id="categoryFilter"><option value="All">All categories</option><option value="Welcome Drink">Welcome Drink</option><option value="Mocktail">Mocktail</option><option value="Soup">Soup</option><option value="Starter">Starter</option><option value="Chaat">Chaat</option><option value="Chinese">Chinese</option><option value="Italian">Italian</option><option value="South Indian">South Indian</option><option value="Punjabi">Punjabi</option><option value="Paneer">Paneer</option><option value="Sabji">Sabji</option><option value="Kathiyawadi">Kathiyawadi</option><option value="Rajasthani">Rajasthani</option><option value="Gujarati">Gujarati</option><option value="Dal / Kadhi">Dal / Kadhi</option><option value="Rice">Rice</option><option value="Bread">Bread</option><option value="Sweet">Sweet</option><option value="Ice Cream">Ice Cream</option><option value="Salad">Salad</option><option value="Papad">Papad</option><option value="Farsan">Farsan</option><option value="Beverage">Beverage</option><option value="Live Counter">Live Counter</option><option value="Breakfast">Breakfast</option><option value="Jain">Jain</option><option value="Kids">Kids</option><option value="Condiments">Condiments</option></select>
+      </div>
+    </div>
+    <div class="dishList" id="dishList"></div>
+  </aside>
+
+  <main class="mainPanel">
+    <section class="heroCard panelCard">
+      <div class="breadcrumb"><span id="breadcrumbCategory">Category</span><span>›</span><span>100-person recipe</span></div>
+      <div class="heroRow">
+        <div class="heroInfo">
+          <h1 id="pageTitle">Dish recipe</h1>
+          <p>Edit the full recipe in JSON. Costs and market rates update live.</p>
+        </div>
+        <div class="heroActions">
+          <div class="segmented" aria-label="Workspace view">
+            <button class="active" data-view="editor">Recipe editor</button>
+            <button data-view="index">Rate index</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="editorView" class="editorCard panelCard">
+      <div class="editorToolbar">
+        <div class="editorMeta">
+          <span class="fileName" id="fileName">recipe.json</span>
+          <span class="unsavedBadge" id="unsavedBadge">Unsaved</span>
+          <span class="validationPill" id="validationPill">Not checked</span>
+        </div>
+        <div class="editorActions">
+          <button class="btn btnSoft" id="formatJson">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 4H5a1 1 0 0 0-1 1v4M16 4h3a1 1 0 0 1 1 1v4M8 20H5a1 1 0 0 1-1-1v-4M16 20h3a1 1 0 0 0 1-1v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Format
+          </button>
+          <button class="btn btnSoft" id="validateJson">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Validate
+          </button>
+          <button class="btn btnPrimary" id="applyJson">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Apply & save
+          </button>
+        </div>
+      </div>
+      <div class="codeShell">
+        <div class="lineNumbers" id="lineNumbers">1</div>
+        <textarea class="codeEditor" id="jsonEditor" spellcheck="false" aria-label="Dish recipe JSON editor"></textarea>
+      </div>
+      <div class="editorFooter">
+        <div class="statusText" id="jsonStatus">Select a dish to begin.</div>
+        <div class="shortcut"><kbd>⌘</kbd> + <kbd>S</kbd> save · <kbd>⌘</kbd> + <kbd>⇧</kbd> + <kbd>F</kbd> format</div>
+      </div>
+    </section>
+
+    <section id="indexView" class="indexLayout" hidden>
+      <div class="indexMain panelCard">
+        <div class="indexHeader">
+          <div>
+            <div class="sectionLabel">Shared ingredient source</div>
+            <h2>Market rate index</h2>
+            <div class="muted"><span id="visibleRateCount">93</span> of <span id="totalRateCount">93</span> ingredients</div>
+          </div>
+          <div class="indexTools">
+            <button class="btn btnSoft" id="copyAllRates">Copy all JSON</button>
+            <button class="btn btnPrimary" id="newRate">New ingredient</button>
+          </div>
+        </div>
+        <div class="indexFilterRow">
+          <label class="searchField">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input class="field" id="rateSearch" placeholder="Search ingredient or JSON key">
+          </label>
+          <select class="select" id="unitFilter">
+            <option value="All">All units</option>
+            <option value="kg">kg</option><option value="gram">gram</option>
+            <option value="ltr">ltr</option><option value="ml">ml</option>
+            <option value="piece">piece</option><option value="packet">packet</option>
+          </select>
+          <select class="select" id="rateSort">
+            <option value="name-asc">Name A–Z</option>
+            <option value="name-desc">Name Z–A</option>
+            <option value="rate-desc">Highest rate</option>
+            <option value="rate-asc">Lowest rate</option>
+          </select>
+        </div>
+        <div class="tableWrap">
+          <table>
+            <thead><tr><th>#</th><th>Ingredient</th><th>JSON key</th><th>Market rate</th><th>Unit</th><th>Used in</th></tr></thead>
+            <tbody id="rateRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside class="indexInspector panelCard">
+        <div class="sectionLabel">Selected ingredient</div>
+        <div class="selectedRateTitle" id="selectedRateTitle">Choose a rate</div>
+        <div class="muted" id="selectedRateKey">Select an ingredient from the table.</div>
+        <div class="rateEditGrid">
+          <input class="field" id="selectedRateValue" type="number" min="0" step="0.01" placeholder="Rate">
+          <select class="select" id="selectedRateUnit">
+            <option value="kg">kg</option><option value="gram">gram</option>
+            <option value="ltr">ltr</option><option value="ml">ml</option>
+            <option value="piece">piece</option><option value="packet">packet</option>
+          </select>
+        </div>
+        <button class="btn btnPrimary" id="saveSelectedRate" style="width:100%;margin-top:9px">Save market rate</button>
+        <div class="codeBox" id="selectedRateJson">{}</div>
+        <div class="sectionLabel" style="margin-top:16px">Used in dishes</div>
+        <div class="usedIn" id="usedInDishes"></div>
+      </aside>
+    </section>
+  </main>
+
+  <aside class="inspector">
+    <section class="inspectorCard panelCard">
+      <div class="inspectorTitle">
+        <h3>Live costing</h3>
+        <span class="validationPill valid" id="costState">Live</span>
+      </div>
+      <div class="metricGrid">
+        <div class="metric full">
+          <div class="metricLabel">Ingredient cost / batch</div>
+          <div class="metricValue" id="totalCost">₹0.00</div>
+        </div>
+        <div class="metric">
+          <div class="metricLabel">Per person</div>
+          <div class="metricValue" id="perPerson">₹0.00</div>
+        </div>
+        <div class="metric">
+          <div class="metricLabel">Ingredients</div>
+          <div class="metricValue" id="ingredientCount">0</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="inspectorCard panelCard">
+      <div class="inspectorTitle">
+        <h3>Recipe breakdown</h3>
+        <span class="countBadge" id="recipeCountBadge">0 rows</span>
+      </div>
+      <div class="recipeList" id="ingredientPreview"></div>
+    </section>
+  </aside>
+</div>
+
+<nav class="mobileTabs" aria-label="Mobile navigation">
+  <button data-mobile="library">Library</button>
+  <button data-mobile="editor" class="active">Editor</button>
+  <button data-mobile="index">Rates</button>
+</nav>
+
+<div class="toast" id="toast">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span id="toastText">Saved</span>
+</div>
+
+<script>
+const DEFAULT_DISHES = [{"id": "dish_1", "category": "Welcome Drink", "name": "Orange Juice", "baseGuests": 100, "ingredients": [{"name": "Orange", "qty": 18, "unit": "kg", "rate": 80, "rateUnit": "kg", "rateKey": "orange__kg"}, {"name": "Sugar", "qty": 1.2, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "sugar__kg"}, {"name": "Water", "qty": 4, "unit": "ltr", "rate": 0, "rateUnit": "ltr", "rateKey": "water__ltr"}, {"name": "Ice", "qty": 5, "unit": "kg", "rate": 10, "rateUnit": "kg", "rateKey": "ice__kg"}]}, {"id": "dish_2", "category": "Welcome Drink", "name": "Kesar Badam Milk", "baseGuests": 100, "ingredients": [{"name": "Milk", "qty": 20, "unit": "ltr", "rate": 60, "rateUnit": "ltr", "rateKey": "milk__ltr"}, {"name": "Sugar", "qty": 2.5, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "sugar__kg"}, {"name": "Almond", "qty": 1.2, "unit": "kg", "rate": 850, "rateUnit": "kg", "rateKey": "almond__kg"}, {"name": "Kesar", "qty": 12, "unit": "gram", "rate": 180000, "rateUnit": "kg", "rateKey": "kesar__kg"}]}, {"id": "dish_3", "category": "Mocktail", "name": "Virgin Mojito", "baseGuests": 100, "ingredients": [{"name": "Lemon", "qty": 4, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "lemon__kg"}, {"name": "Mint", "qty": 1.2, "unit": "kg", "rate": 160, "rateUnit": "kg", "rateKey": "mint__kg"}, {"name": "Sugar Syrup", "qty": 6, "unit": "ltr", "rate": 80, "rateUnit": "ltr", "rateKey": "sugar syrup__ltr"}, {"name": "Soda", "qty": 25, "unit": "ltr", "rate": 35, "rateUnit": "ltr", "rateKey": "soda__ltr"}, {"name": "Ice", "qty": 10, "unit": "kg", "rate": 10, "rateUnit": "kg", "rateKey": "ice__kg"}]}, {"id": "dish_4", "category": "Mocktail", "name": "Blue Lagoon", "baseGuests": 100, "ingredients": [{"name": "Blue Curacao Syrup", "qty": 3, "unit": "ltr", "rate": 260, "rateUnit": "ltr", "rateKey": "blue curacao syrup__ltr"}, {"name": "Lemon", "qty": 3, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "lemon__kg"}, {"name": "Soda", "qty": 25, "unit": "ltr", "rate": 35, "rateUnit": "ltr", "rateKey": "soda__ltr"}, {"name": "Sugar Syrup", "qty": 4, "unit": "ltr", "rate": 80, "rateUnit": "ltr", "rateKey": "sugar syrup__ltr"}, {"name": "Ice", "qty": 10, "unit": "kg", "rate": 10, "rateUnit": "kg", "rateKey": "ice__kg"}]}, {"id": "dish_5", "category": "Soup", "name": "Tomato Soup", "baseGuests": 100, "ingredients": [{"name": "Tomato", "qty": 12, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Onion", "qty": 2, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Corn Flour", "qty": 1, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "corn flour__kg"}, {"name": "Butter", "qty": 0.8, "unit": "kg", "rate": 520, "rateUnit": "kg", "rateKey": "butter__kg"}, {"name": "Cream", "qty": 1, "unit": "kg", "rate": 220, "rateUnit": "kg", "rateKey": "cream__kg"}, {"name": "Spices", "qty": 0.5, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_6", "category": "Soup", "name": "Manchow Soup", "baseGuests": 100, "ingredients": [{"name": "Cabbage", "qty": 4, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "cabbage__kg"}, {"name": "Carrot", "qty": 3, "unit": "kg", "rate": 50, "rateUnit": "kg", "rateKey": "carrot__kg"}, {"name": "Capsicum", "qty": 2, "unit": "kg", "rate": 80, "rateUnit": "kg", "rateKey": "capsicum__kg"}, {"name": "Soy Sauce", "qty": 1.5, "unit": "ltr", "rate": 110, "rateUnit": "ltr", "rateKey": "soy sauce__ltr"}, {"name": "Corn Flour", "qty": 1.5, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "corn flour__kg"}, {"name": "Noodles", "qty": 2, "unit": "kg", "rate": 120, "rateUnit": "kg", "rateKey": "noodles__kg"}]}, {"id": "dish_7", "category": "Starter", "name": "Hara Bhara Kabab", "baseGuests": 100, "ingredients": [{"name": "Potato", "qty": 10, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Spinach", "qty": 5, "unit": "kg", "rate": 50, "rateUnit": "kg", "rateKey": "spinach__kg"}, {"name": "Green Peas", "qty": 4, "unit": "kg", "rate": 100, "rateUnit": "kg", "rateKey": "green peas__kg"}, {"name": "Paneer", "qty": 3, "unit": "kg", "rate": 280, "rateUnit": "kg", "rateKey": "paneer__kg"}, {"name": "Bread Crumb", "qty": 2, "unit": "kg", "rate": 100, "rateUnit": "kg", "rateKey": "bread crumb__kg"}, {"name": "Oil", "qty": 4, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}]}, {"id": "dish_8", "category": "Starter", "name": "Paneer Tikka", "baseGuests": 100, "ingredients": [{"name": "Paneer", "qty": 14, "unit": "kg", "rate": 280, "rateUnit": "kg", "rateKey": "paneer__kg"}, {"name": "Curd", "qty": 4, "unit": "kg", "rate": 70, "rateUnit": "kg", "rateKey": "curd__kg"}, {"name": "Capsicum", "qty": 4, "unit": "kg", "rate": 80, "rateUnit": "kg", "rateKey": "capsicum__kg"}, {"name": "Onion", "qty": 4, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Cream", "qty": 1, "unit": "kg", "rate": 220, "rateUnit": "kg", "rateKey": "cream__kg"}, {"name": "Spices", "qty": 1, "unit": "kg", "rate": 350, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_9", "category": "Chaat", "name": "Pani Puri", "baseGuests": 100, "ingredients": [{"name": "Puri", "qty": 800, "unit": "piece", "rate": 1.2, "rateUnit": "piece", "rateKey": "puri__piece"}, {"name": "Potato", "qty": 8, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Chana", "qty": 4, "unit": "kg", "rate": 95, "rateUnit": "kg", "rateKey": "chana__kg"}, {"name": "Tamarind", "qty": 2, "unit": "kg", "rate": 180, "rateUnit": "kg", "rateKey": "tamarind__kg"}, {"name": "Mint", "qty": 2, "unit": "kg", "rate": 160, "rateUnit": "kg", "rateKey": "mint__kg"}, {"name": "Spices", "qty": 1, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_10", "category": "Chaat", "name": "Dahi Puri", "baseGuests": 100, "ingredients": [{"name": "Puri", "qty": 700, "unit": "piece", "rate": 1.2, "rateUnit": "piece", "rateKey": "puri__piece"}, {"name": "Potato", "qty": 7, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Curd", "qty": 12, "unit": "kg", "rate": 70, "rateUnit": "kg", "rateKey": "curd__kg"}, {"name": "Sev", "qty": 4, "unit": "kg", "rate": 140, "rateUnit": "kg", "rateKey": "sev__kg"}, {"name": "Chutney", "qty": 5, "unit": "kg", "rate": 120, "rateUnit": "kg", "rateKey": "chutney__kg"}]}, {"id": "dish_11", "category": "Chinese", "name": "Veg Hakka Noodles", "baseGuests": 100, "ingredients": [{"name": "Noodles", "qty": 10, "unit": "kg", "rate": 120, "rateUnit": "kg", "rateKey": "noodles__kg"}, {"name": "Cabbage", "qty": 5, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "cabbage__kg"}, {"name": "Carrot", "qty": 3, "unit": "kg", "rate": 50, "rateUnit": "kg", "rateKey": "carrot__kg"}, {"name": "Capsicum", "qty": 3, "unit": "kg", "rate": 80, "rateUnit": "kg", "rateKey": "capsicum__kg"}, {"name": "Soy Sauce", "qty": 1.5, "unit": "ltr", "rate": 110, "rateUnit": "ltr", "rateKey": "soy sauce__ltr"}, {"name": "Oil", "qty": 3, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}]}, {"id": "dish_12", "category": "Chinese", "name": "Baby Corn Manchurian", "baseGuests": 100, "ingredients": [{"name": "Baby Corn", "qty": 10, "unit": "kg", "rate": 160, "rateUnit": "kg", "rateKey": "baby corn__kg"}, {"name": "Corn Flour", "qty": 3, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "corn flour__kg"}, {"name": "Maida", "qty": 2, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "maida__kg"}, {"name": "Capsicum", "qty": 3, "unit": "kg", "rate": 80, "rateUnit": "kg", "rateKey": "capsicum__kg"}, {"name": "Soy Sauce", "qty": 1.5, "unit": "ltr", "rate": 110, "rateUnit": "ltr", "rateKey": "soy sauce__ltr"}, {"name": "Oil", "qty": 5, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}]}, {"id": "dish_13", "category": "Italian", "name": "White Sauce Pasta", "baseGuests": 100, "ingredients": [{"name": "Pasta", "qty": 10, "unit": "kg", "rate": 140, "rateUnit": "kg", "rateKey": "pasta__kg"}, {"name": "Milk", "qty": 12, "unit": "ltr", "rate": 60, "rateUnit": "ltr", "rateKey": "milk__ltr"}, {"name": "Cheese", "qty": 4, "unit": "kg", "rate": 420, "rateUnit": "kg", "rateKey": "cheese__kg"}, {"name": "Butter", "qty": 2, "unit": "kg", "rate": 520, "rateUnit": "kg", "rateKey": "butter__kg"}, {"name": "Maida", "qty": 2, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "maida__kg"}, {"name": "Vegetables", "qty": 6, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "vegetables__kg"}]}, {"id": "dish_14", "category": "Italian", "name": "Red Sauce Pasta", "baseGuests": 100, "ingredients": [{"name": "Pasta", "qty": 10, "unit": "kg", "rate": 140, "rateUnit": "kg", "rateKey": "pasta__kg"}, {"name": "Tomato", "qty": 10, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Capsicum", "qty": 3, "unit": "kg", "rate": 80, "rateUnit": "kg", "rateKey": "capsicum__kg"}, {"name": "Cheese", "qty": 3, "unit": "kg", "rate": 420, "rateUnit": "kg", "rateKey": "cheese__kg"}, {"name": "Olive Oil", "qty": 2, "unit": "ltr", "rate": 650, "rateUnit": "ltr", "rateKey": "olive oil__ltr"}, {"name": "Herbs", "qty": 0.5, "unit": "kg", "rate": 600, "rateUnit": "kg", "rateKey": "herbs__kg"}]}, {"id": "dish_15", "category": "South Indian", "name": "Masala Dosa", "baseGuests": 100, "ingredients": [{"name": "Rice", "qty": 10, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "rice__kg"}, {"name": "Urad Dal", "qty": 3, "unit": "kg", "rate": 130, "rateUnit": "kg", "rateKey": "urad dal__kg"}, {"name": "Potato", "qty": 12, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Onion", "qty": 4, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Oil", "qty": 5, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Coconut Chutney", "qty": 8, "unit": "kg", "rate": 120, "rateUnit": "kg", "rateKey": "coconut chutney__kg"}]}, {"id": "dish_16", "category": "South Indian", "name": "Idli Sambhar", "baseGuests": 100, "ingredients": [{"name": "Rice", "qty": 9, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "rice__kg"}, {"name": "Urad Dal", "qty": 3, "unit": "kg", "rate": 130, "rateUnit": "kg", "rateKey": "urad dal__kg"}, {"name": "Toor Dal", "qty": 4, "unit": "kg", "rate": 150, "rateUnit": "kg", "rateKey": "toor dal__kg"}, {"name": "Vegetables", "qty": 7, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "vegetables__kg"}, {"name": "Tamarind", "qty": 1.5, "unit": "kg", "rate": 180, "rateUnit": "kg", "rateKey": "tamarind__kg"}, {"name": "Coconut Chutney", "qty": 7, "unit": "kg", "rate": 120, "rateUnit": "kg", "rateKey": "coconut chutney__kg"}]}, {"id": "dish_17", "category": "Punjabi", "name": "Chole Masala", "baseGuests": 100, "ingredients": [{"name": "Kabuli Chana", "qty": 12, "unit": "kg", "rate": 140, "rateUnit": "kg", "rateKey": "kabuli chana__kg"}, {"name": "Onion", "qty": 5, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Tomato", "qty": 6, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Oil", "qty": 3, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Spices", "qty": 1.2, "unit": "kg", "rate": 350, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_18", "category": "Punjabi", "name": "Rajma Masala", "baseGuests": 100, "ingredients": [{"name": "Rajma", "qty": 12, "unit": "kg", "rate": 150, "rateUnit": "kg", "rateKey": "rajma__kg"}, {"name": "Onion", "qty": 5, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Tomato", "qty": 6, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Oil", "qty": 3, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Spices", "qty": 1.2, "unit": "kg", "rate": 350, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_19", "category": "Paneer", "name": "Paneer Butter Masala", "baseGuests": 100, "ingredients": [{"name": "Paneer", "qty": 12, "unit": "kg", "rate": 280, "rateUnit": "kg", "rateKey": "paneer__kg"}, {"name": "Tomato", "qty": 5, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Onion", "qty": 3, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Butter", "qty": 1.5, "unit": "kg", "rate": 520, "rateUnit": "kg", "rateKey": "butter__kg"}, {"name": "Cream", "qty": 2, "unit": "kg", "rate": 220, "rateUnit": "kg", "rateKey": "cream__kg"}, {"name": "Cashew", "qty": 0.5, "unit": "kg", "rate": 800, "rateUnit": "kg", "rateKey": "cashew__kg"}, {"name": "Milk", "qty": 3, "unit": "ltr", "rate": 60, "rateUnit": "ltr", "rateKey": "milk__ltr"}, {"name": "Spices", "qty": 0.8, "unit": "kg", "rate": 350, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_20", "category": "Paneer", "name": "Shahi Paneer", "baseGuests": 100, "ingredients": [{"name": "Paneer", "qty": 12, "unit": "kg", "rate": 280, "rateUnit": "kg", "rateKey": "paneer__kg"}, {"name": "Onion", "qty": 4, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Tomato", "qty": 4, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Cream", "qty": 2.5, "unit": "kg", "rate": 220, "rateUnit": "kg", "rateKey": "cream__kg"}, {"name": "Cashew", "qty": 1, "unit": "kg", "rate": 800, "rateUnit": "kg", "rateKey": "cashew__kg"}, {"name": "Butter", "qty": 1.2, "unit": "kg", "rate": 520, "rateUnit": "kg", "rateKey": "butter__kg"}, {"name": "Spices", "qty": 0.8, "unit": "kg", "rate": 350, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_21", "category": "Sabji", "name": "Mix Veg", "baseGuests": 100, "ingredients": [{"name": "Potato", "qty": 5, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Cauliflower", "qty": 5, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "cauliflower__kg"}, {"name": "Carrot", "qty": 3, "unit": "kg", "rate": 50, "rateUnit": "kg", "rateKey": "carrot__kg"}, {"name": "Green Peas", "qty": 3, "unit": "kg", "rate": 100, "rateUnit": "kg", "rateKey": "green peas__kg"}, {"name": "Capsicum", "qty": 2, "unit": "kg", "rate": 80, "rateUnit": "kg", "rateKey": "capsicum__kg"}, {"name": "Oil", "qty": 2.5, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Spices", "qty": 0.8, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_22", "category": "Sabji", "name": "Aloo Gobi", "baseGuests": 100, "ingredients": [{"name": "Potato", "qty": 10, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Cauliflower", "qty": 10, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "cauliflower__kg"}, {"name": "Tomato", "qty": 3, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Oil", "qty": 2.5, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Spices", "qty": 0.8, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_23", "category": "Kathiyawadi", "name": "Sev Tameta", "baseGuests": 100, "ingredients": [{"name": "Tomato", "qty": 15, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Sev", "qty": 6, "unit": "kg", "rate": 140, "rateUnit": "kg", "rateKey": "sev__kg"}, {"name": "Oil", "qty": 3, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Jaggery", "qty": 1.5, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "jaggery__kg"}, {"name": "Spices", "qty": 1, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_24", "category": "Kathiyawadi", "name": "Ringan No Olo", "baseGuests": 100, "ingredients": [{"name": "Brinjal", "qty": 16, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "brinjal__kg"}, {"name": "Onion", "qty": 5, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Tomato", "qty": 4, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Oil", "qty": 3, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Spices", "qty": 0.8, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_25", "category": "Rajasthani", "name": "Dal Baati", "baseGuests": 100, "ingredients": [{"name": "Wheat Flour", "qty": 15, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "wheat flour__kg"}, {"name": "Toor Dal", "qty": 4, "unit": "kg", "rate": 150, "rateUnit": "kg", "rateKey": "toor dal__kg"}, {"name": "Moong Dal", "qty": 3, "unit": "kg", "rate": 130, "rateUnit": "kg", "rateKey": "moong dal__kg"}, {"name": "Ghee", "qty": 5, "unit": "kg", "rate": 620, "rateUnit": "kg", "rateKey": "ghee__kg"}, {"name": "Spices", "qty": 1, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_26", "category": "Rajasthani", "name": "Gatte Ki Sabji", "baseGuests": 100, "ingredients": [{"name": "Besan", "qty": 10, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "besan__kg"}, {"name": "Curd", "qty": 8, "unit": "kg", "rate": 70, "rateUnit": "kg", "rateKey": "curd__kg"}, {"name": "Oil", "qty": 3, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Spices", "qty": 1, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_27", "category": "Gujarati", "name": "Undhiyu", "baseGuests": 100, "ingredients": [{"name": "Surti Papdi", "qty": 8, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "surti papdi__kg"}, {"name": "Purple Yam", "qty": 6, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "purple yam__kg"}, {"name": "Potato", "qty": 6, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Raw Banana", "qty": 4, "unit": "kg", "rate": 50, "rateUnit": "kg", "rateKey": "raw banana__kg"}, {"name": "Methi Muthiya", "qty": 5, "unit": "kg", "rate": 130, "rateUnit": "kg", "rateKey": "methi muthiya__kg"}, {"name": "Oil", "qty": 4, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}]}, {"id": "dish_28", "category": "Gujarati", "name": "Gujarati Kadhi", "baseGuests": 100, "ingredients": [{"name": "Curd", "qty": 12, "unit": "kg", "rate": 70, "rateUnit": "kg", "rateKey": "curd__kg"}, {"name": "Besan", "qty": 2, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "besan__kg"}, {"name": "Sugar", "qty": 1.5, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "sugar__kg"}, {"name": "Ghee", "qty": 0.8, "unit": "kg", "rate": 620, "rateUnit": "kg", "rateKey": "ghee__kg"}, {"name": "Spices", "qty": 0.5, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_29", "category": "Dal / Kadhi", "name": "Dal Fry", "baseGuests": 100, "ingredients": [{"name": "Toor Dal", "qty": 8, "unit": "kg", "rate": 150, "rateUnit": "kg", "rateKey": "toor dal__kg"}, {"name": "Onion", "qty": 3, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Tomato", "qty": 3, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Ghee", "qty": 1.5, "unit": "kg", "rate": 620, "rateUnit": "kg", "rateKey": "ghee__kg"}, {"name": "Spices", "qty": 0.8, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_30", "category": "Dal / Kadhi", "name": "Dal Tadka", "baseGuests": 100, "ingredients": [{"name": "Toor Dal", "qty": 7, "unit": "kg", "rate": 150, "rateUnit": "kg", "rateKey": "toor dal__kg"}, {"name": "Moong Dal", "qty": 2, "unit": "kg", "rate": 130, "rateUnit": "kg", "rateKey": "moong dal__kg"}, {"name": "Onion", "qty": 3, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Tomato", "qty": 3, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Ghee", "qty": 2, "unit": "kg", "rate": 620, "rateUnit": "kg", "rateKey": "ghee__kg"}, {"name": "Spices", "qty": 0.8, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_31", "category": "Rice", "name": "Jeera Rice", "baseGuests": 100, "ingredients": [{"name": "Basmati Rice", "qty": 10, "unit": "kg", "rate": 110, "rateUnit": "kg", "rateKey": "basmati rice__kg"}, {"name": "Ghee", "qty": 1.2, "unit": "kg", "rate": 620, "rateUnit": "kg", "rateKey": "ghee__kg"}, {"name": "Cumin", "qty": 0.4, "unit": "kg", "rate": 420, "rateUnit": "kg", "rateKey": "cumin__kg"}, {"name": "Spices", "qty": 0.2, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_32", "category": "Rice", "name": "Veg Pulao", "baseGuests": 100, "ingredients": [{"name": "Basmati Rice", "qty": 10, "unit": "kg", "rate": 110, "rateUnit": "kg", "rateKey": "basmati rice__kg"}, {"name": "Vegetables", "qty": 6, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "vegetables__kg"}, {"name": "Ghee", "qty": 1.5, "unit": "kg", "rate": 620, "rateUnit": "kg", "rateKey": "ghee__kg"}, {"name": "Cashew", "qty": 0.5, "unit": "kg", "rate": 800, "rateUnit": "kg", "rateKey": "cashew__kg"}, {"name": "Spices", "qty": 0.5, "unit": "kg", "rate": 350, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_33", "category": "Bread", "name": "Chapati", "baseGuests": 100, "ingredients": [{"name": "Wheat Flour", "qty": 12, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "wheat flour__kg"}, {"name": "Oil", "qty": 1, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Salt", "qty": 0.25, "unit": "kg", "rate": 20, "rateUnit": "kg", "rateKey": "salt__kg"}]}, {"id": "dish_34", "category": "Bread", "name": "Puri", "baseGuests": 100, "ingredients": [{"name": "Wheat Flour", "qty": 14, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "wheat flour__kg"}, {"name": "Oil", "qty": 7, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Salt", "qty": 0.25, "unit": "kg", "rate": 20, "rateUnit": "kg", "rateKey": "salt__kg"}]}, {"id": "dish_35", "category": "Sweet", "name": "Gulab Jamun", "baseGuests": 100, "ingredients": [{"name": "Khoya", "qty": 10, "unit": "kg", "rate": 320, "rateUnit": "kg", "rateKey": "khoya__kg"}, {"name": "Maida", "qty": 1.5, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "maida__kg"}, {"name": "Sugar", "qty": 10, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "sugar__kg"}, {"name": "Oil", "qty": 5, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Cardamom", "qty": 0.15, "unit": "kg", "rate": 1800, "rateUnit": "kg", "rateKey": "cardamom__kg"}]}, {"id": "dish_36", "category": "Sweet", "name": "Mohanthal", "baseGuests": 100, "ingredients": [{"name": "Besan", "qty": 10, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "besan__kg"}, {"name": "Ghee", "qty": 6, "unit": "kg", "rate": 620, "rateUnit": "kg", "rateKey": "ghee__kg"}, {"name": "Sugar", "qty": 9, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "sugar__kg"}, {"name": "Milk", "qty": 3, "unit": "ltr", "rate": 60, "rateUnit": "ltr", "rateKey": "milk__ltr"}, {"name": "Dry Fruits", "qty": 1.5, "unit": "kg", "rate": 820, "rateUnit": "kg", "rateKey": "dry fruits__kg"}]}, {"id": "dish_37", "category": "Ice Cream", "name": "Vanilla Ice Cream", "baseGuests": 100, "ingredients": [{"name": "Vanilla Ice Cream", "qty": 20, "unit": "ltr", "rate": 180, "rateUnit": "ltr", "rateKey": "vanilla ice cream__ltr"}, {"name": "Cup", "qty": 100, "unit": "piece", "rate": 3, "rateUnit": "piece", "rateKey": "cup__piece"}, {"name": "Spoon", "qty": 100, "unit": "piece", "rate": 0.8, "rateUnit": "piece", "rateKey": "spoon__piece"}]}, {"id": "dish_38", "category": "Ice Cream", "name": "Kesar Pista Ice Cream", "baseGuests": 100, "ingredients": [{"name": "Kesar Pista Ice Cream", "qty": 20, "unit": "ltr", "rate": 240, "rateUnit": "ltr", "rateKey": "kesar pista ice cream__ltr"}, {"name": "Cup", "qty": 100, "unit": "piece", "rate": 3, "rateUnit": "piece", "rateKey": "cup__piece"}, {"name": "Spoon", "qty": 100, "unit": "piece", "rate": 0.8, "rateUnit": "piece", "rateKey": "spoon__piece"}]}, {"id": "dish_39", "category": "Salad", "name": "Fresh Green Salad", "baseGuests": 100, "ingredients": [{"name": "Cucumber", "qty": 5, "unit": "kg", "rate": 40, "rateUnit": "kg", "rateKey": "cucumber__kg"}, {"name": "Tomato", "qty": 4, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Onion", "qty": 4, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Carrot", "qty": 3, "unit": "kg", "rate": 50, "rateUnit": "kg", "rateKey": "carrot__kg"}, {"name": "Lemon", "qty": 1.5, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "lemon__kg"}]}, {"id": "dish_40", "category": "Salad", "name": "Russian Salad", "baseGuests": 100, "ingredients": [{"name": "Potato", "qty": 6, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Carrot", "qty": 3, "unit": "kg", "rate": 50, "rateUnit": "kg", "rateKey": "carrot__kg"}, {"name": "Green Peas", "qty": 3, "unit": "kg", "rate": 100, "rateUnit": "kg", "rateKey": "green peas__kg"}, {"name": "Mayonnaise", "qty": 5, "unit": "kg", "rate": 220, "rateUnit": "kg", "rateKey": "mayonnaise__kg"}, {"name": "Pineapple", "qty": 3, "unit": "kg", "rate": 100, "rateUnit": "kg", "rateKey": "pineapple__kg"}]}, {"id": "dish_41", "category": "Papad", "name": "Roasted Papad", "baseGuests": 100, "ingredients": [{"name": "Papad", "qty": 120, "unit": "piece", "rate": 5, "rateUnit": "piece", "rateKey": "papad__piece"}, {"name": "Masala", "qty": 0.25, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "masala__kg"}]}, {"id": "dish_42", "category": "Papad", "name": "Masala Papad", "baseGuests": 100, "ingredients": [{"name": "Papad", "qty": 120, "unit": "piece", "rate": 5, "rateUnit": "piece", "rateKey": "papad__piece"}, {"name": "Onion", "qty": 3, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Tomato", "qty": 3, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Sev", "qty": 1.5, "unit": "kg", "rate": 140, "rateUnit": "kg", "rateKey": "sev__kg"}, {"name": "Masala", "qty": 0.3, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "masala__kg"}]}, {"id": "dish_43", "category": "Farsan", "name": "Khaman", "baseGuests": 100, "ingredients": [{"name": "Besan", "qty": 8, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "besan__kg"}, {"name": "Sugar", "qty": 2, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "sugar__kg"}, {"name": "Oil", "qty": 1.5, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Eno", "qty": 0.5, "unit": "kg", "rate": 400, "rateUnit": "kg", "rateKey": "eno__kg"}, {"name": "Spices", "qty": 0.4, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_44", "category": "Farsan", "name": "Samosa", "baseGuests": 100, "ingredients": [{"name": "Maida", "qty": 8, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "maida__kg"}, {"name": "Potato", "qty": 12, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Green Peas", "qty": 3, "unit": "kg", "rate": 100, "rateUnit": "kg", "rateKey": "green peas__kg"}, {"name": "Oil", "qty": 7, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Spices", "qty": 0.8, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_45", "category": "Beverage", "name": "Tea", "baseGuests": 100, "ingredients": [{"name": "Milk", "qty": 12, "unit": "ltr", "rate": 60, "rateUnit": "ltr", "rateKey": "milk__ltr"}, {"name": "Tea Powder", "qty": 0.8, "unit": "kg", "rate": 520, "rateUnit": "kg", "rateKey": "tea powder__kg"}, {"name": "Sugar", "qty": 2.5, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "sugar__kg"}, {"name": "Ginger", "qty": 0.5, "unit": "kg", "rate": 160, "rateUnit": "kg", "rateKey": "ginger__kg"}]}, {"id": "dish_46", "category": "Beverage", "name": "Coffee", "baseGuests": 100, "ingredients": [{"name": "Milk", "qty": 12, "unit": "ltr", "rate": 60, "rateUnit": "ltr", "rateKey": "milk__ltr"}, {"name": "Coffee Powder", "qty": 0.8, "unit": "kg", "rate": 850, "rateUnit": "kg", "rateKey": "coffee powder__kg"}, {"name": "Sugar", "qty": 2.5, "unit": "kg", "rate": 45, "rateUnit": "kg", "rateKey": "sugar__kg"}]}, {"id": "dish_47", "category": "Live Counter", "name": "Live Dosa", "baseGuests": 100, "ingredients": [{"name": "Rice", "qty": 10, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "rice__kg"}, {"name": "Urad Dal", "qty": 3, "unit": "kg", "rate": 130, "rateUnit": "kg", "rateKey": "urad dal__kg"}, {"name": "Potato", "qty": 12, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Oil", "qty": 5, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Chutney", "qty": 8, "unit": "kg", "rate": 120, "rateUnit": "kg", "rateKey": "chutney__kg"}, {"name": "Sambhar", "qty": 12, "unit": "kg", "rate": 100, "rateUnit": "kg", "rateKey": "sambhar__kg"}]}, {"id": "dish_48", "category": "Live Counter", "name": "Pasta Counter", "baseGuests": 100, "ingredients": [{"name": "Pasta", "qty": 12, "unit": "kg", "rate": 140, "rateUnit": "kg", "rateKey": "pasta__kg"}, {"name": "White Sauce", "qty": 8, "unit": "kg", "rate": 180, "rateUnit": "kg", "rateKey": "white sauce__kg"}, {"name": "Red Sauce", "qty": 8, "unit": "kg", "rate": 160, "rateUnit": "kg", "rateKey": "red sauce__kg"}, {"name": "Cheese", "qty": 4, "unit": "kg", "rate": 420, "rateUnit": "kg", "rateKey": "cheese__kg"}, {"name": "Vegetables", "qty": 8, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "vegetables__kg"}]}, {"id": "dish_49", "category": "Breakfast", "name": "Poha", "baseGuests": 100, "ingredients": [{"name": "Poha", "qty": 10, "unit": "kg", "rate": 55, "rateUnit": "kg", "rateKey": "poha__kg"}, {"name": "Potato", "qty": 4, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Onion", "qty": 4, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Peanut", "qty": 2, "unit": "kg", "rate": 140, "rateUnit": "kg", "rateKey": "peanut__kg"}, {"name": "Oil", "qty": 2, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Spices", "qty": 0.5, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_50", "category": "Breakfast", "name": "Upma", "baseGuests": 100, "ingredients": [{"name": "Rava", "qty": 10, "unit": "kg", "rate": 55, "rateUnit": "kg", "rateKey": "rava__kg"}, {"name": "Onion", "qty": 4, "unit": "kg", "rate": 30, "rateUnit": "kg", "rateKey": "onion__kg"}, {"name": "Vegetables", "qty": 5, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "vegetables__kg"}, {"name": "Oil", "qty": 2, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Cashew", "qty": 0.5, "unit": "kg", "rate": 800, "rateUnit": "kg", "rateKey": "cashew__kg"}]}, {"id": "dish_51", "category": "Jain", "name": "Jain Paneer Masala", "baseGuests": 100, "ingredients": [{"name": "Paneer", "qty": 12, "unit": "kg", "rate": 280, "rateUnit": "kg", "rateKey": "paneer__kg"}, {"name": "Tomato", "qty": 8, "unit": "kg", "rate": 35, "rateUnit": "kg", "rateKey": "tomato__kg"}, {"name": "Capsicum", "qty": 4, "unit": "kg", "rate": 80, "rateUnit": "kg", "rateKey": "capsicum__kg"}, {"name": "Cream", "qty": 2, "unit": "kg", "rate": 220, "rateUnit": "kg", "rateKey": "cream__kg"}, {"name": "Cashew", "qty": 0.8, "unit": "kg", "rate": 800, "rateUnit": "kg", "rateKey": "cashew__kg"}, {"name": "Spices", "qty": 0.8, "unit": "kg", "rate": 350, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_52", "category": "Jain", "name": "Jain Mix Veg", "baseGuests": 100, "ingredients": [{"name": "Potato", "qty": 5, "unit": "kg", "rate": 28, "rateUnit": "kg", "rateKey": "potato__kg"}, {"name": "Cauliflower", "qty": 5, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "cauliflower__kg"}, {"name": "Carrot", "qty": 3, "unit": "kg", "rate": 50, "rateUnit": "kg", "rateKey": "carrot__kg"}, {"name": "Green Peas", "qty": 3, "unit": "kg", "rate": 100, "rateUnit": "kg", "rateKey": "green peas__kg"}, {"name": "Capsicum", "qty": 3, "unit": "kg", "rate": 80, "rateUnit": "kg", "rateKey": "capsicum__kg"}, {"name": "Oil", "qty": 2.5, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}]}, {"id": "dish_53", "category": "Kids", "name": "Mini Pizza", "baseGuests": 100, "ingredients": [{"name": "Pizza Base", "qty": 100, "unit": "piece", "rate": 15, "rateUnit": "piece", "rateKey": "pizza base__piece"}, {"name": "Pizza Sauce", "qty": 5, "unit": "kg", "rate": 180, "rateUnit": "kg", "rateKey": "pizza sauce__kg"}, {"name": "Cheese", "qty": 8, "unit": "kg", "rate": 420, "rateUnit": "kg", "rateKey": "cheese__kg"}, {"name": "Vegetables", "qty": 6, "unit": "kg", "rate": 60, "rateUnit": "kg", "rateKey": "vegetables__kg"}]}, {"id": "dish_54", "category": "Kids", "name": "French Fries", "baseGuests": 100, "ingredients": [{"name": "Frozen Fries", "qty": 18, "unit": "kg", "rate": 130, "rateUnit": "kg", "rateKey": "frozen fries__kg"}, {"name": "Oil", "qty": 6, "unit": "ltr", "rate": 140, "rateUnit": "ltr", "rateKey": "oil__ltr"}, {"name": "Seasoning", "qty": 0.5, "unit": "kg", "rate": 400, "rateUnit": "kg", "rateKey": "seasoning__kg"}, {"name": "Ketchup", "qty": 4, "unit": "kg", "rate": 120, "rateUnit": "kg", "rateKey": "ketchup__kg"}]}, {"id": "dish_55", "category": "Condiments", "name": "Green Chutney", "baseGuests": 100, "ingredients": [{"name": "Coriander", "qty": 4, "unit": "kg", "rate": 120, "rateUnit": "kg", "rateKey": "coriander__kg"}, {"name": "Mint", "qty": 2, "unit": "kg", "rate": 160, "rateUnit": "kg", "rateKey": "mint__kg"}, {"name": "Lemon", "qty": 1.5, "unit": "kg", "rate": 90, "rateUnit": "kg", "rateKey": "lemon__kg"}, {"name": "Green Chilli", "qty": 0.8, "unit": "kg", "rate": 120, "rateUnit": "kg", "rateKey": "green chilli__kg"}, {"name": "Spices", "qty": 0.3, "unit": "kg", "rate": 300, "rateUnit": "kg", "rateKey": "spices__kg"}]}, {"id": "dish_56", "category": "Condiments", "name": "Pickle", "baseGuests": 100, "ingredients": [{"name": "Mixed Pickle", "qty": 5, "unit": "kg", "rate": 140, "rateUnit": "kg", "rateKey": "mixed pickle__kg"}]}];
+const DEFAULT_RATES = [{"id": "almond__kg", "name": "Almond", "unit": "kg", "rate": 850}, {"id": "baby corn__kg", "name": "Baby Corn", "unit": "kg", "rate": 160}, {"id": "basmati rice__kg", "name": "Basmati Rice", "unit": "kg", "rate": 110}, {"id": "besan__kg", "name": "Besan", "unit": "kg", "rate": 90}, {"id": "blue curacao syrup__ltr", "name": "Blue Curacao Syrup", "unit": "ltr", "rate": 260}, {"id": "bread crumb__kg", "name": "Bread Crumb", "unit": "kg", "rate": 100}, {"id": "brinjal__kg", "name": "Brinjal", "unit": "kg", "rate": 45}, {"id": "butter__kg", "name": "Butter", "unit": "kg", "rate": 520}, {"id": "cabbage__kg", "name": "Cabbage", "unit": "kg", "rate": 35}, {"id": "capsicum__kg", "name": "Capsicum", "unit": "kg", "rate": 80}, {"id": "cardamom__kg", "name": "Cardamom", "unit": "kg", "rate": 1800}, {"id": "carrot__kg", "name": "Carrot", "unit": "kg", "rate": 50}, {"id": "cashew__kg", "name": "Cashew", "unit": "kg", "rate": 800}, {"id": "cauliflower__kg", "name": "Cauliflower", "unit": "kg", "rate": 60}, {"id": "chana__kg", "name": "Chana", "unit": "kg", "rate": 95}, {"id": "cheese__kg", "name": "Cheese", "unit": "kg", "rate": 420}, {"id": "chutney__kg", "name": "Chutney", "unit": "kg", "rate": 120}, {"id": "coconut chutney__kg", "name": "Coconut Chutney", "unit": "kg", "rate": 120}, {"id": "coffee powder__kg", "name": "Coffee Powder", "unit": "kg", "rate": 850}, {"id": "coriander__kg", "name": "Coriander", "unit": "kg", "rate": 120}, {"id": "corn flour__kg", "name": "Corn Flour", "unit": "kg", "rate": 90}, {"id": "cream__kg", "name": "Cream", "unit": "kg", "rate": 220}, {"id": "cucumber__kg", "name": "Cucumber", "unit": "kg", "rate": 40}, {"id": "cumin__kg", "name": "Cumin", "unit": "kg", "rate": 420}, {"id": "cup__piece", "name": "Cup", "unit": "piece", "rate": 3}, {"id": "curd__kg", "name": "Curd", "unit": "kg", "rate": 70}, {"id": "dry fruits__kg", "name": "Dry Fruits", "unit": "kg", "rate": 820}, {"id": "eno__kg", "name": "Eno", "unit": "kg", "rate": 400}, {"id": "frozen fries__kg", "name": "Frozen Fries", "unit": "kg", "rate": 130}, {"id": "ghee__kg", "name": "Ghee", "unit": "kg", "rate": 620}, {"id": "ginger__kg", "name": "Ginger", "unit": "kg", "rate": 160}, {"id": "green chilli__kg", "name": "Green Chilli", "unit": "kg", "rate": 120}, {"id": "green peas__kg", "name": "Green Peas", "unit": "kg", "rate": 100}, {"id": "herbs__kg", "name": "Herbs", "unit": "kg", "rate": 600}, {"id": "ice__kg", "name": "Ice", "unit": "kg", "rate": 10}, {"id": "jaggery__kg", "name": "Jaggery", "unit": "kg", "rate": 60}, {"id": "kabuli chana__kg", "name": "Kabuli Chana", "unit": "kg", "rate": 140}, {"id": "kesar__kg", "name": "Kesar", "unit": "kg", "rate": 180000}, {"id": "kesar pista ice cream__ltr", "name": "Kesar Pista Ice Cream", "unit": "ltr", "rate": 240}, {"id": "ketchup__kg", "name": "Ketchup", "unit": "kg", "rate": 120}, {"id": "khoya__kg", "name": "Khoya", "unit": "kg", "rate": 320}, {"id": "lemon__kg", "name": "Lemon", "unit": "kg", "rate": 90}, {"id": "maida__kg", "name": "Maida", "unit": "kg", "rate": 45}, {"id": "masala__kg", "name": "Masala", "unit": "kg", "rate": 300}, {"id": "mayonnaise__kg", "name": "Mayonnaise", "unit": "kg", "rate": 220}, {"id": "methi muthiya__kg", "name": "Methi Muthiya", "unit": "kg", "rate": 130}, {"id": "milk__ltr", "name": "Milk", "unit": "ltr", "rate": 60}, {"id": "mint__kg", "name": "Mint", "unit": "kg", "rate": 160}, {"id": "mixed pickle__kg", "name": "Mixed Pickle", "unit": "kg", "rate": 140}, {"id": "moong dal__kg", "name": "Moong Dal", "unit": "kg", "rate": 130}, {"id": "noodles__kg", "name": "Noodles", "unit": "kg", "rate": 120}, {"id": "oil__ltr", "name": "Oil", "unit": "ltr", "rate": 140}, {"id": "olive oil__ltr", "name": "Olive Oil", "unit": "ltr", "rate": 650}, {"id": "onion__kg", "name": "Onion", "unit": "kg", "rate": 30}, {"id": "orange__kg", "name": "Orange", "unit": "kg", "rate": 80}, {"id": "paneer__kg", "name": "Paneer", "unit": "kg", "rate": 280}, {"id": "papad__piece", "name": "Papad", "unit": "piece", "rate": 5}, {"id": "pasta__kg", "name": "Pasta", "unit": "kg", "rate": 140}, {"id": "peanut__kg", "name": "Peanut", "unit": "kg", "rate": 140}, {"id": "pineapple__kg", "name": "Pineapple", "unit": "kg", "rate": 100}, {"id": "pizza base__piece", "name": "Pizza Base", "unit": "piece", "rate": 15}, {"id": "pizza sauce__kg", "name": "Pizza Sauce", "unit": "kg", "rate": 180}, {"id": "poha__kg", "name": "Poha", "unit": "kg", "rate": 55}, {"id": "potato__kg", "name": "Potato", "unit": "kg", "rate": 28}, {"id": "puri__piece", "name": "Puri", "unit": "piece", "rate": 1.2}, {"id": "purple yam__kg", "name": "Purple Yam", "unit": "kg", "rate": 60}, {"id": "rajma__kg", "name": "Rajma", "unit": "kg", "rate": 150}, {"id": "rava__kg", "name": "Rava", "unit": "kg", "rate": 55}, {"id": "raw banana__kg", "name": "Raw Banana", "unit": "kg", "rate": 50}, {"id": "red sauce__kg", "name": "Red Sauce", "unit": "kg", "rate": 160}, {"id": "rice__kg", "name": "Rice", "unit": "kg", "rate": 60}, {"id": "salt__kg", "name": "Salt", "unit": "kg", "rate": 20}, {"id": "sambhar__kg", "name": "Sambhar", "unit": "kg", "rate": 100}, {"id": "seasoning__kg", "name": "Seasoning", "unit": "kg", "rate": 400}, {"id": "sev__kg", "name": "Sev", "unit": "kg", "rate": 140}, {"id": "soda__ltr", "name": "Soda", "unit": "ltr", "rate": 35}, {"id": "soy sauce__ltr", "name": "Soy Sauce", "unit": "ltr", "rate": 110}, {"id": "spices__kg", "name": "Spices", "unit": "kg", "rate": 300}, {"id": "spinach__kg", "name": "Spinach", "unit": "kg", "rate": 50}, {"id": "spoon__piece", "name": "Spoon", "unit": "piece", "rate": 0.8}, {"id": "sugar__kg", "name": "Sugar", "unit": "kg", "rate": 45}, {"id": "sugar syrup__ltr", "name": "Sugar Syrup", "unit": "ltr", "rate": 80}, {"id": "surti papdi__kg", "name": "Surti Papdi", "unit": "kg", "rate": 90}, {"id": "tamarind__kg", "name": "Tamarind", "unit": "kg", "rate": 180}, {"id": "tea powder__kg", "name": "Tea Powder", "unit": "kg", "rate": 520}, {"id": "tomato__kg", "name": "Tomato", "unit": "kg", "rate": 35}, {"id": "toor dal__kg", "name": "Toor Dal", "unit": "kg", "rate": 150}, {"id": "urad dal__kg", "name": "Urad Dal", "unit": "kg", "rate": 130}, {"id": "vanilla ice cream__ltr", "name": "Vanilla Ice Cream", "unit": "ltr", "rate": 180}, {"id": "vegetables__kg", "name": "Vegetables", "unit": "kg", "rate": 60}, {"id": "water__ltr", "name": "Water", "unit": "ltr", "rate": 0}, {"id": "wheat flour__kg", "name": "Wheat Flour", "unit": "kg", "rate": 45}, {"id": "white sauce__kg", "name": "White Sauce", "unit": "kg", "rate": 180}];
+const CATEGORIES = ["Welcome Drink", "Mocktail", "Soup", "Starter", "Chaat", "Chinese", "Italian", "South Indian", "Punjabi", "Paneer", "Sabji", "Kathiyawadi", "Rajasthani", "Gujarati", "Dal / Kadhi", "Rice", "Bread", "Sweet", "Ice Cream", "Salad", "Papad", "Farsan", "Beverage", "Live Counter", "Breakfast", "Jain", "Kids", "Condiments"];
+const VALID_UNITS = ["kg","gram","ltr","ml","piece","packet"];
+const DISH_STORAGE = "catereros_polished_dishes_v1";
+const RATE_STORAGE = "catereros_polished_rates_v1";
+const THEME_STORAGE = "catereros_ui_theme_v1";
+
+const $ = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+function safeStorageGet(key){
+  try { return window.localStorage.getItem(key); } catch { return null; }
+}
+function safeStorageSet(key,value){
+  try { window.localStorage.setItem(key,value); return true; } catch { return false; }
+}
+const money = value => new Intl.NumberFormat("en-IN", {
+  style:"currency",currency:"INR",maximumFractionDigits:2
+}).format(Number(value)||0);
+
+function loadArray(key,fallback){
+  try{
+    const saved=JSON.parse(safeStorageGet(key));
+    return Array.isArray(saved)&&saved.length?saved:clone(fallback);
+  }catch{return clone(fallback)}
+}
+let dishes=loadArray(DISH_STORAGE,DEFAULT_DISHES);
+let rates=loadArray(RATE_STORAGE,DEFAULT_RATES);
+let selectedDishId=dishes[0]?.id||null;
+let selectedRateId=rates[0]?.id||null;
+let currentView="editor";
+let dirty=false;
+
+function esc(value){
+  return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+function normalizeKey(name,unit){return `${String(name).trim().toLowerCase()}__${unit}`}
+function selectedDish(){return dishes.find(d=>d.id===selectedDishId)}
+function getRate(id){return rates.find(r=>r.id===id)}
+function selectedRate(){return getRate(selectedRateId)}
+function convertQuantity(qty,unit,rateUnit){
+  qty=Number(qty)||0;
+  if(unit===rateUnit)return qty;
+  if(unit==="gram"&&rateUnit==="kg")return qty/1000;
+  if(unit==="kg"&&rateUnit==="gram")return qty*1000;
+  if(unit==="ml"&&rateUnit==="ltr")return qty/1000;
+  if(unit==="ltr"&&rateUnit==="ml")return qty*1000;
+  return qty;
+}
+function ingredientCost(i){
+  const live=getRate(i.rateKey);
+  const rate=Number(live?.rate??i.rate??0);
+  const rateUnit=live?.unit||i.rateUnit||i.unit;
+  return convertQuantity(i.qty,i.unit,rateUnit)*rate;
+}
+function dishCost(d){return (d?.ingredients||[]).reduce((sum,i)=>sum+ingredientCost(i),0)}
+function saveState(){
+  safeStorageSet(DISH_STORAGE,JSON.stringify(dishes));
+  safeStorageSet(RATE_STORAGE,JSON.stringify(rates));
+}
+function showToast(text){
+  $("toastText").textContent=text;$("toast").classList.add("show");
+  clearTimeout(showToast.t);showToast.t=setTimeout(()=>$("toast").classList.remove("show"),2200);
+}
+function setStatus(text,type=""){
+  $("jsonStatus").textContent=text;$("jsonStatus").className=`statusText ${type}`;
+}
+function setDirty(value){
+  dirty=value;$("unsavedBadge").classList.toggle("show",dirty);
+}
+function setValidation(state,text){
+  const pill=$("validationPill");
+  pill.className=`validationPill ${state||""}`;pill.textContent=text;
+}
+function updateLineNumbers(){
+  const lines=Math.max(1,$("jsonEditor").value.split("\n").length);
+  $("lineNumbers").textContent=Array.from({length:lines},(_,i)=>i+1).join("\n");
+  $("lineNumbers").scrollTop=$("jsonEditor").scrollTop;
+}
+function rateUsageCount(id){return dishes.filter(d=>d.ingredients?.some(i=>i.rateKey===id)).length}
+function dishToJson(d){
+  return {
+    dishName:d.name,
+    category:d.category,
+    baseGuests:d.baseGuests||100,
+    ingredients:(d.ingredients||[]).map(i=>{
+      const live=getRate(i.rateKey);
+      return {
+        name:live?.name||i.name||"Ingredient",
+        quantity:Number(i.qty)||0,
+        unit:i.unit||live?.unit||"kg",
+        marketRate:Number(live?.rate??i.rate??0),
+        rateUnit:live?.unit||i.rateUnit||"kg"
+      }
+    })
+  }
+}
+function parseJson(){return JSON.parse($("jsonEditor").value)}
+function validateDishJson(data){
+  const errors=[];
+  if(!data||typeof data!=="object"||Array.isArray(data))return ["JSON root must be an object."];
+  if(!String(data.dishName||"").trim())errors.push("dishName is required.");
+  if(!String(data.category||"").trim())errors.push("category is required.");
+  if(!Number.isFinite(Number(data.baseGuests))||Number(data.baseGuests)<=0)errors.push("baseGuests must be greater than 0.");
+  if(!Array.isArray(data.ingredients))return [...errors,"ingredients must be an array."];
+  data.ingredients.forEach((item,index)=>{
+    const n=index+1;
+    if(!item||typeof item!=="object"||Array.isArray(item)){errors.push(`Ingredient ${n} must be an object.`);return}
+    if(!String(item.name||"").trim())errors.push(`Ingredient ${n}: name is required.`);
+    if(!Number.isFinite(Number(item.quantity))||Number(item.quantity)<0)errors.push(`Ingredient ${n}: quantity must be 0 or more.`);
+    if(!VALID_UNITS.includes(item.unit))errors.push(`Ingredient ${n}: invalid unit.`);
+    if(!Number.isFinite(Number(item.marketRate))||Number(item.marketRate)<0)errors.push(`Ingredient ${n}: marketRate must be 0 or more.`);
+    if(!VALID_UNITS.includes(item.rateUnit))errors.push(`Ingredient ${n}: invalid rateUnit.`);
+  });
+  return errors;
+}
+function jsonIngredientCost(item){
+  return convertQuantity(item.quantity,item.unit,item.rateUnit)*(Number(item.marketRate)||0)
+}
+function renderDishList(){
+  const q=$("dishSearch").value.trim().toLowerCase(),cat=$("categoryFilter").value;
+  const filtered=dishes.filter(d=>(!q||d.name.toLowerCase().includes(q)||d.category.toLowerCase().includes(q))&&(cat==="All"||d.category===cat));
+  $("visibleDishCount").textContent=filtered.length;$("totalDishCount").textContent=dishes.length;
+  $("dishList").innerHTML=filtered.length?filtered.map(d=>`
+    <button class="dishItem ${d.id===selectedDishId?"active":""}" data-id="${esc(d.id)}">
+      <span class="dishItemMain">
+        <span class="dishName">${esc(d.name)}</span>
+        <span class="dishMeta">${esc(d.category)} · ${d.ingredients?.length||0} ingredients</span>
+      </span>
+      <span class="dishCost">${money(dishCost(d)/(d.baseGuests||100))}</span>
+    </button>`).join(""):'<div class="emptyState">No matching dishes.</div>';
+}
+function loadSelectedDish(){
+  const d=selectedDish();if(!d)return;
+  $("pageTitle").textContent=d.name;$("breadcrumbCategory").textContent=d.category;
+  $("fileName").textContent=`${d.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"recipe"}.json`;
+  $("jsonEditor").value=JSON.stringify(dishToJson(d),null,2);
+  setDirty(false);setValidation("","Not checked");setStatus("Recipe loaded.");
+  updateLineNumbers();renderJsonSummary();renderDishList();
+}
+function renderJsonSummary(){
+  let data;
+  try{data=parseJson()}catch{
+    $("totalCost").textContent=money(0);$("perPerson").textContent=money(0);$("ingredientCount").textContent=0;
+    $("recipeCountBadge").textContent="0 rows";$("ingredientPreview").innerHTML='<div class="emptyState">Fix JSON syntax to restore the live preview.</div>';
+    $("costState").className="validationPill invalid";$("costState").textContent="JSON error";return;
+  }
+  const items=Array.isArray(data.ingredients)?data.ingredients:[];
+  const total=items.reduce((s,i)=>s+jsonIngredientCost(i),0),guests=Math.max(1,Number(data.baseGuests)||100);
+  $("totalCost").textContent=money(total);$("perPerson").textContent=money(total/guests);
+  $("ingredientCount").textContent=items.length;$("recipeCountBadge").textContent=`${items.length} rows`;
+  $("costState").className="validationPill valid";$("costState").textContent="Live";
+  $("ingredientPreview").innerHTML=items.length?items.map(i=>`
+    <div class="recipeRow">
+      <div><div class="recipeRowName">${esc(i.name||"Ingredient")}</div><div class="recipeRowMeta">${Number(i.quantity)||0} ${esc(i.unit||"")} · ${money(i.marketRate)}/${esc(i.rateUnit||"")}</div></div>
+      <div class="recipeRowCost">${money(jsonIngredientCost(i))}</div>
+    </div>`).join(""):'<div class="emptyState">No ingredients in this recipe.</div>';
+}
+function renderRateTable(){
+  const q=$("rateSearch").value.trim().toLowerCase(),unit=$("unitFilter").value,sort=$("rateSort").value;
+  let list=rates.filter(r=>(!q||r.name.toLowerCase().includes(q)||r.id.toLowerCase().includes(q))&&(unit==="All"||r.unit===unit));
+  list.sort((a,b)=>{
+    if(sort==="name-desc")return b.name.localeCompare(a.name);
+    if(sort==="rate-desc")return Number(b.rate)-Number(a.rate);
+    if(sort==="rate-asc")return Number(a.rate)-Number(b.rate);
+    return a.name.localeCompare(b.name);
+  });
+  $("visibleRateCount").textContent=list.length;$("totalRateCount").textContent=rates.length;
+  $("rateRows").innerHTML=list.length?list.map((r,index)=>`
+    <tr data-rate-id="${esc(r.id)}" class="${r.id===selectedRateId?"selected":""}">
+      <td>${index+1}</td><td class="rateName">${esc(r.name)}</td><td class="rateKey">${esc(r.id)}</td>
+      <td class="rateCell">${money(r.rate)}</td><td><span class="unitChip">${esc(r.unit)}</span></td><td>${rateUsageCount(r.id)}</td>
+    </tr>`).join(""):'<tr><td colspan="6"><div class="emptyState">No matching market rates.</div></td></tr>';
+}
+function renderSelectedRate(){
+  const r=selectedRate();
+  if(!r){
+    $("selectedRateTitle").textContent="Choose a rate";$("selectedRateKey").textContent="Select an ingredient from the table.";
+    $("selectedRateValue").value="";$("selectedRateJson").textContent="{}";$("usedInDishes").innerHTML="";return;
+  }
+  $("selectedRateTitle").textContent=r.name;$("selectedRateKey").textContent=r.id;
+  $("selectedRateValue").value=r.rate;$("selectedRateUnit").value=r.unit;
+  $("selectedRateJson").textContent=JSON.stringify(r,null,2);
+  const used=dishes.filter(d=>d.ingredients?.some(i=>i.rateKey===r.id));
+  $("usedInDishes").innerHTML=used.length?used.map(d=>`<span class="usedChip">${esc(d.name)}</span>`).join(""):'<span class="muted">Not used in any dish yet.</span>';
+}
+function switchView(view){
+  currentView=view;
+  document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+  $("editorView").hidden=view!=="editor";$("indexView").hidden=view!=="index";
+  document.querySelectorAll("[data-mobile]").forEach(b=>b.classList.toggle("active",b.dataset.mobile===view));
+  if(view==="index"){renderRateTable();renderSelectedRate()}
+}
+function applyJson(){
+  try{
+    const data=parseJson(),errors=validateDishJson(data);
+    if(errors.length){setValidation("invalid",`${errors.length} issue${errors.length>1?"s":""}`);setStatus(errors[0],"error");return}
+    const dishIndex=dishes.findIndex(d=>d.id===selectedDishId);if(dishIndex<0)return;
+    const mapped=data.ingredients.map(item=>{
+      const id=normalizeKey(item.name,item.rateUnit);
+      const existing=rates.find(r=>r.id===id);
+      if(existing){existing.name=String(item.name).trim();existing.rate=Number(item.marketRate);existing.unit=item.rateUnit}
+      else rates.push({id,name:String(item.name).trim(),rate:Number(item.marketRate),unit:item.rateUnit});
+      return {name:String(item.name).trim(),qty:Number(item.quantity),unit:item.unit,rateKey:id,rate:Number(item.marketRate),rateUnit:item.rateUnit}
+    });
+    dishes[dishIndex]={...dishes[dishIndex],name:String(data.dishName).trim(),category:String(data.category).trim(),baseGuests:Number(data.baseGuests),ingredients:mapped};
+    saveState();setDirty(false);setValidation("valid","Valid");setStatus("Recipe and market rates saved.","ok");
+    loadSelectedDish();renderRateTable();renderSelectedRate();showToast("Recipe saved");
+  }catch(error){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${error.message}`,"error")}
+}
+$("dishList").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(!b)return;selectedDishId=b.dataset.id;loadSelectedDish();$("sidebar").classList.remove("open")});
+$("dishSearch").addEventListener("input",renderDishList);$("categoryFilter").addEventListener("change",renderDishList);
+$("jsonEditor").addEventListener("input",()=>{setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");updateLineNumbers();renderJsonSummary()});
+$("jsonEditor").addEventListener("scroll",()=>{$("lineNumbers").scrollTop=$("jsonEditor").scrollTop});
+$("formatJson").addEventListener("click",()=>{try{$("jsonEditor").value=JSON.stringify(parseJson(),null,2);updateLineNumbers();renderJsonSummary();setDirty(true);setStatus("JSON formatted.","ok")}catch(e){setStatus(`Invalid JSON: ${e.message}`,"error")}});
+$("validateJson").addEventListener("click",()=>{try{const errors=validateDishJson(parseJson());if(errors.length){setValidation("invalid",`${errors.length} issue${errors.length>1?"s":""}`);setStatus(errors[0],"error")}else{setValidation("valid","Valid");setStatus("JSON is valid and ready to save.","ok")}}catch(e){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${e.message}`,"error")}});
+$("applyJson").addEventListener("click",applyJson);
+document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.view)));
+$("rateSearch").addEventListener("input",renderRateTable);$("unitFilter").addEventListener("change",renderRateTable);$("rateSort").addEventListener("change",renderRateTable);
+$("rateRows").addEventListener("click",e=>{const row=e.target.closest("[data-rate-id]");if(!row)return;selectedRateId=row.dataset.rateId;renderRateTable();renderSelectedRate()});
+$("saveSelectedRate").addEventListener("click",()=>{
+  const r=selectedRate();if(!r)return;
+  const newUnit=$("selectedRateUnit").value,newRate=Math.max(0,Number($("selectedRateValue").value)||0);
+  const oldId=r.id,newId=normalizeKey(r.name,newUnit);r.rate=newRate;r.unit=newUnit;r.id=newId;
+  dishes.forEach(d=>d.ingredients?.forEach(i=>{if(i.rateKey===oldId){i.rateKey=newId;i.rate=newRate;i.rateUnit=newUnit}}));
+  selectedRateId=newId;saveState();renderRateTable();renderSelectedRate();loadSelectedDish();showToast("Market rate updated");
+});
+$("newRate").addEventListener("click",()=>{
+  const name=prompt("Ingredient name");if(!name?.trim())return;
+  const unit=prompt("Purchase unit: kg, gram, ltr, ml, piece, or packet","kg");
+  if(!VALID_UNITS.includes(unit))return showToast("Invalid unit");
+  const rate=Math.max(0,Number(prompt("Market rate","0"))||0),id=normalizeKey(name,unit);
+  if(rates.some(r=>r.id===id))return showToast("Ingredient already exists");
+  rates.push({id,name:name.trim(),rate,unit});selectedRateId=id;saveState();renderRateTable();renderSelectedRate();showToast("Ingredient added");
+});
+$("copyAllRates").addEventListener("click",async()=>{
+  const text=JSON.stringify([...rates].sort((a,b)=>a.name.localeCompare(b.name)),null,2);
+  try{await navigator.clipboard.writeText(text)}catch{const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove()}
+  showToast("Market-rate JSON copied");
+});
+$("themeToggle").addEventListener("click",()=>{
+  const next=document.documentElement.dataset.theme==="dark"?"light":"dark";
+  document.documentElement.dataset.theme=next;safeStorageSet(THEME_STORAGE,next);
+});
+$("mobileMenu").addEventListener("click",()=>$("sidebar").classList.toggle("open"));
+document.querySelectorAll("[data-mobile]").forEach(b=>b.addEventListener("click",()=>{
+  const target=b.dataset.mobile;
+  if(target==="library"){$("sidebar").classList.add("open");return}
+  switchView(target);$("sidebar").classList.remove("open");
+}));
+document.addEventListener("keydown",e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="s"){e.preventDefault();applyJson()}
+  if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==="f"){e.preventDefault();$("formatJson").click()}
+});
+window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
+document.documentElement.dataset.theme=safeStorageGet(THEME_STORAGE)||"light";
+renderDishList();loadSelectedDish();renderRateTable();renderSelectedRate();
+</script>
+</body>
+</html>
