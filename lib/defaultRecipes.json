@@ -646,38 +646,106 @@
         "rateKey": "potato__kg"
       },
       {
-        "name": "Chana",
-        "qty": 4,
+        "name": "Boiled Chickpeas",
+        "qty": 5,
         "unit": "kg",
-        "rate": 95,
+        "rate": 110,
         "rateUnit": "kg",
-        "rateKey": "chana__kg"
+        "rateKey": "boiled chickpeas__kg"
+      },
+      {
+        "name": "Mint Leaves",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "mint leaves__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
       },
       {
         "name": "Tamarind",
-        "qty": 2,
+        "qty": 1.5,
         "unit": "kg",
         "rate": 180,
         "rateUnit": "kg",
         "rateKey": "tamarind__kg"
       },
       {
-        "name": "Mint",
+        "name": "Jaggery",
         "qty": 2,
         "unit": "kg",
-        "rate": 160,
+        "rate": 60,
         "rateUnit": "kg",
-        "rateKey": "mint__kg"
+        "rateKey": "jaggery__kg"
       },
       {
-        "name": "Spices",
-        "qty": 1,
+        "name": "Green Chilli",
+        "qty": 0.2,
         "unit": "kg",
-        "rate": 300,
+        "rate": 80,
         "rateUnit": "kg",
-        "rateKey": "spices__kg"
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 20,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
       }
-    ]
+    ],
+    "servingSize": 1,
+    "servingUnit": "portion",
+    "catalogRate": 25.44,
+    "catalogVersion": 5
   },
   {
     "id": "dish_10",
@@ -687,7 +755,7 @@
     "ingredients": [
       {
         "name": "Puri",
-        "qty": 700,
+        "qty": 600,
         "unit": "piece",
         "rate": 1.2,
         "rateUnit": "piece",
@@ -695,37 +763,105 @@
       },
       {
         "name": "Potato",
-        "qty": 7,
+        "qty": 8,
         "unit": "kg",
         "rate": 28,
         "rateUnit": "kg",
         "rateKey": "potato__kg"
       },
       {
+        "name": "Boiled Chickpeas",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 110,
+        "rateUnit": "kg",
+        "rateKey": "boiled chickpeas__kg"
+      },
+      {
         "name": "Curd",
-        "qty": 12,
+        "qty": 10,
         "unit": "kg",
         "rate": 70,
         "rateUnit": "kg",
         "rateKey": "curd__kg"
       },
       {
-        "name": "Sev",
-        "qty": 4,
+        "name": "Tamarind Chutney",
+        "qty": 3,
         "unit": "kg",
         "rate": 140,
         "rateUnit": "kg",
-        "rateKey": "sev__kg"
+        "rateKey": "tamarind chutney__kg"
       },
       {
-        "name": "Chutney",
-        "qty": 5,
+        "name": "Green Chutney",
+        "qty": 2,
         "unit": "kg",
         "rate": 120,
         "rateUnit": "kg",
-        "rateKey": "chutney__kg"
+        "rateKey": "green chutney__kg"
+      },
+      {
+        "name": "Nylon Sev",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "nylon sev__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Pomegranate Seeds",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "pomegranate seeds__kg"
       }
-    ]
+    ],
+    "servingSize": 1,
+    "servingUnit": "portion",
+    "catalogRate": 30.36,
+    "catalogVersion": 5
   },
   {
     "id": "dish_11",
@@ -36762,5 +36898,765 @@
       }
     ],
     "catalogVersion": 4
+  },
+  {
+    "id": "dish_import_sev_puri",
+    "category": "Chaat",
+    "name": "Sev Puri",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "portion",
+    "catalogRate": 38,
+    "ingredients": [
+      {
+        "name": "Flat Papdi",
+        "qty": 600,
+        "unit": "piece",
+        "rate": 1,
+        "rateUnit": "piece",
+        "rateKey": "flat papdi__piece"
+      },
+      {
+        "name": "Potato",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Tamarind Chutney",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "tamarind chutney__kg"
+      },
+      {
+        "name": "Green Chutney",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "green chutney__kg"
+      },
+      {
+        "name": "Nylon Sev",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "nylon sev__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      }
+    ],
+    "catalogVersion": 5
+  },
+  {
+    "id": "dish_import_bhel_puri",
+    "category": "Chaat",
+    "name": "Bhel Puri",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "portion",
+    "catalogRate": 36,
+    "ingredients": [
+      {
+        "name": "Puffed Rice",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "puffed rice__kg"
+      },
+      {
+        "name": "Nylon Sev",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "nylon sev__kg"
+      },
+      {
+        "name": "Papdi",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "papdi__kg"
+      },
+      {
+        "name": "Potato",
+        "qty": 7,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Tamarind Chutney",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "tamarind chutney__kg"
+      },
+      {
+        "name": "Green Chutney",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "green chutney__kg"
+      },
+      {
+        "name": "Roasted Peanuts",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "roasted peanuts__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      }
+    ],
+    "catalogVersion": 5
+  },
+  {
+    "id": "dish_import_papdi_chaat",
+    "category": "Chaat",
+    "name": "Papdi Chaat",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "portion",
+    "catalogRate": 42,
+    "ingredients": [
+      {
+        "name": "Papdi",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "papdi__kg"
+      },
+      {
+        "name": "Potato",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Boiled Chickpeas",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 110,
+        "rateUnit": "kg",
+        "rateKey": "boiled chickpeas__kg"
+      },
+      {
+        "name": "Curd",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Tamarind Chutney",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "tamarind chutney__kg"
+      },
+      {
+        "name": "Green Chutney",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "green chutney__kg"
+      },
+      {
+        "name": "Nylon Sev",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "nylon sev__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Pomegranate Seeds",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "pomegranate seeds__kg"
+      }
+    ],
+    "catalogVersion": 5
+  },
+  {
+    "id": "dish_import_aloo_tikki_chaat",
+    "category": "Chaat",
+    "name": "Aloo Tikki Chaat",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "portion",
+    "catalogRate": 44,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "qty": 14,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "breadcrumbs__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Green Peas",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "green peas__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Curd",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Tamarind Chutney",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "tamarind chutney__kg"
+      },
+      {
+        "name": "Green Chutney",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "green chutney__kg"
+      },
+      {
+        "name": "Nylon Sev",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "nylon sev__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      }
+    ],
+    "catalogVersion": 5
+  },
+  {
+    "id": "dish_import_dahi_bhalla",
+    "category": "Chaat",
+    "name": "Dahi Bhalla",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "portion",
+    "catalogRate": 46,
+    "ingredients": [
+      {
+        "name": "Urad Dal",
+        "qty": 7,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "urad dal__kg"
+      },
+      {
+        "name": "Moong Dal",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "moong dal__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Curd",
+        "qty": 14,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Tamarind Chutney",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "tamarind chutney__kg"
+      },
+      {
+        "name": "Green Chutney",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "green chutney__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Nylon Sev",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "nylon sev__kg"
+      },
+      {
+        "name": "Pomegranate Seeds",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "pomegranate seeds__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      }
+    ],
+    "catalogVersion": 5
+  },
+  {
+    "id": "dish_import_ragda_pattice",
+    "category": "Chaat",
+    "name": "Ragda Pattice",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "portion",
+    "catalogRate": 48,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "qty": 14,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "breadcrumbs__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "White Peas",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "white peas__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Tamarind Chutney",
+        "qty": 3.5,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "tamarind chutney__kg"
+      },
+      {
+        "name": "Green Chutney",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "green chutney__kg"
+      },
+      {
+        "name": "Nylon Sev",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "nylon sev__kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "chaat masala__kg"
+      },
+      {
+        "name": "Roasted Cumin Powder",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "roasted cumin powder__kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "red chilli powder__kg"
+      },
+      {
+        "name": "Black Salt",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "black salt__kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "coriander leaves__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      }
+    ],
+    "catalogVersion": 5
   }
 ]
