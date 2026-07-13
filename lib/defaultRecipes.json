@@ -1,0 +1,2690 @@
+[
+  {
+    "id": "dish_1",
+    "category": "Welcome Drink",
+    "name": "Orange Juice",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Orange",
+        "qty": 18,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "orange__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Water",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 0,
+        "rateUnit": "ltr",
+        "rateKey": "water__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_2",
+    "category": "Welcome Drink",
+    "name": "Kesar Badam Milk",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Milk",
+        "qty": 20,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "milk__ltr"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Almond",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 850,
+        "rateUnit": "kg",
+        "rateKey": "almond__kg"
+      },
+      {
+        "name": "Kesar",
+        "qty": 12,
+        "unit": "gram",
+        "rate": 180000,
+        "rateUnit": "kg",
+        "rateKey": "kesar__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_3",
+    "category": "Mocktail",
+    "name": "Virgin Mojito",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Lemon",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Mint",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "mint__kg"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Soda",
+        "qty": 25,
+        "unit": "ltr",
+        "rate": 35,
+        "rateUnit": "ltr",
+        "rateKey": "soda__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_4",
+    "category": "Mocktail",
+    "name": "Blue Lagoon",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Blue Curacao Syrup",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 260,
+        "rateUnit": "ltr",
+        "rateKey": "blue curacao syrup__ltr"
+      },
+      {
+        "name": "Lemon",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Soda",
+        "qty": 25,
+        "unit": "ltr",
+        "rate": 35,
+        "rateUnit": "ltr",
+        "rateKey": "soda__ltr"
+      },
+      {
+        "name": "Sugar Syrup",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 80,
+        "rateUnit": "ltr",
+        "rateKey": "sugar syrup__ltr"
+      },
+      {
+        "name": "Ice",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 10,
+        "rateUnit": "kg",
+        "rateKey": "ice__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_5",
+    "category": "Soup",
+    "name": "Tomato Soup",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Tomato",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Corn Flour",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "corn flour__kg"
+      },
+      {
+        "name": "Butter",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 520,
+        "rateUnit": "kg",
+        "rateKey": "butter__kg"
+      },
+      {
+        "name": "Cream",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "cream__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_6",
+    "category": "Soup",
+    "name": "Manchow Soup",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Corn Flour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "corn flour__kg"
+      },
+      {
+        "name": "Noodles",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "noodles__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_7",
+    "category": "Starter",
+    "name": "Hara Bhara Kabab",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Spinach",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "spinach__kg"
+      },
+      {
+        "name": "Green Peas",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "green peas__kg"
+      },
+      {
+        "name": "Paneer",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Bread Crumb",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "bread crumb__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      }
+    ]
+  },
+  {
+    "id": "dish_8",
+    "category": "Starter",
+    "name": "Paneer Tikka",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 14,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Curd",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Cream",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "cream__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 350,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_9",
+    "category": "Chaat",
+    "name": "Pani Puri",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Puri",
+        "qty": 800,
+        "unit": "piece",
+        "rate": 1.2,
+        "rateUnit": "piece",
+        "rateKey": "puri__piece"
+      },
+      {
+        "name": "Potato",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Chana",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 95,
+        "rateUnit": "kg",
+        "rateKey": "chana__kg"
+      },
+      {
+        "name": "Tamarind",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "tamarind__kg"
+      },
+      {
+        "name": "Mint",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "mint__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_10",
+    "category": "Chaat",
+    "name": "Dahi Puri",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Puri",
+        "qty": 700,
+        "unit": "piece",
+        "rate": 1.2,
+        "rateUnit": "piece",
+        "rateKey": "puri__piece"
+      },
+      {
+        "name": "Potato",
+        "qty": 7,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Curd",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Sev",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "sev__kg"
+      },
+      {
+        "name": "Chutney",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "chutney__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_11",
+    "category": "Chinese",
+    "name": "Veg Hakka Noodles",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Noodles",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "noodles__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      }
+    ]
+  },
+  {
+    "id": "dish_12",
+    "category": "Chinese",
+    "name": "Baby Corn Manchurian",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Baby Corn",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Corn Flour",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "corn flour__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Oil",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      }
+    ]
+  },
+  {
+    "id": "dish_13",
+    "category": "Italian",
+    "name": "White Sauce Pasta",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Pasta",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "pasta__kg"
+      },
+      {
+        "name": "Milk",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "milk__ltr"
+      },
+      {
+        "name": "Cheese",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cheese__kg"
+      },
+      {
+        "name": "Butter",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 520,
+        "rateUnit": "kg",
+        "rateKey": "butter__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Vegetables",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "vegetables__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_14",
+    "category": "Italian",
+    "name": "Red Sauce Pasta",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Pasta",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "pasta__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Cheese",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cheese__kg"
+      },
+      {
+        "name": "Olive Oil",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 650,
+        "rateUnit": "ltr",
+        "rateKey": "olive oil__ltr"
+      },
+      {
+        "name": "Herbs",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "herbs__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_15",
+    "category": "South Indian",
+    "name": "Masala Dosa",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "rice__kg"
+      },
+      {
+        "name": "Urad Dal",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "urad dal__kg"
+      },
+      {
+        "name": "Potato",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Coconut Chutney",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "coconut chutney__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_16",
+    "category": "South Indian",
+    "name": "Idli Sambhar",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "rice__kg"
+      },
+      {
+        "name": "Urad Dal",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "urad dal__kg"
+      },
+      {
+        "name": "Toor Dal",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "toor dal__kg"
+      },
+      {
+        "name": "Vegetables",
+        "qty": 7,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "vegetables__kg"
+      },
+      {
+        "name": "Tamarind",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "tamarind__kg"
+      },
+      {
+        "name": "Coconut Chutney",
+        "qty": 7,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "coconut chutney__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_17",
+    "category": "Punjabi",
+    "name": "Chole Masala",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Kabuli Chana",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "kabuli chana__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Spices",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 350,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_18",
+    "category": "Punjabi",
+    "name": "Rajma Masala",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Rajma",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "rajma__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Spices",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 350,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_19",
+    "category": "Paneer",
+    "name": "Paneer Butter Masala",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Butter",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 520,
+        "rateUnit": "kg",
+        "rateKey": "butter__kg"
+      },
+      {
+        "name": "Cream",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "cream__kg"
+      },
+      {
+        "name": "Cashew",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 800,
+        "rateUnit": "kg",
+        "rateKey": "cashew__kg"
+      },
+      {
+        "name": "Milk",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "milk__ltr"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 350,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_20",
+    "category": "Paneer",
+    "name": "Shahi Paneer",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Cream",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "cream__kg"
+      },
+      {
+        "name": "Cashew",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 800,
+        "rateUnit": "kg",
+        "rateKey": "cashew__kg"
+      },
+      {
+        "name": "Butter",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 520,
+        "rateUnit": "kg",
+        "rateKey": "butter__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 350,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_21",
+    "category": "Sabji",
+    "name": "Mix Veg",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Cauliflower",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "cauliflower__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "Green Peas",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "green peas__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_22",
+    "category": "Sabji",
+    "name": "Aloo Gobi",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Cauliflower",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "cauliflower__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_23",
+    "category": "Kathiyawadi",
+    "name": "Sev Tameta",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Tomato",
+        "qty": 15,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Sev",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "sev__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Jaggery",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "jaggery__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_24",
+    "category": "Kathiyawadi",
+    "name": "Ringan No Olo",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Brinjal",
+        "qty": 16,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "brinjal__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_25",
+    "category": "Rajasthani",
+    "name": "Dal Baati",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Wheat Flour",
+        "qty": 15,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "wheat flour__kg"
+      },
+      {
+        "name": "Toor Dal",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "toor dal__kg"
+      },
+      {
+        "name": "Moong Dal",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "moong dal__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_26",
+    "category": "Rajasthani",
+    "name": "Gatte Ki Sabji",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Besan",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "besan__kg"
+      },
+      {
+        "name": "Curd",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Spices",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_27",
+    "category": "Gujarati",
+    "name": "Undhiyu",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Surti Papdi",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "surti papdi__kg"
+      },
+      {
+        "name": "Purple Yam",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "purple yam__kg"
+      },
+      {
+        "name": "Potato",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Raw Banana",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "raw banana__kg"
+      },
+      {
+        "name": "Methi Muthiya",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "methi muthiya__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      }
+    ]
+  },
+  {
+    "id": "dish_28",
+    "category": "Gujarati",
+    "name": "Gujarati Kadhi",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Curd",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 70,
+        "rateUnit": "kg",
+        "rateKey": "curd__kg"
+      },
+      {
+        "name": "Besan",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "besan__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_29",
+    "category": "Dal / Kadhi",
+    "name": "Dal Fry",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Toor Dal",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "toor dal__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_30",
+    "category": "Dal / Kadhi",
+    "name": "Dal Tadka",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Toor Dal",
+        "qty": 7,
+        "unit": "kg",
+        "rate": 150,
+        "rateUnit": "kg",
+        "rateKey": "toor dal__kg"
+      },
+      {
+        "name": "Moong Dal",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "moong dal__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_31",
+    "category": "Rice",
+    "name": "Jeera Rice",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Basmati Rice",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 110,
+        "rateUnit": "kg",
+        "rateKey": "basmati rice__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Cumin",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cumin__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_32",
+    "category": "Rice",
+    "name": "Veg Pulao",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Basmati Rice",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 110,
+        "rateUnit": "kg",
+        "rateKey": "basmati rice__kg"
+      },
+      {
+        "name": "Vegetables",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "vegetables__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Cashew",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 800,
+        "rateUnit": "kg",
+        "rateKey": "cashew__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 350,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_33",
+    "category": "Bread",
+    "name": "Chapati",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Wheat Flour",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "wheat flour__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 1,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_34",
+    "category": "Bread",
+    "name": "Puri",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Wheat Flour",
+        "qty": 14,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "wheat flour__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 7,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_35",
+    "category": "Sweet",
+    "name": "Gulab Jamun",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Khoya",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 320,
+        "rateUnit": "kg",
+        "rateKey": "khoya__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Cardamom",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 1800,
+        "rateUnit": "kg",
+        "rateKey": "cardamom__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_36",
+    "category": "Sweet",
+    "name": "Mohanthal",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Besan",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "besan__kg"
+      },
+      {
+        "name": "Ghee",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 620,
+        "rateUnit": "kg",
+        "rateKey": "ghee__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Milk",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "milk__ltr"
+      },
+      {
+        "name": "Dry Fruits",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 820,
+        "rateUnit": "kg",
+        "rateKey": "dry fruits__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_37",
+    "category": "Ice Cream",
+    "name": "Vanilla Ice Cream",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Vanilla Ice Cream",
+        "qty": 20,
+        "unit": "ltr",
+        "rate": 180,
+        "rateUnit": "ltr",
+        "rateKey": "vanilla ice cream__ltr"
+      },
+      {
+        "name": "Cup",
+        "qty": 100,
+        "unit": "piece",
+        "rate": 3,
+        "rateUnit": "piece",
+        "rateKey": "cup__piece"
+      },
+      {
+        "name": "Spoon",
+        "qty": 100,
+        "unit": "piece",
+        "rate": 0.8,
+        "rateUnit": "piece",
+        "rateKey": "spoon__piece"
+      }
+    ]
+  },
+  {
+    "id": "dish_38",
+    "category": "Ice Cream",
+    "name": "Kesar Pista Ice Cream",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Kesar Pista Ice Cream",
+        "qty": 20,
+        "unit": "ltr",
+        "rate": 240,
+        "rateUnit": "ltr",
+        "rateKey": "kesar pista ice cream__ltr"
+      },
+      {
+        "name": "Cup",
+        "qty": 100,
+        "unit": "piece",
+        "rate": 3,
+        "rateUnit": "piece",
+        "rateKey": "cup__piece"
+      },
+      {
+        "name": "Spoon",
+        "qty": 100,
+        "unit": "piece",
+        "rate": 0.8,
+        "rateUnit": "piece",
+        "rateKey": "spoon__piece"
+      }
+    ]
+  },
+  {
+    "id": "dish_39",
+    "category": "Salad",
+    "name": "Fresh Green Salad",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Cucumber",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 40,
+        "rateUnit": "kg",
+        "rateKey": "cucumber__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_40",
+    "category": "Salad",
+    "name": "Russian Salad",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "Green Peas",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "green peas__kg"
+      },
+      {
+        "name": "Mayonnaise",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "mayonnaise__kg"
+      },
+      {
+        "name": "Pineapple",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "pineapple__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_41",
+    "category": "Papad",
+    "name": "Roasted Papad",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Papad",
+        "qty": 120,
+        "unit": "piece",
+        "rate": 5,
+        "rateUnit": "piece",
+        "rateKey": "papad__piece"
+      },
+      {
+        "name": "Masala",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "masala__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_42",
+    "category": "Papad",
+    "name": "Masala Papad",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Papad",
+        "qty": 120,
+        "unit": "piece",
+        "rate": 5,
+        "rateUnit": "piece",
+        "rateKey": "papad__piece"
+      },
+      {
+        "name": "Onion",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Sev",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "sev__kg"
+      },
+      {
+        "name": "Masala",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "masala__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_43",
+    "category": "Farsan",
+    "name": "Khaman",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Besan",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "besan__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Eno",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 400,
+        "rateUnit": "kg",
+        "rateKey": "eno__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.4,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_44",
+    "category": "Farsan",
+    "name": "Samosa",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Maida",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Potato",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Green Peas",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "green peas__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 7,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_45",
+    "category": "Beverage",
+    "name": "Tea",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Milk",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "milk__ltr"
+      },
+      {
+        "name": "Tea Powder",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 520,
+        "rateUnit": "kg",
+        "rateKey": "tea powder__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_46",
+    "category": "Beverage",
+    "name": "Coffee",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Milk",
+        "qty": 12,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "milk__ltr"
+      },
+      {
+        "name": "Coffee Powder",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 850,
+        "rateUnit": "kg",
+        "rateKey": "coffee powder__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_47",
+    "category": "Live Counter",
+    "name": "Live Dosa",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "rice__kg"
+      },
+      {
+        "name": "Urad Dal",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "urad dal__kg"
+      },
+      {
+        "name": "Potato",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Chutney",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "chutney__kg"
+      },
+      {
+        "name": "Sambhar",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "sambhar__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_48",
+    "category": "Live Counter",
+    "name": "Pasta Counter",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Pasta",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "pasta__kg"
+      },
+      {
+        "name": "White Sauce",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "white sauce__kg"
+      },
+      {
+        "name": "Red Sauce",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "red sauce__kg"
+      },
+      {
+        "name": "Cheese",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cheese__kg"
+      },
+      {
+        "name": "Vegetables",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "vegetables__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_49",
+    "category": "Breakfast",
+    "name": "Poha",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Poha",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 55,
+        "rateUnit": "kg",
+        "rateKey": "poha__kg"
+      },
+      {
+        "name": "Potato",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Peanut",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "peanut__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_50",
+    "category": "Breakfast",
+    "name": "Upma",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Rava",
+        "qty": 10,
+        "unit": "kg",
+        "rate": 55,
+        "rateUnit": "kg",
+        "rateKey": "rava__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Vegetables",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "vegetables__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 2,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Cashew",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 800,
+        "rateUnit": "kg",
+        "rateKey": "cashew__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_51",
+    "category": "Jain",
+    "name": "Jain Paneer Masala",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Tomato",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "tomato__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Cream",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "cream__kg"
+      },
+      {
+        "name": "Cashew",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 800,
+        "rateUnit": "kg",
+        "rateKey": "cashew__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 350,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_52",
+    "category": "Jain",
+    "name": "Jain Mix Veg",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 28,
+        "rateUnit": "kg",
+        "rateKey": "potato__kg"
+      },
+      {
+        "name": "Cauliflower",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "cauliflower__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "Green Peas",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "green peas__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      }
+    ]
+  },
+  {
+    "id": "dish_53",
+    "category": "Kids",
+    "name": "Mini Pizza",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Pizza Base",
+        "qty": 100,
+        "unit": "piece",
+        "rate": 15,
+        "rateUnit": "piece",
+        "rateKey": "pizza base__piece"
+      },
+      {
+        "name": "Pizza Sauce",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "pizza sauce__kg"
+      },
+      {
+        "name": "Cheese",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "cheese__kg"
+      },
+      {
+        "name": "Vegetables",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "vegetables__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_54",
+    "category": "Kids",
+    "name": "French Fries",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Frozen Fries",
+        "qty": 18,
+        "unit": "kg",
+        "rate": 130,
+        "rateUnit": "kg",
+        "rateKey": "frozen fries__kg"
+      },
+      {
+        "name": "Oil",
+        "qty": 6,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "oil__ltr"
+      },
+      {
+        "name": "Seasoning",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 400,
+        "rateUnit": "kg",
+        "rateKey": "seasoning__kg"
+      },
+      {
+        "name": "Ketchup",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ketchup__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_55",
+    "category": "Condiments",
+    "name": "Green Chutney",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Coriander",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "coriander__kg"
+      },
+      {
+        "name": "Mint",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "mint__kg"
+      },
+      {
+        "name": "Lemon",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "lemon__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Spices",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "spices__kg"
+      }
+    ]
+  },
+  {
+    "id": "dish_56",
+    "category": "Condiments",
+    "name": "Pickle",
+    "baseGuests": 100,
+    "ingredients": [
+      {
+        "name": "Mixed Pickle",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "mixed pickle__kg"
+      }
+    ]
+  }
+]

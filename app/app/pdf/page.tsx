@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AppShell, { LockedCard } from '../../components/AppShell';
+import { buildGroceryList, downloadGroceryListCsv } from '../../../lib/groceryList';
 import { calculate, getSession, loadWork } from '../../../lib/store';
 import type { Session, WorkState } from '../../../lib/types';
 
@@ -12,6 +13,7 @@ function money(value: number) {
 export default function PdfPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
+  const [groceryMessage, setGroceryMessage] = useState('');
 
   useEffect(() => {
     const current = getSession();
@@ -25,14 +27,41 @@ export default function PdfPage() {
   const result = calculate(work);
   const profile = work.profile;
 
+  function downloadGroceryList() {
+    if (!work) return;
+    if (!work.menu.length) {
+      setGroceryMessage('Add menu dishes before downloading the grocery list.');
+      return;
+    }
+    if (!(Number(work.event.pax) > 0)) {
+      setGroceryMessage('Enter the number of guests before downloading the grocery list.');
+      return;
+    }
+
+    const groceryList = buildGroceryList(work);
+    if (!groceryList.items.length) {
+      setGroceryMessage('No selected dishes have saved ingredient recipes yet.');
+      return;
+    }
+
+    downloadGroceryListCsv(work, groceryList);
+    setGroceryMessage(
+      groceryList.unmatchedDishes.length
+        ? `Downloaded ${groceryList.items.length} ingredients. ${groceryList.unmatchedDishes.length} dish${groceryList.unmatchedDishes.length === 1 ? '' : 'es'} still need recipes.`
+        : `Downloaded ${groceryList.items.length} combined ingredients for ${result.pax} guests.`,
+    );
+  }
+
   return (
     <AppShell title="PDF" subtitle="Fourth page: print or save quotation as PDF">
       <section className="content-grid">
         <div className="glass-card no-print">
           <div className="action-row">
             <button className="primary-button" onClick={() => window.print()}>Print / Save PDF</button>
+            <button className="ghost-button" onClick={downloadGroceryList}>Download Grocery List</button>
             <span className="muted">Browser print window opens. Choose “Save as PDF”.</span>
           </div>
+          {groceryMessage ? <p className="muted" role="status"><b>{groceryMessage}</b></p> : null}
         </div>
 
         <article className="pdf-paper">
