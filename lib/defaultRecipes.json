@@ -37658,5 +37658,8609 @@
       }
     ],
     "catalogVersion": 5
+  },
+  {
+    "id": "dish_import_chilli_paneer_dry",
+    "category": "Chinese",
+    "name": "Chilli Paneer Dry",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 62,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_hot_garlic_paneer",
+    "category": "Chinese",
+    "name": "Hot Garlic Paneer",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 62,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_black_pepper_paneer",
+    "category": "Chinese",
+    "name": "Black Pepper Paneer",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 64,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_paneer_in_garlic_sauce",
+    "category": "Chinese",
+    "name": "Paneer in Garlic Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 62,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_paneer_in_hot_bean_sauce",
+    "category": "Chinese",
+    "name": "Paneer in Hot Bean Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 64,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Hot Bean Sauce",
+        "qty": 0.9,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "hot bean sauce__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_paneer_in_black_bean_sauce",
+    "category": "Chinese",
+    "name": "Paneer in Black Bean Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 66,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Bean Sauce",
+        "qty": 0.9,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "black bean sauce__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_sweet_and_sour_paneer",
+    "category": "Chinese",
+    "name": "Sweet and Sour Paneer",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 62,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.2,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_vegetable_in_hot_garlic_sauce",
+    "category": "Chinese",
+    "name": "Vegetable in Hot Garlic Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 52,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_vegetable_in_schezwan_sauce",
+    "category": "Chinese",
+    "name": "Vegetable in Schezwan Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 52,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Schezwan Sauce",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "schezwan sauce__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_vegetable_in_black_bean_sauce",
+    "category": "Chinese",
+    "name": "Vegetable in Black Bean Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 54,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Bean Sauce",
+        "qty": 0.9,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "black bean sauce__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_vegetable_in_garlic_sauce",
+    "category": "Chinese",
+    "name": "Vegetable in Garlic Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 52,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_vegetable_in_sweet_and_sour_sauce",
+    "category": "Chinese",
+    "name": "Vegetable in Sweet and Sour Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 52,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.2,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_vegetable_in_oyster_style_sauce",
+    "category": "Chinese",
+    "name": "Vegetable in Oyster Style Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 54,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Vegetarian Oyster Sauce",
+        "qty": 0.8,
+        "unit": "ltr",
+        "rate": 300,
+        "rateUnit": "ltr",
+        "rateKey": "vegetarian oyster sauce__ltr"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_vegetable_in_chilli_basil_sauce",
+    "category": "Chinese",
+    "name": "Vegetable in Chilli Basil Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 54,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Fresh Basil Leaves",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "fresh basil leaves__kg"
+      },
+      {
+        "name": "Green Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "green chilli sauce__ltr"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_vegetable_in_burnt_garlic_sauce",
+    "category": "Chinese",
+    "name": "Vegetable in Burnt Garlic Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 54,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_chinese_mixed_vegetable",
+    "category": "Chinese",
+    "name": "Chinese Mixed Vegetable",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 50,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_stir_fried_vegetables",
+    "category": "Chinese",
+    "name": "Stir Fried Vegetables",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 50,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Sesame Oil",
+        "qty": 0.2,
+        "unit": "ltr",
+        "rate": 500,
+        "rateUnit": "ltr",
+        "rateKey": "sesame oil__ltr"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_exotic_vegetables_in_garlic_sauce",
+    "category": "Chinese",
+    "name": "Exotic Vegetables in Garlic Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 58,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Mushroom",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Zucchini",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "zucchini__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_exotic_vegetables_in_black_pepper_sauce",
+    "category": "Chinese",
+    "name": "Exotic Vegetables in Black Pepper Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Mushroom",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Zucchini",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "zucchini__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_chilli_mushroom",
+    "category": "Chinese",
+    "name": "Chilli Mushroom",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 58,
+    "ingredients": [
+      {
+        "name": "Mushroom",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_mushroom_in_hot_garlic_sauce",
+    "category": "Chinese",
+    "name": "Mushroom in Hot Garlic Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Mushroom",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_mushroom_in_black_pepper_sauce",
+    "category": "Chinese",
+    "name": "Mushroom in Black Pepper Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Mushroom",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_mushroom_in_schezwan_sauce",
+    "category": "Chinese",
+    "name": "Mushroom in Schezwan Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Mushroom",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Schezwan Sauce",
+        "qty": 0.9,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "schezwan sauce__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_baby_corn_in_hot_garlic_sauce",
+    "category": "Chinese",
+    "name": "Baby Corn in Hot Garlic Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 56,
+    "ingredients": [
+      {
+        "name": "Baby Corn",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_baby_corn_in_schezwan_sauce",
+    "category": "Chinese",
+    "name": "Baby Corn in Schezwan Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 56,
+    "ingredients": [
+      {
+        "name": "Baby Corn",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Schezwan Sauce",
+        "qty": 0.9,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "schezwan sauce__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_broccoli_in_garlic_sauce",
+    "category": "Chinese",
+    "name": "Broccoli in Garlic Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 58,
+    "ingredients": [
+      {
+        "name": "Broccoli",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_broccoli_in_black_pepper_sauce",
+    "category": "Chinese",
+    "name": "Broccoli in Black Pepper Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Broccoli",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_broccoli_mushroom_stir_fry",
+    "category": "Chinese",
+    "name": "Broccoli Mushroom Stir Fry",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 62,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Mushroom",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Zucchini",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "zucchini__kg"
+      },
+      {
+        "name": "Mushroom",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.45,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Sesame Oil",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 500,
+        "rateUnit": "ltr",
+        "rateKey": "sesame oil__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.2,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_baby_corn_mushroom_gravy",
+    "category": "Chinese",
+    "name": "Baby Corn Mushroom Gravy",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 58,
+    "ingredients": [
+      {
+        "name": "Mushroom",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_chilli_tofu",
+    "category": "Chinese",
+    "name": "Chilli Tofu",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 58,
+    "ingredients": [
+      {
+        "name": "Tofu",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "tofu__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_schezwan_tofu",
+    "category": "Chinese",
+    "name": "Schezwan Tofu",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Tofu",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "tofu__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Schezwan Sauce",
+        "qty": 0.9,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "schezwan sauce__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_tofu_in_hot_garlic_sauce",
+    "category": "Chinese",
+    "name": "Tofu in Hot Garlic Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Tofu",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "tofu__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_tofu_in_black_bean_sauce",
+    "category": "Chinese",
+    "name": "Tofu in Black Bean Sauce",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 62,
+    "ingredients": [
+      {
+        "name": "Tofu",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "tofu__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Bean Sauce",
+        "qty": 0.9,
+        "unit": "kg",
+        "rate": 240,
+        "rateUnit": "kg",
+        "rateKey": "black bean sauce__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_kung_pao_tofu",
+    "category": "Chinese",
+    "name": "Kung Pao Tofu",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 62,
+    "ingredients": [
+      {
+        "name": "Tofu",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "tofu__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Peanuts",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "peanuts__kg"
+      },
+      {
+        "name": "Sesame Oil",
+        "qty": 0.2,
+        "unit": "ltr",
+        "rate": 500,
+        "rateUnit": "ltr",
+        "rateKey": "sesame oil__ltr"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_sweet_and_sour_tofu",
+    "category": "Chinese",
+    "name": "Sweet and Sour Tofu",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Tofu",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "tofu__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Sugar",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "sugar__kg"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.2,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_tofu_salt_and_pepper",
+    "category": "Chinese",
+    "name": "Tofu Salt and Pepper",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Tofu",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 220,
+        "rateUnit": "kg",
+        "rateKey": "tofu__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_baby_corn_salt_and_pepper",
+    "category": "Chinese",
+    "name": "Baby Corn Salt and Pepper",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 56,
+    "ingredients": [
+      {
+        "name": "Baby Corn",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Onion",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 30,
+        "rateUnit": "kg",
+        "rateKey": "onion__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.35,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.25,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Green Chilli",
+        "qty": 0.15,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "green chilli__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 5,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.8,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.12,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_crispy_vegetables",
+    "category": "Chinese",
+    "name": "Crispy Vegetables",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 52,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.3,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.15,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_vegetable_salt_and_pepper",
+    "category": "Chinese",
+    "name": "Vegetable Salt and Pepper",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 52,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Baby Corn",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 140,
+        "rateUnit": "kg",
+        "rateKey": "baby corn__kg"
+      },
+      {
+        "name": "Broccoli",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "broccoli__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.3,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.15,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.1,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_crispy_lotus_stem",
+    "category": "Chinese",
+    "name": "Crispy Lotus Stem",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 62,
+    "ingredients": [
+      {
+        "name": "Lotus Stem",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "lotus stem__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.18,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_honey_chilli_lotus_stem",
+    "category": "Chinese",
+    "name": "Honey Chilli Lotus Stem",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 64,
+    "ingredients": [
+      {
+        "name": "Lotus Stem",
+        "qty": 9,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "lotus stem__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.18,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Honey",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 300,
+        "rateUnit": "kg",
+        "rateKey": "honey__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_crispy_spinach",
+    "category": "Chinese",
+    "name": "Crispy Spinach",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "g",
+    "catalogRate": 50,
+    "ingredients": [
+      {
+        "name": "Spinach",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 40,
+        "rateUnit": "kg",
+        "rateKey": "spinach__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.8,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Chilli Flakes",
+        "qty": 0.08,
+        "unit": "kg",
+        "rate": 500,
+        "rateUnit": "kg",
+        "rateKey": "chilli flakes__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_veg_steamed_momos",
+    "category": "Chinese",
+    "name": "Veg Steamed Momos",
+    "baseGuests": 100,
+    "servingSize": 4,
+    "servingUnit": "piece",
+    "catalogRate": 48,
+    "ingredients": [
+      {
+        "name": "Momo Sheets",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "momo sheets__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_veg_fried_momos",
+    "category": "Chinese",
+    "name": "Veg Fried Momos",
+    "baseGuests": 100,
+    "servingSize": 4,
+    "servingUnit": "piece",
+    "catalogRate": 52,
+    "ingredients": [
+      {
+        "name": "Momo Sheets",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "momo sheets__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_veg_schezwan_momos",
+    "category": "Chinese",
+    "name": "Veg Schezwan Momos",
+    "baseGuests": 100,
+    "servingSize": 4,
+    "servingUnit": "piece",
+    "catalogRate": 54,
+    "ingredients": [
+      {
+        "name": "Momo Sheets",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "momo sheets__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Schezwan Sauce",
+        "qty": 1,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "schezwan sauce__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 1.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_mushroom_momos",
+    "category": "Chinese",
+    "name": "Mushroom Momos",
+    "baseGuests": 100,
+    "servingSize": 4,
+    "servingUnit": "piece",
+    "catalogRate": 56,
+    "ingredients": [
+      {
+        "name": "Momo Sheets",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "momo sheets__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Mushroom",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 180,
+        "rateUnit": "kg",
+        "rateKey": "mushroom__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_cheese_corn_momos",
+    "category": "Chinese",
+    "name": "Cheese Corn Momos",
+    "baseGuests": 100,
+    "servingSize": 4,
+    "servingUnit": "piece",
+    "catalogRate": 60,
+    "ingredients": [
+      {
+        "name": "Momo Sheets",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "momo sheets__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Processed Cheese",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 420,
+        "rateUnit": "kg",
+        "rateKey": "processed cheese__kg"
+      },
+      {
+        "name": "Sweet Corn",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "sweet corn__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_veg_spring_roll",
+    "category": "Chinese",
+    "name": "Veg Spring Roll",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "catalogRate": 50,
+    "ingredients": [
+      {
+        "name": "Spring Roll Sheets",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "spring roll sheets__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.6,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.15,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "qty": 0.06,
+        "unit": "kg",
+        "rate": 600,
+        "rateUnit": "kg",
+        "rateKey": "black pepper powder__kg"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_hakka_noodles_with_manchurian",
+    "category": "Chinese",
+    "name": "Hakka Noodles with Manchurian",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "plate",
+    "catalogRate": 72,
+    "ingredients": [
+      {
+        "name": "Noodles",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "noodles__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.18,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_fried_rice_with_manchurian",
+    "category": "Chinese",
+    "name": "Fried Rice with Manchurian",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "plate",
+    "catalogRate": 72,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "rice__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.4,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.2,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.18,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_schezwan_rice_with_manchurian",
+    "category": "Chinese",
+    "name": "Schezwan Rice with Manchurian",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "plate",
+    "catalogRate": 76,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "qty": 12,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "rice__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Schezwan Sauce",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "schezwan sauce__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 2.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Maida",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 45,
+        "rateUnit": "kg",
+        "rateKey": "maida__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Garlic",
+        "qty": 0.3,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "garlic__kg"
+      },
+      {
+        "name": "Ginger",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "ginger__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.35,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.18,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.7,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.16,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_triple_schezwan_rice",
+    "category": "Chinese",
+    "name": "Triple Schezwan Rice",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "plate",
+    "catalogRate": 78,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "rice__kg"
+      },
+      {
+        "name": "Noodles",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "noodles__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 3,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 1.5,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Schezwan Sauce",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "schezwan sauce__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.45,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Vegetable Stock",
+        "qty": 4,
+        "unit": "ltr",
+        "rate": 20,
+        "rateUnit": "ltr",
+        "rateKey": "vegetable stock__ltr"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 0.5,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.18,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ],
+    "catalogVersion": 6
+  },
+  {
+    "id": "dish_import_chinese_combo_plate",
+    "category": "Chinese",
+    "name": "Chinese Combo Plate",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "plate",
+    "catalogRate": 82,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "qty": 8,
+        "unit": "kg",
+        "rate": 60,
+        "rateUnit": "kg",
+        "rateKey": "rice__kg"
+      },
+      {
+        "name": "Noodles",
+        "qty": 6,
+        "unit": "kg",
+        "rate": 120,
+        "rateUnit": "kg",
+        "rateKey": "noodles__kg"
+      },
+      {
+        "name": "Paneer",
+        "qty": 5,
+        "unit": "kg",
+        "rate": 280,
+        "rateUnit": "kg",
+        "rateKey": "paneer__kg"
+      },
+      {
+        "name": "Cabbage",
+        "qty": 4,
+        "unit": "kg",
+        "rate": 35,
+        "rateUnit": "kg",
+        "rateKey": "cabbage__kg"
+      },
+      {
+        "name": "Carrot",
+        "qty": 2.5,
+        "unit": "kg",
+        "rate": 50,
+        "rateUnit": "kg",
+        "rateKey": "carrot__kg"
+      },
+      {
+        "name": "French Beans",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "french beans__kg"
+      },
+      {
+        "name": "Capsicum",
+        "qty": 2,
+        "unit": "kg",
+        "rate": 80,
+        "rateUnit": "kg",
+        "rateKey": "capsicum__kg"
+      },
+      {
+        "name": "Spring Onion",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "spring onion__kg"
+      },
+      {
+        "name": "Schezwan Sauce",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 160,
+        "rateUnit": "kg",
+        "rateKey": "schezwan sauce__kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "qty": 0.5,
+        "unit": "ltr",
+        "rate": 110,
+        "rateUnit": "ltr",
+        "rateKey": "soy sauce__ltr"
+      },
+      {
+        "name": "Vinegar",
+        "qty": 0.25,
+        "unit": "ltr",
+        "rate": 60,
+        "rateUnit": "ltr",
+        "rateKey": "vinegar__ltr"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "qty": 0.4,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "red chilli sauce__ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "qty": 0.8,
+        "unit": "kg",
+        "rate": 100,
+        "rateUnit": "kg",
+        "rateKey": "tomato ketchup__kg"
+      },
+      {
+        "name": "Cornflour",
+        "qty": 1.2,
+        "unit": "kg",
+        "rate": 90,
+        "rateUnit": "kg",
+        "rateKey": "cornflour__kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "qty": 3.5,
+        "unit": "ltr",
+        "rate": 140,
+        "rateUnit": "ltr",
+        "rateKey": "cooking oil__ltr"
+      },
+      {
+        "name": "Salt",
+        "qty": 0.2,
+        "unit": "kg",
+        "rate": 20,
+        "rateUnit": "kg",
+        "rateKey": "salt__kg"
+      }
+    ],
+    "catalogVersion": 6
   }
 ]
