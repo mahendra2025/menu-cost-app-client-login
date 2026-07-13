@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="background" x1="120" y1="80" x2="920" y2="960" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="1" stop-color="#007AFF"/>
+    </linearGradient>
+    <filter id="shadow" x="180" y="190" width="664" height="674" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="30" stdDeviation="28" flood-color="#001B3D" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#background)"/>
+  <circle cx="850" cy="174" r="190" fill="#56A7FF" opacity="0.20"/>
+  <circle cx="130" cy="890" r="230" fill="#FFB14A" opacity="0.16"/>
+  <g filter="url(#shadow)">
+    <rect x="230" y="240" width="564" height="564" rx="164" fill="white"/>
+  </g>
+  <text x="512" y="620" fill="#075CB8" font-family="Arial, Helvetica, sans-serif" font-size="292" font-weight="800" text-anchor="middle" letter-spacing="-24">MC</text>
+</svg>
