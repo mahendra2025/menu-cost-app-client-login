@@ -30,7 +30,7 @@ export default function EventPage() {
   function detectAndNext() {
     if (!work || !session) return;
     const detected = parseMenuText(work.event.rawMenuText);
-    const next = { ...work, menu: detected.length ? detected : work.menu };
+    const next = { ...work, menu: detected };
     setWork(next);
     saveWork(session.tenantId, next);
     router.push('/app/menu');
@@ -66,7 +66,7 @@ export default function EventPage() {
           <h2>Paste Menu</h2>
           <div className="helper-card" style={{ marginBottom: 16 }}>
             <b>One message is enough</b>
-            <p>Paste the full menu from WhatsApp, notes, or email. Separate items with new lines, commas, or slashes.</p>
+            <p>Paste the full menu from WhatsApp, notes, or email. Separate items with new lines, commas, or slashes. Only dishes found in the master catalog will be detected.</p>
           </div>
           <div className="form-grid">
             <div className="field">

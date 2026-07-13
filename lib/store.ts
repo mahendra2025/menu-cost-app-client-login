@@ -1,6 +1,6 @@
 'use client';
 
-import { CATEGORY_BASE_COST, CATEGORIES, detectCategory, detectCost } from './dishCostMaster';
+import { CATEGORY_BASE_COST, CATEGORIES, findDishByName } from './dishCostMaster';
 import type { ClientUser, EventDetails, ExtraCost, MenuItem, Session, WorkState } from './types';
 
 const CLIENTS_KEY = 'menu_cost_clients_v1';
@@ -136,14 +136,20 @@ export function parseMenuText(text: string): MenuItem[] {
     .filter((line) => !blockedWords.some((word) => line.toLowerCase() === word))
     .filter((line) => !/\d{1,2}:\d{2}/.test(line));
 
-  const unique = Array.from(new Set(names));
-  return unique.map((name) => {
-    const category = detectCategory(name);
+  const detected = names
+    .map((name) => findDishByName(name))
+    .filter((dish): dish is NonNullable<typeof dish> => Boolean(dish));
+
+  const unique = Array.from(
+    new Map(detected.map((dish) => [dish.name.toLowerCase(), dish])).values(),
+  );
+
+  return unique.map((dish) => {
     return {
       id: uid('dish'),
-      name,
-      category,
-      costPerPlate: detectCost(name, category),
+      name: dish.name,
+      category: dish.category,
+      costPerPlate: dish.rate,
     };
   });
 }

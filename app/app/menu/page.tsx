@@ -168,7 +168,7 @@ export default function MenuPage() {
         <div className="glass-card">
           <div className="section-kicker">Review Items</div>
           <h2>Menu Items</h2>
-          <p className="muted">If one category has multiple dishes, that category will be treated as one shared portion and the dish cost will be split equally on the Cost page.</p>
+          <p className="muted">Only dishes detected from the latest pasted menu are shown here. Add any unmatched dish manually above. If one category has multiple dishes, that category will be treated as one shared portion and the dish cost will be split equally on the Cost page.</p>
           {work.menu.length === 0 ? <p className="muted">No dishes yet. Go to Event page, paste menu text, then click “Next: Check Menu”, or add manually here.</p> : null}
           <div className="menu-list">
             {work.menu.map((item) => (
