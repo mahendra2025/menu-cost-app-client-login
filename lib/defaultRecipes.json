@@ -17485,5 +17485,273 @@
         "rateUnit": "ltr"
       }
     ]
+  },
+
+{
+    "dishName": "Lasaniya Bataka",
+    "category": "Kathiyawadi",
+    "baseGuests": 100,
+    "servingSize": 150,
+    "servingUnit": "gram",
+    "dishRate": 46,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "quantity": 18,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "quantity": 2.5,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "quantity": 0.35,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.4,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Bajra Rotla",
+    "category": "Kathiyawadi",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 22,
+    "ingredients": [
+      {
+        "name": "Bajra Flour",
+        "quantity": 12,
+        "unit": "kg",
+        "marketRate": 55,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ghee",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 620,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.18,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Water",
+        "quantity": 8,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      }
+    ]
+  },
+  {
+    "dishName": "Kathiyawadi Khichdi",
+    "category": "Kathiyawadi",
+    "baseGuests": 100,
+    "servingSize": 200,
+    "servingUnit": "gram",
+    "dishRate": 44,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "quantity": 8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Moong Dal",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 130,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ghee",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 620,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Asafoetida",
+        "quantity": 0.02,
+        "unit": "kg",
+        "marketRate": 1800,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.35,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Water",
+        "quantity": 30,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      }
+    ]
+  },
+  {
+    "dishName": "Vagharelo Rotlo",
+    "category": "Kathiyawadi",
+    "baseGuests": 100,
+    "servingSize": 180,
+    "servingUnit": "gram",
+    "dishRate": 42,
+    "ingredients": [
+      {
+        "name": "Bajra Rotla",
+        "quantity": 50,
+        "unit": "piece",
+        "marketRate": 12,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Curd",
+        "quantity": 6,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cooking Oil",
+        "quantity": 1.5,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Mustard Seeds",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander Leaves",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
   }
+
+
+
 ]
