@@ -2,100 +2,438 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AppShell, { LockedCard } from '../../components/AppShell';
-import { getSession, loadWork, parseMenuText, saveWork } from '../../../lib/store';
-import type { Session, WorkState } from '../../../lib/types';
+
+import AppShell, {
+  LockedCard,
+} from '../../components/AppShell';
+
+import {
+  getSession,
+  loadWork,
+  parseMenuText,
+  saveWork,
+} from '../../../lib/store';
+
+import type {
+  Session,
+  WorkState,
+} from '../../../lib/types';
 
 export default function EventPage() {
   const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
-  const [work, setWork] = useState<WorkState | null>(null);
+
+  const [session, setSession] =
+    useState<Session | null>(null);
+
+  const [work, setWork] =
+    useState<WorkState | null>(null);
+
+  const [detecting, setDetecting] =
+    useState(false);
+
+  const [detectionError, setDetectionError] =
+    useState('');
 
   useEffect(() => {
-    const current = getSession();
-    setSession(current);
-    if (current) setWork(loadWork(current.tenantId));
+    const currentSession = getSession();
+
+    setSession(currentSession);
+
+    if (currentSession) {
+      const savedWork = loadWork(
+        currentSession.tenantId,
+      );
+
+      setWork(savedWork);
+    }
   }, []);
 
-  if (!work || !session) return <AppShell title="Event Details"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
-  if (session.status === 'EXPIRED') return <AppShell title="Event Details"><LockedCard /></AppShell>;
-
-  function updateEvent(key: keyof WorkState['event'], value: string | number) {
+  function updateEvent(
+    key: keyof WorkState['event'],
+    value: string | number,
+  ) {
     if (!work || !session) return;
-    const next = { ...work, event: { ...work.event, [key]: value } };
+
+    const next: WorkState = {
+      ...work,
+
+      event: {
+        ...work.event,
+        [key]: value,
+      },
+    };
+
     setWork(next);
     saveWork(session.tenantId, next);
   }
 
   function detectAndNext() {
+    if (!work || !session || detecting) {
+      return;
+    }
+
+    setDetectionError('');
+    setDetecting(true);
+
+    try {
+      const rawMenuText =
+        work.event.rawMenuText.trim();
+
+      if (!rawMenuText) {
+        setDetectionError(
+          'Please paste the menu before continuing.',
+        );
+
+        return;
+      }
+
+      const detectedDishes =
+        parseMenuText(rawMenuText);
+
+      console.log(
+        'Detected menu dishes:',
+        detectedDishes,
+      );
+
+      if (!detectedDishes.length) {
+        setDetectionError(
+          'No dishes were detected. Confirm that these dish names exist in dishCostMaster.ts.',
+        );
+
+        return;
+      }
+
+      const next: WorkState = {
+        ...work,
+        menu: detectedDishes,
+      };
+
+      setWork(next);
+      saveWork(session.tenantId, next);
+
+      router.push('/app/menu');
+    } catch (error) {
+      console.error(
+        'Menu detection failed:',
+        error,
+      );
+
+      setDetectionError(
+        error instanceof Error
+          ? error.message
+          : 'Menu detection failed. Please try again.',
+      );
+    } finally {
+      setDetecting(false);
+    }
+  }
+
+  function clearPage() {
     if (!work || !session) return;
-    const detected = parseMenuText(work.event.rawMenuText);
-    const next = { ...work, menu: detected };
+
+    const next: WorkState = {
+      ...work,
+
+      event: {
+        ...work.event,
+        clientName: '',
+        eventName: '',
+        eventDate: '',
+        functionType: '',
+        pax: 0,
+        city: '',
+        venue: '',
+        uploadFileName: '',
+        rawMenuText: '',
+      },
+
+      menu: [],
+    };
+
+    setDetectionError('');
     setWork(next);
+
     saveWork(session.tenantId, next);
-    router.push('/app/menu');
+  }
+
+  if (!work || !session) {
+    return (
+      <AppShell title="Event Details">
+        <div className="content-grid">
+          <div className="glass-card">
+            Loading...
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (session.status === 'EXPIRED') {
+    return (
+      <AppShell title="Event Details">
+        <LockedCard />
+      </AppShell>
+    );
   }
 
   return (
-    <AppShell title="Event Details + Menu" subtitle="First page: client details, pax and pasted menu text">
+    <AppShell
+      title="Event Details + Menu"
+      subtitle="Enter event details and paste the complete menu"
+    >
       <section className="content-grid">
         <div className="glass-card">
-          <div className="section-kicker">Step 1 of 5</div>
-          <h2>Event Information</h2>
-          <div className="helper-card" style={{ marginBottom: 16 }}>
-            <b>Start with the basics</b>
-            <p>Fill the event details first, then paste the full menu below in one block. We will split and detect dishes for you on the next step.</p>
+          <div className="section-kicker">
+            Step 1 of 5
           </div>
+
+          <h2>Event Information</h2>
+
+          <div
+            className="helper-card"
+            style={{ marginBottom: 16 }}
+          >
+            <b>Start with event details</b>
+
+            <p>
+              Add the client, event, date and guest
+              information before detecting the menu.
+            </p>
+          </div>
+
           <div className="form-grid">
             <div className="three-grid">
-              <div className="field"><label>Client Name</label><input className="input input-large" value={work.event.clientName} onChange={(e) => updateEvent('clientName', e.target.value)} placeholder="Client name" /></div>
-              <div className="field"><label>Event Name</label><input className="input input-large" value={work.event.eventName} onChange={(e) => updateEvent('eventName', e.target.value)} placeholder="Wedding / Birthday / Corporate" /></div>
-              <div className="field"><label>Event Date</label><input className="input input-large" type="date" value={work.event.eventDate} onChange={(e) => updateEvent('eventDate', e.target.value)} /></div>
+              <div className="field">
+                <label htmlFor="clientName">
+                  Client Name
+                </label>
+
+                <input
+                  id="clientName"
+                  className="input input-large"
+                  value={work.event.clientName}
+                  onChange={(event) =>
+                    updateEvent(
+                      'clientName',
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Client name"
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="eventName">
+                  Event Name
+                </label>
+
+                <input
+                  id="eventName"
+                  className="input input-large"
+                  value={work.event.eventName}
+                  onChange={(event) =>
+                    updateEvent(
+                      'eventName',
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Wedding / Birthday / Corporate"
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="eventDate">
+                  Event Date
+                </label>
+
+                <input
+                  id="eventDate"
+                  className="input input-large"
+                  type="date"
+                  value={work.event.eventDate}
+                  onChange={(event) =>
+                    updateEvent(
+                      'eventDate',
+                      event.target.value,
+                    )
+                  }
+                />
+              </div>
             </div>
+
             <div className="three-grid">
-              <div className="field"><label>Function Type</label><input className="input input-large" value={work.event.functionType} onChange={(e) => updateEvent('functionType', e.target.value)} placeholder="Lunch / Dinner / Breakfast" /></div>
-              <div className="field"><label>Pax / Guests</label><input className="input input-large" type="number" min="1" inputMode="numeric" value={work.event.pax || ''} onChange={(e) => updateEvent('pax', Math.max(0, Number(e.target.value)))} placeholder="300" /></div>
-              <div className="field"><label>City</label><input className="input input-large" value={work.event.city} onChange={(e) => updateEvent('city', e.target.value)} placeholder="Silvassa" /></div>
+              <div className="field">
+                <label htmlFor="functionType">
+                  Function Type
+                </label>
+
+                <input
+                  id="functionType"
+                  className="input input-large"
+                  value={work.event.functionType}
+                  onChange={(event) =>
+                    updateEvent(
+                      'functionType',
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Lunch / Dinner / Breakfast"
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="pax">
+                  Pax / Guests
+                </label>
+
+                <input
+                  id="pax"
+                  className="input input-large"
+                  type="number"
+                  min="1"
+                  inputMode="numeric"
+                  value={work.event.pax || ''}
+                  onChange={(event) => {
+                    const pax = Math.max(
+                      0,
+                      Number(event.target.value),
+                    );
+
+                    updateEvent('pax', pax);
+                  }}
+                  placeholder="300"
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="city">
+                  City
+                </label>
+
+                <input
+                  id="city"
+                  className="input input-large"
+                  value={work.event.city}
+                  onChange={(event) =>
+                    updateEvent(
+                      'city',
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Silvassa"
+                />
+              </div>
             </div>
-            <div className="field"><label>Venue</label><input className="input input-large" value={work.event.venue} onChange={(e) => updateEvent('venue', e.target.value)} placeholder="Venue / Address" /></div>
+
+            <div className="field">
+              <label htmlFor="venue">
+                Venue
+              </label>
+
+              <input
+                id="venue"
+                className="input input-large"
+                value={work.event.venue}
+                onChange={(event) =>
+                  updateEvent(
+                    'venue',
+                    event.target.value,
+                  )
+                }
+                placeholder="Venue / Address"
+              />
+            </div>
           </div>
         </div>
 
         <div className="glass-card">
-          <div className="section-kicker">Paste Only</div>
-          <h2>Paste Menu</h2>
-          <div className="helper-card" style={{ marginBottom: 16 }}>
-            <b>One message is enough</b>
-            <p>Paste the full menu from WhatsApp, notes, or email. Separate items with new lines, commas, or slashes. Only dishes found in the master catalog will be detected.</p>
+          <div className="section-kicker">
+            Menu Detection
           </div>
+
+          <h2>Paste Menu</h2>
+
+          <div
+            className="helper-card"
+            style={{ marginBottom: 16 }}
+          >
+            <b>Paste the complete menu</b>
+
+            <p>
+              Items can be separated with new lines,
+              commas, slashes, semicolons or bullets.
+              Only dishes available in the Dish Cost
+              Master will be detected.
+            </p>
+          </div>
+
           <div className="form-grid">
             <div className="field">
-              <label>Paste Menu Text</label>
-              <textarea className="textarea textarea-large" value={work.event.rawMenuText} onChange={(e) => updateEvent('rawMenuText', e.target.value)} placeholder="Paste menu here: Orange Juice / Manchow Soup / Paneer Tikka / Paneer Butter Masala / Naan / Dal Fry / Jeera Rice / Gulab Jamun" />
+              <label htmlFor="rawMenuText">
+                Paste Menu Text
+              </label>
+
+              <textarea
+                id="rawMenuText"
+                className="textarea textarea-large"
+                value={work.event.rawMenuText}
+                onChange={(event) => {
+                  setDetectionError('');
+
+                  updateEvent(
+                    'rawMenuText',
+                    event.target.value,
+                  );
+                }}
+                placeholder={`Breakfast
+
+Orange Juice
+Vegetable Poha
+Mini Idli
+Medu Vada
+Paneer Tikka
+Paneer Butter Masala
+Dal Fry
+Jeera Rice
+Butter Naan
+Gulab Jamun`}
+              />
             </div>
+
+            {detectionError ? (
+              <div
+                className="helper-card"
+                role="alert"
+                style={{
+                  borderColor:
+                    'rgba(239, 68, 68, 0.45)',
+                  background:
+                    'rgba(239, 68, 68, 0.08)',
+                }}
+              >
+                <b>Detection problem</b>
+
+                <p>{detectionError}</p>
+              </div>
+            ) : null}
+
             <div className="action-row page-actions">
-              <button className="primary-button" onClick={detectAndNext}>Next: Check Menu</button>
+              <button
+                className="primary-button"
+                type="button"
+                onClick={detectAndNext}
+                disabled={detecting}
+              >
+                {detecting
+                  ? 'Detecting Dishes...'
+                  : 'Next: Check Menu'}
+              </button>
+
               <button
                 className="ghost-button"
-                onClick={() => {
-                  const next = {
-                    ...work,
-                    event: {
-                      ...work.event,
-                      clientName: '',
-                      eventName: '',
-                      eventDate: '',
-                      functionType: '',
-                      pax: 0,
-                      city: '',
-                      venue: '',
-                      rawMenuText: '',
-                    },
-                    menu: [],
-                  };
-                  setWork(next);
-                  saveWork(session.tenantId, next);
-                }}
+                type="button"
+                onClick={clearPage}
+                disabled={detecting}
               >
                 Clear This Page
               </button>
