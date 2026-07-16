@@ -416,6 +416,13 @@ tbody tr.selected{background:var(--brand-soft)}
       </div>
       <div class="searchStack">
 
+      
+
+
+        <button class="btn btnPrimary newRecipeButton" id="newRecipe" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          New recipe
+        </button>
         <button
   class="btn btnDanger newRecipeButton"
   id="removeRecipe"
@@ -430,15 +437,8 @@ tbody tr.selected{background:var(--brand-soft)}
       stroke-linejoin="round"
     />
   </svg>
-
   Remove recipe
-</button>-WHERE ADD IT
-
-
-        <button class="btn btnPrimary newRecipeButton" id="newRecipe" type="button">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-          New recipe
-        </button>
+</button>
         <label class="searchField">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <input class="field" id="dishSearch" placeholder="Search dishes">
@@ -1362,6 +1362,76 @@ $("removeRecipe").addEventListener("click", () => {
   showToast("New recipe created");
   $("sidebar").classList.remove("open");$("jsonEditor").focus();
 });
+
+
+$("removeRecipe").addEventListener("click", () => {
+  const recipe = selectedDish();
+
+  if (!recipe) {
+    showToast("Select a recipe first");
+    return;
+  }
+
+  const confirmed = confirm(
+    `Remove "${recipe.name}"?\n\nThis recipe will be permanently removed.`
+  );
+
+  if (!confirmed) return;
+
+  const recipeIndex = dishes.findIndex(
+    dish => dish.id === recipe.id
+  );
+
+  if (recipeIndex === -1) {
+    showToast("Recipe not found");
+    return;
+  }
+
+  // Save deleted recipe ID so default recipes do not return.
+  const deletedIds = new Set(loadDeletedDishIds());
+  deletedIds.add(recipe.id);
+  saveDeletedDishIds([...deletedIds]);
+
+  // Remove recipe.
+  dishes.splice(recipeIndex, 1);
+
+  // Select next available recipe.
+  selectedDishId =
+    dishes[recipeIndex]?.id ||
+    dishes[recipeIndex - 1]?.id ||
+    dishes[0]?.id ||
+    null;
+
+  saveState();
+  setDirty(false);
+  renderDishList();
+
+  if (selectedDishId) {
+    loadSelectedDish();
+    setStatus(`"${recipe.name}" removed successfully.`, "ok");
+  } else {
+    $("pageTitle").textContent = "No recipes";
+    $("breadcrumbCategory").textContent = "Recipe library";
+    $("fileName").textContent = "recipe.json";
+    $("jsonEditor").value = "";
+
+    $("totalCost").textContent = money(0);
+    $("perPerson").textContent = money(0);
+    $("ingredientCount").textContent = "0";
+    $("recipeCountBadge").textContent = "0 rows";
+
+    $("ingredientPreview").innerHTML =
+      '<div class="emptyState">No recipes available.</div>';
+
+    setValidation("", "Not checked");
+    setStatus("No recipes available.");
+    updateLineNumbers();
+  }
+
+  $("sidebar").classList.remove("open");
+  showToast("Recipe removed");
+});
+
 $("dishList").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(!b)return;selectedDishId=b.dataset.id;loadSelectedDish();$("sidebar").classList.remove("open")});
 $("dishSearch").addEventListener("input",renderDishList);$("categoryFilter").addEventListener("change",renderDishList);
 $("jsonEditor").addEventListener("input",()=>{setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");updateLineNumbers();renderJsonSummary()});
