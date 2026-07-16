@@ -145,6 +145,33 @@ svg{display:block}
 .searchField svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--subtle)}
 .searchField .field{padding-left:36px}
 .dishList{padding:10px;overflow:auto;overscroll-behavior:contain}
+.dishCategoryGroup{display:grid;gap:7px;margin-bottom:15px}
+.dishCategoryHeader{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:5px 7px 3px;color:var(--brand-strong);font-size:11px;
+  font-weight:900;letter-spacing:.07em;text-transform:uppercase;
+}
+.dishCategoryCount{
+  min-width:25px;padding:3px 7px;border-radius:999px;text-align:center;
+  color:var(--muted);background:var(--surface-2);border:1px solid var(--line);
+  font-size:10px;letter-spacing:0;
+}
+.dishSubcategoryGroup{
+  overflow:hidden;border:1px solid var(--line);border-radius:14px;background:var(--surface);
+}
+.dishSubcategoryHeader{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 10px;border:0;background:var(--surface-2);color:var(--text);text-align:left;
+}
+.dishSubcategoryHeader:hover{background:color-mix(in srgb,var(--brand-soft) 55%,var(--surface-2))}
+.dishSubcategoryTitle{display:flex;align-items:center;gap:8px;min-width:0;font-size:12px;font-weight:850}
+.dishSubcategoryTitleText{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dishSubcategoryCount{color:var(--muted);font-size:10px;font-weight:850;white-space:nowrap}
+.dishSubcategoryChevron{display:inline-block;color:var(--subtle);font-size:17px;line-height:1;transition:transform .18s ease}
+.dishSubcategoryChevron.open{transform:rotate(90deg)}
+.dishSubcategoryItems{display:grid;gap:3px;padding:5px}
+.dishSubcategoryItems .dishItem{margin-bottom:0}
+.dishSubcategoryItems .dishMeta{font-size:11px}
 .dishItem{
   width:100%;display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;
   text-align:left;border:1px solid transparent;border-radius:14px;
@@ -695,6 +722,146 @@ const money = value => new Intl.NumberFormat("en-IN", {
   style:"currency",currency:"INR",maximumFractionDigits:2
 }).format(Number(value)||0);
 
+function inferSubcategory(category,name){
+  const cat=String(category||"Uncategorised").trim();
+  const dish=String(name||"").trim().toLowerCase();
+  const has=(...words)=>words.some(word=>dish.includes(word));
+
+  if(cat==="Welcome Drink"){
+    if(has("juice"))return "Fresh Juice";
+    if(has("sharbat","jaljeera","kokum","sattu","sol kadhi","aam panna"))return "Traditional Drink";
+    if(has("milk","lassi","chaas","buttermilk","thandai","shake"))return "Milk & Dairy Drink";
+    return "Welcome Beverage";
+  }
+  if(cat==="Mocktail"){
+    if(has("mojito"))return "Mojito";
+    if(has("lagoon","curacao"))return "Blue Mocktail";
+    return "Classic Mocktail";
+  }
+  if(cat==="Soup")return has("manchow","hot and sour","hot & sour","sweet corn","noodle")?"Chinese Soup":"Indian & Continental Soup";
+  if(cat==="Starter"){
+    if(has("paneer"))return "Paneer Starter";
+    if(has("kabab","kebab"))return "Kebab";
+    if(has("manchurian","spring roll","chilli","chili","dragon","crispy","65"))return "Chinese Starter";
+    return "Veg Starter";
+  }
+  if(cat==="Chaat"){
+    if(has("pani puri","golgappa","puchka"))return "Pani Puri";
+    if(has("dahi"))return "Dahi Chaat";
+    if(has("tikki","samosa","kachori"))return "Tikki & Samosa Chaat";
+    return "Street Chaat";
+  }
+  if(cat==="Chinese"){
+    if(has("noodle","chowmein"))return "Noodles";
+    if(has("rice"))return "Chinese Rice";
+    if(has("manchurian"))return "Manchurian";
+    if(has("paneer","chilli","chili"))return "Chinese Main Course";
+    return "Chinese Special";
+  }
+  if(cat==="Italian"){
+    if(has("pasta","macaroni"))return "Pasta";
+    if(has("pizza"))return "Pizza";
+    return "Italian Special";
+  }
+  if(cat==="South Indian"){
+    if(has("dosa","uttapam"))return "Dosa & Uttapam";
+    if(has("idli"))return "Idli";
+    if(has("vada"))return "Vada";
+    if(has("rice"))return "South Indian Rice";
+    return "South Indian Special";
+  }
+  if(cat==="Punjabi"){
+    if(has("chole","rajma"))return "Chole & Rajma";
+    if(has("dal"))return "Punjabi Dal";
+    if(has("kofta"))return "Kofta Curry";
+    return "Punjabi Main Course";
+  }
+  if(cat==="Paneer"){
+    if(has("tikka","kadai","karahi"))return "Spiced Paneer Curry";
+    if(has("butter","shahi","malai","korma"))return "Rich Paneer Curry";
+    if(has("palak","methi"))return "Green Paneer Curry";
+    return "Paneer Main Course";
+  }
+  if(cat==="Sabji")return has("dry","sukhi","fry","bhujia","bhaji")?"Dry Sabji":"Gravy Sabji";
+  if(cat==="Kathiyawadi"){
+    if(has("rotla","roti"))return "Kathiyawadi Bread";
+    if(has("khichdi","rice"))return "Khichdi & Rice";
+    return "Kathiyawadi Sabji";
+  }
+  if(cat==="Rajasthani"){
+    if(has("bati","baati","dal"))return "Dal Baati";
+    if(has("churma","halwa"))return "Rajasthani Sweet";
+    return "Rajasthani Sabji";
+  }
+  if(cat==="Gujarati"){
+    if(has("dhokla","khaman","handvo","patra","muthiya"))return "Gujarati Farsan";
+    if(has("dal","kadhi"))return "Gujarati Dal & Kadhi";
+    if(has("khichdi","rice","pulao"))return "Gujarati Rice";
+    return "Gujarati Sabji";
+  }
+  if(cat==="Dal / Kadhi")return has("kadhi")?"Kadhi":"Dal";
+  if(cat==="Rice"){
+    if(has("biryani"))return "Biryani";
+    if(has("pulao","pulav"))return "Pulao";
+    if(has("khichdi"))return "Khichdi";
+    return "Plain & Flavoured Rice";
+  }
+  if(cat==="Bread"){
+    if(has("naan","kulcha"))return "Naan & Kulcha";
+    if(has("paratha"))return "Paratha";
+    if(has("puri","poori"))return "Puri";
+    return "Roti & Chapati";
+  }
+  if(cat==="Sweet"){
+    if(has("gulab jamun","rasgulla","rasmalai","sandesh"))return "Bengali & Syrup Sweet";
+    if(has("halwa","sheera"))return "Halwa";
+    if(has("ladoo","laddu"))return "Ladoo";
+    if(has("barfi","burfi","katli","peda"))return "Mithai";
+    return "Indian Sweet";
+  }
+  if(cat==="Ice Cream")return "Ice Cream";
+  if(cat==="Salad"){
+    if(has("russian","mayonnaise","cream"))return "Creamy Salad";
+    if(has("fruit"))return "Fruit Salad";
+    return "Fresh Salad";
+  }
+  if(cat==="Papad")return "Papad";
+  if(cat==="Farsan")return has("dhokla","khaman","idada","handvo")?"Steamed Farsan":"Fried Farsan";
+  if(cat==="Beverage"){
+    if(has("tea","coffee"))return "Tea & Coffee";
+    if(has("chaas","lassi","milk"))return "Dairy Beverage";
+    return "Cold Beverage";
+  }
+  if(cat==="Live Counter"){
+    if(has("dosa","uttapam"))return "South Indian Counter";
+    if(has("chaat","puri"))return "Chaat Counter";
+    if(has("pasta","pizza"))return "Italian Counter";
+    if(has("noodle","manchurian"))return "Chinese Counter";
+    return "Live Food Counter";
+  }
+  if(cat==="Breakfast"){
+    if(has("idli","dosa","upma","uttapam"))return "South Indian Breakfast";
+    if(has("paratha","thepla","puri"))return "Indian Bread Breakfast";
+    if(has("poha"))return "Poha";
+    return "Breakfast Snacks";
+  }
+  if(cat==="Jain")return "Jain Special";
+  if(cat==="Kids")return "Kids Special";
+  if(cat==="Condiments"){
+    if(has("chutney"))return "Chutney";
+    if(has("pickle","achar"))return "Pickle";
+    return "Accompaniment";
+  }
+  return `${cat} Recipes`;
+}
+function getDishSubcategory(dish){
+  const saved=String(dish?.subcategory||"").trim();
+  return saved||inferSubcategory(dish?.category,dish?.name);
+}
+function withSubcategory(dish){
+  return {...dish,subcategory:getDishSubcategory(dish)};
+}
+
 function loadArray(key,fallback){
   try{
     const saved=JSON.parse(safeStorageGet(key));
@@ -766,7 +933,7 @@ function loadRateArray(){
   saved.forEach(r=>{if(r?.id)merged.set(r.id,r)});
   return Array.from(merged.values());
 }
-let dishes=loadDishArray();
+let dishes=loadDishArray().map(withSubcategory);
 let rates=loadRateArray();
 safeStorageSet(DISH_STORAGE,JSON.stringify(dishes));
 safeStorageSet(RATE_STORAGE,JSON.stringify(rates));
@@ -813,7 +980,8 @@ async function importDishCatalog(){
       if(!name)return;
       const current=known.get(key);
       if(current){current.catalogRate=Math.max(0,Number(item.rate)||0);return}
-      const dish={id:`catalog_${index}_${key.replace(/[^a-z0-9]+/g,"_")}`,name,category:String(item.category||"Sabji"),baseGuests:100,catalogRate:Math.max(0,Number(item.rate)||0),ingredients:[]};
+      const category=String(item.category||"Sabji");
+      const dish={id:`catalog_${index}_${key.replace(/[^a-z0-9]+/g,"_")}`,name,category,subcategory:String(item.subcategory||inferSubcategory(category,name)),baseGuests:100,catalogRate:Math.max(0,Number(item.rate)||0),ingredients:[]};
       dishes.push(dish);known.set(key,dish);
     });
     saveState();renderDishList();loadSelectedDish();
@@ -845,6 +1013,7 @@ async function syncRecipeCostToDishCatalog(dish){
   }
 }
 function saveState(){
+  dishes=dishes.map(withSubcategory);
   safeStorageSet(DISH_STORAGE,JSON.stringify(dishes));
   safeStorageSet(RATE_STORAGE,JSON.stringify(rates));
 }
@@ -872,6 +1041,7 @@ function dishToJson(d){
   return {
     dishName:d.name,
     category:d.category,
+    subcategory:getDishSubcategory(d),
     baseGuests:d.baseGuests||100,
     ...(Number(d.servingSize)>0?{servingSize:Number(d.servingSize),servingUnit:d.servingUnit||"gram"}:{}),
     dishRate:Number(d.catalogRate)||0,
@@ -893,6 +1063,7 @@ function validateDishJson(data){
   if(!data||typeof data!=="object"||Array.isArray(data))return ["JSON root must be an object."];
   if(!String(data.dishName||"").trim())errors.push("dishName is required.");
   if(!String(data.category||"").trim())errors.push("category is required.");
+  if(!String(data.subcategory||"").trim())errors.push("subcategory is required.");
   if(!Number.isFinite(Number(data.baseGuests))||Number(data.baseGuests)<=0)errors.push("baseGuests must be greater than 0.");
   if(data.servingSize!==undefined||data.servingUnit!==undefined){
     if(!Number.isFinite(Number(data.servingSize))||Number(data.servingSize)<=0)errors.push("servingSize must be greater than 0.");
@@ -913,22 +1084,61 @@ function validateDishJson(data){
 function jsonIngredientCost(item){
   return convertQuantity(item.quantity,item.unit,item.rateUnit)*(Number(item.marketRate)||0)
 }
+const collapsedSubcategories=new Set();
 function renderDishList(){
   const q=$("dishSearch").value.trim().toLowerCase(),cat=$("categoryFilter").value;
-  const filtered=dishes.filter(d=>(!q||d.name.toLowerCase().includes(q)||d.category.toLowerCase().includes(q))&&(cat==="All"||d.category===cat));
+  const filtered=dishes.filter(d=>{
+    const subcategory=getDishSubcategory(d);
+    return (!q||d.name.toLowerCase().includes(q)||d.category.toLowerCase().includes(q)||subcategory.toLowerCase().includes(q))&&(cat==="All"||d.category===cat);
+  });
   $("visibleDishCount").textContent=filtered.length;$("totalDishCount").textContent=dishes.length;
-  $("dishList").innerHTML=filtered.length?filtered.map(d=>`
-    <button class="dishItem ${d.id===selectedDishId?"active":""}" data-id="${esc(d.id)}">
-      <span class="dishItemMain">
-        <span class="dishName">${esc(d.name)}</span>
-        <span class="dishMeta">${esc(d.category)} · ${d.ingredients?.length||0} ingredients</span>
-      </span>
-      <span class="dishCost">${money(dishCost(d)/(d.baseGuests||100))}</span>
-    </button>`).join(""):'<div class="emptyState">No matching dishes.</div>';
+
+  const categoryGroups=new Map();
+  filtered.forEach(dish=>{
+    const category=String(dish.category||"Uncategorised").trim();
+    const subcategory=getDishSubcategory(dish);
+    if(!categoryGroups.has(category))categoryGroups.set(category,new Map());
+    const subcategories=categoryGroups.get(category);
+    if(!subcategories.has(subcategory))subcategories.set(subcategory,[]);
+    subcategories.get(subcategory).push(dish);
+  });
+
+  $("dishList").innerHTML=filtered.length?Array.from(categoryGroups.entries()).map(([category,subcategories])=>{
+    const categoryCount=Array.from(subcategories.values()).reduce((total,list)=>total+list.length,0);
+    return `<section class="dishCategoryGroup">
+      <div class="dishCategoryHeader">
+        <span>${esc(category)}</span>
+        <span class="dishCategoryCount">${categoryCount}</span>
+      </div>
+      ${Array.from(subcategories.entries()).map(([subcategory,groupDishes])=>{
+        const groupKey=`${category}::${subcategory}`;
+        const containsSelected=groupDishes.some(dish=>dish.id===selectedDishId);
+        const collapsed=collapsedSubcategories.has(groupKey)&&!containsSelected;
+        return `<div class="dishSubcategoryGroup">
+          <button class="dishSubcategoryHeader" type="button" data-subcategory-toggle="${esc(groupKey)}" aria-expanded="${collapsed?"false":"true"}">
+            <span class="dishSubcategoryTitle">
+              <span class="dishSubcategoryChevron ${collapsed?"":"open"}">›</span>
+              <span class="dishSubcategoryTitleText">${esc(subcategory)}</span>
+            </span>
+            <span class="dishSubcategoryCount">${groupDishes.length} dish${groupDishes.length===1?"":"es"}</span>
+          </button>
+          <div class="dishSubcategoryItems" ${collapsed?"hidden":""}>
+            ${groupDishes.map(d=>`<button class="dishItem ${d.id===selectedDishId?"active":""}" data-id="${esc(d.id)}">
+              <span class="dishItemMain">
+                <span class="dishName">${esc(d.name)}</span>
+                <span class="dishMeta">${d.ingredients?.length||0} ingredients</span>
+              </span>
+              <span class="dishCost">${money(dishCost(d)/(d.baseGuests||100))}</span>
+            </button>`).join("")}
+          </div>
+        </div>`;
+      }).join("")}
+    </section>`;
+  }).join(""):'<div class="emptyState">No matching dishes.</div>';
 }
 function loadSelectedDish(){
   const d=selectedDish();if(!d)return;
-  $("pageTitle").textContent=d.name;$("breadcrumbCategory").textContent=d.category;
+  $("pageTitle").textContent=d.name;$("breadcrumbCategory").textContent=`${d.category} / ${getDishSubcategory(d)}`;
   $("fileName").textContent=`${d.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"recipe"}.json`;
   $("jsonEditor").value=JSON.stringify(dishToJson(d),null,2);
   setDirty(false);setValidation("","Not checked");setStatus("Recipe loaded.");
@@ -1059,6 +1269,7 @@ function csvToRecipeObjects(text){
   const indexes={
     dishName:findColumn("recipeName","dishName","name"),
     category:findColumn("category"),
+    subcategory:findColumn("subcategory","subCategory"),
     baseGuests:findColumn("baseGuests","guests","pax"),
     servingSize:findColumn("servingSize"),
     servingUnit:findColumn("servingUnit"),
@@ -1082,6 +1293,7 @@ function csvToRecipeObjects(text){
       recipeGroups.set(recipeKey,{
         dishName,
         category:readValue(row,indexes.category)||"Sabji",
+        subcategory:readValue(row,indexes.subcategory)||undefined,
         baseGuests:Number(readValue(row,indexes.baseGuests))||100,
         servingSize:servingSizeText===""?undefined:Number(servingSizeText),
         servingUnit:readValue(row,indexes.servingUnit)||undefined,
@@ -1113,6 +1325,7 @@ function extractRecipeObjects(parsedJson){
 function normalizeImportedRecipe(rawRecipe,index){
   const dishName=String(rawRecipe?.dishName??rawRecipe?.name??"").trim();
   const category=String(rawRecipe?.category??"Sabji").trim();
+  const subcategory=String(rawRecipe?.subcategory??rawRecipe?.subCategory??inferSubcategory(category,dishName)).trim();
   const baseGuests=Number(rawRecipe?.baseGuests??rawRecipe?.guests??100);
   const sourceIngredients=Array.isArray(rawRecipe?.ingredients)?rawRecipe.ingredients:[];
   const ingredients=sourceIngredients.map((ingredient,ingredientIndex)=>({
@@ -1126,6 +1339,7 @@ function normalizeImportedRecipe(rawRecipe,index){
   const recipe={
     dishName,
     category,
+    subcategory,
     baseGuests,
     ...(rawRecipe?.servingSize!==undefined&&rawRecipe?.servingSize!==""?{
       servingSize:Number(rawRecipe.servingSize),
@@ -1164,6 +1378,7 @@ function recipeObjectToDish(recipe,existingId){
     id:existingId||`bulk_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
     name:recipe.dishName,
     category:recipe.category,
+    subcategory:recipe.subcategory||inferSubcategory(recipe.category,recipe.dishName),
     baseGuests:Number(recipe.baseGuests),
     ...(recipe.servingSize!==undefined?{
       servingSize:Number(recipe.servingSize),
@@ -1252,7 +1467,7 @@ async function applyJson(){
       else rates.push({id,name:String(item.name).trim(),rate:Number(item.marketRate),unit:item.rateUnit});
       return {name:String(item.name).trim(),qty:Number(item.quantity),unit:item.unit,rateKey:id,rate:Number(item.marketRate),rateUnit:item.rateUnit}
     });
-    dishes[dishIndex]={...dishes[dishIndex],name:String(data.dishName).trim(),category:String(data.category).trim(),baseGuests:Number(data.baseGuests),servingSize:data.servingSize===undefined?undefined:Number(data.servingSize),servingUnit:data.servingSize===undefined?undefined:data.servingUnit,catalogRate:Math.max(0,Number(data.dishRate)||0),ingredients:mapped};
+    dishes[dishIndex]={...dishes[dishIndex],name:String(data.dishName).trim(),category:String(data.category).trim(),subcategory:String(data.subcategory).trim(),baseGuests:Number(data.baseGuests),servingSize:data.servingSize===undefined?undefined:Number(data.servingSize),servingUnit:data.servingSize===undefined?undefined:data.servingUnit,catalogRate:Math.max(0,Number(data.dishRate)||0),ingredients:mapped};
     saveState();setDirty(false);setValidation("valid","Valid");setStatus("Recipe and market rates saved.","ok");
     loadSelectedDish();renderRateTable();renderSelectedRate();showToast("Recipe saved");
     await syncRecipeCostToDishCatalog(dishes[dishIndex]);
@@ -1261,11 +1476,11 @@ async function applyJson(){
 
 $("downloadRecipeTemplate").addEventListener("click",()=>{
   const rows=[
-    ["recipeName","category","baseGuests","servingSize","servingUnit","dishRate","ingredientName","quantity","unit","marketRate","rateUnit"],
-    ["Paneer Butter Masala","Paneer",100,180,"gram",0,"Paneer",12,"kg",280,"kg"],
-    ["Paneer Butter Masala","Paneer",100,180,"gram",0,"Tomato",8,"kg",35,"kg"],
-    ["Jeera Rice","Rice",100,150,"gram",0,"Basmati Rice",12,"kg",110,"kg"],
-    ["Jeera Rice","Rice",100,150,"gram",0,"Cumin",0.25,"kg",420,"kg"]
+    ["recipeName","category","subcategory","baseGuests","servingSize","servingUnit","dishRate","ingredientName","quantity","unit","marketRate","rateUnit"],
+    ["Paneer Butter Masala","Paneer","Rich Paneer Curry",100,180,"gram",0,"Paneer",12,"kg",280,"kg"],
+    ["Paneer Butter Masala","Paneer","Rich Paneer Curry",100,180,"gram",0,"Tomato",8,"kg",35,"kg"],
+    ["Jeera Rice","Rice","Plain & Flavoured Rice",100,150,"gram",0,"Basmati Rice",12,"kg",110,"kg"],
+    ["Jeera Rice","Rice","Plain & Flavoured Rice",100,150,"gram",0,"Cumin",0.25,"kg",420,"kg"]
   ];
   const csvContent=rows.map(row=>row.map(csvEscape).join(",")).join("\n");
   downloadTextFile("catereros-recipe-bulk-import-template.csv",csvContent,"text/csv;charset=utf-8");
@@ -1281,81 +1496,16 @@ $("newRecipe").addEventListener("click",()=>{
   if(dishes.some(d=>d.name.trim().toLowerCase()===name.trim().toLowerCase())){
     showToast("A recipe with this dish name already exists");return;
   }
-
-$("removeRecipe").addEventListener("click", () => {
-  const recipe = selectedDish();
-
-  if (!recipe) {
-    showToast("Select a recipe first");
-    return;
-  }
-
-  const confirmed = confirm(
-    `Remove "${recipe.name}"?\n\nThis recipe will be permanently removed from this browser.`
-  );
-
-  if (!confirmed) return;
-
-  const recipeIndex = dishes.findIndex(
-    dish => dish.id === recipe.id
-  );
-
-  if (recipeIndex === -1) {
-    showToast("Recipe not found");
-    return;
-  }
-
-  // Remember deleted default recipes so they do not return after refresh.
-  const deletedIds = new Set(loadDeletedDishIds());
-  deletedIds.add(recipe.id);
-  saveDeletedDishIds([...deletedIds]);
-
-  // Remove selected recipe.
-  dishes.splice(recipeIndex, 1);
-
-  // Select the next available recipe.
-  selectedDishId =
-    dishes[recipeIndex]?.id ||
-    dishes[recipeIndex - 1]?.id ||
-    dishes[0]?.id ||
-    null;
-
-  saveState();
-  setDirty(false);
-  renderDishList();
-
-  if (selectedDishId) {
-    loadSelectedDish();
-    setStatus(`"${recipe.name}" removed successfully.`, "ok");
-  } else {
-    $("pageTitle").textContent = "No recipes";
-    $("breadcrumbCategory").textContent = "Recipe library";
-    $("fileName").textContent = "recipe.json";
-    $("jsonEditor").value = "";
-
-    $("totalCost").textContent = money(0);
-    $("perPerson").textContent = money(0);
-    $("ingredientCount").textContent = "0";
-    $("recipeCountBadge").textContent = "0 rows";
-
-    $("ingredientPreview").innerHTML =
-      '<div class="emptyState">No recipes available.</div>';
-
-    setValidation("", "Not checked");
-    setStatus("No recipes available.");
-    updateLineNumbers();
-  }
-
-  showToast("Recipe removed");
-});
-
-
   const selectedCategory=$("categoryFilter").value;
   const category=prompt("Dish category",selectedCategory==="All"?"Sabji":selectedCategory);
   if(!category?.trim())return;
+  const suggestedSubcategory=inferSubcategory(category.trim(),name.trim());
+  const subcategory=prompt("Dish subcategory",suggestedSubcategory);
+  if(!subcategory?.trim())return;
   const id=`recipe_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-  dishes.push({id,name:name.trim(),category:category.trim(),baseGuests:100,catalogRate:0,ingredients:[]});
+  dishes.push({id,name:name.trim(),category:category.trim(),subcategory:subcategory.trim(),baseGuests:100,catalogRate:0,ingredients:[]});
   selectedDishId=id;
+  collapsedSubcategories.delete(`${category.trim()}::${subcategory.trim()}`);
   $("dishSearch").value="";$("categoryFilter").value="All";
   saveState();switchView("editor");loadSelectedDish();setDirty(true);
   setStatus("New recipe ready. Add ingredients in the JSON, then select Apply & save.","ok");
@@ -1363,76 +1513,47 @@ $("removeRecipe").addEventListener("click", () => {
   $("sidebar").classList.remove("open");$("jsonEditor").focus();
 });
 
+$("removeRecipe").addEventListener("click",()=>{
+  const recipe=selectedDish();
+  if(!recipe){showToast("Select a recipe first");return}
+  if(!confirm(`Remove "${recipe.name}"?
 
-$("removeRecipe").addEventListener("click", () => {
-  const recipe = selectedDish();
-
-  if (!recipe) {
-    showToast("Select a recipe first");
-    return;
+This recipe will be permanently removed.`))return;
+  const recipeIndex=dishes.findIndex(dish=>dish.id===recipe.id);
+  if(recipeIndex===-1){showToast("Recipe not found");return}
+  const deletedIds=new Set(loadDeletedDishIds());
+  deletedIds.add(recipe.id);saveDeletedDishIds([...deletedIds]);
+  dishes.splice(recipeIndex,1);
+  selectedDishId=dishes[recipeIndex]?.id||dishes[recipeIndex-1]?.id||dishes[0]?.id||null;
+  saveState();setDirty(false);renderDishList();
+  if(selectedDishId){
+    loadSelectedDish();setStatus(`"${recipe.name}" removed successfully.`,"ok");
+  }else{
+    $("pageTitle").textContent="No recipes";$("breadcrumbCategory").textContent="Recipe library";
+    $("fileName").textContent="recipe.json";$("jsonEditor").value="";
+    $("totalCost").textContent=money(0);$("perPerson").textContent=money(0);
+    $("ingredientCount").textContent="0";$("recipeCountBadge").textContent="0 rows";
+    $("ingredientPreview").innerHTML='<div class="emptyState">No recipes available.</div>';
+    setValidation("","Not checked");setStatus("No recipes available.");updateLineNumbers();
   }
-
-  const confirmed = confirm(
-    `Remove "${recipe.name}"?\n\nThis recipe will be permanently removed.`
-  );
-
-  if (!confirmed) return;
-
-  const recipeIndex = dishes.findIndex(
-    dish => dish.id === recipe.id
-  );
-
-  if (recipeIndex === -1) {
-    showToast("Recipe not found");
-    return;
-  }
-
-  // Save deleted recipe ID so default recipes do not return.
-  const deletedIds = new Set(loadDeletedDishIds());
-  deletedIds.add(recipe.id);
-  saveDeletedDishIds([...deletedIds]);
-
-  // Remove recipe.
-  dishes.splice(recipeIndex, 1);
-
-  // Select next available recipe.
-  selectedDishId =
-    dishes[recipeIndex]?.id ||
-    dishes[recipeIndex - 1]?.id ||
-    dishes[0]?.id ||
-    null;
-
-  saveState();
-  setDirty(false);
-  renderDishList();
-
-  if (selectedDishId) {
-    loadSelectedDish();
-    setStatus(`"${recipe.name}" removed successfully.`, "ok");
-  } else {
-    $("pageTitle").textContent = "No recipes";
-    $("breadcrumbCategory").textContent = "Recipe library";
-    $("fileName").textContent = "recipe.json";
-    $("jsonEditor").value = "";
-
-    $("totalCost").textContent = money(0);
-    $("perPerson").textContent = money(0);
-    $("ingredientCount").textContent = "0";
-    $("recipeCountBadge").textContent = "0 rows";
-
-    $("ingredientPreview").innerHTML =
-      '<div class="emptyState">No recipes available.</div>';
-
-    setValidation("", "Not checked");
-    setStatus("No recipes available.");
-    updateLineNumbers();
-  }
-
-  $("sidebar").classList.remove("open");
-  showToast("Recipe removed");
+  $("sidebar").classList.remove("open");showToast("Recipe removed");
 });
 
-$("dishList").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(!b)return;selectedDishId=b.dataset.id;loadSelectedDish();$("sidebar").classList.remove("open")});
+$("dishList").addEventListener("click",e=>{
+  const toggle=e.target.closest("[data-subcategory-toggle]");
+  if(toggle){
+    const key=toggle.dataset.subcategoryToggle;
+    if(collapsedSubcategories.has(key))collapsedSubcategories.delete(key);
+    else collapsedSubcategories.add(key);
+    renderDishList();
+    return;
+  }
+  const dishButton=e.target.closest("[data-id]");
+  if(!dishButton)return;
+  selectedDishId=dishButton.dataset.id;
+  loadSelectedDish();
+  $("sidebar").classList.remove("open");
+});
 $("dishSearch").addEventListener("input",renderDishList);$("categoryFilter").addEventListener("change",renderDishList);
 $("jsonEditor").addEventListener("input",()=>{setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");updateLineNumbers();renderJsonSummary()});
 $("jsonEditor").addEventListener("scroll",()=>{$("lineNumbers").scrollTop=$("jsonEditor").scrollTop});
