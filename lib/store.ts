@@ -1,8 +1,10 @@
+
 'use client';
 
 import {
   CATEGORY_BASE_COST,
   CATEGORIES,
+  detectCategory,
   findDishByName,
 } from './dishCostMaster';
 
@@ -40,7 +42,7 @@ export const emptyExtras: ExtraCost = {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                              General helpers                               */
+/*                               Basic helpers                                */
 /* -------------------------------------------------------------------------- */
 
 export function uid(prefix = 'id'): string {
@@ -58,13 +60,37 @@ function safeJsonParse<T>(
   try {
     return JSON.parse(value) as T;
   } catch (error) {
-    console.warn('Could not parse saved data:', error);
+    console.warn(
+      'Failed to parse localStorage value:',
+      error,
+    );
+
     return fallback;
   }
 }
 
+function normalizeText(value: string): string {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[–—]/g, ' ')
+    .replace(/\bicecream\b/g, 'ice cream')
+    .replace(/\bpanner\b/g, 'paneer')
+    .replace(/\bmashala\b/g, 'masala')
+    .replace(/\bjira\b/g, 'jeera')
+    .replace(/\bjamoon\b/g, 'jamun')
+    .replace(/\bnan\b/g, 'naan')
+    .replace(/\bkabab\b/g, 'kebab')
+    .replace(/\bmanchau\b/g, 'manchow')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /* -------------------------------------------------------------------------- */
-/*                                Client data                                 */
+/*                                  Clients                                   */
 /* -------------------------------------------------------------------------- */
 
 export function getClients(): ClientUser[] {
@@ -110,11 +136,11 @@ export function upsertClient(
 }
 
 export function deleteClient(id: string): void {
-  const remainingClients = getClients().filter(
+  const clients = getClients().filter(
     (client) => client.id !== id,
   );
 
-  saveClients(remainingClients);
+  saveClients(clients);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -147,19 +173,23 @@ export function refreshSessionFromClient():
 
   const session = getSession();
 
-  if (!session || session.role !== 'CLIENT') {
+  if (
+    !session ||
+    session.role !== 'CLIENT'
+  ) {
     return session;
   }
 
   const client = getClients().find(
-    (item) => item.id === session.tenantId,
+    (item) =>
+      item.id === session.tenantId,
   );
 
   if (!client) {
     return session;
   }
 
-  const next: Session = {
+  const nextSession: Session = {
     ...session,
     businessName: client.businessName,
     status: client.status,
@@ -167,14 +197,14 @@ export function refreshSessionFromClient():
 
   window.localStorage.setItem(
     SESSION_KEY,
-    JSON.stringify(next),
+    JSON.stringify(nextSession),
   );
 
-  return next;
+  return nextSession;
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                Work state                                  */
+/*                                 Work state                                 */
 /* -------------------------------------------------------------------------- */
 
 function workKey(tenantId: string): string {
@@ -198,17 +228,21 @@ export function createEmptyWorkState(
     sellingPricePerPlate: 0,
 
     profile: {
-      businessName: session?.businessName ?? '',
+      businessName:
+        session?.businessName ?? '',
+
       ownerName: '',
       phone: '',
       city: '',
+
       logoText:
         session?.businessName
           ?.slice(0, 2)
           .toUpperCase() ?? 'MC',
     },
 
-    updatedAt: new Date().toISOString(),
+    updatedAt:
+      new Date().toISOString(),
   };
 }
 
@@ -216,7 +250,9 @@ export function loadWork(
   tenantId: string,
 ): WorkState {
   const session = getSession();
-  const fallback = createEmptyWorkState(session);
+
+  const fallback =
+    createEmptyWorkState(session);
 
   if (typeof window === 'undefined') {
     return fallback;
@@ -238,7 +274,8 @@ export function saveWork(
 
   const nextWork: WorkState = {
     ...work,
-    updatedAt: new Date().toISOString(),
+    updatedAt:
+      new Date().toISOString(),
   };
 
   window.localStorage.setItem(
@@ -258,7 +295,7 @@ export function clearWork(
 }
 
 /* -------------------------------------------------------------------------- */
-/*                          Advanced menu detection                           */
+/*                              Menu detection                                */
 /* -------------------------------------------------------------------------- */
 
 const MENU_HEADINGS = new Set([
@@ -300,10 +337,8 @@ const MENU_HEADINGS = new Set([
   'dal kadhi',
   'dal and kadhi',
   'ice cream',
-  'icecream',
   'farsan',
   'namkeen',
-  'farsan and namkeen',
   'condiments',
   'chaat',
   'chinese',
@@ -323,7 +358,8 @@ const COMMON_DISH_ALIASES: Record<
 > = {
   pbm: 'paneer butter masala',
 
-  'paneer bm': 'paneer butter masala',
+  'paneer bm':
+    'paneer butter masala',
 
   'paneer butter mashala':
     'paneer butter masala',
@@ -331,79 +367,66 @@ const COMMON_DISH_ALIASES: Record<
   'panner butter masala':
     'paneer butter masala',
 
-  'panner tikka': 'paneer tikka',
+  'panner tikka':
+    'paneer tikka',
 
-  'manchau soup': 'manchow soup',
+  'manchau soup':
+    'manchow soup',
 
-  'manchow sup': 'manchow soup',
+  'manchow sup':
+    'manchow soup',
 
-  'veg manchow': 'veg manchow soup',
+  'veg manchow':
+    'veg manchow soup',
 
-  'icecream': 'ice cream',
+  icecream:
+    'ice cream',
 
-  'gulab jamoon': 'gulab jamun',
+  'gulab jamoon':
+    'gulab jamun',
 
-  'gulab jamun sweet': 'gulab jamun',
+  'gulab jamun sweet':
+    'gulab jamun',
 
-  'jira rice': 'jeera rice',
+  'jira rice':
+    'jeera rice',
 
-  'jeera pulao': 'jeera rice',
+  'jeera pulao':
+    'jeera rice',
 
-  'dal fry tadka': 'dal fry',
+  'dal fry tadka':
+    'dal fry',
 
-  'butter nan': 'butter naan',
+  'butter nan':
+    'butter naan',
 
-  'plain nan': 'plain naan',
+  'plain nan':
+    'plain naan',
 
-  'hara bhara kabab': 'hara bhara kebab',
+  'hara bhara kabab':
+    'hara bhara kebab',
 
-  'dahi ke kabab': 'dahi ke kebab',
+  'dahi ke kabab':
+    'dahi ke kebab',
 
-  'veg hakka noodle': 'veg hakka noodles',
+  'veg hakka noodle':
+    'veg hakka noodles',
 
-  'hakka noodle': 'hakka noodles',
+  'hakka noodle':
+    'hakka noodles',
 
   'kesar pista icecream':
     'kesar pista ice cream',
 };
 
-function normalizeMenuText(
-  value: string,
-): string {
-  return String(value || '')
-    .normalize('NFKD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-    .replace(/&/g, ' and ')
-    .replace(/[–—]/g, ' ')
-    .replace(/\bicecream\b/g, 'ice cream')
-    .replace(/\bpanner\b/g, 'paneer')
-    .replace(/\bmashala\b/g, 'masala')
-    .replace(/\bjira\b/g, 'jeera')
-    .replace(/\bjamoon\b/g, 'jamun')
-    .replace(/\bnan\b/g, 'naan')
-    .replace(/\bkabab\b/g, 'kebab')
-    .replace(/\bmanchau\b/g, 'manchow')
-    .replace(/₹\s*\d+(?:\.\d+)?/g, ' ')
-    .replace(
-      /\b(?:rs|inr)\.?\s*\d+(?:\.\d+)?\b/gi,
-      ' ',
-    )
-    .replace(
-      /\b\d+(?:\.\d+)?\s*(?:pax|plates?|persons?|people|guests?|pcs?|pieces?|kg|kgs|gram|grams|gm|gms|ml|ltr|litre|litres|packet|packets)\b/gi,
-      ' ',
-    )
-    .replace(/[()[\]{}]/g, ' ')
-    .replace(/[^\p{L}\p{N}+\- ]+/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 function removePriceAndQuantity(
   value: string,
 ): string {
   return value
-    .replace(/₹\s*\d+(?:\.\d+)?/g, ' ')
+    .replace(
+      /₹\s*\d+(?:\.\d+)?/g,
+      ' ',
+    )
     .replace(
       /\b(?:rs|inr)\.?\s*\d+(?:\.\d+)?\b/gi,
       ' ',
@@ -424,34 +447,40 @@ function removeLeadingNumbering(
       /^\s*(?:item\s*)?\d+\s*[.)\-:]*\s*/i,
       '',
     )
-    .replace(/^\s*[-–—*]+\s*/, '')
+    .replace(
+      /^\s*[-–—*]+\s*/,
+      '',
+    )
     .trim();
 }
 
 function cleanMenuLine(
   inputLine: string,
 ): string {
-  let line = removeLeadingNumbering(
-    inputLine,
-  );
-
-  line = removePriceAndQuantity(line);
-
-  /*
-   * Handles lines such as:
-   *
-   * Starter: Paneer Tikka
-   * Sweet: Gulab Jamun
-   */
-  const colonIndex = line.indexOf(':');
-
-  if (colonIndex >= 0) {
-    const possibleHeading = normalizeMenuText(
-      line.slice(0, colonIndex),
+  let line =
+    removeLeadingNumbering(
+      inputLine,
     );
 
-    if (MENU_HEADINGS.has(possibleHeading)) {
-      line = line.slice(colonIndex + 1);
+  line =
+    removePriceAndQuantity(line);
+
+  const colonIndex =
+    line.indexOf(':');
+
+  if (colonIndex >= 0) {
+    const possibleHeading =
+      normalizeText(
+        line.slice(0, colonIndex),
+      );
+
+    if (
+      MENU_HEADINGS.has(
+        possibleHeading,
+      )
+    ) {
+      line =
+        line.slice(colonIndex + 1);
     }
   }
 
@@ -463,33 +492,31 @@ function cleanMenuLine(
 function applyCommonAlias(
   value: string,
 ): string {
-  const normalized = normalizeMenuText(value);
+  const normalized =
+    normalizeText(value);
 
   return (
-    COMMON_DISH_ALIASES[normalized] ??
-    normalized
+    COMMON_DISH_ALIASES[
+      normalized
+    ] ?? normalized
   );
 }
 
 function createDishCandidates(
   value: string,
 ): string[] {
-  const cleaned = cleanMenuLine(value);
+  const cleaned =
+    cleanMenuLine(value);
 
   if (!cleaned) {
     return [];
   }
 
-  const candidates = new Set<string>();
+  const candidates =
+    new Set<string>();
 
   candidates.add(cleaned);
 
-  /*
-   * Remove bracket descriptions:
-   *
-   * Paneer Tikka (Live)
-   * Poha [Jain]
-   */
   candidates.add(
     cleaned
       .replace(/\([^)]*\)/g, ' ')
@@ -498,20 +525,12 @@ function createDishCandidates(
       .trim(),
   );
 
-  /*
-   * Imported names can contain:
-   *
-   * Paneer Tikka — Paneer Starter
-   */
   candidates.add(
-    cleaned.split('—')[0].trim(),
+    cleaned
+      .split('—')[0]
+      .trim(),
   );
 
-  /*
-   * Remove trailing category descriptions:
-   *
-   * Paneer Tikka - Starter
-   */
   candidates.add(
     cleaned
       .replace(
@@ -521,12 +540,6 @@ function createDishCandidates(
       .trim(),
   );
 
-  /*
-   * Remove descriptive words as a fallback.
-   *
-   * Premium Vegetable Poha → Vegetable Poha
-   * Live Masala Dosa → Masala Dosa
-   */
   candidates.add(
     cleaned
       .replace(
@@ -537,34 +550,21 @@ function createDishCandidates(
       .trim(),
   );
 
-  const normalizedCandidate =
-    normalizeMenuText(cleaned);
-
-  candidates.add(normalizedCandidate);
+  candidates.add(
+    normalizeText(cleaned),
+  );
 
   candidates.add(
     applyCommonAlias(cleaned),
   );
 
-  /*
-   * Add candidates without repeated category words.
-   *
-   * Gulab Jamun Sweet → Gulab Jamun
-   */
-  candidates.add(
-    normalizedCandidate
-      .replace(
-        /\b(?:dish|item|starter|sweet|dessert|breakfast|lunch|dinner)\b/g,
-        ' ',
-      )
-      .replace(/\s+/g, ' ')
-      .trim(),
-  );
-
   return Array.from(candidates)
-    .map((candidate) => candidate.trim())
+    .map((candidate) =>
+      candidate.trim(),
+    )
     .filter(
-      (candidate) => candidate.length > 1,
+      (candidate) =>
+        candidate.length > 1,
     );
 }
 
@@ -573,8 +573,11 @@ function splitMenuText(
 ): string[] {
   return text
     .replace(/\r/g, '\n')
-    .replace(/[•▪●◦*]/g, '\n')
-    .replace(/[|]/g, '\n')
+    .replace(
+      /[•▪●◦*]/g,
+      '\n',
+    )
+    .replace(/\|/g, '\n')
     .replace(
       /\s+\/\s+/g,
       '\n',
@@ -585,13 +588,17 @@ function splitMenuText(
     .filter(Boolean)
     .filter((line) => {
       const normalized =
-        normalizeMenuText(line);
+        normalizeText(line);
 
       if (!normalized) {
         return false;
       }
 
-      if (MENU_HEADINGS.has(normalized)) {
+      if (
+        MENU_HEADINGS.has(
+          normalized,
+        )
+      ) {
         return false;
       }
 
@@ -619,21 +626,18 @@ function splitMenuText(
     });
 }
 
-type MasterDish = NonNullable<
-  ReturnType<typeof findDishByName>
->;
-
 function detectDishFromLine(
   menuLine: string,
-): MasterDish | null {
+) {
   const candidates =
     createDishCandidates(menuLine);
 
   for (const candidate of candidates) {
-    const dish = findDishByName(candidate);
+    const matchedDish =
+      findDishByName(candidate);
 
-    if (dish) {
-      return dish;
+    if (matchedDish) {
+      return matchedDish;
     }
   }
 
@@ -643,7 +647,8 @@ function detectDishFromLine(
 export function parseMenuText(
   text: string,
 ): MenuItem[] {
-  const menuLines = splitMenuText(text);
+  const menuLines =
+    splitMenuText(text);
 
   if (!menuLines.length) {
     console.warn(
@@ -653,68 +658,97 @@ export function parseMenuText(
     return [];
   }
 
-  const detectedDishes: MasterDish[] = [];
-  const unmatchedLines: string[] = [];
+  const menuItems: MenuItem[] = [];
 
   for (const line of menuLines) {
-    const dish = detectDishFromLine(line);
+    const matchedDish =
+      detectDishFromLine(line);
 
-    if (dish) {
-      detectedDishes.push(dish);
-    } else {
-      unmatchedLines.push(line);
+    if (matchedDish) {
+      menuItems.push({
+        id: uid('dish'),
+
+        name:
+          matchedDish.name,
+
+        category:
+          matchedDish.category,
+
+        costPerPlate:
+          Number(
+            matchedDish.rate,
+          ) ||
+          getCategoryBaseCost(
+            matchedDish.category,
+          ),
+      });
+
+      continue;
     }
-  }
 
-  if (unmatchedLines.length) {
-    console.group(
-      `Menu detection: ${unmatchedLines.length} unmatched item(s)`,
-    );
+    /*
+     * Dish was not found in catalog.
+     *
+     * Keep it in the menu instead
+     * of deleting it.
+     */
+    const fallbackCategory =
+      detectCategory(line) ||
+      'Sabji';
 
-    unmatchedLines.forEach((line) => {
-      console.warn('Dish not detected:', line);
+    menuItems.push({
+      id: uid('dish'),
+      name: line,
+      category:
+        fallbackCategory,
+
+      /*
+       * Zero means the user must
+       * enter a manual rate.
+       */
+      costPerPlate: 0,
     });
 
-    console.groupEnd();
+    console.warn(
+      'Dish not found in catalog. Added for manual review:',
+      line,
+    );
   }
 
   /*
-   * Prevent duplicate dishes.
-   *
-   * Category is included because two dishes may
-   * have the same name in different categories.
+   * Remove duplicate menu items.
    */
-  const uniqueDishes = Array.from(
-    new Map(
-      detectedDishes.map((dish) => [
-        `${normalizeMenuText(
-          dish.name,
-        )}-${normalizeMenuText(
-          dish.category,
-        )}`,
-        dish,
-      ]),
-    ).values(),
-  );
+  const uniqueItems =
+    Array.from(
+      new Map(
+        menuItems.map((item) => [
+          `${normalizeText(
+            item.name,
+          )}-${normalizeText(
+            item.category,
+          )}`,
+          item,
+        ]),
+      ).values(),
+    );
+
+  const unmatchedCount =
+    uniqueItems.filter(
+      (item) =>
+        Number(
+          item.costPerPlate,
+        ) === 0,
+    ).length;
 
   console.info(
-    `Menu detection result: ${uniqueDishes.length} dish(es) detected from ${menuLines.length} menu line(s).`,
+    `Menu detection completed: ${uniqueItems.length} item(s), ${unmatchedCount} requiring manual rates.`,
   );
 
-  return uniqueDishes.map(
-    (dish): MenuItem => ({
-      id: uid('dish'),
-      name: dish.name,
-      category: dish.category,
-      costPerPlate:
-        Number(dish.rate) ||
-        getCategoryBaseCost(dish.category),
-    }),
-  );
+  return uniqueItems;
 }
 
 /* -------------------------------------------------------------------------- */
-/*                            Menu cost calculation                           */
+/*                               Cost helpers                                 */
 /* -------------------------------------------------------------------------- */
 
 function getCategoryBaseCost(
@@ -722,12 +756,16 @@ function getCategoryBaseCost(
 ): number {
   if (
     CATEGORIES.includes(
-      category as (typeof CATEGORIES)[number],
+      category as (
+        typeof CATEGORIES
+      )[number],
     )
   ) {
     return (
       CATEGORY_BASE_COST[
-        category as (typeof CATEGORIES)[number]
+        category as (
+          typeof CATEGORIES
+        )[number]
       ] ?? 0
     );
   }
@@ -739,10 +777,16 @@ export function buildMenuCostBreakdown(
   menu: MenuItem[],
 ) {
   const categoryCounts =
-    menu.reduce<Record<string, number>>(
+    menu.reduce<
+      Record<string, number>
+    >(
       (counts, item) => {
         counts[item.category] =
-          (counts[item.category] ?? 0) + 1;
+          (
+            counts[
+              item.category
+            ] ?? 0
+          ) + 1;
 
         return counts;
       },
@@ -751,38 +795,37 @@ export function buildMenuCostBreakdown(
 
   return menu.map((item) => {
     const categoryCount =
-      categoryCounts[item.category] ?? 1;
-
-    const enteredCost =
-      Number(item.costPerPlate) || 0;
-
-    const baseCost =
-      enteredCost > 0
-        ? enteredCost
-        : getCategoryBaseCost(
-            item.category,
-          );
+      categoryCounts[
+        item.category
+      ] ?? 1;
 
     /*
-     * When multiple dishes belong to the same
-     * category, the portion is shared.
+     * Manual rate remains zero until
+     * the user enters a value.
      *
-     * Example:
-     *
-     * Two paneer dishes:
-     * each receives 50% of the paneer category cost.
+     * Do not replace zero with a
+     * category rate here.
      */
+    const baseCostPerPlate =
+      Math.max(
+        0,
+        Number(
+          item.costPerPlate,
+        ) || 0,
+      );
+
     const portionFactor =
       categoryCount > 1
         ? 1 / categoryCount
         : 1;
 
     const adjustedCostPerPlate =
-      baseCost * portionFactor;
+      baseCostPerPlate *
+      portionFactor;
 
     return {
       ...item,
-      baseCostPerPlate: baseCost,
+      baseCostPerPlate,
       categoryCount,
       portionFactor,
       adjustedCostPerPlate,
@@ -791,7 +834,7 @@ export function buildMenuCostBreakdown(
 }
 
 /* -------------------------------------------------------------------------- */
-/*                           Final costing calculation                        */
+/*                              Final costing                                 */
 /* -------------------------------------------------------------------------- */
 
 export function calculate(
@@ -803,7 +846,9 @@ export function calculate(
   );
 
   const menuBreakdown =
-    buildMenuCostBreakdown(work.menu);
+    buildMenuCostBreakdown(
+      work.menu,
+    );
 
   const menuCostPerPlate =
     menuBreakdown.reduce(
@@ -813,13 +858,15 @@ export function calculate(
       0,
     );
 
-  const extrasTotal = Object.values(
-    work.extras,
-  ).reduce(
-    (sum, value) =>
-      sum + (Number(value) || 0),
-    0,
-  );
+  const extrasTotal =
+    Object.values(
+      work.extras,
+    ).reduce(
+      (sum, value) =>
+        sum +
+        (Number(value) || 0),
+      0,
+    );
 
   const extraPerPlate =
     pax > 0
@@ -827,12 +874,16 @@ export function calculate(
       : 0;
 
   const finalCostPerPlate =
-    menuCostPerPlate + extraPerPlate;
+    menuCostPerPlate +
+    extraPerPlate;
 
   const sellingPricePerPlate =
-    Number(
-      work.sellingPricePerPlate,
-    ) || 0;
+    Math.max(
+      0,
+      Number(
+        work.sellingPricePerPlate,
+      ) || 0,
+    );
 
   const profitPerPlate =
     sellingPricePerPlate > 0
