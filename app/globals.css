@@ -527,3 +527,450 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .pdf-paper { box-shadow: none; border: 0; border-radius: 0; max-width: none; padding: 0; }
   .app-frame { padding-bottom: 0; }
 }
+
+/* ========================================================================== */
+/* CatererOS 10/10 production polish                                          */
+/* Safe overrides: keeps the existing component structure intact.             */
+/* ========================================================================== */
+
+:root {
+  color-scheme: light;
+  --radius: 24px;
+  --radius-sm: 16px;
+  --radius-xs: 12px;
+  --surface-hover: rgba(255, 255, 255, 0.96);
+  --focus-ring: 0 0 0 4px rgba(0, 122, 255, 0.16);
+  --transition-fast: 160ms cubic-bezier(.2, .8, .2, 1);
+  --transition-base: 220ms cubic-bezier(.2, .8, .2, 1);
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  min-width: 320px;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  touch-action: manipulation;
+}
+
+button,
+[role="button"],
+a {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+select {
+  accent-color: var(--blue);
+}
+
+::selection {
+  background: rgba(0, 122, 255, 0.18);
+}
+
+/* More consistent glass surfaces and Safari support */
+.loader-card,
+.login-card,
+.glass-card,
+.locked-card,
+.alert-card,
+.panel,
+.topbar,
+.bottom-nav {
+  -webkit-backdrop-filter: blur(16px) saturate(145%);
+  backdrop-filter: blur(16px) saturate(145%);
+}
+
+.glass-card,
+.panel,
+.stat-card,
+.menu-row,
+.admin-dish-row,
+.helper-card,
+.dish-preview,
+.billing-details > div {
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base),
+    border-color var(--transition-base),
+    background-color var(--transition-base);
+}
+
+/* Premium controls */
+.primary-button,
+.secondary-button,
+.ghost-button,
+.danger-button,
+.admin-action,
+.admin-delete,
+.admin-submit,
+.admin-logout,
+.admin-filter button,
+.bottom-nav a {
+  min-height: 44px;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.primary-button {
+  background: linear-gradient(180deg, #1687ff 0%, var(--blue) 100%);
+  box-shadow:
+    0 12px 28px rgba(0, 122, 255, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.primary-button:hover {
+  background: linear-gradient(180deg, #087ef6 0%, var(--blue-dark) 100%);
+}
+
+.primary-button:active,
+.secondary-button:active,
+.ghost-button:active,
+.danger-button:active,
+.admin-action:active,
+.admin-delete:active,
+.admin-submit:active,
+.admin-logout:active,
+.bottom-nav a:active {
+  transform: scale(0.97);
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.ghost-button:focus-visible,
+.danger-button:focus-visible,
+.admin-action:focus-visible,
+.admin-delete:focus-visible,
+.admin-submit:focus-visible,
+.admin-logout:focus-visible,
+.admin-filter button:focus-visible,
+.bottom-nav a:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(0, 122, 255, 0.34);
+  outline-offset: 3px;
+}
+
+.input,
+.textarea,
+.select {
+  min-height: 48px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.input:hover,
+.textarea:hover,
+.select:hover {
+  border-color: rgba(0, 0, 0, 0.14);
+  background: var(--surface-hover);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  border-color: rgba(0, 122, 255, 0.58);
+  box-shadow: var(--focus-ring);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: #9b9ba1;
+}
+
+/* Cleaner content hierarchy */
+.page-title h1,
+.login-card h1,
+.admin-welcome h1 {
+  text-wrap: balance;
+}
+
+.page-title p,
+.login-card p,
+.admin-welcome p,
+.helper-card p {
+  text-wrap: pretty;
+}
+
+.content-grid,
+.admin-container,
+.topbar,
+.page-title {
+  isolation: isolate;
+}
+
+.stat-card strong,
+.billing-price strong,
+.admin-stat strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.badge,
+.admin-status,
+.admin-plan,
+.section-kicker {
+  white-space: nowrap;
+}
+
+/* Better tables */
+.table-wrap {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(110, 110, 115, 0.35) transparent;
+}
+
+.table-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(110, 110, 115, 0.28);
+  border-radius: 999px;
+}
+
+.table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Bottom navigation refinement */
+.bottom-nav {
+  padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+}
+
+.bottom-nav a {
+  position: relative;
+  min-width: 0;
+}
+
+.bottom-nav a.active {
+  background: linear-gradient(180deg, #202632 0%, #111827 100%);
+  box-shadow:
+    0 8px 20px rgba(17, 24, 39, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.bottom-nav a.active::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.78;
+}
+
+/* Responsive refinements */
+@media (hover: hover) and (pointer: fine) {
+  .glass-card:hover,
+  .panel:hover,
+  .stat-card:hover,
+  .menu-row:hover,
+  .admin-dish-row:hover,
+  .helper-card:hover {
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.09);
+    transform: translateY(-2px);
+  }
+
+  .bottom-nav a:hover:not(.active) {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.65);
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --radius: 20px;
+    --radius-sm: 14px;
+  }
+
+  .page-shell {
+    background:
+      radial-gradient(circle at 0% 0%, rgba(0, 122, 255, 0.12), transparent 34%),
+      linear-gradient(180deg, #fbfbfd 0%, #f5f5f7 100%);
+  }
+
+  .login-card,
+  .glass-card,
+  .panel,
+  .stat-card,
+  .menu-row,
+  .admin-dish-row,
+  .helper-card {
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+  }
+
+  .topbar {
+    max-width: calc(100vw - 20px);
+  }
+
+  .page-title h1 {
+    letter-spacing: -0.045em;
+  }
+
+  .action-row {
+    gap: 8px;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .ghost-button,
+  .danger-button {
+    min-height: 50px;
+  }
+
+  .bottom-nav {
+    box-shadow: 0 16px 46px rgba(15, 23, 42, 0.18);
+  }
+}
+
+@media (max-width: 390px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card strong {
+    font-size: 25px;
+  }
+
+  .bottom-nav a {
+    min-height: 54px;
+  }
+}
+
+/* Optional manual dark mode: set data-theme="dark" on <html> */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0c0f;
+  --card: rgba(28, 28, 30, 0.82);
+  --card-solid: #1c1c1e;
+  --text: #f5f5f7;
+  --muted: #a1a1a6;
+  --border: rgba(255, 255, 255, 0.11);
+  --surface-hover: rgba(44, 44, 46, 0.96);
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme="dark"] body,
+[data-theme="dark"] .page-shell {
+  background:
+    radial-gradient(circle at top left, rgba(0, 122, 255, 0.2), transparent 30%),
+    radial-gradient(circle at 90% 10%, rgba(255, 149, 0, 0.12), transparent 24%),
+    linear-gradient(180deg, #121318 0%, #090a0d 100%);
+}
+
+[data-theme="dark"] .input,
+[data-theme="dark"] .textarea,
+[data-theme="dark"] .select,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .menu-row,
+[data-theme="dark"] .admin-dish-row,
+[data-theme="dark"] .helper-card,
+[data-theme="dark"] .dish-preview,
+[data-theme="dark"] td,
+[data-theme="dark"] .billing-details > div {
+  background: rgba(28, 28, 30, 0.88);
+  color: var(--text);
+}
+
+[data-theme="dark"] .ghost-button {
+  background: rgba(44, 44, 46, 0.78);
+  color: var(--text);
+}
+
+[data-theme="dark"] .field label,
+[data-theme="dark"] .dish-preview small,
+[data-theme="dark"] .billing-details small {
+  color: var(--muted);
+}
+
+[data-theme="dark"] .pdf-paper {
+  color: #1d1d1f;
+}
+
+/* Accessible motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High-contrast users */
+@media (prefers-contrast: more) {
+  :root {
+    --border: rgba(0, 0, 0, 0.24);
+  }
+
+  .input,
+  .textarea,
+  .select,
+  .glass-card,
+  .panel,
+  .stat-card,
+  .menu-row,
+  .admin-dish-row {
+    border-width: 2px;
+  }
+}
+
+/* Printing: preserve accurate business document output */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  .pdf-paper {
+    width: 100%;
+    break-inside: avoid;
+  }
+
+  .print-section,
+  .summary-line,
+  table,
+  tr,
+  td,
+  th {
+    break-inside: avoid;
+  }
+}
