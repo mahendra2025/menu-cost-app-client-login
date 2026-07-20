@@ -15,7 +15,6 @@ import AppShell, {
 import {
   CATEGORIES,
   detectCategory,
-  detectCost,
   findDishByName,
   findDishByNameInItems,
   suggestDishesByName,
@@ -221,6 +220,15 @@ export default function MenuPage() {
     );
   }, [work]);
 
+  const manualRateCount = useMemo(
+    () =>
+      (work?.menu ?? []).filter(
+        (item) =>
+          !(Number(item.costPerPlate) > 0),
+      ).length,
+    [work],
+  );
+
   const matchedNewDish = useMemo(() => {
     const trimmedName = newDish.trim();
 
@@ -257,10 +265,7 @@ export default function MenuPage() {
       mode: 'fallback' as const,
       dishName: trimmedName,
       category,
-      detectedRate: detectCost(
-        trimmedName,
-        category,
-      ),
+      detectedRate: 0,
     };
   }, [
     newDish,
@@ -331,14 +336,8 @@ export default function MenuPage() {
       detectCategory(trimmedName) ||
       'Sabji';
 
-    const detectedRate =
-      detectCost(
-        trimmedName,
-        detectedCategory,
-      );
-
     setNewCategory(detectedCategory);
-    setNewRate(String(detectedRate));
+    setNewRate('');
   }
 
   function updateItem(
@@ -413,31 +412,9 @@ export default function MenuPage() {
               patch.costPerPlate ===
               undefined
             ) {
-              updated.costPerPlate =
-                detectCost(
-                  trimmedName,
-                  detectedCategory,
-                );
+              updated.costPerPlate = 0;
             }
           }
-        }
-
-        /*
-         * When only category changes,
-         * calculate a suggested new rate.
-         */
-        if (
-          typeof patch.category ===
-            'string' &&
-          patch.name === undefined &&
-          patch.costPerPlate ===
-            undefined
-        ) {
-          updated.costPerPlate =
-            detectCost(
-              updated.name,
-              patch.category,
-            );
         }
 
         return updated;
@@ -505,11 +482,7 @@ export default function MenuPage() {
       'Sabji';
 
     const detectedRate =
-      Number(matchedDish?.rate) ||
-      detectCost(
-        finalName,
-        finalCategory,
-      );
+      Number(matchedDish?.rate) || 0;
 
     /*
      * Manual rate takes priority.
@@ -578,9 +551,12 @@ export default function MenuPage() {
 
     setPageMessage({
       type: 'success',
-      text: `${finalName} added at ₹${formatRate(
-        finalRate,
-      )} per plate.`,
+      text:
+        finalRate > 0
+          ? `${finalName} added at ₹${formatRate(
+              finalRate,
+            )} per plate.`
+          : `${finalName} added without a catalog rate. Enter its manual rate below.`,
     });
   }
 
@@ -630,6 +606,25 @@ export default function MenuPage() {
       setPageMessage({
         type: 'error',
         text: 'Add at least one dish before calculating cost.',
+      });
+
+      return;
+    }
+
+    const dishesWithoutRate =
+      work.menu.filter(
+        (item) =>
+          !(Number(item.costPerPlate) > 0),
+      );
+
+    if (dishesWithoutRate.length) {
+      setPageMessage({
+        type: 'error',
+        text: `Add a manual rate for ${dishesWithoutRate.length} dish${
+          dishesWithoutRate.length === 1 ? '' : 'es'
+        }: ${dishesWithoutRate
+          .map((item) => item.name)
+          .join(', ')}.`,
       });
 
       return;
@@ -813,15 +808,15 @@ export default function MenuPage() {
 
                   setNewCategory(category);
 
-                  const detectedRate =
-                    detectCost(
-                      newDish.trim(),
-                      category,
+                  if (isNewDishMatched) {
+                    setNewRate(
+                      String(
+                        Number(
+                          matchedNewDish?.rate,
+                        ) || 0,
+                      ),
                     );
-
-                  setNewRate(
-                    String(detectedRate),
-                  );
+                  }
 
                   setPageMessage(null);
                 }}
@@ -878,8 +873,9 @@ export default function MenuPage() {
               />
 
               <small className="muted">
-                Detected automatically,
-                but editable.
+                {isNewDishMatched
+                  ? 'Detected automatically, but editable.'
+                  : 'Not in catalog — enter the rate manually.'}
               </small>
             </div>
 
@@ -923,13 +919,20 @@ export default function MenuPage() {
                 {
                   newDishPreview.category
                 }
-                {' • Detected ₹'}
-                {formatRate(
-                  newDishPreview.detectedRate,
-                )}
-                {' • Final ₹'}
-                {formatRate(
-                  finalPreviewRate,
+                {newDishPreview.mode === 'matched' ? (
+                  <>
+                    {' • Detected ₹'}
+                    {formatRate(newDishPreview.detectedRate)}
+                    {' • Final ₹'}
+                    {formatRate(finalPreviewRate)}
+                  </>
+                ) : (
+                  <>
+                    {' • No catalog rate'}
+                    {newRate !== ''
+                      ? ` • Manual ₹${formatRate(finalPreviewRate)}`
+                      : ' • Manual rate required'}
+                  </>
                 )}
               </small>
             </div>
@@ -1003,6 +1006,32 @@ export default function MenuPage() {
             adjusts the rate
             proportionally.
           </p>
+
+          {manualRateCount > 0 ? (
+            <div
+              className="helper-card"
+              role="alert"
+              style={{
+                marginBottom: 16,
+                borderColor:
+                  'rgba(239, 68, 68, 0.45)',
+                background:
+                  'rgba(239, 68, 68, 0.08)',
+              }}
+            >
+              <b>
+                {manualRateCount}{' '}
+                {manualRateCount === 1
+                  ? 'dish needs'
+                  : 'dishes need'}{' '}
+                a manual rate
+              </b>
+
+              <p>
+                These dishes were not found in the catalog. Enter each rate before calculating cost.
+              </p>
+            </div>
+          ) : null}
 
           {work.menu.length === 0 ? (
             <div className="helper-card">
@@ -1154,7 +1183,7 @@ export default function MenuPage() {
 
                   <div className="menu-cell">
                     <span className="mobile-field-label">
-                      Rate / Plate (Auto)
+                      Rate / Plate
                     </span>
 
                     <input
@@ -1164,7 +1193,9 @@ export default function MenuPage() {
                       step="0.01"
                       inputMode="decimal"
                       value={
-                        item.costPerPlate
+                        Number(item.costPerPlate) > 0
+                          ? item.costPerPlate
+                          : ''
                       }
                       onChange={(event) =>
                         updateItem(
@@ -1182,7 +1213,14 @@ export default function MenuPage() {
                           },
                         )
                       }
+                      placeholder="Enter manual rate"
                     />
+
+                    {Number(item.costPerPlate) <= 0 ? (
+                      <small className="field-error">
+                        Dish not found — manual rate required
+                      </small>
+                    ) : null}
                   </div>
 
                   <button
