@@ -108,6 +108,15 @@ function normalizeToken(value: string) {
   return value.trim().toLowerCase();
 }
 
+function proportionalRate(
+  currentRate: number,
+  currentQuantity: number,
+  nextQuantity: number,
+) {
+  if (!(currentQuantity > 0) || !(nextQuantity > 0)) return currentRate;
+  return Math.round((currentRate * nextQuantity / currentQuantity) * 100) / 100;
+}
+
 function validateRows(rows: EditableDish[]) {
   const errors = new Map<string, DishRowErrors>();
   const nameOwners = new Map<string, string[]>();
@@ -259,11 +268,27 @@ export default function AdminDishesPage() {
     setRows((current) => current.filter((row) => row.id !== id));
   }
 
+  function updateServingQuantity(row: EditableDish, nextQuantity: number) {
+    updateRow(row.id, {
+      servingQuantity: nextQuantity,
+      rate: proportionalRate(
+        Number(row.rate) || 0,
+        Number(row.servingQuantity) || 0,
+        nextQuantity,
+      ),
+    });
+  }
+
   function useRecipeServing(row: EditableDish) {
     if (!row.recipeServing) return;
     updateRow(row.id, {
       servingQuantity: row.recipeServing.quantity,
       servingUnit: row.recipeServing.unit,
+      rate: proportionalRate(
+        Number(row.rate) || 0,
+        Number(row.servingQuantity) || 0,
+        row.recipeServing.quantity,
+      ),
     });
   }
 
@@ -379,14 +404,14 @@ export default function AdminDishesPage() {
                     </select>
                   </div>
                   <div className="field">
-                    <label>Rate / Plate</label>
+                    <label>Rate / Plate (Auto)</label>
                     <input className="input input-large" type="number" min="0" value={row.rate || ''} onChange={(e) => updateRow(row.id, { rate: Number(e.target.value) })} placeholder="0" />
                     {rowErrors.get(row.id)?.rate ? <span className="field-error">{rowErrors.get(row.id)?.rate}</span> : null}
                   </div>
                   <div className="admin-serving-grid">
                     <div className="field">
                       <label>Serving Quantity</label>
-                      <input className="input input-large" type="number" min="0.01" step="0.01" value={row.servingQuantity ?? 1} onChange={(e) => updateRow(row.id, { servingQuantity: Number(e.target.value) })} placeholder="1" />
+                      <input className="input input-large" type="number" min="0.01" step="0.01" value={row.servingQuantity ?? 1} onChange={(e) => updateServingQuantity(row, Number(e.target.value))} placeholder="1" />
                       {rowErrors.get(row.id)?.servingQuantity ? <span className="field-error">{rowErrors.get(row.id)?.servingQuantity}</span> : null}
                     </div>
                     <div className="field">

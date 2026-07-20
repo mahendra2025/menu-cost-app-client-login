@@ -52,6 +52,15 @@ function formatRate(value: number): string {
   return Number(value || 0).toFixed(2);
 }
 
+function proportionalRate(
+  currentRate: number,
+  currentQuantity: number,
+  nextQuantity: number,
+) {
+  if (!(currentQuantity > 0) || !(nextQuantity > 0)) return currentRate;
+  return Math.round((currentRate * nextQuantity / currentQuantity) * 100) / 100;
+}
+
 export default function MenuPage() {
   const router = useRouter();
 
@@ -332,6 +341,30 @@ export default function MenuPage() {
       ...work,
       menu: nextMenu,
     });
+  }
+
+  function updateServingQuantity(
+    item: MenuItem,
+    nextQuantity: number,
+  ) {
+    updateItem(
+      item.id,
+      {
+        portionQuantity:
+          nextQuantity,
+        costPerPlate:
+          proportionalRate(
+            Number(
+              item.costPerPlate,
+            ) || 0,
+            Number(
+              item.portionQuantity ??
+              1,
+            ) || 0,
+            nextQuantity,
+          ),
+      },
+    );
   }
 
   function addDish() {
@@ -857,6 +890,9 @@ export default function MenuPage() {
             its category, edit its
             serving quantity and enter
             a manual rate per plate.
+            Changing serving quantity
+            adjusts the rate
+            proportionally.
           </p>
 
           {work.menu.length === 0 ? (
@@ -960,19 +996,16 @@ export default function MenuPage() {
                           1
                         }
                         onChange={(event) =>
-                          updateItem(
-                            item.id,
-                            {
-                              portionQuantity:
-                                Math.max(
-                                  0,
-                                  Number(
-                                    event
-                                      .target
-                                      .value,
-                                  ) || 0,
-                                ),
-                            },
+                          updateServingQuantity(
+                            item,
+                            Math.max(
+                              0,
+                              Number(
+                                event
+                                  .target
+                                  .value,
+                              ) || 0,
+                            ),
                           )
                         }
                       />
@@ -1002,7 +1035,7 @@ export default function MenuPage() {
 
                   <div className="menu-cell">
                     <span className="mobile-field-label">
-                      Manual Rate / Plate
+                      Rate / Plate (Auto)
                     </span>
 
                     <input
