@@ -29,6 +29,37 @@ export default function CostPage() {
   const hasWeddingServices = result.serviceSummaries.some(
     (service) => service.serviceId !== 'default',
   );
+  const manpowerSummaryMap = new Map<
+    string,
+    {
+      serviceId: string;
+      dayLabel: string;
+      mealLabel: string;
+      people: number;
+      cost: number;
+    }
+  >();
+
+  work.manpower.forEach((row) => {
+    const serviceId = row.serviceId ?? 'general';
+    const current = manpowerSummaryMap.get(serviceId) ?? {
+      serviceId,
+      dayLabel: row.dayLabel ?? '',
+      mealLabel: row.mealLabel ?? 'General Event Staff',
+      people: 0,
+      cost: 0,
+    };
+
+    current.people += Math.max(0, Number(row.quantity) || 0);
+    current.cost +=
+      Math.max(0, Number(row.quantity) || 0) *
+      Math.max(0, Number(row.rate) || 0);
+    manpowerSummaryMap.set(serviceId, current);
+  });
+
+  const manpowerSummaries = Array.from(
+    manpowerSummaryMap.values(),
+  ).filter((summary) => summary.people > 0 || summary.cost > 0);
 
   function persist(next: WorkState) {
     if (!session) return;
@@ -116,6 +147,33 @@ export default function CostPage() {
             <div className="field"><label>Disposable</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.disposable || ''} onChange={(e) => updateExtra('disposable', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
             <div className="field"><label>Other Extra</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.other || ''} onChange={(e) => updateExtra('other', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
           </div>
+          {manpowerSummaries.length > 0 ? (
+            <div style={{ marginTop: 18 }}>
+              <h3>Manpower by Function</h3>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Day</th>
+                      <th>Function</th>
+                      <th>Staff</th>
+                      <th>Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {manpowerSummaries.map((summary) => (
+                      <tr key={summary.serviceId}>
+                        <td>{summary.dayLabel || '-'}</td>
+                        <td><b>{summary.mealLabel}</b></td>
+                        <td>{summary.people}</td>
+                        <td><b>{money(summary.cost)}</b></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
           <div className="action-row" style={{ marginTop: 14 }}>
             <button
               className="ghost-button"

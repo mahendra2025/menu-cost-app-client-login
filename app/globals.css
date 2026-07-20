@@ -208,6 +208,34 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .menu-service-heading h3 { margin: 2px 0 0; font-size: 21px; letter-spacing: -.02em; }
 .menu-service-heading .section-kicker { display: block; margin: 0; }
 .menu-service-meta { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.manpower-groups { display: grid; gap: 16px; margin-top: 18px; }
+.manpower-function-card {
+  border: 1px solid rgba(0, 122, 255, .18);
+  border-radius: 22px;
+  padding: 14px;
+  background: linear-gradient(145deg, rgba(0, 122, 255, .055), rgba(255, 255, 255, .72));
+}
+.manpower-function-card > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.manpower-function-card > summary::-webkit-details-marker { display: none; }
+.manpower-function-card > summary::after {
+  content: "＋";
+  color: var(--muted);
+  font-size: 20px;
+  font-weight: 800;
+}
+.manpower-function-card[open] > summary::after { content: "−"; }
+.manpower-function-card h3 { margin: 2px 0 0; font-size: 20px; }
+.manpower-function-card .section-kicker { display: block; margin: 0; }
+.manpower-function-card .table-wrap { margin-top: 14px; }
+.manpower-function-card .action-row { margin-top: 12px; }
+.manpower-function-meta { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; }
 .menu-row {
   display: grid;
   grid-template-columns: minmax(190px, 1.5fr) minmax(150px, 1fr) minmax(210px, .9fr) 130px auto;
@@ -524,6 +552,9 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .menu-service-group { padding: 12px; border-radius: 20px; }
   .menu-service-heading { align-items: flex-start; flex-direction: column; }
   .menu-service-meta { justify-content: flex-start; }
+  .manpower-function-card { padding: 12px; border-radius: 19px; }
+  .manpower-function-card > summary { align-items: flex-start; }
+  .manpower-function-meta { justify-content: flex-start; }
   .admin-dish-row { grid-template-columns: 1fr; }
   .admin-serving-grid { grid-template-columns: 1fr; }
   .admin-alias-grid { grid-template-columns: 1fr; }

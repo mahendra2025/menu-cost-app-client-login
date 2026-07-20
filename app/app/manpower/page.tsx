@@ -14,12 +14,128 @@ import {
 } from '../../../lib/store';
 import type {
   ManpowerRow,
+  MenuItem,
   Session,
   WorkState,
 } from '../../../lib/types';
 
+type FunctionOption = {
+  serviceId: string;
+  dayLabel: string;
+  mealLabel: string;
+  servicePax: number;
+};
+
+type ManpowerGroup = FunctionOption & {
+  rows: ManpowerRow[];
+};
+
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
+}
+
+function rowTotal(row: ManpowerRow) {
+  return (
+    Math.max(0, Number(row.quantity) || 0) *
+    Math.max(0, Number(row.rate) || 0)
+  );
+}
+
+function getFunctions(menu: MenuItem[]): FunctionOption[] {
+  const functions = new Map<string, FunctionOption>();
+
+  menu.forEach((item) => {
+    if (!item.serviceId || functions.has(item.serviceId)) return;
+
+    functions.set(item.serviceId, {
+      serviceId: item.serviceId,
+      dayLabel: item.dayLabel ?? '',
+      mealLabel: item.mealLabel ?? 'Event Function',
+      servicePax: Math.max(0, Number(item.servicePax) || 0),
+    });
+  });
+
+  return Array.from(functions.values());
+}
+
+function createFunctionDefaults(
+  service: FunctionOption,
+): ManpowerRow[] {
+  return defaultManpower.map((template) => ({
+    ...template,
+    id: `${template.id}_${service.serviceId}`,
+    serviceId: service.serviceId,
+    dayLabel: service.dayLabel,
+    mealLabel: service.mealLabel,
+    servicePax: service.servicePax,
+  }));
+}
+
+function initializeFunctionManpower(work: WorkState): WorkState {
+  const functions = getFunctions(work.menu);
+  if (!functions.length) return work;
+
+  const functionIds = new Set(
+    functions.map((service) => service.serviceId),
+  );
+  let rows = work.manpower.map((row) => {
+    if (!row.serviceId || functionIds.has(row.serviceId)) return row;
+
+    const matchingFunction = functions.find(
+      (service) =>
+        service.dayLabel === (row.dayLabel ?? '') &&
+        service.mealLabel === (row.mealLabel ?? '') &&
+        service.servicePax === Math.max(0, Number(row.servicePax) || 0),
+    );
+
+    return matchingFunction
+      ? {
+          ...row,
+          serviceId: matchingFunction.serviceId,
+        }
+      : row;
+  });
+
+  const defaultIds = new Set(
+    defaultManpower.map((row) => row.id),
+  );
+  rows = rows.filter(
+    (row) =>
+      row.serviceId ||
+      row.quantity > 0 ||
+      !defaultIds.has(row.id),
+  );
+
+  functions.forEach((service) => {
+    const hasRows = rows.some(
+      (row) => row.serviceId === service.serviceId,
+    );
+
+    if (!hasRows) {
+      rows.push(...createFunctionDefaults(service));
+    }
+  });
+
+  const staff = rows.reduce(
+    (sum, row) => sum + rowTotal(row),
+    0,
+  );
+
+  if (
+    JSON.stringify(rows) === JSON.stringify(work.manpower) &&
+    staff === work.extras.staff
+  ) {
+    return work;
+  }
+
+  return {
+    ...work,
+    manpower: rows,
+    extras: {
+      ...work.extras,
+      staff,
+    },
+  };
 }
 
 export default function ManpowerPage() {
@@ -30,16 +146,71 @@ export default function ManpowerPage() {
   useEffect(() => {
     const current = getSession();
     setSession(current);
-    if (current) setWork(loadWork(current.tenantId));
+    if (!current) return;
+
+    const savedWork = loadWork(current.tenantId);
+    const initializedWork = initializeFunctionManpower(savedWork);
+
+    setWork(initializedWork);
+    if (initializedWork !== savedWork) {
+      saveWork(current.tenantId, initializedWork);
+    }
   }, []);
+
+  const manpowerGroups = useMemo<ManpowerGroup[]>(() => {
+    if (!work) return [];
+
+    const functions = getFunctions(work.menu);
+    const groups = functions.map((service) => ({
+      ...service,
+      rows: work.manpower.filter(
+        (row) => row.serviceId === service.serviceId,
+      ),
+    }));
+    const knownIds = new Set(
+      functions.map((service) => service.serviceId),
+    );
+    const orphanedFunctionRows = work.manpower.filter(
+      (row) => row.serviceId && !knownIds.has(row.serviceId),
+    );
+    const orphanedIds = Array.from(
+      new Set(orphanedFunctionRows.map((row) => row.serviceId!)),
+    );
+
+    orphanedIds.forEach((serviceId) => {
+      const rows = orphanedFunctionRows.filter(
+        (row) => row.serviceId === serviceId,
+      );
+      const first = rows[0];
+      groups.push({
+        serviceId,
+        dayLabel: first?.dayLabel ?? '',
+        mealLabel: first?.mealLabel ?? 'Previous Function',
+        servicePax: Math.max(0, Number(first?.servicePax) || 0),
+        rows,
+      });
+    });
+
+    const generalRows = work.manpower.filter((row) => !row.serviceId);
+    if (generalRows.length || !groups.length) {
+      groups.unshift({
+        serviceId: 'general',
+        dayLabel: '',
+        mealLabel: 'General Event Staff',
+        servicePax: Math.max(0, Number(work.event.pax) || 0),
+        rows: generalRows.length
+          ? generalRows
+          : defaultManpower.map((row) => ({ ...row })),
+      });
+    }
+
+    return groups;
+  }, [work]);
 
   const manpowerTotal = useMemo(
     () =>
       (work?.manpower ?? []).reduce(
-        (sum, row) =>
-          sum +
-          Math.max(0, Number(row.quantity) || 0) *
-            Math.max(0, Number(row.rate) || 0),
+        (sum, row) => sum + rowTotal(row),
         0,
       ),
     [work],
@@ -79,10 +250,7 @@ export default function ManpowerPage() {
     if (!session || !work) return;
 
     const staff = rows.reduce(
-      (sum, row) =>
-        sum +
-        Math.max(0, Number(row.quantity) || 0) *
-          Math.max(0, Number(row.rate) || 0),
+      (sum, row) => sum + rowTotal(row),
       0,
     );
     const nextWork: WorkState = {
@@ -111,7 +279,7 @@ export default function ManpowerPage() {
     );
   }
 
-  function addRole() {
+  function addRole(group: ManpowerGroup) {
     if (!work) return;
 
     persistRows([
@@ -121,35 +289,58 @@ export default function ManpowerPage() {
         role: 'New Role',
         quantity: 0,
         rate: 0,
+        ...(group.serviceId !== 'general'
+          ? {
+              serviceId: group.serviceId,
+              dayLabel: group.dayLabel,
+              mealLabel: group.mealLabel,
+              servicePax: group.servicePax,
+            }
+          : {}),
       },
     ]);
   }
 
   function resetRows() {
-    persistRows(defaultManpower.map((row) => ({ ...row })));
+    if (!work) return;
+
+    if (
+      !confirm(
+        'Reset all function-wise manpower quantities and rates to defaults?',
+      )
+    ) {
+      return;
+    }
+
+    const functions = getFunctions(work.menu);
+    persistRows(
+      functions.length
+        ? functions.flatMap(createFunctionDefaults)
+        : defaultManpower.map((row) => ({ ...row })),
+    );
   }
 
   return (
     <AppShell
       title="Manpower"
-      subtitle="Step 3 of 6: plan staff quantity and rates"
+      subtitle="Step 3 of 6: plan every staff role function-wise"
     >
       <section className="content-grid">
         <div className="stat-grid">
           <StatCard
-            label="Team Size"
-            value={String(peopleTotal)}
-            note="Total manpower"
+            label="Functions"
+            value={String(manpowerGroups.length)}
+            note="Separate staff plans"
           />
           <StatCard
-            label="Staff Cost"
+            label="Team Assignments"
+            value={String(peopleTotal)}
+            note="Across all functions"
+          />
+          <StatCard
+            label="Manpower Cost"
             value={money(manpowerTotal)}
             note="Added to wedding cost"
-          />
-          <StatCard
-            label="Average / Person"
-            value={money(peopleTotal > 0 ? manpowerTotal / peopleTotal : 0)}
-            note="Across all roles"
           />
           <StatCard
             label="Meal Covers"
@@ -161,130 +352,164 @@ export default function ManpowerPage() {
         <div className="glass-card">
           <div className="section-head">
             <div>
-              <div className="section-kicker">Staff Planning</div>
-              <h2>Manpower Roles</h2>
+              <div className="section-kicker">Function-wise Planning</div>
+              <h2>Manpower by Function</h2>
               <p className="muted">
-                Enter the required quantity and rate for every role. The total
-                is saved automatically and included on the Cost page.
+                Open each function and enter the staff quantity and rate.
+                Every function has its own complete roster.
               </p>
             </div>
             <strong>{money(manpowerTotal)}</strong>
           </div>
 
-          {work.manpower.length === 0 ? (
-            <div className="helper-card">
-              <b>No manpower roles</b>
-              <p>Add a role to start planning staff costs.</p>
-            </div>
-          ) : null}
+          <div className="manpower-groups">
+            {manpowerGroups.map((group) => {
+              const groupPeople = group.rows.reduce(
+                (sum, row) =>
+                  sum + Math.max(0, Number(row.quantity) || 0),
+                0,
+              );
+              const groupCost = group.rows.reduce(
+                (sum, row) => sum + rowTotal(row),
+                0,
+              );
 
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Role</th>
-                  <th>Quantity</th>
-                  <th>Rate</th>
-                  <th>Total</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {work.manpower.map((row) => (
-                  <tr key={row.id}>
-                    <td>
-                      <input
-                        className="input"
-                        value={row.role}
-                        onChange={(event) =>
-                          updateRow(row.id, { role: event.target.value })
-                        }
-                        aria-label="Manpower role"
-                      />
-                    </td>
-                    <td>
-                      <input
-                        className="input"
-                        type="number"
-                        min="0"
-                        step="1"
-                        inputMode="numeric"
-                        value={row.quantity || ''}
-                        onChange={(event) =>
-                          updateRow(row.id, {
-                            quantity: Math.max(
-                              0,
-                              Number(event.target.value) || 0,
-                            ),
-                          })
-                        }
-                        placeholder="0"
-                        aria-label={`Quantity for ${row.role}`}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        className="input"
-                        type="number"
-                        min="0"
-                        step="1"
-                        inputMode="decimal"
-                        value={row.rate || ''}
-                        onChange={(event) =>
-                          updateRow(row.id, {
-                            rate: Math.max(
-                              0,
-                              Number(event.target.value) || 0,
-                            ),
-                          })
-                        }
-                        placeholder="0"
-                        aria-label={`Rate for ${row.role}`}
-                      />
-                    </td>
-                    <td>
-                      <b>
-                        {money(
-                          (Number(row.quantity) || 0) *
-                            (Number(row.rate) || 0),
-                        )}
-                      </b>
-                    </td>
-                    <td>
-                      <button
-                        className="danger-button"
-                        type="button"
-                        onClick={() =>
-                          persistRows(
-                            work.manpower.filter(
-                              (item) => item.id !== row.id,
-                            ),
-                          )
-                        }
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              return (
+                <details
+                  className="manpower-function-card"
+                  key={group.serviceId}
+                >
+                  <summary>
+                    <div>
+                      {group.dayLabel ? (
+                        <span className="section-kicker">
+                          {group.dayLabel}
+                        </span>
+                      ) : null}
+                      <h3>{group.mealLabel}</h3>
+                    </div>
+                    <div className="manpower-function-meta">
+                      {group.servicePax > 0 ? (
+                        <span className="badge green">
+                          {group.servicePax} members
+                        </span>
+                      ) : null}
+                      <span className="badge">{groupPeople} staff</span>
+                      <span className="badge orange">
+                        {money(groupCost)}
+                      </span>
+                    </div>
+                  </summary>
+
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Staff Role</th>
+                          <th>Quantity</th>
+                          <th>Rate</th>
+                          <th>Total</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.rows.map((row) => (
+                          <tr key={row.id}>
+                            <td>
+                              <input
+                                className="input"
+                                value={row.role}
+                                onChange={(event) =>
+                                  updateRow(row.id, {
+                                    role: event.target.value,
+                                  })
+                                }
+                                aria-label="Manpower role"
+                              />
+                            </td>
+                            <td>
+                              <input
+                                className="input"
+                                type="number"
+                                min="0"
+                                step="1"
+                                inputMode="numeric"
+                                value={row.quantity || ''}
+                                onChange={(event) =>
+                                  updateRow(row.id, {
+                                    quantity: Math.max(
+                                      0,
+                                      Number(event.target.value) || 0,
+                                    ),
+                                  })
+                                }
+                                placeholder="0"
+                                aria-label={`Quantity for ${row.role}`}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                className="input"
+                                type="number"
+                                min="0"
+                                step="1"
+                                inputMode="decimal"
+                                value={row.rate || ''}
+                                onChange={(event) =>
+                                  updateRow(row.id, {
+                                    rate: Math.max(
+                                      0,
+                                      Number(event.target.value) || 0,
+                                    ),
+                                  })
+                                }
+                                placeholder="0"
+                                aria-label={`Rate for ${row.role}`}
+                              />
+                            </td>
+                            <td><b>{money(rowTotal(row))}</b></td>
+                            <td>
+                              <button
+                                className="danger-button"
+                                type="button"
+                                onClick={() =>
+                                  persistRows(
+                                    work.manpower.filter(
+                                      (item) => item.id !== row.id,
+                                    ),
+                                  )
+                                }
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="action-row">
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => addRole(group)}
+                    >
+                      Add Role to {group.mealLabel}
+                    </button>
+                  </div>
+                </details>
+              );
+            })}
           </div>
 
           <div className="action-row" style={{ marginTop: 16 }}>
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={addRole}
-            >
-              Add Role
-            </button>
             <button
               className="ghost-button"
               type="button"
               onClick={resetRows}
             >
-              Reset Defaults
+              Reset All Function Staff
             </button>
           </div>
         </div>

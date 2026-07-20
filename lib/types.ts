@@ -62,6 +62,10 @@ export type ManpowerRow = {
   role: string;
   quantity: number;
   rate: number;
+  serviceId?: string;
+  dayLabel?: string;
+  mealLabel?: string;
+  servicePax?: number;
 };
 
 export type BusinessProfile = {

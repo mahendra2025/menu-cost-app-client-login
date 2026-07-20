@@ -47,11 +47,19 @@ export const emptyExtras: ExtraCost = {
 };
 
 export const defaultManpower: ManpowerRow[] = [
-  { id: 'manpower_waiter', role: 'Waiter', quantity: 0, rate: 750 },
+  { id: 'manpower_manager', role: 'Event Manager', quantity: 0, rate: 3500 },
+  { id: 'manpower_supervisor', role: 'Supervisor', quantity: 0, rate: 2000 },
   { id: 'manpower_captain', role: 'Captain', quantity: 0, rate: 1500 },
+  { id: 'manpower_waiter', role: 'Waiter', quantity: 0, rate: 750 },
   { id: 'manpower_cook', role: 'Cook', quantity: 0, rate: 2500 },
+  { id: 'manpower_assistant_cook', role: 'Assistant Cook', quantity: 0, rate: 1400 },
   { id: 'manpower_helper', role: 'Helper / Masi', quantity: 0, rate: 700 },
+  { id: 'manpower_bartender', role: 'Bartender', quantity: 0, rate: 1600 },
+  { id: 'manpower_counter', role: 'Counter Attendant', quantity: 0, rate: 900 },
+  { id: 'manpower_dishwasher', role: 'Dishwasher', quantity: 0, rate: 700 },
   { id: 'manpower_cleaning', role: 'Cleaning', quantity: 0, rate: 600 },
+  { id: 'manpower_security', role: 'Security', quantity: 0, rate: 900 },
+  { id: 'manpower_driver', role: 'Driver', quantity: 0, rate: 1000 },
 ];
 
 /* -------------------------------------------------------------------------- */
