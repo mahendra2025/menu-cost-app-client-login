@@ -7,7 +7,10 @@ import {
   detectCategory,
   findDishesInText,
   findDishByName,
+  findFuzzyDishByName,
 } from './dishCostMaster';
+
+import type { Category } from './dishCostMaster';
 
 import type {
   ClientUser,
@@ -353,6 +356,60 @@ const MENU_HEADINGS = new Set([
   'live counters',
 ]);
 
+const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
+  menu: null,
+  breakfast: 'Breakfast',
+  lunch: null,
+  dinner: null,
+  'hi tea': 'Beverage',
+  'high tea': 'Beverage',
+  starter: 'Starter',
+  starters: 'Starter',
+  'main course': null,
+  'main courses': null,
+  sweet: 'Sweet',
+  sweets: 'Sweet',
+  dessert: 'Sweet',
+  desserts: 'Sweet',
+  beverage: 'Beverage',
+  beverages: 'Beverage',
+  'welcome drink': 'Welcome Drink',
+  'welcome drinks': 'Welcome Drink',
+  mocktail: 'Mocktail',
+  mocktails: 'Mocktail',
+  soup: 'Soup',
+  soups: 'Soup',
+  salad: 'Salad',
+  salads: 'Salad',
+  rice: 'Rice',
+  bread: 'Bread',
+  breads: 'Bread',
+  roti: 'Bread',
+  sabji: 'Sabji',
+  sabzi: 'Sabji',
+  vegetable: 'Sabji',
+  vegetables: 'Sabji',
+  paneer: 'Paneer',
+  dal: 'Dal / Kadhi',
+  kadhi: 'Dal / Kadhi',
+  'dal kadhi': 'Dal / Kadhi',
+  'dal and kadhi': 'Dal / Kadhi',
+  'ice cream': 'Ice Cream',
+  farsan: 'Farsan',
+  namkeen: 'Farsan',
+  condiments: 'Condiments',
+  chaat: 'Chaat',
+  chinese: 'Chinese',
+  italian: 'Italian',
+  'south indian': 'South Indian',
+  'north indian': 'Punjabi',
+  punjabi: 'Punjabi',
+  gujarati: 'Gujarati',
+  rajasthani: 'Rajasthani',
+  'live counter': 'Live Counter',
+  'live counters': 'Live Counter',
+};
+
 const COMMON_DISH_ALIASES: Record<
   string,
   string
@@ -436,6 +493,14 @@ function removePriceAndQuantity(
       /\b\d+(?:\.\d+)?\s*(?:pax|plates?|persons?|people|guests?|pcs?|pieces?|kg|kgs|gram|grams|gm|gms|ml|ltr|litre|litres|packet|packets)\b/gi,
       ' ',
     )
+    .replace(
+      /\s+(?:@|[-–—])\s*(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:\/-)?\s*$/i,
+      ' ',
+    )
+    .replace(
+      /\s+(?:₹|rs\.?|inr)\s*\d+(?:\.\d+)?\s*$/i,
+      ' ',
+    )
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -446,6 +511,10 @@ function removeLeadingNumbering(
   return value
     .replace(
       /^\s*(?:item\s*)?\d+\s*[.)\-:]*\s*/i,
+      '',
+    )
+    .replace(
+      /^\s*\d+(?:\.\d+)?\s*[x×]\s*/i,
       '',
     )
     .replace(
@@ -569,30 +638,74 @@ function createDishCandidates(
     );
 }
 
+type ParsedMenuLine = {
+  text: string;
+  categoryHint?: Category;
+};
+
 function splitMenuText(
   text: string,
-): string[] {
-  return text
+): ParsedMenuLine[] {
+  const rawSegments = text
     .replace(/\r/g, '\n')
     .replace(
-      /[•▪●◦*]/g,
+      /\bdal\s*\/\s*kadhi\b/gi,
+      'dal and kadhi',
+    )
+    .replace(
+      /[•▪●◦◆◇■□✓✔*]/g,
       '\n',
     )
     .replace(/\|/g, '\n')
     .replace(
+      /\s+(?=(?:item\s*)?\d+\s*[.)\-:]\s*\S)/gi,
+      '\n',
+    )
+    .replace(
       /\s+\/\s+/g,
       '\n',
     )
-    .replace(/\t/g, ' ')
-    .split(/[\n,;]+/)
-    .map(cleanMenuLine)
-    .filter(Boolean)
-    .filter((line) => {
+    .replace(/\t+/g, '\n')
+    .split(/[\n,;]+/);
+
+  const menuLines: ParsedMenuLine[] = [];
+  let activeCategory: Category | undefined;
+
+  for (const rawSegment of rawSegments) {
+    let segment = rawSegment.trim();
+    if (!segment) continue;
+
+    const headingWithItems = segment.match(
+      /^([^:–—-]{2,32})\s*[:–—-]\s*(.+)$/,
+    );
+
+    if (headingWithItems) {
+      const headingKey = normalizeText(headingWithItems[1]);
+
+      if (headingKey in MENU_HEADING_CATEGORIES) {
+        activeCategory =
+          MENU_HEADING_CATEGORIES[headingKey] ?? undefined;
+        segment = headingWithItems[2].trim();
+      }
+    }
+
+    const wholeSegmentKey = normalizeText(segment);
+
+    if (wholeSegmentKey in MENU_HEADING_CATEGORIES) {
+      activeCategory =
+        MENU_HEADING_CATEGORIES[wholeSegmentKey] ?? undefined;
+      continue;
+    }
+
+    const line = cleanMenuLine(segment);
+    if (!line) continue;
+
+    {
       const normalized =
         normalizeText(line);
 
       if (!normalized) {
-        return false;
+        continue;
       }
 
       if (
@@ -600,11 +713,11 @@ function splitMenuText(
           normalized,
         )
       ) {
-        return false;
+        continue;
       }
 
       if (/^\d+$/.test(normalized)) {
-        return false;
+        continue;
       }
 
       if (
@@ -612,23 +725,32 @@ function splitMenuText(
           line,
         )
       ) {
-        return false;
+        continue;
       }
 
       if (
-        /^(?:date|time|venue|client|event|pax|guests?)\s*:/i.test(
+        /^(?:date|time|venue|client|event|function|occasion|pax|guests?|persons?)\s*:/i.test(
           line,
         )
       ) {
-        return false;
+        continue;
       }
 
-      return normalized.length > 1;
+      if (normalized.length <= 1) continue;
+    }
+
+    menuLines.push({
+      text: line,
+      categoryHint: activeCategory,
     });
+  }
+
+  return menuLines;
 }
 
 function detectDishesFromLine(
   menuLine: string,
+  categoryHint?: Category,
 ): NonNullable<
   ReturnType<typeof findDishByName>
 >[] {
@@ -641,6 +763,16 @@ function detectDishesFromLine(
 
     if (matchedDishes.length) {
       return matchedDishes;
+    }
+
+    const fuzzyMatch =
+      findFuzzyDishByName(
+        candidate,
+        categoryHint,
+      );
+
+    if (fuzzyMatch) {
+      return [fuzzyMatch];
     }
   }
 
@@ -663,9 +795,13 @@ export function parseMenuText(
 
   const menuItems: MenuItem[] = [];
 
-  for (const line of menuLines) {
+  for (const menuLine of menuLines) {
+    const line = menuLine.text;
     const matchedDishes =
-      detectDishesFromLine(line);
+      detectDishesFromLine(
+        line,
+        menuLine.categoryHint,
+      );
 
     if (matchedDishes.length) {
       matchedDishes.forEach(
@@ -707,6 +843,7 @@ export function parseMenuText(
      * of deleting it.
      */
     const fallbackCategory =
+      menuLine.categoryHint ||
       detectCategory(line) ||
       'Sabji';
 

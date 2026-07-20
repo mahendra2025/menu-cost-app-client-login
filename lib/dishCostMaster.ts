@@ -1804,6 +1804,39 @@ function tokenizeDishName(value: string) {
   return normalizeDishName(value).split(' ').filter(Boolean);
 }
 
+function editDistance(leftValue: string, rightValue: string) {
+  const left = normalizeDishName(leftValue);
+  const right = normalizeDishName(rightValue);
+
+  if (left === right) return 0;
+  if (!left.length) return right.length;
+  if (!right.length) return left.length;
+
+  let previous = Array.from(
+    { length: right.length + 1 },
+    (_, index) => index,
+  );
+
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    const current = [leftIndex];
+
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const substitutionCost =
+        left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1;
+
+      current[rightIndex] = Math.min(
+        current[rightIndex - 1] + 1,
+        previous[rightIndex] + 1,
+        previous[rightIndex - 1] + substitutionCost,
+      );
+    }
+
+    previous = current;
+  }
+
+  return previous[right.length];
+}
+
 function isExactAliasMatch(input: string, candidate: string) {
   const normalizedInput = normalizeDishName(input);
   const normalizedCandidate = normalizeDishName(candidate);
@@ -1927,6 +1960,95 @@ export function findDishesInText(value: string): DishCostItem[] {
       return true;
     })
     .map((match) => match.dish);
+}
+
+/**
+ * Finds one likely catalog dish when a menu item contains a small spelling
+ * or OCR error. Thresholds are deliberately strict: uncertain items should
+ * stay unmatched so the user can review them instead of receiving a wrong
+ * catalog rate.
+ */
+export function findFuzzyDishByName(
+  name: string,
+  preferredCategory?: Category,
+): DishCostItem | null {
+  const normalizedInput = normalizeDishName(name);
+
+  if (normalizedInput.length < 4) return null;
+
+  const inputTokenCount = tokenizeDishName(normalizedInput).length;
+  const matches: Array<{
+    dish: DishCostItem;
+    distance: number;
+    ratio: number;
+    categoryPenalty: number;
+  }> = [];
+
+  getDishCostItems().forEach((dish) => {
+    const candidates = Array.from(
+      new Set(
+        [dish.name, ...(dish.aliases ?? [])]
+          .map(normalizeDishName)
+          .filter((candidate) => candidate.length >= 4),
+      ),
+    );
+
+    candidates.forEach((candidate) => {
+      const candidateTokenCount = tokenizeDishName(candidate).length;
+
+      if (Math.abs(inputTokenCount - candidateTokenCount) > 1) {
+        return;
+      }
+
+      const longestLength = Math.max(
+        normalizedInput.length,
+        candidate.length,
+      );
+      const allowedDistance =
+        longestLength <= 5 ? 1 : longestLength <= 12 ? 2 : 3;
+
+      if (
+        Math.abs(normalizedInput.length - candidate.length) >
+        allowedDistance
+      ) {
+        return;
+      }
+
+      const distance = editDistance(normalizedInput, candidate);
+      const ratio = distance / longestLength;
+
+      if (distance > allowedDistance || ratio > 0.22) return;
+
+      matches.push({
+        dish,
+        distance,
+        ratio,
+        categoryPenalty:
+          preferredCategory && dish.category !== preferredCategory ? 1 : 0,
+      });
+    });
+  });
+
+  matches.sort(
+    (left, right) =>
+      left.distance - right.distance ||
+      left.categoryPenalty - right.categoryPenalty ||
+      left.ratio - right.ratio ||
+      left.dish.name.localeCompare(right.dish.name),
+  );
+
+  const best = matches[0];
+  if (!best) return null;
+
+  const equallyLikelyDifferentDish = matches.find(
+    (match) =>
+      match.dish.name !== best.dish.name &&
+      match.distance === best.distance &&
+      match.categoryPenalty === best.categoryPenalty &&
+      Math.abs(match.ratio - best.ratio) < 0.001,
+  );
+
+  return equallyLikelyDifferentDish ? null : best.dish;
 }
 
 export function detectDish(name: string): DishCostItem | null {

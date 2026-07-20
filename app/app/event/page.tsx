@@ -508,9 +508,9 @@ Gulab Jamun`}
                 A dish not found in the
                 catalog will still
                 appear on the Menu page.
-                Its rate will be ₹0 so
-                you can enter a manual
-                rate.
+                Its rate field will stay
+                blank so you can enter
+                the correct rate manually.
               </p>
             </div>
 
