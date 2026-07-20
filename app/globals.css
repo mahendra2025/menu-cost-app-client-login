@@ -191,7 +191,7 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .menu-list { display: grid; gap: 12px; }
 .menu-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 130px auto;
+  grid-template-columns: minmax(190px, 1.5fr) minmax(150px, 1fr) minmax(210px, .9fr) 130px auto;
   gap: 10px;
   align-items: center;
   padding: 12px;
@@ -199,6 +199,8 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   background: rgba(255,255,255,0.86);
   border: 1px solid var(--border);
 }
+.serving-fields { display: grid; grid-template-columns: minmax(78px, .7fr) minmax(100px, 1fr); gap: 8px; }
+.serving-unit-input { min-width: 0; }
 .admin-dish-list { display: grid; gap: 14px; }
 .dish-filter-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(190px, .8fr) minmax(150px, .45fr); gap: 14px; align-items: end; }
 .dish-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }

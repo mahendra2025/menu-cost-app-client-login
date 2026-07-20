@@ -679,14 +679,17 @@ export function parseMenuText(
             category:
               matchedDish.category,
 
-            costPerPlate:
-              Number(
-                matchedDish.rate,
-              ) ||
-              getCategoryBaseCost(
-                matchedDish.category,
-              ),
-          });
+        costPerPlate:
+          Number(
+            matchedDish.rate,
+          ) ||
+          getCategoryBaseCost(
+            matchedDish.category,
+          ),
+
+        portionQuantity: 1,
+        portionUnit: 'serving',
+      });
         },
       );
 
@@ -714,6 +717,8 @@ export function parseMenuText(
        * enter a manual rate.
        */
       costPerPlate: 0,
+      portionQuantity: 1,
+      portionUnit: 'serving',
     });
 
     console.warn(

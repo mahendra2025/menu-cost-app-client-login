@@ -414,6 +414,8 @@ export default function MenuPage() {
       name: finalName,
       category: finalCategory,
       costPerPlate: finalRate,
+      portionQuantity: 1,
+      portionUnit: 'serving',
     };
 
     persist({
@@ -848,8 +850,9 @@ export default function MenuPage() {
           <p className="muted">
             Review each detected dish.
             You can rename it, change
-            its category and enter a
-            manual rate per plate.
+            its category, edit its
+            serving quantity and enter
+            a manual rate per plate.
           </p>
 
           {work.menu.length === 0 ? (
@@ -933,6 +936,64 @@ export default function MenuPage() {
                         ),
                       )}
                     </select>
+                  </div>
+
+                  <div className="menu-cell">
+                    <span className="mobile-field-label">
+                      Serving Quantity
+                    </span>
+
+                    <div className="serving-fields">
+                      <input
+                        className="input input-large"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        aria-label={`Serving quantity for ${item.name}`}
+                        value={
+                          item.portionQuantity ??
+                          1
+                        }
+                        onChange={(event) =>
+                          updateItem(
+                            item.id,
+                            {
+                              portionQuantity:
+                                Math.max(
+                                  0,
+                                  Number(
+                                    event
+                                      .target
+                                      .value,
+                                  ) || 0,
+                                ),
+                            },
+                          )
+                        }
+                      />
+
+                      <input
+                        className="input input-large serving-unit-input"
+                        aria-label={`Serving unit for ${item.name}`}
+                        value={
+                          item.portionUnit ??
+                          'serving'
+                        }
+                        onChange={(event) =>
+                          updateItem(
+                            item.id,
+                            {
+                              portionUnit:
+                                event
+                                  .target
+                                  .value,
+                            },
+                          )
+                        }
+                        placeholder="serving"
+                      />
+                    </div>
                   </div>
 
                   <div className="menu-cell">
