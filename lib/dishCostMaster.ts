@@ -1804,6 +1804,117 @@ function tokenizeDishName(value: string) {
   return normalizeDishName(value).split(' ').filter(Boolean);
 }
 
+const INDIC_CONSONANTS: Record<string, string> = {
+  क: 'k', ख: 'kh', ग: 'g', घ: 'gh', ङ: 'n',
+  च: 'ch', छ: 'chh', ज: 'j', झ: 'jh', ञ: 'n',
+  ट: 't', ठ: 'th', ड: 'd', ढ: 'dh', ण: 'n',
+  त: 't', थ: 'th', द: 'd', ध: 'dh', न: 'n',
+  प: 'p', फ: 'ph', ब: 'b', भ: 'bh', म: 'm',
+  य: 'y', र: 'r', ल: 'l', व: 'v',
+  श: 'sh', ष: 'sh', स: 's', ह: 'h', ळ: 'l',
+  ક: 'k', ખ: 'kh', ગ: 'g', ઘ: 'gh', ઙ: 'n',
+  ચ: 'ch', છ: 'chh', જ: 'j', ઝ: 'jh', ઞ: 'n',
+  ટ: 't', ઠ: 'th', ડ: 'd', ઢ: 'dh', ણ: 'n',
+  ત: 't', થ: 'th', દ: 'd', ધ: 'dh', ન: 'n',
+  પ: 'p', ફ: 'ph', બ: 'b', ભ: 'bh', મ: 'm',
+  ય: 'y', ર: 'r', લ: 'l', વ: 'v',
+  શ: 'sh', ષ: 'sh', સ: 's', હ: 'h', ળ: 'l',
+};
+
+const INDIC_VOWELS: Record<string, string> = {
+  अ: 'a', आ: 'aa', इ: 'i', ई: 'ee', उ: 'u', ऊ: 'oo',
+  ऋ: 'ri', ए: 'e', ऐ: 'ai', ओ: 'o', औ: 'au',
+  અ: 'a', આ: 'aa', ઇ: 'i', ઈ: 'ee', ઉ: 'u', ઊ: 'oo',
+  ઋ: 'ri', એ: 'e', ઐ: 'ai', ઓ: 'o', ઔ: 'au',
+};
+
+const INDIC_MATRAS: Record<string, string> = {
+  'ा': 'aa', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo',
+  'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
+  'ા': 'aa', 'િ': 'i', 'ી': 'ee', 'ુ': 'u', 'ૂ': 'oo',
+  'ૃ': 'ri', 'ે': 'e', 'ૈ': 'ai', 'ો': 'o', 'ૌ': 'au',
+};
+
+function transliterateIndic(value: string) {
+  let result = '';
+
+  for (const character of value.normalize('NFC')) {
+    const consonant = INDIC_CONSONANTS[character];
+
+    if (consonant) {
+      result += `${consonant}a`;
+      continue;
+    }
+
+    const vowel = INDIC_VOWELS[character];
+
+    if (vowel) {
+      result += vowel;
+      continue;
+    }
+
+    if (character in INDIC_MATRAS) {
+      if (result.endsWith('a')) {
+        result = result.slice(0, -1);
+      }
+
+      result += INDIC_MATRAS[character];
+      continue;
+    }
+
+    if (character === '्' || character === '્') {
+      if (result.endsWith('a')) {
+        result = result.slice(0, -1);
+      }
+      continue;
+    }
+
+    if (
+      character === 'ं' ||
+      character === 'ँ' ||
+      character === 'ઁ' ||
+      character === 'ં'
+    ) {
+      result += 'n';
+      continue;
+    }
+
+    if (character === 'ः' || character === 'ઃ') {
+      result += 'h';
+      continue;
+    }
+
+    if (character === '़' || character === '઼') {
+      continue;
+    }
+
+    result += character;
+  }
+
+  return result;
+}
+
+function phoneticDishKey(value: string) {
+  return transliterateIndic(value)
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/chh|ch/g, 'c')
+    .replace(/sh|kh|gh|jh|th|dh|bh/g, (sound) => sound[0])
+    .replace(/ph|f/g, 'f')
+    .replace(/[qw]/g, (sound) => sound === 'q' ? 'k' : 'v')
+    .replace(/z/g, 'j')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .map((token) =>
+      token
+        .replace(/[aeiou]+/g, '')
+        .replace(/(.)\1+/g, '$1'),
+    )
+    .filter(Boolean)
+    .join(' ');
+}
+
 function editDistance(leftValue: string, rightValue: string) {
   const left = normalizeDishName(leftValue);
   const right = normalizeDishName(rightValue);
@@ -1975,6 +2086,41 @@ export function findFuzzyDishByName(
   const normalizedInput = normalizeDishName(name);
 
   if (normalizedInput.length < 4) return null;
+
+  const inputPhoneticKey = phoneticDishKey(name);
+  const phoneticMatches = new Map<string, DishCostItem>();
+
+  if (inputPhoneticKey.replace(/\s/g, '').length >= 3) {
+    getDishCostItems().forEach((dish) => {
+      const hasPhoneticMatch = [dish.name, ...(dish.aliases ?? [])]
+        .some((candidate) =>
+          phoneticDishKey(candidate) === inputPhoneticKey,
+        );
+
+      if (hasPhoneticMatch) {
+        phoneticMatches.set(
+          `${normalizeDishName(dish.name)}-${dish.category}`,
+          dish,
+        );
+      }
+    });
+  }
+
+  const exactPhoneticDishes = Array.from(phoneticMatches.values());
+
+  if (exactPhoneticDishes.length === 1) {
+    return exactPhoneticDishes[0];
+  }
+
+  if (preferredCategory && exactPhoneticDishes.length > 1) {
+    const categoryMatches = exactPhoneticDishes.filter(
+      (dish) => dish.category === preferredCategory,
+    );
+
+    if (categoryMatches.length === 1) {
+      return categoryMatches[0];
+    }
+  }
 
   const inputTokenCount = tokenizeDishName(normalizedInput).length;
   const matches: Array<{

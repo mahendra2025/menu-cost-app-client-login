@@ -408,7 +408,60 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   rajasthani: 'Rajasthani',
   'live counter': 'Live Counter',
   'live counters': 'Live Counter',
+  'swagat pey': 'Welcome Drink',
+  'स्वागत पेय': 'Welcome Drink',
+  'સ્વાગત પીણું': 'Welcome Drink',
+  'मुख्य भोजन': null,
+  'મુખ્ય ભોજન': null,
+  'sabziyan': 'Sabji',
+  'सब्जी': 'Sabji',
+  'सब्जियां': 'Sabji',
+  'શાક': 'Sabji',
+  'શાકભાજી': 'Sabji',
+  'पनीर': 'Paneer',
+  'પનીર': 'Paneer',
+  'दाल': 'Dal / Kadhi',
+  'दाल कढ़ी': 'Dal / Kadhi',
+  'દાળ': 'Dal / Kadhi',
+  'દાળ કઢી': 'Dal / Kadhi',
+  chawal: 'Rice',
+  'चावल': 'Rice',
+  'ચોખા': 'Rice',
+  'ભાત': 'Rice',
+  'रोटी': 'Bread',
+  'रोटियां': 'Bread',
+  'રોટલી': 'Bread',
+  mithai: 'Sweet',
+  'मिठाई': 'Sweet',
+  'મીઠાઈ': 'Sweet',
+  'आइस क्रीम': 'Ice Cream',
+  'આઇસ ક્રીમ': 'Ice Cream',
+  'सूप': 'Soup',
+  'સૂપ': 'Soup',
+  'स्टार्टर': 'Starter',
+  'સ્ટાર્ટર': 'Starter',
+  'सलाद': 'Salad',
+  'સલાડ': 'Salad',
+  'पापड़': 'Papad',
+  'પાપડ': 'Papad',
+  'फरसान': 'Farsan',
+  'ફરસાણ': 'Farsan',
 };
+
+function normalizeMenuHeading(value: string): string {
+  const text = String(value || '');
+
+  if (/[\u0900-\u097f\u0a80-\u0aff]/u.test(text)) {
+    return text
+      .normalize('NFC')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{M}\p{N}]+/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  return normalizeText(text);
+}
 
 const COMMON_DISH_ALIASES: Record<
   string,
@@ -680,7 +733,7 @@ function splitMenuText(
     );
 
     if (headingWithItems) {
-      const headingKey = normalizeText(headingWithItems[1]);
+      const headingKey = normalizeMenuHeading(headingWithItems[1]);
 
       if (headingKey in MENU_HEADING_CATEGORIES) {
         activeCategory =
@@ -689,7 +742,7 @@ function splitMenuText(
       }
     }
 
-    const wholeSegmentKey = normalizeText(segment);
+    const wholeSegmentKey = normalizeMenuHeading(segment);
 
     if (wholeSegmentKey in MENU_HEADING_CATEGORIES) {
       activeCategory =

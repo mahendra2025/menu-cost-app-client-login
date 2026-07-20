@@ -432,7 +432,9 @@ export default function EventPage() {
             <p>
               Paste the complete menu
               from WhatsApp, notes or
-              email. Separate dishes
+              email in English, Roman
+              Hindi, Hindi or Gujarati.
+              Separate dishes
               using new lines, commas,
               slashes, semicolons or
               bullets.
