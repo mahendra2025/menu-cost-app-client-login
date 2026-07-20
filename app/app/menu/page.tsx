@@ -17,6 +17,7 @@ import {
   detectCategory,
   detectCost,
   findDishByName,
+  findDishByNameInItems,
   suggestDishesByName,
   syncDishCostItemsFromServer,
 } from '../../../lib/dishCostMaster';
@@ -111,7 +112,8 @@ export default function MenuPage() {
     let cancelled = false;
 
     async function refreshAdminServings() {
-      await syncDishCostItemsFromServer();
+      const adminDishes =
+        await syncDishCostItemsFromServer();
       if (cancelled) return;
 
       setWork((latestWork) => {
@@ -139,7 +141,10 @@ export default function MenuPage() {
             }
 
             const adminDish =
-              findDishByName(item.name);
+              findDishByNameInItems(
+                item.name,
+                adminDishes,
+              );
 
             if (!adminDish) return item;
 

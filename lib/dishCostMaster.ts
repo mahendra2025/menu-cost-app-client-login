@@ -1747,7 +1747,11 @@ export async function syncDishCostItemsFromServer() {
       .map((item) => sanitizeDishItem(item))
       .filter((item): item is DishCostItem => item !== null);
     if (cleaned.length) {
-      saveDishCostItems(cleaned);
+      try {
+        saveDishCostItems(cleaned);
+      } catch {
+        // The fresh server catalog is still usable when browser storage is full.
+      }
       return cleaned;
     }
     return DISH_COST_ITEMS;
@@ -1813,7 +1817,16 @@ function isAliasContained(input: string, candidate: string) {
 }
 
 export function findDishByName(name: string): DishCostItem | null {
-  const dishItems = getDishCostItems();
+  return findDishByNameInItems(
+    name,
+    getDishCostItems(),
+  );
+}
+
+export function findDishByNameInItems(
+  name: string,
+  dishItems: DishCostItem[],
+): DishCostItem | null {
   const exactMatch = dishItems.find((dish) =>
     isExactAliasMatch(name, dish.name) || (dish.aliases ?? []).some((alias) => isExactAliasMatch(name, alias)),
   );
