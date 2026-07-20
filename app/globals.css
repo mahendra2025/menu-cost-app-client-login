@@ -225,6 +225,18 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   border: 1px solid var(--border);
 }
 .admin-serving-grid { display: grid; grid-template-columns: minmax(90px, .7fr) minmax(110px, 1fr); gap: 8px; }
+.dish-recipe-serving {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #246b45;
+  font-size: 11px;
+  font-weight: 700;
+}
+.dish-recipe-serving .ghost-button { min-height: 28px; padding: 5px 9px; border-radius: 9px; font-size: 11px; }
+.dish-recipe-serving-missing { color: var(--muted); }
 .admin-alias-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .admin-dish-row-error {
   border-color: rgba(255, 59, 48, 0.28);

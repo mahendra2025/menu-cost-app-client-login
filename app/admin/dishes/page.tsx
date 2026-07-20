@@ -8,6 +8,11 @@ import {
   type Category,
   type DishCostItem,
 } from '../../../lib/dishCostMaster';
+import {
+  createRecipeServingCatalog,
+  findRecipeServing,
+  type RecipeServing,
+} from '../../../lib/recipeServings';
 import { getSession, uid } from '../../../lib/store';
 
 type EditableDish = DishCostItem & {
@@ -15,6 +20,7 @@ type EditableDish = DishCostItem & {
   aliasesText: string;
   hindiAliasesText: string;
   gujaratiAliasesText: string;
+  recipeServing?: RecipeServing;
 };
 type DishRowErrors = {
   name?: string;
@@ -40,11 +46,25 @@ function allRowAliases(item: EditableDish) {
   ];
 }
 
-function toEditableDish(item: DishCostItem): EditableDish {
+function isPlaceholderServing(item: DishCostItem) {
+  return Number(item.servingQuantity ?? 1) === 1 &&
+    String(item.servingUnit ?? 'serving').trim().toLowerCase() === 'serving';
+}
+
+function toEditableDish(
+  item: DishCostItem,
+  recipeCatalog = createRecipeServingCatalog(),
+): EditableDish {
   const aliases = item.aliases ?? [];
+  const recipeServing = findRecipeServing(item.name, recipeCatalog);
+  const useRecipeServing = Boolean(recipeServing && isPlaceholderServing(item));
+
   return {
     ...item,
     id: uid('dish_master'),
+    servingQuantity: useRecipeServing ? recipeServing?.quantity : item.servingQuantity,
+    servingUnit: useRecipeServing ? recipeServing?.unit : item.servingUnit,
+    recipeServing,
     aliasesText: aliases.filter((alias) => !HINDI_SCRIPT.test(alias) && !GUJARATI_SCRIPT.test(alias)).join(', '),
     hindiAliasesText: aliases.filter((alias) => HINDI_SCRIPT.test(alias)).join(', '),
     gujaratiAliasesText: aliases.filter((alias) => GUJARATI_SCRIPT.test(alias)).join(', '),
@@ -159,9 +179,21 @@ export default function AdminDishesPage() {
       try {
         const response = await fetch('/api/admin/dishes', { cache: 'no-store' });
         const data = await response.json();
-        const cleaned = parseDishItems(data.items).map(toEditableDish);
+        const recipeCatalog = createRecipeServingCatalog();
+        const dishItems = parseDishItems(data.items);
+        const cleaned = dishItems.map((item) => toEditableDish(item, recipeCatalog));
+        const loadedRecipeServings = cleaned.some((item, index) =>
+          item.servingQuantity !== dishItems[index]?.servingQuantity ||
+          item.servingUnit !== dishItems[index]?.servingUnit
+        );
+
         setRows(cleaned);
         saveDishCostItems(cleaned.map(toDishCostItem));
+        if (loadedRecipeServings) {
+          setDirty(true);
+          setMessageType('success');
+          setMessage('Serving quantities loaded from Recipes. Save all changes to publish them to client menus.');
+        }
       } finally {
         setReady(true);
       }
@@ -227,6 +259,14 @@ export default function AdminDishesPage() {
     setRows((current) => current.filter((row) => row.id !== id));
   }
 
+  function useRecipeServing(row: EditableDish) {
+    if (!row.recipeServing) return;
+    updateRow(row.id, {
+      servingQuantity: row.recipeServing.quantity,
+      servingUnit: row.recipeServing.unit,
+    });
+  }
+
   async function saveAll() {
     if (rowErrors.size > 0) {
       setMessage('Please fix the highlighted dish rows before saving.');
@@ -247,7 +287,8 @@ export default function AdminDishesPage() {
       });
       if (!response.ok) throw new Error();
       saveDishCostItems(cleaned);
-      setRows(cleaned.map(toEditableDish));
+      const recipeCatalog = createRecipeServingCatalog();
+      setRows(cleaned.map((item) => toEditableDish(item, recipeCatalog)));
       setDirty(false);
       setMessageType('success');
       setMessage('Dish catalog saved. Client menus now use these dishes and rates.');
@@ -271,7 +312,8 @@ export default function AdminDishesPage() {
 
     const reload = await fetch('/api/admin/dishes', { cache: 'no-store' });
     const data = await reload.json();
-    const defaults = parseDishItems(data.items).map(toEditableDish);
+    const recipeCatalog = createRecipeServingCatalog();
+    const defaults = parseDishItems(data.items).map((item) => toEditableDish(item, recipeCatalog));
     saveDishCostItems(defaults.map(toDishCostItem));
     setRows(defaults);
     setDirty(false);
@@ -352,6 +394,14 @@ export default function AdminDishesPage() {
                       <input className="input input-large" value={row.servingUnit ?? 'serving'} onChange={(e) => updateRow(row.id, { servingUnit: e.target.value })} placeholder="serving" />
                       {rowErrors.get(row.id)?.servingUnit ? <span className="field-error">{rowErrors.get(row.id)?.servingUnit}</span> : null}
                     </div>
+                    {row.recipeServing ? (
+                      <div className="dish-recipe-serving">
+                        <span>Recipe: <strong>{row.recipeServing.quantity} {row.recipeServing.unit}</strong></span>
+                        <button className="ghost-button" type="button" onClick={() => useRecipeServing(row)}>Use recipe</button>
+                      </div>
+                    ) : (
+                      <div className="dish-recipe-serving dish-recipe-serving-missing">No matching recipe serving</div>
+                    )}
                   </div>
                   <div className="admin-alias-grid">
                     <div className="field">
