@@ -378,6 +378,7 @@ export default function ManpowerPage() {
                 <details
                   className="manpower-function-card"
                   key={group.serviceId}
+                  open
                 >
                   <summary>
                     <div>
