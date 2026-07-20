@@ -414,8 +414,12 @@ export default function MenuPage() {
       name: finalName,
       category: finalCategory,
       costPerPlate: finalRate,
-      portionQuantity: 1,
-      portionUnit: 'serving',
+      portionQuantity:
+        matchedDish?.servingQuantity ??
+        1,
+      portionUnit:
+        matchedDish?.servingUnit ??
+        'serving',
     };
 
     persist({

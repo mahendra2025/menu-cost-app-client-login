@@ -33,13 +33,15 @@ model MenuWork {
 }
 
 model DishMasterItem {
-  id        String   @id @default(cuid())
-  name      String
-  category  String
-  rate      Float
-  aliases   Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  category        String
+  rate            Float
+  servingQuantity Float    @default(1)
+  servingUnit     String   @default("serving")
+  aliases         Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model RazorpayWebhookEvent {

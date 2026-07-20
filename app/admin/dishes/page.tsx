@@ -19,6 +19,8 @@ type EditableDish = DishCostItem & {
 type DishRowErrors = {
   name?: string;
   rate?: string;
+  servingQuantity?: string;
+  servingUnit?: string;
   aliases?: string;
 };
 
@@ -59,12 +61,14 @@ function parseDishItems(items: unknown): DishCostItem[] {
       const name = String(row.name || '').trim();
       const category = String(row.category || '').trim() as Category;
       const rate = Math.max(Number(row.rate) || 0, 0);
+      const servingQuantity = Math.max(Number(row.servingQuantity) || 1, 0.01);
+      const servingUnit = String(row.servingUnit || 'serving').trim() || 'serving';
       const aliases = Array.isArray(row.aliases)
         ? row.aliases.map((alias) => String(alias).trim()).filter(Boolean)
         : [];
 
       if (!name || !CATEGORIES.includes(category)) return null;
-      return { name, category, rate, aliases };
+      return { name, category, rate, servingQuantity, servingUnit, aliases };
     })
     .filter((item): item is DishCostItem => item !== null);
 }
@@ -74,6 +78,8 @@ function toDishCostItem(item: EditableDish): DishCostItem {
     name: item.name.trim(),
     category: item.category,
     rate: Math.max(Number(item.rate) || 0, 0),
+    servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
+    servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
     aliases: allRowAliases(item),
   };
 }
@@ -94,6 +100,8 @@ function validateRows(rows: EditableDish[]) {
 
     if (!name) rowErrors.name = 'Dish name is required.';
     if (!(Number(row.rate) > 0)) rowErrors.rate = 'Rate must be greater than 0.';
+    if (!(Number(row.servingQuantity) > 0)) rowErrors.servingQuantity = 'Quantity must be greater than 0.';
+    if (!String(row.servingUnit || '').trim()) rowErrors.servingUnit = 'Unit is required.';
 
     const duplicateAliasesInRow = aliases.filter((alias, index) => aliases.findIndex((item) => normalizeToken(item) === normalizeToken(alias)) !== index);
     if (duplicateAliasesInRow.length) rowErrors.aliases = 'Aliases in the same row must be unique.';
@@ -202,6 +210,8 @@ export default function AdminDishesPage() {
         name: '',
         category: 'Sabji',
         rate: 1,
+        servingQuantity: 1,
+        servingUnit: 'serving',
         aliases: [],
         aliasesText: '',
         hindiAliasesText: '',
@@ -270,12 +280,12 @@ export default function AdminDishesPage() {
   }
 
   return (
-    <AppShell title="Dish Master" subtitle="Admin can add dishes, edit category, aliases, and rate">
+    <AppShell title="Dish Master" subtitle="Admin can add dishes and edit category, serving quantity, aliases, and rate">
       <section className="content-grid">
         <div className="glass-card">
           <div className="section-kicker">Admin Control</div>
           <h2>Manage Dish Catalog</h2>
-          <p className="muted">This master list controls dish matching, category auto-fill, and default rate detection in the Menu page.</p>
+          <p className="muted">This master list controls dish matching, category, serving quantity, and default rate detection in the Menu page.</p>
           <div className="action-row" style={{ marginTop: 16 }}>
             <button className="primary-button" onClick={addRow}>+ Add Dish</button>
             <button className="ghost-button" onClick={saveAll} disabled={saving || !dirty}>{saving ? 'Saving…' : dirty ? 'Save All Changes' : 'All Changes Saved'}</button>
@@ -330,6 +340,18 @@ export default function AdminDishesPage() {
                     <label>Rate / Plate</label>
                     <input className="input input-large" type="number" min="0" value={row.rate || ''} onChange={(e) => updateRow(row.id, { rate: Number(e.target.value) })} placeholder="0" />
                     {rowErrors.get(row.id)?.rate ? <span className="field-error">{rowErrors.get(row.id)?.rate}</span> : null}
+                  </div>
+                  <div className="admin-serving-grid">
+                    <div className="field">
+                      <label>Serving Quantity</label>
+                      <input className="input input-large" type="number" min="0.01" step="0.01" value={row.servingQuantity ?? 1} onChange={(e) => updateRow(row.id, { servingQuantity: Number(e.target.value) })} placeholder="1" />
+                      {rowErrors.get(row.id)?.servingQuantity ? <span className="field-error">{rowErrors.get(row.id)?.servingQuantity}</span> : null}
+                    </div>
+                    <div className="field">
+                      <label>Serving Unit</label>
+                      <input className="input input-large" value={row.servingUnit ?? 'serving'} onChange={(e) => updateRow(row.id, { servingUnit: e.target.value })} placeholder="serving" />
+                      {rowErrors.get(row.id)?.servingUnit ? <span className="field-error">{rowErrors.get(row.id)?.servingUnit}</span> : null}
+                    </div>
                   </div>
                   <div className="admin-alias-grid">
                     <div className="field">

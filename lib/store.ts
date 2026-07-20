@@ -687,8 +687,12 @@ export function parseMenuText(
             matchedDish.category,
           ),
 
-        portionQuantity: 1,
-        portionUnit: 'serving',
+        portionQuantity:
+          matchedDish.servingQuantity ??
+          1,
+        portionUnit:
+          matchedDish.servingUnit ??
+          'serving',
       });
         },
       );

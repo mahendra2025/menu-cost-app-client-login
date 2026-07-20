@@ -23,6 +23,8 @@ function normalizeItems(items: unknown) {
       const name = String(row.name || '').trim();
       const category = String(row.category || '').trim();
       const rate = Math.max(Number(row.rate) || 0, 0);
+      const servingQuantity = Math.max(Number(row.servingQuantity) || 1, 0.01);
+      const servingUnit = String(row.servingUnit || 'serving').trim() || 'serving';
       const aliases = Array.isArray(row.aliases)
         ? row.aliases.map((alias) => String(alias).trim()).filter(Boolean)
         : [];
@@ -33,6 +35,8 @@ function normalizeItems(items: unknown) {
         name,
         category,
         rate,
+        servingQuantity,
+        servingUnit,
         aliases,
       };
     })
@@ -67,6 +71,8 @@ export async function GET() {
         name: true,
         category: true,
         rate: true,
+        servingQuantity: true,
+        servingUnit: true,
         aliases: true,
       },
     });
@@ -77,6 +83,8 @@ export async function GET() {
         name: item.name,
         category: item.category as Category,
         rate: item.rate,
+        servingQuantity: item.servingQuantity,
+        servingUnit: item.servingUnit,
         aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
       })))
       : DISH_COST_ITEMS;
@@ -103,6 +111,8 @@ export async function PUT(request: Request) {
             name: item!.name,
             category: item!.category,
             rate: item!.rate,
+            servingQuantity: item!.servingQuantity,
+            servingUnit: item!.servingUnit,
             aliases: item!.aliases,
           },
         }),

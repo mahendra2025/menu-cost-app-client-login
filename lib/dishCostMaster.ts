@@ -35,6 +35,8 @@ export type DishCostItem = {
   name: string;
   category: Category;
   rate: number;
+  servingQuantity?: number;
+  servingUnit?: string;
   aliases?: string[];
 };
 
@@ -1637,6 +1639,8 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
     name: item.name.trim(),
     category: item.category,
     rate: Math.max(Number(item.rate) || 0, 0),
+    servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
+    servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
     aliases: cleanAliases,
   };
 }
