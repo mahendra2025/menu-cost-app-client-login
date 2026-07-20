@@ -10,7 +10,7 @@ import {
 } from '../../../lib/dishCostMaster';
 import {
   createRecipeServingCatalog,
-  findRecipeServing,
+  findDishServing,
   type RecipeServing,
 } from '../../../lib/recipeServings';
 import { getSession, uid } from '../../../lib/store';
@@ -56,7 +56,11 @@ function toEditableDish(
   recipeCatalog = createRecipeServingCatalog(),
 ): EditableDish {
   const aliases = item.aliases ?? [];
-  const recipeServing = findRecipeServing(item.name, recipeCatalog);
+  const recipeServing = findDishServing(
+    item.name,
+    item.category,
+    recipeCatalog,
+  );
   const useRecipeServing = Boolean(recipeServing && isPlaceholderServing(item));
 
   return {
@@ -421,8 +425,8 @@ export default function AdminDishesPage() {
                     </div>
                     {row.recipeServing ? (
                       <div className="dish-recipe-serving">
-                        <span>Recipe: <strong>{row.recipeServing.quantity} {row.recipeServing.unit}</strong></span>
-                        <button className="ghost-button" type="button" onClick={() => useRecipeServing(row)}>Use recipe</button>
+                        <span>Suggested: <strong>{row.recipeServing.quantity} {row.recipeServing.unit}</strong></span>
+                        <button className="ghost-button" type="button" onClick={() => useRecipeServing(row)}>Use suggested</button>
                       </div>
                     ) : (
                       <div className="dish-recipe-serving dish-recipe-serving-missing">No matching recipe serving</div>

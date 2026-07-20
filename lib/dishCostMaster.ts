@@ -1,6 +1,6 @@
 import {
   createRecipeServingCatalog,
-  findRecipeServing,
+  findDishServing,
 } from './recipeServings';
 
 export const CATEGORIES = [
@@ -1626,7 +1626,11 @@ function buildDefaultDishCatalog(...parts: ReadonlyArray<readonly DishCostItem[]
     if (uniqueItems.has(key)) return;
 
     const recipeServing =
-      findRecipeServing(item.name, recipeCatalog);
+      findDishServing(
+        item.name,
+        item.category,
+        recipeCatalog,
+      );
 
     uniqueItems.set(key, recipeServing
       ? {
@@ -1698,7 +1702,11 @@ export function mergeDishCatalog(items: Array<Partial<DishCostItem> | null | und
     const defaultItem = merged.get(key);
     const aliases = Array.from(new Set([...(defaultItem?.aliases ?? []), ...(clean.aliases ?? [])]));
     const recipeServing =
-      findRecipeServing(clean.name, recipeCatalog);
+      findDishServing(
+        clean.name,
+        clean.category,
+        recipeCatalog,
+      );
     const hasPlaceholderServing =
       clean.servingQuantity === 1 &&
       String(clean.servingUnit).toLowerCase() ===
