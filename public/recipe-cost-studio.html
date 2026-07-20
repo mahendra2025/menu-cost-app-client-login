@@ -247,6 +247,55 @@ svg{display:block}
   border-color:color-mix(in srgb,var(--red) 22%,var(--line));
   background:color-mix(in srgb,var(--red) 7%,var(--surface));
 }
+.visualRecipeEditor{padding:18px;background:var(--surface-2)}
+.recipeDetailsCard{
+  padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--surface);
+  box-shadow:var(--shadow-sm);
+}
+.recipeFormHeading,.ingredientSectionHeading{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+}
+.recipeFormHeading h2,.ingredientSectionHeading h3{margin:4px 0 0;letter-spacing:-.025em}
+.recipeIdentityGrid{
+  display:grid;grid-template-columns:1.5fr 1fr 1fr .72fr .72fr .8fr;
+  gap:10px;margin-top:15px;
+}
+.formGroup{display:grid;gap:6px;min-width:0}
+.formGroup label{
+  color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;
+}
+.ingredientSection{margin-top:14px}
+.ingredientHint{margin-top:4px;color:var(--muted);font-size:12px}
+.ingredientCards{display:grid;gap:10px;margin-top:12px}
+.ingredientCard{
+  display:grid;grid-template-columns:34px minmax(150px,1.4fr) minmax(90px,.65fr) minmax(96px,.7fr) minmax(105px,.7fr) minmax(96px,.7fr) minmax(86px,.55fr) 38px;
+  align-items:end;gap:9px;padding:13px;border:1px solid var(--line);
+  border-radius:16px;background:var(--surface);box-shadow:var(--shadow-sm);
+}
+.ingredientNumber{
+  align-self:center;display:grid;width:30px;height:30px;place-items:center;border-radius:10px;
+  background:var(--brand-soft);color:var(--brand-strong);font-size:11px;font-weight:900;
+}
+.ingredientCostBox{align-self:center;text-align:right}
+.ingredientCostBox small{display:block;color:var(--muted);font-size:9px;font-weight:800;text-transform:uppercase}
+.ingredientCostBox strong{display:block;margin-top:4px;font-size:13px}
+.removeIngredient{
+  align-self:center;width:36px;height:36px;border:1px solid color-mix(in srgb,var(--red) 20%,var(--line));
+  border-radius:11px;background:color-mix(in srgb,var(--red) 6%,var(--surface));color:var(--red);
+  font-size:18px;line-height:1;
+}
+.ingredientEmpty{
+  padding:28px;border:1px dashed var(--line-strong);border-radius:16px;
+  background:var(--surface);text-align:center;color:var(--muted);
+}
+.advancedJson{border-top:1px solid var(--line);background:var(--surface)}
+.advancedJson>summary{
+  padding:13px 16px;cursor:pointer;color:var(--muted);font-size:12px;font-weight:820;
+  list-style:none;
+}
+.advancedJson>summary::-webkit-details-marker{display:none}
+.advancedJson>summary::before{content:"›";display:inline-block;margin-right:8px;font-size:17px;transition:transform .15s ease}
+.advancedJson[open]>summary::before{transform:rotate(90deg)}
 .codeShell{
   display:grid;grid-template-columns:54px minmax(0,1fr);
   min-height:580px;background:#0b1220;
@@ -341,6 +390,8 @@ tbody tr.selected{background:var(--brand-soft)}
 @media(max-width:1220px){
   :root{--inspector:300px;--sidebar:260px}
   .shortcut{display:none}
+  .recipeIdentityGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ingredientCard{grid-template-columns:30px minmax(150px,1.4fr) minmax(84px,.6fr) minmax(90px,.65fr) minmax(100px,.7fr) minmax(90px,.65fr) 80px 36px}
 }
 @media(max-width:1020px){
   .workspace{grid-template-columns:250px minmax(0,1fr)}
@@ -369,6 +420,18 @@ tbody tr.selected{background:var(--brand-soft)}
   .editorActions{width:100%}
   .editorActions .btn{flex:1}
   .editorFooter{align-items:flex-start;flex-direction:column}
+  .visualRecipeEditor{padding:12px}
+  .recipeIdentityGrid{grid-template-columns:1fr 1fr}
+  .ingredientCard{
+    grid-template-columns:30px minmax(0,1fr) 36px;
+    align-items:start;
+  }
+  .ingredientCard .formGroup{grid-column:2}
+  .ingredientCard .ingredientNumber{grid-column:1;grid-row:1;align-self:center}
+  .ingredientCard .removeIngredient{grid-column:3;grid-row:1;align-self:center}
+  .ingredientCard .ingredientCostBox{grid-column:2/4;text-align:left;padding-top:4px}
+  .ingredientSectionHeading{align-items:flex-start;flex-direction:column}
+  .ingredientSectionHeading .btn{width:100%}
   .inspector{display:block;max-height:none;margin-top:10px}
   .inspectorCard{margin-bottom:10px}
   .indexLayout{display:block}
@@ -422,7 +485,7 @@ tbody tr.selected{background:var(--brand-soft)}
     </div>
     <div class="brandText">
       <div class="brandTitle">CatererOS Recipe Cost Studio</div>
-      <div class="brandSub">One-dish JSON editing and shared market-rate control</div>
+      <div class="brandSub">Dish recipes, ingredient quantities and live food cost</div>
     </div>
   </div>
   <div class="topActions">
@@ -482,7 +545,7 @@ tbody tr.selected{background:var(--brand-soft)}
       <div class="heroRow">
         <div class="heroInfo">
           <h1 id="pageTitle">Dish recipe</h1>
-          <p>Edit the full recipe in JSON. Costs and market rates update live.</p>
+          <p>Edit ingredients in simple cards. Costs and market rates update live.</p>
         </div>
         <div class="heroActions">
           <div class="segmented" aria-label="Workspace view">
@@ -567,13 +630,48 @@ tbody tr.selected{background:var(--brand-soft)}
           role="status"
           aria-live="polite"
         ></div>
-      <div class="codeShell">
-        <div class="lineNumbers" id="lineNumbers">1</div>
-        <textarea class="codeEditor" id="jsonEditor" spellcheck="false" aria-label="Dish recipe JSON editor"></textarea>
+
+      <div class="visualRecipeEditor">
+        <section class="recipeDetailsCard">
+          <div class="recipeFormHeading">
+            <div>
+              <div class="sectionLabel">Selected dish</div>
+              <h2>Recipe details</h2>
+            </div>
+            <span class="livePill"><span class="liveDot"></span>Auto-calculated</span>
+          </div>
+          <div class="recipeIdentityGrid">
+            <div class="formGroup"><label for="formDishName">Dish name</label><input class="field" id="formDishName"></div>
+            <div class="formGroup"><label for="formCategory">Category</label><input class="field" id="formCategory"></div>
+            <div class="formGroup"><label for="formSubcategory">Subcategory</label><input class="field" id="formSubcategory"></div>
+            <div class="formGroup"><label for="formBaseGuests">Recipe for</label><input class="field" id="formBaseGuests" type="number" min="1"></div>
+            <div class="formGroup"><label for="formServingSize">Serving size</label><input class="field" id="formServingSize" type="number" min="0" step="0.01"></div>
+            <div class="formGroup"><label for="formServingUnit">Serving unit</label><select class="select" id="formServingUnit"><option value="g">g</option><option value="gram">gram</option><option value="kg">kg</option><option value="ml">ml</option><option value="ltr">ltr</option><option value="piece">piece</option><option value="portion">portion</option><option value="bowl">bowl</option><option value="glass">glass</option><option value="plate">plate</option><option value="slice">slice</option></select></div>
+          </div>
+        </section>
+
+        <section class="ingredientSection">
+          <div class="ingredientSectionHeading">
+            <div>
+              <div class="sectionLabel">Dish-wise ingredients</div>
+              <h3>Ingredients for this recipe</h3>
+              <div class="ingredientHint">Quantity is for the full recipe batch. Rate is the purchase price per selected unit.</div>
+            </div>
+            <button class="btn btnPrimary" id="addIngredientCard" type="button">+ Add ingredient</button>
+          </div>
+          <div class="ingredientCards" id="ingredientCards"></div>
+        </section>
       </div>
+
+      <details class="advancedJson" id="advancedJson">
+        <summary>Advanced JSON editor</summary>
+        <div class="codeShell">
+          <div class="lineNumbers" id="lineNumbers">1</div>
+          <textarea class="codeEditor" id="jsonEditor" spellcheck="false" aria-label="Dish recipe JSON editor"></textarea>
+        </div>
+      </details>
       <div class="editorFooter">
         <div class="statusText" id="jsonStatus">Select a dish to begin.</div>
-
 
         <div class="shortcut"><kbd>⌘</kbd> + <kbd>S</kbd> save · <kbd>⌘</kbd> + <kbd>⇧</kbd> + <kbd>F</kbd> format</div>
       </div>
@@ -1142,7 +1240,7 @@ function loadSelectedDish(){
   $("fileName").textContent=`${d.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"recipe"}.json`;
   $("jsonEditor").value=JSON.stringify(dishToJson(d),null,2);
   setDirty(false);setValidation("","Not checked");setStatus("Recipe loaded.");
-  updateLineNumbers();renderJsonSummary();renderDishList();
+  updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();renderDishList();
 }
 function renderJsonSummary(){
   let data;
@@ -1162,6 +1260,72 @@ function renderJsonSummary(){
       <div><div class="recipeRowName">${esc(i.name||"Ingredient")}</div><div class="recipeRowMeta">${Number(i.quantity)||0} ${esc(i.unit||"")} · ${money(i.marketRate)}/${esc(i.rateUnit||"")}</div></div>
       <div class="recipeRowCost">${money(jsonIngredientCost(i))}</div>
     </div>`).join(""):'<div class="emptyState">No ingredients in this recipe.</div>';
+}
+function unitOptions(selected){
+  return VALID_UNITS.map(unit=>`<option value="${unit}" ${unit===selected?"selected":""}>${unit}</option>`).join("");
+}
+function renderVisualRecipeEditor(){
+  let data;
+  try{data=parseJson()}catch{return}
+  $("formDishName").value=data.dishName||"";
+  $("formCategory").value=data.category||"";
+  $("formSubcategory").value=data.subcategory||"";
+  $("formBaseGuests").value=Number(data.baseGuests)||100;
+  $("formServingSize").value=Number(data.servingSize)>0?Number(data.servingSize):"";
+  $("formServingUnit").value=VALID_SERVING_UNITS.includes(data.servingUnit)?data.servingUnit:"gram";
+  const items=Array.isArray(data.ingredients)?data.ingredients:[];
+  $("ingredientCards").innerHTML=items.length?items.map((item,index)=>`
+    <article class="ingredientCard" data-ingredient-index="${index}">
+      <div class="ingredientNumber">${index+1}</div>
+      <div class="formGroup">
+        <label>Ingredient</label>
+        <input class="field" data-ingredient-field="name" value="${esc(item.name||"")}" placeholder="Example: Paneer">
+      </div>
+      <div class="formGroup">
+        <label>Quantity</label>
+        <input class="field" data-ingredient-field="quantity" type="number" min="0" step="0.001" value="${Number(item.quantity)||0}">
+      </div>
+      <div class="formGroup">
+        <label>Quantity unit</label>
+        <select class="select" data-ingredient-field="unit">${unitOptions(item.unit||"kg")}</select>
+      </div>
+      <div class="formGroup">
+        <label>Market rate ₹</label>
+        <input class="field" data-ingredient-field="marketRate" type="number" min="0" step="0.01" value="${Number(item.marketRate)||0}">
+      </div>
+      <div class="formGroup">
+        <label>Rate per</label>
+        <select class="select" data-ingredient-field="rateUnit">${unitOptions(item.rateUnit||item.unit||"kg")}</select>
+      </div>
+      <div class="ingredientCostBox"><small>Ingredient cost</small><strong>${money(jsonIngredientCost(item))}</strong></div>
+      <button class="removeIngredient" type="button" data-remove-ingredient="${index}" aria-label="Remove ${esc(item.name||"ingredient")}">×</button>
+    </article>`).join(""):`<div class="ingredientEmpty"><b>No ingredients yet</b><br>Add the first ingredient to build this dish recipe.</div>`;
+}
+function commitVisualRecipe(){
+  let data;
+  try{data=parseJson()}catch{return}
+  data.dishName=$("formDishName").value.trim();
+  data.category=$("formCategory").value.trim();
+  data.subcategory=$("formSubcategory").value.trim();
+  data.baseGuests=Math.max(1,Number($("formBaseGuests").value)||100);
+  const servingSize=Math.max(0,Number($("formServingSize").value)||0);
+  if(servingSize){
+    data.servingSize=servingSize;
+    data.servingUnit=$("formServingUnit").value;
+  }else{
+    delete data.servingSize;
+    delete data.servingUnit;
+  }
+  data.ingredients=Array.from(document.querySelectorAll("[data-ingredient-index]")).map(card=>({
+    name:card.querySelector('[data-ingredient-field="name"]').value.trim(),
+    quantity:Math.max(0,Number(card.querySelector('[data-ingredient-field="quantity"]').value)||0),
+    unit:card.querySelector('[data-ingredient-field="unit"]').value,
+    marketRate:Math.max(0,Number(card.querySelector('[data-ingredient-field="marketRate"]').value)||0),
+    rateUnit:card.querySelector('[data-ingredient-field="rateUnit"]').value
+  }));
+  $("jsonEditor").value=JSON.stringify(data,null,2);
+  setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");
+  updateLineNumbers();renderJsonSummary();
 }
 function renderRateTable(){
   const q=$("rateSearch").value.trim().toLowerCase(),unit=$("unitFilter").value,sort=$("rateSort").value;
@@ -1557,9 +1721,34 @@ $("dishList").addEventListener("click",e=>{
 $("dishSearch").addEventListener("input",renderDishList);$("categoryFilter").addEventListener("change",renderDishList);
 $("jsonEditor").addEventListener("input",()=>{setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");updateLineNumbers();renderJsonSummary()});
 $("jsonEditor").addEventListener("scroll",()=>{$("lineNumbers").scrollTop=$("jsonEditor").scrollTop});
-$("formatJson").addEventListener("click",()=>{try{$("jsonEditor").value=JSON.stringify(parseJson(),null,2);updateLineNumbers();renderJsonSummary();setDirty(true);setStatus("JSON formatted.","ok")}catch(e){setStatus(`Invalid JSON: ${e.message}`,"error")}});
+$("formatJson").addEventListener("click",()=>{try{$("jsonEditor").value=JSON.stringify(parseJson(),null,2);updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();setDirty(true);setStatus("JSON formatted.","ok")}catch(e){setStatus(`Invalid JSON: ${e.message}`,"error")}});
 $("validateJson").addEventListener("click",()=>{try{const errors=validateDishJson(parseJson());if(errors.length){setValidation("invalid",`${errors.length} issue${errors.length>1?"s":""}`);setStatus(errors[0],"error")}else{setValidation("valid","Valid");setStatus("JSON is valid and ready to save.","ok")}}catch(e){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${e.message}`,"error")}});
 $("applyJson").addEventListener("click",applyJson);
+$("visualRecipeEditor").addEventListener("change",event=>{
+  if(event.target.matches("input,select"))commitVisualRecipe();
+});
+$("ingredientCards").addEventListener("click",event=>{
+  const removeButton=event.target.closest("[data-remove-ingredient]");
+  if(!removeButton)return;
+  const data=parseJson();
+  data.ingredients.splice(Number(removeButton.dataset.removeIngredient),1);
+  $("jsonEditor").value=JSON.stringify(data,null,2);
+  setDirty(true);setValidation("","Not checked");setStatus("Ingredient removed. Save to apply.");
+  updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();
+});
+$("addIngredientCard").addEventListener("click",()=>{
+  const data=parseJson();
+  if(!Array.isArray(data.ingredients))data.ingredients=[];
+  data.ingredients.push({name:"",quantity:0,unit:"kg",marketRate:0,rateUnit:"kg"});
+  $("jsonEditor").value=JSON.stringify(data,null,2);
+  setDirty(true);setValidation("","Not checked");setStatus("New ingredient added. Complete its details and save.");
+  updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();
+  const lastCard=$("ingredientCards").lastElementChild;
+  lastCard?.querySelector('[data-ingredient-field="name"]')?.focus();
+});
+$("advancedJson").addEventListener("toggle",()=>{
+  if(!$("advancedJson").open)renderVisualRecipeEditor();
+});
 document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.view)));
 $("rateSearch").addEventListener("input",renderRateTable);$("unitFilter").addEventListener("change",renderRateTable);$("rateSort").addEventListener("change",renderRateTable);
 $("rateRows").addEventListener("click",e=>{const row=e.target.closest("[data-rate-id]");if(!row)return;selectedRateId=row.dataset.rateId;renderRateTable();renderSelectedRate()});
