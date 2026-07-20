@@ -1,13 +1,7 @@
-const CACHE_NAME = 'menu-cost-pwa-v3';
+const CACHE_NAME = 'menu-cost-pwa-v4';
 const APP_SHELL = [
   '/',
   '/login',
-  '/app/event',
-  '/app/menu',
-  '/app/manpower',
-  '/app/cost',
-  '/app/pdf',
-  '/app/profile',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -35,15 +29,34 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
 
-  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')) {
+  if (
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/icons/')
+  ) {
     event.respondWith(
-      caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-        if (response.ok) {
-          const copy = response.clone();
-          void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })),
+      caches.match(request).then(
+        (cached) =>
+          cached ||
+          fetch(request).then((response) => {
+            if (response.ok) {
+              const copy = response.clone();
+              void caches
+                .open(CACHE_NAME)
+                .then((cache) => cache.put(request, copy));
+            }
+            return response;
+          }),
+      ),
+    );
+    return;
+  }
+
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' }).catch(
+        async () =>
+          (await caches.match('/login')) || Response.error(),
+      ),
     );
     return;
   }
@@ -51,7 +64,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.ok) {
+        if (response.ok && !url.pathname.startsWith('/app/')) {
           const copy = response.clone();
           void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
@@ -60,7 +73,6 @@ self.addEventListener('fetch', (event) => {
       .catch(async () => {
         const cached = await caches.match(request);
         if (cached) return cached;
-        if (request.mode === 'navigate') return (await caches.match('/login')) || Response.error();
         return Response.error();
       }),
   );

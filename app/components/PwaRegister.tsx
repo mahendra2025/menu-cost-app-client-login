@@ -8,7 +8,11 @@ export default function PwaRegister() {
 
     const register = async () => {
       try {
-        await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/',
+          updateViaCache: 'none',
+        });
+        await registration.update();
       } catch {
         // The web app continues to work normally if PWA registration is unavailable.
       }
