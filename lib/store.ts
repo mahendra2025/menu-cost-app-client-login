@@ -4,8 +4,15 @@
 import {
   CATEGORY_BASE_COST,
   CATEGORIES,
+<<<<<<< HEAD
   detectCategory,
   findDishesInText,
+=======
+<<<<<<< HEAD
+=======
+  detectCategory,
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
   findDishByName,
   findFuzzyDishByName,
 } from './dishCostMaster';
@@ -63,7 +70,15 @@ export const defaultManpower: ManpowerRow[] = [
 ];
 
 /* -------------------------------------------------------------------------- */
+<<<<<<< HEAD
 /*                               Basic helpers                                */
+=======
+<<<<<<< HEAD
+/*                              General helpers                               */
+=======
+/*                               Basic helpers                                */
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 /* -------------------------------------------------------------------------- */
 
 export function uid(prefix = 'id'): string {
@@ -81,15 +96,26 @@ function safeJsonParse<T>(
   try {
     return JSON.parse(value) as T;
   } catch (error) {
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    console.warn('Could not parse saved data:', error);
+=======
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     console.warn(
       'Failed to parse localStorage value:',
       error,
     );
 
+<<<<<<< HEAD
+=======
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     return fallback;
   }
 }
 
+<<<<<<< HEAD
 function normalizeText(value: string): string {
   return String(value || '')
     .normalize('NFKD')
@@ -112,6 +138,35 @@ function normalizeText(value: string): string {
 
 /* -------------------------------------------------------------------------- */
 /*                                  Clients                                   */
+=======
+<<<<<<< HEAD
+/* -------------------------------------------------------------------------- */
+/*                                Client data                                 */
+=======
+function normalizeText(value: string): string {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[–—]/g, ' ')
+    .replace(/\bicecream\b/g, 'ice cream')
+    .replace(/\bpanner\b/g, 'paneer')
+    .replace(/\bmashala\b/g, 'masala')
+    .replace(/\bjira\b/g, 'jeera')
+    .replace(/\bjamoon\b/g, 'jamun')
+    .replace(/\bnan\b/g, 'naan')
+    .replace(/\bkabab\b/g, 'kebab')
+    .replace(/\bmanchau\b/g, 'manchow')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  Clients                                   */
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 /* -------------------------------------------------------------------------- */
 
 export function getClients(): ClientUser[] {
@@ -157,11 +212,27 @@ export function upsertClient(
 }
 
 export function deleteClient(id: string): void {
+<<<<<<< HEAD
   const clients = getClients().filter(
     (client) => client.id !== id,
   );
 
   saveClients(clients);
+=======
+<<<<<<< HEAD
+  const remainingClients = getClients().filter(
+    (client) => client.id !== id,
+  );
+
+  saveClients(remainingClients);
+=======
+  const clients = getClients().filter(
+    (client) => client.id !== id,
+  );
+
+  saveClients(clients);
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 }
 
 /* -------------------------------------------------------------------------- */
@@ -194,23 +265,50 @@ export function refreshSessionFromClient():
 
   const session = getSession();
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+  if (!session || session.role !== 'CLIENT') {
+=======
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
   if (
     !session ||
     session.role !== 'CLIENT'
   ) {
+<<<<<<< HEAD
+=======
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     return session;
   }
 
   const client = getClients().find(
+<<<<<<< HEAD
     (item) =>
       item.id === session.tenantId,
+=======
+<<<<<<< HEAD
+    (item) => item.id === session.tenantId,
+=======
+    (item) =>
+      item.id === session.tenantId,
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
   );
 
   if (!client) {
     return session;
   }
 
+<<<<<<< HEAD
   const nextSession: Session = {
+=======
+<<<<<<< HEAD
+  const next: Session = {
+=======
+  const nextSession: Session = {
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     ...session,
     businessName: client.businessName,
     status: client.status,
@@ -218,6 +316,23 @@ export function refreshSessionFromClient():
 
   window.localStorage.setItem(
     SESSION_KEY,
+<<<<<<< HEAD
+    JSON.stringify(nextSession),
+=======
+<<<<<<< HEAD
+    JSON.stringify(next),
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
+  );
+
+  return nextSession;
+}
+
+/* -------------------------------------------------------------------------- */
+<<<<<<< HEAD
+/*                                 Work state                                 */
+=======
+/*                                Work state                                  */
+=======
     JSON.stringify(nextSession),
   );
 
@@ -226,6 +341,8 @@ export function refreshSessionFromClient():
 
 /* -------------------------------------------------------------------------- */
 /*                                 Work state                                 */
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 /* -------------------------------------------------------------------------- */
 
 function workKey(tenantId: string): string {
@@ -257,15 +374,31 @@ export function createEmptyWorkState(
       ownerName: '',
       phone: '',
       city: '',
+<<<<<<< HEAD
 
+=======
+<<<<<<< HEAD
+=======
+
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
       logoText:
         session?.businessName
           ?.slice(0, 2)
           .toUpperCase() ?? 'MC',
     },
 
+<<<<<<< HEAD
     updatedAt:
       new Date().toISOString(),
+=======
+<<<<<<< HEAD
+    updatedAt: new Date().toISOString(),
+=======
+    updatedAt:
+      new Date().toISOString(),
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
   };
 }
 
@@ -273,9 +406,19 @@ export function loadWork(
   tenantId: string,
 ): WorkState {
   const session = getSession();
+<<<<<<< HEAD
 
   const fallback =
     createEmptyWorkState(session);
+=======
+<<<<<<< HEAD
+  const fallback = createEmptyWorkState(session);
+=======
+
+  const fallback =
+    createEmptyWorkState(session);
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 
   if (typeof window === 'undefined') {
     return fallback;
@@ -335,8 +478,17 @@ export function saveWork(
 
   const nextWork: WorkState = {
     ...work,
+<<<<<<< HEAD
     updatedAt:
       new Date().toISOString(),
+=======
+<<<<<<< HEAD
+    updatedAt: new Date().toISOString(),
+=======
+    updatedAt:
+      new Date().toISOString(),
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
   };
 
   window.localStorage.setItem(
@@ -356,7 +508,15 @@ export function clearWork(
 }
 
 /* -------------------------------------------------------------------------- */
+<<<<<<< HEAD
 /*                              Menu detection                                */
+=======
+<<<<<<< HEAD
+/*                          Advanced menu detection                           */
+=======
+/*                              Menu detection                                */
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 /* -------------------------------------------------------------------------- */
 
 const MENU_HEADINGS = new Set([
@@ -398,8 +558,20 @@ const MENU_HEADINGS = new Set([
   'dal kadhi',
   'dal and kadhi',
   'ice cream',
+<<<<<<< HEAD
   'farsan',
   'namkeen',
+=======
+<<<<<<< HEAD
+  'icecream',
+  'farsan',
+  'namkeen',
+  'farsan and namkeen',
+=======
+  'farsan',
+  'namkeen',
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
   'condiments',
   'chaat',
   'chinese',
@@ -545,8 +717,17 @@ const COMMON_DISH_ALIASES: Record<
 > = {
   pbm: 'paneer butter masala',
 
+<<<<<<< HEAD
   'paneer bm':
     'paneer butter masala',
+=======
+<<<<<<< HEAD
+  'paneer bm': 'paneer butter masala',
+=======
+  'paneer bm':
+    'paneer butter masala',
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 
   'paneer butter mashala':
     'paneer butter masala',
@@ -554,6 +735,62 @@ const COMMON_DISH_ALIASES: Record<
   'panner butter masala':
     'paneer butter masala',
 
+<<<<<<< HEAD
+  'panner tikka':
+    'paneer tikka',
+=======
+<<<<<<< HEAD
+  'panner tikka': 'paneer tikka',
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
+
+  'manchau soup':
+    'manchow soup',
+
+  'manchow sup':
+    'manchow soup',
+
+  'veg manchow':
+    'veg manchow soup',
+
+  icecream:
+    'ice cream',
+
+  'gulab jamoon':
+    'gulab jamun',
+
+  'gulab jamun sweet':
+    'gulab jamun',
+
+  'jira rice':
+    'jeera rice',
+
+  'jeera pulao':
+    'jeera rice',
+
+  'dal fry tadka':
+    'dal fry',
+
+  'butter nan':
+    'butter naan',
+
+  'plain nan':
+    'plain naan',
+
+  'hara bhara kabab':
+    'hara bhara kebab',
+
+  'dahi ke kabab':
+    'dahi ke kebab',
+
+  'veg hakka noodle':
+    'veg hakka noodles',
+
+<<<<<<< HEAD
+  'hakka noodle':
+    'hakka noodles',
+=======
+  'hakka noodle': 'hakka noodles',
+=======
   'panner tikka':
     'paneer tikka',
 
@@ -601,19 +838,69 @@ const COMMON_DISH_ALIASES: Record<
 
   'hakka noodle':
     'hakka noodles',
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 
   'kesar pista icecream':
     'kesar pista ice cream',
 };
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+function normalizeMenuText(
+  value: string,
+): string {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[–—]/g, ' ')
+    .replace(/\bicecream\b/g, 'ice cream')
+    .replace(/\bpanner\b/g, 'paneer')
+    .replace(/\bmashala\b/g, 'masala')
+    .replace(/\bjira\b/g, 'jeera')
+    .replace(/\bjamoon\b/g, 'jamun')
+    .replace(/\bnan\b/g, 'naan')
+    .replace(/\bkabab\b/g, 'kebab')
+    .replace(/\bmanchau\b/g, 'manchow')
+    .replace(/₹\s*\d+(?:\.\d+)?/g, ' ')
+    .replace(
+      /\b(?:rs|inr)\.?\s*\d+(?:\.\d+)?\b/gi,
+      ' ',
+    )
+    .replace(
+      /\b\d+(?:\.\d+)?\s*(?:pax|plates?|persons?|people|guests?|pcs?|pieces?|kg|kgs|gram|grams|gm|gms|ml|ltr|litre|litres|packet|packets)\b/gi,
+      ' ',
+    )
+    .replace(/[()[\]{}]/g, ' ')
+    .replace(/[^\p{L}\p{N}+\- ]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+=======
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 function removePriceAndQuantity(
   value: string,
 ): string {
   return value
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    .replace(/₹\s*\d+(?:\.\d+)?/g, ' ')
+=======
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     .replace(
       /₹\s*\d+(?:\.\d+)?/g,
       ' ',
     )
+<<<<<<< HEAD
+=======
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     .replace(
       /\b(?:rs|inr)\.?\s*\d+(?:\.\d+)?\b/gi,
       ' ',
@@ -642,24 +929,137 @@ function removeLeadingNumbering(
       /^\s*(?:item\s*)?\d+\s*[.)\-:]*\s*/i,
       '',
     )
+<<<<<<< HEAD
     .replace(
       /^\s*\d+(?:\.\d+)?\s*[x×]\s*/i,
       '',
     )
+=======
+<<<<<<< HEAD
+    .replace(/^\s*[-–—*]+\s*/, '')
+=======
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     .replace(
       /^\s*[-–—*]+\s*/,
       '',
     )
+<<<<<<< HEAD
     .replace(
       /^\s*(?:o|○|◯)\s+/i,
       '',
     )
+=======
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     .trim();
 }
 
 function cleanMenuLine(
   inputLine: string,
 ): string {
+<<<<<<< HEAD
+  let line =
+    removeLeadingNumbering(
+      inputLine,
+=======
+<<<<<<< HEAD
+  let line = removeLeadingNumbering(
+    inputLine,
+  );
+
+  line = removePriceAndQuantity(line);
+
+  /*
+   * Handles lines such as:
+   *
+   * Starter: Paneer Tikka
+   * Sweet: Gulab Jamun
+   */
+  const colonIndex = line.indexOf(':');
+
+  if (colonIndex >= 0) {
+    const possibleHeading = normalizeMenuText(
+      line.slice(0, colonIndex),
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
+    );
+
+  line =
+    removePriceAndQuantity(line);
+
+  const colonIndex =
+    line.indexOf(':');
+
+  if (colonIndex >= 0) {
+    const possibleHeading =
+      normalizeText(
+        line.slice(0, colonIndex),
+      );
+
+    if (
+      MENU_HEADINGS.has(
+        possibleHeading,
+      )
+    ) {
+      line =
+        line.slice(colonIndex + 1);
+    }
+  }
+
+  return line
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function applyCommonAlias(
+  value: string,
+): string {
+  const normalized =
+    normalizeText(value);
+
+  return (
+    COMMON_DISH_ALIASES[
+      normalized
+    ] ?? normalized
+  );
+}
+
+function createDishCandidates(
+  value: string,
+): string[] {
+  const cleaned =
+    cleanMenuLine(value);
+
+  if (!cleaned) {
+    return [];
+  }
+
+  const candidates =
+    new Set<string>();
+
+  candidates.add(cleaned);
+
+  candidates.add(
+    cleaned
+      .replace(/\([^)]*\)/g, ' ')
+      .replace(/\[[^\]]*\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  );
+
+  candidates.add(
+    cleaned
+      .split('—')[0]
+      .trim(),
+  );
+
+<<<<<<< HEAD
+=======
+  /*
+   * Remove trailing category descriptions:
+   *
+   * Paneer Tikka - Starter
+   */
+=======
   let line =
     removeLeadingNumbering(
       inputLine,
@@ -734,6 +1134,8 @@ function createDishCandidates(
       .trim(),
   );
 
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
   candidates.add(
     cleaned
       .replace(
@@ -743,6 +1145,18 @@ function createDishCandidates(
       .trim(),
   );
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+  /*
+   * Remove descriptive words as a fallback.
+   *
+   * Premium Vegetable Poha → Vegetable Poha
+   * Live Masala Dosa → Masala Dosa
+   */
+=======
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
   candidates.add(
     cleaned
       .replace(
@@ -753,14 +1167,46 @@ function createDishCandidates(
       .trim(),
   );
 
+<<<<<<< HEAD
   candidates.add(
     normalizeText(cleaned),
   );
+=======
+<<<<<<< HEAD
+  const normalizedCandidate =
+    normalizeMenuText(cleaned);
+
+  candidates.add(normalizedCandidate);
+=======
+  candidates.add(
+    normalizeText(cleaned),
+  );
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 
   candidates.add(
     applyCommonAlias(cleaned),
   );
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+  /*
+   * Add candidates without repeated category words.
+   *
+   * Gulab Jamun Sweet → Gulab Jamun
+   */
+  candidates.add(
+    normalizedCandidate
+      .replace(
+        /\b(?:dish|item|starter|sweet|dessert|breakfast|lunch|dinner)\b/g,
+        ' ',
+      )
+      .replace(/\s+/g, ' ')
+      .trim(),
+  );
+
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
   return Array.from(candidates)
     .map((candidate) =>
       candidate.trim(),
@@ -1289,21 +1735,236 @@ export function parseMenuText(
 /*                               Cost helpers                                 */
 /* -------------------------------------------------------------------------- */
 
+=======
+  return Array.from(candidates)
+    .map((candidate) =>
+      candidate.trim(),
+    )
+    .filter(
+      (candidate) =>
+        candidate.length > 1,
+    );
+}
+
+function splitMenuText(
+  text: string,
+): string[] {
+  return text
+    .replace(/\r/g, '\n')
+    .replace(
+      /[•▪●◦*]/g,
+      '\n',
+    )
+    .replace(/\|/g, '\n')
+    .replace(
+      /\s+\/\s+/g,
+      '\n',
+    )
+    .replace(/\t/g, ' ')
+    .split(/[\n,;]+/)
+    .map(cleanMenuLine)
+    .filter(Boolean)
+    .filter((line) => {
+      const normalized =
+        normalizeText(line);
+
+      if (!normalized) {
+        return false;
+      }
+
+      if (
+        MENU_HEADINGS.has(
+          normalized,
+        )
+      ) {
+        return false;
+      }
+
+      if (/^\d+$/.test(normalized)) {
+        return false;
+      }
+
+      if (
+        /\b\d{1,2}:\d{2}\s*(?:am|pm)?\b/i.test(
+          line,
+        )
+      ) {
+        return false;
+      }
+
+      if (
+        /^(?:date|time|venue|client|event|pax|guests?)\s*:/i.test(
+          line,
+        )
+      ) {
+        return false;
+      }
+
+      return normalized.length > 1;
+    });
+}
+
+function detectDishFromLine(
+  menuLine: string,
+) {
+  const candidates =
+    createDishCandidates(menuLine);
+
+  for (const candidate of candidates) {
+    const matchedDish =
+      findDishByName(candidate);
+
+    if (matchedDish) {
+      return matchedDish;
+    }
+  }
+
+  return null;
+}
+
+export function parseMenuText(
+  text: string,
+): MenuItem[] {
+  const menuLines =
+    splitMenuText(text);
+
+  if (!menuLines.length) {
+    console.warn(
+      'Menu detection: no valid menu lines found.',
+    );
+
+    return [];
+  }
+
+  const menuItems: MenuItem[] = [];
+
+  for (const line of menuLines) {
+    const matchedDish =
+      detectDishFromLine(line);
+
+    if (matchedDish) {
+      menuItems.push({
+        id: uid('dish'),
+
+        name:
+          matchedDish.name,
+
+        category:
+          matchedDish.category,
+
+        costPerPlate:
+          Number(
+            matchedDish.rate,
+          ) ||
+          getCategoryBaseCost(
+            matchedDish.category,
+          ),
+      });
+
+      continue;
+    }
+
+    /*
+     * Dish was not found in catalog.
+     *
+     * Keep it in the menu instead
+     * of deleting it.
+     */
+    const fallbackCategory =
+      detectCategory(line) ||
+      'Sabji';
+
+    menuItems.push({
+      id: uid('dish'),
+      name: line,
+      category:
+        fallbackCategory,
+
+      /*
+       * Zero means the user must
+       * enter a manual rate.
+       */
+      costPerPlate: 0,
+    });
+
+    console.warn(
+      'Dish not found in catalog. Added for manual review:',
+      line,
+    );
+  }
+
+  /*
+   * Remove duplicate menu items.
+   */
+  const uniqueItems =
+    Array.from(
+      new Map(
+        menuItems.map((item) => [
+          `${normalizeText(
+            item.name,
+          )}-${normalizeText(
+            item.category,
+          )}`,
+          item,
+        ]),
+      ).values(),
+    );
+
+  const unmatchedCount =
+    uniqueItems.filter(
+      (item) =>
+        Number(
+          item.costPerPlate,
+        ) === 0,
+    ).length;
+
+  console.info(
+    `Menu detection completed: ${uniqueItems.length} item(s), ${unmatchedCount} requiring manual rates.`,
+  );
+
+  return uniqueItems;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               Cost helpers                                 */
+/* -------------------------------------------------------------------------- */
+
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
 function getCategoryBaseCost(
   category: string,
 ): number {
   if (
     CATEGORIES.includes(
+<<<<<<< HEAD
       category as (
         typeof CATEGORIES
       )[number],
+=======
+<<<<<<< HEAD
+      category as (typeof CATEGORIES)[number],
+=======
+      category as (
+        typeof CATEGORIES
+      )[number],
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     )
   ) {
     return (
       CATEGORY_BASE_COST[
+<<<<<<< HEAD
         category as (
           typeof CATEGORIES
         )[number]
+=======
+<<<<<<< HEAD
+        category as (typeof CATEGORIES)[number]
+=======
+        category as (
+          typeof CATEGORIES
+        )[number]
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
       ] ?? 0
     );
   }
@@ -1316,6 +1977,7 @@ export function buildMenuCostBreakdown(
   fallbackPax = 0,
 ) {
   const categoryCounts =
+<<<<<<< HEAD
     menu.reduce<
       Record<string, number>
     >(
@@ -1329,6 +1991,25 @@ export function buildMenuCostBreakdown(
               categoryKey
             ] ?? 0
           ) + 1;
+=======
+<<<<<<< HEAD
+    menu.reduce<Record<string, number>>(
+      (counts, item) => {
+        counts[item.category] =
+          (counts[item.category] ?? 0) + 1;
+=======
+    menu.reduce<
+      Record<string, number>
+    >(
+      (counts, item) => {
+        counts[item.category] =
+          (
+            counts[
+              item.category
+            ] ?? 0
+          ) + 1;
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 
         return counts;
       },
@@ -1339,8 +2020,37 @@ export function buildMenuCostBreakdown(
     const serviceKey = item.serviceId ?? 'default';
     const categoryKey = `${serviceKey}::${item.category}`;
     const categoryCount =
+<<<<<<< HEAD
       categoryCounts[
         categoryKey
+      ] ?? 1;
+=======
+<<<<<<< HEAD
+      categoryCounts[item.category] ?? 1;
+
+    const enteredCost =
+      Number(item.costPerPlate) || 0;
+
+    const baseCost =
+      enteredCost > 0
+        ? enteredCost
+        : getCategoryBaseCost(
+            item.category,
+          );
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
+
+    /*
+     * Manual rate remains zero until
+     * the user enters a value.
+     *
+     * Do not replace zero with a
+     * category rate here.
+     */
+<<<<<<< HEAD
+=======
+=======
+      categoryCounts[
+        item.category
       ] ?? 1;
 
     /*
@@ -1350,6 +2060,7 @@ export function buildMenuCostBreakdown(
      * Do not replace zero with a
      * category rate here.
      */
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     const baseCostPerPlate =
       Math.max(
         0,
@@ -1358,12 +2069,17 @@ export function buildMenuCostBreakdown(
         ) || 0,
       );
 
+<<<<<<< HEAD
+=======
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     const portionFactor =
       categoryCount > 1
         ? 1 / categoryCount
         : 1;
 
     const adjustedCostPerPlate =
+<<<<<<< HEAD
       baseCostPerPlate *
       portionFactor;
     const effectivePax = Math.max(
@@ -1372,6 +2088,14 @@ export function buildMenuCostBreakdown(
     );
     const itemTotalCost =
       adjustedCostPerPlate * effectivePax;
+=======
+<<<<<<< HEAD
+      baseCost * portionFactor;
+=======
+      baseCostPerPlate *
+      portionFactor;
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 
     return {
       ...item,
@@ -1386,7 +2110,15 @@ export function buildMenuCostBreakdown(
 }
 
 /* -------------------------------------------------------------------------- */
+<<<<<<< HEAD
 /*                              Final costing                                 */
+=======
+<<<<<<< HEAD
+/*                           Final costing calculation                        */
+=======
+/*                              Final costing                                 */
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 /* -------------------------------------------------------------------------- */
 
 export function calculate(
@@ -1398,6 +2130,7 @@ export function calculate(
   );
 
   const menuBreakdown =
+<<<<<<< HEAD
     buildMenuCostBreakdown(
       work.menu,
       pax,
@@ -1441,8 +2174,43 @@ export function calculate(
   );
   const menuFoodTotal = menuBreakdown.reduce(
     (sum, item) => sum + item.itemTotalCost,
+=======
+<<<<<<< HEAD
+    buildMenuCostBreakdown(work.menu);
+=======
+    buildMenuCostBreakdown(
+      work.menu,
+    );
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+
+  const menuCostPerPlate =
+    menuBreakdown.reduce(
+      (sum, item) =>
+        sum +
+        item.adjustedCostPerPlate,
+      0,
+    );
+
+<<<<<<< HEAD
+  const extrasTotal = Object.values(
+    work.extras,
+  ).reduce(
+    (sum, value) =>
+      sum + (Number(value) || 0),
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     0,
   );
+=======
+  const extrasTotal =
+    Object.values(
+      work.extras,
+    ).reduce(
+      (sum, value) =>
+        sum +
+        (Number(value) || 0),
+      0,
+    );
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
 
   const menuCostPerPlate =
     totalCovers > 0 ? menuFoodTotal / totalCovers : 0;
@@ -1463,16 +2231,35 @@ export function calculate(
       : 0;
 
   const finalCostPerPlate =
+<<<<<<< HEAD
     menuCostPerPlate +
     extraPerPlate;
 
   const sellingPricePerPlate =
+=======
+<<<<<<< HEAD
+    menuCostPerPlate + extraPerPlate;
+
+  const sellingPricePerPlate =
+    Number(
+      work.sellingPricePerPlate,
+    ) || 0;
+=======
+    menuCostPerPlate +
+    extraPerPlate;
+
+  const sellingPricePerPlate =
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
     Math.max(
       0,
       Number(
         work.sellingPricePerPlate,
       ) || 0,
     );
+<<<<<<< HEAD
+=======
+>>>>>>> a13a0fd (Keep unmatched dishes for manual rates)
+>>>>>>> 8b1d197 (Keep unmatched dishes for manual rates)
 
   const profitPerPlate =
     sellingPricePerPlate > 0
