@@ -42,6 +42,7 @@ export type MenuItem = {
   costPerPlate: number;
   portionQuantity?: number;
   portionUnit?: string;
+  portionManuallyEdited?: boolean;
 };
 
 export type ExtraCost = {

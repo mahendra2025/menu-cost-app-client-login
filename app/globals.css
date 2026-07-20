@@ -243,6 +243,7 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   background: rgba(255, 59, 48, 0.05);
 }
 .menu-cell { display: grid; gap: 6px; }
+.menu-serving-summary { color: var(--muted); font-size: 12px; font-weight: 700; }
 .mobile-field-label {
   display: none;
   font-size: 11px;

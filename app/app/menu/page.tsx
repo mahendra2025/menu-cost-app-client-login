@@ -18,6 +18,7 @@ import {
   detectCost,
   findDishByName,
   suggestDishesByName,
+  syncDishCostItemsFromServer,
 } from '../../../lib/dishCostMaster';
 
 import {
@@ -61,6 +62,13 @@ function proportionalRate(
   return Math.round((currentRate * nextQuantity / currentQuantity) * 100) / 100;
 }
 
+function formatServingQuantity(value: number | undefined) {
+  const quantity = Number(value ?? 1);
+  return Number.isInteger(quantity)
+    ? String(quantity)
+    : String(Math.round(quantity * 100) / 100);
+}
+
 export default function MenuPage() {
   const router = useRouter();
 
@@ -91,11 +99,81 @@ export default function MenuPage() {
 
     setSession(currentSession);
 
-    if (currentSession) {
-      setWork(
-        loadWork(currentSession.tenantId),
-      );
+    if (!currentSession) return;
+
+    const tenantId =
+      currentSession.tenantId;
+    const currentWork =
+      loadWork(tenantId);
+
+    setWork(currentWork);
+
+    let cancelled = false;
+
+    async function refreshAdminServings() {
+      await syncDishCostItemsFromServer();
+      if (cancelled) return;
+
+      setWork((latestWork) => {
+        if (!latestWork) return latestWork;
+
+        let changed = false;
+        const refreshedMenu =
+          latestWork.menu.map((item) => {
+            if (item.portionManuallyEdited) {
+              return item;
+            }
+
+            const adminDish =
+              findDishByName(item.name);
+
+            if (!adminDish) return item;
+
+            const portionQuantity =
+              adminDish.servingQuantity ??
+              1;
+            const portionUnit =
+              adminDish.servingUnit ??
+              'serving';
+
+            if (
+              item.portionQuantity ===
+                portionQuantity &&
+              item.portionUnit ===
+                portionUnit
+            ) {
+              return item;
+            }
+
+            changed = true;
+            return {
+              ...item,
+              portionQuantity,
+              portionUnit,
+            };
+          });
+
+        if (!changed) return latestWork;
+
+        const refreshedWork = {
+          ...latestWork,
+          menu: refreshedMenu,
+        };
+
+        saveWork(
+          tenantId,
+          refreshedWork,
+        );
+
+        return refreshedWork;
+      });
     }
+
+    void refreshAdminServings();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const grouped = useMemo(() => {
@@ -278,6 +356,14 @@ export default function MenuPage() {
 
             updated.category =
               matchedDish.category;
+            updated.portionQuantity =
+              matchedDish.servingQuantity ??
+              1;
+            updated.portionUnit =
+              matchedDish.servingUnit ??
+              'serving';
+            updated.portionManuallyEdited =
+              false;
 
             /*
              * Only update the rate when
@@ -352,6 +438,8 @@ export default function MenuPage() {
       {
         portionQuantity:
           nextQuantity,
+        portionManuallyEdited:
+          true,
         costPerPlate:
           proportionalRate(
             Number(
@@ -937,6 +1025,14 @@ export default function MenuPage() {
                         )
                       }
                     />
+                    <small className="menu-serving-summary">
+                      Serving:{' '}
+                      {formatServingQuantity(
+                        item.portionQuantity,
+                      )}{' '}
+                      {item.portionUnit ??
+                        'serving'}
+                    </small>
                   </div>
 
                   <div className="menu-cell">
@@ -1025,6 +1121,8 @@ export default function MenuPage() {
                                 event
                                   .target
                                   .value,
+                              portionManuallyEdited:
+                                true,
                             },
                           )
                         }
