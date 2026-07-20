@@ -2060,6 +2060,59 @@ export function findDishesInText(value: string): DishCostItem[] {
       if (!overlaps) selected.push(match);
     });
 
+  /*
+   * A catalog word appearing inside an ordinary sentence is not enough.
+   * After removing matched dish spans, only menu-style connector or
+   * presentation words may remain. This prevents text such as
+   * "Coffee break at 5 PM" from becoming the Coffee dish.
+   */
+  let unmatchedText = searchableValue;
+
+  [...selected]
+    .sort((left, right) => right.start - left.start)
+    .forEach((match) => {
+      unmatchedText =
+        unmatchedText.slice(0, match.start) +
+        ' ' +
+        unmatchedText.slice(match.end);
+    });
+
+  const allowedRemainingWords = new Set([
+    'and',
+    'or',
+    'with',
+    'served',
+    'serving',
+    'special',
+    'premium',
+    'regular',
+    'fresh',
+    'hot',
+    'cold',
+    'classic',
+    'live',
+    'counter',
+    'station',
+    'stall',
+    'item',
+    'items',
+    'और',
+    'या',
+    'साथ',
+    'विशेष',
+    'અને',
+    'અથવા',
+    'સાથે',
+    'ખાસ',
+  ]);
+
+  const unexpectedWords = normalizeDishName(unmatchedText)
+    .split(' ')
+    .filter(Boolean)
+    .filter((word) => !allowedRemainingWords.has(word));
+
+  if (unexpectedWords.length) return [];
+
   const seenDishes = new Set<string>();
 
   return selected

@@ -696,6 +696,44 @@ type ParsedMenuLine = {
   categoryHint?: Category;
 };
 
+const NON_DISH_TEXT_PATTERN =
+  /^(?:menu\s+for|wedding\s+menu|party\s+menu|client|customer|event|function|occasion|venue|date|time|pax|guests?|persons?|contact|phone|mobile|address|location|package|price|rate|total|amount|notes?|instructions?|services?|staff|transport|decoration|photography|music|dj|tables?|chairs?|tax|gst|terms?|ग्राहक|कार्यक्रम|स्थान|तारीख|समय|मेहमान|संपर्क|मोबाइल|पता|कुल|नोट|ગ્રાહક|કાર્યક્રમ|સ્થળ|તારીખ|સમય|મહેમાન|સંપર્ક|મોબાઇલ|સરનામું|કુલ|નોંધ)(?:\b|[\s:–—-]|$)/i;
+
+const PROSE_WORD_PATTERN =
+  /\b(?:please|kindly|include|included|excluding|available|required|arrange|arrangement|welcome|thank|thanks|regards|booking|advance|payment|starts?|scheduled|कृपया|धन्यवाद|शामिल|कुल|કૃપા|આભાર|સમાવેશ)\b/i;
+
+function isClearlyNonDishText(value: string): boolean {
+  const normalized = normalizeMenuHeading(value);
+
+  if (!normalized) return true;
+  if (NON_DISH_TEXT_PATTERN.test(normalized)) return true;
+  if (PROSE_WORD_PATTERN.test(normalized)) return true;
+  if (/https?:\/\/|www\.|@\w+\.\w+/.test(value)) return true;
+  if (/^\+?\d[\d\s()-]{7,}$/.test(value.trim())) return true;
+
+  return false;
+}
+
+function isLikelyUnknownDish(
+  value: string,
+  categoryHint?: Category,
+): boolean {
+  if (isClearlyNonDishText(value)) return false;
+  if (/[!?]|\.(?:\s|$)/.test(value)) return false;
+
+  const words = normalizeMenuHeading(value)
+    .split(' ')
+    .filter(Boolean);
+
+  if (!words.length || words.length > 7) return false;
+
+  if (categoryHint) return true;
+
+  return words.some((word) =>
+    /[\p{L}]/u.test(word),
+  );
+}
+
 function splitMenuText(
   text: string,
 ): ParsedMenuLine[] {
@@ -752,6 +790,7 @@ function splitMenuText(
 
     const line = cleanMenuLine(segment);
     if (!line) continue;
+    if (isClearlyNonDishText(line)) continue;
 
     {
       const normalized =
@@ -886,6 +925,21 @@ export function parseMenuText(
         },
       );
 
+      continue;
+    }
+
+    if (
+      !isLikelyUnknownDish(
+        line,
+        menuLine.categoryHint,
+      )
+      ||
+      findDishByName(line)
+    ) {
+      console.info(
+        'Menu detection: ignored non-dish text:',
+        line,
+      );
       continue;
     }
 
