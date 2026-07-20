@@ -120,7 +120,21 @@ export default function MenuPage() {
         let changed = false;
         const refreshedMenu =
           latestWork.menu.map((item) => {
-            if (item.portionManuallyEdited) {
+            const hasPlaceholderServing =
+              Number(
+                item.portionQuantity ??
+                1,
+              ) === 1 &&
+              String(
+                item.portionUnit ??
+                'serving',
+              ).trim().toLowerCase() ===
+                'serving';
+
+            if (
+              item.portionManuallyEdited &&
+              !hasPlaceholderServing
+            ) {
               return item;
             }
 
@@ -150,6 +164,8 @@ export default function MenuPage() {
               ...item,
               portionQuantity,
               portionUnit,
+              portionManuallyEdited:
+                false,
             };
           });
 
