@@ -6,6 +6,13 @@ export type RecipeServing = {
 };
 
 const LOCAL_RECIPE_KEY = 'catereros_polished_dishes_v1';
+const LEGACY_RECIPE_SERVINGS: Array<{
+  name: string;
+  quantity: number;
+  unit: string;
+}> = [
+  { name: 'Dal Fry', quantity: 150, unit: 'ml' },
+];
 
 function normalizeDishName(value: string) {
   return value.trim().toLocaleLowerCase('en-IN').replace(/\s+/g, ' ');
@@ -54,6 +61,12 @@ export function createRecipeServingCatalog() {
     ? defaultRecipesData
     : [];
 
+  LEGACY_RECIPE_SERVINGS.forEach((recipe) => {
+    catalog.set(normalizeDishName(recipe.name), {
+      quantity: recipe.quantity,
+      unit: recipe.unit,
+    });
+  });
   addRecipeServings(catalog, builtInRecipes);
   addRecipeServings(catalog, readLocalRecipes());
 

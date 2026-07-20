@@ -1,3 +1,8 @@
+import {
+  createRecipeServingCatalog,
+  findRecipeServing,
+} from './recipeServings';
+
 export const CATEGORIES = [
   'Welcome Drink',
   'Mocktail',
@@ -1614,9 +1619,22 @@ const DISH_COST_ITEMS_PART_3: readonly DishCostItem[] = [
 
 function buildDefaultDishCatalog(...parts: ReadonlyArray<readonly DishCostItem[]>) {
   const uniqueItems = new Map<string, DishCostItem>();
+  const recipeCatalog = createRecipeServingCatalog();
+
   parts.flat().forEach((item) => {
     const key = normalizeCatalogKey(item.name);
-    if (!uniqueItems.has(key)) uniqueItems.set(key, item);
+    if (uniqueItems.has(key)) return;
+
+    const recipeServing =
+      findRecipeServing(item.name, recipeCatalog);
+
+    uniqueItems.set(key, recipeServing
+      ? {
+          ...item,
+          servingQuantity: recipeServing.quantity,
+          servingUnit: recipeServing.unit,
+        }
+      : item);
   });
   return Array.from(uniqueItems.values());
 }
@@ -1667,6 +1685,7 @@ export function saveDishCostItems(items: DishCostItem[]) {
 
 export function mergeDishCatalog(items: Array<Partial<DishCostItem> | null | undefined>) {
   const merged = new Map<string, DishCostItem>();
+  const recipeCatalog = createRecipeServingCatalog();
 
   DISH_COST_ITEMS.forEach((item) => {
     merged.set(normalizeCatalogKey(item.name), item);
@@ -1678,7 +1697,26 @@ export function mergeDishCatalog(items: Array<Partial<DishCostItem> | null | und
     const key = normalizeCatalogKey(clean.name);
     const defaultItem = merged.get(key);
     const aliases = Array.from(new Set([...(defaultItem?.aliases ?? []), ...(clean.aliases ?? [])]));
-    merged.set(key, { ...clean, aliases });
+    const recipeServing =
+      findRecipeServing(clean.name, recipeCatalog);
+    const hasPlaceholderServing =
+      clean.servingQuantity === 1 &&
+      String(clean.servingUnit).toLowerCase() ===
+        'serving';
+
+    merged.set(key, {
+      ...clean,
+      ...(recipeServing &&
+      hasPlaceholderServing
+        ? {
+            servingQuantity:
+              recipeServing.quantity,
+            servingUnit:
+              recipeServing.unit,
+          }
+        : {}),
+      aliases,
+    });
   });
 
   return Array.from(merged.values()).sort((left, right) => left.name.localeCompare(right.name));
