@@ -10,6 +10,8 @@ export async function GET() {
         name: true,
         category: true,
         rate: true,
+        servingQuantity: true,
+        servingUnit: true,
         aliases: true,
       },
     });
@@ -19,6 +21,8 @@ export async function GET() {
         name: item.name,
         category: item.category as Category,
         rate: item.rate,
+        servingQuantity: item.servingQuantity,
+        servingUnit: item.servingUnit,
         aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
       })))
       : DISH_COST_ITEMS;

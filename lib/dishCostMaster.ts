@@ -35,6 +35,8 @@ export type DishCostItem = {
   name: string;
   category: Category;
   rate: number;
+  servingQuantity?: number;
+  servingUnit?: string;
   aliases?: string[];
 };
 
@@ -1637,6 +1639,8 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
     name: item.name.trim(),
     category: item.category,
     rate: Math.max(Number(item.rate) || 0, 0),
+    servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
+    servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
     aliases: cleanAliases,
   };
 }
@@ -1778,6 +1782,92 @@ export function findDishByName(name: string): DishCostItem | null {
       return candidateTokens.every((token) => tokenizedInput.includes(token));
     });
   }) ?? null;
+}
+
+/**
+ * Finds every catalog dish mentioned in a larger piece of text.
+ *
+ * This is intentionally separate from findDishByName, which returns the
+ * single best match for inputs such as a search field. Pasted menus can put
+ * several dishes on one line, so the menu parser needs all non-overlapping
+ * matches in their original order.
+ */
+export function findDishesInText(value: string): DishCostItem[] {
+  const normalizedValue = normalizeDishName(value);
+  if (!normalizedValue) return [];
+
+  const searchableValue = ` ${normalizedValue} `;
+  const matches: Array<{
+    dish: DishCostItem;
+    start: number;
+    end: number;
+    length: number;
+  }> = [];
+
+  getDishCostItems().forEach((dish) => {
+    const candidates = Array.from(
+      new Set(
+        [dish.name, ...(dish.aliases ?? [])]
+          .map(normalizeDishName)
+          .filter(Boolean),
+      ),
+    );
+
+    candidates.forEach((candidate) => {
+      const needle = ` ${candidate} `;
+      let searchFrom = 0;
+
+      while (searchFrom < searchableValue.length) {
+        const start = searchableValue.indexOf(needle, searchFrom);
+        if (start < 0) break;
+
+        matches.push({
+          dish,
+          start,
+          end: start + needle.length,
+          length: needle.length,
+        });
+
+        searchFrom = start + 1;
+      }
+    });
+  });
+
+  /*
+   * Prefer the longest name when catalog aliases overlap, then keep only
+   * non-overlapping spans. For example, "Paneer Butter Masala" should not
+   * also be treated as a shorter paneer dish.
+   */
+  const selected: typeof matches = [];
+
+  matches
+    .sort(
+      (left, right) =>
+        left.start - right.start ||
+        right.length - left.length ||
+        left.dish.name.localeCompare(right.dish.name),
+    )
+    .forEach((match) => {
+      const overlaps = selected.some(
+        (selectedMatch) =>
+          match.start < selectedMatch.end &&
+          match.end > selectedMatch.start,
+      );
+
+      if (!overlaps) selected.push(match);
+    });
+
+  const seenDishes = new Set<string>();
+
+  return selected
+    .sort((left, right) => left.start - right.start)
+    .filter((match) => {
+      const key = `${normalizeDishName(match.dish.name)}-${match.dish.category}`;
+      if (seenDishes.has(key)) return false;
+      seenDishes.add(key);
+      return true;
+    })
+    .map((match) => match.dish);
 }
 
 export function detectDish(name: string): DishCostItem | null {
