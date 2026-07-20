@@ -1,6 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+} from 'react';
+
 import { useRouter } from 'next/navigation';
 
 import AppShell, {
@@ -9,10 +13,6 @@ import AppShell, {
 
 import {
   getSession,
-<<<<<<< HEAD
-=======
-  loadDishMaster,
->>>>>>> 7200fd0 (Improve menu dish detection)
   loadWork,
   parseMenuText,
   saveWork,
@@ -35,8 +35,7 @@ export default function EventPage() {
   const [detecting, setDetecting] =
     useState(false);
 
-<<<<<<< HEAD
-  const [detectionError, setDetectionError] =
+  const [error, setError] =
     useState('');
 
   useEffect(() => {
@@ -53,166 +52,109 @@ export default function EventPage() {
     }
   }, []);
 
-=======
-  const [error, setError] =
-    useState('');
+  function persistWork(
+    nextWork: WorkState,
+  ) {
+    if (!session) return;
 
-  useEffect(() => {
-    const current = getSession();
+    setWork(nextWork);
 
-    setSession(current);
-
-    if (current) {
-      setWork(loadWork(current.tenantId));
-    }
-  }, []);
-
-  if (!work || !session) {
-    return (
-      <AppShell title="Event Details">
-        <div className="content-grid">
-          <div className="glass-card">
-            Loading...
-          </div>
-        </div>
-      </AppShell>
+    saveWork(
+      session.tenantId,
+      nextWork,
     );
   }
 
-  if (session.status === 'EXPIRED') {
-    return (
-      <AppShell title="Event Details">
-        <LockedCard />
-      </AppShell>
-    );
-  }
-
->>>>>>> 7200fd0 (Improve menu dish detection)
   function updateEvent(
     key: keyof WorkState['event'],
     value: string | number,
   ) {
-    if (!work || !session) return;
+    if (!work) return;
 
-    const next: WorkState = {
+    const nextWork: WorkState = {
       ...work,
-<<<<<<< HEAD
 
-=======
->>>>>>> 7200fd0 (Improve menu dish detection)
       event: {
         ...work.event,
         [key]: value,
       },
     };
 
-    setWork(next);
-    saveWork(session.tenantId, next);
+    persistWork(nextWork);
   }
 
   function detectAndNext() {
-    if (!work || !session || detecting) {
+    if (
+      !work ||
+      !session ||
+      detecting
+    ) {
       return;
     }
 
-<<<<<<< HEAD
-    setDetectionError('');
-=======
+    const rawMenuText =
+      work.event.rawMenuText.trim();
+
     setError('');
->>>>>>> 7200fd0 (Improve menu dish detection)
+
+    if (!rawMenuText) {
+      setError(
+        'Please paste the menu before continuing.',
+      );
+
+      return;
+    }
+
     setDetecting(true);
 
     try {
-      const rawMenuText =
-        work.event.rawMenuText.trim();
-
-      if (!rawMenuText) {
-<<<<<<< HEAD
-        setDetectionError(
-          'Please paste the menu before continuing.',
-        );
-
-        return;
-      }
-
-      const detectedDishes =
+      /*
+       * parseMenuText reads dishes from
+       * the static dishCostMaster.
+       *
+       * Catalog matches receive their
+       * catalog category and rate.
+       *
+       * Unmatched dishes remain in the
+       * menu with an estimated category
+       * and a zero manual rate.
+       */
+      const detectedMenu =
         parseMenuText(rawMenuText);
 
       console.log(
-        'Detected menu dishes:',
-        detectedDishes,
+        'Detected menu:',
+        detectedMenu,
       );
 
-      if (!detectedDishes.length) {
-        setDetectionError(
-          'No dishes were detected. Confirm that these dish names exist in dishCostMaster.ts.',
+      if (!detectedMenu.length) {
+        setError(
+          'No valid menu items were found. Add each dish on a separate line, or separate dishes with commas, slashes or bullets.',
         );
 
-=======
-        setError(
-          'Please paste the menu before continuing.',
-        );
         return;
       }
 
-      const dishMaster =
-        loadDishMaster(session.tenantId);
+      const manualRateCount =
+        detectedMenu.filter(
+          (item) =>
+            Number(
+              item.costPerPlate,
+            ) <= 0,
+        ).length;
 
-      console.log(
-        'Dish Master recipes:',
-        dishMaster.length,
+      console.info(
+        `Menu detection complete: ${detectedMenu.length} dishes detected. ${manualRateCount} dishes require manual rates.`,
       );
 
-      if (!dishMaster.length) {
-        setError(
-          'Dish Master is empty. Import recipes into Dish Master first.',
-        );
-        return;
-      }
-
-      const detected = parseMenuText(
-        rawMenuText,
-        dishMaster,
-      );
-
-      console.log(
-        'Detected dishes:',
-        detected,
-      );
-
-      if (!detected.length) {
-        setError(
-          'No dishes were detected. Check Dish Master names, aliases and imported recipes.',
-        );
->>>>>>> 7200fd0 (Improve menu dish detection)
-        return;
-      }
-
-      const next: WorkState = {
+      const nextWork: WorkState = {
         ...work,
-<<<<<<< HEAD
-        menu: detectedDishes,
-=======
-        menu: detected,
->>>>>>> 7200fd0 (Improve menu dish detection)
+        menu: detectedMenu,
       };
 
-      setWork(next);
-      saveWork(session.tenantId, next);
+      persistWork(nextWork);
 
       router.push('/app/menu');
-<<<<<<< HEAD
-    } catch (error) {
-      console.error(
-        'Menu detection failed:',
-        error,
-      );
-
-      setDetectionError(
-        error instanceof Error
-          ? error.message
-          : 'Menu detection failed. Please try again.',
-=======
     } catch (detectError) {
       console.error(
         'Menu detection error:',
@@ -222,8 +164,7 @@ export default function EventPage() {
       setError(
         detectError instanceof Error
           ? detectError.message
-          : 'Menu detection failed.',
->>>>>>> 7200fd0 (Improve menu dish detection)
+          : 'Menu detection failed. Please try again.',
       );
     } finally {
       setDetecting(false);
@@ -231,14 +172,11 @@ export default function EventPage() {
   }
 
   function clearPage() {
-    if (!work || !session) return;
+    if (!work) return;
 
-    const next: WorkState = {
+    const nextWork: WorkState = {
       ...work,
-<<<<<<< HEAD
 
-=======
->>>>>>> 7200fd0 (Improve menu dish detection)
       event: {
         ...work.event,
         clientName: '',
@@ -248,7 +186,6 @@ export default function EventPage() {
         pax: 0,
         city: '',
         venue: '',
-<<<<<<< HEAD
         uploadFileName: '',
         rawMenuText: '',
       },
@@ -256,19 +193,8 @@ export default function EventPage() {
       menu: [],
     };
 
-    setDetectionError('');
-=======
-        rawMenuText: '',
-      },
-      menu: [],
-    };
-
     setError('');
->>>>>>> 7200fd0 (Improve menu dish detection)
-    setWork(next);
-
-    saveWork(session.tenantId, next);
-<<<<<<< HEAD
+    persistWork(nextWork);
   }
 
   if (!work || !session) {
@@ -283,24 +209,20 @@ export default function EventPage() {
     );
   }
 
-  if (session.status === 'EXPIRED') {
+  if (
+    session.status === 'EXPIRED'
+  ) {
     return (
       <AppShell title="Event Details">
         <LockedCard />
       </AppShell>
     );
-=======
->>>>>>> 7200fd0 (Improve menu dish detection)
   }
 
   return (
     <AppShell
       title="Event Details + Menu"
-<<<<<<< HEAD
-      subtitle="Enter event details and paste the complete menu"
-=======
-      subtitle="First page: client details, pax and pasted menu text"
->>>>>>> 7200fd0 (Improve menu dish detection)
+      subtitle="Enter event information and paste the complete menu"
     >
       <section className="content-grid">
         <div className="glass-card">
@@ -312,41 +234,35 @@ export default function EventPage() {
 
           <div
             className="helper-card"
-            style={{ marginBottom: 16 }}
+            style={{
+              marginBottom: 16,
+            }}
           >
-<<<<<<< HEAD
-            <b>Start with event details</b>
+            <b>
+              Start with the basics
+            </b>
 
             <p>
-              Add the client, event, date and guest
-              information before detecting the menu.
-=======
-            <b>Start with the basics</b>
-
-            <p>
-              Fill the event details first, then
-              paste the complete menu below.
->>>>>>> 7200fd0 (Improve menu dish detection)
+              Enter the event details,
+              guest count and venue.
+              Then paste the complete
+              menu below.
             </p>
           </div>
 
           <div className="form-grid">
             <div className="three-grid">
               <div className="field">
-<<<<<<< HEAD
                 <label htmlFor="clientName">
                   Client Name
                 </label>
 
                 <input
                   id="clientName"
-=======
-                <label>Client Name</label>
-
-                <input
->>>>>>> 7200fd0 (Improve menu dish detection)
                   className="input input-large"
-                  value={work.event.clientName}
+                  value={
+                    work.event.clientName
+                  }
                   onChange={(event) =>
                     updateEvent(
                       'clientName',
@@ -358,20 +274,16 @@ export default function EventPage() {
               </div>
 
               <div className="field">
-<<<<<<< HEAD
                 <label htmlFor="eventName">
                   Event Name
                 </label>
 
                 <input
                   id="eventName"
-=======
-                <label>Event Name</label>
-
-                <input
->>>>>>> 7200fd0 (Improve menu dish detection)
                   className="input input-large"
-                  value={work.event.eventName}
+                  value={
+                    work.event.eventName
+                  }
                   onChange={(event) =>
                     updateEvent(
                       'eventName',
@@ -383,21 +295,17 @@ export default function EventPage() {
               </div>
 
               <div className="field">
-<<<<<<< HEAD
                 <label htmlFor="eventDate">
                   Event Date
                 </label>
 
                 <input
                   id="eventDate"
-=======
-                <label>Event Date</label>
-
-                <input
->>>>>>> 7200fd0 (Improve menu dish detection)
                   className="input input-large"
                   type="date"
-                  value={work.event.eventDate}
+                  value={
+                    work.event.eventDate
+                  }
                   onChange={(event) =>
                     updateEvent(
                       'eventDate',
@@ -410,20 +318,16 @@ export default function EventPage() {
 
             <div className="three-grid">
               <div className="field">
-<<<<<<< HEAD
                 <label htmlFor="functionType">
                   Function Type
                 </label>
 
                 <input
                   id="functionType"
-=======
-                <label>Function Type</label>
-
-                <input
->>>>>>> 7200fd0 (Improve menu dish detection)
                   className="input input-large"
-                  value={work.event.functionType}
+                  value={
+                    work.event.functionType
+                  }
                   onChange={(event) =>
                     updateEvent(
                       'functionType',
@@ -435,62 +339,45 @@ export default function EventPage() {
               </div>
 
               <div className="field">
-<<<<<<< HEAD
                 <label htmlFor="pax">
                   Pax / Guests
                 </label>
 
                 <input
                   id="pax"
-=======
-                <label>Pax / Guests</label>
-
-                <input
->>>>>>> 7200fd0 (Improve menu dish detection)
                   className="input input-large"
                   type="number"
                   min="1"
                   inputMode="numeric"
-                  value={work.event.pax || ''}
-<<<<<<< HEAD
-                  onChange={(event) => {
-                    const pax = Math.max(
-                      0,
-                      Number(event.target.value),
-                    );
-
-                    updateEvent('pax', pax);
-                  }}
-=======
+                  value={
+                    work.event.pax || ''
+                  }
                   onChange={(event) =>
                     updateEvent(
                       'pax',
                       Math.max(
                         0,
-                        Number(event.target.value),
+                        Number(
+                          event.target.value,
+                        ) || 0,
                       ),
                     )
                   }
->>>>>>> 7200fd0 (Improve menu dish detection)
                   placeholder="300"
                 />
               </div>
 
               <div className="field">
-<<<<<<< HEAD
                 <label htmlFor="city">
                   City
                 </label>
 
                 <input
                   id="city"
-=======
-                <label>City</label>
-
-                <input
->>>>>>> 7200fd0 (Improve menu dish detection)
                   className="input input-large"
-                  value={work.event.city}
+                  value={
+                    work.event.city
+                  }
                   onChange={(event) =>
                     updateEvent(
                       'city',
@@ -503,20 +390,16 @@ export default function EventPage() {
             </div>
 
             <div className="field">
-<<<<<<< HEAD
               <label htmlFor="venue">
                 Venue
               </label>
 
               <input
                 id="venue"
-=======
-              <label>Venue</label>
-
-              <input
->>>>>>> 7200fd0 (Improve menu dish detection)
                 className="input input-large"
-                value={work.event.venue}
+                value={
+                  work.event.venue
+                }
                 onChange={(event) =>
                   updateEvent(
                     'venue',
@@ -531,40 +414,33 @@ export default function EventPage() {
 
         <div className="glass-card">
           <div className="section-kicker">
-<<<<<<< HEAD
             Menu Detection
-=======
-            Paste Only
->>>>>>> 7200fd0 (Improve menu dish detection)
           </div>
 
           <h2>Paste Menu</h2>
 
           <div
             className="helper-card"
-            style={{ marginBottom: 16 }}
+            style={{
+              marginBottom: 16,
+            }}
           >
-<<<<<<< HEAD
-            <b>Paste the complete menu</b>
+            <b>
+              One message is enough
+            </b>
 
             <p>
-              Items can be separated with new lines,
-              commas, slashes, semicolons or bullets.
-              Only dishes available in the Dish Cost
-              Master will be detected.
-=======
-            <b>One message is enough</b>
-
-            <p>
-              Paste menu items separated by new
-              lines, commas, slashes or bullets.
->>>>>>> 7200fd0 (Improve menu dish detection)
+              Paste the complete menu
+              from WhatsApp, notes or
+              email. Separate dishes
+              using new lines, commas,
+              slashes, semicolons or
+              bullets.
             </p>
           </div>
 
           <div className="form-grid">
             <div className="field">
-<<<<<<< HEAD
               <label htmlFor="rawMenuText">
                 Paste Menu Text
               </label>
@@ -572,81 +448,76 @@ export default function EventPage() {
               <textarea
                 id="rawMenuText"
                 className="textarea textarea-large"
-                value={work.event.rawMenuText}
+                value={
+                  work.event.rawMenuText
+                }
                 onChange={(event) => {
-                  setDetectionError('');
+                  setError('');
 
                   updateEvent(
                     'rawMenuText',
                     event.target.value,
                   );
                 }}
-                placeholder={`Breakfast
-
+                placeholder={`Welcome Drink
 Orange Juice
-Vegetable Poha
-Mini Idli
-Medu Vada
+
+Starter
 Paneer Tikka
+Hara Bhara Kebab
+
+Main Course
 Paneer Butter Masala
+Special Maharaja Sabji
 Dal Fry
 Jeera Rice
 Butter Naan
+
+Sweet
 Gulab Jamun`}
-              />
-            </div>
-
-            {detectionError ? (
-              <div
-                className="helper-card"
-                role="alert"
-                style={{
-                  borderColor:
-                    'rgba(239, 68, 68, 0.45)',
-                  background:
-                    'rgba(239, 68, 68, 0.08)',
-                }}
-              >
-                <b>Detection problem</b>
-
-                <p>{detectionError}</p>
-=======
-              <label>Paste Menu Text</label>
-
-              <textarea
-                className="textarea textarea-large"
-                value={work.event.rawMenuText}
-                onChange={(event) =>
-                  updateEvent(
-                    'rawMenuText',
-                    event.target.value,
-                  )
-                }
-                placeholder="Orange Juice / Manchow Soup / Paneer Tikka / Paneer Butter Masala / Naan / Dal Fry / Jeera Rice / Gulab Jamun"
               />
             </div>
 
             {error ? (
               <div
                 className="helper-card"
+                role="alert"
                 style={{
                   borderColor:
                     'rgba(239, 68, 68, 0.45)',
+
+                  background:
+                    'rgba(239, 68, 68, 0.08)',
                 }}
               >
-                <b>Detection problem</b>
+                <b>
+                  Detection problem
+                </b>
+
                 <p>{error}</p>
->>>>>>> 7200fd0 (Improve menu dish detection)
               </div>
             ) : null}
+
+            <div className="helper-card">
+              <b>
+                Unmatched dishes are
+                not deleted
+              </b>
+
+              <p>
+                A dish not found in the
+                catalog will still
+                appear on the Menu page.
+                Its rate will be ₹0 so
+                you can enter a manual
+                rate.
+              </p>
+            </div>
 
             <div className="action-row page-actions">
               <button
                 className="primary-button"
-<<<<<<< HEAD
                 type="button"
-=======
->>>>>>> 7200fd0 (Improve menu dish detection)
                 onClick={detectAndNext}
                 disabled={detecting}
               >
@@ -657,10 +528,7 @@ Gulab Jamun`}
 
               <button
                 className="ghost-button"
-<<<<<<< HEAD
                 type="button"
-=======
->>>>>>> 7200fd0 (Improve menu dish detection)
                 onClick={clearPage}
                 disabled={detecting}
               >

@@ -5,6 +5,7 @@ import {
   CATEGORY_BASE_COST,
   CATEGORIES,
   detectCategory,
+  findDishesInText,
   findDishByName,
 } from './dishCostMaster';
 
@@ -626,22 +627,24 @@ function splitMenuText(
     });
 }
 
-function detectDishFromLine(
+function detectDishesFromLine(
   menuLine: string,
-) {
+): NonNullable<
+  ReturnType<typeof findDishByName>
+>[] {
   const candidates =
     createDishCandidates(menuLine);
 
   for (const candidate of candidates) {
-    const matchedDish =
-      findDishByName(candidate);
+    const matchedDishes =
+      findDishesInText(candidate);
 
-    if (matchedDish) {
-      return matchedDish;
+    if (matchedDishes.length) {
+      return matchedDishes;
     }
   }
 
-  return null;
+  return [];
 }
 
 export function parseMenuText(
@@ -661,27 +664,31 @@ export function parseMenuText(
   const menuItems: MenuItem[] = [];
 
   for (const line of menuLines) {
-    const matchedDish =
-      detectDishFromLine(line);
+    const matchedDishes =
+      detectDishesFromLine(line);
 
-    if (matchedDish) {
-      menuItems.push({
-        id: uid('dish'),
+    if (matchedDishes.length) {
+      matchedDishes.forEach(
+        (matchedDish) => {
+          menuItems.push({
+            id: uid('dish'),
 
-        name:
-          matchedDish.name,
+            name:
+              matchedDish.name,
 
-        category:
-          matchedDish.category,
+            category:
+              matchedDish.category,
 
-        costPerPlate:
-          Number(
-            matchedDish.rate,
-          ) ||
-          getCategoryBaseCost(
-            matchedDish.category,
-          ),
-      });
+            costPerPlate:
+              Number(
+                matchedDish.rate,
+              ) ||
+              getCategoryBaseCost(
+                matchedDish.category,
+              ),
+          });
+        },
+      );
 
       continue;
     }
