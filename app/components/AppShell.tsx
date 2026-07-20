@@ -8,19 +8,19 @@ import { getSession, logout, refreshSessionFromClient } from '../../lib/store';
 import type { Session } from '../../lib/types';
 
 const clientNav = [
-  { href: '/app/event', label: 'Event', icon: '📄' },
-  { href: '/app/menu', label: 'Menu', icon: '🍽️' },
-  { href: '/app/manpower', label: 'Manpower', icon: '👥' },
-  { href: '/app/cost', label: 'Cost', icon: '₹' },
-  { href: '/app/pdf', label: 'PDF', icon: '🧾' },
-  { href: '/app/profile', label: 'Profile', icon: '👤' },
+  { href: '/app/event', label: 'Event', description: 'Event and menu', mark: '1' },
+  { href: '/app/menu', label: 'Menu', description: 'Review dishes', mark: '2' },
+  { href: '/app/manpower', label: 'Manpower', description: 'Plan the team', mark: '3' },
+  { href: '/app/cost', label: 'Cost', description: 'Calculate price', mark: '4' },
+  { href: '/app/pdf', label: 'Quotation', description: 'Print and export', mark: '5' },
+  { href: '/app/profile', label: 'Profile', description: 'Business settings', mark: '6' },
 ];
 
 const adminNav = [
-  { href: '/admin/users', label: 'Users', icon: '👥' },
-  { href: '/admin/dishes', label: 'Dishes', icon: '🍽️' },
-  { href: '/admin/recipes', label: 'Recipes', icon: '🧮' },
-  { href: '/app/profile', label: 'Profile', icon: '👤' },
+  { href: '/admin/users', label: 'Clients', description: 'Accounts and access', mark: 'C' },
+  { href: '/admin/dishes', label: 'Dish catalog', description: 'Dishes and rates', mark: 'D' },
+  { href: '/admin/recipes', label: 'Recipe studio', description: 'Ingredients and yield', mark: 'R' },
+  { href: '/app/profile', label: 'Profile', description: 'Workspace settings', mark: 'P' },
 ];
 
 export default function AppShell({ children, title, subtitle }: { children: ReactNode; title: string; subtitle?: string }) {
@@ -45,6 +45,9 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
   }, [ready]);
 
   const nav = useMemo(() => (session?.role === 'ADMIN' ? adminNav : clientNav), [session]);
+  const activeIndex = Math.max(0, nav.findIndex((item) => item.href === pathname));
+  const isAdmin = session?.role === 'ADMIN';
+  const progress = isAdmin ? 100 : ((activeIndex + 1) / clientNav.length) * 100;
 
   if (!ready) {
     return (
@@ -57,48 +60,92 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
   return (
     <main className="page-shell app-frame">
       <header className="topbar no-print">
-        <Link href={session?.role === 'ADMIN' ? '/admin/users' : '/app/event'} className="brand-chip">
+        <Link href={isAdmin ? '/admin/users' : '/app/event'} className="brand-chip">
           <span className="brand-logo">MC</span>
-          <span>
+          <span className="brand-copy">
             <b>Menu Cost</b>
             <small>{session?.businessName}</small>
           </span>
         </Link>
-        <button
-          className="ghost-button logout-button"
-          aria-label="Log out of Menu Cost"
-          onClick={() => {
-            logout();
-            void fetch('/api/client/session', { method: 'DELETE' });
-            router.replace('/login');
-          }}
-        >
-          Logout
-        </button>
+        <div className="topbar-actions">
+          <span className={`account-status ${session?.status === 'ACTIVE' ? 'active' : ''}`}>
+            <i aria-hidden="true" />
+            {isAdmin ? 'Admin' : session?.status === 'ACTIVE' ? 'Active' : session?.status}
+          </span>
+          <button
+            className="ghost-button logout-button"
+            aria-label="Log out of Menu Cost"
+            onClick={() => {
+              logout();
+              void fetch('/api/client/session', { method: 'DELETE' });
+              router.replace('/login');
+            }}
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
-      {session?.status === 'EXPIRED' && session.role === 'CLIENT' ? (
-        <div className="alert-card no-print">
-          <b>Plan expired.</b> Upload, cost and PDF are locked. Renew ₹999/month from admin to continue.
+      <div className="app-layout">
+        <aside className="app-sidebar no-print">
+          <div className="sidebar-heading">
+            <span>{isAdmin ? 'Admin workspace' : 'Quotation workflow'}</span>
+            <b>{isAdmin ? 'Manage your catalog' : `Step ${activeIndex + 1} of ${clientNav.length}`}</b>
+          </div>
+          <nav className="sidebar-nav" aria-label={isAdmin ? 'Admin navigation' : 'Quotation workflow'}>
+            {nav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={pathname === item.href ? 'active' : ''}
+                aria-current={pathname === item.href ? 'page' : undefined}
+              >
+                <span className="nav-mark" aria-hidden="true">{item.mark}</span>
+                <span className="nav-copy">
+                  <b>{item.label}</b>
+                  <small>{item.description}</small>
+                </span>
+              </Link>
+            ))}
+          </nav>
+          <div className="sidebar-support">
+            <span>Need a clean estimate?</span>
+            <p>Complete each step in order. Your work saves automatically.</p>
+          </div>
+        </aside>
+
+        <div className="app-workspace">
+          {session?.status === 'EXPIRED' && session.role === 'CLIENT' ? (
+            <div className="alert-card no-print">
+              <b>Plan expired.</b> Upload, cost and PDF are locked. Renew ₹999/month from admin to continue.
+            </div>
+          ) : null}
+
+          <section className="page-title no-print">
+            <div>
+              <span className="page-eyebrow">{isAdmin ? 'Menu Cost Admin' : 'Catering workspace'}</span>
+              <h1>{title}</h1>
+              <p>{subtitle ?? 'Plan, price and present every event with confidence.'}</p>
+            </div>
+            <div className="page-progress" aria-label={isAdmin ? 'Admin workspace' : `Step ${activeIndex + 1} of ${clientNav.length}`}>
+              <span>{isAdmin ? 'Workspace' : `${activeIndex + 1}/${clientNav.length}`}</span>
+              <div><i style={{ width: `${progress}%` }} /></div>
+            </div>
+          </section>
+
+          {children}
         </div>
-      ) : null}
+      </div>
 
-      <section className="page-title no-print">
-        <p>{subtitle ?? 'Apple-style clean workflow for caterers'}</p>
-        <h1>{title}</h1>
-      </section>
-
-      {children}
-
-      <nav
-        className="bottom-nav no-print"
-        style={{
-          gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))`,
-        }}
-      >
+      <nav className="bottom-nav no-print" aria-label={isAdmin ? 'Admin navigation' : 'Quotation workflow'}>
         {nav.map((item) => (
-          <Link key={item.href} href={item.href} className={pathname === item.href ? 'active' : ''} aria-current={pathname === item.href ? 'page' : undefined}>
-            <span aria-hidden="true">{item.icon}</span>
+          <Link
+            key={item.href}
+            href={item.href}
+            className={pathname === item.href ? 'active' : ''}
+            aria-current={pathname === item.href ? 'page' : undefined}
+          >
+            <span className="nav-mark" aria-hidden="true">{item.mark}</span>
             <small>{item.label}</small>
           </Link>
         ))}
