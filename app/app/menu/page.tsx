@@ -262,6 +262,40 @@ export default function MenuPage() {
       (service) => service.serviceId === newServiceId,
     ) ?? weddingServices[0];
 
+  const menuServiceGroups = useMemo(() => {
+    const services = new Map<
+      string,
+      {
+        serviceId: string;
+        dayLabel: string;
+        mealLabel: string;
+        servicePax: number;
+        items: MenuItem[];
+      }
+    >();
+
+    (work?.menu ?? []).forEach((item) => {
+      const serviceId = item.serviceId ?? 'default';
+      const current = services.get(serviceId) ?? {
+        serviceId,
+        dayLabel: item.dayLabel ?? '',
+        mealLabel: item.mealLabel ?? 'Event Menu',
+        servicePax: Math.max(
+          0,
+          Number(item.servicePax) ||
+            Number(work?.event.pax) ||
+            0,
+        ),
+        items: [],
+      };
+
+      current.items.push(item);
+      services.set(serviceId, current);
+    });
+
+    return Array.from(services.values());
+  }, [work]);
+
   const matchedNewDish = useMemo(() => {
     const trimmedName = newDish.trim();
 
@@ -724,14 +758,22 @@ export default function MenuPage() {
           </div>
 
           <div className="stat-card">
-            <small>Categories</small>
+            <small>
+              {weddingServices.length > 0
+                ? 'Functions'
+                : 'Categories'}
+            </small>
 
             <strong>
-              {grouped.length}
+              {weddingServices.length > 0
+                ? menuServiceGroups.length
+                : grouped.length}
             </strong>
 
             <span>
-              Auto grouped
+              {weddingServices.length > 0
+                ? 'Meal-wise'
+                : 'Auto grouped'}
             </span>
           </div>
 
@@ -1079,7 +1121,11 @@ export default function MenuPage() {
             a manual rate per plate.
             Changing serving quantity
             adjusts the rate
-            proportionally.
+            proportionally. Wedding
+            dishes are separated by
+            function, and category
+            portions are shared only
+            within the same function.
           </p>
 
           {manualRateCount > 0 ? (
@@ -1123,9 +1169,51 @@ export default function MenuPage() {
             </div>
           ) : null}
 
-          <div className="menu-list">
-            {work.menu.map(
-              (item) => (
+          <div className="menu-service-groups">
+            {menuServiceGroups.map((service) => (
+              <section
+                className="menu-service-group"
+                key={service.serviceId}
+              >
+                <div className="menu-service-heading">
+                  <div>
+                    {service.dayLabel ? (
+                      <span className="section-kicker">
+                        {service.dayLabel}
+                      </span>
+                    ) : null}
+                    <h3>{service.mealLabel}</h3>
+                  </div>
+
+                  <div className="menu-service-meta">
+                    {service.servicePax > 0 ? (
+                      <span className="badge green">
+                        {service.servicePax} members
+                      </span>
+                    ) : null}
+                    <span className="badge">
+                      {service.items.length}{' '}
+                      {service.items.length === 1 ? 'dish' : 'dishes'}
+                    </span>
+                    {service.items.some(
+                      (item) => !(Number(item.costPerPlate) > 0),
+                    ) ? (
+                      <span className="badge orange">
+                        {
+                          service.items.filter(
+                            (item) =>
+                              !(Number(item.costPerPlate) > 0),
+                          ).length
+                        }{' '}
+                        rates missing
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="menu-list">
+                  {service.items.map(
+                    (item) => (
                 <div
                   className="menu-row"
                   key={item.id}
@@ -1318,8 +1406,11 @@ export default function MenuPage() {
                     Remove
                   </button>
                 </div>
-              ),
-            )}
+                    ),
+                  )}
+                </div>
+              </section>
+            ))}
           </div>
 
           <div className="action-row page-actions">
@@ -1345,7 +1436,8 @@ export default function MenuPage() {
           </div>
         </div>
 
-        {grouped.length > 0 ? (
+        {grouped.length > 0 &&
+        weddingServices.length === 0 ? (
           <div className="glass-card">
             <div className="section-kicker">
               Costing Rules

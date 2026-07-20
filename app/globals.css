@@ -189,6 +189,25 @@ td:first-child { border-left: 1px solid var(--border); border-radius: 16px 0 0 1
 td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16px 0; }
 
 .menu-list { display: grid; gap: 12px; }
+.menu-service-groups { display: grid; gap: 22px; margin-top: 18px; }
+.menu-service-group {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(255, 149, 0, .2);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(255, 149, 0, .07), rgba(255, 255, 255, .58));
+}
+.menu-service-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 2px 2px 0;
+}
+.menu-service-heading h3 { margin: 2px 0 0; font-size: 21px; letter-spacing: -.02em; }
+.menu-service-heading .section-kicker { display: block; margin: 0; }
+.menu-service-meta { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
 .menu-row {
   display: grid;
   grid-template-columns: minmax(190px, 1.5fr) minmax(150px, 1fr) minmax(210px, .9fr) 130px auto;
@@ -502,6 +521,9 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .glass-card h2 { margin-top: 2px; font-size: 21px; letter-spacing: -.02em; }
   .section-kicker { margin-bottom: 8px; }
   .menu-row { grid-template-columns: 1fr; gap: 12px; padding: 14px; }
+  .menu-service-group { padding: 12px; border-radius: 20px; }
+  .menu-service-heading { align-items: flex-start; flex-direction: column; }
+  .menu-service-meta { justify-content: flex-start; }
   .admin-dish-row { grid-template-columns: 1fr; }
   .admin-serving-grid { grid-template-columns: 1fr; }
   .admin-alias-grid { grid-template-columns: 1fr; }
