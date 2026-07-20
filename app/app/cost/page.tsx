@@ -33,6 +33,9 @@ export default function CostPage() {
   if (session.status === 'EXPIRED') return <AppShell title="Cost"><LockedCard /></AppShell>;
 
   const result = calculate(work);
+  const hasWeddingServices = result.serviceSummaries.some(
+    (service) => service.serviceId !== 'default',
+  );
 
   function persist(next: WorkState) {
     if (!session) return;
@@ -59,11 +62,35 @@ export default function CostPage() {
     <AppShell title="Cost" subtitle="Third page: clean costing with dish cost and extra cost">
       <section className="content-grid">
         <div className="stat-grid">
-          <StatCard label="Menu Cost / Plate" value={money(result.menuCostPerPlate)} note={`${work.menu.length} dishes`} />
-          <StatCard label="Extra / Plate" value={money(result.extraPerPlate)} note={`Total extra ${money(result.extrasTotal)}`} />
-          <StatCard label="Final Cost / Plate" value={money(result.finalCostPerPlate)} note={`${result.pax} pax`} />
-          <StatCard label="Profit / Plate" value={money(result.profitPerPlate)} note="Based on selling rate" />
+          <StatCard label="Average Food / Cover" value={money(result.menuCostPerPlate)} note={`Food total ${money(result.menuFoodTotal)}`} />
+          <StatCard label="Extra / Cover" value={money(result.extraPerPlate)} note={`Total extra ${money(result.extrasTotal)}`} />
+          <StatCard label="Average Final / Cover" value={money(result.finalCostPerPlate)} note={`${result.totalCovers} total meal covers`} />
+          <StatCard label="Total Wedding Cost" value={money(result.totalCost)} note={`${result.serviceSummaries.length} meal${result.serviceSummaries.length === 1 ? '' : 's'}`} />
         </div>
+
+        {hasWeddingServices ? (
+          <div className="glass-card">
+            <h2>Meal-wise Cost Summary</h2>
+            <p className="muted">Each meal uses its own member count. Repeated dishes are charged again in every meal where they appear.</p>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Day</th><th>Meal</th><th>Members</th><th>Dishes</th><th>Food / Plate</th><th>Meal Food Total</th></tr></thead>
+                <tbody>
+                  {result.serviceSummaries.map((service) => (
+                    <tr key={service.serviceId}>
+                      <td>{service.dayLabel || '-'}</td>
+                      <td><b>{service.mealLabel}</b></td>
+                      <td>{service.pax}</td>
+                      <td>{service.dishCount}</td>
+                      <td>{money(service.menuCostPerPlate)}</td>
+                      <td><b>{money(service.totalCost)}</b></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
 
         <div className="glass-card">
           <h2>Dish Cost Table</h2>
@@ -71,16 +98,18 @@ export default function CostPage() {
           {work.menu.length === 0 ? <p className="muted">No dishes found. Add menu items first.</p> : null}
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Dish</th><th>Category</th><th>Base Cost / Plate</th><th>Applied Portion</th><th>Adjusted Cost / Plate</th><th>Total Cost</th></tr></thead>
+              <thead><tr><th>Service</th><th>Dish</th><th>Category</th><th>Members</th><th>Base Cost / Plate</th><th>Applied Portion</th><th>Adjusted Cost / Plate</th><th>Total Cost</th></tr></thead>
               <tbody>
                 {result.menuBreakdown.map((item) => (
                   <tr key={item.id}>
+                    <td>{item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}</td>
                     <td><b>{item.name}</b></td>
                     <td>{item.category}</td>
+                    <td>{item.effectivePax}</td>
                     <td>{money(item.baseCostPerPlate)}</td>
                     <td>{item.categoryCount > 1 ? `1/${item.categoryCount}` : 'Full'}</td>
                     <td>{money(item.adjustedCostPerPlate)}</td>
-                    <td>{money(item.adjustedCostPerPlate * result.pax)}</td>
+                    <td>{money(item.itemTotalCost)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -172,7 +201,7 @@ export default function CostPage() {
         <div className="glass-card">
           <h2>Final Price</h2>
           <div className="two-grid">
-            <div className="field"><label>Selling Price / Plate</label><input className="input" type="number" min="0" inputMode="decimal" value={work.sellingPricePerPlate || ''} onChange={(e) => persist({ ...work, sellingPricePerPlate: Math.max(0, Number(e.target.value)) })} placeholder="Example: 350" /></div>
+            <div className="field"><label>Average Selling Price / Cover</label><input className="input" type="number" min="0" inputMode="decimal" value={work.sellingPricePerPlate || ''} onChange={(e) => persist({ ...work, sellingPricePerPlate: Math.max(0, Number(e.target.value)) })} placeholder="Example: 350" /></div>
             <div className="field"><label>Total Selling Amount</label><input className="input" readOnly value={money(result.totalSelling)} /></div>
           </div>
           <div className="stat-grid" style={{ marginTop: 16 }}>

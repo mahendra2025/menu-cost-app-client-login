@@ -117,7 +117,9 @@ export default function EventPage() {
        *
        * Unmatched dishes remain in the
        * menu with an estimated category
-       * and a zero manual rate.
+       * and a blank manual rate. Full
+       * wedding menus also retain day,
+       * meal and member-count details.
        */
       const detectedMenu =
         parseMenuText(rawMenuText);
@@ -340,7 +342,7 @@ export default function EventPage() {
 
               <div className="field">
                 <label htmlFor="pax">
-                  Pax / Guests
+                  Default Pax / Guests
                 </label>
 
                 <input
@@ -365,6 +367,9 @@ export default function EventPage() {
                   }
                   placeholder="300"
                 />
+                <small className="muted">
+                  Used when the pasted menu does not include members for each meal.
+                </small>
               </div>
 
               <div className="field">

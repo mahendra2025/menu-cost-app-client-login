@@ -408,6 +408,25 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   rajasthani: 'Rajasthani',
   'live counter': 'Live Counter',
   'live counters': 'Live Counter',
+  juice: 'Welcome Drink',
+  juices: 'Welcome Drink',
+  'indian bread': 'Bread',
+  'indian breads': 'Bread',
+  'dal and rice': null,
+  sides: 'Condiments',
+  'side items': 'Condiments',
+  'snacks counter': 'Starter',
+  'snack counter': 'Starter',
+  'special counter': 'Live Counter',
+  'special counters': 'Live Counter',
+  'bihari counter': 'Live Counter',
+  'chaat counter': 'Chaat',
+  'south indian counter': 'South Indian',
+  'italian counter': 'Italian',
+  'fruit counter': 'Salad',
+  'wedding dinner': null,
+  'dj night': null,
+  'dj night dinner snacks': null,
   'swagat pey': 'Welcome Drink',
   'स्वागत पेय': 'Welcome Drink',
   'સ્વાગત પીણું': 'Welcome Drink',
@@ -543,7 +562,7 @@ function removePriceAndQuantity(
       ' ',
     )
     .replace(
-      /\b\d+(?:\.\d+)?\s*(?:pax|plates?|persons?|people|guests?|pcs?|pieces?|kg|kgs|gram|grams|gm|gms|ml|ltr|litre|litres|packet|packets)\b/gi,
+      /\b\d+(?:\.\d+)?\s*(?:pax|members?|plates?|persons?|people|guests?|pcs?|pieces?|kg|kgs|gram|grams|gm|gms|ml|ltr|litre|litres|packet|packets)\b/gi,
       ' ',
     )
     .replace(
@@ -572,6 +591,10 @@ function removeLeadingNumbering(
     )
     .replace(
       /^\s*[-–—*]+\s*/,
+      '',
+    )
+    .replace(
+      /^\s*(?:o|○|◯)\s+/i,
       '',
     )
     .trim();
@@ -694,13 +717,19 @@ function createDishCandidates(
 type ParsedMenuLine = {
   text: string;
   categoryHint?: Category;
+  serviceId?: string;
+  dayLabel?: string;
+  mealLabel?: string;
+  servicePax?: number;
 };
 
 const NON_DISH_TEXT_PATTERN =
-  /^(?:menu\s+for|wedding\s+menu|party\s+menu|client|customer|event|function|occasion|venue|date|time|pax|guests?|persons?|contact|phone|mobile|address|location|package|price|rate|total|amount|notes?|instructions?|services?|staff|transport|decoration|photography|music|dj|tables?|chairs?|tax|gst|terms?|ग्राहक|कार्यक्रम|स्थान|तारीख|समय|मेहमान|संपर्क|मोबाइल|पता|कुल|नोट|ગ્રાહક|કાર્યક્રમ|સ્થળ|તારીખ|સમય|મહેમાન|સંપર્ક|મોબાઇલ|સરનામું|કુલ|નોંધ)(?:\b|[\s:–—-]|$)/i;
+  /^(?:days?\s*\d+|members?|as\s+per\s+(?:selection|choice)|menu\s+for|wedding\s+menu|party\s+menu|client|customer|event|function|occasion|venue|date|time|pax|guests?|persons?|contact|phone|mobile|address|location|package|price|rate|total|amount|notes?|instructions?|services?|staff|transport|decoration|photography|music|dj|tables?|chairs?|tax|gst|terms?|ग्राहक|कार्यक्रम|स्थान|तारीख|समय|मेहमान|संपर्क|मोबाइल|पता|कुल|नोट|ગ્રાહક|કાર્યક્રમ|સ્થળ|તારીખ|સમય|મહેમાન|સંપર્ક|મોબાઇલ|સરનામું|કુલ|નોંધ)(?:\b|[\s:()–—-]|$)/i;
 
 const PROSE_WORD_PATTERN =
-  /\b(?:please|kindly|include|included|excluding|available|required|arrange|arrangement|welcome|thank|thanks|regards|booking|advance|payment|starts?|scheduled|कृपया|धन्यवाद|शामिल|कुल|કૃપા|આભાર|સમાવેશ)\b/i;
+  /\b(?:please|kindly|include|included|excluding|available|required|arrange|arrangement|welcome|thank|thanks|regards|booking|advance|payment|starts?|scheduled|break|will|served|कृपया|धन्यवाद|शामिल|कुल|કૃપા|આભાર|સમાવેશ)\b/i;
+
+const EXPLICIT_MENU_ITEM_MARKER = '__menu_item__';
 
 function isClearlyNonDishText(value: string): boolean {
   const normalized = normalizeMenuHeading(value);
@@ -710,6 +739,13 @@ function isClearlyNonDishText(value: string): boolean {
   if (PROSE_WORD_PATTERN.test(normalized)) return true;
   if (/https?:\/\/|www\.|@\w+\.\w+/.test(value)) return true;
   if (/^\+?\d[\d\s()-]{7,}$/.test(value.trim())) return true;
+  if (
+    /^(?:starter|starters|sweet|sweets|juice|juices|item|items)\s+\d+\s+items?$/i.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
 
   return false;
 }
@@ -734,10 +770,101 @@ function isLikelyUnknownDish(
   );
 }
 
+function protectParentheticalSlashes(value: string): string {
+  let depth = 0;
+  let result = '';
+
+  for (const character of value) {
+    if (character === '(' || character === '[') depth += 1;
+    if (character === ')' || character === ']') {
+      depth = Math.max(0, depth - 1);
+    }
+
+    result += character === '/' && depth > 0 ? '⁄' : character;
+  }
+
+  return result;
+}
+
+function cleanServiceLabel(value: string): string {
+  return value
+    .replace(/^[^\p{L}\p{N}]+/u, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function inferFallbackCategory(
+  value: string,
+  categoryHint?: Category,
+): Category {
+  const normalized = normalizeMenuHeading(value);
+
+  if (
+    /\b(?:milk cake|cake|halwa|jalebi|rasmalai|mithai|sweet|gewar|ghevar|rabdi)\b/i.test(
+      normalized,
+    )
+  ) {
+    return 'Sweet';
+  }
+
+  if (
+    /\b(?:curd|raita|chutney|pickle|sauce)\b/i.test(normalized)
+  ) {
+    return 'Condiments';
+  }
+
+  if (
+    /\b(?:chapati|roti|puri|paratha|naan|bread|pav)\b/i.test(
+      normalized,
+    )
+  ) {
+    return 'Bread';
+  }
+
+  if (
+    /\b(?:tea|coffee|juice|soft drink|biscuit|rusk)\b/i.test(
+      normalized,
+    )
+  ) {
+    return 'Beverage';
+  }
+
+  if (
+    /\b(?:idli|upma|dosa|sambhar|sambar|medu vada)\b/i.test(
+      normalized,
+    )
+  ) {
+    return 'South Indian';
+  }
+
+  if (
+    /\b(?:fruit|papaya|banana)\b/i.test(normalized)
+  ) {
+    return 'Salad';
+  }
+
+  if (
+    /\b(?:puff|kachori|namkeen|sev roll)\b/i.test(normalized)
+  ) {
+    return 'Farsan';
+  }
+
+  const detectedCategory = detectCategory(value);
+  const hasSpecificDetectedCategory =
+    detectedCategory !== 'Sabji' ||
+    /\b(?:sabji|sabzi|vegetable|veg|शाक|सब्जी)\b/i.test(
+      normalized,
+    );
+
+  return hasSpecificDetectedCategory
+    ? detectedCategory
+    : categoryHint || 'Sabji';
+}
+
 function splitMenuText(
   text: string,
 ): ParsedMenuLine[] {
-  const rawSegments = text
+  const rawSegments = protectParentheticalSlashes(text)
     .replace(/\r/g, '\n')
     .replace(
       /\bdal\s*\/\s*kadhi\b/gi,
@@ -745,7 +872,11 @@ function splitMenuText(
     )
     .replace(
       /[•▪●◦◆◇■□✓✔*]/g,
-      '\n',
+      `\n${EXPLICIT_MENU_ITEM_MARKER} `,
+    )
+    .replace(
+      /(^|\n)\s*(?:o|○|◯)\s+/gi,
+      `$1${EXPLICIT_MENU_ITEM_MARKER} `,
     )
     .replace(/\|/g, '\n')
     .replace(
@@ -761,11 +892,59 @@ function splitMenuText(
 
   const menuLines: ParsedMenuLine[] = [];
   let activeCategory: Category | undefined;
+  let activeDayLabel: string | undefined;
+  let activeMealLabel: string | undefined;
+  let activeServicePax: number | undefined;
+  let activeServiceId: string | undefined;
+  let serviceIndex = 0;
 
   for (const rawSegment of rawSegments) {
-    let segment = rawSegment.trim();
+    let segment = rawSegment
+      .replace(/⁄/g, '/')
+      .trim();
     if (!segment) continue;
 
+    const isExplicitMenuItem =
+      segment.startsWith(EXPLICIT_MENU_ITEM_MARKER);
+
+    if (isExplicitMenuItem) {
+      segment = segment
+        .slice(EXPLICIT_MENU_ITEM_MARKER.length)
+        .trim();
+    }
+
+    const rawHeadingKey = normalizeMenuHeading(segment);
+
+    const dayMatch = rawHeadingKey.match(/^day\s*(\d+)$/i);
+
+    if (dayMatch) {
+      activeCategory = undefined;
+      activeDayLabel = `Day ${dayMatch[1]}`;
+      activeMealLabel = undefined;
+      activeServicePax = undefined;
+      activeServiceId = undefined;
+      continue;
+    }
+
+    const serviceMatch = segment.match(
+      /^(.*?)\s*[–—-]\s*(\d+(?:\.\d+)?)\s*(?:members?|pax|guests?|persons?|people)\s*$/i,
+    );
+
+    if (serviceMatch) {
+      const mealLabel = cleanServiceLabel(serviceMatch[1]);
+      const servicePax = Math.max(0, Number(serviceMatch[2]) || 0);
+
+      if (mealLabel && servicePax > 0) {
+        serviceIndex += 1;
+        activeCategory = undefined;
+        activeMealLabel = mealLabel;
+        activeServicePax = servicePax;
+        activeServiceId = `service_${serviceIndex}`;
+        continue;
+      }
+    }
+
+    let lineCategory = activeCategory;
     const headingWithItems = segment.match(
       /^([^:–—-]{2,32})\s*[:–—-]\s*(.+)$/,
     );
@@ -774,15 +953,28 @@ function splitMenuText(
       const headingKey = normalizeMenuHeading(headingWithItems[1]);
 
       if (headingKey in MENU_HEADING_CATEGORIES) {
-        activeCategory =
+        lineCategory =
           MENU_HEADING_CATEGORIES[headingKey] ?? undefined;
         segment = headingWithItems[2].trim();
+
+        if (!cleanMenuLine(segment)) {
+          activeCategory = lineCategory;
+          continue;
+        }
       }
     }
 
     const wholeSegmentKey = normalizeMenuHeading(segment);
 
-    if (wholeSegmentKey in MENU_HEADING_CATEGORIES) {
+    if (
+      wholeSegmentKey in MENU_HEADING_CATEGORIES &&
+      (
+        !isExplicitMenuItem ||
+        /(?:counter|indian bread|dal and rice|sides)/.test(
+          wholeSegmentKey,
+        )
+      )
+    ) {
       activeCategory =
         MENU_HEADING_CATEGORIES[wholeSegmentKey] ?? undefined;
       continue;
@@ -790,6 +982,23 @@ function splitMenuText(
 
     const line = cleanMenuLine(segment);
     if (!line) continue;
+
+    const cleanedHeadingKey = normalizeMenuHeading(line);
+
+    if (
+      cleanedHeadingKey in MENU_HEADING_CATEGORIES &&
+      (
+        !isExplicitMenuItem ||
+        /(?:counter|indian bread|dal and rice|sides)/.test(
+          cleanedHeadingKey,
+        )
+      )
+    ) {
+      activeCategory =
+        MENU_HEADING_CATEGORIES[cleanedHeadingKey] ?? undefined;
+      continue;
+    }
+
     if (isClearlyNonDishText(line)) continue;
 
     {
@@ -803,7 +1012,8 @@ function splitMenuText(
       if (
         MENU_HEADINGS.has(
           normalized,
-        )
+        ) &&
+        !isExplicitMenuItem
       ) {
         continue;
       }
@@ -833,7 +1043,11 @@ function splitMenuText(
 
     menuLines.push({
       text: line,
-      categoryHint: activeCategory,
+      categoryHint: lineCategory,
+      serviceId: activeServiceId,
+      dayLabel: activeDayLabel,
+      mealLabel: activeMealLabel,
+      servicePax: activeServicePax,
     });
   }
 
@@ -921,6 +1135,10 @@ export function parseMenuText(
         portionUnit:
           matchedDish.servingUnit ??
           'serving',
+        serviceId: menuLine.serviceId,
+        dayLabel: menuLine.dayLabel,
+        mealLabel: menuLine.mealLabel,
+        servicePax: menuLine.servicePax,
       });
         },
       );
@@ -933,8 +1151,6 @@ export function parseMenuText(
         line,
         menuLine.categoryHint,
       )
-      ||
-      findDishByName(line)
     ) {
       console.info(
         'Menu detection: ignored non-dish text:',
@@ -950,9 +1166,10 @@ export function parseMenuText(
      * of deleting it.
      */
     const fallbackCategory =
-      menuLine.categoryHint ||
-      detectCategory(line) ||
-      'Sabji';
+      inferFallbackCategory(
+        line,
+        menuLine.categoryHint,
+      );
 
     menuItems.push({
       id: uid('dish'),
@@ -967,6 +1184,10 @@ export function parseMenuText(
       costPerPlate: 0,
       portionQuantity: 1,
       portionUnit: 'serving',
+      serviceId: menuLine.serviceId,
+      dayLabel: menuLine.dayLabel,
+      mealLabel: menuLine.mealLabel,
+      servicePax: menuLine.servicePax,
     });
 
     console.warn(
@@ -986,7 +1207,7 @@ export function parseMenuText(
             item.name,
           )}-${normalizeText(
             item.category,
-          )}`,
+          )}-${item.serviceId ?? 'default'}`,
           item,
         ]),
       ).values(),
@@ -1035,16 +1256,20 @@ function getCategoryBaseCost(
 
 export function buildMenuCostBreakdown(
   menu: MenuItem[],
+  fallbackPax = 0,
 ) {
   const categoryCounts =
     menu.reduce<
       Record<string, number>
     >(
       (counts, item) => {
-        counts[item.category] =
+        const serviceKey = item.serviceId ?? 'default';
+        const categoryKey = `${serviceKey}::${item.category}`;
+
+        counts[categoryKey] =
           (
             counts[
-              item.category
+              categoryKey
             ] ?? 0
           ) + 1;
 
@@ -1054,9 +1279,11 @@ export function buildMenuCostBreakdown(
     );
 
   return menu.map((item) => {
+    const serviceKey = item.serviceId ?? 'default';
+    const categoryKey = `${serviceKey}::${item.category}`;
     const categoryCount =
       categoryCounts[
-        item.category
+        categoryKey
       ] ?? 1;
 
     /*
@@ -1082,6 +1309,12 @@ export function buildMenuCostBreakdown(
     const adjustedCostPerPlate =
       baseCostPerPlate *
       portionFactor;
+    const effectivePax = Math.max(
+      0,
+      Number(item.servicePax) || Number(fallbackPax) || 0,
+    );
+    const itemTotalCost =
+      adjustedCostPerPlate * effectivePax;
 
     return {
       ...item,
@@ -1089,6 +1322,8 @@ export function buildMenuCostBreakdown(
       categoryCount,
       portionFactor,
       adjustedCostPerPlate,
+      effectivePax,
+      itemTotalCost,
     };
   });
 }
@@ -1108,15 +1343,52 @@ export function calculate(
   const menuBreakdown =
     buildMenuCostBreakdown(
       work.menu,
+      pax,
     );
 
+  const serviceSummaryMap = new Map<
+    string,
+    {
+      serviceId: string;
+      dayLabel: string;
+      mealLabel: string;
+      pax: number;
+      dishCount: number;
+      menuCostPerPlate: number;
+      totalCost: number;
+    }
+  >();
+
+  menuBreakdown.forEach((item) => {
+    const serviceId = item.serviceId ?? 'default';
+    const current = serviceSummaryMap.get(serviceId) ?? {
+      serviceId,
+      dayLabel: item.dayLabel ?? '',
+      mealLabel: item.mealLabel ?? 'Event Menu',
+      pax: item.effectivePax,
+      dishCount: 0,
+      menuCostPerPlate: 0,
+      totalCost: 0,
+    };
+
+    current.dishCount += 1;
+    current.menuCostPerPlate += item.adjustedCostPerPlate;
+    current.totalCost += item.itemTotalCost;
+    serviceSummaryMap.set(serviceId, current);
+  });
+
+  const serviceSummaries = Array.from(serviceSummaryMap.values());
+  const totalCovers = serviceSummaries.reduce(
+    (sum, service) => sum + service.pax,
+    0,
+  );
+  const menuFoodTotal = menuBreakdown.reduce(
+    (sum, item) => sum + item.itemTotalCost,
+    0,
+  );
+
   const menuCostPerPlate =
-    menuBreakdown.reduce(
-      (sum, item) =>
-        sum +
-        item.adjustedCostPerPlate,
-      0,
-    );
+    totalCovers > 0 ? menuFoodTotal / totalCovers : 0;
 
   const extrasTotal =
     Object.values(
@@ -1129,8 +1401,8 @@ export function calculate(
     );
 
   const extraPerPlate =
-    pax > 0
-      ? extrasTotal / pax
+    totalCovers > 0
+      ? extrasTotal / totalCovers
       : 0;
 
   const finalCostPerPlate =
@@ -1152,17 +1424,20 @@ export function calculate(
       : 0;
 
   const totalCost =
-    finalCostPerPlate * pax;
+    menuFoodTotal + extrasTotal;
 
   const totalSelling =
-    sellingPricePerPlate * pax;
+    sellingPricePerPlate * totalCovers;
 
-  const totalProfit =
-    profitPerPlate * pax;
+  const totalProfit = totalSelling - totalCost;
 
   return {
-    pax,
+    pax: totalCovers,
+    eventPax: pax,
+    totalCovers,
     menuBreakdown,
+    serviceSummaries,
+    menuFoodTotal,
     menuCostPerPlate,
     extrasTotal,
     extraPerPlate,

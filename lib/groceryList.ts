@@ -281,13 +281,20 @@ function addIngredientToGroceries(
 }
 
 export function buildGroceryList(work: WorkState): GroceryList {
-  const pax = Math.max(0, Number(work.event.pax) || 0);
+  const eventPax = Math.max(0, Number(work.event.pax) || 0);
   const recipeCatalog = createRecipeCatalog();
 
   const groceries = new Map<string, GroceryAccumulator>();
   const matchedDishes = new Set<string>();
   const unmatchedDishes = new Set<string>();
-  const processedDishes = new Set<string>();
+  const dishDemand = new Map<
+    string,
+    {
+      menuItemName: string;
+      canonicalName: string;
+      pax: number;
+    }
+  >();
 
   work.menu.forEach((menuItem) => {
     const menuItemName = menuItem.name.trim();
@@ -301,11 +308,26 @@ export function buildGroceryList(work: WorkState): GroceryList {
 
     const dishKey = normalize(canonicalName);
 
-    if (!dishKey || processedDishes.has(dishKey)) {
+    if (!dishKey) {
       return;
     }
 
-    processedDishes.add(dishKey);
+    const itemPax = Math.max(
+      0,
+      Number(menuItem.servicePax) || eventPax,
+    );
+    const currentDemand = dishDemand.get(dishKey);
+
+    dishDemand.set(dishKey, {
+      menuItemName:
+        currentDemand?.menuItemName ?? menuItemName,
+      canonicalName,
+      pax: (currentDemand?.pax ?? 0) + itemPax,
+    });
+  });
+
+  dishDemand.forEach((demand) => {
+    const { menuItemName, canonicalName, pax } = demand;
 
     const recipe = findRecipe(
       recipeCatalog,
@@ -390,12 +412,29 @@ function createCsvRows(
   work: WorkState,
   groceryList: GroceryList,
 ): Array<Array<string | number>> {
+  const serviceCovers = new Map<string, number>();
+
+  work.menu.forEach((item) => {
+    const serviceId = item.serviceId ?? 'default';
+    const pax = Math.max(
+      0,
+      Number(item.servicePax) || Number(work.event.pax) || 0,
+    );
+
+    serviceCovers.set(serviceId, pax);
+  });
+
+  const totalCovers = Array.from(serviceCovers.values()).reduce(
+    (sum, pax) => sum + pax,
+    0,
+  );
+
   const rows: Array<Array<string | number>> = [
     ['Grocery List'],
     ['Event', work.event.eventName || '-'],
     ['Client', work.event.clientName || '-'],
     ['Event Date', work.event.eventDate || '-'],
-    ['Guests', Math.max(0, Number(work.event.pax) || 0)],
+    ['Total Meal Covers', totalCovers],
     [],
     ['Ingredient', 'Quantity', 'Unit', 'Used In Dishes'],
     ...groceryList.items.map((item) => [

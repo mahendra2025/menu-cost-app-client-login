@@ -33,8 +33,8 @@ export default function PdfPage() {
       setGroceryMessage('Add menu dishes before downloading the grocery list.');
       return;
     }
-    if (!(Number(work.event.pax) > 0)) {
-      setGroceryMessage('Enter the number of guests before downloading the grocery list.');
+    if (!(result.totalCovers > 0)) {
+      setGroceryMessage('Enter members for each meal or the event guest count before downloading the grocery list.');
       return;
     }
 
@@ -48,7 +48,7 @@ export default function PdfPage() {
     setGroceryMessage(
       groceryList.unmatchedDishes.length
         ? `Downloaded ${groceryList.items.length} ingredients. ${groceryList.unmatchedDishes.length} dish${groceryList.unmatchedDishes.length === 1 ? '' : 'es'} still need recipes.`
-        : `Downloaded ${groceryList.items.length} combined ingredients for ${result.pax} guests.`,
+        : `Downloaded ${groceryList.items.length} combined ingredients for ${result.totalCovers} meal covers.`,
     );
   }
 
@@ -80,21 +80,46 @@ export default function PdfPage() {
             <div className="summary-line"><span>Event Date</span><b>{work.event.eventDate || '-'}</b></div>
             <div className="summary-line"><span>Function Type</span><b>{work.event.functionType || '-'}</b></div>
             <div className="summary-line"><span>Venue</span><b>{work.event.venue || '-'}</b></div>
-            <div className="summary-line"><span>Pax</span><b>{result.pax}</b></div>
+            <div className="summary-line"><span>Total Meal Covers</span><b>{result.totalCovers}</b></div>
           </section>
+
+          {result.serviceSummaries.some((service) => service.serviceId !== 'default') ? (
+            <section className="print-section">
+              <h3>Meal-wise Cost Summary</h3>
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>Day</th><th>Meal</th><th>Members</th><th>Food / Plate</th><th>Food Total</th></tr></thead>
+                  <tbody>
+                    {result.serviceSummaries.map((service) => (
+                      <tr key={service.serviceId}>
+                        <td>{service.dayLabel || '-'}</td>
+                        <td><b>{service.mealLabel}</b></td>
+                        <td>{service.pax}</td>
+                        <td>{money(service.menuCostPerPlate)}</td>
+                        <td><b>{money(service.totalCost)}</b></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
 
           <section className="print-section">
             <h3>Menu</h3>
             {work.menu.length === 0 ? <p>No menu items added.</p> : null}
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Dish</th><th>Category</th><th>Cost / Plate</th></tr></thead>
+                <thead><tr><th>Service</th><th>Dish</th><th>Category</th><th>Members</th><th>Cost / Plate</th><th>Total</th></tr></thead>
                 <tbody>
                   {result.menuBreakdown.map((item) => (
                     <tr key={item.id}>
+                      <td>{item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}</td>
                       <td><b>{item.name}</b></td>
                       <td>{item.category}</td>
+                      <td>{item.effectivePax}</td>
                       <td>{money(item.adjustedCostPerPlate)}</td>
+                      <td>{money(item.itemTotalCost)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -104,8 +129,11 @@ export default function PdfPage() {
 
           <section className="print-section">
             <h3>Cost Summary</h3>
-            <div className="summary-line"><span>Per Plate Cost</span><b>{money(result.sellingPricePerPlate)}</b></div>
-            <div className="summary-line total"><span>Total Amount</span><b>{money(result.totalSelling)}</b></div>
+            <div className="summary-line"><span>Food Cost</span><b>{money(result.menuFoodTotal)}</b></div>
+            <div className="summary-line"><span>Extra Cost</span><b>{money(result.extrasTotal)}</b></div>
+            <div className="summary-line"><span>Total Cost</span><b>{money(result.totalCost)}</b></div>
+            <div className="summary-line"><span>Average Selling / Cover</span><b>{money(result.sellingPricePerPlate)}</b></div>
+            <div className="summary-line total"><span>Total Quotation Amount</span><b>{money(result.totalSelling)}</b></div>
           </section>
 
           <section className="print-section">

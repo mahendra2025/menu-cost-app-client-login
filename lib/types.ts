@@ -43,6 +43,10 @@ export type MenuItem = {
   portionQuantity?: number;
   portionUnit?: string;
   portionManuallyEdited?: boolean;
+  serviceId?: string;
+  dayLabel?: string;
+  mealLabel?: string;
+  servicePax?: number;
 };
 
 export type ExtraCost = {

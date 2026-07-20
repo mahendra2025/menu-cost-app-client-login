@@ -91,6 +91,9 @@ export default function MenuPage() {
   const [newRate, setNewRate] =
     useState('');
 
+  const [newServiceId, setNewServiceId] =
+    useState('');
+
   const [pageMessage, setPageMessage] =
     useState<PageMessage>(null);
 
@@ -228,6 +231,36 @@ export default function MenuPage() {
       ).length,
     [work],
   );
+
+  const weddingServices = useMemo(() => {
+    const services = new Map<
+      string,
+      {
+        serviceId: string;
+        dayLabel?: string;
+        mealLabel?: string;
+        servicePax?: number;
+      }
+    >();
+
+    (work?.menu ?? []).forEach((item) => {
+      if (!item.serviceId || services.has(item.serviceId)) return;
+
+      services.set(item.serviceId, {
+        serviceId: item.serviceId,
+        dayLabel: item.dayLabel,
+        mealLabel: item.mealLabel,
+        servicePax: item.servicePax,
+      });
+    });
+
+    return Array.from(services.values());
+  }, [work]);
+
+  const selectedNewDishService =
+    weddingServices.find(
+      (service) => service.serviceId === newServiceId,
+    ) ?? weddingServices[0];
 
   const matchedNewDish = useMemo(() => {
     const trimmedName = newDish.trim();
@@ -510,9 +543,11 @@ export default function MenuPage() {
             finalCategory,
           );
 
-        return (
-          sameName && sameCategory
-        );
+        const sameService =
+          (item.serviceId ?? '') ===
+          (selectedNewDishService?.serviceId ?? '');
+
+        return sameName && sameCategory && sameService;
       });
 
     if (duplicateExists) {
@@ -535,6 +570,14 @@ export default function MenuPage() {
       portionUnit:
         matchedDish?.servingUnit ??
         'serving',
+      serviceId:
+        selectedNewDishService?.serviceId,
+      dayLabel:
+        selectedNewDishService?.dayLabel,
+      mealLabel:
+        selectedNewDishService?.mealLabel,
+      servicePax:
+        selectedNewDishService?.servicePax,
     };
 
     persist({
@@ -763,6 +806,38 @@ export default function MenuPage() {
                 'repeat(auto-fit, minmax(190px, 1fr))',
             }}
           >
+            {weddingServices.length > 0 ? (
+              <div className="field">
+                <label htmlFor="newService">
+                  Add To Meal
+                </label>
+
+                <select
+                  id="newService"
+                  className="select select-large"
+                  value={selectedNewDishService?.serviceId ?? ''}
+                  onChange={(event) => {
+                    setNewServiceId(event.target.value);
+                    setPageMessage(null);
+                  }}
+                >
+                  {weddingServices.map((service) => (
+                    <option
+                      key={service.serviceId}
+                      value={service.serviceId}
+                    >
+                      {[service.dayLabel, service.mealLabel]
+                        .filter(Boolean)
+                        .join(' • ')}
+                      {service.servicePax
+                        ? ` • ${service.servicePax} members`
+                        : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
+
             <div className="field">
               <label htmlFor="newDish">
                 Dish Name
@@ -1083,6 +1158,16 @@ export default function MenuPage() {
                       {item.portionUnit ??
                         'serving'}
                     </small>
+                    {item.mealLabel ? (
+                      <small className="menu-serving-summary">
+                        {[item.dayLabel, item.mealLabel]
+                          .filter(Boolean)
+                          .join(' • ')}
+                        {item.servicePax
+                          ? ` • ${item.servicePax} members`
+                          : ''}
+                      </small>
+                    ) : null}
                   </div>
 
                   <div className="menu-cell">
