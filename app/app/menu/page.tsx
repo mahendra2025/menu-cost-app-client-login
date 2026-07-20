@@ -1155,17 +1155,19 @@ export default function MenuPage() {
           ) : null}
 
           {work.menu.length === 0 ? (
-            <div className="helper-card">
-              <b>
-                No dishes detected
-              </b>
-
-              <p>
-                Return to the Event
-                page and paste the
-                menu, or add dishes
-                manually above.
-              </p>
+            <div className="empty-state">
+              <div className="empty-state-icon" aria-hidden="true">🥘</div>
+              <div>
+                <h3>No dishes added yet</h3>
+                <p>Paste a full wedding menu on the Event page for automatic detection, or use Quick Add above.</p>
+              </div>
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => router.push('/app/event')}
+              >
+                Paste Wedding Menu
+              </button>
             </div>
           ) : null}
 

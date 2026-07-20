@@ -26,6 +26,14 @@ export default function CostPage() {
   if (session.status === 'EXPIRED') return <AppShell title="Cost"><LockedCard /></AppShell>;
 
   const result = calculate(work);
+  const missingRateCount = work.menu.filter(
+    (item) => !(Number(item.costPerPlate) > 0),
+  ).length;
+  const quoteReady =
+    work.menu.length > 0 &&
+    result.totalCovers > 0 &&
+    missingRateCount === 0 &&
+    work.sellingPricePerPlate > 0;
   const hasWeddingServices = result.serviceSummaries.some(
     (service) => service.serviceId !== 'default',
   );
@@ -110,26 +118,36 @@ export default function CostPage() {
         <div className="glass-card">
           <h2>Dish Cost Table</h2>
           <p className="muted">If one category has multiple dishes, that category is treated as one shared portion and the dish cost is split equally.</p>
-          {work.menu.length === 0 ? <p className="muted">No dishes found. Add menu items first.</p> : null}
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Service</th><th>Dish</th><th>Category</th><th>Members</th><th>Base Cost / Plate</th><th>Applied Portion</th><th>Adjusted Cost / Plate</th><th>Total Cost</th></tr></thead>
-              <tbody>
-                {result.menuBreakdown.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}</td>
-                    <td><b>{item.name}</b></td>
-                    <td>{item.category}</td>
-                    <td>{item.effectivePax}</td>
-                    <td>{money(item.baseCostPerPlate)}</td>
-                    <td>{item.categoryCount > 1 ? `1/${item.categoryCount}` : 'Full'}</td>
-                    <td>{money(item.adjustedCostPerPlate)}</td>
-                    <td>{money(item.itemTotalCost)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {work.menu.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon" aria-hidden="true">🍽️</div>
+              <div>
+                <h3>Add dishes to calculate food cost</h3>
+                <p>Paste or type the event menu, review the detected dishes, then return here for the complete cost.</p>
+              </div>
+              <button className="primary-button" type="button" onClick={() => router.push('/app/menu')}>Open Menu</button>
+            </div>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Service</th><th>Dish</th><th>Category</th><th>Members</th><th>Base Cost / Plate</th><th>Applied Portion</th><th>Adjusted Cost / Plate</th><th>Total Cost</th></tr></thead>
+                <tbody>
+                  {result.menuBreakdown.map((item) => (
+                    <tr key={item.id}>
+                      <td>{item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}</td>
+                      <td><b>{item.name}</b></td>
+                      <td>{item.category}</td>
+                      <td>{item.effectivePax}</td>
+                      <td>{money(item.baseCostPerPlate)}</td>
+                      <td>{item.categoryCount > 1 ? `1/${item.categoryCount}` : 'Full'}</td>
+                      <td>{money(item.adjustedCostPerPlate)}</td>
+                      <td><b>{money(item.itemTotalCost)}</b></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <div className="glass-card">
@@ -197,8 +215,30 @@ export default function CostPage() {
             <StatCard label="Total Profit" value={money(result.totalProfit)} />
             <StatCard label="Profit Margin" value={result.totalSelling > 0 ? `${Math.round((result.totalProfit / result.totalSelling) * 100)}%` : '0%'} />
           </div>
+          {!quoteReady ? (
+            <div className="readiness-card" role="status">
+              <div>
+                <span className="section-kicker">Quotation checklist</span>
+                <h3>Complete the missing details</h3>
+              </div>
+              <div className="readiness-list">
+                <span className={work.menu.length > 0 ? 'is-complete' : ''}>Menu dishes</span>
+                <span className={result.totalCovers > 0 ? 'is-complete' : ''}>Member counts</span>
+                <span className={missingRateCount === 0 && work.menu.length > 0 ? 'is-complete' : ''}>Dish rates</span>
+                <span className={work.sellingPricePerPlate > 0 ? 'is-complete' : ''}>Selling price</span>
+              </div>
+            </div>
+          ) : (
+            <div className="readiness-card is-ready" role="status">
+              <div>
+                <span className="section-kicker">Ready</span>
+                <h3>Your quotation is ready to generate</h3>
+              </div>
+              <span className="badge green">All details complete</span>
+            </div>
+          )}
           <div className="action-row" style={{ marginTop: 18 }}>
-            <button className="primary-button" onClick={() => router.push('/app/pdf')}>Next: Generate PDF</button>
+            <button className="primary-button" disabled={!quoteReady} onClick={() => router.push('/app/pdf')}>Next: Generate PDF</button>
             <button className="ghost-button" onClick={() => router.push('/app/manpower')}>Back to Manpower</button>
           </div>
         </div>

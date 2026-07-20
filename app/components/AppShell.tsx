@@ -109,8 +109,8 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
             ))}
           </nav>
           <div className="sidebar-support">
-            <span>Need a clean estimate?</span>
-            <p>Complete each step in order. Your work saves automatically.</p>
+            <span>{session?.role === 'ADMIN' ? 'Catalog workspace' : 'Need a clean estimate?'}</span>
+            <p>{session?.role === 'ADMIN' ? 'Review dish names, categories and rates before saving changes.' : 'Complete each step in order. Your work saves automatically.'}</p>
           </div>
         </aside>
 

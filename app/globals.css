@@ -2124,6 +2124,111 @@ td:last-child {
 }
 
 /* Accessible motion preferences */
+
+.empty-state {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 22px;
+  border: 1px dashed rgba(0, 122, 255, 0.32);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 122, 255, 0.045);
+}
+
+.empty-state-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--shadow-soft);
+  font-size: 26px;
+}
+
+.empty-state h3,
+.readiness-card h3 {
+  margin: 0;
+}
+
+.empty-state p,
+.readiness-card p {
+  margin: 5px 0 0;
+  color: var(--muted);
+}
+
+.readiness-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255, 149, 0, 0.28);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 149, 0, 0.065);
+}
+
+.readiness-card.is-ready {
+  border-color: rgba(52, 199, 89, 0.28);
+  background: rgba(52, 199, 89, 0.065);
+}
+
+.readiness-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.readiness-list span {
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 149, 0, 0.26);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #9a5b00;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.readiness-list span::before {
+  content: '○';
+  margin-right: 6px;
+}
+
+.readiness-list span.is-complete {
+  border-color: rgba(52, 199, 89, 0.25);
+  color: #187b35;
+}
+
+.readiness-list span.is-complete::before {
+  content: '✓';
+}
+
+@media (max-width: 760px) {
+  .empty-state {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .empty-state .primary-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .readiness-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .readiness-list {
+    justify-content: flex-start;
+  }
+}
+
+/* Accessible motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

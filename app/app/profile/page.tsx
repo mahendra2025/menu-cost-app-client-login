@@ -157,7 +157,7 @@ export default function ProfilePage() {
           <div className="stat-card"><small>Role</small><strong>{session.role}</strong><span>{session.userId}</span></div>
           <div className="stat-card"><small>Plan</small><strong>{session.role === 'CLIENT' ? '₹999' : 'Admin'}</strong><span>Monthly Pro</span></div>
           <div className="stat-card"><small>Status</small><strong>{session.status}</strong><span>{client?.expiryDate ? `Expiry ${client.expiryDate}` : 'No expiry'}</span></div>
-          <div className="stat-card"><small>Data</small><strong>Local</strong><span>Browser storage demo</span></div>
+          <div className="stat-card"><small>Saving</small><strong>Auto-saved</strong><span>Stored on this device</span></div>
         </div>
 
         {session.role === 'CLIENT' ? (
@@ -171,9 +171,9 @@ export default function ProfilePage() {
               <div><small>Next billing date</small><strong>{billing?.currentPeriodEnd ? new Date(billing.currentPeriodEnd).toLocaleDateString('en-IN') : '—'}</strong></div>
               <div><small>Renewal</small><strong>{billing?.cancelAtPeriodEnd ? 'Cancels after cycle' : billing?.razorpaySubscriptionId ? 'Automatic' : 'Not started'}</strong></div>
             </div>
-            {!billing?.configured ? <div className="admin-message error">Razorpay credentials and plan ID must be added to the server environment before checkout can start.</div> : null}
+            {!billing?.configured ? <div className="admin-message">Online subscription is not available yet. Contact your account administrator to activate or renew your plan.</div> : null}
             <div className="action-row">
-              {!['active', 'authenticated', 'pending'].includes(billing?.subscriptionStatus || '') ? <button className="primary-button" disabled={billingBusy || !billing?.configured} onClick={subscribe}>{billingBusy ? 'Opening…' : 'Subscribe ₹999/month'}</button> : null}
+              {billing?.configured && !['active', 'authenticated', 'pending'].includes(billing?.subscriptionStatus || '') ? <button className="primary-button" disabled={billingBusy} onClick={subscribe}>{billingBusy ? 'Opening…' : 'Subscribe ₹999/month'}</button> : null}
               {billing?.razorpaySubscriptionId && !billing.cancelAtPeriodEnd ? <button className="danger-button" disabled={billingBusy} onClick={cancelSubscription}>Cancel renewal</button> : null}
               <button className="ghost-button" disabled={billingBusy} onClick={loadBilling}>Refresh status</button>
             </div>
@@ -202,8 +202,8 @@ export default function ProfilePage() {
         </div>
 
         <div className="glass-card">
-          <h2>How Client Login Works</h2>
-          <p className="muted">Admin creates user ID and password in Admin Users. Give those details to your client. If payment is not done, admin changes status to EXPIRED and the client app becomes locked.</p>
+          <h2>Your Data & Access</h2>
+          <p className="muted">Your event, menu, manpower and costing changes save automatically on this device. Your account administrator manages login access and subscription status.</p>
         </div>
       </section>
     </AppShell>

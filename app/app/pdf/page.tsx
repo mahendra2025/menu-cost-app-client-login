@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
 import { buildGroceryList, downloadGroceryListCsv } from '../../../lib/groceryList';
 import { calculate, getSession, loadWork } from '../../../lib/store';
@@ -11,6 +12,7 @@ function money(value: number) {
 }
 
 export default function PdfPage() {
+  const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
   const [groceryMessage, setGroceryMessage] = useState('');
@@ -26,6 +28,15 @@ export default function PdfPage() {
 
   const result = calculate(work);
   const profile = work.profile;
+  const missingRateCount = work.menu.filter(
+    (item) => !(Number(item.costPerPlate) > 0),
+  ).length;
+  const quoteIssues = [
+    work.menu.length === 0 ? 'Add menu dishes' : '',
+    result.totalCovers <= 0 ? 'Enter member counts' : '',
+    missingRateCount > 0 ? `Enter ${missingRateCount} missing dish rate${missingRateCount === 1 ? '' : 's'}` : '',
+    work.sellingPricePerPlate <= 0 ? 'Enter a selling price' : '',
+  ].filter(Boolean);
 
   function downloadGroceryList() {
     if (!work) return;
@@ -56,8 +67,32 @@ export default function PdfPage() {
     <AppShell title="PDF" subtitle="Step 5 of 6: print or save quotation as PDF">
       <section className="content-grid">
         <div className="glass-card no-print">
+          {quoteIssues.length > 0 ? (
+            <div className="readiness-card">
+              <div>
+                <span className="section-kicker">Draft quotation</span>
+                <h3>{quoteIssues.join(' • ')}</h3>
+                <p>You can still print a draft, or return to complete the quotation first.</p>
+              </div>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => router.push(work.menu.length === 0 || missingRateCount > 0 ? '/app/menu' : result.totalCovers <= 0 ? '/app/event' : '/app/cost')}
+              >
+                Complete Details
+              </button>
+            </div>
+          ) : (
+            <div className="readiness-card is-ready">
+              <div>
+                <span className="section-kicker">Ready to share</span>
+                <h3>Quotation details are complete</h3>
+              </div>
+              <span className="badge green">Ready</span>
+            </div>
+          )}
           <div className="action-row">
-            <button className="primary-button" onClick={() => window.print()}>Print / Save PDF</button>
+            <button className="primary-button" onClick={() => window.print()}>{quoteIssues.length ? 'Print Draft PDF' : 'Print / Save PDF'}</button>
             <button className="ghost-button" onClick={downloadGroceryList}>Download Grocery List</button>
             <span className="muted">Browser print window opens. Choose “Save as PDF”.</span>
           </div>
