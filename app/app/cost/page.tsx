@@ -15,13 +15,6 @@ export default function CostPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
-  const [staffRows, setStaffRows] = useState([
-    { role: 'Waiter', qty: 0, rate: 750 },
-    { role: 'Captain', qty: 0, rate: 1500 },
-    { role: 'Cook', qty: 0, rate: 2500 },
-    { role: 'Helper / Masi', qty: 0, rate: 700 },
-    { role: 'Cleaning', qty: 0, rate: 600 },
-  ]);
 
   useEffect(() => {
     const current = getSession();
@@ -49,17 +42,8 @@ export default function CostPage() {
     persist({ ...current, extras: { ...current.extras, [key]: value } });
   }
 
-  function updateStaffRow(index: number, key: 'qty' | 'rate', value: number) {
-    const nextRows = staffRows.map((row, rowIndex) => (
-      rowIndex === index ? { ...row, [key]: value } : row
-    ));
-    setStaffRows(nextRows);
-    const staffTotal = nextRows.reduce((sum, row) => sum + (Number(row.qty) || 0) * (Number(row.rate) || 0), 0);
-    updateExtra('staff', staffTotal);
-  }
-
   return (
-    <AppShell title="Cost" subtitle="Third page: clean costing with dish cost and extra cost">
+    <AppShell title="Cost" subtitle="Step 4 of 6: review food, manpower and extra costs">
       <section className="content-grid">
         <div className="stat-grid">
           <StatCard label="Average Food / Cover" value={money(result.menuCostPerPlate)} note={`Food total ${money(result.menuFoodTotal)}`} />
@@ -120,7 +104,11 @@ export default function CostPage() {
         <div className="glass-card">
           <h2>Extra Cost</h2>
           <div className="three-grid">
-            <div className="field"><label>Staff Cost</label><input className="input" type="number" readOnly value={work.extras.staff || ''} placeholder="0" /></div>
+            <div className="field">
+              <label>Manpower Cost</label>
+              <input className="input" type="number" readOnly value={work.extras.staff || ''} placeholder="0" />
+              <small className="muted">Managed on the Manpower page.</small>
+            </div>
             <div className="field"><label>Transport</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.transport || ''} onChange={(e) => updateExtra('transport', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
             <div className="field"><label>Gas / Fuel</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.gasFuel || ''} onChange={(e) => updateExtra('gasFuel', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
           </div>
@@ -128,73 +116,14 @@ export default function CostPage() {
             <div className="field"><label>Disposable</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.disposable || ''} onChange={(e) => updateExtra('disposable', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
             <div className="field"><label>Other Extra</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.other || ''} onChange={(e) => updateExtra('other', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
           </div>
-          <div className="staff-cost-panel" style={{ marginTop: 18 }}>
-            <div className="section-head">
-              <div>
-                <h3>Advanced Staff Cost</h3>
-                <p className="muted">Add staff role quantity and rate. Total auto-adds to Staff Cost.</p>
-              </div>
-              <strong>{money(work.extras.staff || 0)}</strong>
-            </div>
-
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Role</th>
-                    <th>Qty</th>
-                    <th>Rate</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {staffRows.map((row, index) => (
-                    <tr key={row.role}>
-                      <td><b>{row.role}</b></td>
-                      <td>
-                        <input
-                          className="input"
-                          type="number"
-                          min="0"
-                          value={row.qty || ''}
-                          onChange={(e) => updateStaffRow(index, 'qty', Number(e.target.value))}
-                          placeholder="0"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="input"
-                          type="number"
-                          min="0"
-                          value={row.rate || ''}
-                          onChange={(e) => updateStaffRow(index, 'rate', Number(e.target.value))}
-                          placeholder="0"
-                        />
-                      </td>
-                      <td>{money((row.qty || 0) * (row.rate || 0))}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="action-row" style={{ marginTop: 14 }}>
-              <button
-                className="ghost-button"
-                onClick={() => {
-                  setStaffRows([
-                    { role: 'Waiter', qty: 0, rate: 750 },
-                    { role: 'Captain', qty: 0, rate: 1500 },
-                    { role: 'Cook', qty: 0, rate: 2500 },
-                    { role: 'Helper / Masi', qty: 0, rate: 700 },
-                    { role: 'Cleaning', qty: 0, rate: 600 },
-                  ]);
-                  updateExtra('staff', 0);
-                }}
-              >
-                Reset Staff
-              </button>
-            </div>
+          <div className="action-row" style={{ marginTop: 14 }}>
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() => router.push('/app/manpower')}
+            >
+              Edit Manpower
+            </button>
           </div>
         </div>
 
@@ -212,7 +141,7 @@ export default function CostPage() {
           </div>
           <div className="action-row" style={{ marginTop: 18 }}>
             <button className="primary-button" onClick={() => router.push('/app/pdf')}>Next: Generate PDF</button>
-            <button className="ghost-button" onClick={() => router.push('/app/menu')}>Back to Menu</button>
+            <button className="ghost-button" onClick={() => router.push('/app/manpower')}>Back to Manpower</button>
           </div>
         </div>
       </section>

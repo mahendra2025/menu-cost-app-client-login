@@ -229,7 +229,7 @@ export default function EventPage() {
       <section className="content-grid">
         <div className="glass-card">
           <div className="section-kicker">
-            Step 1 of 5
+            Step 1 of 6
           </div>
 
           <h2>Event Information</h2>

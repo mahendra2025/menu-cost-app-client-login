@@ -151,7 +151,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <AppShell title="Profile" subtitle="Fifth page: business profile, plan status and logout">
+    <AppShell title="Profile" subtitle="Step 6 of 6: business profile, plan status and logout">
       <section className="content-grid">
         <div className="stat-grid">
           <div className="stat-card"><small>Role</small><strong>{session.role}</strong><span>{session.userId}</span></div>

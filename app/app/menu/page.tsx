@@ -707,7 +707,7 @@ export default function MenuPage() {
       return;
     }
 
-    router.push('/app/cost');
+    router.push('/app/manpower');
   }
 
   if (!work || !session) {
@@ -741,7 +741,7 @@ export default function MenuPage() {
         <div className="stat-grid">
           <div className="stat-card">
             <small>Step</small>
-            <strong>2/5</strong>
+            <strong>2/6</strong>
             <span>Menu check</span>
           </div>
 
@@ -1419,7 +1419,7 @@ export default function MenuPage() {
               type="button"
               onClick={goToCostPage}
             >
-              Next: Calculate Cost
+              Next: Manpower
             </button>
 
             <button

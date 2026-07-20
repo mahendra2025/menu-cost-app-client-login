@@ -53,7 +53,7 @@ export default function PdfPage() {
   }
 
   return (
-    <AppShell title="PDF" subtitle="Fourth page: print or save quotation as PDF">
+    <AppShell title="PDF" subtitle="Step 5 of 6: print or save quotation as PDF">
       <section className="content-grid">
         <div className="glass-card no-print">
           <div className="action-row">

@@ -16,6 +16,7 @@ import type {
   ClientUser,
   EventDetails,
   ExtraCost,
+  ManpowerRow,
   MenuItem,
   Session,
   WorkState,
@@ -44,6 +45,14 @@ export const emptyExtras: ExtraCost = {
   disposable: 0,
   other: 0,
 };
+
+export const defaultManpower: ManpowerRow[] = [
+  { id: 'manpower_waiter', role: 'Waiter', quantity: 0, rate: 750 },
+  { id: 'manpower_captain', role: 'Captain', quantity: 0, rate: 1500 },
+  { id: 'manpower_cook', role: 'Cook', quantity: 0, rate: 2500 },
+  { id: 'manpower_helper', role: 'Helper / Masi', quantity: 0, rate: 700 },
+  { id: 'manpower_cleaning', role: 'Cleaning', quantity: 0, rate: 600 },
+];
 
 /* -------------------------------------------------------------------------- */
 /*                               Basic helpers                                */
@@ -225,6 +234,8 @@ export function createEmptyWorkState(
 
     menu: [],
 
+    manpower: defaultManpower.map((row) => ({ ...row })),
+
     extras: {
       ...emptyExtras,
     },
@@ -262,12 +273,50 @@ export function loadWork(
     return fallback;
   }
 
-  return safeJsonParse<WorkState>(
+  const savedWork = safeJsonParse<Partial<WorkState> | null>(
     window.localStorage.getItem(
       workKey(tenantId),
     ),
-    fallback,
+    null,
   );
+
+  if (!savedWork) return fallback;
+
+  const savedStaffCost = Math.max(
+    0,
+    Number(savedWork.extras?.staff) || 0,
+  );
+  const manpower = Array.isArray(savedWork.manpower)
+    ? savedWork.manpower
+    : savedStaffCost > 0
+      ? [
+          {
+            id: 'manpower_existing',
+            role: 'Existing Staff Cost',
+            quantity: 1,
+            rate: savedStaffCost,
+          },
+        ]
+      : defaultManpower.map((row) => ({ ...row }));
+
+  return {
+    ...fallback,
+    ...savedWork,
+    event: {
+      ...fallback.event,
+      ...savedWork.event,
+    },
+    menu: Array.isArray(savedWork.menu) ? savedWork.menu : [],
+    manpower,
+    extras: {
+      ...fallback.extras,
+      ...savedWork.extras,
+    },
+    profile: {
+      ...fallback.profile,
+      ...savedWork.profile,
+    },
+  };
 }
 
 export function saveWork(

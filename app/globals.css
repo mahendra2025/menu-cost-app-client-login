@@ -472,9 +472,9 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   left: 50%;
   bottom: 18px;
   transform: translateX(-50%);
-  width: min(620px, calc(100% - 22px));
+  width: min(740px, calc(100% - 22px));
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 8px;
   padding: 10px;
   border-radius: 28px;

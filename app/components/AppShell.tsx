@@ -10,6 +10,7 @@ import type { Session } from '../../lib/types';
 const clientNav = [
   { href: '/app/event', label: 'Event', icon: '📄' },
   { href: '/app/menu', label: 'Menu', icon: '🍽️' },
+  { href: '/app/manpower', label: 'Manpower', icon: '👥' },
   { href: '/app/cost', label: 'Cost', icon: '₹' },
   { href: '/app/pdf', label: 'PDF', icon: '🧾' },
   { href: '/app/profile', label: 'Profile', icon: '👤' },
@@ -89,7 +90,12 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
 
       {children}
 
-      <nav className="bottom-nav no-print">
+      <nav
+        className="bottom-nav no-print"
+        style={{
+          gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))`,
+        }}
+      >
         {nav.map((item) => (
           <Link key={item.href} href={item.href} className={pathname === item.href ? 'active' : ''} aria-current={pathname === item.href ? 'page' : undefined}>
             <span aria-hidden="true">{item.icon}</span>

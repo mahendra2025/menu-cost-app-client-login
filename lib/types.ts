@@ -57,6 +57,13 @@ export type ExtraCost = {
   other: number;
 };
 
+export type ManpowerRow = {
+  id: string;
+  role: string;
+  quantity: number;
+  rate: number;
+};
+
 export type BusinessProfile = {
   businessName: string;
   ownerName: string;
@@ -68,6 +75,7 @@ export type BusinessProfile = {
 export type WorkState = {
   event: EventDetails;
   menu: MenuItem[];
+  manpower: ManpowerRow[];
   extras: ExtraCost;
   sellingPricePerPlate: number;
   profile: BusinessProfile;
