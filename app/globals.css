@@ -372,6 +372,118 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .recipe-studio-loading .ghost-button { margin-top: 8px; }
 .recipe-loading-spinner { width: 32px; height: 32px; border: 3px solid rgba(0,122,255,.16); border-top-color: var(--blue); border-radius: 50%; animation: recipe-spin .75s linear infinite; }
 @keyframes recipe-spin { to { transform: rotate(360deg); } }
+.dish-cost-panel { overflow: hidden; }
+.dish-cost-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.dish-cost-heading h2 { margin: 5px 0 4px; letter-spacing: -.03em; }
+.dish-cost-heading p { margin: 0; }
+.dish-cost-summary { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
+.dish-cost-summary span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255,255,255,.78);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.dish-cost-summary b { color: var(--text); font-size: 12px; }
+.dish-cost-summary .needs-attention { border-color: rgba(255,149,0,.28); background: rgba(255,149,0,.09); color: #9a5a0a; }
+.dish-cost-summary .needs-attention b { color: #9a5a0a; }
+.dish-cost-summary .is-complete { border-color: rgba(52,199,89,.25); background: rgba(52,199,89,.08); color: #187b35; }
+.dish-cost-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px,1.35fr) minmax(170px,.8fr) minmax(170px,.8fr) auto;
+  gap: 11px;
+  align-items: end;
+  margin-top: 20px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(248,250,252,.78);
+}
+.dish-cost-toolbar .input,
+.dish-cost-toolbar .select { min-height: 44px; padding: 10px 12px; border-radius: 12px; font-size: 13px; }
+.dish-cost-toolbar .ghost-button { min-height: 44px; white-space: nowrap; }
+.dish-portion-note {
+  margin-top: 11px;
+  padding: 10px 12px;
+  border-left: 3px solid rgba(0,122,255,.42);
+  border-radius: 8px 12px 12px 8px;
+  background: rgba(0,122,255,.055);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.dish-portion-note b { color: #075985; }
+.dish-cost-table-wrap { margin-top: 8px; }
+.dish-cost-table { min-width: 980px; }
+.dish-cost-table th { padding-inline: 12px; white-space: nowrap; }
+.dish-cost-table td { padding: 11px 12px; vertical-align: middle; }
+.dish-cost-table tr.dish-rate-missing td { border-color: rgba(255,149,0,.2); background: rgba(255,249,239,.92); }
+.dish-cost-name { display: grid; gap: 4px; min-width: 150px; }
+.dish-cost-name b { font-size: 13px; }
+.dish-cost-name small { color: var(--muted); font-size: 10px; font-weight: 700; }
+.dish-category-chip,
+.portion-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(0,122,255,.08);
+  color: #075985;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.portion-chip { background: rgba(107,114,128,.09); color: #4b5563; }
+.dish-rate-input {
+  display: flex;
+  align-items: center;
+  width: 126px;
+  min-height: 38px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(255,255,255,.94);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.dish-rate-input:focus-within { border-color: rgba(0,122,255,.58); box-shadow: var(--focus-ring); }
+.dish-rate-input > span { padding-left: 10px; color: var(--muted); font-size: 12px; font-weight: 800; }
+.dish-rate-input input { width: 100%; min-width: 0; height: 36px; padding: 0 8px 0 4px; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 12px; font-weight: 800; }
+.dish-rate-input input::placeholder { color: #b26a08; font-weight: 750; }
+.dish-rate-missing .dish-rate-input { border-color: rgba(255,149,0,.42); background: rgba(255,255,255,.98); }
+.dish-total-cost { font-size: 13px; white-space: nowrap; }
+.dish-cost-empty { display: grid; place-items: center; gap: 5px; min-height: 190px; margin-top: 12px; padding: 24px; border: 1px dashed var(--border); border-radius: 18px; text-align: center; }
+.dish-cost-empty span { color: var(--muted); font-size: 12px; }
+.dish-cost-empty .ghost-button { margin-top: 8px; }
+.dish-cost-cards { display: none; }
+.dish-cost-card {
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255,255,255,.86);
+  box-shadow: 0 7px 20px rgba(15,23,42,.05);
+}
+.dish-cost-card.dish-rate-missing { border-color: rgba(255,149,0,.34); background: rgba(255,249,239,.92); }
+.dish-cost-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.dish-cost-card-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 13px; }
+.dish-cost-card-grid > div { display: grid; gap: 3px; padding: 10px; border-radius: 12px; background: rgba(248,250,252,.86); }
+.dish-cost-card-grid small { color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.dish-cost-card-grid b { font-size: 13px; }
+.dish-cost-card-rate { margin-top: 12px; }
+.dish-cost-card-rate .dish-rate-input { width: 100%; min-height: 44px; }
+.dish-cost-card-rate .dish-rate-input input { height: 42px; font-size: 16px; }
+.dish-cost-card-rate .dish-rate-input > span { font-size: 15px; }
 .ghost-button:disabled { opacity: .55; cursor: default; }
 .admin-dish-row {
   display: grid;
@@ -680,6 +792,16 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .recipe-workspace-actions > * { min-width: 0; }
   .recipe-studio-shell { min-height: 680px; }
   .recipe-studio-frame { height: calc(100vh - 250px); min-height: 680px; }
+  .dish-cost-panel { padding: 16px; }
+  .dish-cost-heading { flex-direction: column; gap: 13px; }
+  .dish-cost-summary { justify-content: flex-start; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+  .dish-cost-toolbar { grid-template-columns: 1fr 1fr; padding: 11px; }
+  .dish-cost-toolbar .field:first-child,
+  .dish-cost-toolbar .ghost-button { grid-column: 1 / -1; }
+  .dish-cost-toolbar .field label { font-size: 10px; }
+  .dish-portion-note { font-size: 11px; }
+  .dish-cost-table-wrap { display: none; }
+  .dish-cost-cards { display: grid; gap: 10px; margin-top: 12px; }
   .mobile-field-label { display: inline-block; }
   .table-wrap { margin-inline: -6px; }
   table { min-width: 560px; }
