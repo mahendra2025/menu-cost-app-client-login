@@ -22,11 +22,29 @@ function displayDate(value: string) {
   });
 }
 
+function quotationReference(work: WorkState) {
+  const sourceDate = new Date(work.updatedAt);
+  const safeDate = Number.isNaN(sourceDate.getTime())
+    ? new Date()
+    : sourceDate;
+  const datePart = safeDate
+    .toISOString()
+    .slice(0, 10)
+    .replaceAll('-', '');
+  const clientPart = (work.event.clientName || 'CLIENT')
+    .replace(/[^a-z0-9]/gi, '')
+    .slice(0, 5)
+    .toUpperCase();
+
+  return `QT-${datePart}-${clientPart || 'CLIENT'}`;
+}
+
 export default function PdfPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
   const [groceryMessage, setGroceryMessage] = useState('');
+  const [copyMessage, setCopyMessage] = useState('');
 
   useEffect(() => {
     const current = getSession();
@@ -43,11 +61,22 @@ export default function PdfPage() {
     (item) => !(Number(item.costPerPlate) > 0),
   ).length;
   const quoteIssues = [
-    work.menu.length === 0 ? 'Add menu dishes' : '',
-    result.totalCovers <= 0 ? 'Enter member counts' : '',
-    missingRateCount > 0 ? `Enter ${missingRateCount} missing dish rate${missingRateCount === 1 ? '' : 's'}` : '',
-    work.sellingPricePerPlate <= 0 ? 'Enter a selling price' : '',
-  ].filter(Boolean);
+    work.menu.length === 0
+      ? { label: 'Add menu dishes', route: '/app/menu' }
+      : null,
+    result.totalCovers <= 0
+      ? { label: 'Enter member counts', route: '/app/event' }
+      : null,
+    missingRateCount > 0
+      ? {
+        label: `Enter ${missingRateCount} missing dish rate${missingRateCount === 1 ? '' : 's'}`,
+        route: '/app/menu',
+      }
+      : null,
+    work.sellingPricePerPlate <= 0
+      ? { label: 'Enter a selling price', route: '/app/cost' }
+      : null,
+  ].filter((issue): issue is { label: string; route: string } => Boolean(issue));
   const quotationMeals = result.serviceSummaries.map((service) => ({
     ...service,
     dishes: result.menuBreakdown.filter(
@@ -62,6 +91,31 @@ export default function PdfPage() {
       month: 'short',
       year: 'numeric',
     });
+  const quoteReference = quotationReference(work);
+
+  async function copyQuotationSummary() {
+    if (!work || !session) return;
+
+    const summary = [
+      `${profile.businessName || session.businessName || 'Catering quotation'}`,
+      `Quotation: ${quoteReference}`,
+      `Client: ${work.event.clientName || 'Valued client'}`,
+      `Event: ${work.event.eventName || work.event.functionType || 'Catering event'}`,
+      `Date: ${displayDate(work.event.eventDate)}`,
+      `Venue: ${work.event.venue || work.event.city || 'To be confirmed'}`,
+      `Meal services: ${quotationMeals.length}`,
+      `Total meal covers: ${result.totalCovers.toLocaleString('en-IN')}`,
+      `Rate per cover: ${money(result.sellingPricePerPlate)}`,
+      `Total quotation: ${money(result.totalSelling)}`,
+    ].join('\n');
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopyMessage('Quotation summary copied. It is ready to paste into WhatsApp or email.');
+    } catch {
+      setCopyMessage('Could not copy automatically. Please use Print / Save PDF instead.');
+    }
+  }
 
   function downloadGroceryList() {
     if (!work) return;
@@ -109,21 +163,49 @@ export default function PdfPage() {
 
           {quoteIssues.length > 0 ? (
             <div className="quotation-issue-list" role="status">
-              {quoteIssues.map((issue) => <span key={issue}>{issue}</span>)}
+              {quoteIssues.map((issue) => (
+                <button
+                  key={`${issue.route}-${issue.label}`}
+                  type="button"
+                  onClick={() => router.push(issue.route)}
+                >
+                  {issue.label}
+                  <span aria-hidden="true">Fix →</span>
+                </button>
+              ))}
             </div>
           ) : null}
+
+          <div className="quotation-review-metrics">
+            <div><small>Quotation value</small><b>{money(result.totalSelling)}</b></div>
+            <div><small>Meal services</small><b>{quotationMeals.length}</b></div>
+            <div><small>Total covers</small><b>{result.totalCovers.toLocaleString('en-IN')}</b></div>
+            <div><small>Reference</small><b>{quoteReference}</b></div>
+          </div>
 
           <div className="quotation-actions">
             <button className="primary-button" onClick={() => window.print()}>
               {quoteIssues.length ? 'Print draft' : 'Print / Save PDF'}
             </button>
+            <button className="secondary-button" onClick={copyQuotationSummary}>Copy client summary</button>
             <button className="ghost-button" onClick={downloadGroceryList}>Download grocery list</button>
             <button className="ghost-button" onClick={() => router.push('/app/cost')}>Edit pricing</button>
             <button className="ghost-button" onClick={() => router.push('/app/profile')}>Edit business details</button>
           </div>
           <p className="quotation-print-help">In the print window, choose <b>Save as PDF</b> for a digital copy.</p>
+          {copyMessage ? <div className="quotation-message is-success" role="status">{copyMessage}</div> : null}
           {groceryMessage ? <div className="quotation-message" role="status">{groceryMessage}</div> : null}
         </div>
+
+        <div className="quotation-preview-shell">
+          <div className="quotation-preview-bar no-print">
+            <div>
+              <span aria-hidden="true">●</span>
+              <b>Customer preview</b>
+              <small>A4 print layout</small>
+            </div>
+            <span>{quoteReference}</span>
+          </div>
 
         <article className={`pdf-paper quotation-paper ${quoteIssues.length ? 'is-draft' : ''}`}>
           {quoteIssues.length ? <div className="quotation-draft-mark">Draft quotation</div> : null}
@@ -140,6 +222,7 @@ export default function PdfPage() {
             <div className="quotation-document-meta">
               <span>Quotation</span>
               <b>{work.event.eventName || 'Catering proposal'}</b>
+              <small>Ref. {quoteReference}</small>
               <small>Prepared {preparedDateLabel}</small>
             </div>
           </header>
@@ -205,6 +288,7 @@ export default function PdfPage() {
             </div>
             <div className="quotation-price-breakdown">
               <div><span>Rate per meal cover</span><b>{money(result.sellingPricePerPlate)}</b></div>
+              <div><span>Meal services</span><b>{quotationMeals.length}</b></div>
               <div><span>Total meal covers</span><b>{result.totalCovers.toLocaleString('en-IN')}</b></div>
               <div className="quotation-grand-total"><span>Total quotation amount</span><b>{money(result.totalSelling)}</b></div>
             </div>
@@ -218,8 +302,14 @@ export default function PdfPage() {
           <footer className="quotation-footer">
             <div><span>Prepared by</span><b>{profile.ownerName || profile.businessName || session.businessName}</b></div>
             <div><span>Client acceptance</span><b>Signature &amp; date</b></div>
+            <p>
+              {[profile.phone, profile.city].filter(Boolean).join(' • ')}
+              {[profile.phone, profile.city].filter(Boolean).length ? ' • ' : ''}
+              {quoteReference}
+            </p>
           </footer>
         </article>
+        </div>
       </section>
     </AppShell>
   );
