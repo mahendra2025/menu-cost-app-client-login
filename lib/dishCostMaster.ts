@@ -18,6 +18,19 @@ export const CATEGORIES = [
   'Kathiyawadi',
   'Rajasthani',
   'Gujarati',
+  'North Indian',
+  'Mughlai',
+  'Awadhi',
+  'Kashmiri',
+  'Bengali',
+  'Maharashtrian',
+  'Sindhi',
+  'Bihari',
+  'Odia',
+  'Hyderabadi',
+  'Andhra',
+  'Kerala',
+  'Goan',
   'Dal / Kadhi',
   'Rice',
   'Bread',
@@ -29,16 +42,39 @@ export const CATEGORIES = [
   'Beverage',
   'Live Counter',
   'Breakfast',
+  'Snacks',
+  'Sandwich',
+  'Pizza',
+  'Pasta',
+  'Continental',
+  'Mexican',
+  'Thai',
+  'Lebanese',
+  'Sizzler',
+  'Street Food',
+  'Tandoor',
+  'Fusion',
+  'Main Course',
   'Jain',
+  'Satvik',
+  'Vegan',
   'Kids',
+  'Fruit',
+  'Bakery',
+  'Raita',
+  'Pickle',
+  'Dry Fruit',
+  'Paan',
+  'Mukhwas',
   'Condiments',
+  'Other',
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];
 
 export type DishCostItem = {
   name: string;
-  category: Category;
+  category: string;
   rate: number;
   servingQuantity?: number;
   servingUnit?: string;
@@ -66,6 +102,19 @@ export const CATEGORY_BASE_COST: Record<Category, number> = {
   Kathiyawadi: 50,
   Rajasthani: 52,
   Gujarati: 44,
+  'North Indian': 62,
+  Mughlai: 82,
+  Awadhi: 80,
+  Kashmiri: 76,
+  Bengali: 68,
+  Maharashtrian: 56,
+  Sindhi: 58,
+  Bihari: 58,
+  Odia: 58,
+  Hyderabadi: 78,
+  Andhra: 62,
+  Kerala: 68,
+  Goan: 74,
   'Dal / Kadhi': 24,
   Rice: 24,
   Bread: 18,
@@ -77,9 +126,32 @@ export const CATEGORY_BASE_COST: Record<Category, number> = {
   Beverage: 16,
   'Live Counter': 70,
   Breakfast: 55,
+  Snacks: 38,
+  Sandwich: 40,
+  Pizza: 55,
+  Pasta: 55,
+  Continental: 65,
+  Mexican: 60,
+  Thai: 60,
+  Lebanese: 62,
+  Sizzler: 85,
+  'Street Food': 42,
+  Tandoor: 68,
+  Fusion: 72,
+  'Main Course': 60,
   Jain: 55,
+  Satvik: 52,
+  Vegan: 58,
   Kids: 42,
+  Fruit: 28,
+  Bakery: 30,
+  Raita: 16,
+  Pickle: 5,
+  'Dry Fruit': 48,
+  Paan: 18,
+  Mukhwas: 8,
   Condiments: 6,
+  Other: 40,
 };
 
 const DISH_COST_ITEMS_PART_1: readonly DishCostItem[] = [
@@ -1690,7 +1762,8 @@ function getDishSearchIndex(): DishSearchEntry[] {
 
 function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishCostItem | null {
   if (!item?.name || !item?.category) return null;
-  if (!CATEGORIES.includes(item.category)) return null;
+  const category = String(item.category).trim();
+  if (!category || category.length > 60) return null;
 
   const cleanAliases = Array.isArray(item.aliases)
     ? item.aliases.map((alias) => alias.trim()).filter(Boolean)
@@ -1698,7 +1771,7 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
 
   return {
     name: item.name.trim(),
-    category: item.category,
+    category,
     rate: Math.max(Number(item.rate) || 0, 0),
     servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
     servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
@@ -1816,7 +1889,7 @@ const categoryAliases: Record<Category, string[]> = {
   Starter: ['starter', 'tikka', 'kebab', 'spring roll', 'manchurian', 'paneer chilli', 'baby corn'],
   Chaat: ['chaat', 'pani puri', 'sev puri', 'bhel', 'dahi puri', 'ragda'],
   Chinese: ['chinese', 'noodle', 'noodles', 'fried rice', 'schezwan', 'hakka', 'chilli garlic'],
-  Italian: ['italian', 'pasta', 'pizza', 'lasagna', 'risotto'],
+  Italian: ['italian', 'italian cuisine'],
   'South Indian': ['south indian', 'dosa', 'idli', 'uttapam', 'sambar', 'upma', 'medu vada'],
   Punjabi: ['punjabi', 'dal makhani', 'chole', 'rajma', 'butter masala'],
   Paneer: ['paneer', 'pbm', 'palak paneer', 'kadai paneer'],
@@ -1824,6 +1897,19 @@ const categoryAliases: Record<Category, string[]> = {
   Kathiyawadi: ['kathiyawadi', 'sev tameta', 'lasaniya bataka'],
   Rajasthani: ['rajasthani', 'ker sangri', 'gatte'],
   Gujarati: ['gujarati', 'undhiyu'],
+  'North Indian': ['north indian', 'north indian food'],
+  Mughlai: ['mughlai', 'mughal cuisine'],
+  Awadhi: ['awadhi', 'lucknowi'],
+  Kashmiri: ['kashmiri', 'wazwan'],
+  Bengali: ['bengali', 'bangla cuisine'],
+  Maharashtrian: ['maharashtrian', 'marathi cuisine'],
+  Sindhi: ['sindhi'],
+  Bihari: ['bihari', 'litti chokha'],
+  Odia: ['odia', 'oriya'],
+  Hyderabadi: ['hyderabadi'],
+  Andhra: ['andhra', 'andhra style'],
+  Kerala: ['kerala', 'kerala style', 'malabar'],
+  Goan: ['goan', 'goa style'],
   'Dal / Kadhi': ['dal', 'kadhi', 'kadhi khichdi'],
   Rice: ['rice', 'biryani', 'pulao', 'khichdi'],
   Bread: ['roti', 'naan', 'puri', 'paratha', 'kulcha', 'bread'],
@@ -1834,10 +1920,33 @@ const categoryAliases: Record<Category, string[]> = {
   Farsan: ['farsan', 'dhokla', 'khaman', 'khandvi', 'samosa', 'kachori'],
   Beverage: ['tea', 'coffee', 'milk', 'chaas', 'lassi'],
   'Live Counter': ['live counter', 'live'],
-  Breakfast: ['breakfast', 'poha', 'toast', 'sandwich', 'bakery'],
+  Breakfast: ['breakfast', 'poha', 'upma', 'breakfast platter'],
+  Snacks: ['snack', 'snacks', 'namkeen', 'pakora', 'pakoda'],
+  Sandwich: ['sandwich', 'toastie', 'sub sandwich'],
+  Pizza: ['pizza', 'calzone'],
+  Pasta: ['pasta', 'spaghetti', 'penne', 'macaroni', 'lasagna'],
+  Continental: ['continental', 'au gratin', 'stroganoff', 'baked vegetable'],
+  Mexican: ['mexican', 'taco', 'nachos', 'quesadilla', 'burrito', 'enchilada'],
+  Thai: ['thai', 'pad thai', 'thai curry', 'tom yum'],
+  Lebanese: ['lebanese', 'hummus', 'falafel', 'shawarma', 'pita'],
+  Sizzler: ['sizzler', 'sizzling platter'],
+  'Street Food': ['street food', 'roadside snacks'],
+  Tandoor: ['tandoor', 'tandoori platter'],
+  Fusion: ['fusion', 'indo western', 'modern indian'],
+  'Main Course': ['main course', 'main dish', 'entree'],
   Jain: ['jain'],
+  Satvik: ['satvik', 'sattvik', 'no onion garlic'],
+  Vegan: ['vegan', 'plant based'],
   Kids: ['kids', 'fries', 'burger', 'pasta kids'],
-  Condiments: ['condiments', 'chutney', 'pickle', 'salad dressing'],
+  Fruit: ['fruit platter', 'fruit counter', 'cut fruit', 'fresh fruit'],
+  Bakery: ['bakery', 'pastry', 'croissant', 'muffin', 'cupcake'],
+  Raita: ['raita', 'curd accompaniment'],
+  Pickle: ['pickle', 'achar', 'achaar'],
+  'Dry Fruit': ['dry fruit', 'dry fruits', 'nuts counter'],
+  Paan: ['paan', 'pan counter', 'betel leaf'],
+  Mukhwas: ['mukhwas', 'mouth freshener'],
+  Condiments: ['condiments', 'chutney', 'salad dressing'],
+  Other: ['other', 'miscellaneous', 'misc'],
 };
 
 function normalizeDishName(value: string) {
@@ -2330,14 +2439,21 @@ export function suggestDishesByName(name: string, limit = 5): DishCostItem[] {
     .map((entry) => entry.dish);
 }
 
-export function detectCategory(name: string): Category {
+export function detectCategory(name: string): string {
   const dish = detectDish(name);
   if (dish) return dish.category;
 
   const normalized = normalizeDishName(name);
-  const matchedCategory = CATEGORIES.find((category) =>
-    categoryAliases[category].some((alias) => normalized.includes(normalizeDishName(alias))),
-  );
+  const matchedCategory = CATEGORIES
+    .flatMap((category) =>
+      categoryAliases[category].map((alias) => ({
+        category,
+        alias: normalizeDishName(alias),
+      })),
+    )
+    .filter(({ alias }) => alias && normalized.includes(alias))
+    .sort((left, right) => right.alias.length - left.alias.length)[0]
+    ?.category;
 
   return matchedCategory ?? 'Sabji';
 }

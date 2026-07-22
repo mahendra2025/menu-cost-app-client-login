@@ -5,7 +5,6 @@ import AppShell from '../../components/AppShell';
 import {
   CATEGORIES,
   saveDishCostItems,
-  type Category,
   type DishCostItem,
 } from '../../../lib/dishCostMaster';
 import {
@@ -24,6 +23,7 @@ type EditableDish = DishCostItem & {
 };
 type DishRowErrors = {
   name?: string;
+  category?: string;
   rate?: string;
   servingQuantity?: string;
   servingUnit?: string;
@@ -83,7 +83,7 @@ function parseDishItems(items: unknown): DishCostItem[] {
       if (!item || typeof item !== 'object') return null;
       const row = item as Record<string, unknown>;
       const name = String(row.name || '').trim();
-      const category = String(row.category || '').trim() as Category;
+      const category = String(row.category || '').trim();
       const rate = Math.max(Number(row.rate) || 0, 0);
       const servingQuantity = Math.max(Number(row.servingQuantity) || 1, 0.01);
       const servingUnit = String(row.servingUnit || 'serving').trim() || 'serving';
@@ -91,7 +91,7 @@ function parseDishItems(items: unknown): DishCostItem[] {
         ? row.aliases.map((alias) => String(alias).trim()).filter(Boolean)
         : [];
 
-      if (!name || !CATEGORIES.includes(category)) return null;
+      if (!name || !category || category.length > 60) return null;
       return { name, category, rate, servingQuantity, servingUnit, aliases };
     })
     .filter((item): item is DishCostItem => item !== null);
@@ -132,6 +132,7 @@ function validateRows(rows: EditableDish[]) {
     const aliases = allRowAliases(row);
 
     if (!name) rowErrors.name = 'Dish name is required.';
+    if (!row.category.trim()) rowErrors.category = 'Category is required.';
     if (!(Number(row.rate) > 0)) rowErrors.rate = 'Rate must be greater than 0.';
     if (!(Number(row.servingQuantity) > 0)) rowErrors.servingQuantity = 'Quantity must be greater than 0.';
     if (!String(row.servingUnit || '').trim()) rowErrors.servingUnit = 'Unit is required.';
@@ -176,7 +177,7 @@ export default function AdminDishesPage() {
   const [ready, setReady] = useState(false);
   const [rows, setRows] = useState<EditableDish[]>([]);
   const [query, setQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'ALL' | Category>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ERROR' | 'RECIPE' | 'NO_RECIPE'>('ALL');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
@@ -184,6 +185,13 @@ export default function AdminDishesPage() {
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const rowErrors = useMemo(() => validateRows(rows), [rows]);
+  const availableCategories = useMemo(
+    () => Array.from(new Set([
+      ...CATEGORIES,
+      ...rows.map((row) => row.category.trim()).filter(Boolean),
+    ])).sort((left, right) => left.localeCompare(right)),
+    [rows],
+  );
 
   useEffect(() => {
     const session = getSession();
@@ -282,6 +290,58 @@ export default function AdminDishesPage() {
     }, 80);
   }
 
+  function addCategory() {
+    const enteredName = window.prompt('New category name');
+    if (enteredName === null) return;
+
+    const category = enteredName.trim().replace(/\s+/g, ' ');
+    if (!category) {
+      setMessageType('error');
+      setMessage('Enter a category name.');
+      return;
+    }
+    if (category.length > 60) {
+      setMessageType('error');
+      setMessage('Category names must be 60 characters or fewer.');
+      return;
+    }
+
+    const existingCategory = availableCategories.find(
+      (item) => item.toLowerCase() === category.toLowerCase(),
+    );
+    if (existingCategory) {
+      setCategoryFilter(existingCategory);
+      setMessageType('error');
+      setMessage(`${existingCategory} already exists.`);
+      return;
+    }
+
+    const newRowId = uid('dish_master');
+    setMessageType('success');
+    setMessage(`${category} added. Complete its first dish, then save all changes.`);
+    setQuery('');
+    setCategoryFilter(category);
+    setStatusFilter('ALL');
+    setPage(1);
+    setDirty(true);
+    setRows((current) => [{
+      id: newRowId,
+      name: '',
+      category,
+      rate: 1,
+      servingQuantity: 1,
+      servingUnit: 'serving',
+      aliases: [],
+      aliasesText: '',
+      hindiAliasesText: '',
+      gujaratiAliasesText: '',
+    }, ...current]);
+
+    window.setTimeout(() => {
+      document.getElementById(`dish-name-${newRowId}`)?.focus();
+    }, 80);
+  }
+
   function removeRow(id: string) {
     const selectedDish = rows.find((row) => row.id === id);
     if (
@@ -329,7 +389,7 @@ export default function AdminDishesPage() {
     setMessage('');
     const cleaned = rows
       .map(toDishCostItem)
-      .filter((row) => row.name && CATEGORIES.includes(row.category as Category));
+      .filter((row) => row.name && row.category.trim());
     try {
       const response = await fetch('/api/admin/dishes', {
         method: 'PUT',
@@ -384,7 +444,7 @@ export default function AdminDishesPage() {
 
           <div className="dish-master-health" aria-label="Catalog health">
             <span><b>{rows.length}</b> dishes</span>
-            <span><b>{CATEGORIES.length}</b> categories</span>
+            <span><b>{availableCategories.length}</b> categories</span>
             <span><b>{recipeLinkedCount}</b> recipe linked</span>
             <span className={rowErrors.size ? 'needs-attention' : 'is-complete'}>
               <b>{rowErrors.size}</b> issues
@@ -393,6 +453,7 @@ export default function AdminDishesPage() {
 
           <div className="dish-master-actions">
             <button className="primary-button" onClick={addRow}>+ Add Dish</button>
+            <button className="secondary-button" onClick={addCategory}>+ Add Category</button>
             <button className="secondary-button" onClick={saveAll} disabled={saving || !dirty}>
               {saving ? 'Saving…' : dirty ? 'Save All Changes' : 'All Changes Saved'}
             </button>
@@ -414,9 +475,9 @@ export default function AdminDishesPage() {
             </div>
             <div className="field">
               <label>Category</label>
-              <select className="select select-large" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value as 'ALL' | Category)}>
+              <select className="select select-large" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                 <option value="ALL">All categories</option>
-                {CATEGORIES.map((category) => <option value={category} key={category}>{category}</option>)}
+                {availableCategories.map((category) => <option value={category} key={category}>{category}</option>)}
               </select>
             </div>
             <div className="field">
@@ -467,9 +528,10 @@ export default function AdminDishesPage() {
                   </div>
                   <div className="field">
                     <label>Category</label>
-                    <select className="select select-large" value={row.category} onChange={(e) => updateRow(row.id, { category: e.target.value as Category })}>
-                      {CATEGORIES.map((category) => <option key={category}>{category}</option>)}
+                    <select className="select select-large" value={row.category} onChange={(e) => updateRow(row.id, { category: e.target.value })}>
+                      {availableCategories.map((category) => <option key={category}>{category}</option>)}
                     </select>
+                    {rowErrors.get(row.id)?.category ? <span className="field-error">{rowErrors.get(row.id)?.category}</span> : null}
                   </div>
                   <div className="field">
                     <label>Rate / Plate (Auto)</label>

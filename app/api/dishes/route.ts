@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { DISH_COST_ITEMS, mergeDishCatalog, type Category } from '../../../lib/dishCostMaster';
+import { DISH_COST_ITEMS, mergeDishCatalog } from '../../../lib/dishCostMaster';
 
 export async function GET() {
   try {
@@ -19,7 +19,7 @@ export async function GET() {
     const mergedItems = items.length
       ? mergeDishCatalog(items.map((item) => ({
         name: item.name,
-        category: item.category as Category,
+        category: item.category,
         rate: item.rate,
         servingQuantity: item.servingQuantity,
         servingUnit: item.servingUnit,

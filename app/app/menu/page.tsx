@@ -121,6 +121,9 @@ export default function MenuPage() {
   const [isQuickAddOpen, setIsQuickAddOpen] =
     useState(false);
 
+  const [catalogCategories, setCatalogCategories] =
+    useState<string[]>([]);
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -141,6 +144,10 @@ export default function MenuPage() {
       const adminDishes =
         await syncDishCostItemsFromServer();
       if (cancelled) return;
+
+      setCatalogCategories(
+        Array.from(new Set(adminDishes.map((dish) => dish.category))),
+      );
 
       setWork((latestWork) => {
         if (!latestWork) return latestWork;
@@ -246,6 +253,15 @@ export default function MenuPage() {
         ),
     );
   }, [work]);
+
+  const availableCategories = useMemo(
+    () => Array.from(new Set([
+      ...CATEGORIES,
+      ...catalogCategories,
+      ...(work?.menu ?? []).map((item) => item.category),
+    ].map((category) => category.trim()).filter(Boolean))),
+    [catalogCategories, work],
+  );
 
   const manualRateCount = useMemo(
     () =>
@@ -1100,7 +1116,7 @@ export default function MenuPage() {
                   isNewDishMatched
                 }
               >
-                {CATEGORIES.map(
+                {availableCategories.map(
                   (category) => (
                     <option
                       key={category}
@@ -1511,7 +1527,7 @@ export default function MenuPage() {
                         )
                       }
                     >
-                      {CATEGORIES.map(
+                      {availableCategories.map(
                         (category) => (
                           <option
                             key={

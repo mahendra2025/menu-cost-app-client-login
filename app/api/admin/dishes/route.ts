@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '../../../../lib/prisma';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
-import { CATEGORIES, DISH_COST_ITEMS, mergeDishCatalog, type Category } from '../../../../lib/dishCostMaster';
+import { DISH_COST_ITEMS, mergeDishCatalog } from '../../../../lib/dishCostMaster';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -29,7 +29,7 @@ function normalizeItems(items: unknown) {
         ? row.aliases.map((alias) => String(alias).trim()).filter(Boolean)
         : [];
 
-      if (!name || !CATEGORIES.includes(category as (typeof CATEGORIES)[number])) return null;
+      if (!name || !category || category.length > 60) return null;
 
       return {
         name,
@@ -53,7 +53,7 @@ function normalizeRateUpdates(items: unknown) {
       const name = String(row.name || '').trim();
       const category = String(row.category || '').trim();
       const rate = Math.max(Number(row.rate) || 0, 0);
-      if (!name || !CATEGORIES.includes(category as (typeof CATEGORIES)[number])) return null;
+      if (!name || !category || category.length > 60) return null;
       return { name, category, rate };
     })
     .filter((item): item is { name: string; category: string; rate: number } => item !== null);
@@ -81,7 +81,7 @@ export async function GET() {
       ? mergeDishCatalog(items.map((item) => ({
         id: item.id,
         name: item.name,
-        category: item.category as Category,
+        category: item.category,
         rate: item.rate,
         servingQuantity: item.servingQuantity,
         servingUnit: item.servingUnit,
