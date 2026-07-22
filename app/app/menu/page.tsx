@@ -112,6 +112,9 @@ export default function MenuPage() {
   const [showMissingOnly, setShowMissingOnly] =
     useState(false);
 
+  const [selectedFunctionId, setSelectedFunctionId] =
+    useState('');
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -321,8 +324,18 @@ export default function MenuPage() {
 
   const visibleFunctionGroups = useMemo(() => {
     const query = normalizeDishKey(menuQuery);
+    const activeFunctionId = menuFunctionGroups.some(
+      (functionGroup) => functionGroup.groupKey === selectedFunctionId,
+    )
+      ? selectedFunctionId
+      : '';
 
     return menuFunctionGroups
+      .filter(
+        (functionGroup) =>
+          !activeFunctionId ||
+          functionGroup.groupKey === activeFunctionId,
+      )
       .map((functionGroup) => ({
         ...functionGroup,
         items: functionGroup.items.filter((item) => {
@@ -339,7 +352,7 @@ export default function MenuPage() {
         }),
       }))
       .filter((functionGroup) => functionGroup.items.length > 0);
-  }, [menuFunctionGroups, menuQuery, showMissingOnly]);
+  }, [menuFunctionGroups, menuQuery, selectedFunctionId, showMissingOnly]);
 
   const menuReady =
     Boolean(work?.menu.length) &&
@@ -938,7 +951,7 @@ export default function MenuPage() {
             {weddingServices.length > 0 ? (
               <div className="field">
                 <label htmlFor="newService">
-                  Add To Meal
+                  Function / Meal
                 </label>
 
                 <select
@@ -1228,6 +1241,31 @@ export default function MenuPage() {
 
           {work.menu.length > 0 ? (
             <div className="menu-review-toolbar">
+              <div className="menu-function-filter">
+                <label htmlFor="functionFilter">Function</label>
+                <select
+                  id="functionFilter"
+                  className="select input-large"
+                  value={selectedFunctionId}
+                  onChange={(event) => setSelectedFunctionId(event.target.value)}
+                >
+                  <option value="">All functions</option>
+                  {menuFunctionGroups.map((functionGroup) => (
+                    <option
+                      key={functionGroup.groupKey}
+                      value={functionGroup.groupKey}
+                    >
+                      {[functionGroup.dayLabel, functionGroup.mealLabel]
+                        .filter(Boolean)
+                        .join(' • ')}
+                      {functionGroup.servicePax > 0
+                        ? ` • ${functionGroup.servicePax} members`
+                        : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="menu-search-field">
                 <label htmlFor="menuSearch">Find a dish</label>
                 <input
@@ -1251,13 +1289,14 @@ export default function MenuPage() {
                 {manualRateCount > 0 ? <b>{manualRateCount}</b> : null}
               </button>
 
-              {(menuQuery || showMissingOnly) ? (
+              {(menuQuery || showMissingOnly || selectedFunctionId) ? (
                 <button
                   className="ghost-button menu-clear-filter"
                   type="button"
                   onClick={() => {
                     setMenuQuery('');
                     setShowMissingOnly(false);
+                    setSelectedFunctionId('');
                   }}
                 >
                   Clear filters
@@ -1537,6 +1576,7 @@ export default function MenuPage() {
                 onClick={() => {
                   setMenuQuery('');
                   setShowMissingOnly(false);
+                  setSelectedFunctionId('');
                 }}
               >
                 Clear filters

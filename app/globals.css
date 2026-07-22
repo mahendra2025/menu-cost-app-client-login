@@ -2823,8 +2823,11 @@ td:last-child {
   background: #f8fafc;
 }
 
-.menu-search-field { flex: 1 1 320px; }
-.menu-search-field label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.menu-function-filter { flex: 0 1 270px; min-width: 210px; }
+.menu-search-field { flex: 1 1 280px; }
+.menu-search-field label,
+.menu-function-filter label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+.menu-function-filter .select { width: 100%; }
 
 .menu-filter-toggle {
   display: inline-flex;
@@ -2926,7 +2929,9 @@ td:last-child {
   .menu-overview-metrics { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
   .menu-section-heading > .badge { align-self: flex-start; }
   .menu-review-toolbar { align-items: stretch; flex-direction: column; }
+  .menu-function-filter,
   .menu-search-field { flex-basis: auto; }
+  .menu-function-filter { min-width: 0; }
   .menu-filter-toggle,
   .menu-clear-filter { width: 100%; }
   .menu-row-missing { box-shadow: inset 3px 0 0 #ff9500, 0 8px 24px rgba(15, 23, 42, 0.07); }
