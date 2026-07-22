@@ -23,6 +23,23 @@ import type {
   WorkState,
 } from '../../../lib/types';
 
+const SAMPLE_MENU = `Day 1 • Dinner • 300 Members
+Welcome Drink
+Orange Juice
+
+Starter
+Paneer Tikka
+Hara Bhara Kebab
+
+Main Course
+Paneer Butter Masala
+Dal Fry
+Jeera Rice
+Butter Naan
+
+Sweet
+Gulab Jamun`;
+
 export default function EventPage() {
   const router = useRouter();
 
@@ -303,6 +320,7 @@ export default function EventPage() {
 
   function clearPage() {
     if (!work) return;
+    if (!window.confirm('Clear the event details and pasted menu from this page?')) return;
 
     const nextWork: WorkState = {
       ...work,
@@ -328,6 +346,22 @@ export default function EventPage() {
     persistWork(nextWork);
   }
 
+  function useSampleMenu() {
+    if (!work) return;
+    if (work.event.rawMenuText.trim() && !window.confirm('Replace the current menu text with the sample format?')) return;
+    setError('');
+    setUploadStatus('');
+    updateEvent('rawMenuText', SAMPLE_MENU);
+  }
+
+  function clearMenuText() {
+    if (!work?.event.rawMenuText.trim()) return;
+    if (!window.confirm('Clear the current menu text?')) return;
+    setError('');
+    setUploadStatus('');
+    updateEvent('rawMenuText', '');
+  }
+
   if (!work || !session) {
     return (
       <AppShell title="Event Details">
@@ -350,38 +384,54 @@ export default function EventPage() {
     );
   }
 
+  const eventChecklist = [
+    { label: 'Client', complete: Boolean(work.event.clientName.trim()) },
+    { label: 'Event', complete: Boolean(work.event.eventName.trim()) },
+    { label: 'Date', complete: Boolean(work.event.eventDate) },
+    { label: 'Guests', complete: work.event.pax > 0 },
+    { label: 'Location', complete: Boolean(work.event.venue.trim() || work.event.city.trim()) },
+    { label: 'Menu', complete: Boolean(work.event.rawMenuText.trim()) },
+  ];
+  const completedEventItems = eventChecklist.filter((item) => item.complete).length;
+  const eventProgress = Math.round((completedEventItems / eventChecklist.length) * 100);
+  const menuLines = work.event.rawMenuText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean).length;
+
   return (
     <AppShell
-      title="Event Details + Menu"
-      subtitle="Enter event information and paste the complete menu"
+      title="Create Event"
+      subtitle="Step 1 of 6: add the event brief and bring in the complete menu"
     >
       <section className="content-grid">
-        <div className="glass-card">
-          <div className="section-kicker">
-            Step 1 of 6
+        <div className="event-overview-card">
+          <div className="event-overview-copy">
+            <span className="page-eyebrow">Event setup</span>
+            <h2>{work.event.eventName || 'New catering event'}</h2>
+            <p>{work.event.clientName ? `Prepared for ${work.event.clientName}` : 'Add the client and event details to begin.'}</p>
           </div>
+          <div className="event-progress-card">
+            <div><span>Setup progress</span><b>{eventProgress}%</b></div>
+            <div className="event-progress-track" aria-label={`${eventProgress}% of event setup complete`}><i style={{ width: `${eventProgress}%` }} /></div>
+            <div className="event-checklist">
+              {eventChecklist.map((item) => <span className={item.complete ? 'is-complete' : ''} key={item.label}>{item.label}</span>)}
+            </div>
+          </div>
+        </div>
 
-          <h2>Event Information</h2>
-
-          <div
-            className="helper-card"
-            style={{
-              marginBottom: 16,
-            }}
-          >
-            <b>
-              Start with the basics
-            </b>
-
-            <p>
-              Enter the event details,
-              guest count and venue.
-              Then paste the complete
-              menu below.
-            </p>
+        <div className="glass-card event-details-card">
+          <div className="event-section-heading">
+            <div>
+              <span className="section-kicker">Event brief</span>
+              <h2>Event information</h2>
+              <p>These details appear in the final quotation and help set default guest counts.</p>
+            </div>
+            <span className="event-autosave">Auto-saved</span>
           </div>
 
           <div className="form-grid">
+            <div className="event-form-label">Client &amp; occasion</div>
             <div className="three-grid">
               <div className="field">
                 <label htmlFor="clientName">
@@ -447,6 +497,7 @@ export default function EventPage() {
               </div>
             </div>
 
+            <div className="event-form-label">Guests &amp; location</div>
             <div className="three-grid">
               <div className="field">
                 <label htmlFor="functionType">
@@ -546,33 +597,17 @@ export default function EventPage() {
           </div>
         </div>
 
-        <div className="glass-card">
-          <div className="section-kicker">
-            Menu Detection
-          </div>
-
-          <h2>Paste Menu</h2>
-
-          <div
-            className="helper-card"
-            style={{
-              marginBottom: 16,
-            }}
-          >
-            <b>
-              One message is enough
-            </b>
-
-            <p>
-              Paste the complete menu
-              from WhatsApp, notes or
-              email in English, Roman
-              Hindi, Hindi or Gujarati.
-              Separate dishes
-              using new lines, commas,
-              slashes, semicolons or
-              bullets.
-            </p>
+        <div className="glass-card event-menu-card">
+          <div className="event-section-heading">
+            <div>
+              <span className="section-kicker">Menu detection</span>
+              <h2>Bring in the complete menu</h2>
+              <p>Upload a file or paste the WhatsApp menu. You will review every detected dish on the next page.</p>
+            </div>
+            <div className="event-menu-stats">
+              <span><b>{menuLines}</b> text lines</span>
+              <span>{work.event.uploadFileName ? 'File imported' : 'Text auto-saved'}</span>
+            </div>
           </div>
 
           <div className="form-grid">
@@ -647,9 +682,13 @@ export default function EventPage() {
             <div className="menu-upload-divider"><span>or paste menu text</span></div>
 
             <div className="field">
-              <label htmlFor="rawMenuText">
-                Paste Menu Text
-              </label>
+              <div className="event-menu-text-heading">
+                <label htmlFor="rawMenuText">Menu text</label>
+                <div>
+                  <button className="event-text-action" type="button" onClick={useSampleMenu}>Use sample format</button>
+                  {work.event.rawMenuText ? <button className="event-text-action danger" type="button" onClick={clearMenuText}>Clear text</button> : null}
+                </div>
+              </div>
 
               <textarea
                 id="rawMenuText"
@@ -682,50 +721,34 @@ Butter Naan
 Sweet
 Gulab Jamun`}
               />
+              <div className="event-text-meta">
+                <span>{work.event.rawMenuText.length.toLocaleString('en-IN')} characters</span>
+                <span>English • Roman Hindi • Hindi • Gujarati</span>
+              </div>
             </div>
 
             {error ? (
-              <div
-                className="helper-card"
-                role="alert"
-                style={{
-                  borderColor:
-                    'rgba(239, 68, 68, 0.45)',
-
-                  background:
-                    'rgba(239, 68, 68, 0.08)',
-                }}
-              >
-                <b>
-                  Detection problem
-                </b>
-
+              <div className="event-detection-error" role="alert">
+                <b>Menu needs attention</b>
                 <p>{error}</p>
               </div>
             ) : null}
 
-            <div className="helper-card">
-              <b>
-                Unmatched dishes are
-                not deleted
-              </b>
-
-              <p>
-                A dish not found in the
-                catalog will still
-                appear on the Menu page.
-                Its rate field will stay
-                blank so you can enter
-                the correct rate manually.
-              </p>
+            <div className="event-detection-note">
+              <b>Nothing is silently removed</b>
+              <p>Unmatched dishes continue to Menu review with a blank rate, ready for you to correct.</p>
             </div>
 
-            <div className="action-row page-actions">
+            <div className="event-page-actions">
+              <div>
+                <b>Ready for menu review?</b>
+                <span>Detection keeps meal names, member counts, categories, and unmatched dishes.</span>
+              </div>
               <button
                 className="primary-button"
                 type="button"
                 onClick={detectAndNext}
-                disabled={detecting}
+                disabled={detecting || Boolean(uploading)}
               >
                 {detecting
                   ? 'Detecting Dishes...'
@@ -736,9 +759,9 @@ Gulab Jamun`}
                 className="ghost-button"
                 type="button"
                 onClick={clearPage}
-                disabled={detecting}
+                disabled={detecting || Boolean(uploading)}
               >
-                Clear This Page
+                Clear page
               </button>
             </div>
           </div>
