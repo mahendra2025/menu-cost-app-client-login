@@ -209,7 +209,7 @@ svg{display:block}
   display:flex;align-items:center;gap:4px;padding:4px;border:1px solid var(--line);
   border-radius:13px;background:var(--surface-2);
 }
-.segmented button{
+.segmented button,.segmented a{
   border:0;background:transparent;color:var(--muted);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:820;
 }
 .segmented button.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
@@ -271,6 +271,10 @@ svg{display:block}
 .formGroup label{
   color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.06em;text-transform:uppercase;
 }
+.ingredientMatch{display:block;min-height:14px;color:var(--muted);font-size:9px;font-weight:750;line-height:1.35}
+.ingredientMatch.match{color:var(--green)}
+.ingredientMatch.missing{color:#a7650b}
+.ingredientMatch.missing::before{content:"＋ ";font-weight:950}
 .ingredientSection{margin-top:14px}
 .ingredientHint{margin-top:4px;color:var(--muted);font-size:12px}
 .ingredientCards{display:grid;gap:10px;margin-top:12px}
@@ -479,9 +483,9 @@ tbody tr.selected{background:var(--brand-soft)}
     border:1px solid var(--line);border-radius:17px;background:color-mix(in srgb,var(--surface) 92%,transparent);
     backdrop-filter:blur(18px);box-shadow:var(--shadow-lg);
   }
-  .mobileTabs button{
+  .mobileTabs button,.mobileTabs a{
     border:0;border-radius:12px;background:transparent;color:var(--muted);
-    padding:10px 5px;font-size:11px;font-weight:850;
+    padding:10px 5px;font-size:11px;font-weight:850;text-align:center;
   }
   .mobileTabs button.active{background:var(--brand-soft);color:var(--brand-strong)}
 }
@@ -564,7 +568,7 @@ tbody tr.selected{background:var(--brand-soft)}
         <div class="heroActions">
           <div class="segmented" aria-label="Workspace view">
             <button class="active" data-view="editor">Recipe editor</button>
-            <button data-view="index">Rate index</button>
+            <a href="/admin/ingredients" target="_top">Ingredient master</a>
           </div>
         </div>
       </div>
@@ -669,11 +673,12 @@ tbody tr.selected{background:var(--brand-soft)}
             <div>
               <div class="sectionLabel">Dish-wise ingredients</div>
               <h3>Ingredients for this recipe</h3>
-              <div class="ingredientHint">Quantity is for the full recipe batch. Rate is the purchase price per selected unit.</div>
+              <div class="ingredientHint">Choose an existing ingredient or type a missing one. New ingredients are added to Market Rates when you save.</div>
             </div>
             <button class="btn btnPrimary" id="addIngredientCard" type="button">+ Add ingredient</button>
           </div>
           <div class="ingredientCards" id="ingredientCards"></div>
+          <datalist id="ingredientRateOptions"></datalist>
         </section>
       </div>
 
@@ -785,7 +790,7 @@ tbody tr.selected{background:var(--brand-soft)}
 <nav class="mobileTabs" aria-label="Mobile navigation">
   <button data-mobile="library">Library</button>
   <button data-mobile="editor" class="active">Editor</button>
-  <button data-mobile="index">Rates</button>
+  <a href="/admin/ingredients" target="_top">Ingredients</a>
 </nav>
 
 <div class="toast" id="toast">
@@ -1062,6 +1067,57 @@ function esc(value){
   return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 }
 function normalizeKey(name,unit){return `${String(name).trim().toLowerCase()}__${unit}`}
+function inferIngredientCategory(name){
+  const value=String(name||"").trim().toLowerCase();
+  const has=(...words)=>words.some(word=>value.includes(word));
+  if(has("milk","cream","curd","paneer","cheese","butter","ghee","khoya"))return "Dairy";
+  if(has("oil","shortening"))return "Oils & Fats";
+  if(has("sugar","jaggery","honey","syrup"))return "Sweeteners";
+  if(has("sauce","chutney","ketchup","pickle","vinegar","mayonnaise","pesto"))return "Sauces & Condiments";
+  if(has("juice","water","soda","cola","tea","coffee","ale"))return "Beverages";
+  if(has("flour","rice","rava","poha","oats","barley","quinoa","pasta","noodle","vermicelli"))return "Grains & Flour";
+  if(has("dal","lentil","chana","rajma","pea","bean","gram"))return "Pulses & Legumes";
+  if(has("masala","salt","pepper","chilli","cumin","turmeric","cardamom","cinnamon","saffron","kesar","seasoning"))return "Spices & Seasonings";
+  if(has("bread","bun","base","sheet","wrapper","papad","chips","nachos","biscuit","cup","spoon"))return "Bakery & Packaged";
+  if(has("apple","banana","orange","mango","lemon","lime","pineapple","berry","grape","guava","lychee","peach","kiwi","watermelon","pomegranate","coconut"))return "Fruits";
+  if(has("onion","tomato","potato","carrot","cabbage","capsicum","spinach","mint","garlic","ginger","leaves","vegetable","mushroom","broccoli","gourd","beetroot","pumpkin","corn","bhindi"))return "Vegetables & Herbs";
+  return "Other";
+}
+function findIngredientRate(name,preferredUnit){
+  const cleanName=String(name||"").trim().toLowerCase();
+  if(!cleanName)return null;
+  const exact=rates.find(rate=>rate.id===normalizeKey(cleanName,preferredUnit));
+  return exact||rates.find(rate=>String(rate.name||"").trim().toLowerCase()===cleanName)||null;
+}
+function updateIngredientRateOptions(){
+  const list=$("ingredientRateOptions");if(!list)return;
+  const names=Array.from(new Set(rates.map(rate=>String(rate.name||"").trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+  list.innerHTML=names.map(name=>`<option value="${esc(name)}"></option>`).join("");
+}
+function ingredientMatchMarkup(item){
+  const match=findIngredientRate(item?.name,item?.rateUnit||item?.unit||"kg");
+  if(!String(item?.name||"").trim())return '<small class="ingredientMatch">Start typing to search Market Rates</small>';
+  return match
+    ?`<small class="ingredientMatch match">Market Rate linked · ${money(match.rate)}/${esc(match.unit)}</small>`
+    :'<small class="ingredientMatch missing">New ingredient — added when recipe is saved</small>';
+}
+function updateIngredientMatch(card){
+  const name=card?.querySelector('[data-ingredient-field="name"]')?.value||"";
+  const unit=card?.querySelector('[data-ingredient-field="rateUnit"]')?.value||"kg";
+  const target=card?.querySelector(".ingredientMatch");
+  if(!target)return;
+  const match=findIngredientRate(name,unit);
+  target.className=`ingredientMatch ${name.trim()?(match?"match":"missing"):""}`;
+  target.textContent=!name.trim()?"Start typing to search Market Rates":match?`Market Rate linked · ${money(match.rate)}/${match.unit}`:"New ingredient — added when recipe is saved";
+}
+function hydrateIngredientFromRates(card){
+  const nameInput=card?.querySelector('[data-ingredient-field="name"]');
+  const rateInput=card?.querySelector('[data-ingredient-field="marketRate"]');
+  const unitInput=card?.querySelector('[data-ingredient-field="rateUnit"]');
+  const match=findIngredientRate(nameInput?.value,unitInput?.value||"kg");
+  if(match&&rateInput&&unitInput){rateInput.value=Number(match.rate)||0;unitInput.value=match.unit}
+  updateIngredientMatch(card);
+}
 function selectedDish(){return dishes.find(d=>d.id===selectedDishId)}
 function getRate(id){return rates.find(r=>r.id===id)}
 function selectedRate(){return getRate(selectedRateId)}
@@ -1347,6 +1403,7 @@ function unitOptions(selected){
 function renderVisualRecipeEditor(){
   let data;
   try{data=parseJson()}catch{return}
+  updateIngredientRateOptions();
   $("formDishName").value=data.dishName||"";
   $("formCategory").value=data.category||"";
   $("formSubcategory").value=data.subcategory||"";
@@ -1359,7 +1416,8 @@ function renderVisualRecipeEditor(){
       <div class="ingredientNumber">${index+1}</div>
       <div class="formGroup">
         <label>Ingredient</label>
-        <input class="field" data-ingredient-field="name" value="${esc(item.name||"")}" placeholder="Example: Paneer">
+        <input class="field" data-ingredient-field="name" list="ingredientRateOptions" autocomplete="off" value="${esc(item.name||"")}" placeholder="Search or add ingredient">
+        ${ingredientMatchMarkup(item)}
       </div>
       <div class="formGroup">
         <label>Quantity</label>
@@ -1704,19 +1762,25 @@ async function applyJson(){
     const data=parseJson(),errors=validateDishJson(data);
     if(errors.length){setValidation("invalid",`${errors.length} issue${errors.length>1?"s":""}`);setStatus(errors[0],"error");return}
     const dishIndex=dishes.findIndex(d=>d.id===selectedDishId);if(dishIndex<0)return;
+    const newIngredientNames=Array.from(new Set(data.ingredients
+      .filter(item=>!rates.some(rate=>rate.id===normalizeKey(item.name,item.rateUnit)))
+      .map(item=>String(item.name||"").trim())
+      .filter(Boolean)));
     const mapped=data.ingredients.map(item=>{
       const id=normalizeKey(item.name,item.rateUnit);
       const existing=rates.find(r=>r.id===id);
-      if(existing){existing.name=String(item.name).trim();existing.rate=Number(item.marketRate);existing.unit=item.rateUnit}
-      else rates.push({id,name:String(item.name).trim(),rate:Number(item.marketRate),unit:item.rateUnit});
+      if(existing){existing.name=String(item.name).trim();existing.rate=Number(item.marketRate);existing.unit=item.rateUnit;existing.category=existing.category||inferIngredientCategory(item.name)}
+      else rates.push({id,name:String(item.name).trim(),category:inferIngredientCategory(item.name),rate:Number(item.marketRate),unit:item.rateUnit});
       return {name:String(item.name).trim(),qty:Number(item.quantity),unit:item.unit,rateKey:id,rate:Number(item.marketRate),rateUnit:item.rateUnit}
     });
     dishes[dishIndex]={...dishes[dishIndex],name:String(data.dishName).trim(),category:String(data.category).trim(),subcategory:String(data.subcategory).trim(),baseGuests:Number(data.baseGuests),servingSize:data.servingSize===undefined?undefined:Number(data.servingSize),servingUnit:data.servingSize===undefined?undefined:data.servingUnit,catalogRate:Math.max(0,Number(data.dishRate)||0),ingredients:mapped};
     saveState();setDirty(false);setValidation("valid","Valid");setStatus("Saving recipe and market rates…","ok");
-    loadSelectedDish();renderRateTable();renderSelectedRate();showToast("Recipe saved");
+    loadSelectedDish();renderRateTable();renderSelectedRate();
+    showToast(newIngredientNames.length?`${newIngredientNames.length} new ingredient${newIngredientNames.length===1?"":"s"} added`:"Recipe saved");
     const databaseSaved=await persistRecipeCatalog();
     await syncRecipeCostToDishCatalog(dishes[dishIndex]);
     if(!databaseSaved)setStatus("Recipe kept on this device, but PostgreSQL save failed.","error");
+    else if(newIngredientNames.length)setStatus(`Recipe saved. ${newIngredientNames.length} new ingredient${newIngredientNames.length===1?" was":"s were"} added to Market Rates and PostgreSQL.`,"ok");
   }catch(error){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${error.message}`,"error")}
 }
 
@@ -1807,7 +1871,14 @@ $("formatJson").addEventListener("click",()=>{try{$("jsonEditor").value=JSON.str
 $("validateJson").addEventListener("click",()=>{try{const errors=validateDishJson(parseJson());if(errors.length){setValidation("invalid",`${errors.length} issue${errors.length>1?"s":""}`);setStatus(errors[0],"error")}else{setValidation("valid","Valid");setStatus("JSON is valid and ready to save.","ok")}}catch(e){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${e.message}`,"error")}});
 $("applyJson").addEventListener("click",applyJson);
 $("visualRecipeEditor").addEventListener("change",event=>{
-  if(event.target.matches("input,select"))commitVisualRecipe();
+  if(!event.target.matches("input,select"))return;
+  const card=event.target.closest("[data-ingredient-index]");
+  if(card&&event.target.matches('[data-ingredient-field="name"]'))hydrateIngredientFromRates(card);
+  else if(card)updateIngredientMatch(card);
+  commitVisualRecipe();
+});
+$("ingredientCards").addEventListener("input",event=>{
+  if(event.target.matches('[data-ingredient-field="name"]'))updateIngredientMatch(event.target.closest("[data-ingredient-index]"));
 });
 $("ingredientCards").addEventListener("click",event=>{
   const removeButton=event.target.closest("[data-remove-ingredient]");
@@ -1851,7 +1922,7 @@ $("newRate").addEventListener("click",()=>{
   if(!VALID_UNITS.includes(unit))return showToast("Invalid unit");
   const rate=Math.max(0,Number(prompt("Market rate","0"))||0),id=normalizeKey(name,unit);
   if(rates.some(r=>r.id===id))return showToast("Ingredient already exists");
-  rates.push({id,name:name.trim(),rate,unit});selectedRateId=id;saveState();renderRateTable();renderSelectedRate();showToast("Ingredient added");
+  rates.push({id,name:name.trim(),category:inferIngredientCategory(name),rate,unit});selectedRateId=id;saveState();renderRateTable();renderSelectedRate();updateIngredientRateOptions();showToast("Ingredient added");
 });
 $("copyAllRates").addEventListener("click",async()=>{
   const text=JSON.stringify([...rates].sort((a,b)=>a.name.localeCompare(b.name)),null,2);
