@@ -118,6 +118,9 @@ export default function MenuPage() {
   const [selectedMenuCategory, setSelectedMenuCategory] =
     useState('');
 
+  const [isQuickAddOpen, setIsQuickAddOpen] =
+    useState(false);
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -471,18 +474,21 @@ export default function MenuPage() {
       : Math.max(0, Number(newRate) || 0);
 
   function focusQuickAdd() {
-    document
-      .getElementById('menuQuickAdd')
-      ?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
+    setIsQuickAddOpen(true);
+    setPageMessage(null);
 
     window.setTimeout(() => {
       document
+        .getElementById('menuQuickAdd')
+        ?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+
+      document
         .getElementById('newDish')
-        ?.focus();
-    }, 450);
+        ?.focus({ preventScroll: true });
+    }, 80);
   }
 
   function persist(next: WorkState) {
@@ -975,6 +981,7 @@ export default function MenuPage() {
           </div>
         ) : null}
 
+        {isQuickAddOpen ? (
         <div id="menuQuickAdd" className="glass-card menu-quick-add-card">
           <div className="menu-section-heading">
             <div>
@@ -983,7 +990,18 @@ export default function MenuPage() {
               <p>Catalog matches fill the category, serving size and rate automatically.</p>
             </div>
 
-            <span className="badge green">Saved instantly</span>
+            <div className="menu-quick-add-heading-actions">
+              <span className="badge green">Saved instantly</span>
+              <button
+                className="menu-quick-add-close"
+                type="button"
+                onClick={() => setIsQuickAddOpen(false)}
+                aria-label="Hide Quick Add"
+                title="Hide Quick Add"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
           <div
@@ -1246,6 +1264,7 @@ export default function MenuPage() {
             </div>
           ) : null}
         </div>
+        ) : null}
 
         <div className="glass-card menu-review-card">
           <div className="menu-section-heading">

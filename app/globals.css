@@ -2851,6 +2851,22 @@ td:last-child {
 .menu-section-heading h2 { margin: 3px 0 4px; }
 .menu-section-heading > .badge { flex: 0 0 auto; }
 .menu-quick-add-grid { grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); }
+.menu-quick-add-heading-actions { display: flex; align-items: center; gap: 8px; }
+.menu-quick-add-close {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.menu-quick-add-close:hover { border-color: rgba(255,59,48,.28); background: rgba(255,59,48,.06); color: #a02b24; }
+.menu-quick-add-close:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
 
 .menu-review-toolbar {
   display: flex;
@@ -2974,6 +2990,7 @@ td:last-child {
   .menu-add-dish-button { width: 100%; min-height: 48px; font-size: 13px; }
   .menu-overview-metrics { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
   .menu-section-heading > .badge { align-self: flex-start; }
+  .menu-quick-add-heading-actions { justify-content: space-between; width: 100%; }
   .menu-review-toolbar { align-items: stretch; flex-direction: column; }
   .menu-function-filter,
   .menu-category-filter,
