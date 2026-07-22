@@ -39,6 +39,15 @@ type PageMessage = {
   text: string;
 } | null;
 
+type MenuFunctionGroup = {
+  groupKey: string;
+  serviceId: string;
+  dayLabel: string;
+  mealLabel: string;
+  servicePax: number;
+  items: MenuItem[];
+};
+
 function normalizeDishKey(value: string): string {
   return value
     .toLowerCase()
@@ -232,69 +241,110 @@ export default function MenuPage() {
     [work],
   );
 
-  const weddingServices = useMemo(() => {
-    const services = new Map<
-      string,
-      {
-        serviceId: string;
-        dayLabel?: string;
-        mealLabel?: string;
-        servicePax?: number;
+  const hasFunctionMetadata = useMemo(
+    () =>
+      (work?.menu ?? []).some(
+        (item) =>
+          Boolean(
+            item.serviceId ||
+              item.dayLabel ||
+              item.mealLabel,
+          ),
+      ),
+    [work],
+  );
+
+  /*
+   * Group detected dishes function-wise.
+   * serviceId is preferred. Older saved items
+   * without serviceId are grouped by day + meal.
+   */
+  const menuFunctionGroups = useMemo(() => {
+    const functions =
+      new Map<string, MenuFunctionGroup>();
+
+    for (const item of work?.menu ?? []) {
+      const dayLabel =
+        item.dayLabel?.trim() || '';
+      const mealLabel =
+        item.mealLabel?.trim() ||
+        'Event Menu';
+
+      const fallbackGroupKey = [
+        normalizeDishKey(
+          dayLabel || 'event',
+        ),
+        normalizeDishKey(mealLabel),
+      ].join('::');
+
+      const groupKey =
+        item.serviceId?.trim() ||
+        fallbackGroupKey;
+
+      const existing =
+        functions.get(groupKey);
+
+      if (existing) {
+        existing.items.push(item);
+        existing.servicePax = Math.max(
+          existing.servicePax,
+          Number(item.servicePax) || 0,
+        );
+        continue;
       }
-    >();
 
-    (work?.menu ?? []).forEach((item) => {
-      if (!item.serviceId || services.has(item.serviceId)) return;
-
-      services.set(item.serviceId, {
-        serviceId: item.serviceId,
-        dayLabel: item.dayLabel,
-        mealLabel: item.mealLabel,
-        servicePax: item.servicePax,
-      });
-    });
-
-    return Array.from(services.values());
-  }, [work]);
-
-  const selectedNewDishService =
-    weddingServices.find(
-      (service) => service.serviceId === newServiceId,
-    ) ?? weddingServices[0];
-
-  const menuServiceGroups = useMemo(() => {
-    const services = new Map<
-      string,
-      {
-        serviceId: string;
-        dayLabel: string;
-        mealLabel: string;
-        servicePax: number;
-        items: MenuItem[];
-      }
-    >();
-
-    (work?.menu ?? []).forEach((item) => {
-      const serviceId = item.serviceId ?? 'default';
-      const current = services.get(serviceId) ?? {
-        serviceId,
-        dayLabel: item.dayLabel ?? '',
-        mealLabel: item.mealLabel ?? 'Event Menu',
+      functions.set(groupKey, {
+        groupKey,
+        serviceId:
+          item.serviceId?.trim() ||
+          groupKey,
+        dayLabel,
+        mealLabel,
         servicePax: Math.max(
           0,
           Number(item.servicePax) ||
             Number(work?.event.pax) ||
             0,
         ),
-        items: [],
-      };
+        items: [item],
+      });
+    }
 
-      current.items.push(item);
-      services.set(serviceId, current);
-    });
-
-    return Array.from(services.values());
+    return Array.from(functions.values());
   }, [work]);
+
+  /*
+   * Only show the meal selector when Event Page
+   * supplied function metadata.
+   */
+  const weddingServices = useMemo(
+    () =>
+      hasFunctionMetadata
+        ? menuFunctionGroups.map(
+            (functionGroup) => ({
+              serviceId:
+                functionGroup.serviceId,
+              dayLabel:
+                functionGroup.dayLabel,
+              mealLabel:
+                functionGroup.mealLabel,
+              servicePax:
+                functionGroup.servicePax,
+            }),
+          )
+        : [],
+    [
+      hasFunctionMetadata,
+      menuFunctionGroups,
+    ],
+  );
+
+  const selectedNewDishService =
+    weddingServices.find(
+      (service) =>
+        service.serviceId ===
+        newServiceId,
+    ) ?? weddingServices[0];
 
   const matchedNewDish = useMemo(() => {
     const trimmedName = newDish.trim();
@@ -766,7 +816,7 @@ export default function MenuPage() {
 
             <strong>
               {weddingServices.length > 0
-                ? menuServiceGroups.length
+                ? menuFunctionGroups.length
                 : grouped.length}
             </strong>
 
@@ -1172,10 +1222,10 @@ export default function MenuPage() {
           ) : null}
 
           <div className="menu-service-groups">
-            {menuServiceGroups.map((service) => (
+            {menuFunctionGroups.map((service) => (
               <section
                 className="menu-service-group"
-                key={service.serviceId}
+                key={service.groupKey}
               >
                 <div className="menu-service-heading">
                   <div>
