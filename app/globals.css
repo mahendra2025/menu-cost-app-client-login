@@ -360,6 +360,67 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .manpower-function-card .table-wrap { margin-top: 14px; }
 .manpower-function-card .action-row { margin-top: 12px; }
 .manpower-function-meta { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.manpower-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 21px 22px;
+  border: 1px solid rgba(0,122,255,.15);
+  border-radius: 22px;
+  background: linear-gradient(125deg,rgba(255,255,255,.94),rgba(237,246,255,.9));
+  box-shadow: var(--shadow-soft);
+}
+.manpower-overview h2 { margin: 5px 0 4px; font-size: 24px; letter-spacing: -.035em; }
+.manpower-overview p { margin: 0; color: var(--muted); font-size: 12px; }
+.manpower-health { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
+.manpower-health span { display: inline-flex; align-items: baseline; gap: 4px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 999px; background: rgba(255,255,255,.8); color: var(--muted); font-size: 10px; font-weight: 800; white-space: nowrap; }
+.manpower-health b { color: var(--text); font-size: 11px; }
+.manpower-health .needs-attention { color: #9a5a0a; border-color: rgba(255,149,0,.26); background: rgba(255,149,0,.09); }
+.manpower-health .needs-attention b { color: #9a5a0a; }
+.manpower-health .is-complete { color: #187b35; border-color: rgba(52,199,89,.22); background: rgba(52,199,89,.08); }
+.manpower-planner-card { overflow: hidden; }
+.manpower-planner-heading { align-items: flex-start; }
+.manpower-planner-controls { display: flex; align-items: center; gap: 12px; }
+.manpower-planner-controls > div { display: grid; justify-items: end; gap: 2px; }
+.manpower-planner-controls small { color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.manpower-planner-controls strong { font-size: 20px; white-space: nowrap; }
+.manpower-planner-controls .ghost-button { min-height: 40px; padding: 9px 13px; font-size: 11px; white-space: nowrap; }
+.manpower-function-card { padding: 15px; }
+.manpower-function-progress { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; font-weight: 750; }
+.manpower-table-wrap { margin-top: 14px; }
+.manpower-table { min-width: 790px; }
+.manpower-table th { white-space: nowrap; }
+.manpower-table td { padding: 9px 10px; vertical-align: middle; }
+.manpower-table tr.is-active td { background: rgba(240,248,255,.82); }
+.manpower-role-input { min-width: 190px; min-height: 40px; padding: 9px 11px; border-radius: 11px; font-size: 12px; font-weight: 750; }
+.manpower-number-input { width: 92px; min-height: 40px; padding: 9px 10px; border-radius: 11px; font-size: 12px; font-weight: 800; }
+.manpower-rate-input { display: flex; align-items: center; width: 128px; min-height: 40px; overflow: hidden; border: 1px solid var(--border); border-radius: 11px; background: #fff; transition: border-color var(--transition-fast),box-shadow var(--transition-fast); }
+.manpower-rate-input:focus-within { border-color: rgba(0,122,255,.56); box-shadow: var(--focus-ring); }
+.manpower-rate-input.is-missing { border-color: rgba(255,149,0,.42); background: #fffaf2; }
+.manpower-rate-input > span { padding-left: 10px; color: var(--muted); font-size: 12px; font-weight: 800; }
+.manpower-rate-input input { width: 100%; min-width: 0; height: 38px; padding: 0 8px 0 4px; border: 0; outline: 0; color: var(--text); background: transparent; font-size: 12px; font-weight: 800; }
+.manpower-rate-input input::placeholder { color: #a7650b; font-size: 10px; }
+.manpower-row-total { font-size: 12px; white-space: nowrap; }
+.manpower-remove-button { padding: 7px 9px; border: 0; border-radius: 9px; color: #a02b24; background: rgba(255,59,48,.08); font-size: 10px; font-weight: 850; cursor: pointer; }
+.manpower-function-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.manpower-function-actions .secondary-button,
+.manpower-function-actions .ghost-button { min-height: 40px; padding: 9px 13px; font-size: 11px; }
+.manpower-role-cards { display: none; }
+.manpower-role-card { display: grid; gap: 11px; padding: 13px; border: 1px solid var(--border); border-radius: 15px; background: #fff; }
+.manpower-role-card.is-active { border-color: rgba(0,122,255,.22); background: #f6fbff; }
+.manpower-role-card-heading { display: flex; align-items: center; gap: 8px; }
+.manpower-role-card-heading .manpower-role-input { min-width: 0; flex: 1; }
+.manpower-role-card-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.manpower-role-card-fields .input,
+.manpower-role-card-fields .manpower-rate-input { width: 100%; min-height: 44px; }
+.manpower-role-card-fields .manpower-rate-input input { height: 42px; font-size: 16px; }
+.manpower-role-card-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 9px; border-top: 1px solid var(--border); }
+.manpower-role-card-total span { color: var(--muted); font-size: 10px; font-weight: 750; }
+.manpower-role-card-total b { font-size: 15px; }
+.manpower-empty-roster { display: grid; place-items: center; gap: 5px; min-height: 145px; margin-top: 12px; padding: 20px; border: 1px dashed var(--border); border-radius: 14px; text-align: center; }
+.manpower-empty-roster span { color: var(--muted); font-size: 11px; }
+.manpower-empty-roster .ghost-button { margin-top: 6px; }
 .menu-row {
   display: grid;
   grid-template-columns: minmax(190px, 1.5fr) minmax(150px, 1fr) minmax(210px, .9fr) 130px auto;
@@ -923,6 +984,17 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .manpower-function-card { padding: 12px; border-radius: 19px; }
   .manpower-function-card > summary { align-items: flex-start; }
   .manpower-function-meta { justify-content: flex-start; }
+  .manpower-overview { align-items: flex-start; flex-direction: column; gap: 14px; padding: 18px; }
+  .manpower-health { justify-content: flex-start; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+  .manpower-planner-heading { align-items: flex-start; flex-direction: column; }
+  .manpower-planner-controls { align-items: stretch; flex-direction: column; width: 100%; }
+  .manpower-planner-controls > div { justify-items: start; }
+  .manpower-planner-controls .ghost-button { width: 100%; }
+  .manpower-function-card { padding: 12px; }
+  .manpower-table-wrap { display: none; }
+  .manpower-role-cards { display: grid; gap: 9px; margin-top: 12px; }
+  .manpower-function-actions { display: grid; grid-template-columns: 1fr; }
+  .manpower-function-actions > * { width: 100%; }
   .admin-dish-row { grid-template-columns: 1fr; }
   .admin-serving-grid { grid-template-columns: 1fr; }
   .admin-alias-grid { grid-template-columns: 1fr; }
