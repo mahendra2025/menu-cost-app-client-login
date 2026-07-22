@@ -1269,30 +1269,29 @@ function detectDishesFromLine(
   const candidates =
     createDishCandidates(menuLine);
 
-  for (const candidate of candidates) {
-    const matchedDishes =
-      findDishesInText(candidate);
-
-    if (matchedDishes.length) {
-      return matchedDishes;
-    }
-  }
-
   /*
    * OCR and copied PDFs often merge headings or adjacent columns into
    * a dish line. At this point splitMenuText has already removed prose,
-   * so retain catalog matches even when presentation words remain.
+   * so search all safe variants in one indexed catalog pass.
    */
-  for (const candidate of candidates) {
-    const matchedDishes =
-      findDishesInText(candidate, true);
+  const matchedDishes = findDishesInText(
+    candidates.join(' | '),
+    true,
+  );
 
-    if (matchedDishes.length) {
-      return matchedDishes;
-    }
+  if (matchedDishes.length) {
+    return matchedDishes;
   }
 
-  for (const candidate of candidates) {
+  const fuzzyCandidates = Array.from(
+    new Set([
+      candidates[0],
+      candidates[1],
+      candidates[candidates.length - 1],
+    ].filter((candidate): candidate is string => Boolean(candidate))),
+  );
+
+  for (const candidate of fuzzyCandidates) {
     const fuzzyMatch =
       findFuzzyDishByName(
         candidate,

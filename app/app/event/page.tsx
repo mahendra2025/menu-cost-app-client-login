@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -65,6 +66,10 @@ export default function EventPage() {
   const [uploadStatus, setUploadStatus] =
     useState('');
 
+  const catalogSyncRef = useRef<
+    ReturnType<typeof syncDishCostItemsFromServer> | null
+  >(null);
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -76,6 +81,9 @@ export default function EventPage() {
       );
 
       setWork(savedWork);
+
+      catalogSyncRef.current =
+        syncDishCostItemsFromServer();
     }
   }, []);
 
@@ -140,11 +148,14 @@ export default function EventPage() {
        * This ensures newly added Admin dishes can be detected even
        * when this browser still has an older local catalog.
        */
-      await syncDishCostItemsFromServer();
+      await (
+        catalogSyncRef.current ??
+        syncDishCostItemsFromServer()
+      );
 
       /*
        * parseMenuText reads dishes from
-       * the static dishCostMaster.
+       * the refreshed indexed catalog.
        *
        * Catalog matches receive their
        * catalog category and rate.

@@ -1649,6 +1649,45 @@ export const DISH_COST_ITEMS: DishCostItem[] = buildDefaultDishCatalog(
   DISH_COST_ITEMS_PART_3,
 );
 
+type DishSearchEntry = {
+  dish: DishCostItem;
+  candidates: string[];
+  phoneticKeys?: Set<string>;
+};
+
+let runtimeDishCostItems: DishCostItem[] | null = null;
+let runtimeDishSearchIndex: {
+  catalog: DishCostItem[];
+  entries: DishSearchEntry[];
+} | null = null;
+
+function invalidateDishSearchIndex() {
+  runtimeDishSearchIndex = null;
+}
+
+function getDishSearchIndex(): DishSearchEntry[] {
+  const catalog = getDishCostItems();
+
+  if (runtimeDishSearchIndex?.catalog === catalog) {
+    return runtimeDishSearchIndex.entries;
+  }
+
+  const entries = catalog.map((dish) => {
+    const rawCandidates = [dish.name, ...(dish.aliases ?? [])];
+    const candidates = Array.from(
+      new Set(rawCandidates.map(normalizeDishName).filter(Boolean)),
+    );
+
+    return {
+      dish,
+      candidates,
+    };
+  });
+
+  runtimeDishSearchIndex = { catalog, entries };
+  return entries;
+}
+
 function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishCostItem | null {
   if (!item?.name || !item?.category) return null;
   if (!CATEGORIES.includes(item.category)) return null;
@@ -1669,21 +1708,29 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
 
 export function getDishCostItems(): DishCostItem[] {
   if (typeof window === 'undefined') return DISH_COST_ITEMS;
+  if (runtimeDishCostItems) return runtimeDishCostItems;
 
   try {
     const raw = window.localStorage.getItem(DISH_MASTER_STORAGE_KEY);
-    if (!raw) return DISH_COST_ITEMS;
+    if (!raw) {
+      runtimeDishCostItems = DISH_COST_ITEMS;
+      return runtimeDishCostItems;
+    }
     const parsed = JSON.parse(raw) as Array<Partial<DishCostItem>>;
     const cleaned = parsed.map((item) => sanitizeDishItem(item)).filter((item): item is DishCostItem => item !== null);
-    return cleaned.length ? cleaned : DISH_COST_ITEMS;
+    runtimeDishCostItems = cleaned.length ? cleaned : DISH_COST_ITEMS;
+    return runtimeDishCostItems;
   } catch {
-    return DISH_COST_ITEMS;
+    runtimeDishCostItems = DISH_COST_ITEMS;
+    return runtimeDishCostItems;
   }
 }
 
 export function saveDishCostItems(items: DishCostItem[]) {
   if (typeof window === 'undefined') return;
   const cleaned = items.map((item) => sanitizeDishItem(item)).filter((item): item is DishCostItem => item !== null);
+  runtimeDishCostItems = cleaned.length ? cleaned : DISH_COST_ITEMS;
+  invalidateDishSearchIndex();
   window.localStorage.setItem(DISH_MASTER_STORAGE_KEY, JSON.stringify(cleaned));
 }
 
@@ -1732,6 +1779,8 @@ export function mergeDishCatalog(items: Array<Partial<DishCostItem> | null | und
 
 export function resetDishCostItems() {
   if (typeof window === 'undefined') return;
+  runtimeDishCostItems = null;
+  invalidateDishSearchIndex();
   window.localStorage.removeItem(DISH_MASTER_STORAGE_KEY);
 }
 
@@ -2010,15 +2059,7 @@ export function findDishesInText(
     length: number;
   }> = [];
 
-  getDishCostItems().forEach((dish) => {
-    const candidates = Array.from(
-      new Set(
-        [dish.name, ...(dish.aliases ?? [])]
-          .map(normalizeDishName)
-          .filter(Boolean),
-      ),
-    );
-
+  getDishSearchIndex().forEach(({ dish, candidates }) => {
     candidates.forEach((candidate) => {
       const needle = ` ${candidate} `;
       let searchFrom = 0;
@@ -2147,11 +2188,14 @@ export function findFuzzyDishByName(
   const phoneticMatches = new Map<string, DishCostItem>();
 
   if (inputPhoneticKey.replace(/\s/g, '').length >= 3) {
-    getDishCostItems().forEach((dish) => {
-      const hasPhoneticMatch = [dish.name, ...(dish.aliases ?? [])]
-        .some((candidate) =>
-          phoneticDishKey(candidate) === inputPhoneticKey,
-        );
+    getDishSearchIndex().forEach((entry) => {
+      entry.phoneticKeys ??= new Set(
+        [entry.dish.name, ...(entry.dish.aliases ?? [])]
+          .map(phoneticDishKey)
+          .filter(Boolean),
+      );
+      const dish = entry.dish;
+      const hasPhoneticMatch = entry.phoneticKeys.has(inputPhoneticKey);
 
       if (hasPhoneticMatch) {
         phoneticMatches.set(
@@ -2186,13 +2230,9 @@ export function findFuzzyDishByName(
     categoryPenalty: number;
   }> = [];
 
-  getDishCostItems().forEach((dish) => {
-    const candidates = Array.from(
-      new Set(
-        [dish.name, ...(dish.aliases ?? [])]
-          .map(normalizeDishName)
-          .filter((candidate) => candidate.length >= 4),
-      ),
+  getDishSearchIndex().forEach(({ dish, candidates: indexedCandidates }) => {
+    const candidates = indexedCandidates.filter(
+      (candidate) => candidate.length >= 4,
     );
 
     candidates.forEach((candidate) => {
