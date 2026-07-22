@@ -456,6 +456,21 @@ export default function MenuPage() {
       ? newDishPreview?.detectedRate ?? 0
       : Math.max(0, Number(newRate) || 0);
 
+  function focusQuickAdd() {
+    document
+      .getElementById('menuQuickAdd')
+      ?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+
+    window.setTimeout(() => {
+      document
+        .getElementById('newDish')
+        ?.focus();
+    }, 450);
+  }
+
   function persist(next: WorkState) {
     if (!session) return;
 
@@ -861,12 +876,24 @@ export default function MenuPage() {
             </p>
           </div>
 
-          <div className="menu-overview-metrics" aria-label="Menu summary">
-            <span><b>{work.menu.length}</b> dishes</span>
-            <span><b>{menuFunctionGroups.length}</b> functions</span>
-            <span className={manualRateCount > 0 ? 'needs-attention' : 'is-complete'}>
-              <b>{manualRateCount}</b> rates missing
-            </span>
+          <div className="menu-overview-side">
+            <button
+              className="menu-add-dish-button"
+              type="button"
+              onClick={focusQuickAdd}
+              aria-label="Add a dish"
+            >
+              <span aria-hidden="true">+</span>
+              Add dish
+            </button>
+
+            <div className="menu-overview-metrics" aria-label="Menu summary">
+              <span><b>{work.menu.length}</b> dishes</span>
+              <span><b>{menuFunctionGroups.length}</b> functions</span>
+              <span className={manualRateCount > 0 ? 'needs-attention' : 'is-complete'}>
+                <b>{manualRateCount}</b> rates missing
+              </span>
+            </div>
           </div>
         </div>
 
@@ -934,7 +961,7 @@ export default function MenuPage() {
           </div>
         ) : null}
 
-        <div className="glass-card menu-quick-add-card">
+        <div id="menuQuickAdd" className="glass-card menu-quick-add-card">
           <div className="menu-section-heading">
             <div>
               <div className="section-kicker">Quick Add</div>

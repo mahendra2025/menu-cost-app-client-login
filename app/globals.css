@@ -2756,6 +2756,46 @@ td:last-child {
   line-height: 1.5;
 }
 
+.menu-overview-side {
+  display: grid;
+  justify-items: end;
+  gap: 13px;
+}
+
+.menu-add-dish-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 14px 8px 9px;
+  border: 0;
+  border-radius: 13px;
+  color: #fff;
+  background: linear-gradient(135deg, #172235, #0868dc);
+  box-shadow: 0 8px 18px rgba(8, 104, 220, 0.2);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.menu-add-dish-button span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.menu-add-dish-button:hover { transform: translateY(-1px); box-shadow: 0 11px 24px rgba(8, 104, 220, 0.25); }
+.menu-add-dish-button:focus-visible { outline: 0; box-shadow: var(--focus-ring), 0 11px 24px rgba(8, 104, 220, 0.25); }
+.menu-quick-add-card { scroll-margin-top: 22px; }
+
 .menu-overview-metrics {
   display: flex;
   align-items: center;
@@ -2926,6 +2966,8 @@ td:last-child {
   .menu-section-heading,
   .menu-next-step { align-items: stretch; flex-direction: column; }
   .menu-overview { gap: 15px; padding: 18px; }
+  .menu-overview-side { justify-items: stretch; }
+  .menu-add-dish-button { width: 100%; min-height: 48px; font-size: 13px; }
   .menu-overview-metrics { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
   .menu-section-heading > .badge { align-self: flex-start; }
   .menu-review-toolbar { align-items: stretch; flex-direction: column; }
