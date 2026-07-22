@@ -106,6 +106,12 @@ export default function MenuPage() {
   const [pageMessage, setPageMessage] =
     useState<PageMessage>(null);
 
+  const [menuQuery, setMenuQuery] =
+    useState('');
+
+  const [showMissingOnly, setShowMissingOnly] =
+    useState(false);
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -312,6 +318,32 @@ export default function MenuPage() {
 
     return Array.from(functions.values());
   }, [work]);
+
+  const visibleFunctionGroups = useMemo(() => {
+    const query = normalizeDishKey(menuQuery);
+
+    return menuFunctionGroups
+      .map((functionGroup) => ({
+        ...functionGroup,
+        items: functionGroup.items.filter((item) => {
+          const matchesQuery =
+            !query ||
+            normalizeDishKey(
+              `${item.name} ${item.category} ${item.dayLabel ?? ''} ${item.mealLabel ?? ''}`,
+            ).includes(query);
+          const matchesRate =
+            !showMissingOnly ||
+            !(Number(item.costPerPlate) > 0);
+
+          return matchesQuery && matchesRate;
+        }),
+      }))
+      .filter((functionGroup) => functionGroup.items.length > 0);
+  }, [menuFunctionGroups, menuQuery, showMissingOnly]);
+
+  const menuReady =
+    Boolean(work?.menu.length) &&
+    manualRateCount === 0;
 
   /*
    * Only show the meal selector when Event Page
@@ -711,6 +743,15 @@ export default function MenuPage() {
         (item) => item.id === id,
       );
 
+    if (
+      selectedDish &&
+      !window.confirm(
+        `Remove ${selectedDish.name} from this menu?`,
+      )
+    ) {
+      return;
+    }
+
     persist({
       ...work,
       menu: work.menu.filter(
@@ -785,9 +826,37 @@ export default function MenuPage() {
   return (
     <AppShell
       title="Menu"
-      subtitle="Check dishes, categories and manual rates"
+      subtitle="Review dishes, serving sizes and rates before manpower planning"
     >
       <section className="content-grid">
+        <div className={`menu-overview ${menuReady ? 'is-ready' : 'needs-review'}`}>
+          <div>
+            <span className="section-kicker">Menu readiness</span>
+            <h2>
+              {menuReady
+                ? 'Your menu is ready'
+                : manualRateCount > 0
+                  ? `${manualRateCount} rate${manualRateCount === 1 ? '' : 's'} need attention`
+                  : 'Build your event menu'}
+            </h2>
+            <p>
+              {menuReady
+                ? 'All dishes have a rate. Continue to plan the service team.'
+                : manualRateCount > 0
+                  ? 'Enter the highlighted rates to unlock the next step.'
+                  : 'Add dishes manually or return to Event to detect them from your menu text.'}
+            </p>
+          </div>
+
+          <div className="menu-overview-metrics" aria-label="Menu summary">
+            <span><b>{work.menu.length}</b> dishes</span>
+            <span><b>{menuFunctionGroups.length}</b> functions</span>
+            <span className={manualRateCount > 0 ? 'needs-attention' : 'is-complete'}>
+              <b>{manualRateCount}</b> rates missing
+            </span>
+          </div>
+        </div>
+
         <div className="stat-grid">
           <div className="stat-card">
             <small>Step</small>
@@ -828,29 +897,16 @@ export default function MenuPage() {
           </div>
 
           <div className="stat-card">
-            <small>Next</small>
-            <strong>Cost</strong>
-            <span>Per plate</span>
+            <small>Status</small>
+            <strong>{menuReady ? 'Ready' : 'Review'}</strong>
+            <span>{menuReady ? 'Continue to manpower' : 'Complete missing details'}</span>
           </div>
         </div>
 
         {pageMessage ? (
           <div
-            className="helper-card"
+            className={`menu-page-message ${pageMessage.type}`}
             role="alert"
-            style={{
-              borderColor:
-                pageMessage.type ===
-                'error'
-                  ? 'rgba(239, 68, 68, 0.45)'
-                  : 'rgba(34, 197, 94, 0.45)',
-
-              background:
-                pageMessage.type ===
-                'error'
-                  ? 'rgba(239, 68, 68, 0.08)'
-                  : 'rgba(34, 197, 94, 0.08)',
-            }}
           >
             <b>
               {pageMessage.type ===
@@ -865,38 +921,19 @@ export default function MenuPage() {
           </div>
         ) : null}
 
-        <div className="glass-card">
-          <div className="section-kicker">
-            Quick Add
-          </div>
+        <div className="glass-card menu-quick-add-card">
+          <div className="menu-section-heading">
+            <div>
+              <div className="section-kicker">Quick Add</div>
+              <h2>Add a missing dish</h2>
+              <p>Catalog matches fill the category, serving size and rate automatically.</p>
+            </div>
 
-          <h2>Add Dish</h2>
-
-          <div
-            className="helper-card"
-            style={{
-              marginBottom: 16,
-            }}
-          >
-            <b>
-              Add missing dishes
-            </b>
-
-            <p>
-              The catalog category and
-              rate are detected
-              automatically. You can
-              change the rate manually
-              before adding the dish.
-            </p>
+            <span className="badge green">Saved instantly</span>
           </div>
 
           <div
-            className="form-grid"
-            style={{
-              gridTemplateColumns:
-                'repeat(auto-fit, minmax(190px, 1fr))',
-            }}
+            className="form-grid menu-quick-add-grid"
           >
             {weddingServices.length > 0 ? (
               <div className="field">
@@ -1156,40 +1193,25 @@ export default function MenuPage() {
           ) : null}
         </div>
 
-        <div className="glass-card">
-          <div className="section-kicker">
-            Review Items
+        <div className="glass-card menu-review-card">
+          <div className="menu-section-heading">
+            <div>
+              <div className="section-kicker">Review Items</div>
+              <h2>Check menu details</h2>
+              <p>Update dish names, categories, serving sizes and per-plate rates.</p>
+            </div>
+
+            <span className={`badge ${menuReady ? 'green' : 'orange'}`}>
+              {menuReady
+                ? 'Ready for manpower'
+                : work.menu.length === 0
+                  ? 'No dishes yet'
+                  : `${manualRateCount} missing rates`}
+            </span>
           </div>
 
-          <h2>Detected Menu Items</h2>
-
-          <p className="muted">
-            Review each detected dish.
-            You can rename it, change
-            its category, edit its
-            serving quantity and enter
-            a manual rate per plate.
-            Changing serving quantity
-            adjusts the rate
-            proportionally. Wedding
-            dishes are separated by
-            function, and category
-            portions are shared only
-            within the same function.
-          </p>
-
           {manualRateCount > 0 ? (
-            <div
-              className="helper-card"
-              role="alert"
-              style={{
-                marginBottom: 16,
-                borderColor:
-                  'rgba(239, 68, 68, 0.45)',
-                background:
-                  'rgba(239, 68, 68, 0.08)',
-              }}
-            >
+            <div className="menu-rate-alert" role="alert">
               <b>
                 {manualRateCount}{' '}
                 {manualRateCount === 1
@@ -1201,6 +1223,46 @@ export default function MenuPage() {
               <p>
                 These dishes were not found in the catalog. Enter each rate before calculating cost.
               </p>
+            </div>
+          ) : null}
+
+          {work.menu.length > 0 ? (
+            <div className="menu-review-toolbar">
+              <div className="menu-search-field">
+                <label htmlFor="menuSearch">Find a dish</label>
+                <input
+                  id="menuSearch"
+                  className="input input-large"
+                  type="search"
+                  value={menuQuery}
+                  onChange={(event) => setMenuQuery(event.target.value)}
+                  placeholder="Search dish, category or function"
+                />
+              </div>
+
+              <button
+                className={`menu-filter-toggle ${showMissingOnly ? 'is-active' : ''}`}
+                type="button"
+                aria-pressed={showMissingOnly}
+                onClick={() => setShowMissingOnly((current) => !current)}
+              >
+                <span aria-hidden="true">{showMissingOnly ? '✓' : '○'}</span>
+                Missing rates only
+                {manualRateCount > 0 ? <b>{manualRateCount}</b> : null}
+              </button>
+
+              {(menuQuery || showMissingOnly) ? (
+                <button
+                  className="ghost-button menu-clear-filter"
+                  type="button"
+                  onClick={() => {
+                    setMenuQuery('');
+                    setShowMissingOnly(false);
+                  }}
+                >
+                  Clear filters
+                </button>
+              ) : null}
             </div>
           ) : null}
 
@@ -1222,7 +1284,7 @@ export default function MenuPage() {
           ) : null}
 
           <div className="menu-service-groups">
-            {menuFunctionGroups.map((service) => (
+            {visibleFunctionGroups.map((service) => (
               <section
                 className="menu-service-group"
                 key={service.groupKey}
@@ -1267,7 +1329,7 @@ export default function MenuPage() {
                   {service.items.map(
                     (item) => (
                 <div
-                  className="menu-row"
+                  className={`menu-row ${Number(item.costPerPlate) > 0 ? '' : 'menu-row-missing'}`}
                   key={item.id}
                 >
                   <div className="menu-cell">
@@ -1411,35 +1473,34 @@ export default function MenuPage() {
                       Rate / Plate
                     </span>
 
-                    <input
-                      className="input input-large"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={
-                        Number(item.costPerPlate) > 0
-                          ? item.costPerPlate
-                          : ''
-                      }
-                      onChange={(event) =>
-                        updateItem(
-                          item.id,
-                          {
-                            costPerPlate:
-                              Math.max(
-                                0,
-                                Number(
-                                  event
-                                    .target
-                                    .value,
-                                ) || 0,
-                              ),
-                          },
-                        )
-                      }
-                      placeholder="Enter manual rate"
-                    />
+                    <div className="menu-rate-input">
+                      <span aria-hidden="true">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        aria-label={`Rate per plate for ${item.name}`}
+                        value={
+                          Number(item.costPerPlate) > 0
+                            ? item.costPerPlate
+                            : ''
+                        }
+                        onChange={(event) =>
+                          updateItem(
+                            item.id,
+                            {
+                              costPerPlate:
+                                Math.max(
+                                  0,
+                                  Number(event.target.value) || 0,
+                                ),
+                            },
+                          )
+                        }
+                        placeholder="Enter rate"
+                      />
+                    </div>
 
                     {Number(item.costPerPlate) <= 0 ? (
                       <small className="field-error">
@@ -1449,7 +1510,7 @@ export default function MenuPage() {
                   </div>
 
                   <button
-                    className="danger-button"
+                    className="menu-remove-button"
                     type="button"
                     onClick={() =>
                       removeDish(item.id)
@@ -1465,7 +1526,37 @@ export default function MenuPage() {
             ))}
           </div>
 
-          <div className="action-row page-actions">
+          {work.menu.length > 0 && visibleFunctionGroups.length === 0 ? (
+            <div className="menu-review-empty">
+              <span aria-hidden="true">⌕</span>
+              <h3>No matching dishes</h3>
+              <p>Try another search or clear the active filters.</p>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => {
+                  setMenuQuery('');
+                  setShowMissingOnly(false);
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : null}
+
+          <div className={`menu-next-step ${menuReady ? 'is-ready' : ''}`}>
+            <div>
+              <strong>{menuReady ? 'Menu review complete' : 'Complete your menu review'}</strong>
+              <span>
+                {menuReady
+                  ? 'Next, plan the manpower required for each function.'
+                  : work.menu.length === 0
+                    ? 'Add at least one dish before continuing.'
+                    : `${manualRateCount} dish rate${manualRateCount === 1 ? '' : 's'} must be added before continuing.`}
+              </span>
+            </div>
+
+            <div className="action-row page-actions">
             <button
               className="primary-button"
               type="button"
@@ -1485,6 +1576,7 @@ export default function MenuPage() {
             >
               Back to Event
             </button>
+            </div>
           </div>
         </div>
 
