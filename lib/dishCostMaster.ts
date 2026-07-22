@@ -1995,7 +1995,10 @@ export function findDishByNameInItems(
  * several dishes on one line, so the menu parser needs all non-overlapping
  * matches in their original order.
  */
-export function findDishesInText(value: string): DishCostItem[] {
+export function findDishesInText(
+  value: string,
+  allowUnmatchedWords = false,
+): DishCostItem[] {
   const normalizedValue = normalizeDishName(value);
   if (!normalizedValue) return [];
 
@@ -2111,7 +2114,7 @@ export function findDishesInText(value: string): DishCostItem[] {
     .filter(Boolean)
     .filter((word) => !allowedRemainingWords.has(word));
 
-  if (unexpectedWords.length) return [];
+  if (unexpectedWords.length && !allowUnmatchedWords) return [];
 
   const seenDishes = new Set<string>();
 

@@ -415,6 +415,11 @@ const MENU_HEADINGS = new Set([
   'rajasthani',
   'live counter',
   'live counters',
+  'snack',
+  'snacks',
+  'accompaniment',
+  'accompaniments',
+  'papad pickle',
 ]);
 
 const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
@@ -473,6 +478,11 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   rajasthani: 'Rajasthani',
   'live counter': 'Live Counter',
   'live counters': 'Live Counter',
+  snack: 'Starter',
+  snacks: 'Starter',
+  accompaniment: 'Condiments',
+  accompaniments: 'Condiments',
+  'papad pickle': 'Condiments',
   juice: 'Welcome Drink',
   juices: 'Welcome Drink',
   'indian bread': 'Bread',
@@ -546,6 +556,32 @@ function normalizeMenuHeading(value: string): string {
 
   return normalizeText(text);
 }
+
+const MEAL_SERVICE_LABELS: Record<string, string> = {
+  breakfast: 'Breakfast',
+  brunch: 'Brunch',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  'hi tea': 'Hi Tea',
+  'high tea': 'High Tea',
+  snacks: 'Snacks',
+  'evening snacks': 'Evening Snacks',
+  'morning snacks': 'Morning Snacks',
+  reception: 'Reception',
+  sangeet: 'Sangeet',
+  mehendi: 'Mehendi',
+  haldi: 'Haldi',
+  'wedding dinner': 'Wedding Dinner',
+  'dj night': 'DJ Night',
+  'cocktail dinner': 'Cocktail Dinner',
+  'स्वागत': 'स्वागत',
+  'नाश्ता': 'नाश्ता',
+  'दोपहर का भोजन': 'दोपहर का भोजन',
+  'रात्रि भोजन': 'रात्रि भोजन',
+  'સવારનો નાસ્તો': 'સવારનો નાસ્તો',
+  'બપોરનું ભોજન': 'બપોરનું ભોજન',
+  'રાત્રિ ભોજન': 'રાત્રિ ભોજન',
+};
 
 const COMMON_DISH_ALIASES: Record<
   string,
@@ -786,6 +822,7 @@ type ParsedMenuLine = {
   dayLabel?: string;
   mealLabel?: string;
   servicePax?: number;
+  explicitItem?: boolean;
 };
 
 const NON_DISH_TEXT_PATTERN =
@@ -818,15 +855,16 @@ function isClearlyNonDishText(value: string): boolean {
 function isLikelyUnknownDish(
   value: string,
   categoryHint?: Category,
+  explicitItem = false,
 ): boolean {
   if (isClearlyNonDishText(value)) return false;
-  if (/[!?]|\.(?:\s|$)/.test(value)) return false;
+  if (!explicitItem && /[!?]|\.(?:\s|$)/.test(value)) return false;
 
   const words = normalizeMenuHeading(value)
     .split(' ')
     .filter(Boolean);
 
-  if (!words.length || words.length > 7) return false;
+  if (!words.length || words.length > (explicitItem ? 14 : 7)) return false;
 
   if (categoryHint) return true;
 
@@ -856,6 +894,74 @@ function cleanServiceLabel(value: string): string {
     .replace(/^[^\p{L}\p{N}]+/u, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function normalizeOcrMenuText(value: string): string {
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/[¦‖]/g, '|')
+    .replace(/[·∙]/g, '•')
+    .replace(/([\p{L}\p{M}])-\s*\n\s*([\p{Ll}\p{M}])/gu, '$1$2')
+    .replace(/[ \t]{3,}/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function parseDayHeading(value: string): string | undefined {
+  const normalized = normalizeMenuHeading(value)
+    .replace(/\b(?:date|menu)\b.*$/i, '')
+    .trim();
+  const match = normalized.match(
+    /^(?:day\s*[-:]?\s*(\d+)|(\d+)(?:st|nd|rd|th)?\s*day)$/i,
+  );
+  const dayNumber = match?.[1] || match?.[2];
+  return dayNumber ? `Day ${dayNumber}` : undefined;
+}
+
+function parseServiceHeading(value: string): {
+  mealLabel: string;
+  servicePax?: number;
+} | null {
+  const cleaned = cleanServiceLabel(value)
+    .replace(/^(?:function|meal|service)\s*[:\-]\s*/i, '')
+    .trim();
+  const normalized = normalizeMenuHeading(cleaned);
+  const plainMeal = MEAL_SERVICE_LABELS[normalized];
+
+  if (plainMeal) return { mealLabel: plainMeal };
+
+  const trailingPax = cleaned.match(
+    /^(.*?)\s*(?:[-–—|:]|\()\s*(?:(?:pax|members?|guests?|persons?|people)\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(?:pax|members?|guests?|persons?|people)?\s*\)?\s*$/i,
+  );
+  const leadingPax = cleaned.match(
+    /^(?:pax|members?|guests?|persons?|people)?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(?:pax|members?|guests?|persons?|people)\s*[-–—|:]?\s*(.+)$/i,
+  );
+  const simpleTrailingPax = cleaned.match(
+    /^(.*?)\s+(\d+(?:\.\d+)?)\s*(?:pax|members?|guests?|persons?|people)\s*$/i,
+  );
+  const labelSource = trailingPax?.[1] || leadingPax?.[2] || simpleTrailingPax?.[1] || '';
+  const paxSource = trailingPax?.[2] || leadingPax?.[1] || simpleTrailingPax?.[2] || '';
+  const mealKey = normalizeMenuHeading(labelSource);
+  const knownMeal = MEAL_SERVICE_LABELS[mealKey];
+  const servicePax = Math.max(0, Number(paxSource) || 0);
+  const customMealLabel = cleanServiceLabel(labelSource);
+  const customMealWords = normalizeMenuHeading(customMealLabel)
+    .split(' ')
+    .filter(Boolean);
+
+  if (
+    !knownMeal &&
+    (!(servicePax > 0) || !customMealWords.length || customMealWords.length > 7)
+  ) return null;
+
+  return {
+    mealLabel: knownMeal || customMealLabel,
+    servicePax: servicePax > 0 ? servicePax : undefined,
+  };
 }
 
 function inferFallbackCategory(
@@ -914,6 +1020,36 @@ function inferFallbackCategory(
     return 'Farsan';
   }
 
+  if (categoryHint) return categoryHint;
+
+  if (/\b(?:mocktail|mojito|blue lagoon|fruit punch)\b/i.test(normalized)) {
+    return 'Mocktail';
+  }
+
+  if (/\b(?:soup|shorba|manchow)\b/i.test(normalized)) {
+    return 'Soup';
+  }
+
+  if (/\b(?:chaat|pani puri|bhel|sev puri|dahi puri)\b/i.test(normalized)) {
+    return 'Chaat';
+  }
+
+  if (/\b(?:rice|pulao|biryani|khichdi)\b/i.test(normalized)) {
+    return 'Rice';
+  }
+
+  if (/\b(?:dal|daal|kadhi)\b/i.test(normalized)) {
+    return 'Dal / Kadhi';
+  }
+
+  if (/\b(?:ice cream|kulfi)\b/i.test(normalized)) {
+    return 'Ice Cream';
+  }
+
+  if (/\b(?:papad|papadum)\b/i.test(normalized)) {
+    return 'Papad';
+  }
+
   const detectedCategory = detectCategory(value);
   const hasSpecificDetectedCategory =
     detectedCategory !== 'Sabji' ||
@@ -929,11 +1065,18 @@ function inferFallbackCategory(
 function splitMenuText(
   text: string,
 ): ParsedMenuLine[] {
-  const normalizedServiceHeadings = text.replace(
-    /(?:^|\n)\s*day\s*(\d+)\s*[•▪●◦|]\s*([^\n•▪●◦|]+?)\s*[•▪●◦|]\s*(\d+(?:\.\d+)?)\s*(?:members?|pax|guests?|persons?|people)\s*(?=\n|$)/gi,
-    (_match, dayNumber: string, mealLabel: string, memberCount: string) =>
-      `\nDay ${dayNumber}\n${cleanServiceLabel(mealLabel)} - ${memberCount} members\n`,
-  );
+  const normalizedText = normalizeOcrMenuText(text);
+  const normalizedServiceHeadings = normalizedText
+    .replace(
+      /(?:^|\n)\s*(?:function|meal|service)\s*:\s*([^\n|,]+?)\s*[|,]\s*(?:members?|pax|guests?|persons?|people)\s*:\s*(\d+(?:\.\d+)?)\s*(?=\n|$)/gi,
+      (_match, mealLabel: string, memberCount: string) =>
+        `\n${cleanServiceLabel(mealLabel)} - ${memberCount} members\n`,
+    )
+    .replace(
+      /(?:^|\n)\s*day\s*[-:]?\s*(\d+)\s*[•▪●◦|–—-]\s*([^\n•▪●◦|–—]+?)\s*[•▪●◦|–—-]\s*(\d+(?:\.\d+)?)\s*(?:members?|pax|guests?|persons?|people)\s*(?=\n|$)/gi,
+      (_match, dayNumber: string, mealLabel: string, memberCount: string) =>
+        `\nDay ${dayNumber}\n${cleanServiceLabel(mealLabel)} - ${memberCount} members\n`,
+    );
 
   const rawSegments = protectParentheticalSlashes(normalizedServiceHeadings)
     .replace(/\r/g, '\n')
@@ -984,35 +1127,37 @@ function splitMenuText(
         .trim();
     }
 
-    const rawHeadingKey = normalizeMenuHeading(segment);
+    const dayLabel = parseDayHeading(segment);
 
-    const dayMatch = rawHeadingKey.match(/^day\s*(\d+)$/i);
-
-    if (dayMatch) {
+    if (dayLabel) {
       activeCategory = undefined;
-      activeDayLabel = `Day ${dayMatch[1]}`;
+      activeDayLabel = dayLabel;
       activeMealLabel = undefined;
       activeServicePax = undefined;
       activeServiceId = undefined;
       continue;
     }
 
-    const serviceMatch = segment.match(
-      /^(.*?)\s*[–—-]\s*(\d+(?:\.\d+)?)\s*(?:members?|pax|guests?|persons?|people)\s*$/i,
+    const paxOnlyMatch = segment.match(
+      /^(?:pax|members?|guests?|persons?|people)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*$/i,
+    ) || segment.match(
+      /^(\d+(?:\.\d+)?)\s*(?:pax|members?|guests?|persons?|people)\s*$/i,
     );
 
-    if (serviceMatch) {
-      const mealLabel = cleanServiceLabel(serviceMatch[1]);
-      const servicePax = Math.max(0, Number(serviceMatch[2]) || 0);
+    if (paxOnlyMatch && activeMealLabel) {
+      activeServicePax = Math.max(0, Number(paxOnlyMatch[1]) || 0) || undefined;
+      continue;
+    }
 
-      if (mealLabel && servicePax > 0) {
-        serviceIndex += 1;
-        activeCategory = undefined;
-        activeMealLabel = mealLabel;
-        activeServicePax = servicePax;
-        activeServiceId = `service_${serviceIndex}`;
-        continue;
-      }
+    const serviceHeading = parseServiceHeading(segment);
+
+    if (serviceHeading) {
+      serviceIndex += 1;
+      activeCategory = undefined;
+      activeMealLabel = serviceHeading.mealLabel;
+      activeServicePax = serviceHeading.servicePax;
+      activeServiceId = `service_${serviceIndex}`;
+      continue;
     }
 
     let lineCategory = activeCategory;
@@ -1026,6 +1171,7 @@ function splitMenuText(
       if (headingKey in MENU_HEADING_CATEGORIES) {
         lineCategory =
           MENU_HEADING_CATEGORIES[headingKey] ?? undefined;
+        activeCategory = lineCategory;
         segment = headingWithItems[2].trim();
 
         if (!cleanMenuLine(segment)) {
@@ -1038,13 +1184,7 @@ function splitMenuText(
     const wholeSegmentKey = normalizeMenuHeading(segment);
 
     if (
-      wholeSegmentKey in MENU_HEADING_CATEGORIES &&
-      (
-        !isExplicitMenuItem ||
-        /(?:counter|indian bread|dal and rice|sides)/.test(
-          wholeSegmentKey,
-        )
-      )
+      wholeSegmentKey in MENU_HEADING_CATEGORIES
     ) {
       activeCategory =
         MENU_HEADING_CATEGORIES[wholeSegmentKey] ?? undefined;
@@ -1057,13 +1197,7 @@ function splitMenuText(
     const cleanedHeadingKey = normalizeMenuHeading(line);
 
     if (
-      cleanedHeadingKey in MENU_HEADING_CATEGORIES &&
-      (
-        !isExplicitMenuItem ||
-        /(?:counter|indian bread|dal and rice|sides)/.test(
-          cleanedHeadingKey,
-        )
-      )
+      cleanedHeadingKey in MENU_HEADING_CATEGORIES
     ) {
       activeCategory =
         MENU_HEADING_CATEGORIES[cleanedHeadingKey] ?? undefined;
@@ -1119,6 +1253,7 @@ function splitMenuText(
       dayLabel: activeDayLabel,
       mealLabel: activeMealLabel,
       servicePax: activeServicePax,
+      explicitItem: isExplicitMenuItem,
     });
   }
 
@@ -1141,7 +1276,23 @@ function detectDishesFromLine(
     if (matchedDishes.length) {
       return matchedDishes;
     }
+  }
 
+  /*
+   * OCR and copied PDFs often merge headings or adjacent columns into
+   * a dish line. At this point splitMenuText has already removed prose,
+   * so retain catalog matches even when presentation words remain.
+   */
+  for (const candidate of candidates) {
+    const matchedDishes =
+      findDishesInText(candidate, true);
+
+    if (matchedDishes.length) {
+      return matchedDishes;
+    }
+  }
+
+  for (const candidate of candidates) {
     const fuzzyMatch =
       findFuzzyDishByName(
         candidate,
@@ -1221,6 +1372,7 @@ export function parseMenuText(
       !isLikelyUnknownDish(
         line,
         menuLine.categoryHint,
+        menuLine.explicitItem,
       )
     ) {
       console.info(
