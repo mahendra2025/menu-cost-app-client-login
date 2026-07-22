@@ -1617,37 +1617,64 @@ function csvToRecipeObjects(text){
   });
   return Array.from(recipeGroups.values());
 }
+function normalizeImportFieldName(value){
+  return String(value||"").trim().toLowerCase().replace(/[^a-z0-9]+/g,"");
+}
+function readImportedValue(record,...fieldNames){
+  if(!record||typeof record!=="object"||Array.isArray(record))return undefined;
+  for(const fieldName of fieldNames){
+    if(record[fieldName]!==undefined&&record[fieldName]!==null)return record[fieldName];
+  }
+  const normalizedFields=new Map(Object.entries(record).map(([key,value])=>[normalizeImportFieldName(key),value]));
+  for(const fieldName of fieldNames){
+    const value=normalizedFields.get(normalizeImportFieldName(fieldName));
+    if(value!==undefined&&value!==null)return value;
+  }
+  return undefined;
+}
 function extractRecipeObjects(parsedJson){
   if(Array.isArray(parsedJson))return parsedJson;
-  if(Array.isArray(parsedJson?.recipes))return parsedJson.recipes;
-  if(Array.isArray(parsedJson?.dishes))return parsedJson.dishes;
-  if(parsedJson&&typeof parsedJson==="object")return [parsedJson];
+  if(parsedJson&&typeof parsedJson==="object"){
+    const collection=readImportedValue(parsedJson,"recipes","dishes","recipeList","dishList","menuItems");
+    if(Array.isArray(collection))return collection;
+    return [parsedJson];
+  }
   throw new Error("JSON must contain a recipe object, an array, or { recipes: [...] }.");
 }
 function normalizeImportedRecipe(rawRecipe,index){
-  const dishName=String(rawRecipe?.dishName??rawRecipe?.name??"").trim();
-  const category=String(rawRecipe?.category??"Sabji").trim();
-  const subcategory=String(rawRecipe?.subcategory??rawRecipe?.subCategory??inferSubcategory(category,dishName)).trim();
-  const baseGuests=Number(rawRecipe?.baseGuests??rawRecipe?.guests??100);
-  const sourceIngredients=Array.isArray(rawRecipe?.ingredients)?rawRecipe.ingredients:[];
-  const ingredients=sourceIngredients.map((ingredient,ingredientIndex)=>({
-    name:String(ingredient?.name??ingredient?.ingredientName??"").trim(),
-    quantity:Number(ingredient?.quantity??ingredient?.qty??0),
-    unit:String(ingredient?.unit??"kg").trim(),
-    marketRate:Number(ingredient?.marketRate??ingredient?.rate??0),
-    rateUnit:String(ingredient?.rateUnit??ingredient?.purchaseUnit??ingredient?.unit??"kg").trim(),
-    _index:ingredientIndex+1
-  }));
+  const dishName=String(readImportedValue(rawRecipe,"dishName","recipeName","name","dish")??"").trim();
+  const category=String(readImportedValue(rawRecipe,"category","dishCategory")??"Sabji").trim();
+  const subcategory=String(readImportedValue(rawRecipe,"subcategory","subCategory","dishSubcategory")??inferSubcategory(category,dishName)).trim();
+  const baseGuests=Number(readImportedValue(rawRecipe,"baseGuests","guests","pax","members","serves")??100);
+  const rawIngredients=readImportedValue(rawRecipe,"ingredients","ingredientList","recipeIngredients","items","materials");
+  const sourceIngredients=Array.isArray(rawIngredients)
+    ?rawIngredients
+    :(rawIngredients&&typeof rawIngredients==="object"
+      ?Object.entries(rawIngredients).map(([name,value])=>value&&typeof value==="object"&&!Array.isArray(value)?{name,...value}:{name,quantity:value})
+      :[]);
+  const ingredients=sourceIngredients.map((ingredient,ingredientIndex)=>{
+    if(typeof ingredient==="string")return {name:ingredient.trim(),quantity:0,unit:"kg",marketRate:0,rateUnit:"kg",_index:ingredientIndex+1};
+    const unit=String(readImportedValue(ingredient,"unit","quantityUnit","measurementUnit","uom")??"kg").trim();
+    return {
+      name:String(readImportedValue(ingredient,"name","ingredientName","ingredient","item","material","product")??"").trim(),
+      quantity:Number(readImportedValue(ingredient,"quantity","qty","amount","requiredQuantity")??0),
+      unit,
+      marketRate:Number(readImportedValue(ingredient,"marketRate","rate","price","unitRate","cost")??0),
+      rateUnit:String(readImportedValue(ingredient,"rateUnit","purchaseUnit","priceUnit","ratePer")??unit).trim(),
+      _index:ingredientIndex+1
+    };
+  });
+  const servingSizeValue=readImportedValue(rawRecipe,"servingSize","portionSize","servingQuantity");
   const recipe={
     dishName,
     category,
     subcategory,
     baseGuests,
-    ...(rawRecipe?.servingSize!==undefined&&rawRecipe?.servingSize!==""?{
-      servingSize:Number(rawRecipe.servingSize),
-      servingUnit:String(rawRecipe?.servingUnit??"gram").trim()
+    ...(servingSizeValue!==undefined&&servingSizeValue!==""?{
+      servingSize:Number(servingSizeValue),
+      servingUnit:String(readImportedValue(rawRecipe,"servingUnit","portionUnit")??"gram").trim()
     }:{}),
-    dishRate:Number(rawRecipe?.dishRate??rawRecipe?.catalogRate??0)||0,
+    dishRate:Number(readImportedValue(rawRecipe,"dishRate","catalogRate","perPersonCost","sellingRate")??0)||0,
     ingredients
   };
   const validationErrors=validateDishJson(recipe);
@@ -1656,23 +1683,28 @@ function normalizeImportedRecipe(rawRecipe,index){
   }
   return recipe;
 }
-function recipeObjectToDish(recipe,existingId){
+function recipeObjectToDish(recipe,existingId,newIngredientIds){
   const mappedIngredients=recipe.ingredients.map(ingredient=>{
     const rateId=normalizeKey(ingredient.name,ingredient.rateUnit);
     const existingRate=rates.find(rate=>rate.id===rateId);
+    const importedRate=Math.max(0,Number(ingredient.marketRate)||0);
+    let effectiveRate=importedRate;
     if(existingRate){
       existingRate.name=ingredient.name;
-      existingRate.rate=Number(ingredient.marketRate);
+      if(importedRate>0)existingRate.rate=importedRate;
       existingRate.unit=ingredient.rateUnit;
+      existingRate.category=existingRate.category||inferIngredientCategory(ingredient.name);
+      effectiveRate=Math.max(0,Number(existingRate.rate)||0);
     }else{
-      rates.push({id:rateId,name:ingredient.name,rate:Number(ingredient.marketRate),unit:ingredient.rateUnit});
+      rates.push({id:rateId,name:ingredient.name,category:inferIngredientCategory(ingredient.name),rate:importedRate,unit:ingredient.rateUnit});
+      newIngredientIds?.add(rateId);
     }
     return {
       name:ingredient.name,
       qty:Number(ingredient.quantity),
       unit:ingredient.unit,
       rateKey:rateId,
-      rate:Number(ingredient.marketRate),
+      rate:effectiveRate,
       rateUnit:ingredient.rateUnit
     };
   });
@@ -1716,13 +1748,14 @@ async function importRecipesFromFile(file){
       );
     }
     const importedRecipes=[];
+    const newIngredientIds=new Set();
     let replacedCount=0;
     let skippedCount=0;
     normalizedRecipes.forEach(recipe=>{
       const recipeKey=recipe.dishName.toLowerCase();
       const existing=existingByName.get(recipeKey);
       if(existing&&!replaceDuplicates){skippedCount++;return;}
-      const dish=recipeObjectToDish(recipe,existing?.dish.id);
+      const dish=recipeObjectToDish(recipe,existing?.dish.id,newIngredientIds);
       if(existing){
         dishes[existing.index]=dish;
         replacedCount++;
@@ -1743,10 +1776,13 @@ async function importRecipesFromFile(file){
     renderSelectedRate();
     const syncedCount=await syncRecipeCostsToDishCatalog(importedRecipes);
     const createdCount=importedRecipes.length-replacedCount;
-    const summary=`Imported ${importedRecipes.length} recipe${importedRecipes.length===1?"":"s"}: ${createdCount} new, ${replacedCount} replaced${skippedCount?`, ${skippedCount} skipped`:""}. ${syncedCount?`${syncedCount} synced to Dish Master.`:"Saved to the recipe catalog; Dish Master sync was unavailable."}`;
+    const importSummary=`Imported ${importedRecipes.length} recipe${importedRecipes.length===1?"":"s"}: ${createdCount} new, ${replacedCount} replaced${skippedCount?`, ${skippedCount} skipped`:""}.`;
+    const ingredientSummary=newIngredientIds.size?`${newIngredientIds.size} missing ingredient${newIngredientIds.size===1?"":"s"} added to Ingredient Master${Array.from(newIngredientIds).some(id=>Number(rates.find(rate=>rate.id===id)?.rate)===0)?" with ₹0 where no rate was supplied":""}.`:"";
+    const syncSummary=syncedCount?`${syncedCount} synced to Dish Master.`:"Saved to the recipe catalog; Dish Master sync was unavailable.";
+    const summary=[importSummary,ingredientSummary,syncSummary].filter(Boolean).join(" ");
     setImportSummary(summary,"ok");
     setStatus(summary,syncedCount?"ok":"error");
-    showToast(`${importedRecipes.length} recipes imported`);
+    showToast(newIngredientIds.size?`${newIngredientIds.size} missing ingredient${newIngredientIds.size===1?"":"s"} added`:`${importedRecipes.length} recipes imported`);
   }catch(error){
     const message=error instanceof Error?error.message:"Recipe import failed.";
     setImportSummary(message,"error");
