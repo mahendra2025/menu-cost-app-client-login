@@ -115,6 +115,9 @@ export default function MenuPage() {
   const [selectedFunctionId, setSelectedFunctionId] =
     useState('');
 
+  const [selectedMenuCategory, setSelectedMenuCategory] =
+    useState('');
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -329,6 +332,14 @@ export default function MenuPage() {
     )
       ? selectedFunctionId
       : '';
+    const activeCategory = menuFunctionGroups.some(
+      (functionGroup) =>
+        functionGroup.items.some(
+          (item) => item.category === selectedMenuCategory,
+        ),
+    )
+      ? selectedMenuCategory
+      : '';
 
     return menuFunctionGroups
       .filter(
@@ -347,12 +358,15 @@ export default function MenuPage() {
           const matchesRate =
             !showMissingOnly ||
             !(Number(item.costPerPlate) > 0);
+          const matchesCategory =
+            !activeCategory ||
+            item.category === activeCategory;
 
-          return matchesQuery && matchesRate;
+          return matchesQuery && matchesRate && matchesCategory;
         }),
       }))
       .filter((functionGroup) => functionGroup.items.length > 0);
-  }, [menuFunctionGroups, menuQuery, selectedFunctionId, showMissingOnly]);
+  }, [menuFunctionGroups, menuQuery, selectedFunctionId, selectedMenuCategory, showMissingOnly]);
 
   const menuReady =
     Boolean(work?.menu.length) &&
@@ -1293,6 +1307,23 @@ export default function MenuPage() {
                 </select>
               </div>
 
+              <div className="menu-category-filter">
+                <label htmlFor="categoryFilter">Category</label>
+                <select
+                  id="categoryFilter"
+                  className="select input-large"
+                  value={selectedMenuCategory}
+                  onChange={(event) => setSelectedMenuCategory(event.target.value)}
+                >
+                  <option value="">All categories</option>
+                  {grouped.map(([category, items]) => (
+                    <option key={category} value={category}>
+                      {category} • {items.length} {items.length === 1 ? 'dish' : 'dishes'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="menu-search-field">
                 <label htmlFor="menuSearch">Find a dish</label>
                 <input
@@ -1316,7 +1347,7 @@ export default function MenuPage() {
                 {manualRateCount > 0 ? <b>{manualRateCount}</b> : null}
               </button>
 
-              {(menuQuery || showMissingOnly || selectedFunctionId) ? (
+              {(menuQuery || showMissingOnly || selectedFunctionId || selectedMenuCategory) ? (
                 <button
                   className="ghost-button menu-clear-filter"
                   type="button"
@@ -1324,6 +1355,7 @@ export default function MenuPage() {
                     setMenuQuery('');
                     setShowMissingOnly(false);
                     setSelectedFunctionId('');
+                    setSelectedMenuCategory('');
                   }}
                 >
                   Clear filters
@@ -1604,6 +1636,7 @@ export default function MenuPage() {
                   setMenuQuery('');
                   setShowMissingOnly(false);
                   setSelectedFunctionId('');
+                  setSelectedMenuCategory('');
                 }}
               >
                 Clear filters
