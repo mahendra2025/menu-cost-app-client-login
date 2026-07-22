@@ -38,6 +38,12 @@ export default function EventPage() {
   const [error, setError] =
     useState('');
 
+  const [uploading, setUploading] =
+    useState<'pdf' | 'camera' | null>(null);
+
+  const [uploadStatus, setUploadStatus] =
+    useState('');
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -173,6 +179,128 @@ export default function EventPage() {
     }
   }
 
+  function saveExtractedMenu(
+    fileName: string,
+    extractedText: string,
+    sourceLabel: string,
+  ) {
+    if (!work) return;
+
+    const cleanedText = extractedText
+      .replace(/\u0000/g, '')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
+    if (!cleanedText) {
+      throw new Error(
+        `${sourceLabel} did not contain readable menu text. Try a clearer photo or paste the menu manually.`,
+      );
+    }
+
+    const nextWork: WorkState = {
+      ...work,
+      event: {
+        ...work.event,
+        uploadFileName: fileName,
+        rawMenuText: cleanedText,
+      },
+    };
+
+    persistWork(nextWork);
+    setUploadStatus(
+      `${sourceLabel} read successfully. Review the extracted text below, then continue.`,
+    );
+  }
+
+  async function readPdf(file: File) {
+    setError('');
+    setUploadStatus('Reading PDF pages...');
+    setUploading('pdf');
+
+    try {
+      if (file.size > 15 * 1024 * 1024) {
+        throw new Error('Choose a PDF smaller than 15 MB.');
+      }
+
+      const pdfjs = await import('pdfjs-dist');
+      pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.mjs',
+        import.meta.url,
+      ).toString();
+
+      const pdf = await pdfjs.getDocument({
+        data: await file.arrayBuffer(),
+      }).promise;
+
+      if (pdf.numPages > 30) {
+        throw new Error('Choose a PDF with 30 pages or fewer.');
+      }
+
+      const pages: string[] = [];
+
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        setUploadStatus(`Reading PDF page ${pageNumber} of ${pdf.numPages}...`);
+        const page = await pdf.getPage(pageNumber);
+        const content = await page.getTextContent();
+        const pageText = content.items
+          .map((item) => {
+            if (!('str' in item)) return '';
+            return `${item.str}${item.hasEOL ? '\n' : ' '}`;
+          })
+          .join('')
+          .trim();
+
+        if (pageText) pages.push(pageText);
+      }
+
+      saveExtractedMenu(file.name, pages.join('\n\n'), 'PDF');
+    } catch (uploadError) {
+      setUploadStatus('');
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : 'The PDF could not be read. Please try another file.',
+      );
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  async function readMenuPhoto(file: File) {
+    setError('');
+    setUploadStatus('Preparing menu photo...');
+    setUploading('camera');
+
+    try {
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('Choose a photo smaller than 10 MB.');
+      }
+
+      const { recognize } = await import('tesseract.js');
+      const result = await recognize(file, 'eng', {
+        logger: (message) => {
+          if (message.status === 'recognizing text') {
+            setUploadStatus(
+              `Reading menu photo... ${Math.round((message.progress ?? 0) * 100)}%`,
+            );
+          }
+        },
+      });
+
+      saveExtractedMenu(file.name, result.data.text, 'Menu photo');
+    } catch (uploadError) {
+      setUploadStatus('');
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : 'The menu photo could not be read. Please try a clearer photo.',
+      );
+    } finally {
+      setUploading(null);
+    }
+  }
+
   function clearPage() {
     if (!work) return;
 
@@ -196,6 +324,7 @@ export default function EventPage() {
     };
 
     setError('');
+    setUploadStatus('');
     persistWork(nextWork);
   }
 
@@ -447,6 +576,76 @@ export default function EventPage() {
           </div>
 
           <div className="form-grid">
+            <div className="menu-upload-options">
+              <div className="menu-upload-option">
+                <span className="menu-upload-icon" aria-hidden="true">PDF</span>
+                <div>
+                  <b>Upload menu PDF</b>
+                  <p>Select a text-based PDF up to 15 MB.</p>
+                </div>
+                <label
+                  className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                  htmlFor="menuPdf"
+                >
+                  {uploading === 'pdf' ? 'Reading...' : 'Choose PDF'}
+                </label>
+                <input
+                  id="menuPdf"
+                  className="visually-hidden-file"
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  disabled={Boolean(uploading)}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
+                    if (file) void readPdf(file);
+                  }}
+                />
+              </div>
+
+              <div className="menu-upload-option">
+                <span className="menu-upload-icon camera" aria-hidden="true">CAM</span>
+                <div>
+                  <b>Scan with camera</b>
+                  <p>Take a clear, straight photo of the menu.</p>
+                </div>
+                <label
+                  className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                  htmlFor="menuCamera"
+                >
+                  {uploading === 'camera' ? 'Scanning...' : 'Open Camera'}
+                </label>
+                <input
+                  id="menuCamera"
+                  className="visually-hidden-file"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  disabled={Boolean(uploading)}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = '';
+                    if (file) void readMenuPhoto(file);
+                  }}
+                />
+              </div>
+            </div>
+
+            {uploadStatus ? (
+              <div className="menu-upload-status" role="status" aria-live="polite">
+                <span className={uploading ? 'upload-spinner' : 'upload-check'} aria-hidden="true" />
+                <div>
+                  <b>{uploading ? 'Processing menu' : 'Menu ready to review'}</b>
+                  <p>{uploadStatus}</p>
+                  {work.event.uploadFileName && !uploading ? (
+                    <small>{work.event.uploadFileName}</small>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="menu-upload-divider"><span>or paste menu text</span></div>
+
             <div className="field">
               <label htmlFor="rawMenuText">
                 Paste Menu Text
