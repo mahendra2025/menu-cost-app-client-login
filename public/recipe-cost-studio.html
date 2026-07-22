@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>CatererOS Recipe Cost Studio</title>
+<script>
+if (new URLSearchParams(window.location.search).get('embedded') === '1') {
+  document.documentElement.dataset.embedded = 'true';
+}
+</script>
 <style>
 :root {
   color-scheme: light;
@@ -108,6 +113,8 @@ svg{display:block}
   color:var(--green);font-size:12px;font-weight:800;
 }
 .liveDot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 15%,transparent)}
+.livePill[data-state="saving"]{color:var(--blue)}
+.livePill[data-state="offline"]{color:var(--red)}
 .mobileMenu{display:none}
 .workspace{
   display:grid;
@@ -387,6 +394,13 @@ tbody tr.selected{background:var(--brand-soft)}
   font-size:13px;font-weight:750;
 }
 .toast.show{opacity:1;transform:translateY(0)}
+@media(min-width:761px){
+  html[data-embedded="true"] .topbar{display:none}
+  html[data-embedded="true"] .workspace{padding:12px}
+  html[data-embedded="true"] .sidebar,
+  html[data-embedded="true"] .inspector{top:12px;height:calc(100vh - 24px);max-height:calc(100vh - 24px)}
+  html[data-embedded="true"] .indexInspector{top:12px}
+}
 @media(max-width:1220px){
   :root{--inspector:300px;--sidebar:260px}
   .shortcut{display:none}
@@ -489,7 +503,7 @@ tbody tr.selected{background:var(--brand-soft)}
     </div>
   </div>
   <div class="topActions">
-    <div class="livePill"><span class="liveDot"></span>Saved locally</div>
+    <div class="livePill" id="storageStatus"><span class="liveDot"></span><span id="storageStatusText">Connecting to PostgreSQL</span></div>
     <button class="iconBtn" id="themeToggle" aria-label="Toggle dark mode">
       <svg id="themeIcon" width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M20 15.5A8.5 8.5 0 1 1 8.5 4 7 7 0 0 0 20 15.5Z" stroke="currentColor" stroke-width="2"/></svg>
     </button>
@@ -631,7 +645,7 @@ tbody tr.selected{background:var(--brand-soft)}
           aria-live="polite"
         ></div>
 
-      <div class="visualRecipeEditor">
+      <div class="visualRecipeEditor" id="visualRecipeEditor">
         <section class="recipeDetailsCard">
           <div class="recipeFormHeading">
             <div>
@@ -791,6 +805,7 @@ const DELETED_DISH_STORAGE = "catereros_deleted_dish_ids_v1";
 const THEME_STORAGE = "catereros_ui_theme_v1";
 const RECIPE_VERSION_STORAGE = "catereros_recipe_catalog_version";
 const RECIPE_CATALOG_VERSION = 14;
+const RECIPE_CATALOG_API = "/api/admin/recipes";
 
 const $ = id => document.getElementById(id);
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -1040,6 +1055,8 @@ let selectedDishId=dishes[0]?.id||null;
 let selectedRateId=rates[0]?.id||null;
 let currentView="editor";
 let dirty=false;
+let catalogReady=false;
+let serverSaveTimer=null;
 
 function esc(value){
   return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
@@ -1107,13 +1124,76 @@ async function syncRecipeCostToDishCatalog(dish){
   if(updated){
     setStatus("Recipe saved and Dish Master shows the same per-person cost.","ok");showToast("Dish cost synced to Dish Master");
   }else{
-    setStatus("Recipe saved locally, but Dish Master sync failed.","error");
+    setStatus("Recipe saved, but Dish Master cost sync failed.","error");
   }
 }
-function saveState(){
+function setStorageStatus(text,state=""){
+  const status=$("storageStatus"),label=$("storageStatusText");
+  if(label)label.textContent=text;
+  if(status)status.dataset.state=state;
+}
+function saveLocalState(){
   dishes=dishes.map(withSubcategory);
   safeStorageSet(DISH_STORAGE,JSON.stringify(dishes));
   safeStorageSet(RATE_STORAGE,JSON.stringify(rates));
+}
+async function persistRecipeCatalog(){
+  if(!catalogReady)return false;
+  if(serverSaveTimer){clearTimeout(serverSaveTimer);serverSaveTimer=null}
+  setStorageStatus("Saving to PostgreSQL","saving");
+  try{
+    const response=await fetch(RECIPE_CATALOG_API,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        dishes,
+        rates,
+        deletedDishIds:loadDeletedDishIds(),
+        catalogVersion:RECIPE_CATALOG_VERSION
+      })
+    });
+    if(!response.ok)throw new Error();
+    setStorageStatus("Saved to PostgreSQL","saved");
+    return true;
+  }catch{
+    setStorageStatus("Offline changes on this device","offline");
+    return false;
+  }
+}
+function queueRecipeCatalogSave(){
+  if(!catalogReady)return;
+  setStorageStatus("Saving to PostgreSQL","saving");
+  if(serverSaveTimer)clearTimeout(serverSaveTimer);
+  serverSaveTimer=setTimeout(()=>void persistRecipeCatalog(),300);
+}
+function saveState(){
+  saveLocalState();
+  queueRecipeCatalogSave();
+}
+async function hydrateRecipeCatalog(){
+  setStorageStatus("Connecting to PostgreSQL","saving");
+  try{
+    const response=await fetch(RECIPE_CATALOG_API,{cache:"no-store"});
+    if(!response.ok)throw new Error();
+    const data=await response.json(),catalog=data?.catalog;
+    if(catalog&&Array.isArray(catalog.dishes)&&Array.isArray(catalog.rates)){
+      dishes=catalog.dishes.map(withSubcategory);
+      rates=catalog.rates;
+      saveDeletedDishIds(Array.isArray(catalog.deletedDishIds)?catalog.deletedDishIds:[]);
+      selectedDishId=dishes.some(dish=>dish.id===selectedDishId)?selectedDishId:(dishes[0]?.id||null);
+      selectedRateId=rates.some(rate=>rate.id===selectedRateId)?selectedRateId:(rates[0]?.id||null);
+      saveLocalState();
+      catalogReady=true;
+      setStorageStatus("Saved to PostgreSQL","saved");
+      renderDishList();loadSelectedDish();renderRateTable();renderSelectedRate();
+      return;
+    }
+    catalogReady=true;
+    await persistRecipeCatalog();
+  }catch{
+    catalogReady=true;
+    setStorageStatus("Offline changes on this device","offline");
+  }
 }
 function showToast(text){
   $("toastText").textContent=text;$("toast").classList.add("show");
@@ -1605,7 +1685,7 @@ async function importRecipesFromFile(file){
     renderSelectedRate();
     const syncedCount=await syncRecipeCostsToDishCatalog(importedRecipes);
     const createdCount=importedRecipes.length-replacedCount;
-    const summary=`Imported ${importedRecipes.length} recipe${importedRecipes.length===1?"":"s"}: ${createdCount} new, ${replacedCount} replaced${skippedCount?`, ${skippedCount} skipped`:""}. ${syncedCount?`${syncedCount} synced to Dish Master.`:"Saved locally; Dish Master sync was unavailable."}`;
+    const summary=`Imported ${importedRecipes.length} recipe${importedRecipes.length===1?"":"s"}: ${createdCount} new, ${replacedCount} replaced${skippedCount?`, ${skippedCount} skipped`:""}. ${syncedCount?`${syncedCount} synced to Dish Master.`:"Saved to the recipe catalog; Dish Master sync was unavailable."}`;
     setImportSummary(summary,"ok");
     setStatus(summary,syncedCount?"ok":"error");
     showToast(`${importedRecipes.length} recipes imported`);
@@ -1632,9 +1712,11 @@ async function applyJson(){
       return {name:String(item.name).trim(),qty:Number(item.quantity),unit:item.unit,rateKey:id,rate:Number(item.marketRate),rateUnit:item.rateUnit}
     });
     dishes[dishIndex]={...dishes[dishIndex],name:String(data.dishName).trim(),category:String(data.category).trim(),subcategory:String(data.subcategory).trim(),baseGuests:Number(data.baseGuests),servingSize:data.servingSize===undefined?undefined:Number(data.servingSize),servingUnit:data.servingSize===undefined?undefined:data.servingUnit,catalogRate:Math.max(0,Number(data.dishRate)||0),ingredients:mapped};
-    saveState();setDirty(false);setValidation("valid","Valid");setStatus("Recipe and market rates saved.","ok");
+    saveState();setDirty(false);setValidation("valid","Valid");setStatus("Saving recipe and market rates…","ok");
     loadSelectedDish();renderRateTable();renderSelectedRate();showToast("Recipe saved");
+    const databaseSaved=await persistRecipeCatalog();
     await syncRecipeCostToDishCatalog(dishes[dishIndex]);
+    if(!databaseSaved)setStatus("Recipe kept on this device, but PostgreSQL save failed.","error");
   }catch(error){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${error.message}`,"error")}
 }
 
@@ -1792,7 +1874,8 @@ document.addEventListener("keydown",e=>{
 });
 window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
 document.documentElement.dataset.theme=safeStorageGet(THEME_STORAGE)||"light";
-renderDishList();loadSelectedDish();renderRateTable();renderSelectedRate();importDishCatalog();
+renderDishList();loadSelectedDish();renderRateTable();renderSelectedRate();
+void hydrateRecipeCatalog().then(()=>importDishCatalog());
 </script>
 </body>
 </html>

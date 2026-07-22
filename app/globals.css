@@ -312,8 +312,66 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .dish-pagination { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 22px; }
 .dish-pagination span { color: var(--muted); font-size: 13px; }
 .dish-pagination .ghost-button { min-width: 100px; }
-.recipe-studio-shell { width: min(1720px, calc(100vw - 28px)); margin: 0 auto; overflow: hidden; border: 1px solid var(--border); border-radius: 24px; background: #fff; box-shadow: var(--shadow-soft); }
-.recipe-studio-frame { display: block; width: 100%; height: calc(100vh - 238px); min-height: 720px; border: 0; background: #f4f5f7; }
+.recipe-workspace {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: rgba(255,255,255,.9);
+  box-shadow: var(--shadow-soft);
+}
+.recipe-workspace:fullscreen { padding: 14px; border: 0; border-radius: 0; background: #eef1f5; }
+.recipe-workspace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(115deg, rgba(255,255,255,.98), rgba(245,249,255,.95));
+}
+.recipe-workspace-copy { min-width: 0; }
+.recipe-workspace-copy h2 { margin: 4px 0 3px; font-size: 23px; letter-spacing: -.035em; }
+.recipe-workspace-copy p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.recipe-workspace-controls { display: flex; align-items: center; gap: 18px; flex: 0 0 auto; }
+.recipe-status-list { display: flex; align-items: center; gap: 7px; }
+.recipe-status-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255,255,255,.82);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.recipe-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(52,199,89,.12); }
+.recipe-workspace-actions { flex-wrap: nowrap; }
+.recipe-workspace-actions .ghost-button,
+.recipe-workspace-actions .secondary-button { min-height: 40px; padding: 10px 14px; font-size: 12px; }
+.recipe-studio-shell { position: relative; width: 100%; min-height: 720px; overflow: hidden; background: #f4f5f7; }
+.recipe-studio-frame { display: block; width: 100%; height: calc(100vh - 302px); min-height: 720px; border: 0; background: #f4f5f7; }
+.recipe-studio-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 28px;
+  text-align: center;
+  background: linear-gradient(145deg, #f8fafc, #eef4fb);
+}
+.recipe-studio-loading strong { margin-top: 7px; font-size: 17px; }
+.recipe-studio-loading p { max-width: 420px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.recipe-studio-loading .ghost-button { margin-top: 8px; }
+.recipe-loading-spinner { width: 32px; height: 32px; border: 3px solid rgba(0,122,255,.16); border-top-color: var(--blue); border-radius: 50%; animation: recipe-spin .75s linear infinite; }
+@keyframes recipe-spin { to { transform: rotate(360deg); } }
 .ghost-button:disabled { opacity: .55; cursor: default; }
 .admin-dish-row {
   display: grid;
@@ -614,8 +672,14 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .admin-alias-grid { grid-template-columns: 1fr; }
   .dish-filter-grid { grid-template-columns: 1fr; }
   .dish-list-heading { align-items: flex-start; }
-  .recipe-studio-shell { width: 100%; border-radius: 20px; }
-  .recipe-studio-frame { height: calc(100vh - 220px); min-height: 680px; }
+  .recipe-workspace { border-radius: 20px; }
+  .recipe-workspace-header { align-items: flex-start; flex-direction: column; gap: 14px; padding: 16px; }
+  .recipe-workspace-controls { width: 100%; align-items: stretch; flex-direction: column; gap: 11px; }
+  .recipe-status-list { overflow-x: auto; padding-bottom: 2px; }
+  .recipe-workspace-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .recipe-workspace-actions > * { min-width: 0; }
+  .recipe-studio-shell { min-height: 680px; }
+  .recipe-studio-frame { height: calc(100vh - 250px); min-height: 680px; }
   .mobile-field-label { display: inline-block; }
   .table-wrap { margin-inline: -6px; }
   table { min-width: 560px; }
