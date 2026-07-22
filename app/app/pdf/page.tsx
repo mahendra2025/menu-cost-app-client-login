@@ -11,6 +11,17 @@ function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
 }
 
+function displayDate(value: string) {
+  if (!value) return 'Date to be confirmed';
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export default function PdfPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
@@ -37,6 +48,20 @@ export default function PdfPage() {
     missingRateCount > 0 ? `Enter ${missingRateCount} missing dish rate${missingRateCount === 1 ? '' : 's'}` : '',
     work.sellingPricePerPlate <= 0 ? 'Enter a selling price' : '',
   ].filter(Boolean);
+  const quotationMeals = result.serviceSummaries.map((service) => ({
+    ...service,
+    dishes: result.menuBreakdown.filter(
+      (item) => (item.serviceId ?? 'default') === service.serviceId,
+    ),
+  }));
+  const preparedDate = new Date(work.updatedAt);
+  const preparedDateLabel = Number.isNaN(preparedDate.getTime())
+    ? new Date().toLocaleDateString('en-IN')
+    : preparedDate.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
 
   function downloadGroceryList() {
     if (!work) return;
@@ -64,116 +89,136 @@ export default function PdfPage() {
   }
 
   return (
-    <AppShell title="PDF" subtitle="Step 5 of 6: print or save quotation as PDF">
+    <AppShell title="Quotation" subtitle="Step 5 of 6: review the client copy, then print or save as PDF">
       <section className="content-grid">
-        <div className="glass-card no-print">
-          {quoteIssues.length > 0 ? (
-            <div className="readiness-card">
-              <div>
-                <span className="section-kicker">Draft quotation</span>
-                <h3>{quoteIssues.join(' • ')}</h3>
-                <p>You can still print a draft, or return to complete the quotation first.</p>
-              </div>
-              <button
-                className="ghost-button"
-                type="button"
-                onClick={() => router.push(work.menu.length === 0 || missingRateCount > 0 ? '/app/menu' : result.totalCovers <= 0 ? '/app/event' : '/app/cost')}
-              >
-                Complete Details
-              </button>
+        <div className="glass-card quotation-toolbar no-print">
+          <div className="quotation-toolbar-heading">
+            <div>
+              <span className="page-eyebrow">Final review</span>
+              <h2>{quoteIssues.length ? 'Quotation needs attention' : 'Quotation is ready to share'}</h2>
+              <p className="muted">
+                {quoteIssues.length
+                  ? 'Complete the highlighted details or print a clearly marked draft.'
+                  : 'Internal food cost and profit are excluded from the customer copy.'}
+              </p>
             </div>
-          ) : (
-            <div className="readiness-card is-ready">
-              <div>
-                <span className="section-kicker">Ready to share</span>
-                <h3>Quotation details are complete</h3>
-              </div>
-              <span className="badge green">Ready</span>
-            </div>
-          )}
-          <div className="action-row">
-            <button className="primary-button" onClick={() => window.print()}>{quoteIssues.length ? 'Print Draft PDF' : 'Print / Save PDF'}</button>
-            <button className="ghost-button" onClick={downloadGroceryList}>Download Grocery List</button>
-            <span className="muted">Browser print window opens. Choose “Save as PDF”.</span>
+            <span className={`quotation-status ${quoteIssues.length ? 'is-draft' : 'is-ready'}`}>
+              {quoteIssues.length ? 'Draft' : 'Ready'}
+            </span>
           </div>
-          {groceryMessage ? <p className="muted" role="status"><b>{groceryMessage}</b></p> : null}
-        </div>
 
-        <article className="pdf-paper">
-          <header className="pdf-header">
-            <div className="pdf-title">
-              <h1>{profile.businessName || session.businessName || 'Menu Cost App'}</h1>
-              <p>{profile.ownerName ? `${profile.ownerName} • ` : ''}{profile.phone}{profile.city ? ` • ${profile.city}` : ''}</p>
+          {quoteIssues.length > 0 ? (
+            <div className="quotation-issue-list" role="status">
+              {quoteIssues.map((issue) => <span key={issue}>{issue}</span>)}
             </div>
-            <div className="pdf-logo">{profile.logoText || 'MC'}</div>
-          </header>
-
-          <section className="print-section">
-            <h3>Event Details</h3>
-            <div className="summary-line"><span>Client Name</span><b>{work.event.clientName || '-'}</b></div>
-            <div className="summary-line"><span>Event Name</span><b>{work.event.eventName || '-'}</b></div>
-            <div className="summary-line"><span>Event Date</span><b>{work.event.eventDate || '-'}</b></div>
-            <div className="summary-line"><span>Function Type</span><b>{work.event.functionType || '-'}</b></div>
-            <div className="summary-line"><span>Venue</span><b>{work.event.venue || '-'}</b></div>
-            <div className="summary-line"><span>Total Meal Covers</span><b>{result.totalCovers}</b></div>
-          </section>
-
-          {result.serviceSummaries.some((service) => service.serviceId !== 'default') ? (
-            <section className="print-section">
-              <h3>Meal-wise Cost Summary</h3>
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>Day</th><th>Meal</th><th>Members</th><th>Food / Plate</th><th>Food Total</th></tr></thead>
-                  <tbody>
-                    {result.serviceSummaries.map((service) => (
-                      <tr key={service.serviceId}>
-                        <td>{service.dayLabel || '-'}</td>
-                        <td><b>{service.mealLabel}</b></td>
-                        <td>{service.pax}</td>
-                        <td>{money(service.menuCostPerPlate)}</td>
-                        <td><b>{money(service.totalCost)}</b></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
           ) : null}
 
-          <section className="print-section">
-            <h3>Menu</h3>
-            {work.menu.length === 0 ? <p>No menu items added.</p> : null}
-            <div className="table-wrap">
-              <table>
-                <thead><tr><th>Service</th><th>Dish</th><th>Category</th><th>Members</th><th>Cost / Plate</th><th>Total</th></tr></thead>
-                <tbody>
-                  {result.menuBreakdown.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}</td>
-                      <td><b>{item.name}</b></td>
-                      <td>{item.category}</td>
-                      <td>{item.effectivePax}</td>
-                      <td>{money(item.adjustedCostPerPlate)}</td>
-                      <td>{money(item.itemTotalCost)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="quotation-actions">
+            <button className="primary-button" onClick={() => window.print()}>
+              {quoteIssues.length ? 'Print draft' : 'Print / Save PDF'}
+            </button>
+            <button className="ghost-button" onClick={downloadGroceryList}>Download grocery list</button>
+            <button className="ghost-button" onClick={() => router.push('/app/cost')}>Edit pricing</button>
+            <button className="ghost-button" onClick={() => router.push('/app/profile')}>Edit business details</button>
+          </div>
+          <p className="quotation-print-help">In the print window, choose <b>Save as PDF</b> for a digital copy.</p>
+          {groceryMessage ? <div className="quotation-message" role="status">{groceryMessage}</div> : null}
+        </div>
+
+        <article className={`pdf-paper quotation-paper ${quoteIssues.length ? 'is-draft' : ''}`}>
+          {quoteIssues.length ? <div className="quotation-draft-mark">Draft quotation</div> : null}
+
+          <header className="quotation-header">
+            <div className="quotation-brand">
+              <div className="pdf-logo">{profile.logoText || 'MC'}</div>
+              <div className="pdf-title">
+                <h1>{profile.businessName || session.businessName || 'Menu Cost App'}</h1>
+                <p>{profile.ownerName || 'Catering & event services'}</p>
+                <small>{[profile.phone, profile.city].filter(Boolean).join(' • ')}</small>
+              </div>
+            </div>
+            <div className="quotation-document-meta">
+              <span>Quotation</span>
+              <b>{work.event.eventName || 'Catering proposal'}</b>
+              <small>Prepared {preparedDateLabel}</small>
+            </div>
+          </header>
+
+          <section className="quotation-intro">
+            <div>
+              <span className="quotation-kicker">Prepared for</span>
+              <h2>{work.event.clientName || 'Valued client'}</h2>
+              <p>{work.event.eventName || work.event.functionType || 'Catering event'}</p>
+            </div>
+            <div className="quotation-event-facts">
+              <div><small>Event date</small><b>{displayDate(work.event.eventDate)}</b></div>
+              <div><small>Venue</small><b>{work.event.venue || work.event.city || 'To be confirmed'}</b></div>
+              <div><small>Meal covers</small><b>{result.totalCovers.toLocaleString('en-IN')}</b></div>
             </div>
           </section>
 
-          <section className="print-section">
-            <h3>Cost Summary</h3>
-            <div className="summary-line"><span>Food Cost</span><b>{money(result.menuFoodTotal)}</b></div>
-            <div className="summary-line"><span>Extra Cost</span><b>{money(result.extrasTotal)}</b></div>
-            <div className="summary-line"><span>Total Cost</span><b>{money(result.totalCost)}</b></div>
-            <div className="summary-line"><span>Average Selling / Cover</span><b>{money(result.sellingPricePerPlate)}</b></div>
-            <div className="summary-line total"><span>Total Quotation Amount</span><b>{money(result.totalSelling)}</b></div>
+          <section className="print-section quotation-section">
+            <div className="quotation-section-heading">
+              <div><span>01</span><h3>Meal plan</h3></div>
+              <small>{quotationMeals.length} meal{quotationMeals.length === 1 ? '' : 's'}</small>
+            </div>
+            {quotationMeals.length ? (
+              <div className="quotation-meal-grid">
+                {quotationMeals.map((meal) => (
+                  <div className="quotation-meal-card" key={meal.serviceId}>
+                    <span>{meal.dayLabel || 'Event'}</span>
+                    <b>{meal.mealLabel}</b>
+                    <small>{meal.pax.toLocaleString('en-IN')} members • {meal.dishCount} dishes</small>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="quotation-empty-copy">No meals have been added yet.</p>}
           </section>
 
-          <section className="print-section">
-            <p><b>Note:</b> This quotation is generated from menu costing inputs. Final amount may change if menu, pax, service, transport or venue requirements change.</p>
+          <section className="print-section quotation-section">
+            <div className="quotation-section-heading">
+              <div><span>02</span><h3>Selected menu</h3></div>
+              <small>{work.menu.length} dish{work.menu.length === 1 ? '' : 'es'}</small>
+            </div>
+            {quotationMeals.length ? (
+              <div className="quotation-menu-groups">
+                {quotationMeals.map((meal) => (
+                  <div className="quotation-menu-group" key={meal.serviceId}>
+                    <div className="quotation-menu-title">
+                      <b>{meal.mealLabel}</b>
+                      <span>{meal.dayLabel || 'Event menu'}</span>
+                    </div>
+                    <div className="quotation-dish-list">
+                      {meal.dishes.map((dish) => (
+                        <div key={dish.id}><b>{dish.name}</b><small>{dish.category}</small></div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="quotation-empty-copy">No menu dishes have been added yet.</p>}
           </section>
+
+          <section className="print-section quotation-section quotation-commercial">
+            <div className="quotation-section-heading">
+              <div><span>03</span><h3>Commercial summary</h3></div>
+            </div>
+            <div className="quotation-price-breakdown">
+              <div><span>Rate per meal cover</span><b>{money(result.sellingPricePerPlate)}</b></div>
+              <div><span>Total meal covers</span><b>{result.totalCovers.toLocaleString('en-IN')}</b></div>
+              <div className="quotation-grand-total"><span>Total quotation amount</span><b>{money(result.totalSelling)}</b></div>
+            </div>
+          </section>
+
+          <section className="quotation-terms">
+            <b>Important note</b>
+            <p>This quotation is based on the menu, meal covers and event requirements listed above. The final amount may change if the menu, guest count, service scope, transport or venue requirements change.</p>
+          </section>
+
+          <footer className="quotation-footer">
+            <div><span>Prepared by</span><b>{profile.ownerName || profile.businessName || session.businessName}</b></div>
+            <div><span>Client acceptance</span><b>Signature &amp; date</b></div>
+          </footer>
         </article>
       </section>
     </AppShell>
