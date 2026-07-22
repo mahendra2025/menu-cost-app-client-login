@@ -162,16 +162,16 @@ export default function AdminIngredientsPage() {
     <AppShell title="Ingredient Master" subtitle="Organise ingredients by category and maintain recipe market rates">
       <section className="content-grid ingredient-master">
         <div className={`ingredient-overview ${duplicateCount ? 'needs-attention' : ''}`}>
-          <div>
-            <span className="section-kicker">Recipe inventory</span>
-            <h2>Ingredient Index</h2>
-            <p>One place for ingredient names, categories, purchase units and current market rates.</p>
+          <div className="ingredient-overview-copy">
+            <span className="section-kicker">Ingredient catalog</span>
+            <h2>Ingredients &amp; Market Rates</h2>
+            <p>Keep every ingredient organised and priced correctly for accurate recipe costing.</p>
           </div>
           <div className="ingredient-health" aria-label="Ingredient catalog summary">
-            <span><b>{rows.length}</b> ingredients</span>
-            <span><b>{categoryCount}</b> categories</span>
-            <span><b>{recipeLinkedCount}</b> recipe linked</span>
-            <span className={duplicateCount ? 'needs-attention' : 'is-complete'}><b>{duplicateCount}</b> duplicates</span>
+            <span><b>{rows.length}</b><small>Ingredients</small></span>
+            <span><b>{categoryCount}</b><small>Categories</small></span>
+            <span><b>{recipeLinkedCount}</b><small>Recipe linked</small></span>
+            <span className={duplicateCount ? 'needs-attention' : 'is-complete'}><b>{duplicateCount}</b><small>Duplicates</small></span>
           </div>
           <div className="ingredient-actions">
             <button className="primary-button" type="button" onClick={addIngredient} disabled={!catalogReady}>+ Add Ingredient</button>
@@ -186,8 +186,8 @@ export default function AdminIngredientsPage() {
 
         <div className="glass-card ingredient-filter-card">
           <div className="dish-list-heading">
-            <div><span className="section-kicker">Find &amp; organise</span><h2>Ingredient filters</h2></div>
-            <span className="badge">{filteredRows.length} shown</span>
+            <div><span className="section-kicker">Quick search</span><h2>Find ingredients</h2><p className="muted">Search by ingredient, category or purchase unit.</p></div>
+            <span className="badge">Showing {filteredRows.length}</span>
           </div>
           <div className="ingredient-filter-grid">
             <div className="field">
@@ -207,7 +207,7 @@ export default function AdminIngredientsPage() {
 
         <div className="glass-card ingredient-list-card">
           <div className="dish-list-heading">
-            <div><h2>Ingredients</h2><p className="muted">Recipe-linked names and units are protected so recipe costing stays connected.</p></div>
+            <div><span className="section-kicker">Master list</span><h2>Ingredient details</h2><p className="muted">Green labels show ingredients already connected to saved recipes.</p></div>
             <button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>Save changes</button>
           </div>
           {!ready ? <div className="admin-empty"><span className="admin-loader" /><strong>Loading ingredients</strong></div> : null}
@@ -215,7 +215,7 @@ export default function AdminIngredientsPage() {
           {ready && visibleRows.length ? (
             <div className="ingredient-table-wrap">
               <table className="ingredient-table">
-                <thead><tr><th>Ingredient</th><th>Category</th><th>Purchase unit</th><th>Market rate</th><th>Recipe use</th><th aria-label="Actions" /></tr></thead>
+                <thead><tr><th>Ingredient name</th><th>Category</th><th>Purchase unit</th><th>Rate per unit</th><th>Used in</th><th aria-label="Actions" /></tr></thead>
                 <tbody>
                   {visibleRows.map((row) => {
                     const usedBy = usage[row.originalId] || 0;
@@ -223,23 +223,26 @@ export default function AdminIngredientsPage() {
                     return (
                       <tr key={row.rowKey} className={duplicate ? 'has-error' : ''}>
                         <td>
-                          <input
-                            id={`ingredient-name-${row.rowKey}`}
-                            className="input"
-                            value={row.name}
-                            disabled={usedBy > 0}
-                            onChange={(event) => {
-                              const name = event.target.value;
-                              updateRow(row.rowKey, { name, category: row.originalId ? row.category : inferIngredientCategory(name) });
-                            }}
-                            placeholder="Ingredient name"
-                          />
+                          <div className="ingredient-name-field">
+                            <span className="ingredient-initial" aria-hidden="true">{row.name.trim().charAt(0).toUpperCase() || '+'}</span>
+                            <input
+                              id={`ingredient-name-${row.rowKey}`}
+                              className="input"
+                              value={row.name}
+                              disabled={usedBy > 0}
+                              onChange={(event) => {
+                                const name = event.target.value;
+                                updateRow(row.rowKey, { name, category: row.originalId ? row.category : inferIngredientCategory(name) });
+                              }}
+                              placeholder="Ingredient name"
+                            />
+                          </div>
                           {duplicate ? <small className="ingredient-row-error">Duplicate name and unit</small> : null}
                         </td>
-                        <td><select className="select" value={row.category} onChange={(event) => updateRow(row.rowKey, { category: event.target.value as IngredientCategory })}>{INGREDIENT_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></td>
+                        <td><select className="select ingredient-category-select" value={row.category} onChange={(event) => updateRow(row.rowKey, { category: event.target.value as IngredientCategory })}>{INGREDIENT_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></td>
                         <td><select className="select" value={row.unit} disabled={usedBy > 0} onChange={(event) => updateRow(row.rowKey, { unit: event.target.value as IngredientUnit })}>{INGREDIENT_UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></td>
-                        <td><div className="ingredient-rate-input"><span>₹</span><input className="input" type="number" min="0" step="0.01" value={row.rate} onChange={(event) => updateRow(row.rowKey, { rate: Math.max(0, Number(event.target.value) || 0) })} /></div></td>
-                        <td><span className={`ingredient-usage ${usedBy ? 'linked' : ''}`}>{usedBy ? `${usedBy} recipe${usedBy === 1 ? '' : 's'}` : 'Not used'}</span></td>
+                        <td><div className="ingredient-rate-input"><span className="ingredient-currency">₹</span><input className="input" type="number" min="0" step="0.01" value={row.rate} onChange={(event) => updateRow(row.rowKey, { rate: Math.max(0, Number(event.target.value) || 0) })} /><small>/{row.unit}</small></div></td>
+                        <td><span className={`ingredient-usage ${usedBy ? 'linked' : ''}`}>{usedBy ? `${usedBy} recipe${usedBy === 1 ? '' : 's'}` : 'Not linked'}</span></td>
                         <td><button className="ingredient-delete" type="button" aria-label={`Delete ${row.name || 'ingredient'}`} title={usedBy ? 'Used ingredients cannot be deleted' : 'Delete ingredient'} disabled={usedBy > 0} onClick={() => removeIngredient(row)}>×</button></td>
                       </tr>
                     );
