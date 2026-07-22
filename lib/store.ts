@@ -361,6 +361,10 @@ export function clearWork(
 
 const MENU_HEADINGS = new Set([
   'menu',
+  'dish',
+  'dishes',
+  'menu item',
+  'menu items',
   'breakfast',
   'lunch',
   'dinner',
@@ -415,6 +419,10 @@ const MENU_HEADINGS = new Set([
 
 const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   menu: null,
+  dish: null,
+  dishes: null,
+  'menu item': null,
+  'menu items': null,
   breakfast: 'Breakfast',
   lunch: null,
   dinner: null,
@@ -921,7 +929,13 @@ function inferFallbackCategory(
 function splitMenuText(
   text: string,
 ): ParsedMenuLine[] {
-  const rawSegments = protectParentheticalSlashes(text)
+  const normalizedServiceHeadings = text.replace(
+    /(?:^|\n)\s*day\s*(\d+)\s*[•▪●◦|]\s*([^\n•▪●◦|]+?)\s*[•▪●◦|]\s*(\d+(?:\.\d+)?)\s*(?:members?|pax|guests?|persons?|people)\s*(?=\n|$)/gi,
+    (_match, dayNumber: string, mealLabel: string, memberCount: string) =>
+      `\nDay ${dayNumber}\n${cleanServiceLabel(mealLabel)} - ${memberCount} members\n`,
+  );
+
+  const rawSegments = protectParentheticalSlashes(normalizedServiceHeadings)
     .replace(/\r/g, '\n')
     .replace(
       /\bdal\s*\/\s*kadhi\b/gi,

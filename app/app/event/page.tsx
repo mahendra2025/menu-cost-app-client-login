@@ -12,6 +12,10 @@ import AppShell, {
 } from '../../components/AppShell';
 
 import {
+  syncDishCostItemsFromServer,
+} from '../../../lib/dishCostMaster';
+
+import {
   getSession,
   loadWork,
   parseMenuText,
@@ -106,7 +110,7 @@ export default function EventPage() {
     persistWork(nextWork);
   }
 
-  function detectAndNext() {
+  async function detectAndNext() {
     if (
       !work ||
       !session ||
@@ -131,6 +135,13 @@ export default function EventPage() {
     setDetecting(true);
 
     try {
+      /*
+       * Refresh the PostgreSQL-backed dish catalog before parsing.
+       * This ensures newly added Admin dishes can be detected even
+       * when this browser still has an older local catalog.
+       */
+      await syncDishCostItemsFromServer();
+
       /*
        * parseMenuText reads dishes from
        * the static dishCostMaster.

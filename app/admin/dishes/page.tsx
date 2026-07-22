@@ -177,6 +177,7 @@ export default function AdminDishesPage() {
   const [rows, setRows] = useState<EditableDish[]>([]);
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | Category>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ERROR' | 'RECIPE' | 'NO_RECIPE'>('ALL');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [dirty, setDirty] = useState(false);
@@ -219,11 +220,19 @@ export default function AdminDishesPage() {
     const search = query.trim().toLowerCase();
     return rows.filter((row) => {
       const matchesCategory = categoryFilter === 'ALL' || row.category === categoryFilter;
+      const matchesStatus = statusFilter === 'ALL' ||
+        (statusFilter === 'ERROR' && rowErrors.has(row.id)) ||
+        (statusFilter === 'RECIPE' && Boolean(row.recipeServing)) ||
+        (statusFilter === 'NO_RECIPE' && !row.recipeServing);
       const matchesSearch = !search || row.name.toLowerCase().includes(search) ||
         row.category.toLowerCase().includes(search) || allRowAliases(row).some((alias) => alias.toLowerCase().includes(search));
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesStatus && matchesSearch;
     });
-  }, [rows, query, categoryFilter]);
+  }, [rows, query, categoryFilter, statusFilter, rowErrors]);
+  const recipeLinkedCount = useMemo(
+    () => rows.filter((row) => Boolean(row.recipeServing)).length,
+    [rows],
+  );
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / DISHES_PER_PAGE));
   const visibleRows = useMemo(
     () => filteredRows.slice((page - 1) * DISHES_PER_PAGE, page * DISHES_PER_PAGE),
@@ -232,7 +241,7 @@ export default function AdminDishesPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, categoryFilter]);
+  }, [query, categoryFilter, statusFilter]);
 
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
@@ -245,13 +254,16 @@ export default function AdminDishesPage() {
   }
 
   function addRow() {
+    const newRowId = uid('dish_master');
     setMessage('');
     setQuery('');
     setCategoryFilter('ALL');
+    setStatusFilter('ALL');
+    setPage(1);
     setDirty(true);
     setRows((current) => [
       {
-        id: uid('dish_master'),
+        id: newRowId,
         name: '',
         category: 'Sabji',
         rate: 1,
@@ -264,9 +276,19 @@ export default function AdminDishesPage() {
       },
       ...current,
     ]);
+
+    window.setTimeout(() => {
+      document.getElementById(`dish-name-${newRowId}`)?.focus();
+    }, 80);
   }
 
   function removeRow(id: string) {
+    const selectedDish = rows.find((row) => row.id === id);
+    if (
+      selectedDish &&
+      !window.confirm(`Delete ${selectedDish.name || 'this new dish'} from the catalog?`)
+    ) return;
+
     setMessage('');
     setDirty(true);
     setRows((current) => current.filter((row) => row.id !== id));
@@ -353,20 +375,38 @@ export default function AdminDishesPage() {
   return (
     <AppShell title="Dish Master" subtitle="Admin can add dishes and edit category, serving quantity, aliases, and rate">
       <section className="content-grid">
-        <div className="glass-card">
-          <div className="section-kicker">Admin Control</div>
-          <h2>Manage Dish Catalog</h2>
-          <p className="muted">This master list controls dish matching, category, serving quantity, and default rate detection in the Menu page.</p>
-          <div className="action-row" style={{ marginTop: 16 }}>
+        <div className={`dish-master-overview ${rowErrors.size ? 'needs-attention' : ''}`}>
+          <div className="dish-master-overview-copy">
+            <div className="section-kicker">Admin Control</div>
+            <h2>Manage Dish Catalog</h2>
+            <p>This catalog controls Menu matching, serving quantities, categories and default rates.</p>
+          </div>
+
+          <div className="dish-master-health" aria-label="Catalog health">
+            <span><b>{rows.length}</b> dishes</span>
+            <span><b>{CATEGORIES.length}</b> categories</span>
+            <span><b>{recipeLinkedCount}</b> recipe linked</span>
+            <span className={rowErrors.size ? 'needs-attention' : 'is-complete'}>
+              <b>{rowErrors.size}</b> issues
+            </span>
+          </div>
+
+          <div className="dish-master-actions">
             <button className="primary-button" onClick={addRow}>+ Add Dish</button>
-            <button className="ghost-button" onClick={saveAll} disabled={saving || !dirty}>{saving ? 'Saving…' : dirty ? 'Save All Changes' : 'All Changes Saved'}</button>
-            <button className="danger-button" onClick={resetAll}>Reset Default Catalog</button>
+            <button className="secondary-button" onClick={saveAll} disabled={saving || !dirty}>
+              {saving ? 'Saving…' : dirty ? 'Save All Changes' : 'All Changes Saved'}
+            </button>
+            <button className="ghost-button dish-reset-button" onClick={resetAll}>Reset defaults</button>
           </div>
           {dirty ? <div className="dish-unsaved"><span />You have unsaved catalog changes</div> : null}
           {message ? <div className={`admin-message ${messageType}`} style={{ marginTop: 12, marginBottom: 0 }}>{message}</div> : null}
         </div>
 
-        <div className="glass-card">
+        <div className="glass-card dish-master-filter-card">
+          <div className="dish-list-heading">
+            <div><span className="section-kicker">Find &amp; review</span><h2>Catalog filters</h2></div>
+            <span className="badge">{filteredRows.length} shown</span>
+          </div>
           <div className="dish-filter-grid">
             <div className="field">
               <label>Search Dish</label>
@@ -379,26 +419,50 @@ export default function AdminDishesPage() {
                 {CATEGORIES.map((category) => <option value={category} key={category}>{category}</option>)}
               </select>
             </div>
-            <div className="stat-card">
-              <small>Total Dishes</small>
-              <strong>{rows.length}</strong>
-              <span>{filteredRows.length} shown</span>
+            <div className="field">
+              <label>Catalog Status</label>
+              <select className="select select-large" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
+                <option value="ALL">All dishes</option>
+                <option value="ERROR">Needs attention ({rowErrors.size})</option>
+                <option value="RECIPE">Recipe linked ({recipeLinkedCount})</option>
+                <option value="NO_RECIPE">Recipe not linked ({rows.length - recipeLinkedCount})</option>
+              </select>
             </div>
+            <button
+              className="ghost-button dish-filter-clear"
+              type="button"
+              disabled={!query && categoryFilter === 'ALL' && statusFilter === 'ALL'}
+              onClick={() => {
+                setQuery('');
+                setCategoryFilter('ALL');
+                setStatusFilter('ALL');
+              }}
+            >
+              Clear filters
+            </button>
           </div>
         </div>
 
         {!ready ? <div className="glass-card">Loading...</div> : null}
 
         {ready ? (
-          <div className="glass-card">
-            <div className="dish-list-heading"><div><h2>Dish List</h2><p className="muted">Edit any field, then save all changes.</p></div><span className="badge">{filteredRows.length} dishes</span></div>
-            {filteredRows.length === 0 ? <div className="admin-empty"><strong>No dishes found</strong><span>Try another search or category.</span></div> : null}
+          <div className="glass-card dish-master-list-card">
+            <div className="dish-list-heading">
+              <div><h2>Dish List</h2><p className="muted">Edit core details first. Open Aliases only when matching names need maintenance.</p></div>
+              <div className="dish-list-actions">
+                <span className="badge">{filteredRows.length} dishes</span>
+                <button className="secondary-button" onClick={saveAll} disabled={saving || !dirty}>
+                  {saving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </div>
+            {filteredRows.length === 0 ? <div className="admin-empty"><strong>No dishes found</strong><span>Try another search, category or status.</span></div> : null}
             <div className="admin-dish-list">
               {visibleRows.map((row) => (
                 <div className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`} key={row.id}>
                   <div className="field">
                     <label>Dish Name</label>
-                    <input className="input input-large" value={row.name} onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Paneer Butter Masala" />
+                    <input id={`dish-name-${row.id}`} className="input input-large" value={row.name} onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Paneer Butter Masala" />
                     {rowErrors.get(row.id)?.name ? <span className="field-error">{rowErrors.get(row.id)?.name}</span> : null}
                   </div>
                   <div className="field">
@@ -432,22 +496,32 @@ export default function AdminDishesPage() {
                       <div className="dish-recipe-serving dish-recipe-serving-missing">No matching recipe serving</div>
                     )}
                   </div>
-                  <div className="admin-alias-grid">
-                    <div className="field">
-                      <label>English / Roman Aliases</label>
-                      <input className="input input-large" value={row.aliasesText} onChange={(e) => updateRow(row.id, { aliasesText: e.target.value })} placeholder="pbm, butter paneer" />
-                      {rowErrors.get(row.id)?.aliases ? <span className="field-error">{rowErrors.get(row.id)?.aliases}</span> : null}
+                  <details className="admin-alias-section" open={Boolean(rowErrors.get(row.id)?.aliases) || undefined}>
+                    <summary>
+                      <span>Aliases &amp; search names</span>
+                      <small>
+                        {rowErrors.get(row.id)?.aliases
+                          ? 'Needs attention'
+                          : `${allRowAliases(row).length} saved`}
+                      </small>
+                    </summary>
+                    <div className="admin-alias-grid">
+                      <div className="field">
+                        <label>English / Roman Aliases</label>
+                        <input className="input input-large" value={row.aliasesText} onChange={(e) => updateRow(row.id, { aliasesText: e.target.value })} placeholder="pbm, butter paneer" />
+                        {rowErrors.get(row.id)?.aliases ? <span className="field-error">{rowErrors.get(row.id)?.aliases}</span> : null}
+                      </div>
+                      <div className="field">
+                        <label>Hindi Aliases</label>
+                        <input className="input input-large" lang="hi" value={row.hindiAliasesText} onChange={(e) => updateRow(row.id, { hindiAliasesText: e.target.value })} placeholder="पनीर बटर मसाला" />
+                      </div>
+                      <div className="field">
+                        <label>Gujarati Aliases</label>
+                        <input className="input input-large" lang="gu" value={row.gujaratiAliasesText} onChange={(e) => updateRow(row.id, { gujaratiAliasesText: e.target.value })} placeholder="પનીર બટર મસાલા" />
+                      </div>
                     </div>
-                    <div className="field">
-                      <label>Hindi Aliases</label>
-                      <input className="input input-large" lang="hi" value={row.hindiAliasesText} onChange={(e) => updateRow(row.id, { hindiAliasesText: e.target.value })} placeholder="पनीर बटर मसाला" />
-                    </div>
-                    <div className="field">
-                      <label>Gujarati Aliases</label>
-                      <input className="input input-large" lang="gu" value={row.gujaratiAliasesText} onChange={(e) => updateRow(row.id, { gujaratiAliasesText: e.target.value })} placeholder="પનીર બટર મસાલા" />
-                    </div>
-                  </div>
-                  <button className="danger-button" onClick={() => removeRow(row.id)}>Delete</button>
+                  </details>
+                  <button className="admin-dish-delete" onClick={() => removeRow(row.id)}>Delete</button>
                 </div>
               ))}
             </div>
