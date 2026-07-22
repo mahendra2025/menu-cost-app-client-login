@@ -17750,8 +17750,5263 @@
         "rateUnit": "kg"
       }
     ]
+  },
+  {
+    "dishName": "Paneer Tikka",
+    "category": "Starter",
+    "subcategory": "Paneer Tandoor",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 26.71,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "notes": "Approx. 100 medium skewered pieces.",
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 8,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger Garlic Paste",
+        "quantity": 0.35,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "quantity": 0.02,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garam Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 450,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Kasuri Methi",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 500,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mustard Oil",
+        "quantity": 0.4,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.16,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Paneer Malai Tikka",
+    "category": "Starter",
+    "subcategory": "Paneer Tandoor",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 29.45,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 8,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Hung Curd",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cream",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cashew Paste",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 0.4,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger Garlic Paste",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "White Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 650,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cardamom Powder",
+        "quantity": 0.02,
+        "unit": "kg",
+        "marketRate": 1200,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.3,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Achari Paneer Tikka",
+    "category": "Starter",
+    "subcategory": "Paneer Tandoor",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 26.38,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 8,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Achari Masala",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 360,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger Garlic Paste",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mustard Oil",
+        "quantity": 0.45,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "quantity": 0.02,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Hariyali Paneer Tikka",
+    "category": "Starter",
+    "subcategory": "Paneer Tandoor",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 26.61,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 8,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mint",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger Garlic Paste",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garam Masala",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 450,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.35,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Paneer Shashlik",
+    "category": "Starter",
+    "subcategory": "Paneer Skewer",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 24.55,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 7,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger Garlic Paste",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.4,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.2,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.4,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Paneer Satay",
+    "category": "Starter",
+    "subcategory": "Paneer Skewer",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 25.41,
+    "cuisine": "Asian Fusion",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 7,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Peanut",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coconut Milk",
+        "quantity": 1.5,
+        "unit": "ltr",
+        "marketRate": 180,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.25,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.35,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Brown Sugar",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.35,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Paneer 65",
+    "category": "Starter",
+    "subcategory": "Paneer Fried",
+    "baseGuests": 100,
+    "servingSize": 80,
+    "servingUnit": "g",
+    "dishRate": 25.49,
+    "cuisine": "South Indian Fusion",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 8,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 1.1,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger Garlic Paste",
+        "quantity": 0.35,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curry Leaves",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.2,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.16,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Chilli Paneer Dry",
+    "category": "Starter",
+    "subcategory": "Paneer Chinese",
+    "baseGuests": 100,
+    "servingSize": 80,
+    "servingUnit": "g",
+    "dishRate": 26.02,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 7.5,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.8,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.9,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.4,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.35,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.45,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Dragon Paneer",
+    "category": "Starter",
+    "subcategory": "Paneer Chinese",
+    "baseGuests": 100,
+    "servingSize": 80,
+    "servingUnit": "g",
+    "dishRate": 29.51,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 7.5,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.4,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cashew",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 800,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Red Chilli Sauce",
+        "quantity": 0.6,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.25,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.4,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Paneer Cheese Roll",
+    "category": "Starter",
+    "subcategory": "Paneer Roll",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 25.58,
+    "cuisine": "Indian Fusion",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Paneer",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Potato",
+        "quantity": 2.5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garam Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 450,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.2,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Hara Bhara Kebab",
+    "category": "Starter",
+    "subcategory": "Indian Kebab",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 11.29,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Spinach",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Peas",
+        "quantity": 3,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Potato",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.18,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garam Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 450,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cashew",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 800,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.16,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Veg Seekh Kebab",
+    "category": "Starter",
+    "subcategory": "Indian Kebab",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 10.94,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Carrot",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Beans",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Peas",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Paneer",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger Garlic Paste",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garam Masala",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 450,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.5,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Dahi Ke Kebab",
+    "category": "Starter",
+    "subcategory": "Indian Kebab",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 20.09,
+    "cuisine": "North Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Hung Curd",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Paneer",
+        "quantity": 2.5,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cardamom Powder",
+        "quantity": 0.015,
+        "unit": "kg",
+        "marketRate": 1200,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Corn Cheese Ball",
+    "category": "Starter",
+    "subcategory": "Cheese Starter",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 17.12,
+    "cuisine": "Continental",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Sweet Corn",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Potato",
+        "quantity": 3,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 2.5,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oregano",
+        "quantity": 0.03,
+        "unit": "kg",
+        "marketRate": 700,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.2,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Jalapeno Cheese Poppers",
+    "category": "Starter",
+    "subcategory": "Cheese Starter",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 18.46,
+    "cuisine": "Continental",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 3,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Jalapeno",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 250,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.7,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oregano",
+        "quantity": 0.03,
+        "unit": "kg",
+        "marketRate": 700,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.2,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Veg Cutlet",
+    "category": "Starter",
+    "subcategory": "Indian Fried",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 6.76,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Carrot",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Beans",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Peas",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Beetroot",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garam Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 450,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.2,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.16,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Aloo Tikki",
+    "category": "Starter",
+    "subcategory": "Indian Fried",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 6.27,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "quantity": 9,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Peas",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.16,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Sabudana Vada Mini",
+    "category": "Starter",
+    "subcategory": "Indian Fried",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 9.21,
+    "cuisine": "Maharashtrian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Sabudana",
+        "quantity": 4.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Potato",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Peanut",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sugar",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.5,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Mini Samosa",
+    "category": "Starter",
+    "subcategory": "Indian Fried",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 5.95,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Maida",
+        "quantity": 4.5,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Potato",
+        "quantity": 6,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Peas",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil For Dough",
+        "quantity": 0.8,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garam Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 450,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Dry Mango Powder",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.8,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.16,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Mini Kachori",
+    "category": "Starter",
+    "subcategory": "Indian Fried",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 6.49,
+    "cuisine": "Rajasthani",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Maida",
+        "quantity": 4.5,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Moong Dal",
+        "quantity": 2.5,
+        "unit": "kg",
+        "marketRate": 130,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil For Dough",
+        "quantity": 0.9,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Fennel Seeds",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander Seeds",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garam Masala",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 450,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Dry Mango Powder",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Asafoetida",
+        "quantity": 0.008,
+        "unit": "kg",
+        "marketRate": 1200,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.8,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Crispy Corn",
+    "category": "Starter",
+    "subcategory": "Chinese Dry",
+    "baseGuests": 100,
+    "servingSize": 80,
+    "servingUnit": "g",
+    "dishRate": 11.08,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Sweet Corn",
+        "quantity": 9,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 1.4,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.35,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.2,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.3,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Honey Chilli Potato",
+    "category": "Starter",
+    "subcategory": "Chinese Dry",
+    "baseGuests": 100,
+    "servingSize": 80,
+    "servingUnit": "g",
+    "dishRate": 8.12,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "quantity": 10,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Honey",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 300,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.45,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.2,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sesame Seeds",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.4,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.5,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.13,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Veg Manchurian Dry",
+    "category": "Starter",
+    "subcategory": "Chinese Dry",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 7.46,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Cabbage",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Carrot",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.7,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.35,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.45,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.5,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Veg Spring Roll",
+    "category": "Starter",
+    "subcategory": "Chinese Fried",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 4.1,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Spring Roll Sheets",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Cabbage",
+        "quantity": 3.5,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Carrot",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Beans",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.25,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.25,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.18,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour Slurry",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.4,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.13,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Veg Momos",
+    "category": "Starter",
+    "subcategory": "Steamed Starter",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 6.95,
+    "cuisine": "Tibetan Fusion",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Maida",
+        "quantity": 4.5,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cabbage",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Carrot",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.18,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.25,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.3,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Chilli Mushroom",
+    "category": "Starter",
+    "subcategory": "Chinese Dry",
+    "baseGuests": 100,
+    "servingSize": 80,
+    "servingUnit": "g",
+    "dishRate": 18.28,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Mushroom",
+        "quantity": 8,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.3,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.45,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "quantity": 0.4,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.18,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.22,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.1,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.13,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Salt and Pepper Baby Corn",
+    "category": "Starter",
+    "subcategory": "Chinese Dry",
+    "baseGuests": 100,
+    "servingSize": 80,
+    "servingUnit": "g",
+    "dishRate": 16.33,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Baby Corn",
+        "quantity": 8,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 1.1,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.2,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.2,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Chinese Bhel Cup",
+    "category": "Starter",
+    "subcategory": "Chinese Cup",
+    "baseGuests": 100,
+    "servingSize": 80,
+    "servingUnit": "g",
+    "dishRate": 5.72,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Fried Noodles",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cabbage",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Carrot",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Schezwan Sauce",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.35,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Disposable Cup",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Fork",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      }
+    ]
+  },
+  {
+    "dishName": "Hakka Noodle Cup",
+    "category": "Starter",
+    "subcategory": "Chinese Cup",
+    "baseGuests": 100,
+    "servingSize": 100,
+    "servingUnit": "g",
+    "dishRate": 13.17,
+    "cuisine": "Indo-Chinese",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Noodles",
+        "quantity": 7,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cabbage",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Carrot",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Beans",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spring Onion",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": 0.4,
+        "unit": "ltr",
+        "marketRate": 110,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Chilli Sauce",
+        "quantity": 0.35,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Vinegar",
+        "quantity": 0.2,
+        "unit": "ltr",
+        "marketRate": 60,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.7,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Disposable Cup",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Fork",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      }
+    ]
+  },
+  {
+    "dishName": "Bruschetta",
+    "category": "Starter",
+    "subcategory": "Continental Bite",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 9.77,
+    "cuisine": "Italian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Baguette",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.18,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Olive Oil",
+        "quantity": 0.45,
+        "unit": "ltr",
+        "marketRate": 450,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Fresh Basil Leaves",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 300,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oregano",
+        "quantity": 0.03,
+        "unit": "kg",
+        "marketRate": 700,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Garlic Bread Bite",
+    "category": "Starter",
+    "subcategory": "Continental Bite",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 13.52,
+    "cuisine": "Italian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Baguette",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Butter",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 520,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oregano",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 700,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chilli Flakes",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 500,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Cheese Corn Canape",
+    "category": "Starter",
+    "subcategory": "Canape",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 33.12,
+    "cuisine": "Continental",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Canape Shells",
+        "quantity": 200,
+        "unit": "piece",
+        "marketRate": 8,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Sweet Corn",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 2.5,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mayonnaise",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oregano",
+        "quantity": 0.03,
+        "unit": "kg",
+        "marketRate": 700,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chilli Flakes",
+        "quantity": 0.03,
+        "unit": "kg",
+        "marketRate": 500,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Stuffed Mushroom",
+    "category": "Starter",
+    "subcategory": "Continental Bite",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 35.82,
+    "cuisine": "Continental",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Mushroom",
+        "quantity": 10,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Paneer",
+        "quantity": 2.5,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Spinach",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Butter",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 520,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oregano",
+        "quantity": 0.03,
+        "unit": "kg",
+        "marketRate": 700,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Mini Pizza",
+    "category": "Starter",
+    "subcategory": "Continental Bite",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 32.6,
+    "cuisine": "Italian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Pizza Base Mini",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 10,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Pizza Sauce",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sweet Corn",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Olive",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oregano",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 700,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chilli Flakes",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 500,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Pasta Cup",
+    "category": "Starter",
+    "subcategory": "Continental Cup",
+    "baseGuests": 100,
+    "servingSize": 100,
+    "servingUnit": "g",
+    "dishRate": 33.64,
+    "cuisine": "Italian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Pasta",
+        "quantity": 6.5,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "White Sauce",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sweet Corn",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Broccoli",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Butter",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 520,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oregano",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 700,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Disposable Cup",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Fork",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      }
+    ]
+  },
+  {
+    "dishName": "Veg Croquette",
+    "category": "Starter",
+    "subcategory": "Continental Fried",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 11.54,
+    "cuisine": "Continental",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Carrot",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Beans",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sweet Corn",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Maida",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Herbs",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.2,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Potato Wedges Cup",
+    "category": "Starter",
+    "subcategory": "Continental Cup",
+    "baseGuests": 100,
+    "servingSize": 100,
+    "servingUnit": "g",
+    "dishRate": 6.75,
+    "cuisine": "Continental",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Potato",
+        "quantity": 12,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cornflour",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Paprika Powder",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 500,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic Powder",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Herbs",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.3,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.16,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Disposable Cup",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Fork",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      }
+    ]
+  },
+  {
+    "dishName": "Nachos Salsa Cup",
+    "category": "Starter",
+    "subcategory": "Continental Cup",
+    "baseGuests": 100,
+    "servingSize": 80,
+    "servingUnit": "g",
+    "dishRate": 17.6,
+    "cuisine": "Mexican",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Nachos",
+        "quantity": 6,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato",
+        "quantity": 3,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Jalapeno",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 250,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese Sauce",
+        "quantity": 2.5,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.03,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Disposable Cup",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Fork",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      }
+    ]
+  },
+  {
+    "dishName": "Mini Idli Tadka",
+    "category": "Starter",
+    "subcategory": "South Indian Bite",
+    "baseGuests": 100,
+    "servingSize": 3,
+    "servingUnit": "piece",
+    "dishRate": 5.75,
+    "cuisine": "South Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 3,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Urad Dal",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 130,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Poha",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 55,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curry Leaves",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.5,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Gunpowder Masala",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Mini Dosa Roll",
+    "category": "Starter",
+    "subcategory": "South Indian Bite",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 8.02,
+    "cuisine": "South Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Rice",
+        "quantity": 4.5,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Urad Dal",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 130,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Potato",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curry Leaves",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "quantity": 0.02,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.8,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Medu Vada Bite",
+    "category": "Starter",
+    "subcategory": "South Indian Fried",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 7.68,
+    "cuisine": "South Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Urad Dal",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 130,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curry Leaves",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.5,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Dhokla Sandwich",
+    "category": "Starter",
+    "subcategory": "Gujarati Bite",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 10.75,
+    "cuisine": "Gujarati",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Besan",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sugar",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 45,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Eno",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 400,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chutney",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sesame Seeds",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curry Leaves",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.5,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Coconut",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Khandvi Roll",
+    "category": "Starter",
+    "subcategory": "Gujarati Bite",
+    "baseGuests": 100,
+    "servingSize": 3,
+    "servingUnit": "piece",
+    "dishRate": 7.64,
+    "cuisine": "Gujarati",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 3,
+    "ingredients": [
+      {
+        "name": "Besan",
+        "quantity": 3.5,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger Chilli Paste",
+        "quantity": 0.2,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "quantity": 0.02,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sesame Seeds",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curry Leaves",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.45,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Coconut",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 50,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.13,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Patra Bite",
+    "category": "Starter",
+    "subcategory": "Gujarati Bite",
+    "baseGuests": 100,
+    "servingSize": 3,
+    "servingUnit": "piece",
+    "dishRate": 6.35,
+    "cuisine": "Gujarati",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 3,
+    "ingredients": [
+      {
+        "name": "Colocasia Leaves",
+        "quantity": 8,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Besan",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tamarind",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Jaggery",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "quantity": 0.02,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "quantity": 0.07,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sesame Seeds",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.5,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Dal Baati Bite",
+    "category": "Starter",
+    "subcategory": "Rajasthani Bite",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 14.48,
+    "cuisine": "Rajasthani",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Atta",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Rava",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 55,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ghee",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 620,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Toor Dal",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 150,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Moong Dal",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 130,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chana Dal",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 95,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garam Masala",
+        "quantity": 0.03,
+        "unit": "kg",
+        "marketRate": 450,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Mini Mirchi Vada",
+    "category": "Starter",
+    "subcategory": "Rajasthani Fried",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 5.8,
+    "cuisine": "Rajasthani",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Large Green Chilli",
+        "quantity": 7,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Potato",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Besan",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Fennel Seeds",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander Powder",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Dry Mango Powder",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Red Chilli Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ajwain",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 300,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.6,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Moong Dal Chilla Roll",
+    "category": "Starter",
+    "subcategory": "Indian Roll",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 18.02,
+    "cuisine": "North Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Moong Dal",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 130,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Paneer",
+        "quantity": 3,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger",
+        "quantity": 0.15,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil",
+        "quantity": 0.8,
+        "unit": "ltr",
+        "marketRate": 140,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Pani Puri Shot",
+    "category": "Starter",
+    "subcategory": "Chaat Shot",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 10.41,
+    "cuisine": "Indian Chaat",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Puri",
+        "quantity": 200,
+        "unit": "piece",
+        "marketRate": 1.2,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Potato",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Chickpeas",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 110,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mint",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tamarind",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Jaggery",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Salt",
+        "quantity": 0.12,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Boondi",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Water",
+        "quantity": 16,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Shot Glass",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      }
+    ]
+  },
+  {
+    "dishName": "Raj Kachori Bite",
+    "category": "Starter",
+    "subcategory": "Chaat Bite",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 12.65,
+    "cuisine": "Indian Chaat",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Mini Raj Kachori",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Potato",
+        "quantity": 3,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Chickpeas",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 110,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tamarind Chutney",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chutney",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sev",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Boondi",
+        "quantity": 0.5,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Pomegranate Seeds",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Dahi Puri",
+    "category": "Starter",
+    "subcategory": "Chaat Bite",
+    "baseGuests": 100,
+    "servingSize": 2,
+    "servingUnit": "piece",
+    "dishRate": 15.73,
+    "cuisine": "Indian Chaat",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 2,
+    "ingredients": [
+      {
+        "name": "Puri",
+        "quantity": 200,
+        "unit": "piece",
+        "marketRate": 1.2,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Potato",
+        "quantity": 3.5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Chickpeas",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 110,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tamarind Chutney",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chutney",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sev",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Pomegranate Seeds",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Papdi Chaat Cup",
+    "category": "Starter",
+    "subcategory": "Chaat Cup",
+    "baseGuests": 100,
+    "servingSize": 100,
+    "servingUnit": "g",
+    "dishRate": 18.93,
+    "cuisine": "Indian Chaat",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Papdi",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Potato",
+        "quantity": 3.5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Chickpeas",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 110,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curd",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 70,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tamarind Chutney",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chutney",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Sev",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Pomegranate Seeds",
+        "quantity": 0.8,
+        "unit": "kg",
+        "marketRate": 220,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cumin Powder",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 420,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Disposable Cup",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Spoon",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0.8,
+        "rateUnit": "piece"
+      }
+    ]
+  },
+  {
+    "dishName": "Mini Vada Pav",
+    "category": "Starter",
+    "subcategory": "Indian Slider",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 6.04,
+    "cuisine": "Maharashtrian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Mini Pav",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Potato",
+        "quantity": 7,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Besan",
+        "quantity": 2.5,
+        "unit": "kg",
+        "marketRate": 90,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Garlic",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chilli",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mustard Seeds",
+        "quantity": 0.06,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Curry Leaves",
+        "quantity": 0.08,
+        "unit": "kg",
+        "marketRate": 160,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Turmeric Powder",
+        "quantity": 0.02,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Dry Garlic Chutney",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Chutney",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 1.3,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Mini Pav Bhaji",
+    "category": "Starter",
+    "subcategory": "Indian Cup",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "portion",
+    "dishRate": 15.09,
+    "cuisine": "Indian",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Mini Pav",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Potato",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cauliflower",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Green Peas",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 2,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Butter",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 520,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Pav Bhaji Masala",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Ginger Garlic Paste",
+        "quantity": 0.25,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lemon",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Coriander",
+        "quantity": 0.3,
+        "unit": "kg",
+        "marketRate": 120,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.16,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Disposable Cup",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Spoon",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0.8,
+        "rateUnit": "piece"
+      }
+    ]
+  },
+  {
+    "dishName": "Mini Burger",
+    "category": "Starter",
+    "subcategory": "Continental Slider",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 11.15,
+    "cuisine": "Continental",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Mini Burger Bun",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Potato",
+        "quantity": 5,
+        "unit": "kg",
+        "marketRate": 28,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Vegetables",
+        "quantity": 3,
+        "unit": "kg",
+        "marketRate": 60,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Breadcrumbs",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese Slice",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Mayonnaise",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato Ketchup",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 100,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lettuce",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Tomato",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 35,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Black Pepper Powder",
+        "quantity": 0.04,
+        "unit": "kg",
+        "marketRate": 600,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Oil Absorption",
+        "quantity": 0.8,
+        "unit": "ltr",
+        "marketRate": 0,
+        "rateUnit": "ltr"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.14,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
+  },
+  {
+    "dishName": "Veg Slider",
+    "category": "Starter",
+    "subcategory": "Continental Slider",
+    "baseGuests": 100,
+    "servingSize": 1,
+    "servingUnit": "piece",
+    "dishRate": 20.58,
+    "cuisine": "Continental",
+    "serviceStyle": "Moving",
+    "piecesPerGuest": 1,
+    "ingredients": [
+      {
+        "name": "Slider Bun",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Paneer",
+        "quantity": 4,
+        "unit": "kg",
+        "marketRate": 280,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Capsicum",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 80,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Onion",
+        "quantity": 1.2,
+        "unit": "kg",
+        "marketRate": 30,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Cheese Slice",
+        "quantity": 100,
+        "unit": "piece",
+        "marketRate": 0,
+        "rateUnit": "piece"
+      },
+      {
+        "name": "Mayonnaise",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 180,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Mint Chutney",
+        "quantity": 1,
+        "unit": "kg",
+        "marketRate": 0,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Lettuce",
+        "quantity": 1.5,
+        "unit": "kg",
+        "marketRate": 140,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Butter",
+        "quantity": 0.6,
+        "unit": "kg",
+        "marketRate": 520,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Chaat Masala",
+        "quantity": 0.05,
+        "unit": "kg",
+        "marketRate": 240,
+        "rateUnit": "kg"
+      },
+      {
+        "name": "Salt",
+        "quantity": 0.1,
+        "unit": "kg",
+        "marketRate": 20,
+        "rateUnit": "kg"
+      }
+    ]
   }
-
-
-
 ]
