@@ -52,6 +52,9 @@ type MenuFunctionGroup = {
   items: MenuItem[];
 };
 
+const NEW_MENU_SERVICE_ID =
+  '__new_menu_service__';
+
 function normalizeDishKey(value: string): string {
   return value
     .toLowerCase()
@@ -105,7 +108,16 @@ export default function MenuPage() {
     useState('');
 
   const [newServiceId, setNewServiceId] =
-    useState('');
+    useState(NEW_MENU_SERVICE_ID);
+
+  const [newDayLabel, setNewDayLabel] =
+    useState('Day 1');
+
+  const [newMealLabel, setNewMealLabel] =
+    useState('Dinner');
+
+  const [newServicePax, setNewServicePax] =
+    useState(0);
 
   const [pageMessage, setPageMessage] =
     useState<PageMessage>(null);
@@ -144,6 +156,27 @@ export default function MenuPage() {
       loadWork(tenantId);
 
     setWork(currentWork);
+    setNewServicePax(
+      Math.max(
+        0,
+        Number(currentWork.event.pax) || 0,
+      ),
+    );
+
+    const firstSavedService =
+      currentWork.menu.find(
+        (item) =>
+          Boolean(
+            item.serviceId ||
+              item.dayLabel ||
+              item.mealLabel,
+          ),
+      );
+
+    setNewServiceId(
+      firstSavedService?.serviceId ||
+        NEW_MENU_SERVICE_ID,
+    );
 
     let cancelled = false;
 
@@ -450,7 +483,54 @@ export default function MenuPage() {
       (service) =>
         service.serviceId ===
         newServiceId,
-    ) ?? weddingServices[0];
+    );
+
+  const manualNewDishService = useMemo(() => {
+    const dayLabel =
+      newDayLabel.trim() || 'Day 1';
+    const mealLabel =
+      newMealLabel.trim() || 'Event Menu';
+
+    const matchingService =
+      weddingServices.find(
+        (service) =>
+          normalizeDishKey(
+            service.dayLabel,
+          ) ===
+            normalizeDishKey(
+              dayLabel,
+            ) &&
+          normalizeDishKey(
+            service.mealLabel,
+          ) ===
+            normalizeDishKey(
+              mealLabel,
+            ),
+      );
+
+    if (matchingService) {
+      return matchingService;
+    }
+
+    return {
+      serviceId: `manual::${normalizeDishKey(dayLabel)}::${normalizeDishKey(mealLabel)}`,
+      dayLabel,
+      mealLabel,
+      servicePax: Math.max(
+        0,
+        Number(newServicePax) || 0,
+      ),
+    };
+  }, [
+    newDayLabel,
+    newMealLabel,
+    newServicePax,
+    weddingServices,
+  ]);
+
+  const targetNewDishService =
+    selectedNewDishService ||
+    manualNewDishService;
 
   const matchedNewDish = useMemo(() => {
     const trimmedName = newDish.trim();
@@ -753,7 +833,7 @@ export default function MenuPage() {
 
         const sameService =
           (item.serviceId ?? '') ===
-          (selectedNewDishService?.serviceId ?? '');
+          targetNewDishService.serviceId;
 
         return sameName && sameCategory && sameService;
       });
@@ -779,13 +859,13 @@ export default function MenuPage() {
         matchedDish?.servingUnit ??
         'serving',
       serviceId:
-        selectedNewDishService?.serviceId,
+        targetNewDishService.serviceId,
       dayLabel:
-        selectedNewDishService?.dayLabel,
+        targetNewDishService.dayLabel,
       mealLabel:
-        selectedNewDishService?.mealLabel,
+        targetNewDishService.mealLabel,
       servicePax:
-        selectedNewDishService?.servicePax,
+        targetNewDishService.servicePax,
     };
 
     persist({
@@ -799,6 +879,9 @@ export default function MenuPage() {
     setNewDish('');
     setNewCategory('Sabji');
     setNewRate('');
+    setNewServiceId(
+      targetNewDishService.serviceId,
+    );
 
     setPageMessage({
       type: 'success',
@@ -806,7 +889,10 @@ export default function MenuPage() {
         finalRate > 0
           ? `${finalName} added at ₹${formatRate(
               finalRate,
-            )} per plate.`
+            )} per plate to ${[
+              targetNewDishService.dayLabel,
+              targetNewDishService.mealLabel,
+            ].filter(Boolean).join(' • ')}.`
           : `${finalName} added without a catalog rate. Enter its manual rate below.`,
     });
   }
@@ -1051,16 +1137,18 @@ export default function MenuPage() {
           <div
             className="form-grid menu-quick-add-grid"
           >
-            {weddingServices.length > 0 ? (
-              <div className="field">
+            <div className="field menu-service-picker">
                 <label htmlFor="newService">
-                  Function / Meal
+                  Add dish to
                 </label>
 
                 <select
                   id="newService"
                   className="select select-large"
-                  value={selectedNewDishService?.serviceId ?? ''}
+                  value={
+                    selectedNewDishService?.serviceId ??
+                    NEW_MENU_SERVICE_ID
+                  }
                   onChange={(event) => {
                     setNewServiceId(event.target.value);
                     setPageMessage(null);
@@ -1079,7 +1167,63 @@ export default function MenuPage() {
                         : ''}
                     </option>
                   ))}
+                  <option value={NEW_MENU_SERVICE_ID}>
+                    + Create another day / meal
+                  </option>
                 </select>
+            </div>
+
+            {!selectedNewDishService ? (
+              <div className="menu-service-setup">
+                <div className="field">
+                  <label htmlFor="newDayLabel">Event day</label>
+                  <input
+                    id="newDayLabel"
+                    className="input input-large"
+                    value={newDayLabel}
+                    onChange={(event) => {
+                      setNewDayLabel(event.target.value);
+                      setPageMessage(null);
+                    }}
+                    placeholder="Day 1"
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="newMealLabel">Function / meal</label>
+                  <input
+                    id="newMealLabel"
+                    className="input input-large"
+                    value={newMealLabel}
+                    onChange={(event) => {
+                      setNewMealLabel(event.target.value);
+                      setPageMessage(null);
+                    }}
+                    placeholder="Breakfast, Lunch, Dinner..."
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="newServicePax">Guests</label>
+                  <input
+                    id="newServicePax"
+                    className="input input-large"
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={newServicePax || ''}
+                    onChange={(event) => {
+                      setNewServicePax(
+                        Math.max(
+                          0,
+                          Number(event.target.value) || 0,
+                        ),
+                      );
+                      setPageMessage(null);
+                    }}
+                    placeholder={String(work.event.pax || 0)}
+                  />
+                </div>
               </div>
             ) : null}
 

@@ -821,6 +821,13 @@ Gulab Jamun`}
                     <span>{menuLines} non-empty lines • {work.event.rawMenuText.length.toLocaleString('en-IN')} characters</span>
                     <span>English • Roman Hindi • Hindi • Gujarati</span>
                   </div>
+                  <div className="menu-multiday-tip">
+                    <span aria-hidden="true">2D</span>
+                    <div>
+                      <b>Multi-day event?</b>
+                      <p>Start each menu with a heading such as <code>Day 1 • Dinner • 300 Members</code> and <code>Day 2 • Breakfast • 180 Members</code>.</p>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="menu-upload-empty">
