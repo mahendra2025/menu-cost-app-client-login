@@ -4349,3 +4349,355 @@ td:last-child {
       #07090d;
   }
 }
+
+/* App-wide black theme */
+[data-theme="dark"] body,
+[data-theme="dark"] .page-shell {
+  color: #f5f7fa;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(74, 156, 255, 0.12), transparent 30rem),
+    radial-gradient(circle at 96% 4%, rgba(255, 173, 66, 0.07), transparent 25rem),
+    #07090d;
+}
+
+[data-theme="dark"] .topbar {
+  border-color: #252b35;
+  background: rgba(13, 16, 22, 0.94);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.34);
+}
+
+[data-theme="dark"] .brand-logo,
+[data-theme="dark"] .app-mark {
+  background: linear-gradient(145deg, #202b3c, #1478f2);
+}
+
+[data-theme="dark"] .account-status {
+  color: #ffc16b;
+  border-color: #47371f;
+  background: #21180e;
+}
+
+[data-theme="dark"] .account-status.active {
+  color: #69df9c;
+  border-color: #214331;
+  background: #10261c;
+}
+
+[data-theme="dark"] .page-title h1,
+[data-theme="dark"] .page-title p,
+[data-theme="dark"] .glass-card h1,
+[data-theme="dark"] .glass-card h2,
+[data-theme="dark"] .glass-card h3,
+[data-theme="dark"] .panel h1,
+[data-theme="dark"] .panel h2,
+[data-theme="dark"] .panel h3,
+[data-theme="dark"] .stat-card strong,
+[data-theme="dark"] .billing-price strong {
+  color: #f5f7fa;
+}
+
+[data-theme="dark"] .page-title p,
+[data-theme="dark"] .muted {
+  color: #9aa3b1;
+}
+
+[data-theme="dark"] .page-progress > div {
+  background: #252c36;
+}
+
+[data-theme="dark"] .loader-card,
+[data-theme="dark"] .login-card,
+[data-theme="dark"] .glass-card,
+[data-theme="dark"] .locked-card,
+[data-theme="dark"] .alert-card,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .helper-card,
+[data-theme="dark"] .menu-row,
+[data-theme="dark"] .manpower-function-card,
+[data-theme="dark"] .manpower-role-card,
+[data-theme="dark"] .billing-details > div {
+  color: #f5f7fa;
+  border-color: #272d37;
+  background: #10141b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.26);
+}
+
+[data-theme="dark"] .section-kicker {
+  color: #8bc0ff;
+  border-color: rgba(74, 156, 255, 0.25);
+  background: rgba(74, 156, 255, 0.12);
+}
+
+[data-theme="dark"] .field label {
+  color: #b5bdc8;
+}
+
+[data-theme="dark"] .input,
+[data-theme="dark"] .textarea,
+[data-theme="dark"] .select,
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+[data-theme="dark"] option {
+  color: #f5f7fa;
+}
+
+[data-theme="dark"] .input,
+[data-theme="dark"] .textarea,
+[data-theme="dark"] .select {
+  border-color: #303743;
+  background: #151a22;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+[data-theme="dark"] .input:hover,
+[data-theme="dark"] .textarea:hover,
+[data-theme="dark"] .select:hover {
+  border-color: #46505f;
+  background: #191f28;
+}
+
+[data-theme="dark"] option {
+  background: #151a22;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #778190;
+  opacity: 1;
+}
+
+[data-theme="dark"] input:-webkit-autofill {
+  -webkit-text-fill-color: #f5f7fa;
+  box-shadow: 0 0 0 1000px #151a22 inset;
+}
+
+[data-theme="dark"] .ghost-button {
+  color: #dfe5ec;
+  border-color: #303743;
+  background: #171b22;
+}
+
+[data-theme="dark"] .ghost-button:hover {
+  border-color: #46505f;
+  background: #20252e;
+}
+
+[data-theme="dark"] .secondary-button {
+  color: #fff;
+  background: #202a3a;
+}
+
+[data-theme="dark"] .danger-button {
+  color: #ff8b84;
+  background: rgba(255, 98, 89, 0.12);
+}
+
+[data-theme="dark"] .table-wrap {
+  border-color: #272d37;
+  background: #10141b;
+}
+
+[data-theme="dark"] th {
+  color: #939dab;
+  border-color: #272d37;
+  background: #151a22;
+}
+
+[data-theme="dark"] td {
+  color: #e7ebf0;
+  border-color: #242a33;
+  background: #0d1117;
+}
+
+[data-theme="dark"] .auth-page,
+[data-theme="dark"] .landing-page {
+  background:
+    radial-gradient(circle at 15% 5%, rgba(74, 156, 255, 0.15), transparent 32rem),
+    radial-gradient(circle at 90% 90%, rgba(255, 173, 66, 0.06), transparent 26rem),
+    #07090d;
+}
+
+[data-theme="dark"] .auth-intro,
+[data-theme="dark"] .landing-copy {
+  border: 1px solid #263243;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(93, 170, 255, 0.22), transparent 18rem),
+    linear-gradient(145deg, #121a28, #090e16);
+  box-shadow: 0 26px 76px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .login-card,
+[data-theme="dark"] .landing-preview {
+  color: #f5f7fa;
+  border-color: #272d37;
+  background: #10141b;
+}
+
+[data-theme="dark"] .login-heading h2,
+[data-theme="dark"] .landing-step b {
+  color: #f5f7fa;
+}
+
+[data-theme="dark"] .landing-preview-head,
+[data-theme="dark"] .landing-step small {
+  color: #929baa;
+}
+
+[data-theme="dark"] .landing-preview-head b {
+  color: #69df9c;
+}
+
+[data-theme="dark"] .landing-step {
+  border-color: #2a313c;
+  background: #151a22;
+}
+
+[data-theme="dark"] .form-alert {
+  color: #ff9a94;
+  border-color: rgba(255, 98, 89, 0.32);
+  background: rgba(255, 98, 89, 0.1);
+}
+
+[data-theme="dark"] .menu-service-group {
+  border-color: #47371f;
+  background: #18130d;
+}
+
+[data-theme="dark"] .manpower-function-card {
+  border-color: #26364b;
+  background: #0f1722;
+}
+
+[data-theme="dark"] .manpower-overview,
+[data-theme="dark"] .menu-overview {
+  color: #f5f7fa;
+  border-color: #47371f;
+  background: linear-gradient(125deg, #10141b 0%, #21180e 100%);
+}
+
+[data-theme="dark"] .menu-overview.is-ready {
+  border-color: #214331;
+  background: linear-gradient(125deg, #10141b 0%, #10261c 100%);
+}
+
+[data-theme="dark"] .manpower-health span,
+[data-theme="dark"] .menu-overview-metrics span {
+  color: #a9b2bf;
+  border-color: #2d3540;
+  background: #171c24;
+}
+
+[data-theme="dark"] .manpower-health b,
+[data-theme="dark"] .menu-overview-metrics b {
+  color: #f5f7fa;
+}
+
+[data-theme="dark"] .manpower-table tr.is-active td {
+  background: #111c29;
+}
+
+[data-theme="dark"] .manpower-rate-input,
+[data-theme="dark"] .menu-rate-input {
+  color: #f5f7fa;
+  border-color: #303743;
+  background: #151a22;
+}
+
+[data-theme="dark"] .manpower-rate-input.is-missing,
+[data-theme="dark"] .menu-row-missing {
+  border-color: rgba(255, 173, 66, 0.4);
+  background: #21180e;
+}
+
+[data-theme="dark"] .manual-builder-step,
+[data-theme="dark"] .manual-review-step.has-selection {
+  color: #f5f7fa;
+  border-color: #29313c;
+  background: linear-gradient(180deg, #121720, #0d1117);
+}
+
+[data-theme="dark"] .manual-entry-tabs,
+[data-theme="dark"] .menu-review-toolbar,
+[data-theme="dark"] .manual-review-empty {
+  color: #b2bac6;
+  border-color: #2c3440;
+  background: #151a22;
+}
+
+[data-theme="dark"] .manual-entry-tabs button.is-active {
+  color: #8bc0ff;
+  background: #252c36;
+}
+
+[data-theme="dark"] .manual-review-empty > span {
+  color: #8e99a8;
+  background: #252c36;
+}
+
+[data-theme="dark"] .manual-review-empty b {
+  color: #c2c9d3;
+}
+
+[data-theme="dark"] .menu-filter-toggle,
+[data-theme="dark"] .menu-quick-add-close {
+  color: #dfe5ec;
+  border-color: #303743;
+  background: #171b22;
+}
+
+[data-theme="dark"] .menu-filter-toggle.is-active,
+[data-theme="dark"] .menu-next-step {
+  color: #ffc16b;
+  border-color: rgba(255, 173, 66, 0.34);
+  background: #21180e;
+}
+
+[data-theme="dark"] .menu-next-step.is-ready {
+  color: #69df9c;
+  border-color: rgba(61, 220, 132, 0.3);
+  background: #10261c;
+}
+
+[data-theme="dark"] .quotation-preview-shell {
+  border-color: #2b323d;
+  background: #11161e;
+}
+
+[data-theme="dark"] .quotation-preview-bar,
+[data-theme="dark"] .quotation-preview-bar b {
+  color: #bdc5d0;
+}
+
+[data-theme="dark"] .bottom-nav {
+  border-color: #292f39;
+  background: rgba(13, 16, 22, 0.96);
+  box-shadow: 0 16px 46px rgba(0, 0, 0, 0.42);
+}
+
+[data-theme="dark"] .bottom-nav a {
+  color: #929baa;
+}
+
+[data-theme="dark"] .bottom-nav a:hover:not(.active) {
+  color: #fff;
+  background: #1b212a;
+}
+
+/* Documents stay paper-white on screen and when printed. */
+[data-theme="dark"] .pdf-paper,
+[data-theme="dark"] .quotation-paper {
+  color: #18212f;
+  background: #fff;
+}
+
+@media (max-width: 760px) {
+  [data-theme="dark"] .page-shell,
+  [data-theme="dark"] .auth-page,
+  [data-theme="dark"] .landing-page {
+    background:
+      radial-gradient(circle at 0 0, rgba(74, 156, 255, 0.13), transparent 36%),
+      #07090d;
+  }
+}
