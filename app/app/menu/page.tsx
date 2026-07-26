@@ -149,6 +149,9 @@ export default function MenuPage() {
   const [catalogCategoryFilter, setCatalogCategoryFilter] =
     useState('');
 
+  const [dishEntryMode, setDishEntryMode] =
+    useState<'catalog' | 'custom'>('catalog');
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -623,11 +626,6 @@ export default function MenuPage() {
 
   const isNewDishMatched =
     newDishPreview?.mode === 'matched';
-
-  const finalPreviewRate =
-    newRate === ''
-      ? newDishPreview?.detectedRate ?? 0
-      : Math.max(0, Number(newRate) || 0);
 
   function focusQuickAdd() {
     setIsQuickAddOpen(true);
@@ -1201,410 +1199,305 @@ export default function MenuPage() {
             </div>
           </div>
 
-          <div
-            className="form-grid menu-quick-add-grid"
-          >
-            <div className="field menu-service-picker">
-                <label htmlFor="newService">
-                  Add dish to
-                </label>
+          <div className="manual-menu-builder">
+            <section className="manual-builder-step">
+              <div className="manual-step-heading">
+                <span>1</span>
+                <div>
+                  <h3>Choose the menu</h3>
+                  <p>Every dish will be added to this day and meal.</p>
+                </div>
+              </div>
 
+              <div className="field menu-service-picker">
+                <label htmlFor="newService">Day / Function / Meal</label>
                 <select
                   id="newService"
                   className="select select-large"
-                  value={
-                    selectedNewDishService?.serviceId ??
-                    NEW_MENU_SERVICE_ID
-                  }
+                  value={selectedNewDishService?.serviceId ?? NEW_MENU_SERVICE_ID}
                   onChange={(event) => {
                     setNewServiceId(event.target.value);
                     setPageMessage(null);
                   }}
                 >
                   {weddingServices.map((service) => (
-                    <option
-                      key={service.serviceId}
-                      value={service.serviceId}
-                    >
-                      {[service.dayLabel, service.mealLabel]
-                        .filter(Boolean)
-                        .join(' • ')}
-                      {service.servicePax
-                        ? ` • ${service.servicePax} members`
-                        : ''}
+                    <option key={service.serviceId} value={service.serviceId}>
+                      {[service.dayLabel, service.mealLabel].filter(Boolean).join(' • ')}
+                      {service.servicePax ? ` • ${service.servicePax} members` : ''}
                     </option>
                   ))}
-                  <option value={NEW_MENU_SERVICE_ID}>
-                    + Create another day / meal
-                  </option>
+                  <option value={NEW_MENU_SERVICE_ID}>+ Create another day / meal</option>
                 </select>
-            </div>
-
-            {!selectedNewDishService ? (
-              <div className="menu-service-setup">
-                <div className="field">
-                  <label htmlFor="newDayLabel">Event day</label>
-                  <input
-                    id="newDayLabel"
-                    className="input input-large"
-                    value={newDayLabel}
-                    onChange={(event) => {
-                      setNewDayLabel(event.target.value);
-                      setPageMessage(null);
-                    }}
-                    placeholder="Day 1"
-                  />
-                </div>
-
-                <div className="field">
-                  <label htmlFor="newMealLabel">Function / meal</label>
-                  <input
-                    id="newMealLabel"
-                    className="input input-large"
-                    value={newMealLabel}
-                    onChange={(event) => {
-                      setNewMealLabel(event.target.value);
-                      setPageMessage(null);
-                    }}
-                    placeholder="Breakfast, Lunch, Dinner..."
-                  />
-                </div>
-
-                <div className="field">
-                  <label htmlFor="newServicePax">Guests</label>
-                  <input
-                    id="newServicePax"
-                    className="input input-large"
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    value={newServicePax || ''}
-                    onChange={(event) => {
-                      setNewServicePax(
-                        Math.max(
-                          0,
-                          Number(event.target.value) || 0,
-                        ),
-                      );
-                      setPageMessage(null);
-                    }}
-                    placeholder={String(work.event.pax || 0)}
-                  />
-                </div>
               </div>
-            ) : null}
 
-            <div className="field menu-catalog-category">
-              <label htmlFor="catalogCategory">
-                1. Browse Category
-              </label>
+              {!selectedNewDishService ? (
+                <div className="menu-service-setup">
+                  <div className="field">
+                    <label htmlFor="newDayLabel">Event day</label>
+                    <input
+                      id="newDayLabel"
+                      className="input input-large"
+                      value={newDayLabel}
+                      onChange={(event) => {
+                        setNewDayLabel(event.target.value);
+                        setPageMessage(null);
+                      }}
+                      placeholder="Day 1"
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="newMealLabel">Function / meal</label>
+                    <input
+                      id="newMealLabel"
+                      className="input input-large"
+                      value={newMealLabel}
+                      onChange={(event) => {
+                        setNewMealLabel(event.target.value);
+                        setPageMessage(null);
+                      }}
+                      placeholder="Breakfast, Lunch, Dinner..."
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="newServicePax">Guests</label>
+                    <input
+                      id="newServicePax"
+                      className="input input-large"
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={newServicePax || ''}
+                      onChange={(event) => {
+                        setNewServicePax(Math.max(0, Number(event.target.value) || 0));
+                        setPageMessage(null);
+                      }}
+                      placeholder={String(work.event.pax || 0)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="manual-destination-summary">
+                  <span aria-hidden="true">✓</span>
+                  <div>
+                    <b>{[targetNewDishService.dayLabel, targetNewDishService.mealLabel].filter(Boolean).join(' • ')}</b>
+                    <small>{targetNewDishService.servicePax ? `${targetNewDishService.servicePax} members` : 'Guest count not set'}</small>
+                  </div>
+                </div>
+              )}
+            </section>
 
-              <select
-                id="catalogCategory"
-                className="select select-large"
-                value={catalogCategoryFilter}
-                onChange={(event) => {
-                  setCatalogCategoryFilter(
-                    event.target.value,
-                  );
-                  setPageMessage(null);
-                }}
-              >
-                <option value="">
-                  All categories • {catalogDishes.length} dishes
-                </option>
-                {catalogBrowseCategories.map(
-                  (category) => {
-                    const dishCount =
-                      catalogDishes.filter(
-                        (dish) =>
-                          dish.category ===
-                          category,
-                      ).length;
-
-                    return (
-                      <option
-                        key={category}
-                        value={category}
-                      >
-                        {category} • {dishCount}
-                      </option>
-                    );
-                  },
-                )}
-              </select>
-
-              <small className="muted">
-                Filter the catalog before selecting a dish.
-              </small>
-            </div>
-
-            <div className="field menu-catalog-select">
-              <label htmlFor="catalogDish">
-                2. Select Dish
-              </label>
-
-              <select
-                id="catalogDish"
-                className="select select-large"
-                value=""
-                onChange={(event) => {
-                  const selectedDish =
-                    visibleCatalogDishes.find(
-                      (dish) =>
-                        `${dish.name}::${dish.category}` ===
-                        event.target.value,
-                    );
-
-                  if (selectedDish) {
-                    selectSuggestedDish(selectedDish);
-                  }
-                }}
-              >
-                <option value="">
-                  {catalogDishes.length > 0
-                    ? `Choose from ${visibleCatalogDishes.length} dishes...`
-                    : 'Loading dish catalog...'}
-                </option>
-                {visibleCatalogDishes.map((dish) => (
-                  <option
-                    key={`${dish.name}-${dish.category}`}
-                    value={`${dish.name}::${dish.category}`}
+            <section className="manual-builder-step">
+              <div className="manual-step-heading with-actions">
+                <span>2</span>
+                <div>
+                  <h3>Choose a dish</h3>
+                  <p>Browse the catalog or enter a custom item.</p>
+                </div>
+                <div className="manual-entry-tabs" role="group" aria-label="Dish entry method">
+                  <button
+                    type="button"
+                    className={dishEntryMode === 'catalog' ? 'is-active' : ''}
+                    aria-pressed={dishEntryMode === 'catalog'}
+                    onClick={() => {
+                      setDishEntryMode('catalog');
+                      handleNewDishChange('');
+                    }}
                   >
-                    {dish.name} • {dish.category} • ₹{formatRate(dish.rate)}
-                  </option>
-                ))}
-              </select>
-
-              <small className="muted">
-                Category and rate will fill automatically.
-              </small>
-            </div>
-
-            <div className="field">
-              <label htmlFor="newDish">
-                Dish Name
-              </label>
-
-              <input
-                id="newDish"
-                className="input input-large"
-                value={newDish}
-                onChange={(event) =>
-                  handleNewDishChange(
-                    event.target.value,
-                  )
-                }
-                onKeyDown={(event) => {
-                  if (
-                    event.key === 'Enter'
-                  ) {
-                    event.preventDefault();
-                    addDish();
-                  }
-                }}
-                placeholder="Paneer Butter Masala"
-              />
-            </div>
-
-            <div className="field">
-              <label htmlFor="newCategory">
-                Category
-              </label>
-
-              <select
-                id="newCategory"
-                className={`select select-large ${
-                  isNewDishMatched
-                    ? 'select-locked'
-                    : ''
-                }`}
-                value={newCategory}
-                onChange={(event) => {
-                  const category =
-                    event.target.value;
-
-                  setNewCategory(category);
-
-                  if (isNewDishMatched) {
-                    setNewRate(
-                      String(
-                        Number(
-                          matchedNewDish?.rate,
-                        ) || 0,
-                      ),
-                    );
-                  }
-
-                  setPageMessage(null);
-                }}
-                disabled={
-                  isNewDishMatched
-                }
-              >
-                {availableCategories.map(
-                  (category) => (
-                    <option
-                      key={category}
-                      value={category}
-                    >
-                      {category}
-                    </option>
-                  ),
-                )}
-              </select>
-            </div>
-
-            <div className="field">
-              <label htmlFor="newRate">
-                Manual Rate / Plate
-              </label>
-
-              <input
-                id="newRate"
-                className="input input-large"
-                type="number"
-                min="0"
-                step="0.01"
-                inputMode="decimal"
-                value={newRate}
-                onChange={(event) => {
-                  const value =
-                    event.target.value;
-
-                  if (value === '') {
-                    setNewRate('');
-                  } else {
-                    setNewRate(
-                      String(
-                        Math.max(
-                          0,
-                          Number(value) || 0,
-                        ),
-                      ),
-                    );
-                  }
-
-                  setPageMessage(null);
-                }}
-                placeholder="0.00"
-              />
-
-              <small className="muted">
-                {isNewDishMatched
-                  ? 'Detected automatically, but editable.'
-                  : 'Not in catalog — enter the rate manually.'}
-              </small>
-            </div>
-
-            <div className="field">
-              <label>&nbsp;</label>
-
-              <button
-                className="primary-button full"
-                type="button"
-                onClick={addDish}
-                disabled={!newDish.trim()}
-              >
-                Add Dish
-              </button>
-            </div>
-          </div>
-
-          {newDishPreview ? (
-            <div
-              className={`dish-preview ${
-                newDishPreview.mode ===
-                'matched'
-                  ? 'matched'
-                  : 'fallback'
-              }`}
-            >
-              <strong>
-                {newDishPreview.mode ===
-                'matched'
-                  ? 'Catalog match'
-                  : 'Estimated category'}
-              </strong>
-
-              <span>
-                {
-                  newDishPreview.dishName
-                }
-              </span>
-
-              <small>
-                {
-                  newDishPreview.category
-                }
-                {newDishPreview.mode === 'matched' ? (
-                  <>
-                    {' • Detected ₹'}
-                    {formatRate(newDishPreview.detectedRate)}
-                    {' • Final ₹'}
-                    {formatRate(finalPreviewRate)}
-                  </>
-                ) : (
-                  <>
-                    {' • No catalog rate'}
-                    {newRate !== ''
-                      ? ` • Manual ₹${formatRate(finalPreviewRate)}`
-                      : ' • Manual rate required'}
-                  </>
-                )}
-              </small>
-            </div>
-          ) : null}
-
-          {isNewDishMatched ? (
-            <p
-              className="muted"
-              style={{
-                marginTop: 10,
-              }}
-            >
-              The category is locked
-              because this dish matched
-              the catalog. Its rate can
-              still be changed manually.
-            </p>
-          ) : null}
-
-          {newDishSuggestions.length >
-          0 ? (
-            <div className="dish-suggestions">
-              <strong>
-                Did you mean?
-              </strong>
-
-              <div className="action-row">
-                {newDishSuggestions.map(
-                  (dish) => (
-                    <button
-                      key={`${dish.name}-${dish.category}`}
-                      className="ghost-button"
-                      type="button"
-                      onClick={() =>
-                        selectSuggestedDish(
-                          dish,
-                        )
-                      }
-                    >
-                      {dish.name}
-                      {' • '}
-                      {dish.category}
-                      {' • ₹'}
-                      {formatRate(
-                        Number(
-                          dish.rate,
-                        ),
-                      )}
-                    </button>
-                  ),
-                )}
+                    Catalog
+                  </button>
+                  <button
+                    type="button"
+                    className={dishEntryMode === 'custom' ? 'is-active' : ''}
+                    aria-pressed={dishEntryMode === 'custom'}
+                    onClick={() => {
+                      setDishEntryMode('custom');
+                      handleNewDishChange('');
+                    }}
+                  >
+                    Custom dish
+                  </button>
+                </div>
               </div>
-            </div>
-          ) : null}
+
+              {dishEntryMode === 'catalog' ? (
+                <div className="manual-catalog-grid">
+                  <div className="field">
+                    <label htmlFor="catalogCategory">Category</label>
+                    <select
+                      id="catalogCategory"
+                      className="select select-large"
+                      value={catalogCategoryFilter}
+                      onChange={(event) => {
+                        setCatalogCategoryFilter(event.target.value);
+                        handleNewDishChange('');
+                      }}
+                    >
+                      <option value="">All categories • {catalogDishes.length} dishes</option>
+                      {catalogBrowseCategories.map((category) => {
+                        const dishCount = catalogDishes.filter((dish) => dish.category === category).length;
+                        return (
+                          <option key={category} value={category}>
+                            {category} • {dishCount}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="catalogDish">Dish</label>
+                    <select
+                      id="catalogDish"
+                      className="select select-large"
+                      value={
+                        matchedNewDish &&
+                        (!catalogCategoryFilter ||
+                          matchedNewDish.category === catalogCategoryFilter)
+                          ? `${matchedNewDish.name}::${matchedNewDish.category}`
+                          : ''
+                      }
+                      onChange={(event) => {
+                        const selectedDish = visibleCatalogDishes.find(
+                          (dish) => `${dish.name}::${dish.category}` === event.target.value,
+                        );
+                        if (selectedDish) selectSuggestedDish(selectedDish);
+                      }}
+                    >
+                      <option value="">
+                        {catalogDishes.length > 0
+                          ? `Choose from ${visibleCatalogDishes.length} dishes...`
+                          : 'Loading dish catalog...'}
+                      </option>
+                      {visibleCatalogDishes.map((dish) => (
+                        <option
+                          key={`${dish.name}-${dish.category}`}
+                          value={`${dish.name}::${dish.category}`}
+                        >
+                          {dish.name} • ₹{formatRate(dish.rate)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <div className="manual-custom-grid">
+                  <div className="field">
+                    <label htmlFor="newDish">Dish name</label>
+                    <input
+                      id="newDish"
+                      className="input input-large"
+                      value={newDish}
+                      onChange={(event) => handleNewDishChange(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          addDish();
+                        }
+                      }}
+                      placeholder="Paneer Butter Masala"
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="newCategory">Category</label>
+                    <select
+                      id="newCategory"
+                      className={`select select-large ${isNewDishMatched ? 'select-locked' : ''}`}
+                      value={newCategory}
+                      onChange={(event) => {
+                        setNewCategory(event.target.value);
+                        setPageMessage(null);
+                      }}
+                      disabled={isNewDishMatched}
+                    >
+                      {availableCategories.map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {dishEntryMode === 'custom' && newDishSuggestions.length > 0 ? (
+                <div className="dish-suggestions">
+                  <strong>Did you mean?</strong>
+                  <div className="action-row">
+                    {newDishSuggestions.map((dish) => (
+                      <button
+                        key={`${dish.name}-${dish.category}`}
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => selectSuggestedDish(dish)}
+                      >
+                        {dish.name} • {dish.category} • ₹{formatRate(Number(dish.rate))}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
+            <section className={`manual-builder-step manual-review-step ${newDishPreview ? 'has-selection' : ''}`}>
+              <div className="manual-step-heading">
+                <span>3</span>
+                <div>
+                  <h3>Review and add</h3>
+                  <p>Confirm the rate before adding this dish.</p>
+                </div>
+              </div>
+
+              {newDishPreview ? (
+                <div className="manual-dish-review">
+                  <div className="manual-selected-dish">
+                    <span aria-hidden="true">✓</span>
+                    <div>
+                      <small>{newDishPreview.mode === 'matched' ? 'Catalog dish' : 'Custom dish'}</small>
+                      <b>{newDishPreview.dishName}</b>
+                      <p>{newDishPreview.category} • {formatServingQuantity(matchedNewDish?.servingQuantity)} {matchedNewDish?.servingUnit ?? 'serving'}</p>
+                    </div>
+                  </div>
+
+                  <div className="field manual-review-rate">
+                    <label htmlFor="newRate">Rate / Plate</label>
+                    <div className="menu-rate-input">
+                      <span aria-hidden="true">₹</span>
+                      <input
+                        id="newRate"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={newRate}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setNewRate(value === '' ? '' : String(Math.max(0, Number(value) || 0)));
+                          setPageMessage(null);
+                        }}
+                        placeholder="Enter rate"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    className="primary-button manual-add-button"
+                    type="button"
+                    onClick={addDish}
+                    disabled={!newDish.trim()}
+                  >
+                    <span aria-hidden="true">+</span>
+                    Add to {[targetNewDishService.dayLabel, targetNewDishService.mealLabel].filter(Boolean).join(' • ')}
+                  </button>
+                </div>
+              ) : (
+                <div className="manual-review-empty">
+                  <span aria-hidden="true">＋</span>
+                  <div>
+                    <b>No dish selected yet</b>
+                    <p>Choose a catalog dish or enter a custom dish above.</p>
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
         </div>
         ) : null}
 
