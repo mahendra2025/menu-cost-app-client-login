@@ -24,6 +24,7 @@ import {
 } from '../../../lib/store';
 
 import type {
+  EventDetails,
   Session,
   WorkState,
 } from '../../../lib/types';
@@ -46,6 +47,212 @@ Sweet
 Gulab Jamun`;
 
 type MenuInputMode = 'upload' | 'paste';
+
+type DetectedEventDetails = Partial<
+  Pick<
+    EventDetails,
+    | 'clientName'
+    | 'eventName'
+    | 'eventDate'
+    | 'functionType'
+    | 'pax'
+    | 'city'
+    | 'venue'
+  >
+>;
+
+const EVENT_DETAIL_LABELS: Record<
+  keyof DetectedEventDetails,
+  string
+> = {
+  clientName: 'Client',
+  eventName: 'Event',
+  eventDate: 'Date',
+  functionType: 'Function',
+  pax: 'Guests',
+  city: 'City',
+  venue: 'Venue',
+};
+
+function parseDetectedDate(
+  value: string,
+): string | undefined {
+  const cleaned = value
+    .replace(/[,|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const numericDate = cleaned.match(
+    /\b(\d{1,4})[./-](\d{1,2})[./-](\d{1,4})\b/,
+  );
+
+  if (numericDate) {
+    const first = Number(numericDate[1]);
+    const second = Number(numericDate[2]);
+    const third = Number(numericDate[3]);
+    const year =
+      first > 1900
+        ? first
+        : third < 100
+          ? 2000 + third
+          : third;
+    const month =
+      first > 1900 ? second : second;
+    const day =
+      first > 1900 ? third : first;
+
+    if (
+      year >= 2000 &&
+      month >= 1 &&
+      month <= 12 &&
+      day >= 1 &&
+      day <= 31
+    ) {
+      return [
+        String(year).padStart(4, '0'),
+        String(month).padStart(2, '0'),
+        String(day).padStart(2, '0'),
+      ].join('-');
+    }
+  }
+
+  const parsedTime = Date.parse(cleaned);
+
+  if (!Number.isNaN(parsedTime)) {
+    const parsedDate = new Date(parsedTime);
+
+    return [
+      parsedDate.getFullYear(),
+      String(parsedDate.getMonth() + 1).padStart(2, '0'),
+      String(parsedDate.getDate()).padStart(2, '0'),
+    ].join('-');
+  }
+
+  return undefined;
+}
+
+function detectEventDetails(
+  text: string,
+): DetectedEventDetails {
+  const detected: DetectedEventDetails = {};
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) =>
+      line
+        .replace(/^[\s•●▪►*-]+/, '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    )
+    .filter(Boolean);
+
+  const fieldPatterns: Array<{
+    key: Exclude<
+      keyof DetectedEventDetails,
+      'eventDate' | 'pax'
+    >;
+    pattern: RegExp;
+  }> = [
+    {
+      key: 'clientName',
+      pattern:
+        /^(?:client(?:\s+name)?|customer(?:\s+name)?|party\s+name)\s*[:=-]\s*(.+)$/i,
+    },
+    {
+      key: 'eventName',
+      pattern:
+        /^(?:event(?:\s+name)?|occasion|program(?:me)?)\s*[:=-]\s*(.+)$/i,
+    },
+    {
+      key: 'functionType',
+      pattern:
+        /^(?:function(?:\s+type)?|meal(?:\s+type)?|service)\s*[:=-]\s*(.+)$/i,
+    },
+    {
+      key: 'venue',
+      pattern:
+        /^(?:venue|location|address)\s*[:=-]\s*(.+)$/i,
+    },
+    {
+      key: 'city',
+      pattern:
+        /^(?:city|town)\s*[:=-]\s*(.+)$/i,
+    },
+  ];
+
+  for (const line of lines.slice(0, 80)) {
+    for (const { key, pattern } of fieldPatterns) {
+      if (detected[key]) continue;
+
+      const match = line.match(pattern);
+      const value = match?.[1]?.trim();
+
+      if (value && value.length <= 160) {
+        detected[key] = value;
+      }
+    }
+
+    if (!detected.eventDate) {
+      const dateMatch = line.match(
+        /^(?:event\s+date|date|on)\s*[:=-]\s*(.+)$/i,
+      );
+      const parsedDate =
+        dateMatch?.[1]
+          ? parseDetectedDate(dateMatch[1])
+          : undefined;
+
+      if (parsedDate) {
+        detected.eventDate = parsedDate;
+      }
+    }
+
+    const labeledPax = line.match(
+      /^(?:pax|guests?|members?|persons?|people)\s*[:=-]?\s*(\d{1,6})\b/i,
+    );
+    const trailingPax = line.match(
+      /\b(\d{1,6})\s*(?:pax|guests?|members?|persons?|people)\b/i,
+    );
+    const pax = Number(
+      labeledPax?.[1] ||
+        trailingPax?.[1] ||
+        0,
+    );
+
+    if (pax > Number(detected.pax || 0)) {
+      detected.pax = pax;
+    }
+  }
+
+  return detected;
+}
+
+function mergeDetectedEventDetails(
+  event: EventDetails,
+  detected: DetectedEventDetails,
+): EventDetails {
+  const nextEvent = { ...event };
+
+  for (const [
+    key,
+    value,
+  ] of Object.entries(detected) as Array<
+    [
+      keyof DetectedEventDetails,
+      string | number,
+    ]
+  >) {
+    if (
+      key === 'pax'
+        ? !(Number(nextEvent.pax) > 0)
+        : !String(nextEvent[key] ?? '').trim()
+    ) {
+      Object.assign(nextEvent, {
+        [key]: value,
+      });
+    }
+  }
+
+  return nextEvent;
+}
 
 export default function EventPage() {
   const router = useRouter();
@@ -70,6 +277,9 @@ export default function EventPage() {
 
   const [menuInputMode, setMenuInputMode] =
     useState<MenuInputMode>('paste');
+
+  const [detectedEventDetails, setDetectedEventDetails] =
+    useState<DetectedEventDetails>({});
 
   const catalogSyncRef = useRef<
     ReturnType<typeof syncDishCostItemsFromServer> | null
@@ -204,11 +414,22 @@ export default function EventPage() {
         `Menu detection complete: ${detectedMenu.length} dishes detected. ${manualRateCount} dishes require manual rates.`,
       );
 
+      const detectedDetails =
+        detectEventDetails(rawMenuText);
+
       const nextWork: WorkState = {
         ...work,
+        event:
+          mergeDetectedEventDetails(
+            work.event,
+            detectedDetails,
+          ),
         menu: detectedMenu,
       };
 
+      setDetectedEventDetails(
+        detectedDetails,
+      );
       persistWork(nextWork);
 
       router.push('/app/menu');
@@ -247,10 +468,18 @@ export default function EventPage() {
       );
     }
 
+    const detectedDetails =
+      detectEventDetails(cleanedText);
+    const detectedDetailCount =
+      Object.keys(detectedDetails).length;
+
     const nextWork: WorkState = {
       ...work,
       event: {
-        ...work.event,
+        ...mergeDetectedEventDetails(
+          work.event,
+          detectedDetails,
+        ),
         uploadFileName: fileName,
         rawMenuText: cleanedText,
       },
@@ -258,8 +487,13 @@ export default function EventPage() {
 
     persistWork(nextWork);
     setMenuInputMode('upload');
+    setDetectedEventDetails(
+      detectedDetails,
+    );
     setUploadStatus(
-      `${sourceLabel} read successfully. Review the extracted text below, then continue.`,
+      detectedDetailCount > 0
+        ? `${sourceLabel} read successfully. ${detectedDetailCount} event detail${detectedDetailCount === 1 ? '' : 's'} found and empty fields were filled.`
+        : `${sourceLabel} read successfully. Review the extracted text below, then continue.`,
     );
   }
 
@@ -376,6 +610,7 @@ export default function EventPage() {
 
     setError('');
     setUploadStatus('');
+    setDetectedEventDetails({});
     setMenuInputMode('paste');
     persistWork(nextWork);
   }
@@ -385,6 +620,7 @@ export default function EventPage() {
     if (work.event.rawMenuText.trim() && !window.confirm('Replace the current menu text with the sample format?')) return;
     setError('');
     setUploadStatus('');
+    setDetectedEventDetails({});
     updateEvent('rawMenuText', SAMPLE_MENU);
   }
 
@@ -393,6 +629,7 @@ export default function EventPage() {
     if (!window.confirm('Clear the current menu text?')) return;
     setError('');
     setUploadStatus('');
+    setDetectedEventDetails({});
     updateEvent('rawMenuText', '');
   }
 
@@ -780,6 +1017,43 @@ export default function EventPage() {
                 </div>
               ) : null}
 
+              {Object.keys(detectedEventDetails).length > 0 ? (
+                <div className="event-detected-details">
+                  <div className="event-detected-details-heading">
+                    <div>
+                      <span aria-hidden="true">✓</span>
+                      <div>
+                        <b>Event details detected</b>
+                        <p>Empty fields in Event information were filled automatically.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document
+                          .getElementById('clientName')
+                          ?.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center',
+                          })
+                      }
+                    >
+                      Review details
+                    </button>
+                  </div>
+                  <div className="event-detected-detail-list">
+                    {(Object.entries(detectedEventDetails) as Array<
+                      [keyof DetectedEventDetails, string | number]
+                    >).map(([key, value]) => (
+                      <span key={key}>
+                        <small>{EVENT_DETAIL_LABELS[key]}</small>
+                        <b>{String(value)}</b>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               {menuInputMode === 'paste' || work.event.rawMenuText ? (
                 <div className="field menu-text-field">
                   <div className="event-menu-text-heading">
@@ -798,6 +1072,7 @@ export default function EventPage() {
                     value={work.event.rawMenuText}
                     onChange={(event) => {
                       setError('');
+                      setDetectedEventDetails({});
                       updateEvent('rawMenuText', event.target.value);
                     }}
                     placeholder={`Welcome Drink
