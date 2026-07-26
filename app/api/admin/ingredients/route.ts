@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
 import { INGREDIENT_CATEGORIES, normalizeIngredientRate, type IngredientRate } from '../../../../lib/ingredientCatalog';
 import { prisma } from '../../../../lib/prisma';
@@ -39,6 +40,34 @@ function normalizeCategories(value: unknown, rates: IngredientRate[]) {
       seen.add(key);
       return true;
     });
+}
+
+function updateRecipeIngredients(
+  dishes: unknown,
+  ratesByOriginalId: Map<string, IngredientRate>,
+) {
+  if (!Array.isArray(dishes)) return dishes;
+  return dishes.map((dish) => {
+    if (!dish || typeof dish !== 'object') return dish;
+    const row = dish as Record<string, unknown>;
+    if (!Array.isArray(row.ingredients)) return dish;
+    return {
+      ...row,
+      ingredients: row.ingredients.map((ingredient) => {
+        if (!ingredient || typeof ingredient !== 'object') return ingredient;
+        const item = ingredient as Record<string, unknown>;
+        const rate = ratesByOriginalId.get(String(item.rateKey || ''));
+        if (!rate) return ingredient;
+        return {
+          ...item,
+          name: rate.name,
+          rateKey: rate.id,
+          rate: rate.rate,
+          rateUnit: rate.unit,
+        };
+      }),
+    };
+  });
 }
 
 export async function GET() {
@@ -82,15 +111,28 @@ export async function PUT(request: Request) {
     const previousRates = Array.isArray(catalog.rates) ? catalog.rates : [];
     const previousIds = new Set(previousRates.map((rate) => rate && typeof rate === 'object' ? String((rate as Record<string, unknown>).id || '') : '').filter(Boolean));
     const nextIds = new Set(cleanedRates.map((rate) => rate.id));
+    const ratesByOriginalId = new Map<string, IngredientRate>();
+    body.rates.forEach((submitted, index) => {
+      if (!submitted || typeof submitted !== 'object') return;
+      const originalId = String((submitted as Record<string, unknown>).originalId || '').trim();
+      if (originalId && previousIds.has(originalId)) ratesByOriginalId.set(originalId, cleanedRates[index]);
+    });
     const usage = recipeIngredientUsage(catalog.dishes);
-    const usedDeletions = [...previousIds].filter((id) => !nextIds.has(id) && (usage.get(id) || 0) > 0);
+    const usedDeletions = [...previousIds].filter(
+      (id) => !nextIds.has(id) && !ratesByOriginalId.has(id) && (usage.get(id) || 0) > 0,
+    );
     if (usedDeletions.length) {
       return NextResponse.json({ error: 'An ingredient used by a recipe cannot be deleted' }, { status: 409 });
     }
+    const dishes = updateRecipeIngredients(catalog.dishes, ratesByOriginalId);
 
     const saved = await prisma.recipeCatalog.update({
       where: { id: CATALOG_ID },
-      data: { rates: cleanedRates, ingredientCategories: categories },
+      data: {
+        rates: cleanedRates,
+        ingredientCategories: categories,
+        dishes: dishes as Prisma.InputJsonValue,
+      },
       select: { updatedAt: true },
     });
     return NextResponse.json({ ok: true, updatedAt: saved.updatedAt });

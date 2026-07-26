@@ -244,6 +244,7 @@ export default function AdminIngredientsPage() {
     setMessage('');
     try {
       const rates = rows.map((row) => ({
+        originalId: row.originalId,
         id: normalizeIngredientId(row.name, row.unit),
         name: row.name.trim(),
         category: row.category,
@@ -389,7 +390,7 @@ export default function AdminIngredientsPage() {
 
         <div className="glass-card ingredient-list-card">
           <div className="dish-list-heading">
-            <div><span className="section-kicker">Rate editor</span><h2>Ingredient details</h2><p className="muted">Linked names and units are protected because saved recipes depend on them.</p></div>
+            <div><span className="section-kicker">Ingredient editor</span><h2>Ingredient details</h2><p className="muted">Edit names, categories, units, and rates. Linked recipes update automatically when you save.</p></div>
             <div className="ingredient-list-actions"><span className="badge">{visibleStart}–{visibleEnd} of {filteredRows.length}</span><button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>Save changes</button></div>
           </div>
           {!ready ? <div className="admin-empty"><span className="admin-loader" /><strong>Loading ingredients</strong></div> : null}
@@ -412,7 +413,6 @@ export default function AdminIngredientsPage() {
                               id={`ingredient-name-${row.rowKey}`}
                               className="input"
                               value={row.name}
-                              disabled={usedBy > 0}
                               onChange={(event) => {
                                 const name = event.target.value;
                                 updateRow(row.rowKey, { name, category: row.originalId ? row.category : inferIngredientCategory(name) });
@@ -424,7 +424,7 @@ export default function AdminIngredientsPage() {
                           {!duplicate && !(Number(row.rate) > 0) ? <small className="ingredient-row-warning">Add a market rate</small> : null}
                         </td>
                         <td data-label="Category"><select className="select ingredient-category-select" value={row.category} onChange={(event) => updateRow(row.rowKey, { category: event.target.value as IngredientCategory })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></td>
-                        <td data-label="Purchase unit"><select className="select" value={row.unit} disabled={usedBy > 0} onChange={(event) => updateRow(row.rowKey, { unit: event.target.value as IngredientUnit })}>{INGREDIENT_UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></td>
+                        <td data-label="Purchase unit"><select className="select" value={row.unit} onChange={(event) => updateRow(row.rowKey, { unit: event.target.value as IngredientUnit })}>{INGREDIENT_UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></td>
                         <td data-label="Rate per unit"><div className={`ingredient-rate-input ${Number(row.rate) > 0 ? '' : 'is-missing'}`}><span className="ingredient-currency">₹</span><input className="input" aria-label={`Market rate for ${row.name || 'new ingredient'}`} type="number" min="0" step="0.01" value={row.rate || ''} placeholder="0.00" onChange={(event) => updateRow(row.rowKey, { rate: Math.max(0, Number(event.target.value) || 0) })} /><small>/{row.unit}</small></div></td>
                         <td data-label="Recipe usage"><span className={`ingredient-usage ${usedBy ? 'linked' : ''}`}>{usedBy ? `${usedBy} recipe${usedBy === 1 ? '' : 's'}` : 'Not linked'}</span></td>
                         <td data-label="Actions"><button className="ingredient-delete" type="button" aria-label={`Delete ${row.name || 'ingredient'}`} title={usedBy ? 'Used ingredients cannot be deleted' : 'Delete ingredient'} disabled={usedBy > 0} onClick={() => removeIngredient(row)}>×</button></td>
