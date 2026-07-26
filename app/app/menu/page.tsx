@@ -134,6 +134,9 @@ export default function MenuPage() {
   const [selectedMenuCategory, setSelectedMenuCategory] =
     useState('');
 
+  const [editingServiceId, setEditingServiceId] =
+    useState('');
+
   const [isQuickAddOpen, setIsQuickAddOpen] =
     useState(false);
 
@@ -142,6 +145,9 @@ export default function MenuPage() {
 
   const [catalogDishes, setCatalogDishes] =
     useState<DishCostItem[]>([]);
+
+  const [catalogCategoryFilter, setCatalogCategoryFilter] =
+    useState('');
 
   useEffect(() => {
     const currentSession = getSession();
@@ -322,6 +328,32 @@ export default function MenuPage() {
       ...(work?.menu ?? []).map((item) => item.category),
     ].map((category) => category.trim()).filter(Boolean))),
     [catalogCategories, work],
+  );
+
+  const catalogBrowseCategories = useMemo(
+    () =>
+      [...catalogCategories].sort(
+        (firstCategory, secondCategory) =>
+          firstCategory.localeCompare(
+            secondCategory,
+          ),
+      ),
+    [catalogCategories],
+  );
+
+  const visibleCatalogDishes = useMemo(
+    () =>
+      catalogCategoryFilter
+        ? catalogDishes.filter(
+            (dish) =>
+              dish.category ===
+              catalogCategoryFilter,
+          )
+        : catalogDishes,
+    [
+      catalogCategoryFilter,
+      catalogDishes,
+    ],
   );
 
   const manualRateCount = useMemo(
@@ -774,6 +806,38 @@ export default function MenuPage() {
     );
   }
 
+  function updateServiceGroup(
+    service: MenuFunctionGroup,
+    patch: {
+      dayLabel?: string;
+      mealLabel?: string;
+      servicePax?: number;
+    },
+  ) {
+    if (!work) return;
+
+    const serviceItemIds =
+      new Set(
+        service.items.map(
+          (item) => item.id,
+        ),
+      );
+
+    persist({
+      ...work,
+      menu: work.menu.map((item) =>
+        serviceItemIds.has(item.id)
+          ? {
+              ...item,
+              serviceId:
+                service.serviceId,
+              ...patch,
+            }
+          : item,
+      ),
+    });
+  }
+
   function addDish() {
     if (!work) return;
 
@@ -906,6 +970,9 @@ export default function MenuPage() {
   ) {
     setNewDish(dish.name);
     setNewCategory(dish.category);
+    setCatalogCategoryFilter(
+      dish.category,
+    );
     setNewRate(
       String(Number(dish.rate) || 0),
     );
@@ -1227,9 +1294,54 @@ export default function MenuPage() {
               </div>
             ) : null}
 
+            <div className="field menu-catalog-category">
+              <label htmlFor="catalogCategory">
+                1. Browse Category
+              </label>
+
+              <select
+                id="catalogCategory"
+                className="select select-large"
+                value={catalogCategoryFilter}
+                onChange={(event) => {
+                  setCatalogCategoryFilter(
+                    event.target.value,
+                  );
+                  setPageMessage(null);
+                }}
+              >
+                <option value="">
+                  All categories • {catalogDishes.length} dishes
+                </option>
+                {catalogBrowseCategories.map(
+                  (category) => {
+                    const dishCount =
+                      catalogDishes.filter(
+                        (dish) =>
+                          dish.category ===
+                          category,
+                      ).length;
+
+                    return (
+                      <option
+                        key={category}
+                        value={category}
+                      >
+                        {category} • {dishCount}
+                      </option>
+                    );
+                  },
+                )}
+              </select>
+
+              <small className="muted">
+                Filter the catalog before selecting a dish.
+              </small>
+            </div>
+
             <div className="field menu-catalog-select">
               <label htmlFor="catalogDish">
-                Select from Catalog
+                2. Select Dish
               </label>
 
               <select
@@ -1238,7 +1350,7 @@ export default function MenuPage() {
                 value=""
                 onChange={(event) => {
                   const selectedDish =
-                    catalogDishes.find(
+                    visibleCatalogDishes.find(
                       (dish) =>
                         `${dish.name}::${dish.category}` ===
                         event.target.value,
@@ -1251,10 +1363,10 @@ export default function MenuPage() {
               >
                 <option value="">
                   {catalogDishes.length > 0
-                    ? 'Choose a dish...'
+                    ? `Choose from ${visibleCatalogDishes.length} dishes...`
                     : 'Loading dish catalog...'}
                 </option>
-                {catalogDishes.map((dish) => (
+                {visibleCatalogDishes.map((dish) => (
                   <option
                     key={`${dish.name}-${dish.category}`}
                     value={`${dish.name}::${dish.category}`}
@@ -1265,7 +1377,7 @@ export default function MenuPage() {
               </select>
 
               <small className="muted">
-                Or type a custom dish name below.
+                Category and rate will fill automatically.
               </small>
             </div>
 
@@ -1669,8 +1781,113 @@ export default function MenuPage() {
                         rates missing
                       </span>
                     ) : null}
+                    <button
+                      className="menu-service-edit-button"
+                      type="button"
+                      aria-expanded={
+                        editingServiceId ===
+                        service.groupKey
+                      }
+                      onClick={() =>
+                        setEditingServiceId(
+                          editingServiceId ===
+                            service.groupKey
+                            ? ''
+                            : service.groupKey,
+                        )
+                      }
+                    >
+                      {editingServiceId === service.groupKey
+                        ? 'Done'
+                        : 'Edit details'}
+                    </button>
                   </div>
                 </div>
+
+                {editingServiceId ===
+                service.groupKey ? (
+                  <div className="menu-service-editor">
+                    <div className="field">
+                      <label
+                        htmlFor={`service-day-${service.groupKey}`}
+                      >
+                        Event day
+                      </label>
+                      <input
+                        id={`service-day-${service.groupKey}`}
+                        className="input input-large"
+                        value={service.dayLabel}
+                        onChange={(event) =>
+                          updateServiceGroup(
+                            service,
+                            {
+                              dayLabel:
+                                event.target.value,
+                            },
+                          )
+                        }
+                        placeholder="Day 1"
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label
+                        htmlFor={`service-meal-${service.groupKey}`}
+                      >
+                        Function / meal
+                      </label>
+                      <input
+                        id={`service-meal-${service.groupKey}`}
+                        className="input input-large"
+                        value={service.mealLabel}
+                        onChange={(event) =>
+                          updateServiceGroup(
+                            service,
+                            {
+                              mealLabel:
+                                event.target.value,
+                            },
+                          )
+                        }
+                        placeholder="Breakfast, Lunch, Dinner..."
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label
+                        htmlFor={`service-pax-${service.groupKey}`}
+                      >
+                        Guests
+                      </label>
+                      <input
+                        id={`service-pax-${service.groupKey}`}
+                        className="input input-large"
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        value={
+                          service.servicePax ||
+                          ''
+                        }
+                        onChange={(event) =>
+                          updateServiceGroup(
+                            service,
+                            {
+                              servicePax:
+                                Math.max(
+                                  0,
+                                  Number(
+                                    event.target.value,
+                                  ) || 0,
+                                ),
+                            },
+                          )
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="menu-list">
                   {service.items.map(
