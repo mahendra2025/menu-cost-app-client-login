@@ -424,7 +424,7 @@ export default function AdminDishesPage() {
     }
     const assignedCount = rows.filter((row) => row.category === category).length;
     const warning = assignedCount
-      ? `Delete ${category}? Its ${assignedCount} dish${assignedCount === 1 ? '' : 'es'} will be moved to Other.`
+      ? `Delete ${category} and permanently delete its ${assignedCount} dish${assignedCount === 1 ? '' : 'es'}?`
       : `Delete the ${category} category?`;
     if (!window.confirm(warning)) return;
 
@@ -434,13 +434,11 @@ export default function AdminDishesPage() {
       delete next[category];
       return next;
     });
-    if (assignedCount) {
-      setRows((current) => current.map((row) => row.category === category ? { ...row, category: 'Other', subcategory: '' } : row));
-    }
+    if (assignedCount) setRows((current) => current.filter((row) => row.category !== category));
     if (categoryFilter === category) setCategoryFilter('ALL');
     setDirty(true);
     setMessageType('success');
-    setMessage(`${category} deleted${assignedCount ? ` and ${assignedCount} dish${assignedCount === 1 ? '' : 'es'} moved to Other` : ''}. Save all changes to publish.`);
+    setMessage(`${category} deleted${assignedCount ? ` with ${assignedCount} dish${assignedCount === 1 ? '' : 'es'}` : ''}. Save all changes to publish.`);
   }
 
   function addSubcategory(category: string) {

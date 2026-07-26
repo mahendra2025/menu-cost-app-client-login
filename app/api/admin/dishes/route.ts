@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../lib/prisma';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
 import { CATEGORIES, DISH_COST_ITEMS, mergeDishCatalog } from '../../../../lib/dishCostMaster';
@@ -117,6 +118,38 @@ function readRecipeHierarchy(value: unknown) {
     .filter((item): item is NonNullable<typeof item> => item !== null);
 }
 
+function alignRecipeCategories(
+  value: unknown,
+  items: Array<{ name: string; category: string; subcategory: string }>,
+  categories: string[],
+  deletedCategories: Set<string>,
+) {
+  if (!Array.isArray(value)) return value;
+  const itemsByName = new Map(items.map((item) => [item.name.toLowerCase(), item]));
+  const allowedCategories = new Set(categories);
+
+  return value.flatMap((dish) => {
+    if (!dish || typeof dish !== 'object' || Array.isArray(dish)) return [dish];
+    const row = dish as Record<string, unknown>;
+    const currentCategory = String(row.category || '').trim();
+    if (deletedCategories.has(currentCategory)) return [];
+
+    const name = String(row.dishName || row.name || '').trim();
+    const matchingItem = itemsByName.get(name.toLowerCase());
+
+    if (matchingItem) {
+      return [{
+        ...row,
+        category: matchingItem.category,
+        subcategory: matchingItem.subcategory,
+      }];
+    }
+
+    if (!currentCategory || allowedCategories.has(currentCategory)) return [dish];
+    return [{ ...row, category: 'Other', subcategory: '' }];
+  });
+}
+
 export async function GET() {
   try {
     const authError = await requireAdmin();
@@ -175,7 +208,7 @@ export async function GET() {
     });
     const categories = normalizeCategories(
       categoryCatalog?.categories,
-      [...alignedItems.map((item) => item.category), ...recipeHierarchy.map((item) => item.category)],
+      alignedItems.map((item) => item.category),
     );
     const subcategories = normalizeSubcategories(
       categoryCatalog?.subcategories,
@@ -204,15 +237,33 @@ export async function PUT(request: Request) {
     const categories = normalizeCategories(body.categories, items.map((item) => String(item?.category || '')));
     const subcategories = normalizeSubcategories(body.subcategories, categories, items);
 
-    await prisma.$transaction([
-      prisma.dishMasterItem.deleteMany(),
-      prisma.dishCategoryCatalog.upsert({
+    await prisma.$transaction(async (tx) => {
+      const [recipeCatalog, previousCategoryCatalog] = await Promise.all([
+        tx.recipeCatalog.findUnique({
+          where: { id: 'global' },
+          select: { dishes: true },
+        }),
+        tx.dishCategoryCatalog.findUnique({
+          where: { id: CATEGORY_CATALOG_ID },
+          select: { categories: true },
+        }),
+      ]);
+      const previousCategories = Array.isArray(previousCategoryCatalog?.categories)
+        ? previousCategoryCatalog.categories.map((category) => String(category))
+        : [];
+      const deletedCategories = new Set(
+        previousCategories.filter((category) => !categories.includes(category)),
+      );
+
+      await tx.dishMasterItem.deleteMany();
+      await tx.dishCategoryCatalog.upsert({
         where: { id: CATEGORY_CATALOG_ID },
         create: { id: CATEGORY_CATALOG_ID, categories, subcategories },
         update: { categories, subcategories },
-      }),
-      ...items.map((item) =>
-        prisma.dishMasterItem.create({
+      });
+
+      await Promise.all(items.map((item) =>
+        tx.dishMasterItem.create({
           data: {
             name: item!.name,
             category: item!.category,
@@ -222,9 +273,17 @@ export async function PUT(request: Request) {
             servingUnit: item!.servingUnit,
             aliases: item!.aliases,
           },
-        }),
-      ),
-    ]);
+        })
+      ));
+
+      if (recipeCatalog) {
+        const dishes = alignRecipeCategories(recipeCatalog.dishes, items, categories, deletedCategories);
+        await tx.recipeCatalog.update({
+          where: { id: 'global' },
+          data: { dishes: dishes as Prisma.InputJsonValue },
+        });
+      }
+    });
 
     return NextResponse.json({ ok: true });
   } catch {
