@@ -1218,10 +1218,28 @@ async function syncRecipeCostToDishCatalog(dish){
     setStatus("Recipe saved, but Dish Master cost sync failed.","error");
   }
 }
+function notifyParent(){
+  if(window.parent===window||document.documentElement.dataset.embedded!=="true")return;
+  const status=$("storageStatus"),label=$("storageStatusText");
+  const rawState=String(status?.dataset.state||"connecting");
+  const state=["saving","saved","offline"].includes(rawState)?rawState:"connecting";
+  window.parent.postMessage({
+    type:"recipe-studio-status",
+    state,
+    text:String(label?.textContent||"Recipe studio ready"),
+    recipes:dishes.length,
+    costedRecipes:dishes.filter(dish=>Array.isArray(dish.ingredients)&&dish.ingredients.length&&dishCost(dish)>0).length,
+    ingredients:rates.length,
+    missingRates:rates.filter(rate=>!(Number(rate.rate)>0)).length,
+    selectedRecipe:selectedDish()?.name||"",
+    dirty
+  },window.location.origin);
+}
 function setStorageStatus(text,state=""){
   const status=$("storageStatus"),label=$("storageStatusText");
   if(label)label.textContent=text;
   if(status)status.dataset.state=state;
+  notifyParent();
 }
 function saveLocalState(){
   dishes=dishes.map(withSubcategory);
@@ -1313,6 +1331,7 @@ function setStatus(text,type=""){
 }
 function setDirty(value){
   dirty=value;$("unsavedBadge").classList.toggle("show",dirty);
+  notifyParent();
 }
 function setValidation(state,text){
   const pill=$("validationPill");
