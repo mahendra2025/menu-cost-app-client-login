@@ -2972,10 +2972,11 @@ td:last-child {
 
 .dish-master-overview.needs-attention { border-color: rgba(255, 149, 0, .25); background: linear-gradient(125deg, #fff 0%, #fff9ef 100%); }
 .dish-master-overview-copy h2 { margin: 3px 0 5px; font-size: 24px; letter-spacing: -.035em; }
-.dish-master-overview-copy p { margin: 0; color: var(--muted); font-size: 12px; }
+.dish-master-overview-copy p { max-width: 620px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .dish-master-health { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
-.dish-master-health span { display: inline-flex; align-items: baseline; gap: 4px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 999px; background: rgba(255,255,255,.86); color: var(--muted); font-size: 10px; font-weight: 800; white-space: nowrap; }
-.dish-master-health b { color: var(--text); font-size: 12px; }
+.dish-master-health span { display: grid; min-width: 84px; gap: 1px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.86); color: var(--muted); font-weight: 800; white-space: nowrap; }
+.dish-master-health b { color: var(--text); font-size: 16px; letter-spacing: -.02em; }
+.dish-master-health small { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .035em; }
 .dish-master-health .needs-attention { border-color: rgba(255,149,0,.3); color: #9a5a0a; }
 .dish-master-health .needs-attention b { color: #9a5a0a; }
 .dish-master-health .is-complete { border-color: rgba(52,199,89,.24); color: #187b35; }
@@ -2988,9 +2989,36 @@ td:last-child {
 .dish-master-filter-card .dish-list-heading { margin-bottom: 14px; }
 .dish-filter-grid { grid-template-columns: minmax(240px, 1.3fr) minmax(180px, .7fr) minmax(200px, .8fr) auto; }
 .dish-filter-clear { min-height: 46px; padding-inline: 13px; font-size: 11px; white-space: nowrap; }
+.dish-search-input { display: flex; align-items: center; min-height: 48px; padding: 0 12px; border: 1px solid #d8e0ea; border-radius: 12px; background: #fff; transition: border-color .2s ease, box-shadow .2s ease; }
+.dish-search-input:focus-within { border-color: rgba(0,122,255,.58); box-shadow: 0 0 0 5px rgba(0,122,255,.11); }
+.dish-search-input > span { color: #7b8797; font-size: 20px; line-height: 1; transform: rotate(-15deg); }
+.dish-search-input input { min-width: 0; width: 100%; height: 46px; padding: 0 9px; border: 0; outline: 0; color: var(--text); background: transparent; font-size: 12px; font-weight: 700; }
+.dish-search-input input::placeholder { color: #9aa4b2; }
+.dish-search-input button { width: 28px; height: 28px; flex: 0 0 auto; border: 0; border-radius: 50%; color: #667085; background: #edf1f5; font-size: 17px; cursor: pointer; }
+.dish-status-filters { display: flex; align-items: center; gap: 7px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); overflow-x: auto; }
+.dish-status-filters button { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 7px 11px; border: 1px solid transparent; border-radius: 999px; color: #667085; background: #f2f5f8; font-size: 10px; font-weight: 850; white-space: nowrap; cursor: pointer; }
+.dish-status-filters button span { min-width: 20px; padding: 2px 5px; border-radius: 999px; color: #697587; background: rgba(255,255,255,.85); font-size: 9px; text-align: center; }
+.dish-status-filters button:hover { color: var(--text); background: #eaf0f6; }
+.dish-status-filters button.active { border-color: rgba(0,122,255,.22); color: #075db7; background: #eaf4ff; }
+.dish-status-filters button.active span { color: #075db7; }
 .dish-list-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; }
 .dish-list-actions .secondary-button { min-height: 40px; padding: 9px 13px; font-size: 11px; }
 
+.admin-dish-row > .admin-dish-row-heading { grid-column: 1 / -1; }
+.admin-dish-row-heading { display: flex; align-items: center; gap: 10px; margin: -14px -14px 1px; padding: 11px 14px; border-bottom: 1px solid var(--border); background: #f8fafc; }
+.dish-row-number { display: grid; width: 27px; height: 27px; flex: 0 0 auto; place-items: center; border: 1px solid #dfe5ec; border-radius: 8px; color: #697587; background: #fff; font-size: 9px; font-weight: 900; }
+.admin-dish-row-heading > div { min-width: 0; flex: 1; }
+.admin-dish-row-heading strong,
+.admin-dish-row-heading small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-dish-row-heading strong { font-size: 12px; }
+.admin-dish-row-heading small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+.dish-row-status { padding: 5px 8px; border-radius: 999px; color: #697587; background: #edf1f5; font-size: 9px; font-weight: 850; white-space: nowrap; }
+.dish-row-status.linked { color: #187b35; background: rgba(52,199,89,.1); }
+.dish-row-status.error { color: #a02b24; background: rgba(255,59,48,.1); }
+.dish-price-input { display: flex; align-items: center; min-height: 48px; overflow: hidden; border: 1px solid #d8e0ea; border-radius: 12px; background: #fff; transition: border-color .2s ease, box-shadow .2s ease; }
+.dish-price-input:focus-within { border-color: rgba(0,122,255,.58); box-shadow: 0 0 0 5px rgba(0,122,255,.11); }
+.dish-price-input > span { align-self: stretch; display: grid; place-items: center; padding: 0 10px; border-right: 1px solid #e5eaf0; color: #667085; background: #f8fafc; font-size: 12px; font-weight: 850; }
+.dish-price-input input { min-width: 0; width: 100%; height: 46px; padding: 0 10px; border: 0; outline: 0; color: var(--text); background: transparent; font-size: 12px; font-weight: 800; }
 .admin-dish-row > .admin-alias-section { grid-column: 1 / -2; }
 .admin-dish-row > .admin-dish-delete { grid-column: -2 / -1; }
 .admin-alias-section { overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #f8fafc; }
@@ -3004,6 +3032,13 @@ td:last-child {
 .admin-alias-section .admin-alias-grid { padding: 12px; }
 .admin-dish-delete { min-height: 40px; padding: 8px 10px; border: 0; border-radius: 10px; background: rgba(255,59,48,.08); color: #a02b24; font-size: 10px; font-weight: 850; cursor: pointer; }
 .admin-dish-delete:hover { background: rgba(255,59,48,.14); }
+.dish-loading { min-height: 150px; display: flex; align-items: center; justify-content: center; gap: 12px; color: var(--muted); font-size: 12px; }
+.dish-save-dock { position: fixed; z-index: 20; right: 28px; bottom: 24px; display: flex; align-items: center; gap: 24px; min-width: 390px; padding: 12px 13px 12px 16px; border: 1px solid rgba(255,149,0,.25); border-radius: 17px; background: rgba(255,255,255,.96); box-shadow: 0 18px 50px rgba(15,23,42,.18); backdrop-filter: blur(16px); }
+.dish-save-dock > div { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 9px; }
+.dish-save-dock > div > span { grid-row: 1 / 3; width: 9px; height: 9px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 5px rgba(255,149,0,.12); }
+.dish-save-dock strong { font-size: 12px; }
+.dish-save-dock small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+.dish-save-dock .primary-button { min-height: 40px; padding: 9px 14px; font-size: 11px; white-space: nowrap; }
 
 @media (max-width: 1080px) {
   .dish-filter-grid { grid-template-columns: 1fr 1fr; }
@@ -3014,6 +3049,7 @@ td:last-child {
 @media (max-width: 760px) {
   .dish-master-overview { grid-template-columns: 1fr; gap: 15px; padding: 18px; }
   .dish-master-health { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .dish-master-health span { min-width: 92px; }
   .dish-master-actions { display: grid; grid-template-columns: 1fr; }
   .dish-master-actions > *,
   .dish-master-actions .dish-reset-button { width: 100%; margin-left: 0; }
@@ -3026,6 +3062,17 @@ td:last-child {
   .admin-dish-row > .admin-dish-delete { grid-column: 1 / -1; }
   .admin-alias-section .admin-alias-grid { grid-template-columns: 1fr; }
   .admin-dish-delete { width: 100%; min-height: 44px; font-size: 12px; }
+  .dish-save-dock { right: 12px; bottom: 84px; left: 12px; min-width: 0; gap: 12px; }
+  .dish-save-dock > div { min-width: 0; flex: 1; }
+  .dish-save-dock small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+@media (max-width: 480px) {
+  .dish-save-dock { padding: 10px; }
+  .dish-save-dock small { display: none; }
+  .dish-save-dock .primary-button { padding-inline: 12px; }
+  .admin-dish-row-heading { align-items: flex-start; }
+  .dish-row-status { max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
 }
 
 .menu-overview {

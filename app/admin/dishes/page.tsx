@@ -30,9 +30,10 @@ type DishRowErrors = {
   aliases?: string;
 };
 
-const DISHES_PER_PAGE = 50;
+const DISHES_PER_PAGE = 24;
 const HINDI_SCRIPT = /[\u0900-\u097F]/u;
 const GUJARATI_SCRIPT = /[\u0A80-\u0AFF]/u;
+type DishSort = 'NAME_ASC' | 'NAME_DESC' | 'RATE_HIGH' | 'RATE_LOW';
 
 function parseAliases(value: string) {
   return value.split(',').map((alias) => alias.trim()).filter(Boolean);
@@ -179,6 +180,7 @@ export default function AdminDishesPage() {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ERROR' | 'RECIPE' | 'NO_RECIPE'>('ALL');
+  const [sort, setSort] = useState<DishSort>('NAME_ASC');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [dirty, setDirty] = useState(false);
@@ -200,6 +202,7 @@ export default function AdminDishesPage() {
     async function loadRows() {
       try {
         const response = await fetch('/api/admin/dishes', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Could not load dishes');
         const data = await response.json();
         const recipeCatalog = createRecipeServingCatalog();
         const dishItems = parseDishItems(data.items);
@@ -216,6 +219,9 @@ export default function AdminDishesPage() {
           setMessageType('success');
           setMessage('Serving quantities loaded from Recipes. Save all changes to publish them to client menus.');
         }
+      } catch {
+        setMessageType('error');
+        setMessage('Could not load the dish catalog. Refresh the page to try again.');
       } finally {
         setReady(true);
       }
@@ -226,7 +232,7 @@ export default function AdminDishesPage() {
 
   const filteredRows = useMemo(() => {
     const search = query.trim().toLowerCase();
-    return rows.filter((row) => {
+    const matches = rows.filter((row) => {
       const matchesCategory = categoryFilter === 'ALL' || row.category === categoryFilter;
       const matchesStatus = statusFilter === 'ALL' ||
         (statusFilter === 'ERROR' && rowErrors.has(row.id)) ||
@@ -236,12 +242,21 @@ export default function AdminDishesPage() {
         row.category.toLowerCase().includes(search) || allRowAliases(row).some((alias) => alias.toLowerCase().includes(search));
       return matchesCategory && matchesStatus && matchesSearch;
     });
-  }, [rows, query, categoryFilter, statusFilter, rowErrors]);
+
+    return matches.sort((left, right) => {
+      if (sort === 'RATE_HIGH') return Number(right.rate) - Number(left.rate);
+      if (sort === 'RATE_LOW') return Number(left.rate) - Number(right.rate);
+      const nameOrder = left.name.localeCompare(right.name, undefined, { sensitivity: 'base' });
+      return sort === 'NAME_DESC' ? -nameOrder : nameOrder;
+    });
+  }, [rows, query, categoryFilter, statusFilter, rowErrors, sort]);
   const recipeLinkedCount = useMemo(
     () => rows.filter((row) => Boolean(row.recipeServing)).length,
     [rows],
   );
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / DISHES_PER_PAGE));
+  const visibleStart = filteredRows.length ? ((page - 1) * DISHES_PER_PAGE) + 1 : 0;
+  const visibleEnd = Math.min(page * DISHES_PER_PAGE, filteredRows.length);
   const visibleRows = useMemo(
     () => filteredRows.slice((page - 1) * DISHES_PER_PAGE, page * DISHES_PER_PAGE),
     [filteredRows, page],
@@ -254,6 +269,15 @@ export default function AdminDishesPage() {
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
+
+  useEffect(() => {
+    const warnAboutUnsavedChanges = (event: BeforeUnloadEvent) => {
+      if (!dirty) return;
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warnAboutUnsavedChanges);
+    return () => window.removeEventListener('beforeunload', warnAboutUnsavedChanges);
+  }, [dirty]);
 
   function updateRow(id: string, patch: Partial<EditableDish>) {
     setMessage('');
@@ -433,31 +457,31 @@ export default function AdminDishesPage() {
   }
 
   return (
-    <AppShell title="Dish Master" subtitle="Admin can add dishes and edit category, serving quantity, aliases, and rate">
+    <AppShell title="Dish Catalog" subtitle="Manage the dishes, serving sizes, aliases and default prices used across every menu">
       <section className="content-grid">
         <div className={`dish-master-overview ${rowErrors.size ? 'needs-attention' : ''}`}>
           <div className="dish-master-overview-copy">
-            <div className="section-kicker">Admin Control</div>
-            <h2>Manage Dish Catalog</h2>
-            <p>This catalog controls Menu matching, serving quantities, categories and default rates.</p>
+            <div className="section-kicker">Catalog overview</div>
+            <h2>{rowErrors.size ? `${rowErrors.size} dishes need attention` : 'Your dish catalog is ready'}</h2>
+            <p>Changes here update menu matching, serving quantities and default plate prices for all clients.</p>
           </div>
 
           <div className="dish-master-health" aria-label="Catalog health">
-            <span><b>{rows.length}</b> dishes</span>
-            <span><b>{availableCategories.length}</b> categories</span>
-            <span><b>{recipeLinkedCount}</b> recipe linked</span>
+            <span><b>{rows.length}</b> <small>Dishes</small></span>
+            <span><b>{availableCategories.length}</b> <small>Categories</small></span>
+            <span><b>{recipeLinkedCount}</b> <small>Recipe linked</small></span>
             <span className={rowErrors.size ? 'needs-attention' : 'is-complete'}>
-              <b>{rowErrors.size}</b> issues
+              <b>{rowErrors.size}</b> <small>{rowErrors.size === 1 ? 'Issue' : 'Issues'}</small>
             </span>
           </div>
 
           <div className="dish-master-actions">
-            <button className="primary-button" onClick={addRow}>+ Add Dish</button>
-            <button className="secondary-button" onClick={addCategory}>+ Add Category</button>
+            <button className="primary-button" type="button" onClick={addRow}><span aria-hidden="true">＋</span> Add dish</button>
+            <button className="ghost-button" type="button" onClick={addCategory}><span aria-hidden="true">＋</span> Add category</button>
             <button className="secondary-button" onClick={saveAll} disabled={saving || !dirty}>
               {saving ? 'Saving…' : dirty ? 'Save All Changes' : 'All Changes Saved'}
             </button>
-            <button className="ghost-button dish-reset-button" onClick={resetAll}>Reset defaults</button>
+            <button className="ghost-button dish-reset-button" type="button" onClick={resetAll}>Reset defaults</button>
           </div>
           {dirty ? <div className="dish-unsaved"><span />You have unsaved catalog changes</div> : null}
           {message ? <div className={`admin-message ${messageType}`} style={{ marginTop: 12, marginBottom: 0 }}>{message}</div> : null}
@@ -465,28 +489,32 @@ export default function AdminDishesPage() {
 
         <div className="glass-card dish-master-filter-card">
           <div className="dish-list-heading">
-            <div><span className="section-kicker">Find &amp; review</span><h2>Catalog filters</h2></div>
-            <span className="badge">{filteredRows.length} shown</span>
+            <div><span className="section-kicker">Find &amp; review</span><h2>Find a dish</h2><p className="muted">Search names and aliases, or narrow the catalog by status.</p></div>
+            <span className="badge">{filteredRows.length} of {rows.length}</span>
           </div>
           <div className="dish-filter-grid">
-            <div className="field">
-              <label>Search Dish</label>
-              <input className="input input-large" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Paneer, biryani, live counter..." />
+            <div className="field dish-search-field">
+              <label htmlFor="dish-search">Search catalog</label>
+              <div className="dish-search-input">
+                <span aria-hidden="true">⌕</span>
+                <input id="dish-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search a dish, category or alias…" />
+                {query ? <button type="button" onClick={() => setQuery('')} aria-label="Clear search">×</button> : null}
+              </div>
             </div>
             <div className="field">
-              <label>Category</label>
-              <select className="select select-large" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+              <label htmlFor="dish-category-filter">Category</label>
+              <select id="dish-category-filter" className="select select-large" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                 <option value="ALL">All categories</option>
                 {availableCategories.map((category) => <option value={category} key={category}>{category}</option>)}
               </select>
             </div>
             <div className="field">
-              <label>Catalog Status</label>
-              <select className="select select-large" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
-                <option value="ALL">All dishes</option>
-                <option value="ERROR">Needs attention ({rowErrors.size})</option>
-                <option value="RECIPE">Recipe linked ({recipeLinkedCount})</option>
-                <option value="NO_RECIPE">Recipe not linked ({rows.length - recipeLinkedCount})</option>
+              <label htmlFor="dish-sort">Sort by</label>
+              <select id="dish-sort" className="select select-large" value={sort} onChange={(e) => setSort(e.target.value as DishSort)}>
+                <option value="NAME_ASC">Name A–Z</option>
+                <option value="NAME_DESC">Name Z–A</option>
+                <option value="RATE_HIGH">Highest price</option>
+                <option value="RATE_LOW">Lowest price</option>
               </select>
             </div>
             <button
@@ -502,16 +530,34 @@ export default function AdminDishesPage() {
               Clear filters
             </button>
           </div>
+          <div className="dish-status-filters" aria-label="Filter dishes by status">
+            {([
+              ['ALL', 'All dishes', rows.length],
+              ['ERROR', 'Needs attention', rowErrors.size],
+              ['RECIPE', 'Recipe linked', recipeLinkedCount],
+              ['NO_RECIPE', 'No recipe', rows.length - recipeLinkedCount],
+            ] as const).map(([value, label, count]) => (
+              <button
+                type="button"
+                key={value}
+                className={statusFilter === value ? 'active' : ''}
+                aria-pressed={statusFilter === value}
+                onClick={() => setStatusFilter(value)}
+              >
+                {label} <span>{count}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {!ready ? <div className="glass-card">Loading...</div> : null}
+        {!ready ? <div className="glass-card dish-loading" role="status"><span className="admin-loader" aria-hidden="true" /><strong>Loading dish catalog…</strong></div> : null}
 
         {ready ? (
           <div className="glass-card dish-master-list-card">
             <div className="dish-list-heading">
-              <div><h2>Dish List</h2><p className="muted">Edit core details first. Open Aliases only when matching names need maintenance.</p></div>
+              <div><span className="section-kicker">Catalog editor</span><h2>Dish list</h2><p className="muted">Prices are per serving. Changing serving quantity adjusts the price proportionally.</p></div>
               <div className="dish-list-actions">
-                <span className="badge">{filteredRows.length} dishes</span>
+                <span className="badge">{visibleStart}–{visibleEnd} of {filteredRows.length}</span>
                 <button className="secondary-button" onClick={saveAll} disabled={saving || !dirty}>
                   {saving ? 'Saving…' : 'Save changes'}
                 </button>
@@ -519,8 +565,18 @@ export default function AdminDishesPage() {
             </div>
             {filteredRows.length === 0 ? <div className="admin-empty"><strong>No dishes found</strong><span>Try another search, category or status.</span></div> : null}
             <div className="admin-dish-list">
-              {visibleRows.map((row) => (
+              {visibleRows.map((row, index) => (
                 <div className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`} key={row.id}>
+                  <div className="admin-dish-row-heading">
+                    <span className="dish-row-number">{visibleStart + index}</span>
+                    <div>
+                      <strong>{row.name.trim() || 'New dish'}</strong>
+                      <small>{row.category || 'Uncategorised'} · ₹{Number(row.rate || 0).toLocaleString('en-IN')} per {row.servingUnit || 'serving'}</small>
+                    </div>
+                    <span className={`dish-row-status ${rowErrors.has(row.id) ? 'error' : row.recipeServing ? 'linked' : ''}`}>
+                      {rowErrors.has(row.id) ? 'Needs attention' : row.recipeServing ? 'Recipe linked' : 'No recipe'}
+                    </span>
+                  </div>
                   <div className="field">
                     <label>Dish Name</label>
                     <input id={`dish-name-${row.id}`} className="input input-large" value={row.name} onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Paneer Butter Masala" />
@@ -534,8 +590,11 @@ export default function AdminDishesPage() {
                     {rowErrors.get(row.id)?.category ? <span className="field-error">{rowErrors.get(row.id)?.category}</span> : null}
                   </div>
                   <div className="field">
-                    <label>Rate / Plate (Auto)</label>
-                    <input className="input input-large" type="number" min="0" value={row.rate || ''} onChange={(e) => updateRow(row.id, { rate: Number(e.target.value) })} placeholder="0" />
+                    <label>Price / serving</label>
+                    <div className="dish-price-input">
+                      <span aria-hidden="true">₹</span>
+                      <input type="number" min="0" value={row.rate || ''} onChange={(e) => updateRow(row.id, { rate: Number(e.target.value) })} placeholder="0" aria-label={`Price per serving for ${row.name || 'new dish'}`} />
+                    </div>
                     {rowErrors.get(row.id)?.rate ? <span className="field-error">{rowErrors.get(row.id)?.rate}</span> : null}
                   </div>
                   <div className="admin-serving-grid">
@@ -583,7 +642,7 @@ export default function AdminDishesPage() {
                       </div>
                     </div>
                   </details>
-                  <button className="admin-dish-delete" onClick={() => removeRow(row.id)}>Delete</button>
+                  <button className="admin-dish-delete" type="button" onClick={() => removeRow(row.id)} aria-label={`Delete ${row.name || 'new dish'}`}>Delete dish</button>
                 </div>
               ))}
             </div>
@@ -594,6 +653,14 @@ export default function AdminDishesPage() {
                 <button className="ghost-button" disabled={page === pageCount} onClick={() => setPage((current) => Math.min(pageCount, current + 1))}>Next</button>
               </div>
             ) : null}
+          </div>
+        ) : null}
+        {dirty ? (
+          <div className="dish-save-dock no-print" role="status">
+            <div><span aria-hidden="true" /><strong>Unsaved changes</strong><small>Save to publish updates to client menus.</small></div>
+            <button className="primary-button" type="button" onClick={saveAll} disabled={saving}>
+              {saving ? 'Saving…' : 'Save all changes'}
+            </button>
           </div>
         ) : null}
       </section>
