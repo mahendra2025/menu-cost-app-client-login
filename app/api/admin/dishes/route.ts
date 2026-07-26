@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '../../../../lib/prisma';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
 import { CATEGORIES, DISH_COST_ITEMS, mergeDishCatalog } from '../../../../lib/dishCostMaster';
+import defaultRecipesData from '../../../../lib/defaultRecipes.json';
 
 const CATEGORY_CATALOG_ID = 'global';
 
@@ -101,12 +102,27 @@ function normalizeSubcategories(
   }));
 }
 
+function readRecipeHierarchy(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const row = item as Record<string, unknown>;
+      const name = String(row.dishName || row.name || '').trim();
+      const category = String(row.category || '').trim();
+      const subcategory = String(row.subcategory || '').trim();
+      if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
+      return { name, category, subcategory };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+}
+
 export async function GET() {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
 
-    const [items, categoryCatalog] = await Promise.all([
+    const [items, categoryCatalog, recipeCatalog] = await Promise.all([
       prisma.dishMasterItem.findMany({
         orderBy: { name: 'asc' },
         select: {
@@ -124,6 +140,10 @@ export async function GET() {
         where: { id: CATEGORY_CATALOG_ID },
         select: { categories: true, subcategories: true },
       }),
+      prisma.recipeCatalog.findUnique({
+        where: { id: 'global' },
+        select: { dishes: true },
+      }),
     ]);
 
     const mergedItems = items.length
@@ -139,17 +159,36 @@ export async function GET() {
       })))
       : DISH_COST_ITEMS;
 
+    const recipeHierarchy = [
+      ...readRecipeHierarchy(defaultRecipesData),
+      ...readRecipeHierarchy(recipeCatalog?.dishes),
+    ];
+    const recipeByName = new Map(
+      recipeHierarchy.map((item) => [item.name.toLowerCase(), item]),
+    );
+    const alignedItems = mergedItems.map((item) => {
+      const recipe = recipeByName.get(item.name.trim().toLowerCase());
+      return {
+        ...item,
+        subcategory: item.subcategory || recipe?.subcategory || '',
+      };
+    });
     const categories = normalizeCategories(
       categoryCatalog?.categories,
-      mergedItems.map((item) => item.category),
+      [...alignedItems.map((item) => item.category), ...recipeHierarchy.map((item) => item.category)],
     );
     const subcategories = normalizeSubcategories(
       categoryCatalog?.subcategories,
       categories,
-      mergedItems,
+      [...alignedItems, ...recipeHierarchy],
     );
 
-    return NextResponse.json({ items: mergedItems, categories, subcategories });
+    return NextResponse.json({
+      items: alignedItems,
+      categories,
+      subcategories,
+      hierarchySource: recipeCatalog?.dishes ? 'recipes' : 'defaults',
+    });
   } catch {
     return NextResponse.json({ error: 'Failed to load dishes' }, { status: 500 });
   }

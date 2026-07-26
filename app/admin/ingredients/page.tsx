@@ -32,13 +32,15 @@ function hasDuplicate(rows: IngredientRow[], row: IngredientRow) {
 
 export default function AdminIngredientsPage() {
   const [rows, setRows] = useState<IngredientRow[]>([]);
+  const [categories, setCategories] = useState<string[]>([...INGREDIENT_CATEGORIES]);
   const [usage, setUsage] = useState<UsageMap>({});
   const [ready, setReady] = useState(false);
   const [catalogReady, setCatalogReady] = useState(true);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'ALL' | IngredientCategory>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [categoryQuery, setCategoryQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IngredientStatus>('ALL');
   const [sort, setSort] = useState<IngredientSort>('NAME_ASC');
   const [page, setPage] = useState(1);
@@ -54,6 +56,7 @@ export default function AdminIngredientsPage() {
       if (!response.ok) throw new Error(data.error || 'Could not load ingredients.');
       const loaded = Array.isArray(data.rates) ? data.rates as IngredientRate[] : [];
       setRows(loaded.map((rate) => ({ ...rate, rowKey: rowKey(), originalId: rate.id })));
+      setCategories(Array.isArray(data.categories) && data.categories.length ? data.categories : [...INGREDIENT_CATEGORIES]);
       setUsage(data.usage && typeof data.usage === 'object' ? data.usage : {});
       setCatalogReady(data.ready !== false);
       setDirty(false);
@@ -89,7 +92,11 @@ export default function AdminIngredientsPage() {
         return sort === 'NAME_DESC' ? -nameOrder : nameOrder;
       });
   }, [rows, query, categoryFilter, statusFilter, sort, usage]);
-  const categoryCount = useMemo(() => new Set(rows.map((row) => row.category)).size, [rows]);
+  const categoryCount = categories.length;
+  const visibleCategories = useMemo(() => {
+    const search = categoryQuery.trim().toLowerCase();
+    return categories.filter((category) => !search || category.toLowerCase().includes(search));
+  }, [categories, categoryQuery]);
   const recipeLinkedCount = useMemo(() => rows.filter((row) => (usage[row.originalId] || 0) > 0).length, [rows, usage]);
   const duplicateCount = useMemo(() => rows.filter((row) => hasDuplicate(rows, row)).length, [rows]);
   const missingRateCount = useMemo(() => rows.filter((row) => !(Number(row.rate) > 0)).length, [rows]);
@@ -122,7 +129,7 @@ export default function AdminIngredientsPage() {
       originalId: '',
       id: '',
       name: '',
-      category: 'Vegetables & Herbs',
+      category: categories[0] || 'Other',
       rate: 0,
       unit: 'kg',
     }, ...current]);
@@ -146,6 +153,80 @@ export default function AdminIngredientsPage() {
     setRows((current) => current.filter((item) => item.rowKey !== row.rowKey));
     setDirty(true);
     setMessage('');
+  }
+
+  function addCategory() {
+    const enteredName = window.prompt('New ingredient category name');
+    if (enteredName === null) return;
+    const category = enteredName.trim().replace(/\s+/g, ' ');
+    if (!category || category.length > 60) {
+      setMessageType('error');
+      setMessage('Category names must contain 1–60 characters.');
+      return;
+    }
+    const existing = categories.find((item) => item.toLowerCase() === category.toLowerCase());
+    if (existing) {
+      setCategoryFilter(existing);
+      setMessageType('error');
+      setMessage(`${existing} already exists.`);
+      return;
+    }
+    setCategories((current) => [...current, category]);
+    setCategoryFilter(category);
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${category} added. Save all changes to publish it.`);
+  }
+
+  function renameCategory(category: string) {
+    if (category === 'Other') {
+      setMessageType('error');
+      setMessage('Other is the protected fallback category and cannot be renamed.');
+      return;
+    }
+    const enteredName = window.prompt(`Rename ${category}`, category);
+    if (enteredName === null) return;
+    const nextName = enteredName.trim().replace(/\s+/g, ' ');
+    if (!nextName || nextName.length > 60) {
+      setMessageType('error');
+      setMessage('Category names must contain 1–60 characters.');
+      return;
+    }
+    const existing = categories.find(
+      (item) => item.toLowerCase() === nextName.toLowerCase() && item !== category,
+    );
+    if (existing) {
+      setMessageType('error');
+      setMessage(`${existing} already exists.`);
+      return;
+    }
+    setCategories((current) => current.map((item) => item === category ? nextName : item));
+    setRows((current) => current.map((row) => row.category === category ? { ...row, category: nextName } : row));
+    if (categoryFilter === category) setCategoryFilter(nextName);
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${category} renamed to ${nextName}. Save all changes to publish it.`);
+  }
+
+  function deleteCategory(category: string) {
+    if (category === 'Other') {
+      setMessageType('error');
+      setMessage('Other is the protected fallback category and cannot be deleted.');
+      return;
+    }
+    const assignedCount = rows.filter((row) => row.category === category).length;
+    const warning = assignedCount
+      ? `Delete ${category}? Its ${assignedCount} ingredient${assignedCount === 1 ? '' : 's'} will be moved to Other.`
+      : `Delete the ${category} category?`;
+    if (!window.confirm(warning)) return;
+    setCategories((current) => current.filter((item) => item !== category));
+    if (assignedCount) {
+      setRows((current) => current.map((row) => row.category === category ? { ...row, category: 'Other' } : row));
+    }
+    if (categoryFilter === category) setCategoryFilter('ALL');
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${category} deleted${assignedCount ? ` and ${assignedCount} ingredient${assignedCount === 1 ? '' : 's'} moved to Other` : ''}. Save all changes to publish.`);
   }
 
   async function saveAll() {
@@ -172,7 +253,7 @@ export default function AdminIngredientsPage() {
       const response = await fetch('/api/admin/ingredients', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rates }),
+        body: JSON.stringify({ rates, categories }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not save ingredients.');
@@ -206,6 +287,7 @@ export default function AdminIngredientsPage() {
           </div>
           <div className="ingredient-actions">
             <button className="primary-button" type="button" onClick={addIngredient} disabled={!catalogReady}><span aria-hidden="true">＋</span> Add ingredient</button>
+            <button className="ghost-button" type="button" onClick={addCategory} disabled={!catalogReady}><span aria-hidden="true">＋</span> Add category</button>
             <button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>
               {saving ? 'Saving…' : dirty ? 'Save all changes' : 'All changes saved'}
             </button>
@@ -214,6 +296,49 @@ export default function AdminIngredientsPage() {
           {message ? <div className={`admin-message ${messageType}`}>{message}</div> : null}
           {!catalogReady ? <div className="admin-message error">Open Recipe Studio once to initialise the PostgreSQL recipe catalog.</div> : null}
         </div>
+
+        <details className="glass-card dish-category-manager">
+          <summary>
+            <div>
+              <span className="section-kicker">Category manager</span>
+              <h2>Edit ingredient categories</h2>
+              <p>Add, rename, or delete the categories used throughout the Ingredient Master.</p>
+            </div>
+            <span className="dish-category-summary-count">{categories.length} categories</span>
+          </summary>
+          <div className="dish-category-manager-body">
+            <div className="dish-category-toolbar">
+              <div className="dish-search-input">
+                <span aria-hidden="true">⌕</span>
+                <input value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="Find a category…" aria-label="Find an ingredient category" />
+                {categoryQuery ? <button type="button" onClick={() => setCategoryQuery('')} aria-label="Clear category search">×</button> : null}
+              </div>
+              <button className="primary-button" type="button" onClick={addCategory} disabled={!catalogReady}><span aria-hidden="true">＋</span> Add category</button>
+            </div>
+            {visibleCategories.length ? (
+              <div className="dish-category-grid">
+                {visibleCategories.map((category) => {
+                  const assignedCount = rows.filter((row) => row.category === category).length;
+                  const protectedCategory = category === 'Other';
+                  return (
+                    <div className={`dish-category-item ${protectedCategory ? 'is-protected' : ''}`} key={category}>
+                      <div className="dish-category-item-heading">
+                        <div>
+                          <strong>{category}</strong>
+                          <small>{assignedCount} ingredient{assignedCount === 1 ? '' : 's'}{protectedCategory ? ' · Fallback' : ''}</small>
+                        </div>
+                        <div className="dish-category-item-actions">
+                          <button type="button" onClick={() => renameCategory(category)} disabled={protectedCategory}>Edit</button>
+                          <button className="delete" type="button" onClick={() => deleteCategory(category)} disabled={protectedCategory}>Delete</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : <div className="admin-empty dish-category-empty"><strong>No categories found</strong><span>Try another search.</span></div>}
+          </div>
+        </details>
 
         <div className="glass-card ingredient-filter-card">
           <div className="dish-list-heading">
@@ -233,7 +358,7 @@ export default function AdminIngredientsPage() {
               <label htmlFor="ingredient-category-filter">Category</label>
               <select id="ingredient-category-filter" className="select" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value as typeof categoryFilter)}>
                 <option value="ALL">All categories</option>
-                {INGREDIENT_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                {categories.map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
             </div>
             <div className="field">
@@ -298,7 +423,7 @@ export default function AdminIngredientsPage() {
                           {duplicate ? <small className="ingredient-row-error">Duplicate name and unit</small> : null}
                           {!duplicate && !(Number(row.rate) > 0) ? <small className="ingredient-row-warning">Add a market rate</small> : null}
                         </td>
-                        <td data-label="Category"><select className="select ingredient-category-select" value={row.category} onChange={(event) => updateRow(row.rowKey, { category: event.target.value as IngredientCategory })}>{INGREDIENT_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></td>
+                        <td data-label="Category"><select className="select ingredient-category-select" value={row.category} onChange={(event) => updateRow(row.rowKey, { category: event.target.value as IngredientCategory })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></td>
                         <td data-label="Purchase unit"><select className="select" value={row.unit} disabled={usedBy > 0} onChange={(event) => updateRow(row.rowKey, { unit: event.target.value as IngredientUnit })}>{INGREDIENT_UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></td>
                         <td data-label="Rate per unit"><div className={`ingredient-rate-input ${Number(row.rate) > 0 ? '' : 'is-missing'}`}><span className="ingredient-currency">₹</span><input className="input" aria-label={`Market rate for ${row.name || 'new ingredient'}`} type="number" min="0" step="0.01" value={row.rate || ''} placeholder="0.00" onChange={(event) => updateRow(row.rowKey, { rate: Math.max(0, Number(event.target.value) || 0) })} /><small>/{row.unit}</small></div></td>
                         <td data-label="Recipe usage"><span className={`ingredient-usage ${usedBy ? 'linked' : ''}`}>{usedBy ? `${usedBy} recipe${usedBy === 1 ? '' : 's'}` : 'Not linked'}</span></td>

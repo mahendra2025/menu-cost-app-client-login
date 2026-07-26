@@ -54,13 +54,14 @@ model DishCategoryCatalog {
 }
 
 model RecipeCatalog {
-  id             String   @id
-  dishes         Json
-  rates          Json
-  deletedDishIds Json
-  catalogVersion Int      @default(1)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                   String   @id
+  dishes               Json
+  rates                Json
+  ingredientCategories Json     @default("[]")
+  deletedDishIds       Json
+  catalogVersion       Int      @default(1)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 model RazorpayWebhookEvent {

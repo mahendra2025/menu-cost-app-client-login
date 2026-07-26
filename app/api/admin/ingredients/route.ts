@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
-import { normalizeIngredientRate } from '../../../../lib/ingredientCatalog';
+import { INGREDIENT_CATEGORIES, normalizeIngredientRate, type IngredientRate } from '../../../../lib/ingredientCatalog';
 import { prisma } from '../../../../lib/prisma';
 
 const CATALOG_ID = 'global';
@@ -28,20 +28,36 @@ function recipeIngredientUsage(dishes: unknown) {
   return usage;
 }
 
+function normalizeCategories(value: unknown, rates: IngredientRate[]) {
+  const supplied = Array.isArray(value) && value.length ? value : INGREDIENT_CATEGORIES;
+  const seen = new Set<string>();
+  return [...supplied, ...rates.map((rate) => rate.category), 'Other']
+    .map((category) => String(category || '').trim().replace(/\s+/g, ' '))
+    .filter((category) => {
+      const key = category.toLowerCase();
+      if (!category || category.length > 60 || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 export async function GET() {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
     const catalog = await prisma.recipeCatalog.findUnique({
       where: { id: CATALOG_ID },
-      select: { rates: true, dishes: true, updatedAt: true },
+      select: { rates: true, ingredientCategories: true, dishes: true, updatedAt: true },
     });
-    if (!catalog) return NextResponse.json({ rates: [], usage: {}, ready: false });
+    if (!catalog) return NextResponse.json({ rates: [], categories: INGREDIENT_CATEGORIES, usage: {}, ready: false });
     const usage = Object.fromEntries(recipeIngredientUsage(catalog.dishes));
     const rates = Array.isArray(catalog.rates)
-      ? catalog.rates.map(normalizeIngredientRate).filter(Boolean)
+      ? catalog.rates
+        .map(normalizeIngredientRate)
+        .filter((rate): rate is NonNullable<typeof rate> => Boolean(rate))
       : [];
-    return NextResponse.json({ rates, usage, ready: true, updatedAt: catalog.updatedAt });
+    const categories = normalizeCategories(catalog.ingredientCategories, rates);
+    return NextResponse.json({ rates, categories, usage, ready: true, updatedAt: catalog.updatedAt });
   } catch {
     return NextResponse.json({ error: 'Failed to load ingredients' }, { status: 500 });
   }
@@ -59,6 +75,7 @@ export async function PUT(request: Request) {
     if (new Set(cleanedRates.map((rate) => rate.id)).size !== cleanedRates.length) {
       return NextResponse.json({ error: 'Ingredient name and unit combinations must be unique' }, { status: 400 });
     }
+    const categories = normalizeCategories(body.categories, cleanedRates);
 
     const catalog = await prisma.recipeCatalog.findUnique({ where: { id: CATALOG_ID } });
     if (!catalog) return NextResponse.json({ error: 'Open Recipe Studio once before creating the Ingredient Master' }, { status: 409 });
@@ -73,7 +90,7 @@ export async function PUT(request: Request) {
 
     const saved = await prisma.recipeCatalog.update({
       where: { id: CATALOG_ID },
-      data: { rates: cleanedRates },
+      data: { rates: cleanedRates, ingredientCategories: categories },
       select: { updatedAt: true },
     });
     return NextResponse.json({ ok: true, updatedAt: saved.updatedAt });

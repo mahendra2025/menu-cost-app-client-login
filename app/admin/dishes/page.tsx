@@ -647,7 +647,7 @@ export default function AdminDishesPage() {
             <div>
               <span className="section-kicker">Category manager</span>
               <h2>Edit categories &amp; subcategories</h2>
-              <p>Organise dishes in two levels. Renaming automatically updates every assigned dish.</p>
+              <p>Uses the same category structure as Recipe Studio. Renaming automatically updates every assigned dish.</p>
             </div>
             <span className="dish-category-summary-count">{availableCategories.length} categories</span>
           </summary>

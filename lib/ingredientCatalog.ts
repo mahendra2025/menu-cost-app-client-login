@@ -13,7 +13,7 @@ export const INGREDIENT_CATEGORIES = [
   'Other',
 ] as const;
 
-export type IngredientCategory = (typeof INGREDIENT_CATEGORIES)[number];
+export type IngredientCategory = string;
 
 export const INGREDIENT_UNITS = ['kg', 'gram', 'ltr', 'ml', 'piece', 'packet'] as const;
 export type IngredientUnit = (typeof INGREDIENT_UNITS)[number];
@@ -56,11 +56,11 @@ export function normalizeIngredientRate(value: unknown): IngredientRate | null {
   const name = String(row.name || '').trim();
   const unit = String(row.unit || '').trim() as IngredientUnit;
   if (!name || !INGREDIENT_UNITS.includes(unit)) return null;
-  const suppliedCategory = String(row.category || '').trim() as IngredientCategory;
+  const suppliedCategory = String(row.category || '').trim();
   return {
     id: normalizeIngredientId(name, unit),
     name,
-    category: INGREDIENT_CATEGORIES.includes(suppliedCategory) ? suppliedCategory : inferIngredientCategory(name),
+    category: suppliedCategory && suppliedCategory.length <= 60 ? suppliedCategory : inferIngredientCategory(name),
     rate: Math.max(0, Number(row.rate) || 0),
     unit,
   };
