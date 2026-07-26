@@ -25,6 +25,7 @@ import {
 
 import type {
   EventDetails,
+  MenuItem,
   Session,
   WorkState,
 } from '../../../lib/types';
@@ -60,6 +61,11 @@ type DetectedEventDetails = Partial<
     | 'venue'
   >
 >;
+
+type MenuDetectionPreview = {
+  menu: MenuItem[];
+  eventDetails: DetectedEventDetails;
+};
 
 const EVENT_DETAIL_LABELS: Record<
   keyof DetectedEventDetails,
@@ -254,6 +260,25 @@ function mergeDetectedEventDetails(
   return nextEvent;
 }
 
+function menuItemIdentity(
+  item: MenuItem,
+): string {
+  const normalize = (value: string) =>
+    value
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/\p{Diacritic}/gu, '')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const serviceKey =
+    item.serviceId ||
+    `${normalize(item.dayLabel || 'event')}::${normalize(item.mealLabel || 'event menu')}`;
+
+  return `${serviceKey}::${normalize(item.name)}::${normalize(item.category)}`;
+}
+
 export default function EventPage() {
   const router = useRouter();
 
@@ -280,6 +305,14 @@ export default function EventPage() {
 
   const [detectedEventDetails, setDetectedEventDetails] =
     useState<DetectedEventDetails>({});
+
+  const [detectionPreview, setDetectionPreview] =
+    useState<MenuDetectionPreview | null>(null);
+
+  const [selectedPreviewIds, setSelectedPreviewIds] =
+    useState<Set<string>>(
+      () => new Set(),
+    );
 
   const catalogSyncRef = useRef<
     ReturnType<typeof syncDishCostItemsFromServer> | null
@@ -417,22 +450,29 @@ export default function EventPage() {
       const detectedDetails =
         detectEventDetails(rawMenuText);
 
-      const nextWork: WorkState = {
-        ...work,
-        event:
-          mergeDetectedEventDetails(
-            work.event,
-            detectedDetails,
-          ),
-        menu: detectedMenu,
-      };
-
       setDetectedEventDetails(
         detectedDetails,
       );
-      persistWork(nextWork);
+      setDetectionPreview({
+        menu: detectedMenu,
+        eventDetails: detectedDetails,
+      });
+      setSelectedPreviewIds(
+        new Set(
+          detectedMenu.map(
+            (item) => item.id,
+          ),
+        ),
+      );
 
-      router.push('/app/menu');
+      window.setTimeout(() => {
+        document
+          .getElementById('menuDetectionPreview')
+          ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+      }, 80);
     } catch (detectError) {
       console.error(
         'Menu detection error:',
@@ -447,6 +487,70 @@ export default function EventPage() {
     } finally {
       setDetecting(false);
     }
+  }
+
+  function applyDetectionPreview(
+    mode: 'replace' | 'merge',
+  ) {
+    if (
+      !work ||
+      !detectionPreview
+    ) {
+      return;
+    }
+
+    const selectedMenu =
+      detectionPreview.menu.filter(
+        (item) =>
+          selectedPreviewIds.has(
+            item.id,
+          ),
+      );
+
+    if (!selectedMenu.length) {
+      setError(
+        'Select at least one detected dish before continuing.',
+      );
+      return;
+    }
+
+    let nextMenu = selectedMenu;
+
+    if (mode === 'merge') {
+      const existingKeys =
+        new Set(
+          work.menu.map(
+            menuItemIdentity,
+          ),
+        );
+
+      nextMenu = [
+        ...work.menu,
+        ...selectedMenu.filter(
+          (item) =>
+            !existingKeys.has(
+              menuItemIdentity(item),
+            ),
+        ),
+      ];
+    }
+
+    const nextWork: WorkState = {
+      ...work,
+      event:
+        mergeDetectedEventDetails(
+          work.event,
+          detectionPreview.eventDetails,
+        ),
+      menu: nextMenu,
+    };
+
+    persistWork(nextWork);
+    setDetectionPreview(null);
+    setSelectedPreviewIds(
+      new Set(),
+    );
+    router.push('/app/menu');
   }
 
   function saveExtractedMenu(
@@ -487,6 +591,8 @@ export default function EventPage() {
 
     persistWork(nextWork);
     setMenuInputMode('upload');
+    setDetectionPreview(null);
+    setSelectedPreviewIds(new Set());
     setDetectedEventDetails(
       detectedDetails,
     );
@@ -611,6 +717,8 @@ export default function EventPage() {
     setError('');
     setUploadStatus('');
     setDetectedEventDetails({});
+    setDetectionPreview(null);
+    setSelectedPreviewIds(new Set());
     setMenuInputMode('paste');
     persistWork(nextWork);
   }
@@ -621,6 +729,8 @@ export default function EventPage() {
     setError('');
     setUploadStatus('');
     setDetectedEventDetails({});
+    setDetectionPreview(null);
+    setSelectedPreviewIds(new Set());
     updateEvent('rawMenuText', SAMPLE_MENU);
   }
 
@@ -630,6 +740,8 @@ export default function EventPage() {
     setError('');
     setUploadStatus('');
     setDetectedEventDetails({});
+    setDetectionPreview(null);
+    setSelectedPreviewIds(new Set());
     updateEvent('rawMenuText', '');
   }
 
@@ -673,6 +785,83 @@ export default function EventPage() {
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean).length;
+
+  const selectedPreviewMenu =
+    detectionPreview?.menu.filter(
+      (item) =>
+        selectedPreviewIds.has(
+          item.id,
+        ),
+    ) ?? [];
+
+  const previewGroupMap =
+    new Map<
+      string,
+      {
+        key: string;
+        dayLabel: string;
+        mealLabel: string;
+        servicePax: number;
+        items: MenuItem[];
+      }
+    >();
+
+  for (const item of detectionPreview?.menu ?? []) {
+    const groupKey =
+      item.serviceId ||
+      `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`;
+    const existingGroup =
+      previewGroupMap.get(groupKey);
+
+    if (existingGroup) {
+      existingGroup.items.push(item);
+      existingGroup.servicePax =
+        Math.max(
+          existingGroup.servicePax,
+          Number(item.servicePax) || 0,
+        );
+    } else {
+      previewGroupMap.set(groupKey, {
+        key: groupKey,
+        dayLabel:
+          item.dayLabel || '',
+        mealLabel:
+          item.mealLabel ||
+          'Event Menu',
+        servicePax:
+          Number(item.servicePax) ||
+          Number(work.event.pax) ||
+          0,
+        items: [item],
+      });
+    }
+  }
+
+  const detectionPreviewGroups =
+    Array.from(
+      previewGroupMap.values(),
+    );
+
+  const previewMissingRateCount =
+    selectedPreviewMenu.filter(
+      (item) =>
+        !(Number(item.costPerPlate) > 0),
+    ).length;
+
+  const existingMenuKeys =
+    new Set(
+      work.menu.map(
+        menuItemIdentity,
+      ),
+    );
+
+  const previewDuplicateCount =
+    selectedPreviewMenu.filter(
+      (item) =>
+        existingMenuKeys.has(
+          menuItemIdentity(item),
+        ),
+    ).length;
 
   return (
     <AppShell
@@ -1073,6 +1262,8 @@ export default function EventPage() {
                     onChange={(event) => {
                       setError('');
                       setDetectedEventDetails({});
+                      setDetectionPreview(null);
+                      setSelectedPreviewIds(new Set());
                       updateEvent('rawMenuText', event.target.value);
                     }}
                     placeholder={`Welcome Drink
@@ -1125,6 +1316,200 @@ Gulab Jamun`}
               <p>Unmatched dishes are never discarded. They continue to the review screen with a blank rate.</p>
             </div>
 
+            {detectionPreview ? (
+              <div
+                id="menuDetectionPreview"
+                className="menu-detection-preview"
+              >
+                <div className="menu-preview-heading">
+                  <div>
+                    <span className="section-kicker">Detection preview</span>
+                    <h3>Review before saving</h3>
+                    <p>Deselect anything that is not a dish, then replace or merge the menu.</p>
+                  </div>
+                  <div className="menu-preview-metrics">
+                    <span><b>{selectedPreviewMenu.length}</b> selected</span>
+                    <span><b>{detectionPreviewGroups.length}</b> functions</span>
+                    <span className={previewMissingRateCount > 0 ? 'needs-attention' : ''}>
+                      <b>{previewMissingRateCount}</b> rates missing
+                    </span>
+                  </div>
+                </div>
+
+                <div className="menu-preview-toolbar">
+                  <b>{selectedPreviewMenu.length} of {detectionPreview.menu.length} dishes selected</b>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedPreviewIds(
+                          new Set(
+                            detectionPreview.menu.map(
+                              (item) => item.id,
+                            ),
+                          ),
+                        )
+                      }
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedPreviewIds(
+                          new Set(),
+                        )
+                      }
+                    >
+                      Clear selection
+                    </button>
+                  </div>
+                </div>
+
+                <div className="menu-preview-groups">
+                  {detectionPreviewGroups.map((group) => {
+                    const selectedInGroup =
+                      group.items.filter(
+                        (item) =>
+                          selectedPreviewIds.has(
+                            item.id,
+                          ),
+                      ).length;
+
+                    return (
+                      <details
+                        className="menu-preview-group"
+                        key={group.key}
+                        open
+                      >
+                        <summary>
+                          <div>
+                            <b>
+                              {[group.dayLabel, group.mealLabel]
+                                .filter(Boolean)
+                                .join(' • ')}
+                            </b>
+                            <span>
+                              {group.servicePax > 0
+                                ? `${group.servicePax} members • `
+                                : ''}
+                              {selectedInGroup}/{group.items.length} selected
+                            </span>
+                          </div>
+                          <span aria-hidden="true">⌄</span>
+                        </summary>
+
+                        <div className="menu-preview-items">
+                          {group.items.map((item) => {
+                            const isSelected =
+                              selectedPreviewIds.has(
+                                item.id,
+                              );
+
+                            return (
+                              <label
+                                className={`menu-preview-item ${isSelected ? 'is-selected' : ''}`}
+                                key={item.id}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(event) => {
+                                    const nextIds =
+                                      new Set(
+                                        selectedPreviewIds,
+                                      );
+
+                                    if (event.target.checked) {
+                                      nextIds.add(item.id);
+                                    } else {
+                                      nextIds.delete(item.id);
+                                    }
+
+                                    setSelectedPreviewIds(
+                                      nextIds,
+                                    );
+                                    setError('');
+                                  }}
+                                />
+                                <span className="menu-preview-checkbox" aria-hidden="true">✓</span>
+                                <div>
+                                  <b>{item.name}</b>
+                                  <small>{item.category}</small>
+                                </div>
+                                <strong className={Number(item.costPerPlate) > 0 ? '' : 'missing'}>
+                                  {Number(item.costPerPlate) > 0
+                                    ? `₹${Number(item.costPerPlate).toFixed(2)}`
+                                    : 'Rate needed'}
+                                </strong>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    );
+                  })}
+                </div>
+
+                {previewDuplicateCount > 0 ? (
+                  <div className="menu-preview-duplicate-note">
+                    <b>{previewDuplicateCount} duplicate {previewDuplicateCount === 1 ? 'dish' : 'dishes'} found</b>
+                    <p>Merge mode will keep the existing version and skip these duplicates.</p>
+                  </div>
+                ) : null}
+
+                <div className="menu-preview-actions">
+                  <div>
+                    <b>Ready to save {selectedPreviewMenu.length} dishes?</b>
+                    <span>
+                      {work.menu.length > 0
+                        ? `Your current menu contains ${work.menu.length} dishes.`
+                        : 'This will create your event menu.'}
+                    </span>
+                  </div>
+                  {work.menu.length > 0 ? (
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={() =>
+                        applyDetectionPreview(
+                          'merge',
+                        )
+                      }
+                      disabled={!selectedPreviewMenu.length}
+                    >
+                      Merge with Current
+                    </button>
+                  ) : null}
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={() =>
+                      applyDetectionPreview(
+                        'replace',
+                      )
+                    }
+                    disabled={!selectedPreviewMenu.length}
+                  >
+                    {work.menu.length > 0
+                      ? 'Replace Current Menu'
+                      : 'Use Detected Menu'}
+                  </button>
+                  <button
+                    className="menu-preview-cancel"
+                    type="button"
+                    onClick={() => {
+                      setDetectionPreview(null);
+                      setSelectedPreviewIds(new Set());
+                      setError('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             <div className={`event-page-actions ${work.event.rawMenuText.trim() ? 'is-ready' : ''}`}>
               <div>
                 <b>{work.event.rawMenuText.trim() ? `${menuLines} lines ready for detection` : 'Add a menu to continue'}</b>
@@ -1138,7 +1523,9 @@ Gulab Jamun`}
               >
                 {detecting
                   ? 'Detecting Dishes...'
-                  : `Detect Menu${menuLines > 0 ? ` • ${menuLines} lines` : ''}`}
+                  : detectionPreview
+                    ? 'Refresh Detection Preview'
+                    : `Detect Menu${menuLines > 0 ? ` • ${menuLines} lines` : ''}`}
               </button>
 
               <button
