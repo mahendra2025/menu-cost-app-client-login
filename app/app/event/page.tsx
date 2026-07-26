@@ -45,6 +45,8 @@ Butter Naan
 Sweet
 Gulab Jamun`;
 
+type MenuInputMode = 'upload' | 'paste';
+
 export default function EventPage() {
   const router = useRouter();
 
@@ -66,6 +68,9 @@ export default function EventPage() {
   const [uploadStatus, setUploadStatus] =
     useState('');
 
+  const [menuInputMode, setMenuInputMode] =
+    useState<MenuInputMode>('paste');
+
   const catalogSyncRef = useRef<
     ReturnType<typeof syncDishCostItemsFromServer> | null
   >(null);
@@ -81,6 +86,11 @@ export default function EventPage() {
       );
 
       setWork(savedWork);
+      setMenuInputMode(
+        savedWork.event.uploadFileName
+          ? 'upload'
+          : 'paste',
+      );
 
       catalogSyncRef.current =
         syncDishCostItemsFromServer();
@@ -247,6 +257,7 @@ export default function EventPage() {
     };
 
     persistWork(nextWork);
+    setMenuInputMode('upload');
     setUploadStatus(
       `${sourceLabel} read successfully. Review the extracted text below, then continue.`,
     );
@@ -365,6 +376,7 @@ export default function EventPage() {
 
     setError('');
     setUploadStatus('');
+    setMenuInputMode('paste');
     persistWork(nextWork);
   }
 
@@ -416,7 +428,7 @@ export default function EventPage() {
     { label: 'Date', complete: Boolean(work.event.eventDate) },
     { label: 'Guests', complete: work.event.pax > 0 },
     { label: 'Location', complete: Boolean(work.event.venue.trim() || work.event.city.trim()) },
-    { label: 'Menu', complete: Boolean(work.event.rawMenuText.trim()) },
+    { label: 'Menu', complete: Boolean(work.event.rawMenuText.trim() || work.menu.length) },
   ];
   const completedEventItems = eventChecklist.filter((item) => item.complete).length;
   const eventProgress = Math.round((completedEventItems / eventChecklist.length) * 100);
@@ -627,126 +639,168 @@ export default function EventPage() {
           <div className="event-section-heading">
             <div>
               <span className="section-kicker">Menu detection</span>
-              <h2>Bring in the complete menu</h2>
-              <p>Upload a file or paste the WhatsApp menu. You will review every detected dish on the next page.</p>
+              <h2>How would you like to add the menu?</h2>
+              <p>Choose one method now. You can review and correct every dish before costing.</p>
             </div>
             <div className="event-menu-stats">
               <span><b>{menuLines}</b> text lines</span>
-              <span>{work.event.uploadFileName ? 'File imported' : 'Text auto-saved'}</span>
+              <span className={work.event.rawMenuText.trim() ? 'is-ready' : ''}>
+                {work.event.rawMenuText.trim() ? 'Ready to detect' : 'Waiting for menu'}
+              </span>
             </div>
           </div>
 
           <div className="form-grid">
-            <div className="menu-upload-options">
-              <div className="menu-upload-option">
-                <span className="menu-upload-icon" aria-hidden="true">PDF</span>
+            <div className="menu-source-choices" aria-label="Menu input method">
+              <button
+                className={`menu-source-choice ${menuInputMode === 'upload' ? 'is-active' : ''}`}
+                type="button"
+                aria-pressed={menuInputMode === 'upload'}
+                onClick={() => {
+                  setMenuInputMode('upload');
+                  setError('');
+                }}
+              >
+                <span className="menu-source-number">01</span>
                 <div>
-                  <b>Upload menu PDF</b>
-                  <p>Select a text-based PDF up to 15 MB.</p>
+                  <b>Upload a menu</b>
+                  <p>PDF or camera photo</p>
                 </div>
-                <label
-                  className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
-                  htmlFor="menuPdf"
-                >
-                  {uploading === 'pdf' ? 'Reading...' : 'Choose PDF'}
-                </label>
-                <input
-                  id="menuPdf"
-                  className="visually-hidden-file"
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  disabled={Boolean(uploading)}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    event.target.value = '';
-                    if (file) void readPdf(file);
-                  }}
-                />
-              </div>
+                <span className="menu-source-check" aria-hidden="true">✓</span>
+              </button>
 
-              <div className="menu-upload-option">
-                <span className="menu-upload-icon camera" aria-hidden="true">CAM</span>
+              <button
+                className={`menu-source-choice ${menuInputMode === 'paste' ? 'is-active' : ''}`}
+                type="button"
+                aria-pressed={menuInputMode === 'paste'}
+                onClick={() => {
+                  setMenuInputMode('paste');
+                  setError('');
+                }}
+              >
+                <span className="menu-source-number">02</span>
                 <div>
-                  <b>Scan with camera</b>
-                  <p>Take a clear, straight photo of the menu.</p>
+                  <b>Paste menu text</b>
+                  <p>WhatsApp or typed menu</p>
                 </div>
-                <label
-                  className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
-                  htmlFor="menuCamera"
-                >
-                  {uploading === 'camera' ? 'Scanning...' : 'Open Camera'}
-                </label>
-                <input
-                  id="menuCamera"
-                  className="visually-hidden-file"
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  disabled={Boolean(uploading)}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    event.target.value = '';
-                    if (file) void readMenuPhoto(file);
-                  }}
-                />
-              </div>
+                <span className="menu-source-check" aria-hidden="true">✓</span>
+              </button>
 
-              <div className="menu-upload-option manual">
-                <span className="menu-upload-icon manual" aria-hidden="true">MAN</span>
+              <button
+                className="menu-source-choice manual"
+                type="button"
+                onClick={selectMenuManually}
+                disabled={Boolean(uploading)}
+              >
+                <span className="menu-source-number">03</span>
                 <div>
                   <b>Select dishes manually</b>
-                  <p>Browse the dish catalog and add only the items you need.</p>
+                  <p>Build from the dish catalog</p>
                 </div>
-                <button
-                  className="ghost-button"
-                  type="button"
-                  onClick={selectMenuManually}
-                  disabled={Boolean(uploading)}
-                >
-                  Select Manually
-                </button>
-              </div>
+                <span className="menu-source-arrow" aria-hidden="true">→</span>
+              </button>
             </div>
 
-            {uploadStatus ? (
-              <div className="menu-upload-status" role="status" aria-live="polite">
-                <span className={uploading ? 'upload-spinner' : 'upload-check'} aria-hidden="true" />
+            <div className="menu-source-workspace">
+              <div className="menu-source-workspace-heading">
                 <div>
-                  <b>{uploading ? 'Processing menu' : 'Menu ready to review'}</b>
-                  <p>{uploadStatus}</p>
-                  {work.event.uploadFileName && !uploading ? (
-                    <small>{work.event.uploadFileName}</small>
-                  ) : null}
+                  <span>{menuInputMode === 'upload' ? 'Import menu' : 'Paste menu'}</span>
+                  <h3>{menuInputMode === 'upload' ? 'Choose your file source' : 'Paste the full menu below'}</h3>
                 </div>
-              </div>
-            ) : null}
-
-            <div className="menu-upload-divider"><span>or paste menu text</span></div>
-
-            <div className="field">
-              <div className="event-menu-text-heading">
-                <label htmlFor="rawMenuText">Menu text</label>
-                <div>
-                  <button className="event-text-action" type="button" onClick={useSampleMenu}>Use sample format</button>
-                  {work.event.rawMenuText ? <button className="event-text-action danger" type="button" onClick={clearMenuText}>Clear text</button> : null}
-                </div>
+                <small>Auto-saved</small>
               </div>
 
-              <textarea
-                id="rawMenuText"
-                className="textarea textarea-large"
-                value={
-                  work.event.rawMenuText
-                }
-                onChange={(event) => {
-                  setError('');
+              {menuInputMode === 'upload' ? (
+                <div className="menu-upload-options">
+                  <div className="menu-upload-option">
+                    <span className="menu-upload-icon" aria-hidden="true">PDF</span>
+                    <div>
+                      <b>Upload PDF</b>
+                      <p>Text-based PDF, up to 15 MB.</p>
+                    </div>
+                    <label
+                      className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                      htmlFor="menuPdf"
+                    >
+                      {uploading === 'pdf' ? 'Reading PDF...' : 'Choose PDF'}
+                    </label>
+                    <input
+                      id="menuPdf"
+                      className="visually-hidden-file"
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      disabled={Boolean(uploading)}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = '';
+                        if (file) void readPdf(file);
+                      }}
+                    />
+                  </div>
 
-                  updateEvent(
-                    'rawMenuText',
-                    event.target.value,
-                  );
-                }}
-                placeholder={`Welcome Drink
+                  <div className="menu-upload-option">
+                    <span className="menu-upload-icon camera" aria-hidden="true">CAM</span>
+                    <div>
+                      <b>Take a photo</b>
+                      <p>Use a clear, straight menu photo.</p>
+                    </div>
+                    <label
+                      className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                      htmlFor="menuCamera"
+                    >
+                      {uploading === 'camera' ? 'Scanning photo...' : 'Open Camera'}
+                    </label>
+                    <input
+                      id="menuCamera"
+                      className="visually-hidden-file"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      disabled={Boolean(uploading)}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = '';
+                        if (file) void readMenuPhoto(file);
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              {uploadStatus ? (
+                <div className="menu-upload-status" role="status" aria-live="polite">
+                  <span className={uploading ? 'upload-spinner' : 'upload-check'} aria-hidden="true" />
+                  <div>
+                    <b>{uploading ? 'Processing menu' : 'Menu imported successfully'}</b>
+                    <p>{uploadStatus}</p>
+                    {work.event.uploadFileName && !uploading ? (
+                      <small>{work.event.uploadFileName}</small>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {menuInputMode === 'paste' || work.event.rawMenuText ? (
+                <div className="field menu-text-field">
+                  <div className="event-menu-text-heading">
+                    <label htmlFor="rawMenuText">
+                      {menuInputMode === 'upload' ? 'Extracted menu text' : 'Menu text'}
+                    </label>
+                    <div>
+                      <button className="event-text-action" type="button" onClick={useSampleMenu}>Use sample</button>
+                      {work.event.rawMenuText ? <button className="event-text-action danger" type="button" onClick={clearMenuText}>Clear</button> : null}
+                    </div>
+                  </div>
+
+                  <textarea
+                    id="rawMenuText"
+                    className="textarea textarea-large"
+                    value={work.event.rawMenuText}
+                    onChange={(event) => {
+                      setError('');
+                      updateEvent('rawMenuText', event.target.value);
+                    }}
+                    placeholder={`Welcome Drink
 Orange Juice
 
 Starter
@@ -762,11 +816,19 @@ Butter Naan
 
 Sweet
 Gulab Jamun`}
-              />
-              <div className="event-text-meta">
-                <span>{work.event.rawMenuText.length.toLocaleString('en-IN')} characters</span>
-                <span>English • Roman Hindi • Hindi • Gujarati</span>
-              </div>
+                  />
+                  <div className="event-text-meta">
+                    <span>{menuLines} non-empty lines • {work.event.rawMenuText.length.toLocaleString('en-IN')} characters</span>
+                    <span>English • Roman Hindi • Hindi • Gujarati</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="menu-upload-empty">
+                  <span aria-hidden="true">↑</span>
+                  <b>Select a PDF or take a menu photo</b>
+                  <p>We will extract the text so you can review it before detection.</p>
+                </div>
+              )}
             </div>
 
             {error ? (
@@ -777,24 +839,24 @@ Gulab Jamun`}
             ) : null}
 
             <div className="event-detection-note">
-              <b>Nothing is silently removed</b>
-              <p>Unmatched dishes continue to Menu review with a blank rate, ready for you to correct.</p>
+              <b>Safe to review</b>
+              <p>Unmatched dishes are never discarded. They continue to the review screen with a blank rate.</p>
             </div>
 
-            <div className="event-page-actions">
+            <div className={`event-page-actions ${work.event.rawMenuText.trim() ? 'is-ready' : ''}`}>
               <div>
-                <b>Ready for menu review?</b>
-                <span>Detection keeps meal names, member counts, categories, and unmatched dishes.</span>
+                <b>{work.event.rawMenuText.trim() ? `${menuLines} lines ready for detection` : 'Add a menu to continue'}</b>
+                <span>{work.event.rawMenuText.trim() ? 'Meals, guest counts and categories will stay organized.' : 'Upload a file, paste text, or choose dishes manually.'}</span>
               </div>
               <button
                 className="primary-button"
                 type="button"
                 onClick={detectAndNext}
-                disabled={detecting || Boolean(uploading)}
+                disabled={detecting || Boolean(uploading) || !work.event.rawMenuText.trim()}
               >
                 {detecting
                   ? 'Detecting Dishes...'
-                  : 'Next: Check Menu'}
+                  : `Detect Menu${menuLines > 0 ? ` • ${menuLines} lines` : ''}`}
               </button>
 
               <button
