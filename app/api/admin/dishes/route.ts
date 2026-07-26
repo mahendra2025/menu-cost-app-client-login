@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { prisma } from '../../../../lib/prisma';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
-import { DISH_COST_ITEMS, mergeDishCatalog } from '../../../../lib/dishCostMaster';
+import { CATEGORIES, DISH_COST_ITEMS, mergeDishCatalog } from '../../../../lib/dishCostMaster';
+
+const CATEGORY_CATALOG_ID = 'global';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -59,23 +61,42 @@ function normalizeRateUpdates(items: unknown) {
     .filter((item): item is { name: string; category: string; rate: number } => item !== null);
 }
 
+function normalizeCategories(value: unknown, itemCategories: string[] = []) {
+  const source = Array.isArray(value) ? value : CATEGORIES;
+  const categories = [...source, ...itemCategories, 'Other']
+    .map((category) => String(category || '').trim().replace(/\s+/g, ' '))
+    .filter((category) => category && category.length <= 60);
+  const unique = new Map<string, string>();
+  categories.forEach((category) => {
+    const key = category.toLowerCase();
+    if (!unique.has(key)) unique.set(key, category);
+  });
+  return Array.from(unique.values()).slice(0, 150);
+}
+
 export async function GET() {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
 
-    const items = await prisma.dishMasterItem.findMany({
-      orderBy: { name: 'asc' },
-      select: {
-        id: true,
-        name: true,
-        category: true,
-        rate: true,
-        servingQuantity: true,
-        servingUnit: true,
-        aliases: true,
-      },
-    });
+    const [items, categoryCatalog] = await Promise.all([
+      prisma.dishMasterItem.findMany({
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          rate: true,
+          servingQuantity: true,
+          servingUnit: true,
+          aliases: true,
+        },
+      }),
+      prisma.dishCategoryCatalog.findUnique({
+        where: { id: CATEGORY_CATALOG_ID },
+        select: { categories: true },
+      }),
+    ]);
 
     const mergedItems = items.length
       ? mergeDishCatalog(items.map((item) => ({
@@ -89,7 +110,12 @@ export async function GET() {
       })))
       : DISH_COST_ITEMS;
 
-    return NextResponse.json({ items: mergedItems });
+    const categories = normalizeCategories(
+      categoryCatalog?.categories,
+      mergedItems.map((item) => item.category),
+    );
+
+    return NextResponse.json({ items: mergedItems, categories });
   } catch {
     return NextResponse.json({ error: 'Failed to load dishes' }, { status: 500 });
   }
@@ -102,9 +128,15 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
     const items = normalizeItems(body.items);
+    const categories = normalizeCategories(body.categories, items.map((item) => String(item?.category || '')));
 
     await prisma.$transaction([
       prisma.dishMasterItem.deleteMany(),
+      prisma.dishCategoryCatalog.upsert({
+        where: { id: CATEGORY_CATALOG_ID },
+        create: { id: CATEGORY_CATALOG_ID, categories },
+        update: { categories },
+      }),
       ...items.map((item) =>
         prisma.dishMasterItem.create({
           data: {
@@ -173,7 +205,10 @@ export async function DELETE() {
     const authError = await requireAdmin();
     if (authError) return authError;
 
-    await prisma.dishMasterItem.deleteMany();
+    await prisma.$transaction([
+      prisma.dishMasterItem.deleteMany(),
+      prisma.dishCategoryCatalog.deleteMany(),
+    ]);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: 'Failed to reset dishes' }, { status: 500 });

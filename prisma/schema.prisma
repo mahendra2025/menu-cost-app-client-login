@@ -44,6 +44,13 @@ model DishMasterItem {
   updatedAt       DateTime @updatedAt
 }
 
+model DishCategoryCatalog {
+  id         String   @id
+  categories Json
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+}
+
 model RecipeCatalog {
   id             String   @id
   dishes         Json

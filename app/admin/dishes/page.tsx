@@ -177,6 +177,8 @@ function validateRows(rows: EditableDish[]) {
 export default function AdminDishesPage() {
   const [ready, setReady] = useState(false);
   const [rows, setRows] = useState<EditableDish[]>([]);
+  const [categories, setCategories] = useState<string[]>([...CATEGORIES]);
+  const [categoryQuery, setCategoryQuery] = useState('');
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ERROR' | 'RECIPE' | 'NO_RECIPE'>('ALL');
@@ -189,11 +191,15 @@ export default function AdminDishesPage() {
   const rowErrors = useMemo(() => validateRows(rows), [rows]);
   const availableCategories = useMemo(
     () => Array.from(new Set([
-      ...CATEGORIES,
+      ...categories,
       ...rows.map((row) => row.category.trim()).filter(Boolean),
     ])).sort((left, right) => left.localeCompare(right)),
-    [rows],
+    [categories, rows],
   );
+  const visibleCategories = useMemo(() => {
+    const search = categoryQuery.trim().toLowerCase();
+    return availableCategories.filter((category) => !search || category.toLowerCase().includes(search));
+  }, [availableCategories, categoryQuery]);
 
   useEffect(() => {
     const session = getSession();
@@ -206,6 +212,9 @@ export default function AdminDishesPage() {
         const data = await response.json();
         const recipeCatalog = createRecipeServingCatalog();
         const dishItems = parseDishItems(data.items);
+        const loadedCategories = Array.isArray(data.categories)
+          ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
+          : [...CATEGORIES];
         const cleaned = dishItems.map((item) => toEditableDish(item, recipeCatalog));
         const loadedRecipeServings = cleaned.some((item, index) =>
           item.servingQuantity !== dishItems[index]?.servingQuantity ||
@@ -213,6 +222,7 @@ export default function AdminDishesPage() {
         );
 
         setRows(cleaned);
+        setCategories(Array.from(new Set([...loadedCategories, ...cleaned.map((item) => item.category), 'Other'])));
         saveDishCostItems(cleaned.map(toDishCostItem));
         if (loadedRecipeServings) {
           setDirty(true);
@@ -340,30 +350,65 @@ export default function AdminDishesPage() {
       return;
     }
 
-    const newRowId = uid('dish_master');
     setMessageType('success');
-    setMessage(`${category} added. Complete its first dish, then save all changes.`);
-    setQuery('');
+    setMessage(`${category} added. Save all changes to publish the category.`);
+    setCategories((current) => [...current, category]);
     setCategoryFilter(category);
     setStatusFilter('ALL');
-    setPage(1);
     setDirty(true);
-    setRows((current) => [{
-      id: newRowId,
-      name: '',
-      category,
-      rate: 1,
-      servingQuantity: 1,
-      servingUnit: 'serving',
-      aliases: [],
-      aliasesText: '',
-      hindiAliasesText: '',
-      gujaratiAliasesText: '',
-    }, ...current]);
+  }
 
-    window.setTimeout(() => {
-      document.getElementById(`dish-name-${newRowId}`)?.focus();
-    }, 80);
+  function renameCategory(category: string) {
+    if (category === 'Other') {
+      setMessageType('error');
+      setMessage('Other is the protected fallback category and cannot be renamed.');
+      return;
+    }
+    const enteredName = window.prompt(`Rename ${category}`, category);
+    if (enteredName === null) return;
+    const nextName = enteredName.trim().replace(/\s+/g, ' ');
+    if (!nextName || nextName.length > 60) {
+      setMessageType('error');
+      setMessage('Category names must contain 1–60 characters.');
+      return;
+    }
+    const existing = availableCategories.find(
+      (item) => item.toLowerCase() === nextName.toLowerCase() && item !== category,
+    );
+    if (existing) {
+      setMessageType('error');
+      setMessage(`${existing} already exists.`);
+      return;
+    }
+
+    setCategories((current) => current.map((item) => item === category ? nextName : item));
+    setRows((current) => current.map((row) => row.category === category ? { ...row, category: nextName } : row));
+    if (categoryFilter === category) setCategoryFilter(nextName);
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${category} renamed to ${nextName}. Save all changes to publish it.`);
+  }
+
+  function deleteCategory(category: string) {
+    if (category === 'Other') {
+      setMessageType('error');
+      setMessage('Other is the protected fallback category and cannot be deleted.');
+      return;
+    }
+    const assignedCount = rows.filter((row) => row.category === category).length;
+    const warning = assignedCount
+      ? `Delete ${category}? Its ${assignedCount} dish${assignedCount === 1 ? '' : 'es'} will be moved to Other.`
+      : `Delete the ${category} category?`;
+    if (!window.confirm(warning)) return;
+
+    setCategories((current) => current.filter((item) => item !== category));
+    if (assignedCount) {
+      setRows((current) => current.map((row) => row.category === category ? { ...row, category: 'Other' } : row));
+    }
+    if (categoryFilter === category) setCategoryFilter('ALL');
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${category} deleted${assignedCount ? ` and ${assignedCount} dish${assignedCount === 1 ? '' : 'es'} moved to Other` : ''}. Save all changes to publish.`);
   }
 
   function removeRow(id: string) {
@@ -418,7 +463,7 @@ export default function AdminDishesPage() {
       const response = await fetch('/api/admin/dishes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cleaned }),
+        body: JSON.stringify({ items: cleaned, categories: availableCategories }),
       });
       if (!response.ok) throw new Error();
       saveDishCostItems(cleaned);
@@ -451,6 +496,7 @@ export default function AdminDishesPage() {
     const defaults = parseDishItems(data.items).map((item) => toEditableDish(item, recipeCatalog));
     saveDishCostItems(defaults.map(toDishCostItem));
     setRows(defaults);
+    setCategories(Array.isArray(data.categories) ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean) : [...CATEGORIES]);
     setDirty(false);
     setMessageType('success');
     setMessage('Dish master reset to the default shared catalog.');
@@ -486,6 +532,47 @@ export default function AdminDishesPage() {
           {dirty ? <div className="dish-unsaved"><span />You have unsaved catalog changes</div> : null}
           {message ? <div className={`admin-message ${messageType}`} style={{ marginTop: 12, marginBottom: 0 }}>{message}</div> : null}
         </div>
+
+        <details className="glass-card dish-category-manager">
+          <summary>
+            <div>
+              <span className="section-kicker">Category manager</span>
+              <h2>Edit dish categories</h2>
+              <p>Rename categories or delete them safely. Dishes from deleted categories move to Other.</p>
+            </div>
+            <span className="dish-category-summary-count">{availableCategories.length} categories</span>
+          </summary>
+          <div className="dish-category-manager-body">
+            <div className="dish-category-toolbar">
+              <div className="dish-search-input">
+                <span aria-hidden="true">⌕</span>
+                <input value={categoryQuery} onChange={(event) => setCategoryQuery(event.target.value)} placeholder="Find a category…" aria-label="Find a dish category" />
+                {categoryQuery ? <button type="button" onClick={() => setCategoryQuery('')} aria-label="Clear category search">×</button> : null}
+              </div>
+              <button className="primary-button" type="button" onClick={addCategory}><span aria-hidden="true">＋</span> Add category</button>
+            </div>
+            {visibleCategories.length ? (
+              <div className="dish-category-grid">
+                {visibleCategories.map((category) => {
+                  const assignedCount = rows.filter((row) => row.category === category).length;
+                  const protectedCategory = category === 'Other';
+                  return (
+                    <div className={`dish-category-item ${protectedCategory ? 'is-protected' : ''}`} key={category}>
+                      <div>
+                        <strong>{category}</strong>
+                        <small>{assignedCount} dish{assignedCount === 1 ? '' : 'es'}{protectedCategory ? ' · Fallback' : ''}</small>
+                      </div>
+                      <div className="dish-category-item-actions">
+                        <button type="button" onClick={() => renameCategory(category)} disabled={protectedCategory} aria-label={`Rename ${category}`}>Edit</button>
+                        <button className="delete" type="button" onClick={() => deleteCategory(category)} disabled={protectedCategory} aria-label={`Delete ${category}`}>Delete</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : <div className="admin-empty dish-category-empty"><strong>No categories found</strong><span>Try another search.</span></div>}
+          </div>
+        </details>
 
         <div className="glass-card dish-master-filter-card">
           <div className="dish-list-heading">
