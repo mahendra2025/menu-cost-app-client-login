@@ -14,8 +14,10 @@ import {
 
 type IngredientRow = IngredientRate & { rowKey: string; originalId: string };
 type UsageMap = Record<string, number>;
+type IngredientStatus = 'ALL' | 'ATTENTION' | 'LINKED' | 'UNLINKED';
+type IngredientSort = 'NAME_ASC' | 'NAME_DESC' | 'RATE_HIGH' | 'RATE_LOW' | 'MOST_USED';
 
-const PAGE_SIZE = 40;
+const PAGE_SIZE = 30;
 
 function rowKey() {
   return typeof crypto !== 'undefined' && crypto.randomUUID
@@ -37,6 +39,8 @@ export default function AdminIngredientsPage() {
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | IngredientCategory>('ALL');
+  const [statusFilter, setStatusFilter] = useState<IngredientStatus>('ALL');
+  const [sort, setSort] = useState<IngredientSort>('NAME_ASC');
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
@@ -66,18 +70,44 @@ export default function AdminIngredientsPage() {
   const filteredRows = useMemo(() => {
     const search = query.trim().toLowerCase();
     return rows
-      .filter((row) => (categoryFilter === 'ALL' || row.category === categoryFilter) &&
-        (!search || row.name.toLowerCase().includes(search) || row.category.toLowerCase().includes(search) || row.unit.includes(search)))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [rows, query, categoryFilter]);
+      .filter((row) => {
+        const usedBy = usage[row.originalId] || 0;
+        const needsAttention = !(Number(row.rate) > 0) || !row.name.trim() || hasDuplicate(rows, row);
+        const matchesStatus = statusFilter === 'ALL' ||
+          (statusFilter === 'ATTENTION' && needsAttention) ||
+          (statusFilter === 'LINKED' && usedBy > 0) ||
+          (statusFilter === 'UNLINKED' && usedBy === 0);
+        return matchesStatus &&
+          (categoryFilter === 'ALL' || row.category === categoryFilter) &&
+          (!search || row.name.toLowerCase().includes(search) || row.category.toLowerCase().includes(search) || row.unit.includes(search));
+      })
+      .sort((a, b) => {
+        if (sort === 'RATE_HIGH') return Number(b.rate) - Number(a.rate);
+        if (sort === 'RATE_LOW') return Number(a.rate) - Number(b.rate);
+        if (sort === 'MOST_USED') return (usage[b.originalId] || 0) - (usage[a.originalId] || 0) || a.name.localeCompare(b.name);
+        const nameOrder = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+        return sort === 'NAME_DESC' ? -nameOrder : nameOrder;
+      });
+  }, [rows, query, categoryFilter, statusFilter, sort, usage]);
   const categoryCount = useMemo(() => new Set(rows.map((row) => row.category)).size, [rows]);
   const recipeLinkedCount = useMemo(() => rows.filter((row) => (usage[row.originalId] || 0) > 0).length, [rows, usage]);
   const duplicateCount = useMemo(() => rows.filter((row) => hasDuplicate(rows, row)).length, [rows]);
+  const missingRateCount = useMemo(() => rows.filter((row) => !(Number(row.rate) > 0)).length, [rows]);
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
   const visibleRows = filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const visibleStart = filteredRows.length ? ((page - 1) * PAGE_SIZE) + 1 : 0;
+  const visibleEnd = Math.min(page * PAGE_SIZE, filteredRows.length);
 
-  useEffect(() => { setPage(1); }, [query, categoryFilter]);
+  useEffect(() => { setPage(1); }, [query, categoryFilter, statusFilter, sort]);
   useEffect(() => { if (page > pageCount) setPage(pageCount); }, [page, pageCount]);
+  useEffect(() => {
+    const warnAboutUnsavedChanges = (event: BeforeUnloadEvent) => {
+      if (!dirty) return;
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warnAboutUnsavedChanges);
+    return () => window.removeEventListener('beforeunload', warnAboutUnsavedChanges);
+  }, [dirty]);
 
   function updateRow(key: string, patch: Partial<IngredientRow>) {
     setMessage('');
@@ -98,6 +128,7 @@ export default function AdminIngredientsPage() {
     }, ...current]);
     setQuery('');
     setCategoryFilter('ALL');
+    setStatusFilter('ALL');
     setPage(1);
     setDirty(true);
     setMessage('');
@@ -159,24 +190,24 @@ export default function AdminIngredientsPage() {
   }
 
   return (
-    <AppShell title="Ingredient Master" subtitle="Organise ingredients by category and maintain recipe market rates">
+    <AppShell title="Ingredients" subtitle="Maintain purchase units and market rates used by every recipe">
       <section className="content-grid ingredient-master">
-        <div className={`ingredient-overview ${duplicateCount ? 'needs-attention' : ''}`}>
+        <div className={`ingredient-overview ${duplicateCount || missingRateCount ? 'needs-attention' : ''}`}>
           <div className="ingredient-overview-copy">
-            <span className="section-kicker">Ingredient catalog</span>
-            <h2>Ingredients &amp; Market Rates</h2>
-            <p>Keep every ingredient organised and priced correctly for accurate recipe costing.</p>
+            <span className="section-kicker">Market rate catalog</span>
+            <h2>{missingRateCount ? `${missingRateCount} rates need attention` : 'Your ingredient rates are ready'}</h2>
+            <p>Accurate purchase rates keep recipe costs and Dish Catalog prices reliable.</p>
           </div>
           <div className="ingredient-health" aria-label="Ingredient catalog summary">
             <span><b>{rows.length}</b><small>Ingredients</small></span>
             <span><b>{categoryCount}</b><small>Categories</small></span>
             <span><b>{recipeLinkedCount}</b><small>Recipe linked</small></span>
-            <span className={duplicateCount ? 'needs-attention' : 'is-complete'}><b>{duplicateCount}</b><small>Duplicates</small></span>
+            <span className={missingRateCount ? 'needs-attention' : 'is-complete'}><b>{missingRateCount}</b><small>Missing rates</small></span>
           </div>
           <div className="ingredient-actions">
-            <button className="primary-button" type="button" onClick={addIngredient} disabled={!catalogReady}>+ Add Ingredient</button>
+            <button className="primary-button" type="button" onClick={addIngredient} disabled={!catalogReady}><span aria-hidden="true">＋</span> Add ingredient</button>
             <button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>
-              {saving ? 'Saving…' : dirty ? 'Save All Changes' : 'All Changes Saved'}
+              {saving ? 'Saving…' : dirty ? 'Save all changes' : 'All changes saved'}
             </button>
           </div>
           {dirty ? <div className="dish-unsaved"><span />You have unsaved ingredient changes</div> : null}
@@ -186,32 +217,59 @@ export default function AdminIngredientsPage() {
 
         <div className="glass-card ingredient-filter-card">
           <div className="dish-list-heading">
-            <div><span className="section-kicker">Quick search</span><h2>Find ingredients</h2><p className="muted">Search by ingredient, category or purchase unit.</p></div>
-            <span className="badge">Showing {filteredRows.length}</span>
+            <div><span className="section-kicker">Find &amp; review</span><h2>Find ingredients</h2><p className="muted">Search the catalog or isolate missing rates and recipe-linked ingredients.</p></div>
+            <span className="badge">{filteredRows.length} of {rows.length}</span>
           </div>
           <div className="ingredient-filter-grid">
-            <div className="field">
-              <label>Search Ingredient</label>
-              <input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Paneer, tomato, cumin…" />
+            <div className="field ingredient-search-field">
+              <label htmlFor="ingredient-search">Search catalog</label>
+              <div className="ingredient-search-input">
+                <span aria-hidden="true">⌕</span>
+                <input id="ingredient-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search ingredient, category or unit…" />
+                {query ? <button type="button" onClick={() => setQuery('')} aria-label="Clear ingredient search">×</button> : null}
+              </div>
             </div>
             <div className="field">
-              <label>Category</label>
-              <select className="select" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value as typeof categoryFilter)}>
+              <label htmlFor="ingredient-category-filter">Category</label>
+              <select id="ingredient-category-filter" className="select" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value as typeof categoryFilter)}>
                 <option value="ALL">All categories</option>
                 {INGREDIENT_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
             </div>
-            <button className="ghost-button" type="button" disabled={!query && categoryFilter === 'ALL'} onClick={() => { setQuery(''); setCategoryFilter('ALL'); }}>Clear filters</button>
+            <div className="field">
+              <label htmlFor="ingredient-sort">Sort by</label>
+              <select id="ingredient-sort" className="select" value={sort} onChange={(event) => setSort(event.target.value as IngredientSort)}>
+                <option value="NAME_ASC">Name A–Z</option>
+                <option value="NAME_DESC">Name Z–A</option>
+                <option value="RATE_HIGH">Highest rate</option>
+                <option value="RATE_LOW">Lowest rate</option>
+                <option value="MOST_USED">Most used</option>
+              </select>
+            </div>
+            <button className="ghost-button" type="button" disabled={!query && categoryFilter === 'ALL' && statusFilter === 'ALL'} onClick={() => { setQuery(''); setCategoryFilter('ALL'); setStatusFilter('ALL'); }}>Clear filters</button>
+          </div>
+          <div className="ingredient-status-filters" aria-label="Filter ingredients by status">
+            {([
+              ['ALL', 'All ingredients', rows.length],
+              ['ATTENTION', 'Needs attention', rows.filter((row) => !(Number(row.rate) > 0) || !row.name.trim() || hasDuplicate(rows, row)).length],
+              ['LINKED', 'Recipe linked', recipeLinkedCount],
+              ['UNLINKED', 'Not linked', rows.length - recipeLinkedCount],
+            ] as const).map(([value, label, count]) => (
+              <button type="button" key={value} className={statusFilter === value ? 'active' : ''} aria-pressed={statusFilter === value} onClick={() => setStatusFilter(value)}>
+                {label}<span>{count}</span>
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="glass-card ingredient-list-card">
           <div className="dish-list-heading">
-            <div><span className="section-kicker">Master list</span><h2>Ingredient details</h2><p className="muted">Green labels show ingredients already connected to saved recipes.</p></div>
-            <button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>Save changes</button>
+            <div><span className="section-kicker">Rate editor</span><h2>Ingredient details</h2><p className="muted">Linked names and units are protected because saved recipes depend on them.</p></div>
+            <div className="ingredient-list-actions"><span className="badge">{visibleStart}–{visibleEnd} of {filteredRows.length}</span><button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>Save changes</button></div>
           </div>
           {!ready ? <div className="admin-empty"><span className="admin-loader" /><strong>Loading ingredients</strong></div> : null}
-          {ready && !visibleRows.length ? <div className="admin-empty"><strong>No ingredients found</strong><span>Try another search or add a new ingredient.</span></div> : null}
+          {ready && messageType === 'error' && !rows.length ? <div className="ingredient-load-error"><strong>Ingredient catalog unavailable</strong><span>{message}</span><button className="ghost-button" type="button" onClick={() => void loadIngredients()}>Try again</button></div> : null}
+          {ready && !visibleRows.length && !(messageType === 'error' && !rows.length) ? <div className="admin-empty"><strong>No ingredients found</strong><span>Try another search or add a new ingredient.</span></div> : null}
           {ready && visibleRows.length ? (
             <div className="ingredient-table-wrap">
               <table className="ingredient-table">
@@ -222,7 +280,7 @@ export default function AdminIngredientsPage() {
                     const duplicate = hasDuplicate(rows, row);
                     return (
                       <tr key={row.rowKey} className={duplicate ? 'has-error' : ''}>
-                        <td>
+                        <td data-label="Ingredient">
                           <div className="ingredient-name-field">
                             <span className="ingredient-initial" aria-hidden="true">{row.name.trim().charAt(0).toUpperCase() || '+'}</span>
                             <input
@@ -238,12 +296,13 @@ export default function AdminIngredientsPage() {
                             />
                           </div>
                           {duplicate ? <small className="ingredient-row-error">Duplicate name and unit</small> : null}
+                          {!duplicate && !(Number(row.rate) > 0) ? <small className="ingredient-row-warning">Add a market rate</small> : null}
                         </td>
-                        <td><select className="select ingredient-category-select" value={row.category} onChange={(event) => updateRow(row.rowKey, { category: event.target.value as IngredientCategory })}>{INGREDIENT_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></td>
-                        <td><select className="select" value={row.unit} disabled={usedBy > 0} onChange={(event) => updateRow(row.rowKey, { unit: event.target.value as IngredientUnit })}>{INGREDIENT_UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></td>
-                        <td><div className="ingredient-rate-input"><span className="ingredient-currency">₹</span><input className="input" type="number" min="0" step="0.01" value={row.rate} onChange={(event) => updateRow(row.rowKey, { rate: Math.max(0, Number(event.target.value) || 0) })} /><small>/{row.unit}</small></div></td>
-                        <td><span className={`ingredient-usage ${usedBy ? 'linked' : ''}`}>{usedBy ? `${usedBy} recipe${usedBy === 1 ? '' : 's'}` : 'Not linked'}</span></td>
-                        <td><button className="ingredient-delete" type="button" aria-label={`Delete ${row.name || 'ingredient'}`} title={usedBy ? 'Used ingredients cannot be deleted' : 'Delete ingredient'} disabled={usedBy > 0} onClick={() => removeIngredient(row)}>×</button></td>
+                        <td data-label="Category"><select className="select ingredient-category-select" value={row.category} onChange={(event) => updateRow(row.rowKey, { category: event.target.value as IngredientCategory })}>{INGREDIENT_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></td>
+                        <td data-label="Purchase unit"><select className="select" value={row.unit} disabled={usedBy > 0} onChange={(event) => updateRow(row.rowKey, { unit: event.target.value as IngredientUnit })}>{INGREDIENT_UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></td>
+                        <td data-label="Rate per unit"><div className={`ingredient-rate-input ${Number(row.rate) > 0 ? '' : 'is-missing'}`}><span className="ingredient-currency">₹</span><input className="input" aria-label={`Market rate for ${row.name || 'new ingredient'}`} type="number" min="0" step="0.01" value={row.rate || ''} placeholder="0.00" onChange={(event) => updateRow(row.rowKey, { rate: Math.max(0, Number(event.target.value) || 0) })} /><small>/{row.unit}</small></div></td>
+                        <td data-label="Recipe usage"><span className={`ingredient-usage ${usedBy ? 'linked' : ''}`}>{usedBy ? `${usedBy} recipe${usedBy === 1 ? '' : 's'}` : 'Not linked'}</span></td>
+                        <td data-label="Actions"><button className="ingredient-delete" type="button" aria-label={`Delete ${row.name || 'ingredient'}`} title={usedBy ? 'Used ingredients cannot be deleted' : 'Delete ingredient'} disabled={usedBy > 0} onClick={() => removeIngredient(row)}>×</button></td>
                       </tr>
                     );
                   })}
@@ -253,6 +312,12 @@ export default function AdminIngredientsPage() {
           ) : null}
           {pageCount > 1 ? <div className="dish-pagination"><button className="ghost-button" type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)}>Previous</button><span>Page {page} of {pageCount}</span><button className="ghost-button" type="button" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)}>Next</button></div> : null}
         </div>
+        {dirty ? (
+          <div className="dish-save-dock no-print" role="status">
+            <div><span aria-hidden="true" /><strong>Unsaved rate changes</strong><small>Save to update recipe costing.</small></div>
+            <button className="primary-button" type="button" onClick={saveAll} disabled={saving || !catalogReady}>{saving ? 'Saving…' : 'Save all changes'}</button>
+          </div>
+        ) : null}
       </section>
     </AppShell>
   );
