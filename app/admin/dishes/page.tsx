@@ -127,7 +127,6 @@ function proportionalRate(
 function validateRows(rows: EditableDish[]) {
   const errors = new Map<string, DishRowErrors>();
   const nameOwners = new Map<string, string[]>();
-  const aliasOwners = new Map<string, string[]>();
 
   rows.forEach((row) => {
     const rowErrors: DishRowErrors = {};
@@ -148,11 +147,6 @@ function validateRows(rows: EditableDish[]) {
       nameOwners.set(normalizedName, [...(nameOwners.get(normalizedName) ?? []), row.id]);
     }
 
-    aliases.forEach((alias) => {
-      const normalizedAlias = normalizeToken(alias);
-      aliasOwners.set(normalizedAlias, [...(aliasOwners.get(normalizedAlias) ?? []), row.id]);
-    });
-
     if (Object.keys(rowErrors).length) errors.set(row.id, rowErrors);
   });
 
@@ -162,12 +156,6 @@ function validateRows(rows: EditableDish[]) {
 
     if (normalizedName && (nameOwners.get(normalizedName)?.length ?? 0) > 1) {
       rowErrors.name = 'Dish names must be unique.';
-    }
-
-    const aliases = allRowAliases(row);
-    const hasConflictingAlias = aliases.some((alias) => (aliasOwners.get(normalizeToken(alias))?.length ?? 0) > 1);
-    if (hasConflictingAlias) {
-      rowErrors.aliases = 'Aliases must be unique across all dishes.';
     }
 
     if (Object.keys(rowErrors).length) errors.set(row.id, rowErrors);
@@ -549,7 +537,11 @@ export default function AdminDishesPage() {
 
   async function saveAll() {
     if (rowErrors.size > 0) {
-      setMessage('Please fix the highlighted dish rows before saving.');
+      setQuery('');
+      setCategoryFilter('ALL');
+      setStatusFilter('ERROR');
+      setPage(1);
+      setMessage(`${rowErrors.size} dish row${rowErrors.size === 1 ? '' : 's'} need attention. The list now shows only those rows.`);
       setMessageType('error');
       return;
     }
