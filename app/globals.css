@@ -139,7 +139,7 @@ a { color: inherit; text-decoration: none; }
 .action-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .page-actions { margin-top: 18px; }
 
-.menu-upload-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.menu-upload-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .menu-upload-option {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -166,6 +166,8 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: .04em;
 }
 .menu-upload-icon.camera { background: rgba(0, 122, 255, .12); color: #075985; }
+.menu-upload-icon.manual { background: rgba(52, 199, 89, .12); color: #187b35; }
+.menu-upload-option.manual { border-color: rgba(52, 199, 89, .22); background: linear-gradient(145deg, rgba(52, 199, 89, .07), rgba(255, 255, 255, .84)); }
 .visually-hidden-file {
   position: absolute;
   width: 1px;
@@ -261,6 +263,11 @@ a { color: inherit; text-decoration: none; }
   .event-page-actions { grid-template-columns: 1fr; }
   .event-page-actions .primary-button,
   .event-page-actions .ghost-button { width: 100%; }
+}
+
+@media (min-width: 701px) and (max-width: 980px) {
+  .menu-upload-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .menu-upload-option.manual { grid-column: 1 / -1; }
 }
 
 .topbar {

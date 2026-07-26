@@ -384,6 +384,10 @@ export default function EventPage() {
     updateEvent('rawMenuText', '');
   }
 
+  function selectMenuManually() {
+    router.push('/app/menu?mode=manual');
+  }
+
   if (!work || !session) {
     return (
       <AppShell title="Event Details">
@@ -685,6 +689,22 @@ export default function EventPage() {
                     if (file) void readMenuPhoto(file);
                   }}
                 />
+              </div>
+
+              <div className="menu-upload-option manual">
+                <span className="menu-upload-icon manual" aria-hidden="true">MAN</span>
+                <div>
+                  <b>Select dishes manually</b>
+                  <p>Browse the dish catalog and add only the items you need.</p>
+                </div>
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={selectMenuManually}
+                  disabled={Boolean(uploading)}
+                >
+                  Select Manually
+                </button>
               </div>
             </div>
 

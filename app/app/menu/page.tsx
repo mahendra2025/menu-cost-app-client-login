@@ -21,6 +21,10 @@ import {
   syncDishCostItemsFromServer,
 } from '../../../lib/dishCostMaster';
 
+import type {
+  DishCostItem,
+} from '../../../lib/dishCostMaster';
+
 import {
   getSession,
   loadWork,
@@ -124,6 +128,9 @@ export default function MenuPage() {
   const [catalogCategories, setCatalogCategories] =
     useState<string[]>([]);
 
+  const [catalogDishes, setCatalogDishes] =
+    useState<DishCostItem[]>([]);
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -147,6 +154,11 @@ export default function MenuPage() {
 
       setCatalogCategories(
         Array.from(new Set(adminDishes.map((dish) => dish.category))),
+      );
+      setCatalogDishes(
+        [...adminDishes].sort((firstDish, secondDish) =>
+          firstDish.name.localeCompare(secondDish.name),
+        ),
       );
 
       setWork((latestWork) => {
@@ -224,6 +236,22 @@ export default function MenuPage() {
     }
 
     void refreshAdminServings();
+
+    if (
+      new URLSearchParams(window.location.search).get('mode') ===
+      'manual'
+    ) {
+      setIsQuickAddOpen(true);
+
+      window.setTimeout(() => {
+        document
+          .getElementById('menuQuickAdd')
+          ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+      }, 120);
+    }
 
     return () => {
       cancelled = true;
@@ -1054,6 +1082,48 @@ export default function MenuPage() {
                 </select>
               </div>
             ) : null}
+
+            <div className="field menu-catalog-select">
+              <label htmlFor="catalogDish">
+                Select from Catalog
+              </label>
+
+              <select
+                id="catalogDish"
+                className="select select-large"
+                value=""
+                onChange={(event) => {
+                  const selectedDish =
+                    catalogDishes.find(
+                      (dish) =>
+                        `${dish.name}::${dish.category}` ===
+                        event.target.value,
+                    );
+
+                  if (selectedDish) {
+                    selectSuggestedDish(selectedDish);
+                  }
+                }}
+              >
+                <option value="">
+                  {catalogDishes.length > 0
+                    ? 'Choose a dish...'
+                    : 'Loading dish catalog...'}
+                </option>
+                {catalogDishes.map((dish) => (
+                  <option
+                    key={`${dish.name}-${dish.category}`}
+                    value={`${dish.name}::${dish.category}`}
+                  >
+                    {dish.name} • {dish.category} • ₹{formatRate(dish.rate)}
+                  </option>
+                ))}
+              </select>
+
+              <small className="muted">
+                Or type a custom dish name below.
+              </small>
+            </div>
 
             <div className="field">
               <label htmlFor="newDish">
