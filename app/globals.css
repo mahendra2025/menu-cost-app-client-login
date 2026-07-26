@@ -4143,3 +4143,209 @@ td:last-child {
     break-inside: avoid;
   }
 }
+
+/* Final admin dark-theme contrast pass.
+   Kept at the end so later responsive/catalog rules cannot restore light
+   surfaces or dark text inside the admin workspace. */
+.admin-theme.page-shell {
+  color: #f5f7fa;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(74, 156, 255, 0.12), transparent 28rem),
+    radial-gradient(circle at 96% 4%, rgba(255, 173, 66, 0.07), transparent 24rem),
+    #07090d;
+}
+
+.admin-theme .app-workspace,
+.admin-theme .page-title,
+.admin-theme h1,
+.admin-theme h2,
+.admin-theme h3,
+.admin-theme .dish-category-item strong,
+.admin-theme .admin-dish-row-heading strong,
+.admin-theme .admin-alias-section > summary span,
+.admin-theme .dish-save-dock strong {
+  color: #f5f7fa;
+}
+
+.admin-theme .dish-master-overview {
+  color: #f5f7fa;
+  border-color: #26364b;
+  background: linear-gradient(125deg, #10141b 0%, #101a28 100%);
+}
+
+.admin-theme .dish-master-overview.needs-attention {
+  border-color: rgba(255, 173, 66, 0.3);
+  background: linear-gradient(125deg, #10141b 0%, #21180e 100%);
+}
+
+.admin-theme .dish-master-health span {
+  color: #aab2bf;
+  border-color: #2b323d;
+  background: #151a22;
+}
+
+.admin-theme .dish-master-health b {
+  color: #f5f7fa;
+}
+
+.admin-theme .dish-category-manager-body,
+.admin-theme .dish-category-item,
+.admin-theme .admin-dish-row-heading,
+.admin-theme .admin-alias-section,
+.admin-theme .dish-save-dock {
+  color: #f5f7fa;
+  border-color: #2b323d;
+  background: #0d1117;
+}
+
+.admin-theme .dish-category-item.is-protected,
+.admin-theme .admin-alias-section {
+  background: #151a22;
+}
+
+.admin-theme .dish-category-summary-count {
+  color: #8bc0ff;
+  background: rgba(74, 156, 255, 0.14);
+}
+
+.admin-theme .dish-category-item-actions button,
+.admin-theme .dish-add-subcategory,
+.admin-theme .dish-subcategory-chip button {
+  color: #8bc0ff;
+  background: rgba(74, 156, 255, 0.13);
+}
+
+.admin-theme .dish-category-item-actions button.delete,
+.admin-theme .dish-subcategory-chip button.delete {
+  color: #ff8b84;
+  background: rgba(255, 98, 89, 0.12);
+}
+
+.admin-theme .dish-category-item-actions button:disabled {
+  color: #6f7886;
+  background: #202630;
+}
+
+.admin-theme .dish-subcategory-chip {
+  color: #e6eaf0;
+  border-color: #343c48;
+  background: #1a2029;
+}
+
+.admin-theme .dish-subcategory-chip small,
+.admin-theme .dish-row-status,
+.admin-theme .dish-search-input button {
+  color: #aab2bf;
+  background: #252c36;
+}
+
+.admin-theme .dish-search-input,
+.admin-theme .dish-price-input {
+  color: #f5f7fa;
+  border-color: #303743;
+  background: #151a22;
+}
+
+.admin-theme .dish-search-input input,
+.admin-theme .dish-price-input input {
+  color: #f5f7fa;
+}
+
+.admin-theme .dish-price-input > span {
+  color: #bdc5d0;
+  border-color: #303743;
+  background: #202630;
+}
+
+.admin-theme .dish-status-filters button {
+  color: #a4adba;
+  background: #1b212a;
+}
+
+.admin-theme .dish-status-filters button span {
+  color: #b6beca;
+  background: #29313c;
+}
+
+.admin-theme .dish-status-filters button:hover {
+  color: #fff;
+  background: #252c36;
+}
+
+.admin-theme .dish-status-filters button.active,
+.admin-theme .dish-status-filters button.active span {
+  color: #8bc0ff;
+  border-color: rgba(74, 156, 255, 0.32);
+  background: rgba(74, 156, 255, 0.14);
+}
+
+.admin-theme .input,
+.admin-theme .textarea,
+.admin-theme .select,
+.admin-theme input,
+.admin-theme textarea,
+.admin-theme select,
+.admin-theme option {
+  color: #f5f7fa;
+}
+
+.admin-theme option {
+  background: #151a22;
+}
+
+.admin-theme input::placeholder,
+.admin-theme textarea::placeholder {
+  color: #778190;
+  opacity: 1;
+}
+
+.admin-theme .muted,
+.admin-theme .page-title p,
+.admin-theme .dish-list-heading p,
+.admin-theme .dish-category-manager p,
+.admin-theme .dish-category-item small,
+.admin-theme .admin-dish-row-heading small,
+.admin-theme .admin-alias-section > summary small,
+.admin-theme .dish-field-hint,
+.admin-theme .dish-save-dock small {
+  color: #9aa3b1;
+}
+
+.admin-page {
+  --text: #f5f7fa;
+  --muted: #929baa;
+  --border: #272d37;
+  --surface-hover: #1b212a;
+}
+
+.admin-page h1,
+.admin-page h2,
+.admin-page h3,
+.admin-page .admin-brand strong,
+.admin-page .admin-client-main strong,
+.admin-page .admin-stat strong {
+  color: #f5f7fa;
+}
+
+.admin-page input,
+.admin-page select,
+.admin-page option {
+  color: #f5f7fa;
+}
+
+.admin-page option {
+  background: #151a22;
+}
+
+.admin-page input::placeholder {
+  color: #778190;
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .admin-theme.page-shell {
+    background:
+      radial-gradient(circle at 0 0, rgba(74, 156, 255, 0.13), transparent 36%),
+      #07090d;
+  }
+}
