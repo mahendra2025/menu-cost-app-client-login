@@ -59,7 +59,7 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
   }
 
   return (
-    <main className="page-shell app-frame">
+    <main className={`page-shell app-frame ${isAdmin ? 'admin-theme' : ''}`}>
       <header className="topbar no-print">
         <Link href={isAdmin ? '/admin/users' : '/app/event'} className="brand-chip">
           <span className="brand-logo">MC</span>

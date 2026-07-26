@@ -5,8 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>CatererOS Recipe Cost Studio</title>
 <script>
-if (new URLSearchParams(window.location.search).get('embedded') === '1') {
+const initialParams = new URLSearchParams(window.location.search);
+if (initialParams.get('embedded') === '1') {
   document.documentElement.dataset.embedded = 'true';
+}
+if (initialParams.get('theme') === 'dark') {
+  document.documentElement.dataset.theme = 'dark';
 }
 </script>
 <style>
@@ -2063,7 +2067,7 @@ document.addEventListener("keydown",e=>{
   if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==="f"){e.preventDefault();$("formatJson").click()}
 });
 window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
-document.documentElement.dataset.theme=safeStorageGet(THEME_STORAGE)||"light";
+document.documentElement.dataset.theme=new URLSearchParams(window.location.search).get("theme")||safeStorageGet(THEME_STORAGE)||"light";
 renderDishList();loadSelectedDish();renderRateTable();renderSelectedRate();
 void hydrateRecipeCatalog().then(()=>importDishCatalog());
 </script>

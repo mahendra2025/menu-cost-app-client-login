@@ -2809,6 +2809,418 @@ td:last-child {
   }
 }
 
+/* Admin black theme */
+.admin-theme {
+  --bg: #07090d;
+  --card: #10141b;
+  --card-solid: #10141b;
+  --text: #f5f7fa;
+  --muted: #9199a8;
+  --border: #252b35;
+  --blue: #4a9cff;
+  --blue-dark: #2f83ec;
+  --green: #3ddc84;
+  --orange: #ffad42;
+  --red: #ff6259;
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.28);
+  color-scheme: dark;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(74, 156, 255, 0.12), transparent 28rem),
+    radial-gradient(circle at 96% 4%, rgba(255, 173, 66, 0.07), transparent 24rem),
+    #07090d;
+}
+
+.admin-theme .topbar {
+  border-color: #242a34;
+  background: rgba(13, 16, 22, 0.92);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.34);
+}
+
+.admin-theme .brand-logo {
+  background: linear-gradient(145deg, #202b3c, #1478f2);
+}
+
+.admin-theme .account-status {
+  color: #8fc2ff;
+  border-color: #26364b;
+  background: #101b2a;
+}
+
+.admin-theme .ghost-button {
+  color: #dfe5ec;
+  border-color: #303743;
+  background: #171b22;
+}
+
+.admin-theme .ghost-button:hover {
+  border-color: #46505f;
+  background: #20252e;
+}
+
+.admin-theme .app-sidebar {
+  border: 1px solid #232a35;
+  background: linear-gradient(180deg, #121722 0%, #090c11 100%);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.38);
+}
+
+.admin-theme .page-eyebrow,
+.admin-theme .section-kicker {
+  color: #7db7ff;
+}
+
+.admin-theme .section-kicker {
+  background: rgba(74, 156, 255, 0.12);
+}
+
+.admin-theme .panel,
+.admin-theme .glass-card,
+.admin-theme .recipe-workspace,
+.admin-theme .admin-dish-row,
+.admin-theme .dish-preview,
+.admin-theme .dish-cost-card {
+  border-color: var(--border);
+  background: #10141b;
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-theme .input,
+.admin-theme .textarea,
+.admin-theme .select,
+.admin-theme .dish-rate-input,
+.admin-theme .ingredient-search-input {
+  color: var(--text);
+  border-color: #303743;
+  background: #151a22;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.admin-theme .input:hover,
+.admin-theme .textarea:hover,
+.admin-theme .select:hover {
+  border-color: #46505f;
+  background: #191f28;
+}
+
+.admin-theme .field label {
+  color: #b3bac6;
+}
+
+.admin-theme .dish-cost-toolbar,
+.admin-theme .dish-cost-card-grid > div,
+.admin-theme .recipe-storage-status {
+  border-color: var(--border);
+  background: #0c1016;
+}
+
+.admin-theme .dish-cost-summary span,
+.admin-theme .recipe-overview-stats > div,
+.admin-theme .ingredient-health span {
+  border-color: var(--border);
+  background: #151a22;
+}
+
+.admin-theme .recipe-overview,
+.admin-theme .ingredient-overview {
+  border-color: #26364b;
+  background: linear-gradient(125deg, #10141b 0%, #101a28 100%);
+}
+
+.admin-theme .recipe-overview.is-offline,
+.admin-theme .ingredient-overview.needs-attention {
+  border-color: rgba(255, 173, 66, 0.3);
+  background: linear-gradient(125deg, #10141b 0%, #21180e 100%);
+}
+
+.admin-theme .recipe-workflow span {
+  color: #b2bac7;
+}
+
+.admin-theme .recipe-overview-stats .needs-attention,
+.admin-theme .ingredient-health .needs-attention {
+  color: #ffc36e;
+  border-color: rgba(255, 173, 66, 0.3);
+  background: rgba(255, 173, 66, 0.1);
+}
+
+.admin-theme .recipe-workspace-header {
+  border-color: var(--border);
+  background: linear-gradient(115deg, #121720, #0d131c);
+}
+
+.admin-theme .recipe-studio-shell,
+.admin-theme .recipe-studio-frame {
+  background: #0b0f17;
+}
+
+.admin-theme .recipe-studio-loading {
+  background: linear-gradient(145deg, #0f141d, #0b1018);
+}
+
+.admin-theme .ingredient-status-filters button,
+.admin-theme .ingredient-search-input button,
+.admin-theme .ingredient-usage,
+.admin-theme .admin-plan {
+  color: #a9b1bf;
+  background: #1b212a;
+}
+
+.admin-theme .ingredient-status-filters button:hover {
+  color: #fff;
+  background: #242b36;
+}
+
+.admin-theme .ingredient-status-filters button.active {
+  color: #86bdff;
+  border-color: rgba(74, 156, 255, 0.34);
+  background: rgba(74, 156, 255, 0.14);
+}
+
+.admin-theme .ingredient-status-filters button span {
+  color: #a9b1bf;
+  background: #272e38;
+}
+
+.admin-theme .ingredient-table th {
+  color: #8f98a7;
+  background: #10141b;
+}
+
+.admin-theme .ingredient-table td {
+  border-color: var(--border);
+  background: #0d1117;
+}
+
+.admin-theme .ingredient-table .input,
+.admin-theme .ingredient-table .select {
+  color: #edf1f5;
+}
+
+.admin-theme .ingredient-table input:disabled,
+.admin-theme .ingredient-table select:disabled {
+  color: #828b99;
+  background: #171c24;
+}
+
+.admin-theme .ingredient-category-select {
+  color: #ffd08a !important;
+  border-color: #5a4728 !important;
+  background-color: #241d12 !important;
+}
+
+.admin-theme .ingredient-initial {
+  color: #8bc0ff;
+  background: #15263a;
+}
+
+.admin-theme .ingredient-usage.linked {
+  color: #72e0a2;
+  background: rgba(61, 220, 132, 0.12);
+}
+
+.admin-theme .dish-category-chip {
+  color: #8bc0ff;
+  background: rgba(74, 156, 255, 0.13);
+}
+
+.admin-theme .portion-chip {
+  color: #b6beca;
+  background: #202630;
+}
+
+.admin-theme .dish-cost-table tr.dish-rate-missing td,
+.admin-theme .dish-cost-card.dish-rate-missing {
+  border-color: rgba(255, 173, 66, 0.28);
+  background: #1d170f;
+}
+
+.admin-page {
+  --admin-black: #07090d;
+  --admin-surface: #10141b;
+  --admin-surface-raised: #151a22;
+  --admin-line: #272d37;
+  --admin-text: #f5f7fa;
+  --admin-muted: #929baa;
+  color-scheme: dark;
+  color: var(--admin-text);
+  background:
+    radial-gradient(circle at 7% 0%, rgba(8, 119, 249, 0.14), transparent 30rem),
+    radial-gradient(circle at 93% 10%, rgba(68, 82, 110, 0.1), transparent 26rem),
+    var(--admin-black);
+}
+
+.admin-page .admin-topbar {
+  border-color: var(--admin-line);
+}
+
+.admin-page .admin-brand small,
+.admin-page .admin-welcome p,
+.admin-page .admin-stat small,
+.admin-page .admin-client-main span,
+.admin-page .admin-form-intro {
+  color: var(--admin-muted);
+}
+
+.admin-page .admin-nav {
+  background: #11161e;
+}
+
+.admin-page .admin-nav a {
+  color: #8993a2;
+}
+
+.admin-page .admin-nav a:hover {
+  color: #f5f7fa;
+}
+
+.admin-page .admin-nav a.active {
+  color: #83baff;
+  background: #202630;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
+}
+
+.admin-page .admin-logout {
+  color: #c3cad4;
+  border-color: #303743;
+  background: #141920;
+}
+
+.admin-page .admin-logout:hover {
+  color: #fff;
+  border-color: #46505f;
+}
+
+.admin-page .admin-stat,
+.admin-page .admin-client-panel,
+.admin-page .admin-create-panel {
+  color: var(--admin-text);
+  border-color: var(--admin-line);
+  background: rgba(16, 20, 27, 0.96);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.admin-page .admin-stat-icon.blue,
+.admin-page .admin-avatar {
+  color: #87bdff;
+  background: #14263a;
+}
+
+.admin-page .admin-stat-icon.green {
+  color: #6ce09e;
+  background: #10291e;
+}
+
+.admin-page .admin-stat-icon.orange {
+  color: #ffc16b;
+  background: #2a1d0f;
+}
+
+.admin-page .admin-result-count,
+.admin-page .admin-plan {
+  color: #aab2bf;
+  background: #202630;
+}
+
+.admin-page .admin-search,
+.admin-page .admin-form .input,
+.admin-page .admin-form .select {
+  color: #a7b0be;
+  border-color: #303743;
+  background: #151a22;
+}
+
+.admin-page .admin-search:focus-within {
+  border-color: rgba(74, 156, 255, 0.65);
+  background: #181e27;
+}
+
+.admin-page .admin-search input {
+  color: var(--admin-text);
+}
+
+.admin-page .admin-filter {
+  background: #151a22;
+}
+
+.admin-page .admin-filter button {
+  color: #929baa;
+}
+
+.admin-page .admin-filter button.active {
+  color: #f5f7fa;
+  background: #282f3a;
+  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.3);
+}
+
+.admin-page .admin-client-card {
+  border-color: #272d37;
+  background: #0d1117;
+}
+
+.admin-page .admin-client-card:hover {
+  border-color: #3a4350;
+  box-shadow: 0 9px 24px rgba(0, 0, 0, 0.28);
+}
+
+.admin-page .admin-client-main small,
+.admin-page .admin-form-note,
+.admin-page .admin-stat p {
+  color: #707a89;
+}
+
+.admin-page .admin-status.active {
+  color: #62da96;
+}
+
+.admin-page .admin-status.active i {
+  box-shadow: 0 0 0 3px rgba(61, 220, 132, 0.14);
+}
+
+.admin-page .admin-status.inactive {
+  color: #ffb45b;
+}
+
+.admin-page .admin-status.inactive i {
+  box-shadow: 0 0 0 3px rgba(255, 173, 66, 0.14);
+}
+
+.admin-page .admin-action.block {
+  color: #ffc16b;
+  background: rgba(255, 173, 66, 0.12);
+}
+
+.admin-page .admin-action.activate {
+  color: #65df99;
+  background: rgba(61, 220, 132, 0.12);
+}
+
+.admin-page .admin-delete:hover {
+  color: #ff7b73;
+  background: rgba(255, 98, 89, 0.12);
+}
+
+.admin-page .admin-empty,
+.admin-page .admin-empty strong {
+  color: #9099a8;
+}
+
+.admin-page .admin-form .field label {
+  color: #b5bdc8;
+}
+
+.admin-page .admin-message.error {
+  color: #ff8b84;
+  border-color: rgba(255, 98, 89, 0.3);
+  background: rgba(255, 98, 89, 0.1);
+}
+
+.admin-page .admin-message.success {
+  color: #69df9c;
+  border-color: rgba(61, 220, 132, 0.3);
+  background: rgba(61, 220, 132, 0.1);
+}
+
 @media (max-width: 760px) {
   :root {
     --radius: 20px;

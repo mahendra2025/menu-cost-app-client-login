@@ -166,7 +166,7 @@ export default function AdminRecipeStudioPage() {
             key={frameKey}
             ref={frameRef}
             className="recipe-studio-frame"
-            src="/recipe-cost-studio.html?embedded=1"
+            src="/recipe-cost-studio.html?embedded=1&theme=dark"
             title="Menu Cost Recipe Cost Studio"
             onLoad={() => {
               setLoading(false);
