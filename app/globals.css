@@ -3068,9 +3068,10 @@ td:last-child {
 .dish-category-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .dish-category-toolbar .dish-search-input { width: min(420px,100%); }
 .dish-category-toolbar .primary-button { min-height: 44px; padding: 10px 15px; font-size: 11px; white-space: nowrap; }
-.dish-category-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 9px; max-height: 370px; padding-right: 3px; overflow-y: auto; }
-.dish-category-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding: 11px 12px; border: 1px solid var(--border); border-radius: 13px; background: #fff; }
-.dish-category-item > div:first-child { min-width: 0; }
+.dish-category-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; max-height: 480px; padding-right: 3px; overflow-y: auto; }
+.dish-category-item { display: grid; gap: 10px; min-width: 0; padding: 11px 12px; border: 1px solid var(--border); border-radius: 13px; background: #fff; }
+.dish-category-item-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; }
+.dish-category-item-heading > div:first-child { min-width: 0; }
 .dish-category-item strong,
 .dish-category-item small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dish-category-item strong { font-size: 11px; }
@@ -3080,6 +3081,16 @@ td:last-child {
 .dish-category-item-actions button { min-height: 30px; padding: 5px 8px; border: 0; border-radius: 8px; color: #075db7; background: #edf5ff; font-size: 9px; font-weight: 850; cursor: pointer; }
 .dish-category-item-actions button.delete { color: #a02b24; background: #fff0ef; }
 .dish-category-item-actions button:disabled { color: #98a2b3; background: #edf0f4; cursor: not-allowed; }
+.dish-subcategory-section { display: grid; gap: 7px; padding-top: 9px; border-top: 1px solid var(--border); }
+.dish-add-subcategory { justify-self: start; min-height: 29px; padding: 5px 8px; border: 1px dashed rgba(0,122,255,.3); border-radius: 8px; color: #075db7; background: #f6faff; font-size: 9px; font-weight: 850; cursor: pointer; }
+.dish-subcategory-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.dish-subcategory-chip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 4px 4px 4px 7px; border: 1px solid #dce5ef; border-radius: 9px; background: #f8fafc; }
+.dish-subcategory-chip > span { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.dish-subcategory-chip b { overflow: hidden; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.dish-subcategory-chip small { display: inline-grid; min-width: 17px; height: 17px; place-items: center; margin: 0; border-radius: 999px; background: #e8edf3; font-size: 8px; }
+.dish-subcategory-chip button { min-height: 23px; padding: 3px 5px; border: 0; border-radius: 6px; color: #075db7; background: #eaf4ff; font-size: 8px; font-weight: 850; cursor: pointer; }
+.dish-subcategory-chip button.delete { color: #a02b24; background: #fff0ef; font-size: 12px; }
+.dish-no-subcategories { color: #98a2b3; font-size: 9px; font-style: italic; }
 .dish-category-empty { min-height: 130px; }
 
 .dish-master-filter-card .dish-list-heading { margin-bottom: 14px; }
@@ -3101,6 +3112,11 @@ td:last-child {
 .dish-list-actions .secondary-button { min-height: 40px; padding: 9px 13px; font-size: 11px; }
 
 .admin-dish-row > .admin-dish-row-heading { grid-column: 1 / -1; }
+.admin-dish-row > .dish-name-field { grid-column: span 3; }
+.admin-dish-row > .dish-category-field,
+.admin-dish-row > .dish-subcategory-field,
+.admin-dish-row > .dish-price-field { grid-column: span 2; }
+.dish-field-hint { color: var(--muted); font-size: 9px; }
 .admin-dish-row-heading { display: flex; align-items: center; gap: 10px; margin: -14px -14px 1px; padding: 11px 14px; border-bottom: 1px solid var(--border); background: #f8fafc; }
 .dish-row-number { display: grid; width: 27px; height: 27px; flex: 0 0 auto; place-items: center; border: 1px solid #dfe5ec; border-radius: 8px; color: #697587; background: #fff; font-size: 9px; font-weight: 900; }
 .admin-dish-row-heading > div { min-width: 0; flex: 1; }
@@ -3137,7 +3153,7 @@ td:last-child {
 .dish-save-dock .primary-button { min-height: 40px; padding: 9px 14px; font-size: 11px; white-space: nowrap; }
 
 @media (max-width: 1080px) {
-  .dish-category-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .dish-category-grid { grid-template-columns: 1fr; }
   .recipe-overview { grid-template-columns: 1fr; }
   .recipe-overview-stats { max-width: 620px; }
   .dish-filter-grid { grid-template-columns: 1fr 1fr; }
@@ -3177,7 +3193,11 @@ td:last-child {
   .dish-list-heading { align-items: stretch; flex-direction: column; }
   .dish-list-actions { justify-content: space-between; width: 100%; }
   .admin-dish-row > .admin-alias-section,
-  .admin-dish-row > .admin-dish-delete { grid-column: 1 / -1; }
+  .admin-dish-row > .admin-dish-delete,
+  .admin-dish-row > .dish-name-field,
+  .admin-dish-row > .dish-category-field,
+  .admin-dish-row > .dish-subcategory-field,
+  .admin-dish-row > .dish-price-field { grid-column: 1 / -1; }
   .admin-alias-section .admin-alias-grid { grid-template-columns: 1fr; }
   .admin-dish-delete { width: 100%; min-height: 44px; font-size: 12px; }
   .dish-save-dock { right: 12px; bottom: 84px; left: 12px; min-width: 0; gap: 12px; }

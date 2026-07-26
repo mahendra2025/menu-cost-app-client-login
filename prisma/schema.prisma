@@ -36,6 +36,7 @@ model DishMasterItem {
   id              String   @id @default(cuid())
   name            String
   category        String
+  subcategory     String   @default("")
   rate            Float
   servingQuantity Float    @default(1)
   servingUnit     String   @default("serving")
@@ -47,6 +48,7 @@ model DishMasterItem {
 model DishCategoryCatalog {
   id         String   @id
   categories Json
+  subcategories Json  @default("{}")
   updatedAt  DateTime @updatedAt
   createdAt  DateTime @default(now())
 }

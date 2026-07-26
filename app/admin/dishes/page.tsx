@@ -85,6 +85,7 @@ function parseDishItems(items: unknown): DishCostItem[] {
       const row = item as Record<string, unknown>;
       const name = String(row.name || '').trim();
       const category = String(row.category || '').trim();
+      const subcategory = String(row.subcategory || '').trim();
       const rate = Math.max(Number(row.rate) || 0, 0);
       const servingQuantity = Math.max(Number(row.servingQuantity) || 1, 0.01);
       const servingUnit = String(row.servingUnit || 'serving').trim() || 'serving';
@@ -92,8 +93,8 @@ function parseDishItems(items: unknown): DishCostItem[] {
         ? row.aliases.map((alias) => String(alias).trim()).filter(Boolean)
         : [];
 
-      if (!name || !category || category.length > 60) return null;
-      return { name, category, rate, servingQuantity, servingUnit, aliases };
+      if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
+      return { name, category, subcategory, rate, servingQuantity, servingUnit, aliases };
     })
     .filter((item): item is DishCostItem => item !== null);
 }
@@ -102,6 +103,7 @@ function toDishCostItem(item: EditableDish): DishCostItem {
   return {
     name: item.name.trim(),
     category: item.category,
+    subcategory: String(item.subcategory || '').trim(),
     rate: Math.max(Number(item.rate) || 0, 0),
     servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
     servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
@@ -178,6 +180,7 @@ export default function AdminDishesPage() {
   const [ready, setReady] = useState(false);
   const [rows, setRows] = useState<EditableDish[]>([]);
   const [categories, setCategories] = useState<string[]>([...CATEGORIES]);
+  const [subcategories, setSubcategories] = useState<Record<string, string[]>>({});
   const [categoryQuery, setCategoryQuery] = useState('');
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
@@ -198,8 +201,16 @@ export default function AdminDishesPage() {
   );
   const visibleCategories = useMemo(() => {
     const search = categoryQuery.trim().toLowerCase();
-    return availableCategories.filter((category) => !search || category.toLowerCase().includes(search));
-  }, [availableCategories, categoryQuery]);
+    return availableCategories.filter((category) =>
+      !search ||
+      category.toLowerCase().includes(search) ||
+      (subcategories[category] ?? []).some((subcategory) => subcategory.toLowerCase().includes(search))
+    );
+  }, [availableCategories, categoryQuery, subcategories]);
+  const subcategoryCount = useMemo(
+    () => Object.values(subcategories).reduce((total, items) => total + items.length, 0),
+    [subcategories],
+  );
 
   useEffect(() => {
     const session = getSession();
@@ -215,6 +226,12 @@ export default function AdminDishesPage() {
         const loadedCategories = Array.isArray(data.categories)
           ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
           : [...CATEGORIES];
+        const loadedSubcategories = data.subcategories && typeof data.subcategories === 'object' && !Array.isArray(data.subcategories)
+          ? Object.fromEntries(Object.entries(data.subcategories as Record<string, unknown>).map(([category, values]) => [
+            category,
+            Array.isArray(values) ? values.map((value) => String(value).trim()).filter(Boolean) : [],
+          ]))
+          : {};
         const cleaned = dishItems.map((item) => toEditableDish(item, recipeCatalog));
         const loadedRecipeServings = cleaned.some((item, index) =>
           item.servingQuantity !== dishItems[index]?.servingQuantity ||
@@ -223,6 +240,7 @@ export default function AdminDishesPage() {
 
         setRows(cleaned);
         setCategories(Array.from(new Set([...loadedCategories, ...cleaned.map((item) => item.category), 'Other'])));
+        setSubcategories(loadedSubcategories);
         saveDishCostItems(cleaned.map(toDishCostItem));
         if (loadedRecipeServings) {
           setDirty(true);
@@ -249,7 +267,9 @@ export default function AdminDishesPage() {
         (statusFilter === 'RECIPE' && Boolean(row.recipeServing)) ||
         (statusFilter === 'NO_RECIPE' && !row.recipeServing);
       const matchesSearch = !search || row.name.toLowerCase().includes(search) ||
-        row.category.toLowerCase().includes(search) || allRowAliases(row).some((alias) => alias.toLowerCase().includes(search));
+        row.category.toLowerCase().includes(search) ||
+        String(row.subcategory || '').toLowerCase().includes(search) ||
+        allRowAliases(row).some((alias) => alias.toLowerCase().includes(search));
       return matchesCategory && matchesStatus && matchesSearch;
     });
 
@@ -308,6 +328,7 @@ export default function AdminDishesPage() {
         id: newRowId,
         name: '',
         category: 'Sabji',
+        subcategory: '',
         rate: 1,
         servingQuantity: 1,
         servingUnit: 'serving',
@@ -353,6 +374,7 @@ export default function AdminDishesPage() {
     setMessageType('success');
     setMessage(`${category} added. Save all changes to publish the category.`);
     setCategories((current) => [...current, category]);
+    setSubcategories((current) => ({ ...current, [category]: current[category] ?? [] }));
     setCategoryFilter(category);
     setStatusFilter('ALL');
     setDirty(true);
@@ -382,6 +404,11 @@ export default function AdminDishesPage() {
     }
 
     setCategories((current) => current.map((item) => item === category ? nextName : item));
+    setSubcategories((current) => {
+      const next = { ...current, [nextName]: current[category] ?? [] };
+      delete next[category];
+      return next;
+    });
     setRows((current) => current.map((row) => row.category === category ? { ...row, category: nextName } : row));
     if (categoryFilter === category) setCategoryFilter(nextName);
     setDirty(true);
@@ -402,13 +429,88 @@ export default function AdminDishesPage() {
     if (!window.confirm(warning)) return;
 
     setCategories((current) => current.filter((item) => item !== category));
+    setSubcategories((current) => {
+      const next = { ...current };
+      delete next[category];
+      return next;
+    });
     if (assignedCount) {
-      setRows((current) => current.map((row) => row.category === category ? { ...row, category: 'Other' } : row));
+      setRows((current) => current.map((row) => row.category === category ? { ...row, category: 'Other', subcategory: '' } : row));
     }
     if (categoryFilter === category) setCategoryFilter('ALL');
     setDirty(true);
     setMessageType('success');
     setMessage(`${category} deleted${assignedCount ? ` and ${assignedCount} dish${assignedCount === 1 ? '' : 'es'} moved to Other` : ''}. Save all changes to publish.`);
+  }
+
+  function addSubcategory(category: string) {
+    const enteredName = window.prompt(`New subcategory under ${category}`);
+    if (enteredName === null) return;
+    const subcategory = enteredName.trim().replace(/\s+/g, ' ');
+    if (!subcategory || subcategory.length > 60) {
+      setMessageType('error');
+      setMessage('Subcategory names must contain 1–60 characters.');
+      return;
+    }
+    const existing = (subcategories[category] ?? []).find((item) => item.toLowerCase() === subcategory.toLowerCase());
+    if (existing) {
+      setMessageType('error');
+      setMessage(`${existing} already exists under ${category}.`);
+      return;
+    }
+    setSubcategories((current) => ({ ...current, [category]: [...(current[category] ?? []), subcategory] }));
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${subcategory} added under ${category}. Save all changes to publish.`);
+  }
+
+  function renameSubcategory(category: string, subcategory: string) {
+    const enteredName = window.prompt(`Rename ${subcategory}`, subcategory);
+    if (enteredName === null) return;
+    const nextName = enteredName.trim().replace(/\s+/g, ' ');
+    if (!nextName || nextName.length > 60) {
+      setMessageType('error');
+      setMessage('Subcategory names must contain 1–60 characters.');
+      return;
+    }
+    const existing = (subcategories[category] ?? []).find(
+      (item) => item.toLowerCase() === nextName.toLowerCase() && item !== subcategory,
+    );
+    if (existing) {
+      setMessageType('error');
+      setMessage(`${existing} already exists under ${category}.`);
+      return;
+    }
+    setSubcategories((current) => ({
+      ...current,
+      [category]: (current[category] ?? []).map((item) => item === subcategory ? nextName : item),
+    }));
+    setRows((current) => current.map((row) =>
+      row.category === category && row.subcategory === subcategory ? { ...row, subcategory: nextName } : row
+    ));
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${subcategory} renamed to ${nextName}.`);
+  }
+
+  function deleteSubcategory(category: string, subcategory: string) {
+    const assignedCount = rows.filter((row) => row.category === category && row.subcategory === subcategory).length;
+    const warning = assignedCount
+      ? `Delete ${subcategory}? It will be cleared from ${assignedCount} dish${assignedCount === 1 ? '' : 'es'}.`
+      : `Delete the ${subcategory} subcategory?`;
+    if (!window.confirm(warning)) return;
+    setSubcategories((current) => ({
+      ...current,
+      [category]: (current[category] ?? []).filter((item) => item !== subcategory),
+    }));
+    if (assignedCount) {
+      setRows((current) => current.map((row) =>
+        row.category === category && row.subcategory === subcategory ? { ...row, subcategory: '' } : row
+      ));
+    }
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${subcategory} deleted${assignedCount ? ` and cleared from ${assignedCount} dish${assignedCount === 1 ? '' : 'es'}` : ''}.`);
   }
 
   function removeRow(id: string) {
@@ -463,7 +565,7 @@ export default function AdminDishesPage() {
       const response = await fetch('/api/admin/dishes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cleaned, categories: availableCategories }),
+        body: JSON.stringify({ items: cleaned, categories: availableCategories, subcategories }),
       });
       if (!response.ok) throw new Error();
       saveDishCostItems(cleaned);
@@ -497,6 +599,12 @@ export default function AdminDishesPage() {
     saveDishCostItems(defaults.map(toDishCostItem));
     setRows(defaults);
     setCategories(Array.isArray(data.categories) ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean) : [...CATEGORIES]);
+    setSubcategories(data.subcategories && typeof data.subcategories === 'object' && !Array.isArray(data.subcategories)
+      ? Object.fromEntries(Object.entries(data.subcategories as Record<string, unknown>).map(([category, values]) => [
+        category,
+        Array.isArray(values) ? values.map((value) => String(value).trim()).filter(Boolean) : [],
+      ]))
+      : {});
     setDirty(false);
     setMessageType('success');
     setMessage('Dish master reset to the default shared catalog.');
@@ -515,6 +623,7 @@ export default function AdminDishesPage() {
           <div className="dish-master-health" aria-label="Catalog health">
             <span><b>{rows.length}</b> <small>Dishes</small></span>
             <span><b>{availableCategories.length}</b> <small>Categories</small></span>
+            <span><b>{subcategoryCount}</b> <small>Subcategories</small></span>
             <span><b>{recipeLinkedCount}</b> <small>Recipe linked</small></span>
             <span className={rowErrors.size ? 'needs-attention' : 'is-complete'}>
               <b>{rowErrors.size}</b> <small>{rowErrors.size === 1 ? 'Issue' : 'Issues'}</small>
@@ -537,8 +646,8 @@ export default function AdminDishesPage() {
           <summary>
             <div>
               <span className="section-kicker">Category manager</span>
-              <h2>Edit dish categories</h2>
-              <p>Rename categories or delete them safely. Dishes from deleted categories move to Other.</p>
+              <h2>Edit categories &amp; subcategories</h2>
+              <p>Organise dishes in two levels. Renaming automatically updates every assigned dish.</p>
             </div>
             <span className="dish-category-summary-count">{availableCategories.length} categories</span>
           </summary>
@@ -556,15 +665,35 @@ export default function AdminDishesPage() {
                 {visibleCategories.map((category) => {
                   const assignedCount = rows.filter((row) => row.category === category).length;
                   const protectedCategory = category === 'Other';
+                  const categorySubcategories = subcategories[category] ?? [];
                   return (
                     <div className={`dish-category-item ${protectedCategory ? 'is-protected' : ''}`} key={category}>
-                      <div>
-                        <strong>{category}</strong>
-                        <small>{assignedCount} dish{assignedCount === 1 ? '' : 'es'}{protectedCategory ? ' · Fallback' : ''}</small>
+                      <div className="dish-category-item-heading">
+                        <div>
+                          <strong>{category}</strong>
+                          <small>{assignedCount} dish{assignedCount === 1 ? '' : 'es'} · {categorySubcategories.length} subcategories{protectedCategory ? ' · Fallback' : ''}</small>
+                        </div>
+                        <div className="dish-category-item-actions">
+                          <button type="button" onClick={() => renameCategory(category)} disabled={protectedCategory} aria-label={`Rename ${category}`}>Edit</button>
+                          <button className="delete" type="button" onClick={() => deleteCategory(category)} disabled={protectedCategory} aria-label={`Delete ${category}`}>Delete</button>
+                        </div>
                       </div>
-                      <div className="dish-category-item-actions">
-                        <button type="button" onClick={() => renameCategory(category)} disabled={protectedCategory} aria-label={`Rename ${category}`}>Edit</button>
-                        <button className="delete" type="button" onClick={() => deleteCategory(category)} disabled={protectedCategory} aria-label={`Delete ${category}`}>Delete</button>
+                      <div className="dish-subcategory-section">
+                        <button className="dish-add-subcategory" type="button" onClick={() => addSubcategory(category)} aria-label={`Add subcategory to ${category}`}><span aria-hidden="true">＋</span> Add subcategory</button>
+                        {categorySubcategories.length ? (
+                          <div className="dish-subcategory-list">
+                            {categorySubcategories.map((subcategory) => {
+                              const subAssignedCount = rows.filter((row) => row.category === category && row.subcategory === subcategory).length;
+                              return (
+                                <div className="dish-subcategory-chip" key={subcategory}>
+                                  <span><b>{subcategory}</b><small>{subAssignedCount}</small></span>
+                                  <button type="button" onClick={() => renameSubcategory(category, subcategory)} aria-label={`Rename ${subcategory}`}>Edit</button>
+                                  <button className="delete" type="button" onClick={() => deleteSubcategory(category, subcategory)} aria-label={`Delete ${subcategory}`}>×</button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : <small className="dish-no-subcategories">No subcategories yet</small>}
                       </div>
                     </div>
                   );
@@ -652,31 +781,44 @@ export default function AdminDishesPage() {
             </div>
             {filteredRows.length === 0 ? <div className="admin-empty"><strong>No dishes found</strong><span>Try another search, category or status.</span></div> : null}
             <div className="admin-dish-list">
-              {visibleRows.map((row, index) => (
-                <div className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`} key={row.id}>
+              {visibleRows.map((row, index) => {
+                const rowSubcategories = Array.from(new Set([
+                  ...(subcategories[row.category] ?? []),
+                  ...(row.subcategory ? [row.subcategory] : []),
+                ])).sort((left, right) => left.localeCompare(right));
+                return (
+                  <div className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`} key={row.id}>
                   <div className="admin-dish-row-heading">
                     <span className="dish-row-number">{visibleStart + index}</span>
                     <div>
                       <strong>{row.name.trim() || 'New dish'}</strong>
-                      <small>{row.category || 'Uncategorised'} · ₹{Number(row.rate || 0).toLocaleString('en-IN')} per {row.servingUnit || 'serving'}</small>
+                      <small>{row.category || 'Uncategorised'}{row.subcategory ? ` / ${row.subcategory}` : ''} · ₹{Number(row.rate || 0).toLocaleString('en-IN')} per {row.servingUnit || 'serving'}</small>
                     </div>
                     <span className={`dish-row-status ${rowErrors.has(row.id) ? 'error' : row.recipeServing ? 'linked' : ''}`}>
                       {rowErrors.has(row.id) ? 'Needs attention' : row.recipeServing ? 'Recipe linked' : 'No recipe'}
                     </span>
                   </div>
-                  <div className="field">
+                  <div className="field dish-name-field">
                     <label>Dish Name</label>
                     <input id={`dish-name-${row.id}`} className="input input-large" value={row.name} onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Paneer Butter Masala" />
                     {rowErrors.get(row.id)?.name ? <span className="field-error">{rowErrors.get(row.id)?.name}</span> : null}
                   </div>
-                  <div className="field">
+                  <div className="field dish-category-field">
                     <label>Category</label>
-                    <select className="select select-large" value={row.category} onChange={(e) => updateRow(row.id, { category: e.target.value })}>
+                    <select className="select select-large" aria-label={`Category for ${row.name || 'new dish'}`} value={row.category} onChange={(e) => updateRow(row.id, { category: e.target.value, subcategory: '' })}>
                       {availableCategories.map((category) => <option key={category}>{category}</option>)}
                     </select>
                     {rowErrors.get(row.id)?.category ? <span className="field-error">{rowErrors.get(row.id)?.category}</span> : null}
                   </div>
-                  <div className="field">
+                  <div className="field dish-subcategory-field">
+                    <label>Subcategory</label>
+                    <select className="select select-large" aria-label={`Subcategory for ${row.name || 'new dish'}`} value={row.subcategory || ''} onChange={(e) => updateRow(row.id, { subcategory: e.target.value })}>
+                      <option value="">No subcategory</option>
+                      {rowSubcategories.map((subcategory) => <option key={subcategory} value={subcategory}>{subcategory}</option>)}
+                    </select>
+                    {!rowSubcategories.length ? <small className="dish-field-hint">Add one in Category manager</small> : null}
+                  </div>
+                  <div className="field dish-price-field">
                     <label>Price / serving</label>
                     <div className="dish-price-input">
                       <span aria-hidden="true">₹</span>
@@ -730,8 +872,9 @@ export default function AdminDishesPage() {
                     </div>
                   </details>
                   <button className="admin-dish-delete" type="button" onClick={() => removeRow(row.id)} aria-label={`Delete ${row.name || 'new dish'}`}>Delete dish</button>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
             {filteredRows.length > DISHES_PER_PAGE ? (
               <div className="dish-pagination">

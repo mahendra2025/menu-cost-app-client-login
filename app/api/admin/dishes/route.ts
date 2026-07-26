@@ -24,6 +24,7 @@ function normalizeItems(items: unknown) {
       const row = item as Record<string, unknown>;
       const name = String(row.name || '').trim();
       const category = String(row.category || '').trim();
+      const subcategory = String(row.subcategory || '').trim();
       const rate = Math.max(Number(row.rate) || 0, 0);
       const servingQuantity = Math.max(Number(row.servingQuantity) || 1, 0.01);
       const servingUnit = String(row.servingUnit || 'serving').trim() || 'serving';
@@ -31,18 +32,19 @@ function normalizeItems(items: unknown) {
         ? row.aliases.map((alias) => String(alias).trim()).filter(Boolean)
         : [];
 
-      if (!name || !category || category.length > 60) return null;
+      if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
 
       return {
         name,
         category,
+        subcategory,
         rate,
         servingQuantity,
         servingUnit,
         aliases,
       };
     })
-    .filter(Boolean);
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 }
 
 function normalizeRateUpdates(items: unknown) {
@@ -54,11 +56,12 @@ function normalizeRateUpdates(items: unknown) {
       const row = item as Record<string, unknown>;
       const name = String(row.name || '').trim();
       const category = String(row.category || '').trim();
+      const subcategory = String(row.subcategory || '').trim();
       const rate = Math.max(Number(row.rate) || 0, 0);
-      if (!name || !category || category.length > 60) return null;
-      return { name, category, rate };
+      if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
+      return { name, category, subcategory, rate };
     })
-    .filter((item): item is { name: string; category: string; rate: number } => item !== null);
+    .filter((item): item is { name: string; category: string; subcategory: string; rate: number } => item !== null);
 }
 
 function normalizeCategories(value: unknown, itemCategories: string[] = []) {
@@ -74,6 +77,30 @@ function normalizeCategories(value: unknown, itemCategories: string[] = []) {
   return Array.from(unique.values()).slice(0, 150);
 }
 
+function normalizeSubcategories(
+  value: unknown,
+  categories: string[],
+  items: Array<{ category?: string; subcategory?: string }> = [],
+) {
+  const source = value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  return Object.fromEntries(categories.map((category) => {
+    const stored = Array.isArray(source[category]) ? source[category] as unknown[] : [];
+    const assigned = items
+      .filter((item) => item.category === category)
+      .map((item) => item.subcategory);
+    const unique = new Map<string, string>();
+    [...stored, ...assigned].forEach((subcategory) => {
+      const clean = String(subcategory || '').trim().replace(/\s+/g, ' ');
+      if (!clean || clean.length > 60) return;
+      const key = clean.toLowerCase();
+      if (!unique.has(key)) unique.set(key, clean);
+    });
+    return [category, Array.from(unique.values()).slice(0, 150)];
+  }));
+}
+
 export async function GET() {
   try {
     const authError = await requireAdmin();
@@ -86,6 +113,7 @@ export async function GET() {
           id: true,
           name: true,
           category: true,
+          subcategory: true,
           rate: true,
           servingQuantity: true,
           servingUnit: true,
@@ -94,7 +122,7 @@ export async function GET() {
       }),
       prisma.dishCategoryCatalog.findUnique({
         where: { id: CATEGORY_CATALOG_ID },
-        select: { categories: true },
+        select: { categories: true, subcategories: true },
       }),
     ]);
 
@@ -103,6 +131,7 @@ export async function GET() {
         id: item.id,
         name: item.name,
         category: item.category,
+        subcategory: item.subcategory,
         rate: item.rate,
         servingQuantity: item.servingQuantity,
         servingUnit: item.servingUnit,
@@ -114,8 +143,13 @@ export async function GET() {
       categoryCatalog?.categories,
       mergedItems.map((item) => item.category),
     );
+    const subcategories = normalizeSubcategories(
+      categoryCatalog?.subcategories,
+      categories,
+      mergedItems,
+    );
 
-    return NextResponse.json({ items: mergedItems, categories });
+    return NextResponse.json({ items: mergedItems, categories, subcategories });
   } catch {
     return NextResponse.json({ error: 'Failed to load dishes' }, { status: 500 });
   }
@@ -129,19 +163,21 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const items = normalizeItems(body.items);
     const categories = normalizeCategories(body.categories, items.map((item) => String(item?.category || '')));
+    const subcategories = normalizeSubcategories(body.subcategories, categories, items);
 
     await prisma.$transaction([
       prisma.dishMasterItem.deleteMany(),
       prisma.dishCategoryCatalog.upsert({
         where: { id: CATEGORY_CATALOG_ID },
-        create: { id: CATEGORY_CATALOG_ID, categories },
-        update: { categories },
+        create: { id: CATEGORY_CATALOG_ID, categories, subcategories },
+        update: { categories, subcategories },
       }),
       ...items.map((item) =>
         prisma.dishMasterItem.create({
           data: {
             name: item!.name,
             category: item!.category,
+            subcategory: item!.subcategory,
             rate: item!.rate,
             servingQuantity: item!.servingQuantity,
             servingUnit: item!.servingUnit,
@@ -178,7 +214,7 @@ export async function PATCH(request: Request) {
         if (existing) {
           await tx.dishMasterItem.update({
             where: { id: existing.id },
-            data: { name: item.name, category: item.category, rate: item.rate },
+            data: { name: item.name, category: item.category, subcategory: item.subcategory, rate: item.rate },
           });
         } else {
           const defaultDish = DISH_COST_ITEMS.find((dish) => dish.name.toLowerCase() === item.name.toLowerCase());
@@ -186,6 +222,7 @@ export async function PATCH(request: Request) {
             data: {
               name: item.name,
               category: item.category,
+              subcategory: item.subcategory,
               rate: item.rate,
               aliases: defaultDish?.aliases ?? [],
             },

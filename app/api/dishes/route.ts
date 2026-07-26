@@ -9,6 +9,7 @@ export async function GET() {
       select: {
         name: true,
         category: true,
+        subcategory: true,
         rate: true,
         servingQuantity: true,
         servingUnit: true,
@@ -20,6 +21,7 @@ export async function GET() {
       ? mergeDishCatalog(items.map((item) => ({
         name: item.name,
         category: item.category,
+        subcategory: item.subcategory,
         rate: item.rate,
         servingQuantity: item.servingQuantity,
         servingUnit: item.servingUnit,

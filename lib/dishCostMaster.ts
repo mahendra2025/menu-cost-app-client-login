@@ -75,6 +75,7 @@ export type Category = (typeof CATEGORIES)[number];
 export type DishCostItem = {
   name: string;
   category: string;
+  subcategory?: string;
   rate: number;
   servingQuantity?: number;
   servingUnit?: string;
@@ -1772,6 +1773,7 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
   return {
     name: item.name.trim(),
     category,
+    subcategory: String(item.subcategory || '').trim().slice(0, 60),
     rate: Math.max(Number(item.rate) || 0, 0),
     servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
     servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
