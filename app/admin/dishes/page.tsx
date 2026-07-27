@@ -404,7 +404,7 @@ export default function AdminDishesPage() {
     setMessage(`${category} renamed to ${nextName}. Save all changes to publish it.`);
   }
 
-  function deleteCategory(category: string) {
+  async function deleteCategory(category: string) {
     if (category === 'Other') {
       setMessageType('error');
       setMessage('Other is the protected fallback category and cannot be deleted.');
@@ -416,17 +416,30 @@ export default function AdminDishesPage() {
       : `Delete the ${category} category?`;
     if (!window.confirm(warning)) return;
 
-    setCategories((current) => current.filter((item) => item !== category));
-    setSubcategories((current) => {
-      const next = { ...current };
-      delete next[category];
-      return next;
-    });
-    if (assignedCount) setRows((current) => current.filter((row) => row.category !== category));
-    if (categoryFilter === category) setCategoryFilter('ALL');
-    setDirty(true);
-    setMessageType('success');
-    setMessage(`${category} deleted${assignedCount ? ` with ${assignedCount} dish${assignedCount === 1 ? '' : 'es'}` : ''}. Save all changes to publish.`);
+    setSaving(true);
+    setMessage('');
+    try {
+      const response = await fetch(`/api/admin/dishes?category=${encodeURIComponent(category)}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error();
+
+      setCategories((current) => current.filter((item) => item !== category));
+      setSubcategories((current) => {
+        const next = { ...current };
+        delete next[category];
+        return next;
+      });
+      if (assignedCount) setRows((current) => current.filter((row) => row.category !== category));
+      if (categoryFilter === category) setCategoryFilter('ALL');
+      setMessageType('success');
+      setMessage(`${category} permanently deleted${assignedCount ? ` with ${assignedCount} dish${assignedCount === 1 ? '' : 'es'}` : ''}.`);
+    } catch {
+      setMessageType('error');
+      setMessage(`Could not delete ${category}. Please try again.`);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function addSubcategory(category: string) {

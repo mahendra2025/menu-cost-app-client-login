@@ -344,10 +344,64 @@ export async function PATCH(request: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
+
+    const category = new URL(request.url).searchParams.get('category')?.trim();
+    if (category) {
+      if (category === 'Other' || category.length > 60) {
+        return NextResponse.json({ error: 'This category cannot be deleted' }, { status: 400 });
+      }
+
+      const deleted = await prisma.$transaction(async (tx) => {
+        const [categoryCatalog, recipeCatalog] = await Promise.all([
+          tx.dishCategoryCatalog.findUnique({
+            where: { id: CATEGORY_CATALOG_ID },
+            select: { categories: true, subcategories: true },
+          }),
+          tx.recipeCatalog.findUnique({
+            where: { id: 'global' },
+            select: { dishes: true },
+          }),
+        ]);
+        const currentCategories = normalizeCategories(categoryCatalog?.categories);
+        const categories = currentCategories.filter(
+          (item) => item.toLowerCase() !== category.toLowerCase(),
+        );
+        const subcategories = normalizeSubcategories(
+          categoryCatalog?.subcategories,
+          categories,
+        );
+
+        const result = await tx.dishMasterItem.deleteMany({
+          where: { category: { equals: category, mode: 'insensitive' } },
+        });
+        await tx.dishCategoryCatalog.upsert({
+          where: { id: CATEGORY_CATALOG_ID },
+          create: { id: CATEGORY_CATALOG_ID, categories, subcategories },
+          update: { categories, subcategories },
+        });
+
+        if (recipeCatalog) {
+          const dishes = alignRecipeCategories(
+            recipeCatalog.dishes,
+            [],
+            categories,
+            new Set([category]),
+          );
+          await tx.recipeCatalog.update({
+            where: { id: 'global' },
+            data: { dishes: dishes as Prisma.InputJsonValue },
+          });
+        }
+
+        return result.count;
+      });
+
+      return NextResponse.json({ ok: true, deleted });
+    }
 
     await prisma.$transaction([
       prisma.dishMasterItem.deleteMany(),
