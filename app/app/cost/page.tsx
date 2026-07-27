@@ -118,6 +118,19 @@ export default function CostPage() {
     });
   }
 
+  function updateDishPortion(
+    id: string,
+    patch: Pick<WorkState['menu'][number], 'portionMode' | 'portionPercent'>,
+  ) {
+    if (!work) return;
+    persist({
+      ...work,
+      menu: work.menu.map((item) =>
+        item.id === id ? { ...item, ...patch } : item,
+      ),
+    });
+  }
+
   return (
     <AppShell title="Cost" subtitle="Step 4 of 6: review food, manpower and extra costs">
       <section className="content-grid">
@@ -208,7 +221,7 @@ export default function CostPage() {
               </div>
 
               <div className="dish-portion-note">
-                <b>Shared portions:</b> when a meal has multiple dishes in one category, the category portion is divided equally between them.
+                <b>Portion allocation:</b> use automatic equal sharing or set a custom percentage for any dish. A 50% portion charges half its base cost; 150% charges one-and-a-half times.
               </div>
 
               {filteredDishCosts.length === 0 ? (
@@ -268,7 +281,51 @@ export default function CostPage() {
                                 />
                               </label>
                             </td>
-                            <td><span className="portion-chip">{item.categoryCount > 1 ? `1/${item.categoryCount}` : 'Full'}</span></td>
+                            <td>
+                              <div className="cost-portion-control">
+                                <select
+                                  className="select"
+                                  aria-label={`Cost portion allocation for ${item.name}`}
+                                  value={item.portionMode}
+                                  onChange={(event) => {
+                                    const mode = event.target.value as 'AUTO' | 'CUSTOM';
+                                    updateDishPortion(item.id, {
+                                      portionMode: mode,
+                                      portionPercent:
+                                        mode === 'CUSTOM'
+                                          ? item.portionPercent
+                                          : undefined,
+                                    });
+                                  }}
+                                >
+                                  <option value="AUTO">Auto</option>
+                                  <option value="CUSTOM">Custom</option>
+                                </select>
+                                {item.portionMode === 'CUSTOM' ? (
+                                  <label className="portion-percent-input compact">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="300"
+                                      step="1"
+                                      value={item.portionPercent}
+                                      onChange={(event) =>
+                                        updateDishPortion(item.id, {
+                                          portionMode: 'CUSTOM',
+                                          portionPercent: Math.min(
+                                            300,
+                                            Math.max(0, Number(event.target.value) || 0),
+                                          ),
+                                        })
+                                      }
+                                    />
+                                    <span>%</span>
+                                  </label>
+                                ) : (
+                                  <span className="portion-chip">{item.categoryCount > 1 ? `1/${item.categoryCount}` : 'Full'}</span>
+                                )}
+                              </div>
+                            </td>
                             <td>{money(item.adjustedCostPerPlate)}</td>
                             <td><strong className="dish-total-cost">{money(item.itemTotalCost)}</strong></td>
                           </tr>
@@ -289,7 +346,7 @@ export default function CostPage() {
                         </div>
                         <div className="dish-cost-card-grid">
                           <div><small>Members</small><b>{item.effectivePax.toLocaleString('en-IN')}</b></div>
-                          <div><small>Portion</small><b>{item.categoryCount > 1 ? `1/${item.categoryCount}` : 'Full'}</b></div>
+                          <div><small>Portion</small><b>{Math.round(item.portionPercent * 100) / 100}%</b></div>
                           <div><small>Adjusted / plate</small><b>{money(item.adjustedCostPerPlate)}</b></div>
                           <div><small>Total cost</small><b>{money(item.itemTotalCost)}</b></div>
                         </div>

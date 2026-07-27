@@ -43,6 +43,8 @@ export type MenuItem = {
   portionQuantity?: number;
   portionUnit?: string;
   portionManuallyEdited?: boolean;
+  portionMode?: 'AUTO' | 'CUSTOM';
+  portionPercent?: number;
   serviceId?: string;
   dayLabel?: string;
   mealLabel?: string;

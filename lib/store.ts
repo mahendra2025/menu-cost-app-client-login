@@ -1575,7 +1575,7 @@ export function buildMenuCostBreakdown(
       {},
     );
 
-  return menu.map((item) => {
+  const breakdown = menu.map((item) => {
     const serviceKey = item.serviceId ?? 'default';
     const categoryKey = `${serviceKey}::${item.category}`;
     const categoryCount =
@@ -1598,10 +1598,16 @@ export function buildMenuCostBreakdown(
         ) || 0,
       );
 
+    const automaticPortionFactor =
+      categoryCount > 1 ? 1 / categoryCount : 1;
+    const customPortion =
+      item.portionMode === 'CUSTOM'
+        ? Math.min(300, Math.max(0, Number(item.portionPercent) || 0))
+        : null;
     const portionFactor =
-      categoryCount > 1
-        ? 1 / categoryCount
-        : 1;
+      customPortion === null
+        ? automaticPortionFactor
+        : customPortion / 100;
 
     const adjustedCostPerPlate =
       baseCostPerPlate *
@@ -1618,9 +1624,33 @@ export function buildMenuCostBreakdown(
       baseCostPerPlate,
       categoryCount,
       portionFactor,
+      portionMode: customPortion === null ? 'AUTO' as const : 'CUSTOM' as const,
+      portionPercent:
+        customPortion === null
+          ? automaticPortionFactor * 100
+          : customPortion,
       adjustedCostPerPlate,
       effectivePax,
       itemTotalCost,
+    };
+  });
+
+  const portionTotals = breakdown.reduce<Record<string, number>>(
+    (totals, item) => {
+      const serviceKey = item.serviceId ?? 'default';
+      const categoryKey = `${serviceKey}::${item.category}`;
+      totals[categoryKey] = (totals[categoryKey] ?? 0) + item.portionPercent;
+      return totals;
+    },
+    {},
+  );
+
+  return breakdown.map((item) => {
+    const serviceKey = item.serviceId ?? 'default';
+    const categoryKey = `${serviceKey}::${item.category}`;
+    return {
+      ...item,
+      portionGroupTotalPercent: portionTotals[categoryKey] ?? item.portionPercent,
     };
   });
 }

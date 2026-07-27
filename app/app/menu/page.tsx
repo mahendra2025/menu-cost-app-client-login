@@ -1923,6 +1923,51 @@ export default function MenuPage() {
                         placeholder="serving"
                       />
                     </div>
+                    <div className="portion-allocation-fields">
+                      <select
+                        className="select"
+                        aria-label={`Portion allocation for ${item.name}`}
+                        value={item.portionMode ?? 'AUTO'}
+                        onChange={(event) => {
+                          const mode = event.target.value as 'AUTO' | 'CUSTOM';
+                          updateItem(item.id, {
+                            portionMode: mode,
+                            portionPercent:
+                              mode === 'CUSTOM'
+                                ? item.portionPercent ?? 100
+                                : item.portionPercent,
+                          });
+                        }}
+                      >
+                        <option value="AUTO">Auto share</option>
+                        <option value="CUSTOM">Custom share</option>
+                      </select>
+                      {(item.portionMode ?? 'AUTO') === 'CUSTOM' ? (
+                        <label className="portion-percent-input">
+                          <input
+                            className="input"
+                            type="number"
+                            min="0"
+                            max="300"
+                            step="1"
+                            inputMode="decimal"
+                            aria-label={`Portion percentage for ${item.name}`}
+                            value={item.portionPercent ?? 100}
+                            onChange={(event) =>
+                              updateItem(item.id, {
+                                portionPercent: Math.min(
+                                  300,
+                                  Math.max(0, Number(event.target.value) || 0),
+                                ),
+                              })
+                            }
+                          />
+                          <span>%</span>
+                        </label>
+                      ) : (
+                        <small>Equal split by category</small>
+                      )}
+                    </div>
                   </div>
 
                   <div className="menu-cell">
