@@ -1,17 +1,34 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ChangeEvent,
+} from 'react';
+
+import Papa from 'papaparse';
+
 import AppShell from '../../components/AppShell';
+
 import {
   CATEGORIES,
+  mergeDishCatalog,
   saveDishCostItems,
   type DishCostItem,
 } from '../../../lib/dishCostMaster';
+
+import {
+  convertCsvDishRows,
+  type CsvDishRow,
+} from '../../../lib/csvDishImport';
+
 import {
   createRecipeServingCatalog,
   findDishServing,
   type RecipeServing,
 } from '../../../lib/recipeServings';
+
 import { getSession, uid } from '../../../lib/store';
 
 type EditableDish = DishCostItem & {
@@ -584,7 +601,124 @@ export default function AdminDishesPage() {
       setSaving(false);
     }
   }
+function handleCsvImport(
+  event: ChangeEvent<HTMLInputElement>,
+) {
+  const input = event.currentTarget;
+  const file = input.files?.[0];
 
+  if (!file) return;
+
+  setMessage('');
+
+  Papa.parse<CsvDishRow>(file, {
+    header: true,
+    skipEmptyLines: true,
+
+    complete: (result) => {
+      try {
+        const importedDishes = convertCsvDishRows(
+          result.data,
+        ).map(
+          (dish): DishCostItem => ({
+            name: String(dish.name || '').trim(),
+
+            category:
+              String(dish.category || 'Other').trim() ||
+              'Other',
+
+            subcategory: String(
+              dish.subcategory || '',
+            ).trim(),
+
+            rate: Math.max(
+              Number(dish.rate) || 0,
+              0,
+            ),
+
+            servingQuantity: Math.max(
+              Number(dish.servingQuantity) || 1,
+              0.01,
+            ),
+
+            servingUnit:
+              String(
+                dish.servingUnit || 'serving',
+              ).trim() || 'serving',
+
+            aliases: Array.isArray(dish.aliases)
+              ? dish.aliases
+              : [],
+          }),
+        );
+
+        if (!importedDishes.length) {
+          setMessageType('error');
+          setMessage(
+            'No valid dishes found in the CSV file.',
+          );
+          input.value = '';
+          return;
+        }
+
+        const mergedDishes = mergeDishCatalog([
+          ...rows.map(toDishCostItem),
+          ...importedDishes,
+        ]);
+
+        const recipeCatalog =
+          createRecipeServingCatalog();
+
+        setRows(
+          mergedDishes.map((dish) =>
+            toEditableDish(dish, recipeCatalog),
+          ),
+        );
+
+        setCategories((current) =>
+          Array.from(
+            new Set([
+              ...current,
+              ...mergedDishes.map(
+                (dish) => dish.category,
+              ),
+              'Other',
+            ]),
+          ),
+        );
+
+        setQuery('');
+        setCategoryFilter('ALL');
+        setStatusFilter('ALL');
+        setPage(1);
+        setDirty(true);
+        setMessageType('success');
+
+        setMessage(
+          `${importedDishes.length} CSV dishes imported. Click Save All Changes to publish them.`,
+        );
+      } catch (error) {
+        console.error(
+          'CSV dish import failed:',
+          error,
+        );
+
+        setMessageType('error');
+        setMessage('Could not import the CSV file.');
+      } finally {
+        input.value = '';
+      }
+    },
+
+    error: (error) => {
+      console.error('CSV reading failed:', error);
+
+      setMessageType('error');
+      setMessage('Could not read the CSV file.');
+      input.value = '';
+    },
+  });
+}  
   async function resetAll() {
     if (!confirm('Reset every dish and rate to the default catalog? Your custom changes will be removed.')) return;
     setMessage('');
