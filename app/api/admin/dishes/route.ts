@@ -191,6 +191,15 @@ export async function GET() {
         aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
       })))
       : DISH_COST_ITEMS;
+    const storedCategories = Array.isArray(categoryCatalog?.categories)
+      ? categoryCatalog.categories
+        .map((category) => String(category || '').trim().toLowerCase())
+        .filter(Boolean)
+      : [];
+    const allowedCategories = new Set(storedCategories);
+    const catalogItems = allowedCategories.size
+      ? mergedItems.filter((item) => allowedCategories.has(item.category.trim().toLowerCase()))
+      : mergedItems;
 
     const recipeHierarchy = [
       ...readRecipeHierarchy(defaultRecipesData),
@@ -199,7 +208,7 @@ export async function GET() {
     const recipeByName = new Map(
       recipeHierarchy.map((item) => [item.name.toLowerCase(), item]),
     );
-    const alignedItems = mergedItems.map((item) => {
+    const alignedItems = catalogItems.map((item) => {
       const recipe = recipeByName.get(item.name.trim().toLowerCase());
       return {
         ...item,
