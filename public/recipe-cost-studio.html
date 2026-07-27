@@ -279,6 +279,25 @@ svg{display:block}
 .ingredientMatch.match{color:var(--green)}
 .ingredientMatch.missing{color:#a7650b}
 .ingredientMatch.missing::before{content:"＋ ";font-weight:950}
+.aliasEditor{
+  margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:16px;
+  background:var(--surface-2);
+}
+.aliasEditorHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.aliasEditorTitle{font-size:13px;font-weight:850}
+.aliasEditorHint{margin-top:3px;color:var(--muted);font-size:11px}
+.aliasAddRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:11px}
+.aliasChips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;min-height:30px}
+.aliasChip{
+  display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid var(--line);
+  border-radius:999px;background:var(--surface);font-size:11px;font-weight:780;
+}
+.aliasChip button{
+  display:grid;place-items:center;width:18px;height:18px;padding:0;border:0;border-radius:50%;
+  background:var(--surface-2);color:var(--muted);font-size:14px;line-height:1;
+}
+.aliasChip button:hover{color:var(--red);background:color-mix(in srgb,var(--red) 8%,var(--surface))}
+.aliasEmpty{color:var(--muted);font-size:11px;align-self:center}
 .ingredientSection{margin-top:14px}
 .ingredientHint{margin-top:4px;color:var(--muted);font-size:12px}
 .ingredientCards{display:grid;gap:10px;margin-top:12px}
@@ -452,6 +471,9 @@ tbody tr.selected{background:var(--brand-soft)}
   .ingredientCard .ingredientNumber{grid-column:1;grid-row:1;align-self:center}
   .ingredientCard .removeIngredient{grid-column:3;grid-row:1;align-self:center}
   .ingredientCard .ingredientCostBox{grid-column:2/4;text-align:left;padding-top:4px}
+  .aliasEditorHeader{display:block}
+  .aliasAddRow{grid-template-columns:1fr}
+  .aliasAddRow .btn{width:100%}
   .ingredientSectionHeading{align-items:flex-start;flex-direction:column}
   .ingredientSectionHeading .btn{width:100%}
   .inspector{display:block;max-height:none;margin-top:10px}
@@ -589,6 +611,19 @@ tbody tr.selected{background:var(--brand-soft)}
 
 <button
   class="btn btnSoft"
+  id="focusDishAliases"
+  type="button"
+  title="Add alternate dish names"
+>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <path d="M7 7h10M7 12h7M7 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M4 4h16v16H4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+  </svg>
+  Dish aliases
+</button>
+
+<button
+  class="btn btnSoft"
   id="downloadRecipeTemplate"
   type="button"
   title="Download CSV template"
@@ -669,6 +704,21 @@ tbody tr.selected{background:var(--brand-soft)}
             <div class="formGroup"><label for="formBaseGuests">Recipe for</label><input class="field" id="formBaseGuests" type="number" min="1"></div>
             <div class="formGroup"><label for="formServingSize">Serving size</label><input class="field" id="formServingSize" type="number" min="0" step="0.01"></div>
             <div class="formGroup"><label for="formServingUnit">Serving unit</label><select class="select" id="formServingUnit"><option value="g">g</option><option value="gram">gram</option><option value="kg">kg</option><option value="ml">ml</option><option value="ltr">ltr</option><option value="piece">piece</option><option value="portion">portion</option><option value="bowl">bowl</option><option value="glass">glass</option><option value="plate">plate</option><option value="slice">slice</option></select></div>
+          </div>
+
+          <div class="aliasEditor" id="dishAliasEditor">
+            <div class="aliasEditorHeader">
+              <div>
+                <div class="aliasEditorTitle">Dish aliases</div>
+                <div class="aliasEditorHint">Add spelling variations, short names, Hindi or Gujarati names. Menu detection and recipe search will use them.</div>
+              </div>
+              <span class="countBadge" id="dishAliasCount">0 aliases</span>
+            </div>
+            <div class="aliasAddRow">
+              <input class="field" id="formDishAlias" placeholder="Example: PBM, Butter Paneer, पनीर मखनी">
+              <button class="btn btnSoft" id="addDishAlias" type="button">+ Add alias</button>
+            </div>
+            <div class="aliasChips" id="dishAliasChips"></div>
           </div>
         </section>
 
@@ -1015,8 +1065,25 @@ function getDishSubcategory(dish){
   const saved=String(dish?.subcategory||"").trim();
   return saved||inferSubcategory(dish?.category,dish?.name);
 }
+function normalizeAliases(value,dishName=""){
+  const source=Array.isArray(value)
+    ?value
+    :typeof value==="string"
+      ?value.split(/[|,;\n]+/)
+      :[];
+  const dishKey=String(dishName||"").trim().toLowerCase();
+  const seen=new Set();
+  return source
+    .map(alias=>String(alias||"").trim())
+    .filter(alias=>{
+      const key=alias.toLowerCase();
+      if(!key||key===dishKey||seen.has(key))return false;
+      seen.add(key);
+      return true;
+    });
+}
 function withSubcategory(dish){
-  return {...dish,subcategory:getDishSubcategory(dish)};
+  return {...dish,subcategory:getDishSubcategory(dish),aliases:normalizeAliases(dish?.aliases,dish?.name)};
 }
 
 function loadArray(key,fallback){
@@ -1180,7 +1247,7 @@ async function importDishCatalog(){
       const current=known.get(key);
       if(current){current.catalogRate=Math.max(0,Number(item.rate)||0);if(item.subcategory)current.subcategory=String(item.subcategory);return}
       const category=String(item.category||"Sabji");
-      const dish={id:`catalog_${index}_${key.replace(/[^a-z0-9]+/g,"_")}`,name,category,subcategory:String(item.subcategory||inferSubcategory(category,name)),baseGuests:100,catalogRate:Math.max(0,Number(item.rate)||0),ingredients:[]};
+      const dish={id:`catalog_${index}_${key.replace(/[^a-z0-9]+/g,"_")}`,name,category,subcategory:String(item.subcategory||inferSubcategory(category,name)),aliases:normalizeAliases(item.aliases,name),baseGuests:100,catalogRate:Math.max(0,Number(item.rate)||0),ingredients:[]};
       dishes.push(dish);known.set(key,dish);
     });
     saveState();renderDishList();loadSelectedDish();
@@ -1343,6 +1410,7 @@ function dishToJson(d){
     dishName:d.name,
     category:d.category,
     subcategory:getDishSubcategory(d),
+    aliases:normalizeAliases(d.aliases,d.name),
     baseGuests:d.baseGuests||100,
     ...(Number(d.servingSize)>0?{servingSize:Number(d.servingSize),servingUnit:d.servingUnit||"gram"}:{}),
     dishRate:Number(d.catalogRate)||0,
@@ -1365,6 +1433,8 @@ function validateDishJson(data){
   if(!String(data.dishName||"").trim())errors.push("dishName is required.");
   if(!String(data.category||"").trim())errors.push("category is required.");
   if(!String(data.subcategory||"").trim())errors.push("subcategory is required.");
+  if(data.aliases!==undefined&&!Array.isArray(data.aliases))errors.push("aliases must be an array of dish names.");
+  if(Array.isArray(data.aliases)&&data.aliases.some(alias=>!String(alias||"").trim()))errors.push("aliases cannot contain empty values.");
   if(!Number.isFinite(Number(data.baseGuests))||Number(data.baseGuests)<=0)errors.push("baseGuests must be greater than 0.");
   if(data.servingSize!==undefined||data.servingUnit!==undefined){
     if(!Number.isFinite(Number(data.servingSize))||Number(data.servingSize)<=0)errors.push("servingSize must be greater than 0.");
@@ -1400,7 +1470,8 @@ function renderDishList(){
   const q=$("dishSearch").value.trim().toLowerCase(),cat=$("categoryFilter").value;
   const filtered=dishes.filter(d=>{
     const subcategory=getDishSubcategory(d);
-    return (!q||d.name.toLowerCase().includes(q)||d.category.toLowerCase().includes(q)||subcategory.toLowerCase().includes(q))&&(cat==="All"||d.category===cat);
+    const aliases=normalizeAliases(d.aliases,d.name);
+    return (!q||d.name.toLowerCase().includes(q)||d.category.toLowerCase().includes(q)||subcategory.toLowerCase().includes(q)||aliases.some(alias=>alias.toLowerCase().includes(q)))&&(cat==="All"||d.category===cat);
   });
   $("visibleDishCount").textContent=filtered.length;$("totalDishCount").textContent=dishes.length;
 
@@ -1437,7 +1508,7 @@ function renderDishList(){
             ${groupDishes.map(d=>`<button class="dishItem ${d.id===selectedDishId?"active":""}" data-id="${esc(d.id)}">
               <span class="dishItemMain">
                 <span class="dishName">${esc(d.name)}</span>
-                <span class="dishMeta">${d.ingredients?.length||0} ingredients</span>
+                <span class="dishMeta">${d.ingredients?.length||0} ingredients${normalizeAliases(d.aliases,d.name).length?` · ${normalizeAliases(d.aliases,d.name).length} aliases`:""}</span>
               </span>
               <span class="dishCost">${money(dishCost(d)/(d.baseGuests||100))}</span>
             </button>`).join("")}
@@ -1477,6 +1548,15 @@ function renderJsonSummary(){
 function unitOptions(selected){
   return VALID_UNITS.map(unit=>`<option value="${unit}" ${unit===selected?"selected":""}>${unit}</option>`).join("");
 }
+function renderDishAliases(data){
+  const aliases=normalizeAliases(data?.aliases,data?.dishName);
+  const count=$("dishAliasCount");
+  const chips=$("dishAliasChips");
+  if(count)count.textContent=`${aliases.length} alias${aliases.length===1?"":"es"}`;
+  if(chips)chips.innerHTML=aliases.length
+    ?aliases.map((alias,index)=>`<span class="aliasChip"><span>${esc(alias)}</span><button type="button" data-remove-alias="${index}" aria-label="Remove ${esc(alias)}">×</button></span>`).join("")
+    :'<span class="aliasEmpty">No aliases yet. Add names used by clients or menu photos.</span>';
+}
 function renderVisualRecipeEditor(){
   let data;
   try{data=parseJson()}catch{return}
@@ -1487,6 +1567,7 @@ function renderVisualRecipeEditor(){
   $("formBaseGuests").value=Number(data.baseGuests)||100;
   $("formServingSize").value=Number(data.servingSize)>0?Number(data.servingSize):"";
   $("formServingUnit").value=VALID_SERVING_UNITS.includes(data.servingUnit)?data.servingUnit:"gram";
+  renderDishAliases(data);
   const items=Array.isArray(data.ingredients)?data.ingredients:[];
   $("ingredientCards").innerHTML=items.length?items.map((item,index)=>`
     <article class="ingredientCard" data-ingredient-index="${index}">
@@ -1653,6 +1734,7 @@ function csvToRecipeObjects(text){
     servingSize:findColumn("servingSize"),
     servingUnit:findColumn("servingUnit"),
     dishRate:findColumn("dishRate","catalogRate","perPersonCost"),
+    aliases:findColumn("aliases","dishAliases","alternateNames","alternateName"),
     ingredientName:findColumn("ingredientName","ingredient"),
     quantity:findColumn("quantity","qty"),
     unit:findColumn("unit"),
@@ -1677,11 +1759,16 @@ function csvToRecipeObjects(text){
         servingSize:servingSizeText===""?undefined:Number(servingSizeText),
         servingUnit:readValue(row,indexes.servingUnit)||undefined,
         dishRate:Number(readValue(row,indexes.dishRate))||0,
+        aliases:normalizeAliases(readValue(row,indexes.aliases),dishName),
         ingredients:[],
         _row:rowIndex+2
       });
     }
     const recipe=recipeGroups.get(recipeKey);
+    recipe.aliases=normalizeAliases([
+      ...(recipe.aliases||[]),
+      ...normalizeAliases(readValue(row,indexes.aliases),dishName)
+    ],dishName);
     const ingredientName=readValue(row,indexes.ingredientName);
     if(!ingredientName)return;
     recipe.ingredients.push({
@@ -1723,6 +1810,7 @@ function normalizeImportedRecipe(rawRecipe,index){
   const category=String(readImportedValue(rawRecipe,"category","dishCategory")??"Sabji").trim();
   const subcategory=String(readImportedValue(rawRecipe,"subcategory","subCategory","dishSubcategory")??inferSubcategory(category,dishName)).trim();
   const baseGuests=Number(readImportedValue(rawRecipe,"baseGuests","guests","pax","members","serves")??100);
+  const aliases=normalizeAliases(readImportedValue(rawRecipe,"aliases","dishAliases","alternateNames","alternateName","alsoKnownAs"),dishName);
   const rawIngredients=readImportedValue(rawRecipe,"ingredients","ingredientList","recipeIngredients","items","materials");
   const sourceIngredients=Array.isArray(rawIngredients)
     ?rawIngredients
@@ -1746,6 +1834,7 @@ function normalizeImportedRecipe(rawRecipe,index){
     dishName,
     category,
     subcategory,
+    aliases,
     baseGuests,
     ...(servingSizeValue!==undefined&&servingSizeValue!==""?{
       servingSize:Number(servingSizeValue),
@@ -1790,6 +1879,7 @@ function recipeObjectToDish(recipe,existingId,newIngredientIds){
     name:recipe.dishName,
     category:recipe.category,
     subcategory:recipe.subcategory||inferSubcategory(recipe.category,recipe.dishName),
+    aliases:normalizeAliases(recipe.aliases,recipe.dishName),
     baseGuests:Number(recipe.baseGuests),
     ...(recipe.servingSize!==undefined?{
       servingSize:Number(recipe.servingSize),
@@ -1886,7 +1976,7 @@ async function applyJson(){
       else rates.push({id,name:String(item.name).trim(),category:inferIngredientCategory(item.name),rate:Number(item.marketRate),unit:item.rateUnit});
       return {name:String(item.name).trim(),qty:Number(item.quantity),unit:item.unit,rateKey:id,rate:Number(item.marketRate),rateUnit:item.rateUnit}
     });
-    dishes[dishIndex]={...dishes[dishIndex],name:String(data.dishName).trim(),category:String(data.category).trim(),subcategory:String(data.subcategory).trim(),baseGuests:Number(data.baseGuests),servingSize:data.servingSize===undefined?undefined:Number(data.servingSize),servingUnit:data.servingSize===undefined?undefined:data.servingUnit,catalogRate:Math.max(0,Number(data.dishRate)||0),ingredients:mapped};
+    dishes[dishIndex]={...dishes[dishIndex],name:String(data.dishName).trim(),category:String(data.category).trim(),subcategory:String(data.subcategory).trim(),aliases:normalizeAliases(data.aliases,data.dishName),baseGuests:Number(data.baseGuests),servingSize:data.servingSize===undefined?undefined:Number(data.servingSize),servingUnit:data.servingSize===undefined?undefined:data.servingUnit,catalogRate:Math.max(0,Number(data.dishRate)||0),ingredients:mapped};
     saveState();setDirty(false);setValidation("valid","Valid");setStatus("Saving recipe and market rates…","ok");
     loadSelectedDish();renderRateTable();renderSelectedRate();
     showToast(newIngredientNames.length?`${newIngredientNames.length} new ingredient${newIngredientNames.length===1?"":"s"} added`:"Recipe saved");
@@ -1899,15 +1989,19 @@ async function applyJson(){
 
 $("downloadRecipeTemplate").addEventListener("click",()=>{
   const rows=[
-    ["recipeName","category","subcategory","baseGuests","servingSize","servingUnit","dishRate","ingredientName","quantity","unit","marketRate","rateUnit"],
-    ["Paneer Butter Masala","Paneer","Rich Paneer Curry",100,180,"gram",0,"Paneer",12,"kg",280,"kg"],
-    ["Paneer Butter Masala","Paneer","Rich Paneer Curry",100,180,"gram",0,"Tomato",8,"kg",35,"kg"],
-    ["Jeera Rice","Rice","Plain & Flavoured Rice",100,150,"gram",0,"Basmati Rice",12,"kg",110,"kg"],
-    ["Jeera Rice","Rice","Plain & Flavoured Rice",100,150,"gram",0,"Cumin",0.25,"kg",420,"kg"]
+    ["recipeName","category","subcategory","baseGuests","servingSize","servingUnit","dishRate","aliases","ingredientName","quantity","unit","marketRate","rateUnit"],
+    ["Paneer Butter Masala","Paneer","Rich Paneer Curry",100,180,"gram",0,"PBM|Butter Paneer|Paneer Makhani|पनीर बटर मसाला","Paneer",12,"kg",280,"kg"],
+    ["Paneer Butter Masala","Paneer","Rich Paneer Curry",100,180,"gram",0,"","Tomato",8,"kg",35,"kg"],
+    ["Jeera Rice","Rice","Plain & Flavoured Rice",100,150,"gram",0,"Cumin Rice|Zeera Rice|जीरा राइस","Basmati Rice",12,"kg",110,"kg"],
+    ["Jeera Rice","Rice","Plain & Flavoured Rice",100,150,"gram",0,"","Cumin",0.25,"kg",420,"kg"]
   ];
   const csvContent=rows.map(row=>row.map(csvEscape).join(",")).join("\n");
   downloadTextFile("catereros-recipe-bulk-import-template.csv",csvContent,"text/csv;charset=utf-8");
-  setImportSummary("CSV template downloaded. Add one row per ingredient, then import the completed file.","ok");
+  setImportSummary("CSV template downloaded. Add aliases with | between names, one row per ingredient, then import the completed file.","ok");
+});
+$("focusDishAliases").addEventListener("click",()=>{
+  $("dishAliasEditor")?.scrollIntoView({behavior:"smooth",block:"center"});
+  setTimeout(()=>$("formDishAlias")?.focus(),250);
 });
 $("bulkImportRecipes").addEventListener("click",()=>$("bulkRecipeFile").click());
 $("bulkRecipeFile").addEventListener("change",event=>importRecipesFromFile(event.target.files?.[0]));
@@ -1926,7 +2020,7 @@ $("newRecipe").addEventListener("click",()=>{
   const subcategory=prompt("Dish subcategory",suggestedSubcategory);
   if(!subcategory?.trim())return;
   const id=`recipe_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-  dishes.push({id,name:name.trim(),category:category.trim(),subcategory:subcategory.trim(),baseGuests:100,catalogRate:0,ingredients:[]});
+  dishes.push({id,name:name.trim(),category:category.trim(),subcategory:subcategory.trim(),aliases:[],baseGuests:100,catalogRate:0,ingredients:[]});
   selectedDishId=id;
   collapsedSubcategories.delete(`${category.trim()}::${subcategory.trim()}`);
   $("dishSearch").value="";$("categoryFilter").value="All";
@@ -1983,6 +2077,42 @@ $("jsonEditor").addEventListener("scroll",()=>{$("lineNumbers").scrollTop=$("jso
 $("formatJson").addEventListener("click",()=>{try{$("jsonEditor").value=JSON.stringify(parseJson(),null,2);updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();setDirty(true);setStatus("JSON formatted.","ok")}catch(e){setStatus(`Invalid JSON: ${e.message}`,"error")}});
 $("validateJson").addEventListener("click",()=>{try{const errors=validateDishJson(parseJson());if(errors.length){setValidation("invalid",`${errors.length} issue${errors.length>1?"s":""}`);setStatus(errors[0],"error")}else{setValidation("valid","Valid");setStatus("JSON is valid and ready to save.","ok")}}catch(e){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${e.message}`,"error")}});
 $("applyJson").addEventListener("click",applyJson);
+function addDishAliasFromInput(){
+  const input=$("formDishAlias");
+  const alias=String(input?.value||"").trim();
+  if(!alias)return;
+  const data=parseJson();
+  const existing=normalizeAliases(data.aliases,data.dishName);
+  const aliasKey=alias.toLowerCase();
+  if(aliasKey===String(data.dishName||"").trim().toLowerCase()||existing.some(item=>item.toLowerCase()===aliasKey)){
+    showToast("Alias already exists");
+    input.select();
+    return;
+  }
+  data.aliases=normalizeAliases([...existing,alias],data.dishName);
+  $("jsonEditor").value=JSON.stringify(data,null,2);
+  input.value="";
+  setDirty(true);setValidation("","Not checked");setStatus("Dish alias added. Save to apply.","ok");
+  updateLineNumbers();renderJsonSummary();renderDishAliases(data);
+  input.focus();
+}
+$("addDishAlias").addEventListener("click",addDishAliasFromInput);
+$("formDishAlias").addEventListener("keydown",event=>{
+  if(event.key!=="Enter")return;
+  event.preventDefault();
+  addDishAliasFromInput();
+});
+$("dishAliasChips").addEventListener("click",event=>{
+  const button=event.target.closest("[data-remove-alias]");
+  if(!button)return;
+  const data=parseJson();
+  const aliases=normalizeAliases(data.aliases,data.dishName);
+  aliases.splice(Number(button.dataset.removeAlias),1);
+  data.aliases=aliases;
+  $("jsonEditor").value=JSON.stringify(data,null,2);
+  setDirty(true);setValidation("","Not checked");setStatus("Dish alias removed. Save to apply.");
+  updateLineNumbers();renderJsonSummary();renderDishAliases(data);
+});
 $("visualRecipeEditor").addEventListener("change",event=>{
   if(!event.target.matches("input,select"))return;
   const card=event.target.closest("[data-ingredient-index]");
