@@ -6,7 +6,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "prisma db push && next dev",
     "build": "prisma generate && next build",
     "start": "prisma db push --accept-data-loss && next start",
     "db:push": "prisma db push",
