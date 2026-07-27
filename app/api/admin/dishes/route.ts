@@ -336,6 +336,25 @@ export async function PATCH(request: Request) {
           });
         }
       }
+
+      const categoryCatalog = await tx.dishCategoryCatalog.findUnique({
+        where: { id: CATEGORY_CATALOG_ID },
+        select: { categories: true, subcategories: true },
+      });
+      const categories = normalizeCategories(
+        categoryCatalog?.categories,
+        updates.map((item) => item.category),
+      );
+      const subcategories = normalizeSubcategories(
+        categoryCatalog?.subcategories,
+        categories,
+        updates,
+      );
+      await tx.dishCategoryCatalog.upsert({
+        where: { id: CATEGORY_CATALOG_ID },
+        create: { id: CATEGORY_CATALOG_ID, categories, subcategories },
+        update: { categories, subcategories },
+      });
     });
 
     return NextResponse.json({ ok: true, updated: updates.length });
