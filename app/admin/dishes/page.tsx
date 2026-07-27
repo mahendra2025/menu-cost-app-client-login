@@ -769,6 +769,20 @@ function handleCsvImport(
 
           <div className="dish-master-actions">
             <button className="primary-button" type="button" onClick={addRow}><span aria-hidden="true">＋</span> Add dish</button>
+            <label
+  className="ghost-button"
+  style={{ cursor: 'pointer' }}
+>
+  <span aria-hidden="true">⇧</span>
+  Import CSV
+
+  <input
+    type="file"
+    accept=".csv,text/csv"
+    onChange={handleCsvImport}
+    style={{ display: 'none' }}
+  />
+</label>
             <button className="ghost-button" type="button" onClick={addCategory}><span aria-hidden="true">＋</span> Add category</button>
             <button className="secondary-button" onClick={saveAll} disabled={saving || !dirty}>
               {saving ? 'Saving…' : dirty ? 'Save All Changes' : 'All Changes Saved'}
