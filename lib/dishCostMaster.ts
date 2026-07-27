@@ -1851,7 +1851,24 @@ export function mergeDishCatalog(items: Array<Partial<DishCostItem> | null | und
 
   return Array.from(merged.values()).sort((left, right) => left.name.localeCompare(right.name));
 }
+export function bulkAddDishes(
+  newDishes: Array<Partial<DishCostItem>>,
+): DishCostItem[] {
+  if (!Array.isArray(newDishes) || newDishes.length === 0) {
+    return getDishCostItems();
+  }
 
+  const currentDishes = getDishCostItems();
+
+  const mergedDishes = mergeDishCatalog([
+    ...currentDishes,
+    ...newDishes,
+  ]);
+
+  saveDishCostItems(mergedDishes);
+
+  return mergedDishes;
+}
 export function resetDishCostItems() {
   if (typeof window === 'undefined') return;
   runtimeDishCostItems = null;
