@@ -555,7 +555,7 @@ tbody tr.selected{background:var(--brand-soft)}
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           <input class="field" id="dishSearch" placeholder="Search dishes">
         </label>
-        <select class="select" id="categoryFilter"><option value="All">All categories</option><option value="Welcome Drink">Welcome Drink</option><option value="Mocktail">Mocktail</option><option value="Soup">Soup</option><option value="Starter">Starter</option><option value="Chaat">Chaat</option><option value="Chinese">Chinese</option><option value="Italian">Italian</option><option value="South Indian">South Indian</option><option value="Punjabi">Punjabi</option><option value="Paneer">Paneer</option><option value="Sabji">Sabji</option><option value="Kathiyawadi">Kathiyawadi</option><option value="Rajasthani">Rajasthani</option><option value="Gujarati">Gujarati</option><option value="North Indian">North Indian</option><option value="Mughlai">Mughlai</option><option value="Awadhi">Awadhi</option><option value="Kashmiri">Kashmiri</option><option value="Bengali">Bengali</option><option value="Maharashtrian">Maharashtrian</option><option value="Sindhi">Sindhi</option><option value="Bihari">Bihari</option><option value="Odia">Odia</option><option value="Hyderabadi">Hyderabadi</option><option value="Andhra">Andhra</option><option value="Kerala">Kerala</option><option value="Goan">Goan</option><option value="Dal / Kadhi">Dal / Kadhi</option><option value="Rice">Rice</option><option value="Bread">Bread</option><option value="Sweet">Sweet</option><option value="Ice Cream">Ice Cream</option><option value="Salad">Salad</option><option value="Papad">Papad</option><option value="Farsan">Farsan</option><option value="Beverage">Beverage</option><option value="Live Counter">Live Counter</option><option value="Breakfast">Breakfast</option><option value="Snacks">Snacks</option><option value="Sandwich">Sandwich</option><option value="Pizza">Pizza</option><option value="Pasta">Pasta</option><option value="Continental">Continental</option><option value="Mexican">Mexican</option><option value="Thai">Thai</option><option value="Lebanese">Lebanese</option><option value="Sizzler">Sizzler</option><option value="Street Food">Street Food</option><option value="Tandoor">Tandoor</option><option value="Fusion">Fusion</option><option value="Main Course">Main Course</option><option value="Jain">Jain</option><option value="Satvik">Satvik</option><option value="Vegan">Vegan</option><option value="Kids">Kids</option><option value="Fruit">Fruit</option><option value="Bakery">Bakery</option><option value="Raita">Raita</option><option value="Pickle">Pickle</option><option value="Dry Fruit">Dry Fruit</option><option value="Paan">Paan</option><option value="Mukhwas">Mukhwas</option><option value="Condiments">Condiments</option><option value="Other">Other</option></select>
+        <select class="select" id="categoryFilter"><option value="All">All categories</option></select>
       </div>
     </div>
     <div class="dishList" id="dishList"></div>
@@ -813,7 +813,7 @@ const RATE_STORAGE = "catereros_polished_rates_v1";
 const DELETED_DISH_STORAGE = "catereros_deleted_dish_ids_v1";
 const THEME_STORAGE = "catereros_ui_theme_v1";
 const RECIPE_VERSION_STORAGE = "catereros_recipe_catalog_version";
-const RECIPE_CATALOG_VERSION = 15;
+const RECIPE_CATALOG_VERSION = 16;
 const RECIPE_CATALOG_API = "/api/admin/recipes";
 
 const $ = id => document.getElementById(id);
@@ -1027,6 +1027,16 @@ function loadArray(key,fallback){
 }
 function loadDishArray() {
   const deletedIds = new Set(loadDeletedDishIds());
+  const installedVersion = Math.max(
+    0,
+    Number(safeStorageGet(RECIPE_VERSION_STORAGE)) || 0
+  );
+
+  if (installedVersion < RECIPE_CATALOG_VERSION) {
+    safeStorageSet(DISH_STORAGE, "[]");
+    saveDeletedDishIds([]);
+    return [];
+  }
 
   let saved = [];
 
@@ -1037,9 +1047,7 @@ function loadDishArray() {
     saved = [];
   }
 
-  const availableDefaultDishes = DEFAULT_DISHES.filter(
-    dish => !deletedIds.has(dish.id)
-  );
+  const availableDefaultDishes = [];
 
   if (!saved.length) {
     return clone(availableDefaultDishes);
@@ -1060,25 +1068,6 @@ function loadDishArray() {
       dish
     );
   });
-
-  const installedVersion = Math.max(
-    0,
-    Number(safeStorageGet(RECIPE_VERSION_STORAGE)) || 0
-  );
-
-  if (installedVersion < RECIPE_CATALOG_VERSION) {
-    DEFAULT_DISHES
-      .filter(dish =>
-        Number(dish.catalogVersion) === RECIPE_CATALOG_VERSION &&
-        !deletedIds.has(dish.id)
-      )
-      .forEach(dish => {
-        merged.set(
-          String(dish.name).trim().toLowerCase(),
-          clone(dish)
-        );
-      });
-  }
 
   return Array.from(merged.values());
 }
@@ -1294,7 +1283,8 @@ async function hydrateRecipeCatalog(){
       const deletedIds=Array.isArray(catalog.deletedDishIds)?catalog.deletedDishIds:[];
       const deletedIdSet=new Set(deletedIds);
       const needsCatalogUpgrade=Number(catalog.catalogVersion||0)<RECIPE_CATALOG_VERSION;
-      const mergedDishes=new Map(catalog.dishes.map(dish=>[String(dish?.name||"").trim().toLowerCase(),dish]));
+      const savedDishes=needsCatalogUpgrade?[]:catalog.dishes;
+      const mergedDishes=new Map(savedDishes.map(dish=>[String(dish?.name||"").trim().toLowerCase(),dish]));
       if(needsCatalogUpgrade){
         DEFAULT_DISHES
           .filter(dish=>Number(dish.catalogVersion)===RECIPE_CATALOG_VERSION&&!deletedIdSet.has(dish.id))
