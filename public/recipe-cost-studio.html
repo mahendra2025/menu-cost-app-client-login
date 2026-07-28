@@ -1245,7 +1245,7 @@ async function importDishCatalog(){
       const name=String(item.name||"").trim(),key=name.toLowerCase();
       if(!name)return;
       const current=known.get(key);
-      if(current){current.catalogRate=Math.max(0,Number(item.rate)||0);if(item.subcategory)current.subcategory=String(item.subcategory);return}
+      if(current){current.catalogRate=Math.max(0,Number(item.rate)||0);current.aliases=normalizeAliases([...(current.aliases||[]),...(Array.isArray(item.aliases)?item.aliases:[])],name);if(item.subcategory)current.subcategory=String(item.subcategory);return}
       const category=String(item.category||"Sabji");
       const dish={id:`catalog_${index}_${key.replace(/[^a-z0-9]+/g,"_")}`,name,category,subcategory:String(item.subcategory||inferSubcategory(category,name)),aliases:normalizeAliases(item.aliases,name),baseGuests:100,catalogRate:Math.max(0,Number(item.rate)||0),ingredients:[]};
       dishes.push(dish);known.set(key,dish);
@@ -1258,6 +1258,7 @@ async function syncRecipeCostsToDishCatalog(dishList){
   try{
     const calculated=dishList.map(dish=>({
       name:dish.name,
+      aliases:normalizeAliases(dish.aliases,dish.name),
       category:dish.category,
       subcategory:getDishSubcategory(dish),
       rate:Math.round((dishCost(dish)/(Number(dish.baseGuests)||100))*100)/100
@@ -1923,6 +1924,9 @@ async function importRecipesFromFile(file){
       const existing=existingByName.get(recipeKey);
       if(existing&&!replaceDuplicates){skippedCount++;return;}
       const dish=recipeObjectToDish(recipe,existing?.dish.id,newIngredientIds);
+      if(existing){
+        dish.aliases=normalizeAliases([...(existing.dish.aliases||[]),...(dish.aliases||[])],dish.name);
+      }
       if(existing){
         dishes[existing.index]=dish;
         replacedCount++;

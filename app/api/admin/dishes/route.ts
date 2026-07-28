@@ -60,10 +60,24 @@ function normalizeRateUpdates(items: unknown) {
       const category = String(row.category || '').trim();
       const subcategory = String(row.subcategory || '').trim();
       const rate = Math.max(Number(row.rate) || 0, 0);
+      const aliases = Array.isArray(row.aliases)
+        ? Array.from(new Map(
+          row.aliases
+            .map((alias) => String(alias).trim().replace(/\s+/g, ' '))
+            .filter(Boolean)
+            .map((alias) => [alias.toLocaleLowerCase(), alias]),
+        ).values())
+        : undefined;
       if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
-      return { name, category, subcategory, rate };
+      return { name, category, subcategory, rate, aliases };
     })
-    .filter((item): item is { name: string; category: string; subcategory: string; rate: number } => item !== null);
+    .filter((item): item is {
+      name: string;
+      category: string;
+      subcategory: string;
+      rate: number;
+      aliases: string[] | undefined;
+    } => item !== null);
 }
 
 function normalizeCategories(value: unknown, itemCategories: string[] = []) {
@@ -321,7 +335,13 @@ export async function PATCH(request: Request) {
         if (existing) {
           await tx.dishMasterItem.update({
             where: { id: existing.id },
-            data: { name: item.name, category: item.category, subcategory: item.subcategory, rate: item.rate },
+            data: {
+              name: item.name,
+              category: item.category,
+              subcategory: item.subcategory,
+              rate: item.rate,
+              ...(item.aliases ? { aliases: item.aliases } : {}),
+            },
           });
         } else {
           const defaultDish = DISH_COST_ITEMS.find((dish) => dish.name.toLowerCase() === item.name.toLowerCase());
@@ -331,7 +351,7 @@ export async function PATCH(request: Request) {
               category: item.category,
               subcategory: item.subcategory,
               rate: item.rate,
-              aliases: defaultDish?.aliases ?? [],
+              aliases: item.aliases ?? defaultDish?.aliases ?? [],
             },
           });
         }
