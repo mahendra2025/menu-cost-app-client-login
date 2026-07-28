@@ -8,14 +8,14 @@ datasource db {
 }
 
 model Tenant {
-  id        String     @id @default(cuid())
-  name      String
-  email     String     @unique
-  password  String
-  plan      String     @default("PRO")
-  status    String     @default("ACTIVE")
-  works     MenuWork[]
-  createdAt DateTime   @default(now())
+  id                     String     @id @default(cuid())
+  name                   String
+  email                  String     @unique
+  password               String
+  plan                   String     @default("PRO")
+  status                 String     @default("ACTIVE")
+  works                  MenuWork[]
+  createdAt              DateTime   @default(now())
   razorpayCustomerId     String?
   razorpaySubscriptionId String?    @unique
   subscriptionStatus     String?
@@ -45,12 +45,26 @@ model DishMasterItem {
   updatedAt       DateTime @updatedAt
 }
 
+model PendingDishSuggestion {
+  id             String   @id @default(cuid())
+  name           String
+  normalizedName String   @unique
+  categoryHint   String   @default("Other")
+  tenantId       String
+  sourceFileName String   @default("")
+  occurrences    Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([updatedAt])
+}
+
 model DishCategoryCatalog {
-  id         String   @id
-  categories Json
-  subcategories Json  @default("{}")
-  updatedAt  DateTime @updatedAt
-  createdAt  DateTime @default(now())
+  id            String   @id
+  categories    Json
+  subcategories Json     @default("{}")
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
 }
 
 model RecipeCatalog {

@@ -18,6 +18,7 @@ import {
 
 import {
   getSession,
+  findPendingDishCandidates,
   loadWork,
   parseMenuText,
   saveWork,
@@ -309,6 +310,9 @@ export default function EventPage() {
   const [detectionPreview, setDetectionPreview] =
     useState<MenuDetectionPreview | null>(null);
 
+  const [queuedSuggestionCount, setQueuedSuggestionCount] =
+    useState(0);
+
   const [selectedPreviewIds, setSelectedPreviewIds] =
     useState<Set<string>>(
       () => new Set(),
@@ -413,14 +417,66 @@ export default function EventPage() {
        * Catalog matches receive their
        * catalog category and rate.
        *
-       * Unmatched dishes remain in the
-       * menu with an estimated category
-       * and a blank manual rate. Full
-       * wedding menus also retain day,
-       * meal and member-count details.
+       * Only catalog-confirmed dishes are
+       * returned. Full wedding menus also
+       * retain day, meal and member-count
+       * details.
        */
       const detectedMenu =
         parseMenuText(rawMenuText);
+      const pendingCandidates =
+        findPendingDishCandidates(
+          rawMenuText,
+        );
+      let queuedCount = 0;
+
+      if (pendingCandidates.length) {
+        try {
+          const queueResponse =
+            await fetch(
+              '/api/dish-suggestions',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type':
+                    'application/json',
+                },
+                body: JSON.stringify({
+                  candidates:
+                    pendingCandidates,
+                  sourceFileName:
+                    work.event
+                      .uploadFileName,
+                }),
+              },
+            );
+          const queueData =
+            await queueResponse.json();
+
+          if (queueResponse.ok) {
+            queuedCount = Math.max(
+              0,
+              Number(
+                queueData.queued,
+              ) || 0,
+            );
+          } else {
+            console.warn(
+              'Could not queue new dishes:',
+              queueData.error,
+            );
+          }
+        } catch (queueError) {
+          console.warn(
+            'Could not queue new dishes:',
+            queueError,
+          );
+        }
+      }
+
+      setQueuedSuggestionCount(
+        queuedCount,
+      );
 
       console.log(
         'Detected menu:',
@@ -429,22 +485,16 @@ export default function EventPage() {
 
       if (!detectedMenu.length) {
         setError(
-          'No valid menu items were found. Add each dish on a separate line, or separate dishes with commas, slashes or bullets.',
+          queuedCount > 0
+            ? `No existing catalog dishes were found. ${queuedCount} possible new ${queuedCount === 1 ? 'dish was' : 'dishes were'} sent to Admin for review.`
+            : 'No dishes from the catalog were found. Check the extracted text, add missing dishes to the Dish Catalog, or select dishes manually.',
         );
 
         return;
       }
 
-      const manualRateCount =
-        detectedMenu.filter(
-          (item) =>
-            Number(
-              item.costPerPlate,
-            ) <= 0,
-        ).length;
-
       console.info(
-        `Menu detection complete: ${detectedMenu.length} dishes detected. ${manualRateCount} dishes require manual rates.`,
+        `Menu detection complete: ${detectedMenu.length} catalog dishes detected.`,
       );
 
       const detectedDetails =
@@ -547,6 +597,7 @@ export default function EventPage() {
 
     persistWork(nextWork);
     setDetectionPreview(null);
+    setQueuedSuggestionCount(0);
     setSelectedPreviewIds(
       new Set(),
     );
@@ -1312,8 +1363,13 @@ Gulab Jamun`}
             ) : null}
 
             <div className="event-detection-note">
-              <b>Safe to review</b>
-              <p>Unmatched dishes are never discarded. They continue to the review screen with a blank rate.</p>
+              <b>Dish-only detection</b>
+              <p>
+                Only dishes confirmed in the Dish Catalog appear in the preview.
+                {queuedSuggestionCount > 0
+                  ? ` ${queuedSuggestionCount} possible new ${queuedSuggestionCount === 1 ? 'dish is' : 'dishes are'} waiting for Admin review.`
+                  : ' Possible new dishes are sent privately to Admin for review; other text is ignored.'}
+              </p>
             </div>
 
             {detectionPreview ? (
@@ -1325,7 +1381,7 @@ Gulab Jamun`}
                   <div>
                     <span className="section-kicker">Detection preview</span>
                     <h3>Review before saving</h3>
-                    <p>Deselect anything that is not a dish, then replace or merge the menu.</p>
+                    <p>Only catalog-confirmed dishes are shown. Choose which ones to save, then replace or merge the menu.</p>
                   </div>
                   <div className="menu-preview-metrics">
                     <span><b>{selectedPreviewMenu.length}</b> selected</span>

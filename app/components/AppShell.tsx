@@ -18,6 +18,7 @@ const clientNav = [
 
 const adminNav = [
   { href: '/admin/users', label: 'Clients', description: 'Accounts and access', mark: 'C' },
+  { href: '/admin/new-dishes', label: 'New dishes', description: 'Review uploaded dishes', mark: 'N' },
   { href: '/admin/dishes', label: 'Dish catalog', description: 'Dishes and rates', mark: 'D' },
   { href: '/admin/ingredients', label: 'Ingredients', description: 'Categories and rates', mark: 'I' },
   { href: '/admin/recipes', label: 'Recipe studio', description: 'Ingredients and yield', mark: 'R' },

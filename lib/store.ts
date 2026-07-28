@@ -4,7 +4,6 @@
 import {
   CATEGORY_BASE_COST,
   CATEGORIES,
-  detectCategory,
   findDishesInText,
   findDishByName,
   findFuzzyDishByName,
@@ -900,6 +899,11 @@ type ParsedMenuLine = {
   explicitItem?: boolean;
 };
 
+export type PendingDishCandidate = {
+  name: string;
+  categoryHint: string;
+};
+
 const NON_DISH_TEXT_PATTERN =
   /^(?:days?\s*\d+|members?|as\s+per\s+(?:selection|choice)|menu\s+for|wedding\s+menu|party\s+menu|client|customer|event|function|occasion|venue|date|time|pax|guests?|persons?|contact|phone|mobile|address|location|package|price|rate|total|amount|notes?|instructions?|services?|staff|transport|decoration|photography|music|dj|tables?|chairs?|tax|gst|terms?|ग्राहक|कार्यक्रम|स्थान|तारीख|समय|मेहमान|संपर्क|मोबाइल|पता|कुल|नोट|ગ્રાહક|કાર્યક્રમ|સ્થળ|તારીખ|સમય|મહેમાન|સંપર્ક|મોબાઇલ|સરનામું|કુલ|નોંધ)(?:\b|[\s:()–—-]|$)/i;
 
@@ -925,27 +929,6 @@ function isClearlyNonDishText(value: string): boolean {
   }
 
   return false;
-}
-
-function isLikelyUnknownDish(
-  value: string,
-  categoryHint?: Category,
-  explicitItem = false,
-): boolean {
-  if (isClearlyNonDishText(value)) return false;
-  if (!explicitItem && /[!?]|\.(?:\s|$)/.test(value)) return false;
-
-  const words = normalizeMenuHeading(value)
-    .split(' ')
-    .filter(Boolean);
-
-  if (!words.length || words.length > (explicitItem ? 14 : 7)) return false;
-
-  if (categoryHint) return true;
-
-  return words.some((word) =>
-    /[\p{L}]/u.test(word),
-  );
 }
 
 function protectParentheticalSlashes(value: string): string {
@@ -1037,104 +1020,6 @@ function parseServiceHeading(value: string): {
     mealLabel: knownMeal || customMealLabel,
     servicePax: servicePax > 0 ? servicePax : undefined,
   };
-}
-
-function inferFallbackCategory(
-  value: string,
-  categoryHint?: Category,
-): string {
-  const normalized = normalizeMenuHeading(value);
-
-  if (
-    /\b(?:milk cake|cake|halwa|jalebi|rasmalai|mithai|sweet|gewar|ghevar|rabdi)\b/i.test(
-      normalized,
-    )
-  ) {
-    return 'Sweet';
-  }
-
-  if (
-    /\b(?:curd|raita|chutney|pickle|sauce)\b/i.test(normalized)
-  ) {
-    return 'Condiments';
-  }
-
-  if (
-    /\b(?:chapati|roti|puri|paratha|naan|bread|pav)\b/i.test(
-      normalized,
-    )
-  ) {
-    return 'Bread';
-  }
-
-  if (
-    /\b(?:tea|coffee|juice|soft drink|biscuit|rusk)\b/i.test(
-      normalized,
-    )
-  ) {
-    return 'Beverage';
-  }
-
-  if (
-    /\b(?:idli|upma|dosa|sambhar|sambar|medu vada)\b/i.test(
-      normalized,
-    )
-  ) {
-    return 'South Indian';
-  }
-
-  if (
-    /\b(?:fruit|papaya|banana)\b/i.test(normalized)
-  ) {
-    return 'Salad';
-  }
-
-  if (
-    /\b(?:puff|kachori|namkeen|sev roll)\b/i.test(normalized)
-  ) {
-    return 'Farsan';
-  }
-
-  if (categoryHint) return categoryHint;
-
-  if (/\b(?:mocktail|mojito|blue lagoon|fruit punch)\b/i.test(normalized)) {
-    return 'Mocktail';
-  }
-
-  if (/\b(?:soup|shorba|manchow)\b/i.test(normalized)) {
-    return 'Soup';
-  }
-
-  if (/\b(?:chaat|pani puri|bhel|sev puri|dahi puri)\b/i.test(normalized)) {
-    return 'Chaat';
-  }
-
-  if (/\b(?:rice|pulao|biryani|khichdi)\b/i.test(normalized)) {
-    return 'Rice';
-  }
-
-  if (/\b(?:dal|daal|kadhi)\b/i.test(normalized)) {
-    return 'Dal / Kadhi';
-  }
-
-  if (/\b(?:ice cream|kulfi)\b/i.test(normalized)) {
-    return 'Ice Cream';
-  }
-
-  if (/\b(?:papad|papadum)\b/i.test(normalized)) {
-    return 'Papad';
-  }
-
-  const detectedCategory = detectCategory(value);
-  const hasSpecificDetectedCategory =
-    detectedCategory !== 'Sabji' ||
-    /\b(?:sabji|sabzi|vegetable|veg|शाक|सब्जी)\b/i.test(
-      normalized,
-    );
-
-  return hasSpecificDetectedCategory
-    ? detectedCategory
-    : categoryHint || 'Sabji';
 }
 
 function splitMenuText(
@@ -1345,17 +1230,20 @@ function detectDishesFromLine(
     createDishCandidates(menuLine);
 
   /*
-   * OCR and copied PDFs often merge headings or adjacent columns into
-   * a dish line. At this point splitMenuText has already removed prose,
-   * so search all safe variants in one indexed catalog pass.
+   * Only accept a candidate when every meaningful word belongs to a
+   * catalog dish (apart from menu-style connectors such as "and").
+   * This prevents ordinary OCR text containing a dish word from reaching
+   * the Menu page while still supporting several dishes on one line.
    */
-  const matchedDishes = findDishesInText(
-    candidates.join(' | '),
-    true,
-  );
+  for (const candidate of candidates) {
+    const matchedDishes = findDishesInText(
+      candidate,
+      false,
+    );
 
-  if (matchedDishes.length) {
-    return matchedDishes;
+    if (matchedDishes.length) {
+      return matchedDishes;
+    }
   }
 
   const fuzzyCandidates = Array.from(
@@ -1379,6 +1267,82 @@ function detectDishesFromLine(
   }
 
   return [];
+}
+
+export function findPendingDishCandidates(
+  text: string,
+): PendingDishCandidate[] {
+  const menuLines =
+    splitMenuText(text);
+  const catalogMatches =
+    menuLines.map((line) =>
+      detectDishesFromLine(
+        line.text,
+        line.categoryHint,
+      ),
+    );
+  const candidates = menuLines
+    .map((line, index) => ({
+      line,
+      index,
+    }))
+    .filter(
+      ({ line, index }) =>
+        Boolean(
+          line.categoryHint ||
+            line.explicitItem ||
+            line.serviceId ||
+            catalogMatches[
+              index - 1
+            ]?.length ||
+            catalogMatches[
+              index + 1
+            ]?.length,
+        ),
+    )
+    .filter(
+      ({ index }) =>
+        !catalogMatches[index]
+          ?.length,
+    )
+    .filter(
+      ({ line }) => {
+        if (isClearlyNonDishText(line.text)) {
+          return false;
+        }
+
+        const words = normalizeMenuHeading(
+          line.text,
+        )
+          .split(' ')
+          .filter(Boolean);
+
+        return (
+          words.length > 0 &&
+          words.length <= 8 &&
+          !/[!?]|\.(?:\s|$)/.test(
+            line.text,
+          )
+        );
+      },
+    )
+    .map(({ line }) => ({
+      name: line.text,
+      categoryHint:
+        line.categoryHint ||
+        'Other',
+    }));
+
+  return Array.from(
+    new Map(
+      candidates.map((candidate) => [
+        normalizeMenuHeading(
+          candidate.name,
+        ),
+        candidate,
+      ]),
+    ).values(),
+  );
 }
 
 export function parseMenuText(
@@ -1442,53 +1406,8 @@ export function parseMenuText(
       continue;
     }
 
-    if (
-      !isLikelyUnknownDish(
-        line,
-        menuLine.categoryHint,
-        menuLine.explicitItem,
-      )
-    ) {
-      console.info(
-        'Menu detection: ignored non-dish text:',
-        line,
-      );
-      continue;
-    }
-
-    /*
-     * Dish was not found in catalog.
-     *
-     * Keep it in the menu instead
-     * of deleting it.
-     */
-    const fallbackCategory =
-      inferFallbackCategory(
-        line,
-        menuLine.categoryHint,
-      );
-
-    menuItems.push({
-      id: uid('dish'),
-      name: line,
-      category:
-        fallbackCategory,
-
-      /*
-       * Zero means the user must
-       * enter a manual rate.
-       */
-      costPerPlate: 0,
-      portionQuantity: 1,
-      portionUnit: 'serving',
-      serviceId: menuLine.serviceId,
-      dayLabel: menuLine.dayLabel,
-      mealLabel: menuLine.mealLabel,
-      servicePax: menuLine.servicePax,
-    });
-
-    console.warn(
-      'Dish not found in catalog. Added for manual review:',
+    console.info(
+      'Menu detection: ignored text that is not a catalog dish:',
       line,
     );
   }
@@ -1510,16 +1429,8 @@ export function parseMenuText(
       ).values(),
     );
 
-  const unmatchedCount =
-    uniqueItems.filter(
-      (item) =>
-        Number(
-          item.costPerPlate,
-        ) === 0,
-    ).length;
-
   console.info(
-    `Menu detection completed: ${uniqueItems.length} item(s), ${unmatchedCount} requiring manual rates.`,
+    `Menu detection completed: ${uniqueItems.length} catalog dish(es).`,
   );
 
   return uniqueItems;
