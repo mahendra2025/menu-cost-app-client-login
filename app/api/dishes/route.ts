@@ -4,6 +4,7 @@ import {
   DISH_COST_ITEMS,
   filterDishCatalogByStoredCategories,
   mergeDishCatalog,
+  readDeletedDishCategories,
 } from '../../../lib/dishCostMaster';
 
 export async function GET() {
@@ -23,7 +24,7 @@ export async function GET() {
       }),
       prisma.dishCategoryCatalog.findUnique({
         where: { id: 'global' },
-        select: { categories: true },
+        select: { categories: true, subcategories: true },
       }),
     ]);
 
@@ -41,6 +42,7 @@ export async function GET() {
     const catalogItems = filterDishCatalogByStoredCategories(
       mergedItems,
       categoryCatalog?.categories,
+      readDeletedDishCategories(categoryCatalog?.subcategories),
     );
 
     return NextResponse.json({ items: catalogItems });

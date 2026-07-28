@@ -82,6 +82,21 @@ export type DishCostItem = {
   aliases?: string[];
 };
 
+export const DISH_DELETED_CATEGORIES_KEY = '__deletedCategories';
+
+export function readDeletedDishCategories(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+  const deletedCategories = (value as Record<string, unknown>)[DISH_DELETED_CATEGORIES_KEY];
+  if (!Array.isArray(deletedCategories)) return [];
+
+  return Array.from(new Map(
+    deletedCategories
+      .map((category) => String(category || '').trim().replace(/\s+/g, ' '))
+      .filter(Boolean)
+      .map((category) => [category.toLowerCase(), category]),
+  ).values());
+}
+
 function normalizeCatalogKey(value: string) {
   return value.trim().toLowerCase();
 }
@@ -1859,8 +1874,18 @@ export function mergeDishCatalog(items: Array<Partial<DishCostItem> | null | und
 export function filterDishCatalogByStoredCategories(
   items: DishCostItem[],
   categories: unknown,
+  deletedCategories: unknown = [],
 ) {
-  if (!Array.isArray(categories)) return items;
+  const deletedCategoryKeys = new Set(
+    (Array.isArray(deletedCategories) ? deletedCategories : [])
+      .map((category) => String(category || '').trim().toLowerCase())
+      .filter(Boolean),
+  );
+  const availableItems = items.filter(
+    (item) => !deletedCategoryKeys.has(item.category.trim().toLowerCase()),
+  );
+
+  if (!Array.isArray(categories)) return availableItems;
 
   const allowedCategories = new Set(
     categories
@@ -1868,20 +1893,20 @@ export function filterDishCatalogByStoredCategories(
       .filter(Boolean),
   );
 
-  if (!allowedCategories.size) return items;
+  if (!allowedCategories.size) return availableItems;
 
   const catalogCategories = new Set(
-    items
+    availableItems
       .map((item) => item.category.trim().toLowerCase())
       .filter(Boolean),
   );
-  const filteredItems = items.filter((item) =>
+  const filteredItems = availableItems.filter((item) =>
     allowedCategories.has(item.category.trim().toLowerCase()),
   );
   const representedCategoryCount = Array.from(catalogCategories)
     .filter((category) => allowedCategories.has(category))
     .length;
-  const itemCoverage = filteredItems.length / Math.max(items.length, 1);
+  const itemCoverage = filteredItems.length / Math.max(availableItems.length, 1);
   const categoryCoverage =
     representedCategoryCount / Math.max(catalogCategories.size, 1);
   const looksIncomplete =
@@ -1892,7 +1917,7 @@ export function filterDishCatalogByStoredCategories(
       categoryCoverage < 0.25
     );
 
-  return looksIncomplete ? items : filteredItems;
+  return looksIncomplete ? availableItems : filteredItems;
 }
 export function bulkAddDishes(
   newDishes: Array<Partial<DishCostItem>>,

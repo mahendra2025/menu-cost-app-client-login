@@ -5,9 +5,11 @@ import { prisma } from '../../../../lib/prisma';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
 import {
   CATEGORIES,
+  DISH_DELETED_CATEGORIES_KEY,
   DISH_COST_ITEMS,
   filterDishCatalogByStoredCategories,
   mergeDishCatalog,
+  readDeletedDishCategories,
 } from '../../../../lib/dishCostMaster';
 import defaultRecipesData from '../../../../lib/defaultRecipes.json';
 
@@ -122,6 +124,22 @@ function normalizeSubcategories(
   }));
 }
 
+function withDeletedCategories(
+  subcategories: Record<string, string[]>,
+  deletedCategories: Iterable<string>,
+) {
+  const deleted = Array.from(new Map(
+    Array.from(deletedCategories)
+      .map((category) => String(category || '').trim().replace(/\s+/g, ' '))
+      .filter(Boolean)
+      .map((category) => [category.toLowerCase(), category]),
+  ).values()).sort((left, right) => left.localeCompare(right));
+
+  return deleted.length
+    ? { ...subcategories, [DISH_DELETED_CATEGORIES_KEY]: deleted }
+    : subcategories;
+}
+
 function readRecipeHierarchy(value: unknown) {
   if (!Array.isArray(value)) return [];
   return value
@@ -213,6 +231,7 @@ export async function GET() {
     const catalogItems = filterDishCatalogByStoredCategories(
       mergedItems,
       categoryCatalog?.categories,
+      readDeletedDishCategories(categoryCatalog?.subcategories),
     );
 
     const recipeHierarchy = [
@@ -268,21 +287,32 @@ export async function PUT(request: Request) {
         }),
         tx.dishCategoryCatalog.findUnique({
           where: { id: CATEGORY_CATALOG_ID },
-          select: { categories: true },
+          select: { categories: true, subcategories: true },
         }),
       ]);
       const previousCategories = Array.isArray(previousCategoryCatalog?.categories)
         ? previousCategoryCatalog.categories.map((category) => String(category))
         : [];
-      const deletedCategories = new Set(
-        previousCategories.filter((category) => !categories.includes(category)),
+      const currentCategoryKeys = new Set(categories.map((category) => category.toLowerCase()));
+      const deletedCategoryMap = new Map(
+        readDeletedDishCategories(previousCategoryCatalog?.subcategories)
+          .map((category) => [category.toLowerCase(), category]),
+      );
+      previousCategories
+        .filter((category) => !currentCategoryKeys.has(category.toLowerCase()))
+        .forEach((category) => deletedCategoryMap.set(category.toLowerCase(), category));
+      categories.forEach((category) => deletedCategoryMap.delete(category.toLowerCase()));
+      const deletedCategories = new Set(deletedCategoryMap.values());
+      const storedSubcategories = withDeletedCategories(
+        subcategories,
+        deletedCategories,
       );
 
       await tx.dishMasterItem.deleteMany();
       await tx.dishCategoryCatalog.upsert({
         where: { id: CATEGORY_CATALOG_ID },
-        create: { id: CATEGORY_CATALOG_ID, categories, subcategories },
-        update: { categories, subcategories },
+        create: { id: CATEGORY_CATALOG_ID, categories, subcategories: storedSubcategories },
+        update: { categories, subcategories: storedSubcategories },
       });
 
       await Promise.all(items.map((item) =>
@@ -326,7 +356,21 @@ export async function PATCH(request: Request) {
     }
 
     await prisma.$transaction(async (tx) => {
-      for (const item of updates) {
+      const categoryCatalog = await tx.dishCategoryCatalog.findUnique({
+        where: { id: CATEGORY_CATALOG_ID },
+        select: { categories: true, subcategories: true },
+      });
+      const deletedCategoryKeys = new Set(
+        readDeletedDishCategories(categoryCatalog?.subcategories)
+          .map((category) => category.toLowerCase()),
+      );
+      const effectiveUpdates = updates.map((item) =>
+        deletedCategoryKeys.has(item.category.toLowerCase())
+          ? { ...item, category: 'Other', subcategory: '' }
+          : item
+      );
+
+      for (const item of effectiveUpdates) {
         const existing = await tx.dishMasterItem.findFirst({
           where: { name: { equals: item.name, mode: 'insensitive' } },
           select: { id: true },
@@ -357,23 +401,23 @@ export async function PATCH(request: Request) {
         }
       }
 
-      const categoryCatalog = await tx.dishCategoryCatalog.findUnique({
-        where: { id: CATEGORY_CATALOG_ID },
-        select: { categories: true, subcategories: true },
-      });
       const categories = normalizeCategories(
         categoryCatalog?.categories,
-        updates.map((item) => item.category),
+        effectiveUpdates.map((item) => item.category),
       );
       const subcategories = normalizeSubcategories(
         categoryCatalog?.subcategories,
         categories,
-        updates,
+        effectiveUpdates,
+      );
+      const storedSubcategories = withDeletedCategories(
+        subcategories,
+        readDeletedDishCategories(categoryCatalog?.subcategories),
       );
       await tx.dishCategoryCatalog.upsert({
         where: { id: CATEGORY_CATALOG_ID },
-        create: { id: CATEGORY_CATALOG_ID, categories, subcategories },
-        update: { categories, subcategories },
+        create: { id: CATEGORY_CATALOG_ID, categories, subcategories: storedSubcategories },
+        update: { categories, subcategories: storedSubcategories },
       });
     });
 
@@ -413,14 +457,22 @@ export async function DELETE(request: Request) {
           categoryCatalog?.subcategories,
           categories,
         );
+        const deletedCategories = new Set([
+          ...readDeletedDishCategories(categoryCatalog?.subcategories),
+          category,
+        ]);
+        const storedSubcategories = withDeletedCategories(
+          subcategories,
+          deletedCategories,
+        );
 
         const result = await tx.dishMasterItem.deleteMany({
           where: { category: { equals: category, mode: 'insensitive' } },
         });
         await tx.dishCategoryCatalog.upsert({
           where: { id: CATEGORY_CATALOG_ID },
-          create: { id: CATEGORY_CATALOG_ID, categories, subcategories },
-          update: { categories, subcategories },
+          create: { id: CATEGORY_CATALOG_ID, categories, subcategories: storedSubcategories },
+          update: { categories, subcategories: storedSubcategories },
         });
 
         if (recipeCatalog) {
