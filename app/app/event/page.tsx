@@ -27,6 +27,7 @@ import {
   loadWork,
   parseMenuText,
   saveWork,
+  uid,
 } from '../../../lib/store';
 
 import type {
@@ -422,17 +423,41 @@ export default function EventPage() {
        * Catalog matches receive their
        * catalog category and rate.
        *
-       * Only catalog-confirmed dishes are
-       * returned. Full wedding menus also
-       * retain day, meal and member-count
-       * details.
+       * Catalog-confirmed dishes receive
+       * their saved rates. Structured new
+       * dish candidates remain available
+       * with a blank manual rate.
        */
-      const detectedMenu =
+      const catalogMenu =
         parseMenuText(rawMenuText);
       const pendingCandidates =
         findPendingDishCandidates(
           rawMenuText,
         );
+      const manualMenu: MenuItem[] =
+        pendingCandidates.map(
+          (candidate) => ({
+            id: uid('dish'),
+            name: candidate.name,
+            category:
+              candidate.categoryHint,
+            costPerPlate: 0,
+            portionQuantity: 1,
+            portionUnit: 'serving',
+            serviceId:
+              candidate.serviceId,
+            dayLabel:
+              candidate.dayLabel,
+            mealLabel:
+              candidate.mealLabel,
+            servicePax:
+              candidate.servicePax,
+          }),
+        );
+      const detectedMenu = [
+        ...catalogMenu,
+        ...manualMenu,
+      ];
       let queuedCount = 0;
 
       if (pendingCandidates.length) {
@@ -490,16 +515,14 @@ export default function EventPage() {
 
       if (!detectedMenu.length) {
         setError(
-          queuedCount > 0
-            ? `No existing catalog dishes were found. ${queuedCount} possible new ${queuedCount === 1 ? 'dish was' : 'dishes were'} sent to Admin for review.`
-            : 'No dishes from the catalog were found. Check the extracted text, add missing dishes to the Dish Catalog, or select dishes manually.',
+          'No likely dishes were found. Check the extracted text or select dishes manually.',
         );
 
         return;
       }
 
       console.info(
-        `Menu detection complete: ${detectedMenu.length} catalog dishes detected.`,
+        `Menu detection complete: ${catalogMenu.length} catalog dishes and ${manualMenu.length} new dishes detected.`,
       );
 
       const detectedDetails =
@@ -1609,10 +1632,10 @@ Gulab Jamun`}
             <div className="event-detection-note">
               <b>Dish-only detection</b>
               <p>
-                Only dishes confirmed in the Dish Catalog appear in the preview.
+                Catalog dishes include their saved rate. Likely new dishes appear with “Rate needed” so you can enter a rate manually.
                 {queuedSuggestionCount > 0
-                  ? ` ${queuedSuggestionCount} possible new ${queuedSuggestionCount === 1 ? 'dish is' : 'dishes are'} waiting for Admin review.`
-                  : ' Possible new dishes are sent privately to Admin for review; other text is ignored.'}
+                  ? ` ${queuedSuggestionCount} new ${queuedSuggestionCount === 1 ? 'dish is' : 'dishes are'} also waiting for Admin approval.`
+                  : ' Headings and unrelated document text are ignored.'}
               </p>
             </div>
 
@@ -1625,7 +1648,7 @@ Gulab Jamun`}
                   <div>
                     <span className="section-kicker">Detection preview</span>
                     <h3>Review before saving</h3>
-                    <p>Only catalog-confirmed dishes are shown. Choose which ones to save, then replace or merge the menu.</p>
+                    <p>Review catalog dishes and new dishes needing a manual rate, then replace or merge the menu.</p>
                   </div>
                   <div className="menu-preview-metrics">
                     <span><b>{selectedPreviewMenu.length}</b> selected</span>

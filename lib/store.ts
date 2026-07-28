@@ -902,6 +902,10 @@ type ParsedMenuLine = {
 export type PendingDishCandidate = {
   name: string;
   categoryHint: string;
+  serviceId?: string;
+  dayLabel?: string;
+  mealLabel?: string;
+  servicePax?: number;
 };
 
 const NON_DISH_TEXT_PATTERN =
@@ -1331,14 +1335,16 @@ export function findPendingDishCandidates(
       categoryHint:
         line.categoryHint ||
         'Other',
+      serviceId: line.serviceId,
+      dayLabel: line.dayLabel,
+      mealLabel: line.mealLabel,
+      servicePax: line.servicePax,
     }));
 
   return Array.from(
     new Map(
       candidates.map((candidate) => [
-        normalizeMenuHeading(
-          candidate.name,
-        ),
+        `${normalizeMenuHeading(candidate.name)}-${candidate.serviceId || 'default'}`,
         candidate,
       ]),
     ).values(),
