@@ -17,6 +17,11 @@ import {
 } from '../../../lib/dishCostMaster';
 
 import {
+  pdfPageNeedsOcr,
+  reconstructPdfMenuText,
+} from '../../../lib/pdfMenuExtraction';
+
+import {
   getSession,
   findPendingDishCandidates,
   loadWork,
@@ -679,23 +684,206 @@ export default function EventPage() {
       }
 
       const pages: string[] = [];
+      let ocrPageCount = 0;
+      let activeOcrPage = 0;
+      type PdfOcrWorker =
+        Awaited<
+          ReturnType<
+            (typeof import('tesseract.js'))['createWorker']
+          >
+        >;
+      let ocrWorker:
+        | PdfOcrWorker
+        | null = null;
+      const createdOcrWorkers:
+        PdfOcrWorker[] = [];
 
-      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-        setUploadStatus(`Reading PDF page ${pageNumber} of ${pdf.numPages}...`);
-        const page = await pdf.getPage(pageNumber);
-        const content = await page.getTextContent();
-        const pageText = content.items
-          .map((item) => {
-            if (!('str' in item)) return '';
-            return `${item.str}${item.hasEOL ? '\n' : ' '}`;
-          })
-          .join('')
-          .trim();
+      async function getOcrWorker() {
+        if (ocrWorker) {
+          return ocrWorker;
+        }
 
-        if (pageText) pages.push(pageText);
+        const tesseract =
+          await import(
+            'tesseract.js'
+          );
+        const options = {
+          logger: (
+            message: {
+              status: string;
+              progress?: number;
+            },
+          ) => {
+            if (
+              message.status ===
+              'recognizing text'
+            ) {
+              setUploadStatus(
+                `Scanning PDF page ${activeOcrPage} of ${pdf.numPages}... ${Math.round((message.progress ?? 0) * 100)}%`,
+              );
+            }
+          },
+        };
+
+        try {
+          ocrWorker =
+            await tesseract.createWorker(
+              ['eng', 'hin', 'guj'],
+              undefined,
+              options,
+            );
+        } catch {
+          setUploadStatus(
+            `Loading standard PDF text recognition for page ${activeOcrPage}...`,
+          );
+          ocrWorker =
+            await tesseract.createWorker(
+              'eng',
+              undefined,
+              options,
+            );
+        }
+
+        createdOcrWorkers.push(
+          ocrWorker,
+        );
+        await ocrWorker.setParameters({
+          tessedit_pageseg_mode:
+            tesseract.PSM
+              .SPARSE_TEXT,
+          preserve_interword_spaces:
+            '1',
+          user_defined_dpi: '220',
+        });
+
+        return ocrWorker;
       }
 
-      saveExtractedMenu(file.name, pages.join('\n\n'), 'PDF');
+      try {
+        for (
+          let pageNumber = 1;
+          pageNumber <= pdf.numPages;
+          pageNumber += 1
+        ) {
+          setUploadStatus(
+            `Reading PDF page ${pageNumber} of ${pdf.numPages}...`,
+          );
+          const page =
+            await pdf.getPage(
+              pageNumber,
+            );
+          const content =
+            await page.getTextContent();
+          const textItems =
+            content.items.filter(
+              (
+                item,
+              ): item is Extract<
+                (typeof content.items)[number],
+                { str: string }
+              > => 'str' in item,
+            );
+          let pageText =
+            reconstructPdfMenuText(
+              textItems,
+            );
+
+          if (
+            pdfPageNeedsOcr(
+              pageText,
+              textItems.length,
+            )
+          ) {
+            activeOcrPage =
+              pageNumber;
+
+            try {
+              const baseViewport =
+                page.getViewport({
+                  scale: 1,
+                });
+              const scale = Math.min(
+                2.4,
+                2400 /
+                  Math.max(
+                    baseViewport.width,
+                    baseViewport.height,
+                  ),
+              );
+              const viewport =
+                page.getViewport({
+                  scale: Math.max(
+                    1.5,
+                    scale,
+                  ),
+                });
+              const canvas =
+                document.createElement(
+                  'canvas',
+                );
+              canvas.width = Math.ceil(
+                viewport.width,
+              );
+              canvas.height = Math.ceil(
+                viewport.height,
+              );
+
+              try {
+                await page.render({
+                  canvas,
+                  viewport,
+                }).promise;
+
+                const worker =
+                  await getOcrWorker();
+                const result =
+                  await worker.recognize(
+                    canvas,
+                  );
+                const ocrText =
+                  result.data.text
+                    .replace(
+                      /\u0000/g,
+                      '',
+                    )
+                    .trim();
+
+                if (ocrText) {
+                  pageText = ocrText;
+                  ocrPageCount += 1;
+                }
+              } finally {
+                canvas.width = 0;
+                canvas.height = 0;
+              }
+            } catch (ocrError) {
+              console.warn(
+                `OCR failed for PDF page ${pageNumber}:`,
+                ocrError,
+              );
+            }
+          }
+
+          if (pageText) {
+            pages.push(pageText);
+          }
+        }
+      } finally {
+        await Promise.all(
+          createdOcrWorkers.map(
+            (worker) =>
+              worker.terminate(),
+          ),
+        );
+      }
+
+      saveExtractedMenu(
+        file.name,
+        pages.join('\n\n'),
+        ocrPageCount > 0
+          ? 'PDF with OCR'
+          : 'PDF',
+      );
     } catch (uploadError) {
       setUploadStatus('');
       setError(
@@ -718,18 +906,74 @@ export default function EventPage() {
         throw new Error('Choose a photo smaller than 10 MB.');
       }
 
-      const { recognize } = await import('tesseract.js');
-      const result = await recognize(file, 'eng', {
-        logger: (message) => {
-          if (message.status === 'recognizing text') {
-            setUploadStatus(
-              `Reading menu photo... ${Math.round((message.progress ?? 0) * 100)}%`,
-            );
-          }
-        },
-      });
+      const {
+        createWorker,
+        PSM,
+      } = await import('tesseract.js');
+      let worker:
+        | Awaited<
+            ReturnType<
+              typeof createWorker
+            >
+          >
+        | null = null;
 
-      saveExtractedMenu(file.name, result.data.text, 'Menu photo');
+      try {
+        const workerOptions = {
+          logger: (
+            message: {
+              status: string;
+              progress?: number;
+            },
+          ) => {
+            if (
+              message.status ===
+              'recognizing text'
+            ) {
+              setUploadStatus(
+                `Reading menu photo... ${Math.round((message.progress ?? 0) * 100)}%`,
+              );
+            }
+          },
+        };
+
+        try {
+          worker =
+            await createWorker(
+              ['eng', 'hin', 'guj'],
+              undefined,
+              workerOptions,
+            );
+        } catch {
+          setUploadStatus(
+            'Loading standard photo recognition...',
+          );
+          worker =
+            await createWorker(
+              'eng',
+              undefined,
+              workerOptions,
+            );
+        }
+        await worker.setParameters({
+          tessedit_pageseg_mode:
+            PSM.SPARSE_TEXT,
+          preserve_interword_spaces:
+            '1',
+        });
+        const result =
+          await worker.recognize(
+            file,
+          );
+
+        saveExtractedMenu(
+          file.name,
+          result.data.text,
+          'Menu photo',
+        );
+      } finally {
+        await worker?.terminate();
+      }
     } catch (uploadError) {
       setUploadStatus('');
       setError(
@@ -1193,7 +1437,7 @@ export default function EventPage() {
                     <span className="menu-upload-icon" aria-hidden="true">PDF</span>
                     <div>
                       <b>Upload PDF</b>
-                      <p>Text-based PDF, up to 15 MB.</p>
+                      <p>Text or scanned PDF, including multi-column menus, up to 15 MB.</p>
                     </div>
                     <label
                       className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
