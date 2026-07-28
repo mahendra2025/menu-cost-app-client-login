@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
-import { DISH_COST_ITEMS, mergeDishCatalog } from '../../../lib/dishCostMaster';
+import {
+  DISH_COST_ITEMS,
+  filterDishCatalogByStoredCategories,
+  mergeDishCatalog,
+} from '../../../lib/dishCostMaster';
 
 export async function GET() {
   try {
@@ -34,15 +38,10 @@ export async function GET() {
         aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
       })))
       : DISH_COST_ITEMS;
-    const storedCategories = Array.isArray(categoryCatalog?.categories)
-      ? categoryCatalog.categories
-        .map((category) => String(category || '').trim().toLowerCase())
-        .filter(Boolean)
-      : [];
-    const allowedCategories = new Set(storedCategories);
-    const catalogItems = allowedCategories.size
-      ? mergedItems.filter((item) => allowedCategories.has(item.category.trim().toLowerCase()))
-      : mergedItems;
+    const catalogItems = filterDishCatalogByStoredCategories(
+      mergedItems,
+      categoryCatalog?.categories,
+    );
 
     return NextResponse.json({ items: catalogItems });
   } catch {

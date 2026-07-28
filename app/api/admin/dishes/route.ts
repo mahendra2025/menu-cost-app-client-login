@@ -3,7 +3,12 @@ import { cookies } from 'next/headers';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../lib/prisma';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
-import { CATEGORIES, DISH_COST_ITEMS, mergeDishCatalog } from '../../../../lib/dishCostMaster';
+import {
+  CATEGORIES,
+  DISH_COST_ITEMS,
+  filterDishCatalogByStoredCategories,
+  mergeDishCatalog,
+} from '../../../../lib/dishCostMaster';
 import defaultRecipesData from '../../../../lib/defaultRecipes.json';
 
 const CATEGORY_CATALOG_ID = 'global';
@@ -205,15 +210,10 @@ export async function GET() {
         aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
       })))
       : DISH_COST_ITEMS;
-    const storedCategories = Array.isArray(categoryCatalog?.categories)
-      ? categoryCatalog.categories
-        .map((category) => String(category || '').trim().toLowerCase())
-        .filter(Boolean)
-      : [];
-    const allowedCategories = new Set(storedCategories);
-    const catalogItems = allowedCategories.size
-      ? mergedItems.filter((item) => allowedCategories.has(item.category.trim().toLowerCase()))
-      : mergedItems;
+    const catalogItems = filterDishCatalogByStoredCategories(
+      mergedItems,
+      categoryCatalog?.categories,
+    );
 
     const recipeHierarchy = [
       ...readRecipeHierarchy(defaultRecipesData),

@@ -1851,6 +1851,49 @@ export function mergeDishCatalog(items: Array<Partial<DishCostItem> | null | und
 
   return Array.from(merged.values()).sort((left, right) => left.name.localeCompare(right.name));
 }
+
+/**
+ * Applies an intentionally configured category list without allowing a
+ * partial or corrupted category record to hide most of the dish catalog.
+ */
+export function filterDishCatalogByStoredCategories(
+  items: DishCostItem[],
+  categories: unknown,
+) {
+  if (!Array.isArray(categories)) return items;
+
+  const allowedCategories = new Set(
+    categories
+      .map((category) => String(category || '').trim().toLowerCase())
+      .filter(Boolean),
+  );
+
+  if (!allowedCategories.size) return items;
+
+  const catalogCategories = new Set(
+    items
+      .map((item) => item.category.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  const filteredItems = items.filter((item) =>
+    allowedCategories.has(item.category.trim().toLowerCase()),
+  );
+  const representedCategoryCount = Array.from(catalogCategories)
+    .filter((category) => allowedCategories.has(category))
+    .length;
+  const itemCoverage = filteredItems.length / Math.max(items.length, 1);
+  const categoryCoverage =
+    representedCategoryCount / Math.max(catalogCategories.size, 1);
+  const looksIncomplete =
+    catalogCategories.size >= 5 &&
+    (
+      allowedCategories.size < 3 ||
+      itemCoverage < 0.25 ||
+      categoryCoverage < 0.25
+    );
+
+  return looksIncomplete ? items : filteredItems;
+}
 export function bulkAddDishes(
   newDishes: Array<Partial<DishCostItem>>,
 ): DishCostItem[] {
