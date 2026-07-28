@@ -4776,6 +4776,73 @@ td:last-child {
   background: #fff;
 }
 
+/* Client workspace uses tinted translucent surfaces instead of solid white. */
+.client-theme {
+  --card: rgba(235, 243, 252, 0.82);
+  --card-solid: #eaf2fb;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(20, 120, 242, 0.14), transparent 28rem),
+    radial-gradient(circle at 96% 4%, rgba(238, 138, 24, 0.09), transparent 24rem),
+    linear-gradient(180deg, #edf4fb 0%, #e6eef8 100%);
+}
+
+.client-theme .topbar,
+.client-theme .glass-card,
+.client-theme .panel,
+.client-theme .locked-card,
+.client-theme .alert-card,
+.client-theme .stat-card,
+.client-theme .helper-card,
+.client-theme .menu-row,
+.client-theme .manpower-role-card {
+  border-color: rgba(113, 139, 171, 0.2);
+  background: rgba(235, 243, 252, 0.82);
+  box-shadow: 0 8px 26px rgba(42, 68, 102, 0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.client-theme .input,
+.client-theme .textarea,
+.client-theme .select,
+.client-theme .menu-text-field .textarea,
+.client-theme .manpower-rate-input,
+.client-theme .portion-percent-input,
+.client-theme .menu-rate-input {
+  border-color: rgba(113, 139, 171, 0.24);
+  background: rgba(228, 239, 250, 0.9);
+}
+
+.client-theme .menu-source-choice,
+.client-theme .menu-source-workspace,
+.client-theme .menu-upload-option,
+.client-theme .menu-preview-item,
+.client-theme .manual-builder-step,
+.client-theme .manual-review-step,
+.client-theme .manual-entry-tabs,
+.client-theme .menu-review-toolbar,
+.client-theme .manual-review-empty,
+.client-theme .bottom-nav {
+  border-color: rgba(113, 139, 171, 0.2);
+  background: rgba(230, 240, 251, 0.82);
+}
+
+.client-theme .menu-source-choice:hover,
+.client-theme .menu-service-edit-button:hover {
+  background: rgba(220, 234, 249, 0.96);
+}
+
+.client-theme .menu-preview-checkbox,
+.client-theme .manual-review-empty > span {
+  background: #dceaf8;
+}
+
+/* Printed documents intentionally stay paper-white. */
+.client-theme .pdf-paper,
+.client-theme .quotation-paper {
+  background: #fff;
+}
+
 @media (max-width: 760px) {
   [data-theme="dark"] .page-shell,
   [data-theme="dark"] .auth-page,
