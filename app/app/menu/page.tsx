@@ -15,7 +15,7 @@ import AppShell, {
 import {
   CATEGORIES,
   detectCategory,
-  findDishByName,
+  
   findDishByNameInItems,
   suggestDishesByName,
   syncDishCostItemsFromServer,
@@ -567,16 +567,19 @@ export default function MenuPage() {
     selectedNewDishService ||
     manualNewDishService;
 
-  const matchedNewDish = useMemo(() => {
-    const trimmedName = newDish.trim();
+const matchedNewDish = useMemo(() => {
+  const trimmedName = newDish.trim();
 
-    if (!trimmedName) {
-      return null;
-    }
+  if (!trimmedName) {
+    return null;
+  }
 
-    return findDishByName(trimmedName);
-  }, [newDish]);
-
+  return findDishByNameInItems(
+    trimmedName,
+    catalogDishes,
+  );
+}, [newDish, catalogDishes]);
+  
   const newDishPreview = useMemo(() => {
     const trimmedName = newDish.trim();
 
@@ -653,43 +656,46 @@ export default function MenuPage() {
   }
 
   function handleNewDishChange(
-    value: string,
-  ) {
-    setNewDish(value);
-    setPageMessage(null);
+  value: string,
+) {
+  setNewDish(value);
+  setPageMessage(null);
 
-    const trimmedName = value.trim();
+  const trimmedName = value.trim();
 
-    if (!trimmedName) {
-      setNewCategory('Sabji');
-      setNewRate('');
-      return;
-    }
-
-    const matchedDish =
-      findDishByName(trimmedName);
-
-    if (matchedDish) {
-      setNewCategory(
-        matchedDish.category,
-      );
-
-      setNewRate(
-        String(
-          Number(matchedDish.rate) || 0,
-        ),
-      );
-
-      return;
-    }
-
-    const detectedCategory =
-      detectCategory(trimmedName) ||
-      'Sabji';
-
-    setNewCategory(detectedCategory);
+  if (!trimmedName) {
+    setNewCategory('Sabji');
     setNewRate('');
+    return;
   }
+
+  const matchedDish =
+    findDishByNameInItems(
+      trimmedName,
+      catalogDishes,
+    );
+
+  if (matchedDish) {
+    setNewCategory(
+      matchedDish.category,
+    );
+
+    setNewRate(
+      String(
+        Number(matchedDish.rate) || 0,
+      ),
+    );
+
+    return;
+  }
+
+  const detectedCategory =
+    detectCategory(trimmedName) ||
+    'Sabji';
+
+  setNewCategory(detectedCategory);
+  setNewRate('');
+}
 
   function updateItem(
     id: string,
@@ -718,8 +724,11 @@ export default function MenuPage() {
           const trimmedName =
             patch.name.trim();
 
-          const matchedDish =
-            findDishByName(trimmedName);
+         const matchedDish =
+  findDishByNameInItems(
+    trimmedName,
+    catalogDishes,
+  );
 
           if (matchedDish) {
             updated.name =
