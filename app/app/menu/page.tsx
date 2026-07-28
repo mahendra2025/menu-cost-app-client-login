@@ -861,7 +861,10 @@ const matchedNewDish = useMemo(() => {
     }
 
     const matchedDish =
-      findDishByName(trimmedName);
+  findDishByNameInItems(
+    trimmedName,
+    catalogDishes,
+  );
 
     const finalName =
       matchedDish?.name ||
