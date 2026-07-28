@@ -4776,16 +4776,7 @@ td:last-child {
   background: #fff;
 }
 
-/* Client workspace uses tinted translucent surfaces instead of solid white. */
-.client-theme {
-  --card: rgba(235, 243, 252, 0.82);
-  --card-solid: #eaf2fb;
-  background:
-    radial-gradient(circle at 8% 0%, rgba(20, 120, 242, 0.14), transparent 28rem),
-    radial-gradient(circle at 96% 4%, rgba(238, 138, 24, 0.09), transparent 24rem),
-    linear-gradient(180deg, #edf4fb 0%, #e6eef8 100%);
-}
-
+/* Client pages share the same black surface system as the Admin workspace. */
 .client-theme .topbar,
 .client-theme .glass-card,
 .client-theme .panel,
@@ -4795,11 +4786,10 @@ td:last-child {
 .client-theme .helper-card,
 .client-theme .menu-row,
 .client-theme .manpower-role-card {
-  border-color: rgba(113, 139, 171, 0.2);
-  background: rgba(235, 243, 252, 0.82);
-  box-shadow: 0 8px 26px rgba(42, 68, 102, 0.08);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  color: #f5f7fa;
+  border-color: #252b35;
+  background: #10141b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
 }
 
 .client-theme .input,
@@ -4809,8 +4799,9 @@ td:last-child {
 .client-theme .manpower-rate-input,
 .client-theme .portion-percent-input,
 .client-theme .menu-rate-input {
-  border-color: rgba(113, 139, 171, 0.24);
-  background: rgba(228, 239, 250, 0.9);
+  color: #f5f7fa;
+  border-color: #303743;
+  background: #151a22;
 }
 
 .client-theme .menu-source-choice,
@@ -4823,24 +4814,67 @@ td:last-child {
 .client-theme .menu-review-toolbar,
 .client-theme .manual-review-empty,
 .client-theme .bottom-nav {
-  border-color: rgba(113, 139, 171, 0.2);
-  background: rgba(230, 240, 251, 0.82);
+  color: #f5f7fa;
+  border-color: #2b323d;
+  background: #151a22;
 }
 
 .client-theme .menu-source-choice:hover,
 .client-theme .menu-service-edit-button:hover {
-  background: rgba(220, 234, 249, 0.96);
+  border-color: #46505f;
+  background: #20252e;
 }
 
 .client-theme .menu-preview-checkbox,
 .client-theme .manual-review-empty > span {
-  background: #dceaf8;
+  color: #aab2bf;
+  border-color: #343c48;
+  background: #252c36;
+}
+
+.client-theme .menu-source-workspace,
+.client-theme .menu-upload-option,
+.client-theme .event-detection-note,
+.client-theme .menu-detection-preview,
+.client-theme .menu-preview-group,
+.client-theme .menu-service-group,
+.client-theme .manpower-function-card,
+.client-theme .menu-overview,
+.client-theme .manpower-overview {
+  color: #f5f7fa;
+  border-color: #26364b;
+  background: linear-gradient(145deg, #10141b, #101a28);
+}
+
+.client-theme .menu-preview-item.is-selected {
+  color: #f5f7fa;
+  border-color: rgba(61, 220, 132, 0.3);
+  background: rgba(61, 220, 132, 0.09);
+}
+
+.client-theme .menu-source-choice p,
+.client-theme .menu-upload-option p,
+.client-theme .menu-preview-item small,
+.client-theme .manual-review-empty p,
+.client-theme .manual-review-empty b {
+  color: #9aa3b1;
 }
 
 /* Printed documents intentionally stay paper-white. */
 .client-theme .pdf-paper,
 .client-theme .quotation-paper {
+  color-scheme: light;
+  color: #18212f;
   background: #fff;
+}
+
+.client-theme .pdf-paper h1,
+.client-theme .pdf-paper h2,
+.client-theme .pdf-paper h3,
+.client-theme .quotation-paper h1,
+.client-theme .quotation-paper h2,
+.client-theme .quotation-paper h3 {
+  color: #18212f;
 }
 
 @media (max-width: 760px) {
