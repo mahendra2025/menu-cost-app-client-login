@@ -1,9 +1,16 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
+import {
+  CATEGORIES,
+  DISH_DELETED_CATEGORIES_KEY,
+  readDeletedDishCategories,
+} from '../../../../lib/dishCostMaster';
 import { prisma } from '../../../../lib/prisma';
 
 const CATALOG_ID = 'global';
+const CATEGORY_CATALOG_ID = 'global';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -31,6 +38,234 @@ function readCatalogPayload(value: unknown) {
     deletedDishIds: Array.from(new Set(deletedDishIds)),
     catalogVersion: Math.max(1, Math.floor(Number(body.catalogVersion) || 1)),
   };
+}
+
+function cleanText(
+  value: unknown,
+  maxLength = 120,
+) {
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
+
+function convertQuantity(
+  quantity: number,
+  unit: string,
+  rateUnit: string,
+) {
+  if (unit === rateUnit) return quantity;
+  if (unit === 'gram' && rateUnit === 'kg') return quantity / 1000;
+  if (unit === 'kg' && rateUnit === 'gram') return quantity * 1000;
+  if (unit === 'ml' && rateUnit === 'ltr') return quantity / 1000;
+  if (unit === 'ltr' && rateUnit === 'ml') return quantity * 1000;
+  return quantity;
+}
+
+function normalizeRecipeDishes(
+  dishes: unknown[],
+  rates: unknown[],
+) {
+  const ratesById = new Map(
+    rates.flatMap((value) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+      const row = value as Record<string, unknown>;
+      const id = cleanText(row.id, 180);
+      if (!id) return [];
+      return [[id, {
+        rate: Math.max(0, Number(row.rate) || 0),
+        unit: cleanText(row.unit, 30) || 'kg',
+      }] as const];
+    }),
+  );
+  const normalized = new Map<string, {
+    name: string;
+    category: string;
+    subcategory: string;
+    rate: number;
+    servingQuantity: number;
+    servingUnit: string;
+    aliases: string[];
+  }>();
+
+  for (const value of dishes) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+    const row = value as Record<string, unknown>;
+    const name = cleanText(row.name || row.dishName);
+    const category = cleanText(row.category, 60);
+    const subcategory = cleanText(row.subcategory, 60);
+    if (!name || !category) continue;
+
+    const baseGuests = Math.max(1, Number(row.baseGuests) || 100);
+    const ingredients = Array.isArray(row.ingredients) ? row.ingredients : [];
+    const totalCost = ingredients.reduce((total, ingredient) => {
+      if (!ingredient || typeof ingredient !== 'object' || Array.isArray(ingredient)) return total;
+      const item = ingredient as Record<string, unknown>;
+      const quantity = Math.max(0, Number(item.qty ?? item.quantity) || 0);
+      const unit = cleanText(item.unit, 30) || 'kg';
+      const liveRate = ratesById.get(cleanText(item.rateKey, 180));
+      const rate = liveRate?.rate ?? Math.max(0, Number(item.rate ?? item.marketRate) || 0);
+      const rateUnit = liveRate?.unit || cleanText(item.rateUnit, 30) || unit;
+      return total + convertQuantity(quantity, unit, rateUnit) * rate;
+    }, 0);
+    const catalogRate = Math.max(
+      0,
+      totalCost > 0
+        ? totalCost / baseGuests
+        : Number(row.catalogRate ?? row.dishRate) || 0,
+    );
+    const aliases = Array.isArray(row.aliases)
+      ? Array.from(new Map(
+        row.aliases
+          .map((alias) => cleanText(alias))
+          .filter(Boolean)
+          .filter((alias) => alias.toLowerCase() !== name.toLowerCase())
+          .map((alias) => [alias.toLowerCase(), alias]),
+      ).values())
+      : [];
+
+    normalized.set(name.toLowerCase(), {
+      name,
+      category,
+      subcategory,
+      rate: Math.round(catalogRate * 100) / 100,
+      servingQuantity: Math.max(0.01, Number(row.servingSize) || 1),
+      servingUnit: cleanText(row.servingUnit, 30) || 'serving',
+      aliases,
+    });
+  }
+
+  return Array.from(normalized.values());
+}
+
+async function syncRecipesToDishCatalog(
+  tx: Prisma.TransactionClient,
+  catalog: ReturnType<typeof readCatalogPayload> extends infer T
+    ? Exclude<T, null>
+    : never,
+) {
+  const recipeDishes = normalizeRecipeDishes(catalog.dishes, catalog.rates);
+  if (!recipeDishes.length) return 0;
+
+  const [existingDishes, categoryCatalog] = await Promise.all([
+    tx.dishMasterItem.findMany({
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        subcategory: true,
+        rate: true,
+        servingQuantity: true,
+        servingUnit: true,
+        aliases: true,
+      },
+    }),
+    tx.dishCategoryCatalog.findUnique({
+      where: { id: CATEGORY_CATALOG_ID },
+      select: { categories: true, subcategories: true },
+    }),
+  ]);
+  const existingByName = new Map(
+    existingDishes.map((dish) => [dish.name.trim().toLowerCase(), dish]),
+  );
+  const creates: Prisma.DishMasterItemCreateManyInput[] = [];
+  const updates: Array<ReturnType<typeof tx.dishMasterItem.update>> = [];
+
+  for (const dish of recipeDishes) {
+    const existing = existingByName.get(dish.name.toLowerCase());
+    if (existing) {
+      const existingAliases = Array.isArray(existing.aliases)
+        ? existing.aliases.map(String).map((alias) => alias.toLowerCase()).sort()
+        : [];
+      const nextAliases = dish.aliases.map((alias) => alias.toLowerCase()).sort();
+      const unchanged =
+        existing.name === dish.name &&
+        existing.category === dish.category &&
+        existing.subcategory === dish.subcategory &&
+        Math.abs(existing.rate - dish.rate) < 0.001 &&
+        Math.abs(existing.servingQuantity - dish.servingQuantity) < 0.001 &&
+        existing.servingUnit === dish.servingUnit &&
+        JSON.stringify(existingAliases) === JSON.stringify(nextAliases);
+      if (unchanged) continue;
+
+      updates.push(tx.dishMasterItem.update({
+        where: { id: existing.id },
+        data: dish,
+      }));
+    } else {
+      creates.push(dish);
+    }
+  }
+
+  await Promise.all([
+    ...updates,
+    ...(creates.length
+      ? [tx.dishMasterItem.createMany({ data: creates })]
+      : []),
+  ]);
+
+  const categories = Array.from(new Map(
+    [
+      ...(Array.isArray(categoryCatalog?.categories)
+        ? categoryCatalog.categories.map(String)
+        : [...CATEGORIES]),
+      ...recipeDishes.map((dish) => dish.category),
+      'Other',
+    ]
+      .map((category) => cleanText(category, 60))
+      .filter(Boolean)
+      .map((category) => [category.toLowerCase(), category]),
+  ).values());
+  const subcategories =
+    categoryCatalog?.subcategories &&
+    typeof categoryCatalog.subcategories === 'object' &&
+    !Array.isArray(categoryCatalog.subcategories)
+      ? { ...categoryCatalog.subcategories as Record<string, unknown> }
+      : {};
+
+  for (const category of categories) {
+    const stored = Array.isArray(subcategories[category])
+      ? (subcategories[category] as unknown[]).map((value) => cleanText(value, 60)).filter(Boolean)
+      : [];
+    const imported = recipeDishes
+      .filter((dish) => dish.category.toLowerCase() === category.toLowerCase())
+      .map((dish) => dish.subcategory)
+      .filter(Boolean);
+    subcategories[category] = Array.from(new Map(
+      [...stored, ...imported].map((subcategory) => [
+        subcategory.toLowerCase(),
+        subcategory,
+      ]),
+    ).values());
+  }
+
+  const importedCategoryKeys = new Set(
+    recipeDishes.map((dish) => dish.category.toLowerCase()),
+  );
+  const deletedCategories = readDeletedDishCategories(subcategories)
+    .filter((category) => !importedCategoryKeys.has(category.toLowerCase()));
+  if (deletedCategories.length) {
+    subcategories[DISH_DELETED_CATEGORIES_KEY] = deletedCategories;
+  } else {
+    delete subcategories[DISH_DELETED_CATEGORIES_KEY];
+  }
+
+  await tx.dishCategoryCatalog.upsert({
+    where: { id: CATEGORY_CATALOG_ID },
+    create: {
+      id: CATEGORY_CATALOG_ID,
+      categories,
+      subcategories: subcategories as Prisma.InputJsonValue,
+    },
+    update: {
+      categories,
+      subcategories: subcategories as Prisma.InputJsonValue,
+    },
+  });
+
+  return recipeDishes.length;
 }
 
 export async function GET() {
@@ -65,14 +300,25 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Invalid recipe catalog' }, { status: 400 });
     }
 
-    const saved = await prisma.recipeCatalog.upsert({
-      where: { id: CATALOG_ID },
-      create: { id: CATALOG_ID, ...catalog },
-      update: catalog,
-      select: { updatedAt: true },
+    const saved = await prisma.$transaction(async (tx) => {
+      const recipeCatalog = await tx.recipeCatalog.upsert({
+        where: { id: CATALOG_ID },
+        create: { id: CATALOG_ID, ...catalog },
+        update: catalog,
+        select: { updatedAt: true },
+      });
+      const syncedDishes = await syncRecipesToDishCatalog(tx, catalog);
+      return {
+        updatedAt: recipeCatalog.updatedAt,
+        syncedDishes,
+      };
     });
 
-    return NextResponse.json({ ok: true, updatedAt: saved.updatedAt });
+    return NextResponse.json({
+      ok: true,
+      updatedAt: saved.updatedAt,
+      syncedDishes: saved.syncedDishes,
+    });
   } catch {
     return NextResponse.json({ error: 'Failed to save recipes' }, { status: 500 });
   }

@@ -1940,12 +1940,14 @@ async function importRecipesFromFile(file){
     selectedDishId=importedRecipes[0].id;
     $("dishSearch").value="";
     $("categoryFilter").value="All";
-    saveState();
+    saveLocalState();
+    const recipeCatalogSaved=await persistRecipeCatalog();
     renderDishList();
     loadSelectedDish();
     renderRateTable();
     renderSelectedRate();
-    const syncedCount=await syncRecipeCostsToDishCatalog(importedRecipes);
+    const directSyncedCount=await syncRecipeCostsToDishCatalog(importedRecipes);
+    const syncedCount=directSyncedCount||(recipeCatalogSaved?importedRecipes.length:0);
     const createdCount=importedRecipes.length-replacedCount;
     const importSummary=`Imported ${importedRecipes.length} recipe${importedRecipes.length===1?"":"s"}: ${createdCount} new, ${replacedCount} replaced${skippedCount?`, ${skippedCount} skipped`:""}.`;
     const ingredientSummary=newIngredientIds.size?`${newIngredientIds.size} missing ingredient${newIngredientIds.size===1?"":"s"} added to Ingredient Master${Array.from(newIngredientIds).some(id=>Number(rates.find(rate=>rate.id===id)?.rate)===0)?" with ₹0 where no rate was supplied":""}.`:"";
