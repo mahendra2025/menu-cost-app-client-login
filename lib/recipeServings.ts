@@ -78,6 +78,29 @@ export function createRecipeServingCatalog() {
   return catalog;
 }
 
+export function createRecipeNameCatalog() {
+  const catalog = new Set<string>();
+  const builtInRecipes: unknown[] = Array.isArray(defaultRecipesData)
+    ? defaultRecipesData
+    : [];
+
+  [...builtInRecipes, ...readLocalRecipes()].forEach((value) => {
+    if (!value || typeof value !== 'object') return;
+    const recipe = value as Record<string, unknown>;
+    const name = String(recipe.dishName ?? recipe.name ?? '').trim();
+    if (name) catalog.add(normalizeDishName(name));
+  });
+
+  return catalog;
+}
+
+export function hasDishRecipe(
+  dishName: string,
+  catalog = createRecipeNameCatalog(),
+) {
+  return catalog.has(normalizeDishName(dishName));
+}
+
 export function findRecipeServing(
   dishName: string,
   catalog = createRecipeServingCatalog(),

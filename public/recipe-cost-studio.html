@@ -2077,6 +2077,43 @@ $("dishList").addEventListener("click",e=>{
   loadSelectedDish();
   $("sidebar").classList.remove("open");
 });
+window.addEventListener("message",event=>{
+  if(event.origin!==window.location.origin||event.source!==window.parent)return;
+  if(event.data?.type!=="recipe-studio-open-dish")return;
+  const requested=event.data?.dish||{};
+  const openRequestedDish=()=>{
+  if(!catalogReady){setTimeout(openRequestedDish,100);return}
+  const name=String(requested.name||"").trim();
+  if(!name)return;
+  const existing=dishes.find(dish=>String(dish.name||"").trim().toLowerCase()===name.toLowerCase());
+  if(existing){
+    selectedDishId=existing.id;
+    $("dishSearch").value="";
+    $("categoryFilter").value="All";
+    loadSelectedDish();
+    $("sidebar").classList.remove("open");
+    showToast(`Opened ${existing.name}`);
+    return;
+  }
+  const category=String(requested.category||"Other").trim()||"Other";
+  const subcategory=String(requested.subcategory||"").trim()||inferSubcategory(category,name);
+  const id=`recipe_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  dishes.push({id,name,category,subcategory,aliases:[],baseGuests:100,catalogRate:0,ingredients:[]});
+  selectedDishId=id;
+  collapsedSubcategories.delete(`${category}::${subcategory}`);
+  $("dishSearch").value="";
+  $("categoryFilter").value="All";
+  saveState();
+  switchView("editor");
+  loadSelectedDish();
+  setDirty(true);
+  setStatus("Recipe created from Dish Catalog. Add ingredients, then select Apply & save.","ok");
+  showToast(`Recipe ready for ${name}`);
+  $("sidebar").classList.remove("open");
+  $("jsonEditor").focus();
+  };
+  openRequestedDish();
+});
 $("dishSearch").addEventListener("input",renderDishList);$("categoryFilter").addEventListener("change",renderDishList);
 $("jsonEditor").addEventListener("input",()=>{setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");updateLineNumbers();renderJsonSummary()});
 $("jsonEditor").addEventListener("scroll",()=>{$("lineNumbers").scrollTop=$("jsonEditor").scrollTop});

@@ -10,6 +10,9 @@ import {
 import Papa from 'papaparse';
 
 import AppShell from '../../components/AppShell';
+import RecipeStudioPanel, {
+  type RecipeStudioDishRequest,
+} from './RecipeStudioPanel';
 
 import {
   CATEGORIES,
@@ -24,8 +27,10 @@ import {
 } from '../../../lib/csvDishImport';
 
 import {
+  createRecipeNameCatalog,
   createRecipeServingCatalog,
   findDishServing,
+  hasDishRecipe,
   type RecipeServing,
 } from '../../../lib/recipeServings';
 
@@ -37,6 +42,7 @@ type EditableDish = DishCostItem & {
   hindiAliasesText: string;
   gujaratiAliasesText: string;
   recipeServing?: RecipeServing;
+  recipeLinked: boolean;
 };
 type DishRowErrors = {
   name?: string;
@@ -72,6 +78,7 @@ function isPlaceholderServing(item: DishCostItem) {
 function toEditableDish(
   item: DishCostItem,
   recipeCatalog = createRecipeServingCatalog(),
+  recipeNames = createRecipeNameCatalog(),
 ): EditableDish {
   const aliases = item.aliases ?? [];
   const recipeServing = findDishServing(
@@ -79,6 +86,7 @@ function toEditableDish(
     item.category,
     recipeCatalog,
   );
+  const recipeLinked = hasDishRecipe(item.name, recipeNames);
   const useRecipeServing = Boolean(recipeServing && isPlaceholderServing(item));
 
   return {
@@ -87,6 +95,7 @@ function toEditableDish(
     servingQuantity: useRecipeServing ? recipeServing?.quantity : item.servingQuantity,
     servingUnit: useRecipeServing ? recipeServing?.unit : item.servingUnit,
     recipeServing,
+    recipeLinked,
     aliasesText: aliases.filter((alias) => !HINDI_SCRIPT.test(alias) && !GUJARATI_SCRIPT.test(alias)).join(', '),
     hindiAliasesText: aliases.filter((alias) => HINDI_SCRIPT.test(alias)).join(', '),
     gujaratiAliasesText: aliases.filter((alias) => GUJARATI_SCRIPT.test(alias)).join(', '),
@@ -182,6 +191,18 @@ function validateRows(rows: EditableDish[]) {
 }
 
 export default function AdminDishesPage() {
+  const [workspaceView, setWorkspaceView] =
+    useState<'catalog' | 'recipes'>(
+      'catalog',
+    );
+  const [
+    recipeStudioOpened,
+    setRecipeStudioOpened,
+  ] = useState(false);
+  const [
+    requestedRecipeDish,
+    setRequestedRecipeDish,
+  ] = useState<RecipeStudioDishRequest | null>(null);
   const [ready, setReady] = useState(false);
   const [rows, setRows] = useState<EditableDish[]>([]);
   const [categories, setCategories] = useState<string[]>([...CATEGORIES]);
@@ -218,6 +239,66 @@ export default function AdminDishesPage() {
   );
 
   useEffect(() => {
+    const syncViewFromHash = () => {
+      const view =
+        window.location.hash ===
+        '#recipes'
+          ? 'recipes'
+          : 'catalog';
+      setWorkspaceView(view);
+      if (view === 'recipes') {
+        setRecipeStudioOpened(true);
+      }
+    };
+    syncViewFromHash();
+    window.addEventListener(
+      'hashchange',
+      syncViewFromHash,
+    );
+    return () =>
+      window.removeEventListener(
+        'hashchange',
+        syncViewFromHash,
+      );
+  }, []);
+
+  function openWorkspace(
+    view: 'catalog' | 'recipes',
+  ) {
+    setWorkspaceView(view);
+    if (view === 'recipes') {
+      setRecipeStudioOpened(true);
+    } else if (recipeStudioOpened) {
+      const recipeCatalog = createRecipeServingCatalog();
+      const recipeNames = createRecipeNameCatalog();
+      setRows((current) => current.map((row) => ({
+        ...row,
+        recipeServing: findDishServing(row.name, row.category, recipeCatalog),
+        recipeLinked: hasDishRecipe(row.name, recipeNames),
+      })));
+    }
+    window.history.replaceState(
+      null,
+      '',
+      view === 'recipes'
+        ? '#recipes'
+        : window.location.pathname,
+    );
+  }
+
+  function openRecipeForDish(
+    dish: EditableDish,
+  ) {
+    setRequestedRecipeDish({
+      requestId: uid('recipe_request'),
+      name: dish.name.trim(),
+      category: dish.category.trim() || 'Other',
+      subcategory: String(dish.subcategory || '').trim(),
+    });
+    openWorkspace('recipes');
+  }
+
+  useEffect(() => {
     const session = getSession();
     if (session?.role !== 'ADMIN') return;
 
@@ -227,6 +308,7 @@ export default function AdminDishesPage() {
         if (!response.ok) throw new Error('Could not load dishes');
         const data = await response.json();
         const recipeCatalog = createRecipeServingCatalog();
+        const recipeNames = createRecipeNameCatalog();
         const dishItems = parseDishItems(data.items);
         const loadedCategories = Array.isArray(data.categories)
           ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
@@ -237,7 +319,7 @@ export default function AdminDishesPage() {
             Array.isArray(values) ? values.map((value) => String(value).trim()).filter(Boolean) : [],
           ]))
           : {};
-        const cleaned = dishItems.map((item) => toEditableDish(item, recipeCatalog));
+        const cleaned = dishItems.map((item) => toEditableDish(item, recipeCatalog, recipeNames));
         const loadedRecipeServings = cleaned.some((item, index) =>
           item.servingQuantity !== dishItems[index]?.servingQuantity ||
           item.servingUnit !== dishItems[index]?.servingUnit
@@ -269,8 +351,8 @@ export default function AdminDishesPage() {
       const matchesCategory = categoryFilter === 'ALL' || row.category === categoryFilter;
       const matchesStatus = statusFilter === 'ALL' ||
         (statusFilter === 'ERROR' && rowErrors.has(row.id)) ||
-        (statusFilter === 'RECIPE' && Boolean(row.recipeServing)) ||
-        (statusFilter === 'NO_RECIPE' && !row.recipeServing);
+        (statusFilter === 'RECIPE' && row.recipeLinked) ||
+        (statusFilter === 'NO_RECIPE' && !row.recipeLinked);
       const matchesSearch = !search || row.name.toLowerCase().includes(search) ||
         row.category.toLowerCase().includes(search) ||
         String(row.subcategory || '').toLowerCase().includes(search) ||
@@ -286,7 +368,7 @@ export default function AdminDishesPage() {
     });
   }, [rows, query, categoryFilter, statusFilter, rowErrors, sort]);
   const recipeLinkedCount = useMemo(
-    () => rows.filter((row) => Boolean(row.recipeServing)).length,
+    () => rows.filter((row) => row.recipeLinked).length,
     [rows],
   );
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / DISHES_PER_PAGE));
@@ -341,6 +423,7 @@ export default function AdminDishesPage() {
         aliasesText: '',
         hindiAliasesText: '',
         gujaratiAliasesText: '',
+        recipeLinked: false,
       },
       ...current,
     ]);
@@ -590,7 +673,8 @@ export default function AdminDishesPage() {
       if (!response.ok) throw new Error();
       saveDishCostItems(cleaned);
       const recipeCatalog = createRecipeServingCatalog();
-      setRows(cleaned.map((item) => toEditableDish(item, recipeCatalog)));
+      const recipeNames = createRecipeNameCatalog();
+      setRows(cleaned.map((item) => toEditableDish(item, recipeCatalog, recipeNames)));
       setDirty(false);
       setMessageType('success');
       setMessage('Dish catalog saved. Client menus now use these dishes and rates.');
@@ -668,10 +752,12 @@ function handleCsvImport(
 
         const recipeCatalog =
           createRecipeServingCatalog();
+        const recipeNames =
+          createRecipeNameCatalog();
 
         setRows(
           mergedDishes.map((dish) =>
-            toEditableDish(dish, recipeCatalog),
+            toEditableDish(dish, recipeCatalog, recipeNames),
           ),
         );
 
@@ -732,7 +818,8 @@ function handleCsvImport(
     const reload = await fetch('/api/admin/dishes', { cache: 'no-store' });
     const data = await reload.json();
     const recipeCatalog = createRecipeServingCatalog();
-    const defaults = parseDishItems(data.items).map((item) => toEditableDish(item, recipeCatalog));
+    const recipeNames = createRecipeNameCatalog();
+    const defaults = parseDishItems(data.items).map((item) => toEditableDish(item, recipeCatalog, recipeNames));
     saveDishCostItems(defaults.map(toDishCostItem));
     setRows(defaults);
     setCategories(Array.isArray(data.categories) ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean) : [...CATEGORIES]);
@@ -747,9 +834,146 @@ function handleCsvImport(
     setMessage('Dish master reset to the default shared catalog.');
   }
 
+  useEffect(() => {
+    const handleWorkspaceShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isEditing = Boolean(
+        target?.closest('input, textarea, select, [contenteditable="true"]'),
+      );
+      const key = event.key.toLowerCase();
+
+      if ((event.metaKey || event.ctrlKey) && key === 's' && workspaceView === 'catalog') {
+        event.preventDefault();
+        if (dirty && !saving) void saveAll();
+        return;
+      }
+      if (event.altKey && event.key === '1') {
+        event.preventDefault();
+        openWorkspace('catalog');
+        return;
+      }
+      if (event.altKey && event.key === '2') {
+        event.preventDefault();
+        openWorkspace('recipes');
+        return;
+      }
+      if (!isEditing && event.key === '/') {
+        event.preventDefault();
+        openWorkspace('catalog');
+        window.requestAnimationFrame(() =>
+          document.getElementById('dish-search')?.focus(),
+        );
+      }
+    };
+
+    window.addEventListener('keydown', handleWorkspaceShortcut);
+    return () => window.removeEventListener('keydown', handleWorkspaceShortcut);
+  }, [dirty, saving, workspaceView]);
+
   return (
-    <AppShell title="Dish Catalog" subtitle="Manage the dishes, serving sizes, aliases and default prices used across every menu">
-      <section className="content-grid">
+    <AppShell title="Dishes & Recipes" subtitle="Manage the complete dish catalog, rates, serving sizes and batch recipes in one workspace">
+      <div
+        className="catalog-workspace-tabs no-print"
+        role="tablist"
+        aria-label="Dishes and recipes workspace"
+        onKeyDown={(event) => {
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+          event.preventDefault();
+          openWorkspace(workspaceView === 'catalog' ? 'recipes' : 'catalog');
+          window.requestAnimationFrame(() => {
+            document.querySelector<HTMLButtonElement>(
+              '.catalog-workspace-tabs button[aria-selected="true"]',
+            )?.focus();
+          });
+        }}
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={
+            workspaceView === 'catalog'
+          }
+          className={
+            workspaceView === 'catalog'
+              ? 'is-active'
+              : ''
+          }
+          onClick={() =>
+            openWorkspace('catalog')
+          }
+        >
+          <span aria-hidden="true">D</span>
+          <div>
+            <b>Dish Catalog</b>
+            <small>Names, categories, rates and aliases</small>
+          </div>
+          <em>{rows.length}</em>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={
+            workspaceView === 'recipes'
+          }
+          className={
+            workspaceView === 'recipes'
+              ? 'is-active'
+              : ''
+          }
+          onClick={() =>
+            openWorkspace('recipes')
+          }
+        >
+          <span aria-hidden="true">R</span>
+          <div>
+            <b>Recipe Studio</b>
+            <small>Ingredients, yield and batch costing</small>
+          </div>
+          <em>{recipeLinkedCount} linked</em>
+        </button>
+      </div>
+
+      <section className="catalog-command-center no-print" aria-label="Workspace shortcuts">
+        <div>
+          <span className="section-kicker">Command center</span>
+          <strong>
+            {workspaceView === 'catalog'
+              ? 'Manage dishes and send them straight to costing'
+              : 'Build recipes and publish their cost back to dishes'}
+          </strong>
+        </div>
+        <div className="catalog-command-actions">
+          <button className="primary-button" type="button" onClick={addRow}>
+            <span aria-hidden="true">＋</span> New dish
+          </button>
+          <button
+            className={`ghost-button ${rowErrors.size ? 'has-alert' : ''}`}
+            type="button"
+            onClick={() => {
+              openWorkspace('catalog');
+              setQuery('');
+              setCategoryFilter('ALL');
+              setStatusFilter('ERROR');
+            }}
+            disabled={!rowErrors.size}
+          >
+            Review issues <span>{rowErrors.size}</span>
+          </button>
+          <button className="ghost-button" type="button" onClick={() => openWorkspace('recipes')}>
+            Open Recipe Studio
+          </button>
+          <a className="ghost-button" href="/admin/ingredients">Ingredient rates</a>
+        </div>
+        <div className="catalog-shortcut-hints" aria-label="Keyboard shortcuts">
+          <span><kbd>Alt</kbd><kbd>1</kbd> Catalog</span>
+          <span><kbd>Alt</kbd><kbd>2</kbd> Recipes</span>
+          <span><kbd>⌘/Ctrl</kbd><kbd>S</kbd> Save</span>
+          <span><kbd>/</kbd> Search</span>
+        </div>
+      </section>
+
+      <div id="dish-catalog-panel" role="tabpanel" hidden={workspaceView !== 'catalog'}>
+        <section className="content-grid">
         <div className={`dish-master-overview ${rowErrors.size ? 'needs-attention' : ''}`}>
           <div className="dish-master-overview-copy">
             <div className="section-kicker">Catalog overview</div>
@@ -945,9 +1169,21 @@ function handleCsvImport(
                       <strong>{row.name.trim() || 'New dish'}</strong>
                       <small>{row.category || 'Uncategorised'}{row.subcategory ? ` / ${row.subcategory}` : ''} · ₹{Number(row.rate || 0).toLocaleString('en-IN')} per {row.servingUnit || 'serving'}</small>
                     </div>
-                    <span className={`dish-row-status ${rowErrors.has(row.id) ? 'error' : row.recipeServing ? 'linked' : ''}`}>
-                      {rowErrors.has(row.id) ? 'Needs attention' : row.recipeServing ? 'Recipe linked' : 'No recipe'}
-                    </span>
+                    <div className="dish-row-heading-actions">
+                      <span className={`dish-row-status ${rowErrors.has(row.id) ? 'error' : row.recipeLinked ? 'linked' : ''}`}>
+                        {rowErrors.has(row.id) ? 'Needs attention' : row.recipeLinked ? 'Recipe linked' : 'No recipe'}
+                      </span>
+                      {row.name.trim() ? (
+                        <button
+                          className="dish-recipe-open"
+                          type="button"
+                          onClick={() => openRecipeForDish(row)}
+                        >
+                          {row.recipeLinked ? 'Open recipe' : 'Build recipe'}
+                          <span aria-hidden="true">→</span>
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="field dish-name-field">
                     <label>Dish Name</label>
@@ -1044,7 +1280,14 @@ function handleCsvImport(
             </button>
           </div>
         ) : null}
-      </section>
+        </section>
+      </div>
+
+      <div id="recipe-studio-panel" role="tabpanel" hidden={workspaceView !== 'recipes'}>
+        {recipeStudioOpened ? (
+          <RecipeStudioPanel requestedDish={requestedRecipeDish} />
+        ) : null}
+      </div>
     </AppShell>
   );
 }
