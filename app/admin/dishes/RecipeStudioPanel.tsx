@@ -41,8 +41,12 @@ const INITIAL_STATUS: StudioStatus = {
 
 export default function RecipeStudioPanel({
   requestedDish,
+  catalogRevision = 0,
+  onCatalogChanged,
 }: {
   requestedDish?: RecipeStudioDishRequest | null;
+  catalogRevision?: number;
+  onCatalogChanged?: () => void;
 }) {
   const workspaceRef =
     useRef<HTMLElement>(null);
@@ -107,13 +111,14 @@ export default function RecipeStudioPanel({
       ) {
         return;
       }
-      if (
-        !event.data ||
-        event.data.type !==
-          'recipe-studio-status'
-      ) {
+      if (!event.data) {
         return;
       }
+      if (event.data.type === 'recipe-studio-catalog-changed') {
+        onCatalogChanged?.();
+        return;
+      }
+      if (event.data.type !== 'recipe-studio-status') return;
 
       const payload =
         event.data as Partial<StudioStatus> & {
@@ -171,7 +176,7 @@ export default function RecipeStudioPanel({
         'message',
         receiveStudioStatus,
       );
-  }, []);
+  }, [onCatalogChanged]);
 
   useEffect(() => {
     if (!requestedDish || loading) return;
@@ -183,6 +188,14 @@ export default function RecipeStudioPanel({
       window.location.origin,
     );
   }, [loading, requestedDish]);
+
+  useEffect(() => {
+    if (!catalogRevision || loading) return;
+    frameRef.current?.contentWindow?.postMessage(
+      { type: 'recipe-studio-refresh-catalog' },
+      window.location.origin,
+    );
+  }, [catalogRevision, loading]);
 
   async function toggleFullscreen() {
     setWorkspaceMessage('');

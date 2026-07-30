@@ -38,6 +38,7 @@ import { getSession, uid } from '../../../lib/store';
 
 type EditableDish = DishCostItem & {
   id: string;
+  originalName: string;
   aliasesText: string;
   hindiAliasesText: string;
   gujaratiAliasesText: string;
@@ -92,6 +93,7 @@ function toEditableDish(
   return {
     ...item,
     id: uid('dish_master'),
+    originalName: item.name,
     servingQuantity: useRecipeServing ? recipeServing?.quantity : item.servingQuantity,
     servingUnit: useRecipeServing ? recipeServing?.unit : item.servingUnit,
     recipeServing,
@@ -203,6 +205,7 @@ export default function AdminDishesPage() {
     requestedRecipeDish,
     setRequestedRecipeDish,
   ] = useState<RecipeStudioDishRequest | null>(null);
+  const [catalogRevision, setCatalogRevision] = useState(0);
   const [ready, setReady] = useState(false);
   const [rows, setRows] = useState<EditableDish[]>([]);
   const [categories, setCategories] = useState<string[]>([...CATEGORIES]);
@@ -296,6 +299,56 @@ export default function AdminDishesPage() {
       subcategory: String(dish.subcategory || '').trim(),
     });
     openWorkspace('recipes');
+  }
+
+  async function refreshDishCatalogFromRecipes() {
+    if (dirty) {
+      setMessageType('error');
+      setMessage('Recipe changes were saved. Save your pending Dish Catalog changes before refreshing recipe rates.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/dishes', { cache: 'no-store' });
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      const dishItems = parseDishItems(data.items);
+      const recipeCatalog = createRecipeServingCatalog();
+      const recipeNames = createRecipeNameCatalog();
+      const refreshedRows = dishItems.map((item) =>
+        toEditableDish(item, recipeCatalog, recipeNames),
+      );
+      const refreshedCategories = Array.isArray(data.categories)
+        ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
+        : [...CATEGORIES];
+      const refreshedSubcategories =
+        data.subcategories &&
+        typeof data.subcategories === 'object' &&
+        !Array.isArray(data.subcategories)
+          ? Object.fromEntries(
+            Object.entries(data.subcategories as Record<string, unknown>).map(([category, values]) => [
+              category,
+              Array.isArray(values)
+                ? values.map((value) => String(value).trim()).filter(Boolean)
+                : [],
+            ]),
+          )
+          : {};
+
+      setRows(refreshedRows);
+      setCategories(Array.from(new Set([
+        ...refreshedCategories,
+        ...refreshedRows.map((item) => item.category),
+        'Other',
+      ])));
+      setSubcategories(refreshedSubcategories);
+      saveDishCostItems(refreshedRows.map(toDishCostItem));
+      setMessageType('success');
+      setMessage('Recipe changes synced to the Dish Catalog.');
+    } catch {
+      setMessageType('error');
+      setMessage('Recipe saved, but the Dish Catalog could not refresh. Reload the page to try again.');
+    }
   }
 
   useEffect(() => {
@@ -413,6 +466,7 @@ export default function AdminDishesPage() {
     setRows((current) => [
       {
         id: newRowId,
+        originalName: '',
         name: '',
         category: 'Sabji',
         subcategory: '',
@@ -664,20 +718,36 @@ export default function AdminDishesPage() {
     const cleaned = rows
       .map(toDishCostItem)
       .filter((row) => row.name && row.category.trim());
+    const originalNames = new Map(
+      rows.map((row) => [normalizeToken(row.name), row.originalName]),
+    );
     try {
       const response = await fetch('/api/admin/dishes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cleaned, categories: availableCategories, subcategories }),
+        body: JSON.stringify({
+          items: cleaned.map((item) => ({
+            ...item,
+            originalName: originalNames.get(normalizeToken(item.name)) || item.name,
+          })),
+          categories: availableCategories,
+          subcategories,
+        }),
       });
       if (!response.ok) throw new Error();
+      const saveResult = await response.json();
       saveDishCostItems(cleaned);
       const recipeCatalog = createRecipeServingCatalog();
       const recipeNames = createRecipeNameCatalog();
-      setRows(cleaned.map((item) => toEditableDish(item, recipeCatalog, recipeNames)));
+      const recipesSynced = Number(saveResult.syncedRecipes) > 0;
+      setRows(cleaned.map((item) => {
+        const editable = toEditableDish(item, recipeCatalog, recipeNames);
+        return recipesSynced ? { ...editable, recipeLinked: true } : editable;
+      }));
       setDirty(false);
+      setCatalogRevision((current) => current + 1);
       setMessageType('success');
-      setMessage('Dish catalog saved. Client menus now use these dishes and rates.');
+      setMessage('Dishes and linked recipes saved together. Client menus now use the latest names, categories and rates.');
     } catch {
       setMessageType('error');
       setMessage('Could not save dish master. Please try again.');
@@ -1285,7 +1355,11 @@ function handleCsvImport(
 
       <div id="recipe-studio-panel" role="tabpanel" hidden={workspaceView !== 'recipes'}>
         {recipeStudioOpened ? (
-          <RecipeStudioPanel requestedDish={requestedRecipeDish} />
+          <RecipeStudioPanel
+            requestedDish={requestedRecipeDish}
+            catalogRevision={catalogRevision}
+            onCatalogChanged={() => void refreshDishCatalogFromRecipes()}
+          />
         ) : null}
       </div>
     </AppShell>

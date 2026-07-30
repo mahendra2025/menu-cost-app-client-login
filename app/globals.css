@@ -5098,3 +5098,120 @@ td:last-child {
       #07090d;
   }
 }
+
+/* Full-screen admin workspaces */
+.admin-workspace-shell {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+}
+
+.admin-workspace-shell .topbar {
+  top: 0;
+  max-width: none;
+  min-height: 72px;
+  margin: 0;
+  padding: 10px clamp(16px, 2vw, 32px);
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+
+.admin-workspace-shell .app-layout {
+  grid-template-columns: 238px minmax(0, 1fr);
+  gap: 0;
+  max-width: none;
+  min-height: calc(100vh - 72px);
+  min-height: calc(100dvh - 72px);
+  margin: 0;
+  align-items: stretch;
+}
+
+.admin-workspace-shell .app-sidebar {
+  top: 72px;
+  min-height: calc(100vh - 72px);
+  min-height: calc(100dvh - 72px);
+  padding: 22px 16px;
+  border-right: 1px solid #252b35;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.admin-workspace-shell .app-workspace {
+  width: 100%;
+  max-width: none;
+  padding: 24px clamp(20px, 2.5vw, 42px) 48px;
+}
+
+.admin-workspace-shell .page-title,
+.admin-workspace-shell .content-grid,
+.admin-workspace-shell .alert-card {
+  max-width: none;
+}
+
+.admin-workspace-shell .page-title {
+  margin-top: 0;
+}
+
+.admin-page {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0 0 48px;
+}
+
+.admin-page .admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: 100%;
+  max-width: none;
+  padding-inline: clamp(18px, 3vw, 48px);
+  background: rgba(7, 9, 13, 0.96);
+  backdrop-filter: blur(20px);
+}
+
+.admin-page .admin-container {
+  width: 100%;
+  max-width: none;
+  padding: 28px clamp(20px, 3vw, 52px) 0;
+}
+
+@media (max-width: 1080px) {
+  .admin-workspace-shell .app-layout {
+    grid-template-columns: 196px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .admin-workspace-shell {
+    padding: 0;
+  }
+
+  .admin-workspace-shell .topbar {
+    top: 0;
+    margin: 0;
+    padding-inline: 14px;
+  }
+
+  .admin-workspace-shell .app-layout {
+    display: block;
+    min-height: calc(100dvh - 72px);
+  }
+
+  .admin-workspace-shell .app-workspace {
+    padding: 18px 14px calc(104px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .admin-page {
+    padding: 0 0 30px;
+  }
+
+  .admin-page .admin-topbar {
+    padding-inline: 14px;
+  }
+
+  .admin-page .admin-container {
+    padding: 20px 14px 0;
+  }
+}

@@ -1254,10 +1254,11 @@ async function importDishCatalog(){
     showToast(`${items.length} Dish Master rates imported`);
   }catch{}
 }
-async function syncRecipeCostsToDishCatalog(dishList){
+async function syncRecipeCostsToDishCatalog(dishList,originalNames=new Map()){
   try{
     const calculated=dishList.map(dish=>({
       name:dish.name,
+      originalName:originalNames.get(dish.id)||dish.name,
       aliases:normalizeAliases(dish.aliases,dish.name),
       category:dish.category,
       subcategory:getDishSubcategory(dish),
@@ -1272,13 +1273,18 @@ async function syncRecipeCostsToDishCatalog(dishList){
     return calculated.length;
   }catch{return 0}
 }
-async function syncRecipeCostToDishCatalog(dish){
-  const updated=await syncRecipeCostsToDishCatalog([dish]);
+async function syncRecipeCostToDishCatalog(dish,originalName=dish.name){
+  const updated=await syncRecipeCostsToDishCatalog([dish],new Map([[dish.id,originalName]]));
   if(updated){
     setStatus("Recipe saved and Dish Master shows the same per-person cost.","ok");showToast("Dish cost synced to Dish Master");
   }else{
     setStatus("Recipe saved, but Dish Master cost sync failed.","error");
   }
+  return updated;
+}
+function notifyParentCatalogChanged(){
+  if(window.parent===window||document.documentElement.dataset.embedded!=="true")return;
+  window.parent.postMessage({type:"recipe-studio-catalog-changed"},window.location.origin);
 }
 function notifyParent(){
   if(window.parent===window||document.documentElement.dataset.embedded!=="true")return;
@@ -1947,6 +1953,7 @@ async function importRecipesFromFile(file){
     renderRateTable();
     renderSelectedRate();
     const directSyncedCount=await syncRecipeCostsToDishCatalog(importedRecipes);
+    if(directSyncedCount)notifyParentCatalogChanged();
     const syncedCount=directSyncedCount||(recipeCatalogSaved?importedRecipes.length:0);
     const createdCount=importedRecipes.length-replacedCount;
     const importSummary=`Imported ${importedRecipes.length} recipe${importedRecipes.length===1?"":"s"}: ${createdCount} new, ${replacedCount} replaced${skippedCount?`, ${skippedCount} skipped`:""}.`;
@@ -1971,6 +1978,7 @@ async function applyJson(){
     const data=parseJson(),errors=validateDishJson(data);
     if(errors.length){setValidation("invalid",`${errors.length} issue${errors.length>1?"s":""}`);setStatus(errors[0],"error");return}
     const dishIndex=dishes.findIndex(d=>d.id===selectedDishId);if(dishIndex<0)return;
+    const previousDishName=String(dishes[dishIndex]?.name||"").trim();
     const newIngredientNames=Array.from(new Set(data.ingredients
       .filter(item=>!rates.some(rate=>rate.id===normalizeKey(item.name,item.rateUnit)))
       .map(item=>String(item.name||"").trim())
@@ -1987,7 +1995,8 @@ async function applyJson(){
     loadSelectedDish();renderRateTable();renderSelectedRate();
     showToast(newIngredientNames.length?`${newIngredientNames.length} new ingredient${newIngredientNames.length===1?"":"s"} added`:"Recipe saved");
     const databaseSaved=await persistRecipeCatalog();
-    await syncRecipeCostToDishCatalog(dishes[dishIndex]);
+    const dishSynced=await syncRecipeCostToDishCatalog(dishes[dishIndex],previousDishName);
+    if(dishSynced)notifyParentCatalogChanged();
     if(!databaseSaved)setStatus("Recipe kept on this device, but PostgreSQL save failed.","error");
     else if(newIngredientNames.length)setStatus(`Recipe saved. ${newIngredientNames.length} new ingredient${newIngredientNames.length===1?" was":"s were"} added to Market Rates and PostgreSQL.`,"ok");
   }catch(error){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${error.message}`,"error")}
@@ -2079,6 +2088,17 @@ $("dishList").addEventListener("click",e=>{
 });
 window.addEventListener("message",event=>{
   if(event.origin!==window.location.origin||event.source!==window.parent)return;
+  if(event.data?.type==="recipe-studio-refresh-catalog"){
+    const refreshCatalog=async()=>{
+      if(!catalogReady){setTimeout(refreshCatalog,100);return}
+      await hydrateRecipeCatalog();
+      await importDishCatalog();
+      setStatus("Dishes and recipes refreshed together.","ok");
+      notifyParentCatalogChanged();
+    };
+    void refreshCatalog();
+    return;
+  }
   if(event.data?.type!=="recipe-studio-open-dish")return;
   const requested=event.data?.dish||{};
   const openRequestedDish=()=>{
@@ -2199,7 +2219,7 @@ $("saveSelectedRate").addEventListener("click",async()=>{
   dishes.forEach(d=>d.ingredients?.forEach(i=>{if(i.rateKey===oldId){i.rateKey=newId;i.rate=newRate;i.rateUnit=newUnit}}));
   selectedRateId=newId;saveState();renderRateTable();renderSelectedRate();loadSelectedDish();
   const updated=await syncRecipeCostsToDishCatalog(affected);
-  if(updated){setStatus(`${updated} Dish Master cost${updated===1?"":"s"} updated from this market rate.`,"ok");showToast(`${updated} dish cost${updated===1?"":"s"} synced`)}
+  if(updated){notifyParentCatalogChanged();setStatus(`${updated} Dish Master cost${updated===1?"":"s"} updated from this market rate.`,"ok");showToast(`${updated} dish cost${updated===1?"":"s"} synced`)}
   else{setStatus("Market rate saved locally, but Dish Master sync failed.","error");showToast("Market rate saved")}
 });
 $("newRate").addEventListener("click",()=>{

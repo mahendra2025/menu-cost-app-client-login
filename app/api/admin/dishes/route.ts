@@ -32,6 +32,7 @@ function normalizeItems(items: unknown) {
       if (!item || typeof item !== 'object') return null;
       const row = item as Record<string, unknown>;
       const name = String(row.name || '').trim();
+      const originalName = String(row.originalName || name).trim();
       const category = String(row.category || '').trim();
       const subcategory = String(row.subcategory || '').trim();
       const rate = Math.max(Number(row.rate) || 0, 0);
@@ -51,6 +52,7 @@ function normalizeItems(items: unknown) {
         servingQuantity,
         servingUnit,
         aliases,
+        originalName,
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
@@ -64,6 +66,7 @@ function normalizeRateUpdates(items: unknown) {
       if (!item || typeof item !== 'object') return null;
       const row = item as Record<string, unknown>;
       const name = String(row.name || '').trim();
+      const originalName = String(row.originalName || name).trim();
       const category = String(row.category || '').trim();
       const subcategory = String(row.subcategory || '').trim();
       const rate = Math.max(Number(row.rate) || 0, 0);
@@ -76,10 +79,11 @@ function normalizeRateUpdates(items: unknown) {
         ).values())
         : undefined;
       if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
-      return { name, category, subcategory, rate, aliases };
+      return { name, originalName, category, subcategory, rate, aliases };
     })
     .filter((item): item is {
       name: string;
+      originalName: string;
       category: string;
       subcategory: string;
       rate: number;
@@ -187,6 +191,85 @@ function alignRecipeCategories(
   });
 }
 
+function syncRecipeCatalogWithDishes(
+  value: unknown,
+  deletedDishIdsValue: unknown,
+  items: ReturnType<typeof normalizeItems>,
+  deletedCategories: Set<string>,
+) {
+  const source = Array.isArray(value) ? value : [];
+  const itemByName = new Map<string, (typeof items)[number]>();
+  items.forEach((item) => {
+    itemByName.set(item.name.toLowerCase(), item);
+    if (item.originalName) itemByName.set(item.originalName.toLowerCase(), item);
+  });
+
+  const matchedNames = new Set<string>();
+  const removedRecipeIds: string[] = [];
+  const dishes = source.flatMap<Record<string, unknown>>((dish) => {
+    if (!dish || typeof dish !== 'object' || Array.isArray(dish)) return [];
+    const row = dish as Record<string, unknown>;
+    const currentName = String(row.dishName || row.name || '').trim();
+    const item = itemByName.get(currentName.toLowerCase());
+    const recipeId = String(row.id || '').trim();
+
+    if (!item || deletedCategories.has(String(row.category || '').trim())) {
+      if (recipeId) removedRecipeIds.push(recipeId);
+      return [];
+    }
+
+    matchedNames.add(item.name.toLowerCase());
+    return [{
+      ...row,
+      name: item.name,
+      category: item.category,
+      subcategory: item.subcategory,
+      aliases: item.aliases,
+      catalogRate: item.rate,
+      servingSize: item.servingQuantity,
+      servingUnit: item.servingUnit,
+    }];
+  });
+
+  items.forEach((item, index) => {
+    if (matchedNames.has(item.name.toLowerCase())) return;
+    const stableName = item.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 70);
+    dishes.push({
+      id: `catalog_${stableName || index}_${index}`,
+      name: item.name,
+      category: item.category,
+      subcategory: item.subcategory,
+      aliases: item.aliases,
+      baseGuests: 100,
+      catalogRate: item.rate,
+      servingSize: item.servingQuantity,
+      servingUnit: item.servingUnit,
+      ingredients: [],
+    });
+  });
+
+  const deletedDishIds = Array.from(new Set([
+    ...(Array.isArray(deletedDishIdsValue)
+      ? deletedDishIdsValue.map((id) => String(id).trim()).filter(Boolean)
+      : []),
+    ...removedRecipeIds,
+  ]));
+  const activeIds = new Set(
+    dishes
+      .map((dish) => String((dish as Record<string, unknown>).id || '').trim())
+      .filter(Boolean),
+  );
+
+  return {
+    dishes,
+    deletedDishIds: deletedDishIds.filter((id) => !activeIds.has(id)),
+  };
+}
+
 export async function GET() {
   try {
     const authError = await requireAdmin();
@@ -279,11 +362,11 @@ export async function PUT(request: Request) {
     const categories = normalizeCategories(body.categories, items.map((item) => String(item?.category || '')));
     const subcategories = normalizeSubcategories(body.subcategories, categories, items);
 
-    await prisma.$transaction(async (tx) => {
+    const syncedRecipes = await prisma.$transaction(async (tx) => {
       const [recipeCatalog, previousCategoryCatalog] = await Promise.all([
         tx.recipeCatalog.findUnique({
           where: { id: 'global' },
-          select: { dishes: true },
+          select: { dishes: true, deletedDishIds: true },
         }),
         tx.dishCategoryCatalog.findUnique({
           where: { id: CATEGORY_CATALOG_ID },
@@ -330,15 +413,25 @@ export async function PUT(request: Request) {
       ));
 
       if (recipeCatalog) {
-        const dishes = alignRecipeCategories(recipeCatalog.dishes, items, categories, deletedCategories);
+        const syncedRecipes = syncRecipeCatalogWithDishes(
+          recipeCatalog.dishes,
+          recipeCatalog.deletedDishIds,
+          items,
+          deletedCategories,
+        );
         await tx.recipeCatalog.update({
           where: { id: 'global' },
-          data: { dishes: dishes as Prisma.InputJsonValue },
+          data: {
+            dishes: syncedRecipes.dishes as Prisma.InputJsonValue,
+            deletedDishIds: syncedRecipes.deletedDishIds,
+          },
         });
+        return syncedRecipes.dishes.length;
       }
+      return 0;
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, syncedRecipes });
   } catch {
     return NextResponse.json({ error: 'Failed to save dishes' }, { status: 500 });
   }
@@ -372,7 +465,12 @@ export async function PATCH(request: Request) {
 
       for (const item of effectiveUpdates) {
         const existing = await tx.dishMasterItem.findFirst({
-          where: { name: { equals: item.name, mode: 'insensitive' } },
+          where: {
+            OR: [
+              { name: { equals: item.originalName, mode: 'insensitive' } },
+              { name: { equals: item.name, mode: 'insensitive' } },
+            ],
+          },
           select: { id: true },
         });
 
