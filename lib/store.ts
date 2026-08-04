@@ -1437,18 +1437,34 @@ export async function findPendingDishCandidates(
       index,
     }))
     .filter(
-      ({ line, index }) =>
-        Boolean(
-          line.categoryHint ||
-            line.explicitItem ||
-            line.serviceId ||
+      ({ line, index }) => {
+        const previousIsDish =
+          Boolean(
             catalogMatches[
               index - 1
-            ]?.length ||
+            ]?.length,
+          );
+        const nextIsDish =
+          Boolean(
             catalogMatches[
               index + 1
             ]?.length,
-        ),
+          );
+
+        /*
+         * A meal/service heading alone is not enough evidence: OCR often
+         * reads client, venue, and footer text inside the same section.
+         * Unknown text is offered as a manual dish only when it is under a
+         * recognized food category, explicitly bulleted, or surrounded by
+         * two catalog-confirmed dishes.
+         */
+        return Boolean(
+          line.categoryHint ||
+            line.explicitItem ||
+            (previousIsDish &&
+              nextIsDish),
+        );
+      },
     )
     .filter(
       ({ index }) =>
@@ -1468,9 +1484,13 @@ export async function findPendingDishCandidates(
           .filter(Boolean);
 
         return (
-          words.length > 0 &&
-          words.length <= 8 &&
+          words.length >=
+            (line.explicitItem ? 1 : 2) &&
+          words.length <= 6 &&
           !/[!?]|\.(?:\s|$)/.test(
+            line.text,
+          ) &&
+          !/[:=@]|\b(?:www|com|road|street|address|mobile|phone)\b/i.test(
             line.text,
           )
         );

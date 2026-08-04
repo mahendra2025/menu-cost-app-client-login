@@ -1137,8 +1137,8 @@ export default function EventPage() {
       | null = null;
 
     try {
-      if (file.size > 10 * 1024 * 1024) {
-        throw new Error('Choose a photo smaller than 10 MB.');
+      if (file.size > 20 * 1024 * 1024) {
+        throw new Error('Choose a photo smaller than 20 MB.');
       }
 
       if (
@@ -1219,44 +1219,65 @@ export default function EventPage() {
             preparedPhoto.enhanced,
             { rotateAuto: true },
           );
-        let bestResult =
-          enhancedResult;
-        const enhancedCharacters =
-          enhancedResult.data.text.match(
-            /[\p{L}\p{N}]/gu,
-          )?.length ?? 0;
+        recognitionPass =
+          'Checking original photo';
+        await worker.setParameters({
+          tessedit_pageseg_mode:
+            PSM.AUTO,
+        });
+        const originalResult =
+          await worker.recognize(
+            preparedPhoto.original,
+            { rotateAuto: true },
+          );
 
-        if (
-          enhancedResult.data.confidence < 68 ||
-          enhancedCharacters < 35
+        setUploadStatus(
+          'Validating detected dishes against the catalog...',
+        );
+
+        async function catalogAwareScore(
+          text: string,
+          confidence: number,
         ) {
-          recognitionPass =
-            'Trying alternate photo detection';
-          await worker.setParameters({
-            tessedit_pageseg_mode:
-              PSM.AUTO,
-          });
-          const originalResult =
-            await worker.recognize(
-              preparedPhoto.original,
-              { rotateAuto: true },
-            );
+          const [
+            catalogDishes,
+            possibleNewDishes,
+          ] = await Promise.all([
+            parseMenuText(text),
+            findPendingDishCandidates(
+              text,
+            ),
+          ]);
 
-          if (
+          return (
+            catalogDishes.length * 1000 +
+            possibleNewDishes.length * 100 +
             ocrResultScore(
-              originalResult.data.text,
-              originalResult.data
-                .confidence,
-            ) >
-            ocrResultScore(
-              enhancedResult.data.text,
-              enhancedResult.data
-                .confidence,
+              text,
+              confidence,
             )
-          ) {
-            bestResult = originalResult;
-          }
+          );
         }
+
+        const [
+          enhancedScore,
+          originalScore,
+        ] = await Promise.all([
+          catalogAwareScore(
+            enhancedResult.data.text,
+            enhancedResult.data
+              .confidence,
+          ),
+          catalogAwareScore(
+            originalResult.data.text,
+            originalResult.data
+              .confidence,
+          ),
+        ]);
+        const bestResult =
+          originalScore > enhancedScore
+            ? originalResult
+            : enhancedResult;
 
         saveExtractedMenu(
           file.name,
