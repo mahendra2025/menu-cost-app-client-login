@@ -213,6 +213,7 @@ export default function AdminDishesPage() {
   const [categoryQuery, setCategoryQuery] = useState('');
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [subcategoryFilter, setSubcategoryFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ERROR' | 'RECIPE' | 'NO_RECIPE'>('ALL');
   const [sort, setSort] = useState<DishSort>('NAME_ASC');
   const [message, setMessage] = useState('');
@@ -220,6 +221,7 @@ export default function AdminDishesPage() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const rowErrors = useMemo(() => validateRows(rows), [rows]);
   const availableCategories = useMemo(
     () => Array.from(new Set([
@@ -240,6 +242,19 @@ export default function AdminDishesPage() {
     () => Object.values(subcategories).reduce((total, items) => total + items.length, 0),
     [subcategories],
   );
+  const availableFilterSubcategories = useMemo(() => {
+    const categoryNames = categoryFilter === 'ALL'
+      ? availableCategories
+      : [categoryFilter];
+
+    return Array.from(new Set([
+      ...categoryNames.flatMap((category) => subcategories[category] ?? []),
+      ...rows
+        .filter((row) => categoryFilter === 'ALL' || row.category === categoryFilter)
+        .map((row) => String(row.subcategory || '').trim())
+        .filter(Boolean),
+    ])).sort((left, right) => left.localeCompare(right));
+  }, [availableCategories, categoryFilter, rows, subcategories]);
 
   useEffect(() => {
     const syncViewFromHash = () => {
@@ -412,6 +427,7 @@ export default function AdminDishesPage() {
     const search = query.trim().toLowerCase();
     const matches = rows.filter((row) => {
       const matchesCategory = categoryFilter === 'ALL' || row.category === categoryFilter;
+      const matchesSubcategory = subcategoryFilter === 'ALL' || row.subcategory === subcategoryFilter;
       const matchesStatus = statusFilter === 'ALL' ||
         (statusFilter === 'ERROR' && rowErrors.has(row.id)) ||
         (statusFilter === 'RECIPE' && row.recipeLinked) ||
@@ -420,7 +436,7 @@ export default function AdminDishesPage() {
         row.category.toLowerCase().includes(search) ||
         String(row.subcategory || '').toLowerCase().includes(search) ||
         allRowAliases(row).some((alias) => alias.toLowerCase().includes(search));
-      return matchesCategory && matchesStatus && matchesSearch;
+      return matchesCategory && matchesSubcategory && matchesStatus && matchesSearch;
     });
 
     return matches.sort((left, right) => {
@@ -429,7 +445,7 @@ export default function AdminDishesPage() {
       const nameOrder = left.name.localeCompare(right.name, undefined, { sensitivity: 'base' });
       return sort === 'NAME_DESC' ? -nameOrder : nameOrder;
     });
-  }, [rows, query, categoryFilter, statusFilter, rowErrors, sort]);
+  }, [rows, query, categoryFilter, subcategoryFilter, statusFilter, rowErrors, sort]);
   const recipeLinkedCount = useMemo(
     () => rows.filter((row) => row.recipeLinked).length,
     [rows],
@@ -444,7 +460,16 @@ export default function AdminDishesPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, categoryFilter, statusFilter]);
+  }, [query, categoryFilter, subcategoryFilter, statusFilter]);
+
+  useEffect(() => {
+    if (
+      subcategoryFilter !== 'ALL' &&
+      !availableFilterSubcategories.includes(subcategoryFilter)
+    ) {
+      setSubcategoryFilter('ALL');
+    }
+  }, [availableFilterSubcategories, subcategoryFilter]);
 
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
@@ -470,8 +495,10 @@ export default function AdminDishesPage() {
     setMessage('');
     setQuery('');
     setCategoryFilter('ALL');
+    setSubcategoryFilter('ALL');
     setStatusFilter('ALL');
     setPage(1);
+    setExpandedRowId(newRowId);
     setDirty(true);
     setRows((current) => [
       {
@@ -685,6 +712,7 @@ export default function AdminDishesPage() {
 
     setMessage('');
     setDirty(true);
+    setExpandedRowId((current) => current === id ? null : current);
     setRows((current) => current.filter((row) => row.id !== id));
   }
 
@@ -716,8 +744,10 @@ export default function AdminDishesPage() {
     if (rowErrors.size > 0) {
       setQuery('');
       setCategoryFilter('ALL');
+      setSubcategoryFilter('ALL');
       setStatusFilter('ERROR');
       setPage(1);
+      setExpandedRowId(filteredRows.find((row) => rowErrors.has(row.id))?.id ?? null);
       setMessage(`${rowErrors.size} dish row${rowErrors.size === 1 ? '' : 's'} need attention. The list now shows only those rows.`);
       setMessageType('error');
       return;
@@ -855,6 +885,7 @@ function handleCsvImport(
 
         setQuery('');
         setCategoryFilter('ALL');
+        setSubcategoryFilter('ALL');
         setStatusFilter('ALL');
         setPage(1);
         setDirty(true);
@@ -1013,45 +1044,6 @@ function handleCsvImport(
         </button>
       </div>
 
-      <section className="catalog-command-center no-print" aria-label="Workspace shortcuts">
-        <div>
-          <span className="section-kicker">Command center</span>
-          <strong>
-            {workspaceView === 'catalog'
-              ? 'Manage dishes and send them straight to costing'
-              : 'Build recipes and publish their cost back to dishes'}
-          </strong>
-        </div>
-        <div className="catalog-command-actions">
-          <button className="primary-button" type="button" onClick={addRow}>
-            <span aria-hidden="true">＋</span> New dish
-          </button>
-          <button
-            className={`ghost-button ${rowErrors.size ? 'has-alert' : ''}`}
-            type="button"
-            onClick={() => {
-              openWorkspace('catalog');
-              setQuery('');
-              setCategoryFilter('ALL');
-              setStatusFilter('ERROR');
-            }}
-            disabled={!rowErrors.size}
-          >
-            Review issues <span>{rowErrors.size}</span>
-          </button>
-          <button className="ghost-button" type="button" onClick={() => openWorkspace('recipes')}>
-            Open Recipe Studio
-          </button>
-          <a className="ghost-button" href="/admin/ingredients">Ingredient rates</a>
-        </div>
-        <div className="catalog-shortcut-hints" aria-label="Keyboard shortcuts">
-          <span><kbd>Alt</kbd><kbd>1</kbd> Catalog</span>
-          <span><kbd>Alt</kbd><kbd>2</kbd> Recipes</span>
-          <span><kbd>⌘/Ctrl</kbd><kbd>S</kbd> Save</span>
-          <span><kbd>/</kbd> Search</span>
-        </div>
-      </section>
-
       <div id="dish-catalog-panel" role="tabpanel" hidden={workspaceView !== 'catalog'}>
         <section className="content-grid">
         <div className={`dish-master-overview ${rowErrors.size ? 'needs-attention' : ''}`}>
@@ -1160,7 +1152,7 @@ function handleCsvImport(
 
         <div className="glass-card dish-master-filter-card">
           <div className="dish-list-heading">
-            <div><span className="section-kicker">Find &amp; review</span><h2>Find a dish</h2><p className="muted">Search names and aliases, or narrow the catalog by status.</p></div>
+            <div><span className="section-kicker">Find &amp; review</span><h2>Find a dish</h2><p className="muted">Search names and aliases, or narrow the catalog by category, subcategory or status.</p></div>
             <span className="badge">{filteredRows.length} of {rows.length}</span>
           </div>
           <div className="dish-filter-grid">
@@ -1174,9 +1166,27 @@ function handleCsvImport(
             </div>
             <div className="field">
               <label htmlFor="dish-category-filter">Category</label>
-              <select id="dish-category-filter" className="select select-large" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+              <select id="dish-category-filter" className="select select-large" value={categoryFilter} onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setSubcategoryFilter('ALL');
+              }}>
                 <option value="ALL">All categories</option>
                 {availableCategories.map((category) => <option value={category} key={category}>{category}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="dish-subcategory-filter">Subcategory</label>
+              <select
+                id="dish-subcategory-filter"
+                className="select select-large"
+                value={subcategoryFilter}
+                disabled={!availableFilterSubcategories.length}
+                onChange={(e) => setSubcategoryFilter(e.target.value)}
+              >
+                <option value="ALL">All subcategories</option>
+                {availableFilterSubcategories.map((subcategory) => (
+                  <option value={subcategory} key={subcategory}>{subcategory}</option>
+                ))}
               </select>
             </div>
             <div className="field">
@@ -1191,10 +1201,11 @@ function handleCsvImport(
             <button
               className="ghost-button dish-filter-clear"
               type="button"
-              disabled={!query && categoryFilter === 'ALL' && statusFilter === 'ALL'}
+              disabled={!query && categoryFilter === 'ALL' && subcategoryFilter === 'ALL' && statusFilter === 'ALL'}
               onClick={() => {
                 setQuery('');
                 setCategoryFilter('ALL');
+                setSubcategoryFilter('ALL');
                 setStatusFilter('ALL');
               }}
             >
@@ -1263,8 +1274,19 @@ function handleCsvImport(
                           <span aria-hidden="true">→</span>
                         </button>
                       ) : null}
+                      <button
+                        className="dish-row-edit"
+                        type="button"
+                        aria-expanded={expandedRowId === row.id}
+                        aria-controls={`dish-editor-${row.id}`}
+                        onClick={() => setExpandedRowId((current) => current === row.id ? null : row.id)}
+                      >
+                        {expandedRowId === row.id ? 'Close' : 'Edit details'}
+                      </button>
                     </div>
                   </div>
+                  {expandedRowId === row.id ? (
+                  <div className="dish-row-editor" id={`dish-editor-${row.id}`}>
                   <div className="field dish-name-field">
                     <label>Dish Name</label>
                     <input id={`dish-name-${row.id}`} className="input input-large" value={row.name} onChange={(e) => updateRow(row.id, { name: e.target.value })} placeholder="Paneer Butter Masala" />
@@ -1339,6 +1361,8 @@ function handleCsvImport(
                     </div>
                   </details>
                   <button className="admin-dish-delete" type="button" onClick={() => removeRow(row.id)} aria-label={`Delete ${row.name || 'new dish'}`}>Delete dish</button>
+                  </div>
+                  ) : null}
                   </div>
                 );
               })}
