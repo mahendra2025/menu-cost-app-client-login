@@ -1252,6 +1252,10 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .disposable-cost-labels { align-items: center; padding: 0 11px 3px; border: 0; border-radius: 0; color: var(--muted); background: transparent; font-size: 9px; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
 .disposable-cost-row .field { gap: 0; }
 .disposable-cost-row .input { min-height: 40px; padding: 8px 10px; border-radius: 10px; }
+.disposable-item-name { display: grid; align-content: center; gap: 3px; min-height: 40px; padding: 7px 10px; }
+.disposable-item-name span { display: none; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.disposable-item-name strong { color: var(--text); font-size: 13px; }
+.disposable-included-label { display: flex; align-items: center; justify-content: center; min-height: 40px; padding: 7px 10px; border-radius: 10px; color: #187b35; background: rgba(52,199,89,.08); font-size: 9px; font-weight: 850; text-transform: uppercase; }
 .disposable-row-total { display: flex; align-items: center; min-height: 40px; padding: 0 4px; font-size: 13px; white-space: nowrap; }
 .disposable-cost-row .dish-remove-button { min-height: 40px; }
 .extra-cost-add-button {
@@ -1721,6 +1725,8 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .disposable-cost-labels { display: none; }
   .disposable-cost-row { grid-template-columns: 1fr 1fr; align-items: end; padding: 12px; }
   .disposable-cost-row .field:first-child { grid-column: 1 / -1; }
+  .disposable-cost-row .disposable-item-name { grid-column: 1 / -1; }
+  .disposable-item-name span { display: block; }
   .disposable-row-total { min-height: 44px; padding: 10px; border-radius: 10px; background: rgba(0,122,255,.055); }
   .disposable-cost-row .dish-remove-button { min-height: 44px; }
   .mobile-field-label { display: inline-block; }

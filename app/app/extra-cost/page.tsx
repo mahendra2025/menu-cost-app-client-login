@@ -4,12 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
-import { getSession, loadWork, saveWork, uid } from '../../../lib/store';
+import { defaultDisposableItems, getSession, loadWork, saveWork, uid } from '../../../lib/store';
 import type { DisposableCostItem, Session, WorkState } from '../../../lib/types';
 
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
 }
+
+const defaultDisposableIds = new Set(
+  defaultDisposableItems.map((item) => item.id),
+);
 
 export default function ExtraCostPage() {
   const router = useRouter();
@@ -194,10 +198,17 @@ export default function ExtraCostPage() {
 
               return (
                 <div className="disposable-cost-row" key={item.id}>
-                  <div className="field">
-                    <label className="mobile-field-label" htmlFor={`item-name-${item.id}`}>Item</label>
-                    <input id={`item-name-${item.id}`} className="input" value={item.name} onChange={(event) => updateDisposableItem(item.id, { name: event.target.value })} placeholder="Item name" />
-                  </div>
+                  {defaultDisposableIds.has(item.id) ? (
+                    <div className="disposable-item-name">
+                      <span>Item</span>
+                      <strong>{item.name}</strong>
+                    </div>
+                  ) : (
+                    <div className="field">
+                      <label className="mobile-field-label" htmlFor={`item-name-${item.id}`}>Item</label>
+                      <input id={`item-name-${item.id}`} className="input" value={item.name} onChange={(event) => updateDisposableItem(item.id, { name: event.target.value })} placeholder="Item name" />
+                    </div>
+                  )}
                   <div className="field">
                     <label className="mobile-field-label" htmlFor={`item-qty-${item.id}`}>Quantity</label>
                     <input id={`item-qty-${item.id}`} className="input" type="number" min="0" step="1" inputMode="numeric" value={item.quantity || ''} onChange={(event) => updateDisposableItem(item.id, { quantity: Math.max(0, Number(event.target.value)) })} placeholder="0" />
@@ -207,7 +218,11 @@ export default function ExtraCostPage() {
                     <input id={`item-cost-${item.id}`} className="input" type="number" min="0" step="0.01" inputMode="decimal" value={item.unitCost || ''} onChange={(event) => updateDisposableItem(item.id, { unitCost: Math.max(0, Number(event.target.value)) })} placeholder="₹0" />
                   </div>
                   <strong className="disposable-row-total">{money(itemTotal)}</strong>
-                  <button className="dish-remove-button" type="button" onClick={() => removeDisposableItem(item)}>Remove</button>
+                  {defaultDisposableIds.has(item.id) ? (
+                    <span className="disposable-included-label">Included</span>
+                  ) : (
+                    <button className="dish-remove-button" type="button" onClick={() => removeDisposableItem(item)}>Remove</button>
+                  )}
                 </div>
               );
             })}

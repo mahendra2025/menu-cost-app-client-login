@@ -333,6 +333,53 @@ export function loadWork(
         ]
       : defaultManpower.map((row) => ({ ...row }));
 
+  const savedDisposableItems = Array.isArray(savedWork.disposableItems)
+    ? savedWork.disposableItems.map((item) => ({
+        id: String(item.id || uid('disposable')),
+        name: String(item.name || 'Disposable item'),
+        quantity: Math.max(0, Number(item.quantity) || 0),
+        unitCost: Math.max(0, Number(item.unitCost) || 0),
+      }))
+    : [];
+  const defaultDisposableIds = new Set(
+    defaultDisposableItems.map((item) => item.id),
+  );
+  const defaultDisposableNames = new Set(
+    defaultDisposableItems.map((item) => item.name.toLocaleLowerCase('en-IN')),
+  );
+  const disposableItems = [
+    ...defaultDisposableItems.map((defaultItem) => {
+      const savedItem = savedDisposableItems.find(
+        (item) =>
+          item.id === defaultItem.id ||
+          item.name.toLocaleLowerCase('en-IN') ===
+            defaultItem.name.toLocaleLowerCase('en-IN'),
+      );
+
+      return savedItem
+        ? {
+            ...defaultItem,
+            quantity: savedItem.quantity,
+            unitCost: savedItem.unitCost,
+          }
+        : { ...defaultItem };
+    }),
+    ...savedDisposableItems.filter(
+      (item) =>
+        !defaultDisposableIds.has(item.id) &&
+        !defaultDisposableNames.has(item.name.toLocaleLowerCase('en-IN')),
+    ),
+  ];
+
+  if (!savedDisposableItems.length && Number(savedWork.extras?.disposable) > 0) {
+    disposableItems.push({
+      id: 'disposable_existing',
+      name: 'Existing disposable cost',
+      quantity: 1,
+      unitCost: Math.max(0, Number(savedWork.extras?.disposable) || 0),
+    });
+  }
+
   return {
     ...fallback,
     ...savedWork,
@@ -346,21 +393,7 @@ export function loadWork(
       ...fallback.extras,
       ...savedWork.extras,
     },
-    disposableItems: Array.isArray(savedWork.disposableItems)
-      ? savedWork.disposableItems.map((item) => ({
-          id: String(item.id || uid('disposable')),
-          name: String(item.name || 'Disposable item'),
-          quantity: Math.max(0, Number(item.quantity) || 0),
-          unitCost: Math.max(0, Number(item.unitCost) || 0),
-        }))
-      : Number(savedWork.extras?.disposable) > 0
-        ? [{
-            id: 'disposable_existing',
-            name: 'Existing disposable cost',
-            quantity: 1,
-            unitCost: Math.max(0, Number(savedWork.extras?.disposable) || 0),
-          }]
-        : fallback.disposableItems,
+    disposableItems,
     profile: {
       ...fallback.profile,
       ...savedWork.profile,
