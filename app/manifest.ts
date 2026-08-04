@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/',
     name: 'Menu Cost App',
     short_name: 'Menu Cost',
-    description: 'Menu costing, per-plate pricing, and quotations for caterers.',
+    description: 'Menu costing, per-plate pricing, and final costing for caterers.',
     start_url: '/login',
     scope: '/',
     display: 'standalone',

@@ -1178,7 +1178,7 @@ export default function EventPage() {
             <div>
               <span className="section-kicker">Event brief</span>
               <h2>Event information</h2>
-              <p>These details appear in the final quotation and help set default guest counts.</p>
+              <p>These details support the final costing and help set default guest counts.</p>
             </div>
             <span className="event-autosave">Auto-saved</span>
           </div>

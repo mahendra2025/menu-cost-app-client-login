@@ -12,7 +12,7 @@ const clientNav = [
   { href: '/app/manpower', label: 'Manpower', description: 'Plan the team', mark: '2' },
   { href: '/app/extra-cost', label: 'Extra Cost', description: 'Transport and supplies', mark: '3' },
   { href: '/app/cost', label: 'Cost', description: 'Calculate price', mark: '4' },
-  { href: '/app/pdf', label: 'Quotation', description: 'Print and export', mark: '5' },
+  { href: '/app/final-costing', label: 'Final Costing', description: 'Price and profit', mark: '5' },
   { href: '/app/profile', label: 'Profile', description: 'Business settings', mark: '6' },
 ];
 
@@ -100,10 +100,10 @@ export default function AppShell({
       <div className="app-layout">
         <aside className="app-sidebar no-print">
           <div className="sidebar-heading">
-            <span>{isAdmin ? 'Admin workspace' : 'Quotation workflow'}</span>
+            <span>{isAdmin ? 'Admin workspace' : 'Costing workflow'}</span>
             <b>{isAdmin ? 'Manage your catalog' : `Step ${activeIndex + 1} of ${clientNav.length}`}</b>
           </div>
-          <nav className="sidebar-nav" aria-label={isAdmin ? 'Admin navigation' : 'Quotation workflow'}>
+          <nav className="sidebar-nav" aria-label={isAdmin ? 'Admin navigation' : 'Costing workflow'}>
             {nav.map((item) => (
               <Link
                 key={item.href}
@@ -128,7 +128,7 @@ export default function AppShell({
         <div className="app-workspace">
           {session?.status === 'EXPIRED' && session.role === 'CLIENT' ? (
             <div className="alert-card no-print">
-              <b>Plan expired.</b> Upload, cost and PDF are locked. Renew ₹999/month from admin to continue.
+              <b>Plan expired.</b> Upload, cost and final costing are locked. Renew ₹999/month from admin to continue.
             </div>
           ) : null}
 
@@ -150,7 +150,7 @@ export default function AppShell({
         </div>
       </div>
 
-      <nav className="bottom-nav no-print" aria-label={isAdmin ? 'Admin navigation' : 'Quotation workflow'}>
+      <nav className="bottom-nav no-print" aria-label={isAdmin ? 'Admin navigation' : 'Costing workflow'}>
         {nav.map((item) => (
           <Link
             key={item.href}

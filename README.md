@@ -8,7 +8,7 @@ This is a Next.js app for the Menu Cost workflow with client login backed by Pos
 2. `/app/manpower` - Function-wise staffing plan
 3. `/app/extra-cost` - Transport, gas/fuel and disposable supplies
 4. `/app/cost` - Dish cost + extra cost + profit
-5. `/app/pdf` - Print / Save as PDF
+5. `/app/final-costing` - Final selling price, total cost and profit
 6. `/app/profile` - Business profile, plan status, logout
 7. `/admin/users` - Admin creates client user ID and password
 8. `/admin/dishes` - Admin manages shared dishes and rates
@@ -34,7 +34,7 @@ Client login:
 
 Admin changes client status from `ACTIVE` to `EXPIRED`.
 
-Expired client can only open Profile and Logout. Event upload, manpower, cost and PDF are locked.
+Expired client can only open Profile and Logout. Event upload, manpower, cost and final costing are locked.
 
 ## Run locally
 

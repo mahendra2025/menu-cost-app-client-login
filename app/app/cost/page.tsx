@@ -56,11 +56,6 @@ export default function CostPage() {
   const missingRateCount = work.menu.filter(
     (item) => !(Number(item.costPerPlate) > 0),
   ).length;
-  const quoteReady =
-    work.menu.length > 0 &&
-    result.totalCovers > 0 &&
-    missingRateCount === 0 &&
-    work.sellingPricePerPlate > 0;
   const hasWeddingServices = result.serviceSummaries.some(
     (service) => service.serviceId !== 'default',
   );
@@ -472,44 +467,9 @@ export default function CostPage() {
           </div>
         </div>
 
-        <div className="glass-card">
-          <h2>Final Price</h2>
-          <div className="two-grid">
-            <div className="field"><label>Average Selling Price / Cover</label><input className="input" type="number" min="0" inputMode="decimal" value={work.sellingPricePerPlate || ''} onChange={(e) => persist({ ...work, sellingPricePerPlate: Math.max(0, Number(e.target.value)) })} placeholder="Example: 350" /></div>
-            <div className="field"><label>Total Selling Amount</label><input className="input" readOnly value={money(result.totalSelling)} /></div>
-          </div>
-          <div className="stat-grid" style={{ marginTop: 16 }}>
-            <StatCard label="Total Cost" value={money(result.totalCost)} />
-            <StatCard label="Total Selling" value={money(result.totalSelling)} />
-            <StatCard label="Total Profit" value={money(result.totalProfit)} />
-            <StatCard label="Profit Margin" value={result.totalSelling > 0 ? `${Math.round((result.totalProfit / result.totalSelling) * 100)}%` : '0%'} />
-          </div>
-          {!quoteReady ? (
-            <div className="readiness-card" role="status">
-              <div>
-                <span className="section-kicker">Quotation checklist</span>
-                <h3>Complete the missing details</h3>
-              </div>
-              <div className="readiness-list">
-                <span className={work.menu.length > 0 ? 'is-complete' : ''}>Menu dishes</span>
-                <span className={result.totalCovers > 0 ? 'is-complete' : ''}>Member counts</span>
-                <span className={missingRateCount === 0 && work.menu.length > 0 ? 'is-complete' : ''}>Dish rates</span>
-                <span className={work.sellingPricePerPlate > 0 ? 'is-complete' : ''}>Selling price</span>
-              </div>
-            </div>
-          ) : (
-            <div className="readiness-card is-ready" role="status">
-              <div>
-                <span className="section-kicker">Ready</span>
-                <h3>Your quotation is ready to generate</h3>
-              </div>
-              <span className="badge green">All details complete</span>
-            </div>
-          )}
-          <div className="action-row" style={{ marginTop: 18 }}>
-            <button className="primary-button" disabled={!quoteReady} onClick={() => router.push('/app/pdf')}>Next: Generate PDF</button>
-            <button className="ghost-button" onClick={() => router.push('/app/extra-cost')}>Back to Extra Cost</button>
-          </div>
+        <div className="action-row page-actions">
+          <button className="primary-button" type="button" onClick={() => router.push('/app/final-costing')}>Next: Final Costing</button>
+          <button className="ghost-button" type="button" onClick={() => router.push('/app/extra-cost')}>Back to Extra Cost</button>
         </div>
       </section>
     </AppShell>

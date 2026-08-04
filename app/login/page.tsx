@@ -76,7 +76,7 @@ export default function LoginPage() {
           <div className="app-mark">MC</div>
           <p className="eyebrow">Built for caterers</p>
           <h1>Price every event with clarity.</h1>
-          <p>Turn a full wedding menu into organized functions, staffing plans, costs and a client-ready quotation.</p>
+          <p>Turn a full wedding menu into organized functions, staffing plans, costs and a clear final price.</p>
           <div className="auth-benefits" aria-label="Product benefits">
             <div><span>01</span><b>Detect complete menus</b><small>English, Roman, Hindi and Gujarati</small></div>
             <div><span>02</span><b>Plan function-wise</b><small>Dishes, guests and manpower stay separate</small></div>
