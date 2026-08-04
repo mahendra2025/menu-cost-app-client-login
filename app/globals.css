@@ -1206,6 +1206,70 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .dish-remove-button:hover { border-color: rgba(255,59,48,.38); background: rgba(255,59,48,.13); }
 .dish-remove-button:focus-visible { outline: 0; box-shadow: 0 0 0 3px rgba(255,59,48,.16); }
 .dish-remove-button-mobile { width: 100%; min-height: 42px; margin-top: 12px; font-size: 12px; }
+.cost-extra-heading,
+.extra-cost-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.cost-extra-heading h2,
+.extra-cost-section-heading h2 { margin: 4px 0; }
+.cost-extra-heading p,
+.extra-cost-section-heading p { max-width: 680px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.extra-cost-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid rgba(0,122,255,.22);
+  border-radius: 24px;
+  color: #fff;
+  background: linear-gradient(135deg,#0f172a,#16233b 68%,#12325a);
+  box-shadow: 0 18px 42px rgba(15,23,42,.18);
+}
+.extra-cost-overview h2 { margin: 5px 0; font-size: 24px; letter-spacing: -.035em; }
+.extra-cost-overview p { max-width: 720px; margin: 0; color: #aebbd0; font-size: 12px; line-height: 1.55; }
+.extra-cost-overview-total { display: grid; flex: 0 0 auto; gap: 5px; min-width: 175px; padding: 15px 18px; border: 1px solid rgba(255,255,255,.12); border-radius: 17px; background: rgba(255,255,255,.07); }
+.extra-cost-overview-total span { color: #aebbd0; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.extra-cost-overview-total b { font-size: 24px; }
+.disposable-cost-card { display: grid; gap: 18px; }
+.disposable-total-chip { display: grid; flex: 0 0 auto; gap: 3px; min-width: 145px; padding: 10px 13px; border: 1px solid rgba(52,199,89,.24); border-radius: 14px; color: #187b35; background: rgba(52,199,89,.08); text-align: right; }
+.disposable-total-chip span { font-size: 9px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
+.disposable-total-chip b { font-size: 17px; }
+.disposable-cost-list { display: grid; gap: 8px; }
+.disposable-cost-row {
+  display: grid;
+  grid-template-columns: minmax(170px,1.5fr) minmax(90px,.65fr) minmax(110px,.8fr) minmax(95px,.65fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: rgba(248,250,252,.7);
+}
+.disposable-cost-labels { align-items: center; padding: 0 11px 3px; border: 0; border-radius: 0; color: var(--muted); background: transparent; font-size: 9px; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+.disposable-cost-row .field { gap: 0; }
+.disposable-cost-row .input { min-height: 40px; padding: 8px 10px; border-radius: 10px; }
+.disposable-row-total { display: flex; align-items: center; min-height: 40px; padding: 0 4px; font-size: 13px; white-space: nowrap; }
+.disposable-cost-row .dish-remove-button { min-height: 40px; }
+.extra-cost-add-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border: 1px dashed rgba(0,122,255,.36);
+  border-radius: 14px;
+  color: #075985;
+  background: rgba(0,122,255,.055);
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.extra-cost-add-button span { display: grid; width: 23px; height: 23px; place-items: center; border-radius: 8px; color: #fff; background: var(--blue); font-size: 16px; }
+.extra-cost-add-button:hover { border-color: rgba(0,122,255,.55); background: rgba(0,122,255,.09); }
 .dish-cost-empty { display: grid; place-items: center; gap: 5px; min-height: 190px; margin-top: 12px; padding: 24px; border: 1px dashed var(--border); border-radius: 18px; text-align: center; }
 .dish-cost-empty span { color: var(--muted); font-size: 12px; }
 .dish-cost-empty .ghost-button { margin-top: 8px; }
@@ -1648,6 +1712,17 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   .dish-portion-note { font-size: 11px; }
   .dish-cost-table-wrap { display: none; }
   .dish-cost-cards { display: grid; gap: 10px; margin-top: 12px; }
+  .cost-extra-heading,
+  .extra-cost-section-heading,
+  .extra-cost-overview { align-items: stretch; flex-direction: column; }
+  .extra-cost-overview { padding: 18px; }
+  .extra-cost-overview-total,
+  .disposable-total-chip { width: 100%; text-align: left; }
+  .disposable-cost-labels { display: none; }
+  .disposable-cost-row { grid-template-columns: 1fr 1fr; align-items: end; padding: 12px; }
+  .disposable-cost-row .field:first-child { grid-column: 1 / -1; }
+  .disposable-row-total { min-height: 44px; padding: 10px; border-radius: 10px; background: rgba(0,122,255,.055); }
+  .disposable-cost-row .dish-remove-button { min-height: 44px; }
   .mobile-field-label { display: inline-block; }
   .table-wrap { margin-inline: -6px; }
   table { min-width: 560px; }

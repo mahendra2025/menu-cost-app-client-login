@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
 import { calculate, getSession, loadWork, saveWork } from '../../../lib/store';
-import type { ExtraCost, Session, WorkState } from '../../../lib/types';
+import type { Session, WorkState } from '../../../lib/types';
 
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
@@ -100,12 +100,6 @@ export default function CostPage() {
     if (!session) return;
     setWork(next);
     saveWork(session.tenantId, next);
-  }
-
-  function updateExtra(key: keyof ExtraCost, value: number) {
-    if (!work) return;
-    const current = work;
-    persist({ ...current, extras: { ...current.extras, [key]: value } });
   }
 
   function updateDishCost(id: string, value: number) {
@@ -427,19 +421,18 @@ export default function CostPage() {
         </div>
 
         <div className="glass-card">
-          <h2>Extra Cost</h2>
-          <div className="three-grid">
-            <div className="field">
-              <label>Manpower Cost</label>
-              <input className="input" type="number" readOnly value={work.extras.staff || ''} placeholder="0" />
-              <small className="muted">Managed on the Manpower page.</small>
+          <div className="cost-extra-heading">
+            <div>
+              <h2>Extra Cost Summary</h2>
+              <p className="muted">Transport, gas/fuel and disposable supplies are managed on the Extra Cost page.</p>
             </div>
-            <div className="field"><label>Transport</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.transport || ''} onChange={(e) => updateExtra('transport', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
-            <div className="field"><label>Gas / Fuel</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.gasFuel || ''} onChange={(e) => updateExtra('gasFuel', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
+            <button className="ghost-button" type="button" onClick={() => router.push('/app/extra-cost')}>Edit Extra Costs</button>
           </div>
-          <div className="two-grid" style={{ marginTop: 14 }}>
-            <div className="field"><label>Disposable</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.disposable || ''} onChange={(e) => updateExtra('disposable', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
-            <div className="field"><label>Other Extra</label><input className="input" type="number" min="0" inputMode="decimal" value={work.extras.other || ''} onChange={(e) => updateExtra('other', Math.max(0, Number(e.target.value)))} placeholder="0" /></div>
+          <div className="stat-grid" style={{ marginTop: 16 }}>
+            <StatCard label="Manpower" value={money(work.extras.staff)} />
+            <StatCard label="Transport" value={money(work.extras.transport)} />
+            <StatCard label="Gas / Fuel" value={money(work.extras.gasFuel)} />
+            <StatCard label="Disposables" value={money(work.extras.disposable)} />
           </div>
           {manpowerSummaries.length > 0 ? (
             <div style={{ marginTop: 18 }}>
@@ -515,7 +508,7 @@ export default function CostPage() {
           )}
           <div className="action-row" style={{ marginTop: 18 }}>
             <button className="primary-button" disabled={!quoteReady} onClick={() => router.push('/app/pdf')}>Next: Generate PDF</button>
-            <button className="ghost-button" onClick={() => router.push('/app/manpower')}>Back to Manpower</button>
+            <button className="ghost-button" onClick={() => router.push('/app/extra-cost')}>Back to Extra Cost</button>
           </div>
         </div>
       </section>

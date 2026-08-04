@@ -13,6 +13,7 @@ import type { Category } from './dishCostMaster';
 
 import type {
   ClientUser,
+  DisposableCostItem,
   EventDetails,
   ExtraCost,
   ManpowerRow,
@@ -44,6 +45,30 @@ export const emptyExtras: ExtraCost = {
   disposable: 0,
   other: 0,
 };
+
+export const defaultDisposableItems: DisposableCostItem[] = [
+  'Tissue',
+  'Fuel',
+  'Napkin',
+  'Cap',
+  'Cafe Cap',
+  'Gloves',
+  'Packing Roll',
+  'Table Roll',
+  'Disposable Cup',
+  'Plates',
+  'Spoon',
+  'Silver Roll',
+  'Toothpick',
+  'Food Box',
+  'Sweet Box',
+  'Garbage Bag',
+].map((name, index) => ({
+  id: `disposable_${index + 1}`,
+  name,
+  quantity: 0,
+  unitCost: 0,
+}));
 
 export const defaultManpower: ManpowerRow[] = [
   { id: 'manpower_manager', role: 'Event Manager', quantity: 0, rate: 3500 },
@@ -247,6 +272,8 @@ export function createEmptyWorkState(
       ...emptyExtras,
     },
 
+    disposableItems: defaultDisposableItems.map((item) => ({ ...item })),
+
     sellingPricePerPlate: 0,
 
     profile: {
@@ -319,6 +346,21 @@ export function loadWork(
       ...fallback.extras,
       ...savedWork.extras,
     },
+    disposableItems: Array.isArray(savedWork.disposableItems)
+      ? savedWork.disposableItems.map((item) => ({
+          id: String(item.id || uid('disposable')),
+          name: String(item.name || 'Disposable item'),
+          quantity: Math.max(0, Number(item.quantity) || 0),
+          unitCost: Math.max(0, Number(item.unitCost) || 0),
+        }))
+      : Number(savedWork.extras?.disposable) > 0
+        ? [{
+            id: 'disposable_existing',
+            name: 'Existing disposable cost',
+            quantity: 1,
+            unitCost: Math.max(0, Number(savedWork.extras?.disposable) || 0),
+          }]
+        : fallback.disposableItems,
     profile: {
       ...fallback.profile,
       ...savedWork.profile,

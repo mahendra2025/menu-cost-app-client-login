@@ -59,6 +59,13 @@ export type ExtraCost = {
   other: number;
 };
 
+export type DisposableCostItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  unitCost: number;
+};
+
 export type ManpowerRow = {
   id: string;
   role: string;
@@ -83,6 +90,7 @@ export type WorkState = {
   menu: MenuItem[];
   manpower: ManpowerRow[];
   extras: ExtraCost;
+  disposableItems: DisposableCostItem[];
   sellingPricePerPlate: number;
   profile: BusinessProfile;
   updatedAt: string;

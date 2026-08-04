@@ -10,9 +10,10 @@ import type { Session } from '../../lib/types';
 const clientNav = [
   { href: '/app/event', label: 'Event', description: 'Event and menu', mark: '1' },
   { href: '/app/manpower', label: 'Manpower', description: 'Plan the team', mark: '2' },
-  { href: '/app/cost', label: 'Cost', description: 'Calculate price', mark: '3' },
-  { href: '/app/pdf', label: 'Quotation', description: 'Print and export', mark: '4' },
-  { href: '/app/profile', label: 'Profile', description: 'Business settings', mark: '5' },
+  { href: '/app/extra-cost', label: 'Extra Cost', description: 'Transport and supplies', mark: '3' },
+  { href: '/app/cost', label: 'Cost', description: 'Calculate price', mark: '4' },
+  { href: '/app/pdf', label: 'Quotation', description: 'Print and export', mark: '5' },
+  { href: '/app/profile', label: 'Profile', description: 'Business settings', mark: '6' },
 ];
 
 const adminNav = [

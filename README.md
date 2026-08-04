@@ -6,12 +6,13 @@ This is a Next.js app for the Menu Cost workflow with client login backed by Pos
 
 1. `/app/event` - Event details + upload/paste menu
 2. `/app/manpower` - Function-wise staffing plan
-3. `/app/cost` - Dish cost + extra cost + profit
-4. `/app/pdf` - Print / Save as PDF
-5. `/app/profile` - Business profile, plan status, logout
-6. `/admin/users` - Admin creates client user ID and password
-7. `/admin/dishes` - Admin manages shared dishes and rates
-8. `/admin/recipes` - Admin manages recipes and ingredient costing
+3. `/app/extra-cost` - Transport, gas/fuel and disposable supplies
+4. `/app/cost` - Dish cost + extra cost + profit
+5. `/app/pdf` - Print / Save as PDF
+6. `/app/profile` - Business profile, plan status, logout
+7. `/admin/users` - Admin creates client user ID and password
+8. `/admin/dishes` - Admin manages shared dishes and rates
+9. `/admin/recipes` - Admin manages recipes and ingredient costing
 
 ## Login
 

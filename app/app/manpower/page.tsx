@@ -370,7 +370,7 @@ export default function ManpowerPage() {
   return (
     <AppShell
       title="Manpower"
-      subtitle="Step 3 of 6: plan every staff role function-wise"
+      subtitle="Step 2 of 6: plan every staff role function-wise"
     >
       <section className="content-grid">
         <div className="manpower-overview">
@@ -592,9 +592,9 @@ export default function ManpowerPage() {
           <button
             className="primary-button"
             type="button"
-            onClick={() => router.push('/app/cost')}
+            onClick={() => router.push('/app/extra-cost')}
           >
-            Next: Calculate Cost
+            Next: Extra Cost
           </button>
           <button
             className="ghost-button"
