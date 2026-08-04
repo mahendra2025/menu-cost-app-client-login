@@ -1178,13 +1178,10 @@ export default function EventPage() {
             <div>
               <span className="section-kicker">Event brief</span>
               <h2>Event information</h2>
-              <p>These details support the final costing and help set default guest counts.</p>
             </div>
-            <span className="event-autosave">Auto-saved</span>
           </div>
 
           <div className="form-grid">
-            <div className="event-form-label">Client &amp; occasion</div>
             <div className="three-grid">
               <div className="field">
                 <label htmlFor="clientName">
@@ -1250,7 +1247,6 @@ export default function EventPage() {
               </div>
             </div>
 
-            <div className="event-form-label">Guests &amp; location</div>
             <div className="three-grid">
               <div className="field">
                 <label htmlFor="functionType">
@@ -1300,9 +1296,6 @@ export default function EventPage() {
                   }
                   placeholder="300"
                 />
-                <small className="muted">
-                  Used when the pasted menu does not include members for each meal.
-                </small>
               </div>
 
               <div className="field">
@@ -1395,7 +1388,6 @@ export default function EventPage() {
                   <span>{menuInputMode === 'upload' ? 'Import menu' : 'Paste menu'}</span>
                   <h3>{menuInputMode === 'upload' ? 'Choose your file source' : 'Paste the full menu below'}</h3>
                 </div>
-                <small>Auto-saved</small>
               </div>
 
               {menuInputMode === 'upload' ? (
