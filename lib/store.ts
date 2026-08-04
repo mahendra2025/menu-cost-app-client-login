@@ -75,6 +75,12 @@ export const defaultManpower: ManpowerRow[] = [
   { id: 'manpower_supervisor', role: 'Supervisor', quantity: 0, rate: 2000 },
   { id: 'manpower_captain', role: 'Captain', quantity: 0, rate: 1500 },
   { id: 'manpower_waiter', role: 'Waiter', quantity: 0, rate: 750 },
+  { id: 'manpower_ghati', role: 'Ghati', quantity: 0, rate: 900 },
+  { id: 'manpower_girls', role: 'Girls', quantity: 0, rate: 900 },
+  { id: 'manpower_pyaro', role: 'Pyaro', quantity: 0, rate: 1000 },
+  { id: 'manpower_models', role: 'Models', quantity: 0, rate: 1500 },
+  { id: 'manpower_cc_boy', role: 'CC Boy', quantity: 0, rate: 900 },
+  { id: 'manpower_tie_waiter', role: 'Tie Waiter', quantity: 0, rate: 900 },
   { id: 'manpower_cook', role: 'Cook', quantity: 0, rate: 2500 },
   { id: 'manpower_assistant_cook', role: 'Assistant Cook', quantity: 0, rate: 1400 },
   { id: 'manpower_helper', role: 'Helper / Masi', quantity: 0, rate: 700 },
@@ -332,6 +338,14 @@ export function loadWork(
           },
         ]
       : defaultManpower.map((row) => ({ ...row }));
+
+  if (!manpower.some((row) => row.serviceId)) {
+    defaultManpower.forEach((template) => {
+      if (!manpower.some((row) => row.id === template.id)) {
+        manpower.push({ ...template });
+      }
+    });
+  }
 
   const savedDisposableItems = Array.isArray(savedWork.disposableItems)
     ? savedWork.disposableItems.map((item) => ({

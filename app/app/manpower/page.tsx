@@ -107,13 +107,12 @@ function initializeFunctionManpower(work: WorkState): WorkState {
   );
 
   functions.forEach((service) => {
-    const hasRows = rows.some(
-      (row) => row.serviceId === service.serviceId,
-    );
-
-    if (!hasRows) {
-      rows.push(...createFunctionDefaults(service));
-    }
+    const functionDefaults = createFunctionDefaults(service);
+    functionDefaults.forEach((template) => {
+      if (!rows.some((row) => row.id === template.id)) {
+        rows.push(template);
+      }
+    });
   });
 
   const staff = rows.reduce(
