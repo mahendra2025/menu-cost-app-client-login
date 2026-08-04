@@ -7,22 +7,46 @@ import { syncDishCostItemsFromServer } from '../../lib/dishCostMaster';
 import { getSession, logout, refreshSessionFromClient } from '../../lib/store';
 import type { Session } from '../../lib/types';
 
+type NavIcon = 'event' | 'team' | 'extras' | 'cost' | 'final' | 'profile' | 'clients' | 'dishes' | 'ingredients';
+
 const clientNav = [
-  { href: '/app/event', label: 'Event', description: 'Event and menu', mark: '1' },
-  { href: '/app/manpower', label: 'Manpower', description: 'Plan the team', mark: '2' },
-  { href: '/app/extra-cost', label: 'Extra Cost', description: 'Transport and supplies', mark: '3' },
-  { href: '/app/cost', label: 'Cost', description: 'Calculate price', mark: '4' },
-  { href: '/app/final-costing', label: 'Final Costing', description: 'Price and profit', mark: '5' },
-  { href: '/app/profile', label: 'Profile', description: 'Business settings', mark: '6' },
+  { href: '/app/event', label: 'Event', mobileLabel: 'Event', description: 'Event and menu', icon: 'event' as NavIcon },
+  { href: '/app/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Plan the team', icon: 'team' as NavIcon },
+  { href: '/app/extra-cost', label: 'Extra Cost', mobileLabel: 'Extras', description: 'Transport and supplies', icon: 'extras' as NavIcon },
+  { href: '/app/cost', label: 'Cost', mobileLabel: 'Cost', description: 'Calculate price', icon: 'cost' as NavIcon },
+  { href: '/app/final-costing', label: 'Final Costing', mobileLabel: 'Final', description: 'Price and profit', icon: 'final' as NavIcon },
+  { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Business settings', icon: 'profile' as NavIcon },
 ];
 
 const adminNav = [
-  { href: '/admin/users', label: 'Clients', description: 'Accounts and access', mark: 'C' },
-  { href: '/admin/new-dishes', label: 'New dishes', description: 'Review uploaded dishes', mark: 'N' },
-  { href: '/admin/dishes', label: 'Dishes & recipes', description: 'Catalog, rates and recipes', mark: 'D' },
-  { href: '/admin/ingredients', label: 'Ingredients', description: 'Categories and rates', mark: 'I' },
-  { href: '/app/profile', label: 'Profile', description: 'Workspace settings', mark: 'P' },
+  { href: '/admin/users', label: 'Clients', mobileLabel: 'Clients', description: 'Accounts and access', icon: 'clients' as NavIcon },
+  { href: '/admin/new-dishes', label: 'New dishes', mobileLabel: 'New', description: 'Review uploaded dishes', icon: 'dishes' as NavIcon },
+  { href: '/admin/dishes', label: 'Dishes & recipes', mobileLabel: 'Dishes', description: 'Catalog, rates and recipes', icon: 'dishes' as NavIcon },
+  { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Categories and rates', icon: 'ingredients' as NavIcon },
+  { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Workspace settings', icon: 'profile' as NavIcon },
 ];
+
+function NavIconMark({ icon }: { icon: NavIcon }) {
+  const paths: Record<NavIcon, ReactNode> = {
+    event: <><path d="M4 6.5h16v13H4z"/><path d="M8 3.5v5M16 3.5v5M4 10.5h16"/></>,
+    team: <><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.4-3.4 2.2-5.2 5.5-5.2s5.1 1.8 5.5 5.2M15 5.5a3 3 0 0 1 0 5.8M16 14c2.6.3 4 2 4.3 5"/></>,
+    extras: <><path d="M4 8h16l-1.3 11H5.3zM8 8a4 4 0 0 1 8 0"/><path d="M9 13h6"/></>,
+    cost: <><circle cx="12" cy="12" r="8.5"/><path d="M14.8 8.8c-.7-.6-1.6-.9-2.8-.9-1.5 0-2.6.7-2.6 1.8 0 2.8 5.7 1.1 5.7 4.2 0 1.2-1.1 2.1-3 2.1-1.2 0-2.3-.4-3.1-1.1M12 6.4v11.2"/></>,
+    final: <><path d="M5 3.5h14v17H5z"/><path d="m8.5 12 2.2 2.2 4.8-5M8.5 17h7"/></>,
+    profile: <><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-4.2 2.8-6.3 7-6.3s6.5 2.1 7 6.3"/></>,
+    clients: <><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c.4-3.4 2.2-5.2 5.5-5.2s5.1 1.8 5.5 5.2M15 14c3 .1 4.7 1.8 5 5"/></>,
+    dishes: <><path d="M4 16.5h16M6.5 16.5a5.5 5.5 0 0 1 11 0M12 8V5.5"/><path d="M3 20h18"/></>,
+    ingredients: <><path d="M8 4h8l1 4v12H7V8zM7 8h10"/><path d="M10 12h4"/></>,
+  };
+
+  return (
+    <span className="nav-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {paths[icon]}
+      </svg>
+    </span>
+  );
+}
 
 export default function AppShell({
   children,
@@ -57,6 +81,7 @@ export default function AppShell({
 
   const nav = useMemo(() => (session?.role === 'ADMIN' ? adminNav : clientNav), [session]);
   const activeIndex = Math.max(0, nav.findIndex((item) => item.href === pathname));
+  const activeItem = nav[activeIndex];
   const isAdmin = session?.role === 'ADMIN';
   const progress = isAdmin ? 100 : ((activeIndex + 1) / clientNav.length) * 100;
 
@@ -79,6 +104,7 @@ export default function AppShell({
           </span>
         </Link>
         <div className="topbar-actions">
+          <span className="mobile-page-context" aria-hidden="true">{activeItem?.mobileLabel}</span>
           <span className={`account-status ${session?.status === 'ACTIVE' ? 'active' : ''}`}>
             <i aria-hidden="true" />
             {isAdmin ? 'Admin' : session?.status === 'ACTIVE' ? 'Active' : session?.status}
@@ -92,7 +118,11 @@ export default function AppShell({
               router.replace('/login');
             }}
           >
-            Sign out
+            <svg className="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M14 8l4 4-4 4M18 12H8" />
+              <path d="M11 5H5v14h6" />
+            </svg>
+            <span>Sign out</span>
           </button>
         </div>
       </header>
@@ -111,7 +141,7 @@ export default function AppShell({
                 className={pathname === item.href ? 'active' : ''}
                 aria-current={pathname === item.href ? 'page' : undefined}
               >
-                <span className="nav-mark" aria-hidden="true">{item.mark}</span>
+                <NavIconMark icon={item.icon} />
                 <span className="nav-copy">
                   <b>{item.label}</b>
                   <small>{item.description}</small>
@@ -158,8 +188,8 @@ export default function AppShell({
             className={pathname === item.href ? 'active' : ''}
             aria-current={pathname === item.href ? 'page' : undefined}
           >
-            <span className="nav-mark" aria-hidden="true">{item.mark}</span>
-            <small>{item.label}</small>
+            <NavIconMark icon={item.icon} />
+            <small>{item.mobileLabel}</small>
           </Link>
         ))}
       </nav>

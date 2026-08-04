@@ -3080,6 +3080,330 @@ td:last-child {
   }
 }
 
+/* ========================================================================== */
+/* Mobile-first client experience                                             */
+/* ========================================================================== */
+
+.mobile-page-context {
+  display: none;
+}
+
+.nav-mark svg {
+  width: 18px;
+  height: 18px;
+}
+
+.logout-icon {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 860px) {
+  html {
+    scroll-padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .client-theme.page-shell {
+    min-height: 100dvh;
+    padding: 0;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    overscroll-behavior-y: contain;
+  }
+
+  .client-theme .topbar {
+    top: 0;
+    z-index: 50;
+    min-height: 62px;
+    margin: 0;
+    padding:
+      max(8px, env(safe-area-inset-top, 0px))
+      max(12px, env(safe-area-inset-right, 0px))
+      8px
+      max(12px, env(safe-area-inset-left, 0px));
+    border-width: 0 0 1px;
+    border-radius: 0;
+    background: rgba(10, 13, 18, 0.94);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(20px) saturate(150%);
+  }
+
+  .client-theme .brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .client-theme .brand-copy b {
+    font-size: 14px;
+  }
+
+  .client-theme .brand-copy small {
+    max-width: 110px;
+    font-size: 10px;
+  }
+
+  .client-theme .topbar-actions {
+    gap: 7px;
+  }
+
+  .client-theme .mobile-page-context {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 6px 9px;
+    border: 1px solid #2d3541;
+    border-radius: 999px;
+    color: #aeb7c5;
+    background: #151a22;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .client-theme .logout-button {
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border-radius: 12px;
+  }
+
+  .client-theme .logout-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .client-theme .app-workspace {
+    width: 100%;
+    padding: 14px 12px 0;
+  }
+
+  .client-theme .page-title {
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0 0 14px;
+    padding: 3px 2px 0;
+  }
+
+  .client-theme .page-title > div:first-child {
+    min-width: 0;
+  }
+
+  .client-theme .page-title h1 {
+    margin: 5px 0 4px;
+    font-size: clamp(28px, 8.5vw, 36px);
+    line-height: 1.02;
+  }
+
+  .client-theme .page-title p {
+    max-width: 265px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .client-theme .page-progress {
+    width: 56px;
+    flex: 0 0 56px;
+    padding-top: 5px;
+  }
+
+  .client-theme .page-progress > span {
+    font-size: 9px;
+  }
+
+  .client-theme .glass-card,
+  .client-theme .panel,
+  .client-theme .locked-card,
+  .client-theme .alert-card {
+    padding: 16px;
+    border-radius: 17px;
+  }
+
+  .client-theme .content-grid {
+    gap: 12px;
+  }
+
+  .client-theme .input,
+  .client-theme .textarea,
+  .client-theme .select {
+    min-height: 50px;
+    padding: 13px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .client-theme .primary-button,
+  .client-theme .secondary-button,
+  .client-theme .ghost-button,
+  .client-theme .danger-button {
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  .client-theme .bottom-nav {
+    left: 0;
+    bottom: 0;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 2px;
+    width: 100%;
+    padding: 7px max(6px, env(safe-area-inset-right, 0px)) max(7px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
+    border-width: 1px 0 0;
+    border-radius: 20px 20px 0 0;
+    background: rgba(15, 19, 26, 0.97);
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.28);
+    transform: none;
+  }
+
+  .client-theme .bottom-nav a {
+    gap: 4px;
+    min-height: 58px;
+    padding: 6px 2px;
+    border-radius: 13px;
+    color: #8f99a8;
+  }
+
+  .client-theme .bottom-nav a.active {
+    color: #fff;
+    background: linear-gradient(180deg, #268aff, #126fde);
+    box-shadow: 0 7px 18px rgba(20, 120, 242, 0.3);
+  }
+
+  .client-theme .bottom-nav .nav-mark {
+    width: 25px;
+    height: 25px;
+    border-radius: 8px;
+    background: transparent;
+  }
+
+  .client-theme .bottom-nav .nav-mark svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .client-theme .bottom-nav a.active .nav-mark {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  .client-theme .bottom-nav small {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .client-theme .action-row.page-actions {
+    margin-top: 12px;
+    padding-bottom: 4px;
+  }
+
+  .client-theme .menu-source-workspace,
+  .client-theme .menu-detection-preview {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .client-theme .menu-upload-option {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .client-theme .menu-text-field .textarea {
+    min-height: 170px;
+  }
+
+  .client-theme .billing-heading,
+  .client-theme .quotation-toolbar-heading,
+  .client-theme .final-costing-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .client-theme .billing-details,
+  .client-theme .quotation-review-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-page {
+    display: block;
+    min-height: 100dvh;
+    padding: 0;
+    background: #0d1728;
+  }
+
+  .auth-layout {
+    gap: 0;
+    width: 100%;
+    max-width: none;
+  }
+
+  .auth-intro {
+    min-height: 0;
+    padding: max(22px, env(safe-area-inset-top, 0px)) 22px 24px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .auth-intro .eyebrow {
+    margin-top: 14px;
+  }
+
+  .auth-intro h1 {
+    margin: 7px 0 8px;
+    font-size: clamp(30px, 9.5vw, 40px);
+  }
+
+  .auth-intro > p:not(.eyebrow) {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .login-card {
+    min-height: calc(100dvh - 245px);
+    padding: 24px 20px max(26px, env(safe-area-inset-bottom, 0px));
+    border-radius: 22px 22px 0 0;
+  }
+
+  .login-heading {
+    margin-bottom: 20px;
+  }
+
+  .login-heading h2 {
+    font-size: 25px;
+  }
+
+  .auth-submit {
+    min-height: 52px;
+  }
+}
+
+@media (max-width: 380px) {
+  .client-theme .mobile-page-context {
+    display: none;
+  }
+
+  .client-theme .brand-copy small {
+    max-width: 125px;
+  }
+
+  .client-theme .app-workspace {
+    padding-inline: 9px;
+  }
+
+  .client-theme .bottom-nav small {
+    font-size: 8px;
+  }
+
+  .client-theme .bottom-nav .nav-mark svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
 @media (max-width: 600px) {
   .page-shell {
     padding: 9px;
@@ -5366,5 +5690,41 @@ td:last-child {
 
   .admin-page .admin-container {
     padding: 20px 14px 0;
+  }
+}
+
+/* Keep the phone authentication screen compact after all theme overrides. */
+@media (max-width: 600px) {
+  .auth-page {
+    min-height: 100dvh;
+    padding: 0;
+  }
+
+  .auth-layout {
+    gap: 0;
+    max-width: none;
+  }
+
+  .auth-intro {
+    min-height: 0;
+    border-radius: 0;
+  }
+
+  .login-card {
+    min-height: 0;
+    align-content: start;
+    border-radius: 22px 22px 0 0;
+  }
+}
+
+@media (max-width: 860px) {
+  .client-theme .topbar {
+    width: 100%;
+    max-width: none;
+  }
+
+  .client-theme .event-text-action,
+  .client-theme .menu-preview-cancel {
+    min-height: 44px;
   }
 }
