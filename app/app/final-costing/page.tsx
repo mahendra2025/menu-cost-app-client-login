@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
+import { downloadFinalCostingPdf } from '../../../lib/finalCostingPdf';
 import { calculate, getSession, loadWork, saveWork } from '../../../lib/store';
 import type { Session, WorkState } from '../../../lib/types';
 
@@ -172,6 +173,7 @@ export default function FinalCostingPage() {
         )}
 
         <div className="action-row page-actions">
+          <button className="secondary-button" type="button" onClick={() => downloadFinalCostingPdf(work)}>Download Menu &amp; Costing PDF</button>
           <button className="primary-button" type="button" onClick={() => router.push('/app/profile')}>Next: Profile</button>
           <button className="ghost-button" type="button" onClick={() => router.push('/app/cost')}>Back to Cost</button>
         </div>
