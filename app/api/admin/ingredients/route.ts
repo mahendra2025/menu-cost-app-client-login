@@ -17,14 +17,17 @@ async function requireAdmin() {
 }
 
 function recipeIngredientUsage(dishes: unknown) {
-  const usage = new Map<string, number>();
+  const usage = new Map<string, Array<{ id: string; name: string }>>();
   if (!Array.isArray(dishes)) return usage;
-  dishes.forEach((dish) => {
+  dishes.forEach((dish, index) => {
     if (!dish || typeof dish !== 'object') return;
-    const ingredients = (dish as Record<string, unknown>).ingredients;
+    const recipe = dish as Record<string, unknown>;
+    const ingredients = recipe.ingredients;
     if (!Array.isArray(ingredients)) return;
+    const name = String(recipe.name || recipe.dishName || `Recipe ${index + 1}`).trim();
+    const id = String(recipe.id || `recipe_${index + 1}`).trim();
     new Set(ingredients.map((item) => item && typeof item === 'object' ? String((item as Record<string, unknown>).rateKey || '') : '').filter(Boolean))
-      .forEach((id) => usage.set(id, (usage.get(id) || 0) + 1));
+      .forEach((rateKey) => usage.set(rateKey, [...(usage.get(rateKey) || []), { id, name }]));
   });
   return usage;
 }
@@ -78,7 +81,7 @@ export async function GET() {
       where: { id: CATALOG_ID },
       select: { rates: true, ingredientCategories: true, dishes: true, updatedAt: true },
     });
-    if (!catalog) return NextResponse.json({ rates: [], categories: INGREDIENT_CATEGORIES, usage: {}, ready: false });
+    if (!catalog) return NextResponse.json({ rates: [], categories: INGREDIENT_CATEGORIES, usage: {}, ready: true });
     const usage = Object.fromEntries(recipeIngredientUsage(catalog.dishes));
     const rates = Array.isArray(catalog.rates)
       ? catalog.rates
@@ -107,8 +110,7 @@ export async function PUT(request: Request) {
     const categories = normalizeCategories(body.categories, cleanedRates);
 
     const catalog = await prisma.recipeCatalog.findUnique({ where: { id: CATALOG_ID } });
-    if (!catalog) return NextResponse.json({ error: 'Open Recipe Studio once before creating the Ingredient Master' }, { status: 409 });
-    const previousRates = Array.isArray(catalog.rates) ? catalog.rates : [];
+    const previousRates = Array.isArray(catalog?.rates) ? catalog.rates : [];
     const previousIds = new Set(previousRates.map((rate) => rate && typeof rate === 'object' ? String((rate as Record<string, unknown>).id || '') : '').filter(Boolean));
     const nextIds = new Set(cleanedRates.map((rate) => rate.id));
     const ratesByOriginalId = new Map<string, IngredientRate>();
@@ -117,18 +119,25 @@ export async function PUT(request: Request) {
       const originalId = String((submitted as Record<string, unknown>).originalId || '').trim();
       if (originalId && previousIds.has(originalId)) ratesByOriginalId.set(originalId, cleanedRates[index]);
     });
-    const usage = recipeIngredientUsage(catalog.dishes);
+    const usage = recipeIngredientUsage(catalog?.dishes);
     const usedDeletions = [...previousIds].filter(
-      (id) => !nextIds.has(id) && !ratesByOriginalId.has(id) && (usage.get(id) || 0) > 0,
+      (id) => !nextIds.has(id) && !ratesByOriginalId.has(id) && (usage.get(id)?.length || 0) > 0,
     );
     if (usedDeletions.length) {
       return NextResponse.json({ error: 'An ingredient used by a recipe cannot be deleted' }, { status: 409 });
     }
-    const dishes = updateRecipeIngredients(catalog.dishes, ratesByOriginalId);
+    const dishes = updateRecipeIngredients(catalog?.dishes ?? [], ratesByOriginalId);
 
-    const saved = await prisma.recipeCatalog.update({
+    const saved = await prisma.recipeCatalog.upsert({
       where: { id: CATALOG_ID },
-      data: {
+      create: {
+        id: CATALOG_ID,
+        rates: cleanedRates,
+        ingredientCategories: categories,
+        dishes: [],
+        deletedDishIds: [],
+      },
+      update: {
         rates: cleanedRates,
         ingredientCategories: categories,
         dishes: dishes as Prisma.InputJsonValue,

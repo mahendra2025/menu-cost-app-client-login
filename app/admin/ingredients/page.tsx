@@ -13,7 +13,8 @@ import {
 } from '../../../lib/ingredientCatalog';
 
 type IngredientRow = IngredientRate & { rowKey: string; originalId: string };
-type UsageMap = Record<string, number>;
+type RecipeUsage = { id: string; name: string };
+type UsageMap = Record<string, RecipeUsage[]>;
 type IngredientStatus = 'ALL' | 'ATTENTION' | 'LINKED' | 'UNLINKED';
 type IngredientSort = 'NAME_ASC' | 'NAME_DESC' | 'RATE_HIGH' | 'RATE_LOW' | 'MOST_USED';
 
@@ -44,6 +45,10 @@ export default function AdminIngredientsPage() {
   const [statusFilter, setStatusFilter] = useState<IngredientStatus>('ALL');
   const [sort, setSort] = useState<IngredientSort>('NAME_ASC');
   const [page, setPage] = useState(1);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Set<string>>(new Set());
+  const [bulkCategory, setBulkCategory] = useState('');
+  const [bulkUnit, setBulkUnit] = useState('');
+  const [bulkRateChange, setBulkRateChange] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
 
@@ -60,6 +65,7 @@ export default function AdminIngredientsPage() {
       setUsage(data.usage && typeof data.usage === 'object' ? data.usage : {});
       setCatalogReady(data.ready !== false);
       setDirty(false);
+      setSelectedRowKeys(new Set());
     } catch (error) {
       setMessageType('error');
       setMessage(error instanceof Error ? error.message : 'Could not load ingredients.');
@@ -74,7 +80,7 @@ export default function AdminIngredientsPage() {
     const search = query.trim().toLowerCase();
     return rows
       .filter((row) => {
-        const usedBy = usage[row.originalId] || 0;
+        const usedBy = usage[row.originalId]?.length || 0;
         const needsAttention = !(Number(row.rate) > 0) || !row.name.trim() || hasDuplicate(rows, row);
         const matchesStatus = statusFilter === 'ALL' ||
           (statusFilter === 'ATTENTION' && needsAttention) ||
@@ -87,7 +93,7 @@ export default function AdminIngredientsPage() {
       .sort((a, b) => {
         if (sort === 'RATE_HIGH') return Number(b.rate) - Number(a.rate);
         if (sort === 'RATE_LOW') return Number(a.rate) - Number(b.rate);
-        if (sort === 'MOST_USED') return (usage[b.originalId] || 0) - (usage[a.originalId] || 0) || a.name.localeCompare(b.name);
+        if (sort === 'MOST_USED') return (usage[b.originalId]?.length || 0) - (usage[a.originalId]?.length || 0) || a.name.localeCompare(b.name);
         const nameOrder = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
         return sort === 'NAME_DESC' ? -nameOrder : nameOrder;
       });
@@ -97,13 +103,19 @@ export default function AdminIngredientsPage() {
     const search = categoryQuery.trim().toLowerCase();
     return categories.filter((category) => !search || category.toLowerCase().includes(search));
   }, [categories, categoryQuery]);
-  const recipeLinkedCount = useMemo(() => rows.filter((row) => (usage[row.originalId] || 0) > 0).length, [rows, usage]);
+  const recipeLinkedCount = useMemo(() => rows.filter((row) => (usage[row.originalId]?.length || 0) > 0).length, [rows, usage]);
   const duplicateCount = useMemo(() => rows.filter((row) => hasDuplicate(rows, row)).length, [rows]);
   const missingRateCount = useMemo(() => rows.filter((row) => !(Number(row.rate) > 0)).length, [rows]);
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
   const visibleRows = filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const visibleStart = filteredRows.length ? ((page - 1) * PAGE_SIZE) + 1 : 0;
   const visibleEnd = Math.min(page * PAGE_SIZE, filteredRows.length);
+  const selectedRows = useMemo(
+    () => rows.filter((row) => selectedRowKeys.has(row.rowKey)),
+    [rows, selectedRowKeys],
+  );
+  const selectedLinkedCount = selectedRows.filter((row) => (usage[row.originalId]?.length || 0) > 0).length;
+  const allVisibleSelected = visibleRows.length > 0 && visibleRows.every((row) => selectedRowKeys.has(row.rowKey));
 
   useEffect(() => { setPage(1); }, [query, categoryFilter, statusFilter, sort]);
   useEffect(() => { if (page > pageCount) setPage(pageCount); }, [page, pageCount]);
@@ -120,6 +132,79 @@ export default function AdminIngredientsPage() {
     setMessage('');
     setDirty(true);
     setRows((current) => current.map((row) => row.rowKey === key ? { ...row, ...patch } : row));
+  }
+
+  function toggleRowSelection(key: string) {
+    setSelectedRowKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function toggleVisibleSelection() {
+    setSelectedRowKeys((current) => {
+      const next = new Set(current);
+      visibleRows.forEach((row) => {
+        if (allVisibleSelected) next.delete(row.rowKey);
+        else next.add(row.rowKey);
+      });
+      return next;
+    });
+  }
+
+  function applyBulkCategory() {
+    if (!bulkCategory || !selectedRows.length) return;
+    setRows((current) => current.map((row) => selectedRowKeys.has(row.rowKey) ? { ...row, category: bulkCategory } : row));
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${selectedRows.length} ingredient${selectedRows.length === 1 ? '' : 's'} moved to ${bulkCategory}.`);
+  }
+
+  function applyBulkUnit() {
+    if (!bulkUnit || !selectedRows.length) return;
+    setRows((current) => current.map((row) => selectedRowKeys.has(row.rowKey) ? { ...row, unit: bulkUnit as IngredientUnit } : row));
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${selectedRows.length} purchase unit${selectedRows.length === 1 ? '' : 's'} changed to ${bulkUnit}.`);
+  }
+
+  function applyBulkRateChange() {
+    const percentage = Number(bulkRateChange);
+    if (!selectedRows.length || !Number.isFinite(percentage) || percentage === 0 || percentage <= -100) {
+      setMessageType('error');
+      setMessage('Enter a rate change greater than -100%, for example 5 or -10.');
+      return;
+    }
+    const multiplier = 1 + (percentage / 100);
+    setRows((current) => current.map((row) => selectedRowKeys.has(row.rowKey)
+      ? { ...row, rate: Math.round(Math.max(0, Number(row.rate) * multiplier) * 100) / 100 }
+      : row));
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${selectedRows.length} rate${selectedRows.length === 1 ? '' : 's'} ${percentage > 0 ? 'increased' : 'decreased'} by ${Math.abs(percentage)}%.`);
+    setBulkRateChange('');
+  }
+
+  function removeSelectedIngredients() {
+    if (!selectedRows.length) return;
+    if (selectedLinkedCount) {
+      setMessageType('error');
+      setMessage(`${selectedLinkedCount} selected ingredient${selectedLinkedCount === 1 ? ' is' : 's are'} linked to recipes. Deselect them before deleting.`);
+      return;
+    }
+    if (!window.confirm(`Delete ${selectedRows.length} selected ingredient${selectedRows.length === 1 ? '' : 's'}?`)) return;
+    setRows((current) => current.filter((row) => !selectedRowKeys.has(row.rowKey)));
+    setSelectedRowKeys(new Set());
+    setDirty(true);
+    setMessageType('success');
+    setMessage(`${selectedRows.length} ingredient${selectedRows.length === 1 ? '' : 's'} removed. Save changes to publish.`);
+  }
+
+  function discardChanges() {
+    if (!dirty || !window.confirm('Discard all unsaved ingredient changes?')) return;
+    void loadIngredients();
   }
 
   function addIngredient() {
@@ -143,7 +228,7 @@ export default function AdminIngredientsPage() {
   }
 
   function removeIngredient(row: IngredientRow) {
-    const usedBy = usage[row.originalId] || 0;
+    const usedBy = usage[row.originalId]?.length || 0;
     if (usedBy > 0) {
       setMessageType('error');
       setMessage(`${row.name} is used by ${usedBy} recipe${usedBy === 1 ? '' : 's'} and cannot be deleted.`);
@@ -151,6 +236,11 @@ export default function AdminIngredientsPage() {
     }
     if (row.name && !window.confirm(`Delete ${row.name} from Ingredient Master?`)) return;
     setRows((current) => current.filter((item) => item.rowKey !== row.rowKey));
+    setSelectedRowKeys((current) => {
+      const next = new Set(current);
+      next.delete(row.rowKey);
+      return next;
+    });
     setDirty(true);
     setMessage('');
   }
@@ -393,21 +483,53 @@ export default function AdminIngredientsPage() {
             <div><span className="section-kicker">Ingredient editor</span><h2>Ingredient details</h2><p className="muted">Edit names, categories, units, and rates. Linked recipes update automatically when you save.</p></div>
             <div className="ingredient-list-actions"><span className="badge">{visibleStart}–{visibleEnd} of {filteredRows.length}</span><button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>Save changes</button></div>
           </div>
+          {selectedRows.length ? (
+            <div className="ingredient-bulk-toolbar" role="region" aria-label="Bulk ingredient actions">
+              <div className="ingredient-bulk-summary">
+                <strong>{selectedRows.length} selected</strong>
+                <button type="button" onClick={() => setSelectedRowKeys(new Set())}>Clear selection</button>
+              </div>
+              <div className="ingredient-bulk-control">
+                <label htmlFor="bulk-ingredient-category">Category</label>
+                <select id="bulk-ingredient-category" className="select" value={bulkCategory} onChange={(event) => setBulkCategory(event.target.value)}>
+                  <option value="">Choose…</option>
+                  {categories.map((category) => <option key={category}>{category}</option>)}
+                </select>
+                <button type="button" className="ghost-button" disabled={!bulkCategory} onClick={applyBulkCategory}>Apply</button>
+              </div>
+              <div className="ingredient-bulk-control">
+                <label htmlFor="bulk-ingredient-unit">Purchase unit</label>
+                <select id="bulk-ingredient-unit" className="select" value={bulkUnit} onChange={(event) => setBulkUnit(event.target.value)}>
+                  <option value="">Choose…</option>
+                  {INGREDIENT_UNITS.map((unit) => <option key={unit}>{unit}</option>)}
+                </select>
+                <button type="button" className="ghost-button" disabled={!bulkUnit} onClick={applyBulkUnit}>Apply</button>
+              </div>
+              <div className="ingredient-bulk-control ingredient-bulk-rate">
+                <label htmlFor="bulk-ingredient-rate">Rate change</label>
+                <div><input id="bulk-ingredient-rate" className="input" type="number" step="0.1" min="-99.9" value={bulkRateChange} onChange={(event) => setBulkRateChange(event.target.value)} placeholder="e.g. 5" /><span>%</span></div>
+                <button type="button" className="ghost-button" disabled={!bulkRateChange} onClick={applyBulkRateChange}>Apply</button>
+              </div>
+              <button className="ingredient-bulk-delete" type="button" disabled={selectedLinkedCount > 0} title={selectedLinkedCount ? 'Linked ingredients cannot be deleted' : 'Delete selected ingredients'} onClick={removeSelectedIngredients}>Delete selected</button>
+            </div>
+          ) : null}
           {!ready ? <div className="admin-empty"><span className="admin-loader" /><strong>Loading ingredients</strong></div> : null}
           {ready && messageType === 'error' && !rows.length ? <div className="ingredient-load-error"><strong>Ingredient catalog unavailable</strong><span>{message}</span><button className="ghost-button" type="button" onClick={() => void loadIngredients()}>Try again</button></div> : null}
           {ready && !visibleRows.length && !(messageType === 'error' && !rows.length) ? <div className="admin-empty"><strong>No ingredients found</strong><span>Try another search or add a new ingredient.</span></div> : null}
           {ready && visibleRows.length ? (
             <div className="ingredient-table-wrap">
               <table className="ingredient-table">
-                <thead><tr><th>Ingredient name</th><th>Category</th><th>Purchase unit</th><th>Rate per unit</th><th>Used in</th><th aria-label="Actions" /></tr></thead>
+                <thead><tr><th><label className="ingredient-select-all"><input type="checkbox" checked={allVisibleSelected} onChange={toggleVisibleSelection} /><span>Select page</span></label></th><th>Category</th><th>Purchase unit</th><th>Rate per unit</th><th>Used in</th><th aria-label="Actions" /></tr></thead>
                 <tbody>
                   {visibleRows.map((row) => {
-                    const usedBy = usage[row.originalId] || 0;
+                    const usedByRecipes = usage[row.originalId] || [];
+                    const usedBy = usedByRecipes.length;
                     const duplicate = hasDuplicate(rows, row);
                     return (
                       <tr key={row.rowKey} className={duplicate ? 'has-error' : ''}>
                         <td data-label="Ingredient">
                           <div className="ingredient-name-field">
+                            <input className="ingredient-row-check" type="checkbox" checked={selectedRowKeys.has(row.rowKey)} onChange={() => toggleRowSelection(row.rowKey)} aria-label={`Select ${row.name || 'new ingredient'}`} />
                             <span className="ingredient-initial" aria-hidden="true">{row.name.trim().charAt(0).toUpperCase() || '+'}</span>
                             <input
                               id={`ingredient-name-${row.rowKey}`}
@@ -426,7 +548,17 @@ export default function AdminIngredientsPage() {
                         <td data-label="Category"><select className="select ingredient-category-select" value={row.category} onChange={(event) => updateRow(row.rowKey, { category: event.target.value as IngredientCategory })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></td>
                         <td data-label="Purchase unit"><select className="select" value={row.unit} onChange={(event) => updateRow(row.rowKey, { unit: event.target.value as IngredientUnit })}>{INGREDIENT_UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></td>
                         <td data-label="Rate per unit"><div className={`ingredient-rate-input ${Number(row.rate) > 0 ? '' : 'is-missing'}`}><span className="ingredient-currency">₹</span><input className="input" aria-label={`Market rate for ${row.name || 'new ingredient'}`} type="number" min="0" step="0.01" value={row.rate || ''} placeholder="0.00" onChange={(event) => updateRow(row.rowKey, { rate: Math.max(0, Number(event.target.value) || 0) })} /><small>/{row.unit}</small></div></td>
-                        <td data-label="Recipe usage"><span className={`ingredient-usage ${usedBy ? 'linked' : ''}`}>{usedBy ? `${usedBy} recipe${usedBy === 1 ? '' : 's'}` : 'Not linked'}</span></td>
+                        <td data-label="Recipe usage">
+                          {usedBy ? (
+                            <div className="ingredient-recipe-links" aria-label={`${row.name} is used in ${usedBy} recipe${usedBy === 1 ? '' : 's'}`}>
+                              {usedByRecipes.map((recipe) => (
+                                <a key={recipe.id} href={`/admin/dishes?recipe=${encodeURIComponent(recipe.name)}#recipes`} title={`Open ${recipe.name} in Recipe Studio`}>
+                                  <span>{recipe.name}</span><small>Open</small>
+                                </a>
+                              ))}
+                            </div>
+                          ) : <span className="ingredient-usage">Not linked</span>}
+                        </td>
                         <td data-label="Actions"><button className="ingredient-delete" type="button" aria-label={`Delete ${row.name || 'ingredient'}`} title={usedBy ? 'Used ingredients cannot be deleted' : 'Delete ingredient'} disabled={usedBy > 0} onClick={() => removeIngredient(row)}>×</button></td>
                       </tr>
                     );
@@ -438,9 +570,9 @@ export default function AdminIngredientsPage() {
           {pageCount > 1 ? <div className="dish-pagination"><button className="ghost-button" type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)}>Previous</button><span>Page {page} of {pageCount}</span><button className="ghost-button" type="button" disabled={page === pageCount} onClick={() => setPage((value) => value + 1)}>Next</button></div> : null}
         </div>
         {dirty ? (
-          <div className="dish-save-dock no-print" role="status">
+          <div className="dish-save-dock ingredient-save-dock no-print" role="status">
             <div><span aria-hidden="true" /><strong>Unsaved rate changes</strong><small>Save to update recipe costing.</small></div>
-            <button className="primary-button" type="button" onClick={saveAll} disabled={saving || !catalogReady}>{saving ? 'Saving…' : 'Save all changes'}</button>
+            <div className="ingredient-save-dock-actions"><button className="ghost-button" type="button" onClick={discardChanges} disabled={saving}>Discard</button><button className="primary-button" type="button" onClick={saveAll} disabled={saving || !catalogReady}>{saving ? 'Saving…' : 'Save all changes'}</button></div>
           </div>
         ) : null}
       </section>

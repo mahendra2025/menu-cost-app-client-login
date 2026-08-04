@@ -244,13 +244,23 @@ export default function AdminDishesPage() {
   useEffect(() => {
     const syncViewFromHash = () => {
       const view =
-        window.location.hash ===
-        '#recipes'
+        window.location.hash.startsWith(
+          '#recipes',
+        )
           ? 'recipes'
           : 'catalog';
       setWorkspaceView(view);
       if (view === 'recipes') {
         setRecipeStudioOpened(true);
+      }
+      const linkedRecipe = new URLSearchParams(window.location.search).get('recipe')?.trim();
+      if (view === 'recipes' && linkedRecipe) {
+        setRequestedRecipeDish({
+          requestId: `recipe_link_${Date.now()}`,
+          name: linkedRecipe,
+          category: 'Other',
+          subcategory: '',
+        });
       }
     };
     syncViewFromHash();
