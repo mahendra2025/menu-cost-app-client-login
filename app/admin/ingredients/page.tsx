@@ -485,7 +485,7 @@ export default function AdminIngredientsPage() {
 
         <div className="glass-card ingredient-list-card">
           <div className="dish-list-heading">
-            <div><span className="section-kicker">Ingredient editor</span><h2>Ingredient details</h2><p className="muted">Edit names, categories, units, and rates. Linked recipes update automatically when you save.</p></div>
+            <div><span className="section-kicker">Ingredient editor</span><h2>Ingredient details</h2><p className="muted">Click a linked ingredient to open its first recipe. Editing controls remain available.</p></div>
             <div className="ingredient-list-actions"><span className="badge">{visibleStart}–{visibleEnd} of {filteredRows.length}</span><button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>Save changes</button></div>
           </div>
           {selectedRows.length ? (
@@ -531,7 +531,16 @@ export default function AdminIngredientsPage() {
                     const usedBy = usedByRecipes.length;
                     const duplicate = hasDuplicate(rows, row);
                     return (
-                      <tr key={row.rowKey} className={duplicate ? 'has-error' : ''}>
+                      <tr
+                        key={row.rowKey}
+                        className={`${duplicate ? 'has-error ' : ''}${usedBy ? 'is-recipe-linked' : ''}`.trim()}
+                        title={usedBy ? `Open ${usedByRecipes[0].name} in Recipe Studio` : undefined}
+                        onClick={(event) => {
+                          if (!usedBy) return;
+                          if ((event.target as HTMLElement).closest('button, input, select, textarea, summary, a, label')) return;
+                          window.location.href = `/admin/dishes?recipe=${encodeURIComponent(usedByRecipes[0].name)}#recipes`;
+                        }}
+                      >
                         <td data-label="Ingredient">
                           <div className="ingredient-name-field">
                             <input className="ingredient-row-check" type="checkbox" checked={selectedRowKeys.has(row.rowKey)} onChange={() => toggleRowSelection(row.rowKey)} aria-label={`Select ${row.name || 'new ingredient'}`} />

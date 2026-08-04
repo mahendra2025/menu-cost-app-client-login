@@ -1169,6 +1169,8 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .ingredient-table .input,.ingredient-table .select { width: 100%; min-height: 44px; padding: 9px 10px; border-radius: 10px; color: #263244; font-size: 13px; font-weight: 700; }
 .ingredient-table input:disabled,.ingredient-table select:disabled { color: #667085; opacity: .82; cursor: not-allowed; background: #f1f4f8; }
 .ingredient-table tr.has-error td { border-color: rgba(223,63,63,.38); background: #fff8f7; }
+.ingredient-table tr.is-recipe-linked { cursor: pointer; }
+.ingredient-table tr.is-recipe-linked:hover td { border-color: rgba(52,199,89,.32); background: #f5fcf8; }
 .ingredient-row-error { display: block; margin: 5px 3px 0; color: var(--red); font-size: 9px; font-weight: 800; }
 .ingredient-row-warning { display: block; margin: 5px 3px 0; color: #9a5a0a; font-size: 9px; font-weight: 800; }
 .ingredient-name-field { display: flex; align-items: center; gap: 8px; }
@@ -3858,6 +3860,11 @@ td:last-child {
 .admin-theme .ingredient-table td {
   border-color: var(--border);
   background: #0d1117;
+}
+
+.admin-theme .ingredient-table tr.is-recipe-linked:hover td {
+  border-color: rgba(61,220,132,.3);
+  background: #111c18;
 }
 
 .admin-theme .ingredient-table .input,
