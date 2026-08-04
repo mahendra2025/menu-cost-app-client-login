@@ -2,6 +2,7 @@
 
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import type { RowInput } from 'jspdf-autotable';
 import { calculate } from './store';
 import type { WorkState } from './types';
 
@@ -37,6 +38,41 @@ function addSectionTitle(doc: jsPDF, title: string, y: number) {
 
 export function downloadFinalCostingPdf(work: WorkState) {
   const result = calculate(work);
+  const menuCostingRows: RowInput[] = [];
+  let previousMealKey = '';
+
+  result.menuBreakdown.forEach((item) => {
+    const mealKey = item.serviceId ||
+      `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`;
+
+    if (previousMealKey && mealKey !== previousMealKey) {
+      menuCostingRows.push([{
+        content: '',
+        colSpan: 8,
+        styles: {
+          fillColor: [255, 255, 255],
+          lineColor: [255, 255, 255],
+          lineWidth: 0,
+          minCellHeight: 4,
+          cellPadding: 2,
+        },
+      }]);
+    }
+
+    menuCostingRows.push([
+      [item.dayLabel, item.mealLabel].filter(Boolean).join(' - ') || 'Event Menu',
+      item.name,
+      item.category,
+      Number(item.portionQuantity) > 0
+        ? `${item.portionQuantity} ${item.portionUnit || 'serving'}`
+        : 'Not set',
+      item.effectivePax.toLocaleString('en-IN'),
+      pdfMoney(item.baseCostPerPlate),
+      pdfMoney(item.adjustedCostPerPlate),
+      pdfMoney(item.itemTotalCost),
+    ]);
+    previousMealKey = mealKey;
+  });
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -110,6 +146,36 @@ export function downloadFinalCostingPdf(work: WorkState) {
   });
 
   cursorY = tableEnd(doc, cursorY + 22) + 9;
+  addSectionTitle(doc, 'Meal-wise Costing', cursorY);
+  autoTable(doc, {
+    startY: cursorY + 3,
+    margin: { left: 14, right: 14, bottom: 16 },
+    theme: 'grid',
+    head: [['Day', 'Meal', 'Covers', 'Dishes', 'Food / Plate', 'Meal Food Total']],
+    body: result.serviceSummaries.length
+      ? result.serviceSummaries.map((service) => [
+          service.dayLabel || '-',
+          service.mealLabel || 'Event Menu',
+          service.pax.toLocaleString('en-IN'),
+          service.dishCount.toLocaleString('en-IN'),
+          pdfMoney(service.menuCostPerPlate),
+          pdfMoney(service.totalCost),
+        ])
+      : [['-', 'No meals added', '-', '-', '-', '-']],
+    headStyles: { fillColor: [35, 105, 190], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [246, 249, 252] },
+    columnStyles: {
+      0: { cellWidth: 24 },
+      1: { cellWidth: 45 },
+      2: { halign: 'right' },
+      3: { halign: 'right' },
+      4: { halign: 'right' },
+      5: { halign: 'right', fontStyle: 'bold' },
+    },
+    styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.2 },
+  });
+
+  cursorY = tableEnd(doc, cursorY + 24) + 9;
   addSectionTitle(doc, 'Menu Costing', cursorY);
   autoTable(doc, {
     startY: cursorY + 3,
@@ -125,19 +191,8 @@ export function downloadFinalCostingPdf(work: WorkState) {
       'Adjusted',
       'Total',
     ]],
-    body: result.menuBreakdown.length
-      ? result.menuBreakdown.map((item) => [
-          [item.dayLabel, item.mealLabel].filter(Boolean).join(' - ') || 'Event Menu',
-          item.name,
-          item.category,
-          Number(item.portionQuantity) > 0
-            ? `${item.portionQuantity} ${item.portionUnit || 'serving'}`
-            : 'Not set',
-          item.effectivePax.toLocaleString('en-IN'),
-          pdfMoney(item.baseCostPerPlate),
-          pdfMoney(item.adjustedCostPerPlate),
-          pdfMoney(item.itemTotalCost),
-        ])
+    body: menuCostingRows.length
+      ? menuCostingRows
       : [['-', 'No menu dishes added', '-', '-', '-', '-', '-', '-']],
     headStyles: { fillColor: [16, 24, 39], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [246, 249, 252] },
