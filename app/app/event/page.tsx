@@ -278,6 +278,272 @@ function menuItemIdentity(
   return `${serviceKey}::${normalize(item.name)}::${normalize(item.category)}`;
 }
 
+type PreparedMenuPhoto = {
+  original: HTMLCanvasElement;
+  enhanced: HTMLCanvasElement;
+};
+
+async function prepareMenuPhoto(
+  file: File,
+): Promise<PreparedMenuPhoto> {
+  let source: CanvasImageSource;
+  let sourceWidth = 0;
+  let sourceHeight = 0;
+  let releaseSource = () => {};
+
+  try {
+    if ('createImageBitmap' in window) {
+      const bitmap = await createImageBitmap(
+        file,
+        { imageOrientation: 'from-image' },
+      );
+      source = bitmap;
+      sourceWidth = bitmap.width;
+      sourceHeight = bitmap.height;
+      releaseSource = () => bitmap.close();
+    } else {
+      throw new Error('ImageBitmap is unavailable');
+    }
+  } catch {
+    const imageUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.src = imageUrl;
+
+    try {
+      await image.decode();
+    } catch {
+      URL.revokeObjectURL(imageUrl);
+      throw new Error(
+        'This photo format could not be opened. Please use a JPEG, PNG, or WebP photo.',
+      );
+    }
+
+    source = image;
+    sourceWidth = image.naturalWidth;
+    sourceHeight = image.naturalHeight;
+    releaseSource = () =>
+      URL.revokeObjectURL(imageUrl);
+  }
+
+  if (
+    !sourceWidth ||
+    !sourceHeight
+  ) {
+    releaseSource();
+    throw new Error(
+      'The selected photo has no readable image data.',
+    );
+  }
+
+  const longestEdge = Math.max(
+    sourceWidth,
+    sourceHeight,
+  );
+  const shortestEdge = Math.min(
+    sourceWidth,
+    sourceHeight,
+  );
+  const maximumPixels = 7_500_000;
+  let scale = Math.min(
+    3000 / longestEdge,
+    Math.sqrt(
+      maximumPixels /
+        (sourceWidth * sourceHeight),
+    ),
+  );
+
+  if (
+    scale > 1 &&
+    shortestEdge * scale > 1400
+  ) {
+    scale = Math.max(
+      1,
+      1400 / shortestEdge,
+    );
+  }
+
+  const width = Math.max(
+    1,
+    Math.round(sourceWidth * scale),
+  );
+  const height = Math.max(
+    1,
+    Math.round(sourceHeight * scale),
+  );
+  const original =
+    document.createElement('canvas');
+  original.width = width;
+  original.height = height;
+  const originalContext =
+    original.getContext('2d');
+
+  if (!originalContext) {
+    releaseSource();
+    throw new Error(
+      'Photo processing is not supported by this browser.',
+    );
+  }
+
+  originalContext.fillStyle = '#fff';
+  originalContext.fillRect(
+    0,
+    0,
+    width,
+    height,
+  );
+  originalContext.imageSmoothingEnabled = true;
+  originalContext.imageSmoothingQuality = 'high';
+  originalContext.drawImage(
+    source,
+    0,
+    0,
+    width,
+    height,
+  );
+  releaseSource();
+
+  const enhanced =
+    document.createElement('canvas');
+  enhanced.width = width;
+  enhanced.height = height;
+  const enhancedContext =
+    enhanced.getContext('2d', {
+      willReadFrequently: true,
+    });
+
+  if (!enhancedContext) {
+    original.width = 0;
+    original.height = 0;
+    throw new Error(
+      'Photo enhancement is not supported by this browser.',
+    );
+  }
+
+  enhancedContext.drawImage(
+    original,
+    0,
+    0,
+  );
+  const pixels =
+    enhancedContext.getImageData(
+      0,
+      0,
+      width,
+      height,
+    );
+  const histogram =
+    new Uint32Array(256);
+  let luminanceTotal = 0;
+
+  for (
+    let index = 0;
+    index < pixels.data.length;
+    index += 4
+  ) {
+    const luminance = Math.round(
+      pixels.data[index] * 0.2126 +
+        pixels.data[index + 1] * 0.7152 +
+        pixels.data[index + 2] * 0.0722,
+    );
+    histogram[luminance] += 1;
+    luminanceTotal += luminance;
+  }
+
+  const pixelCount = width * height;
+  const percentileCount =
+    pixelCount * 0.015;
+  let low = 0;
+  let high = 255;
+  let accumulated = 0;
+
+  for (
+    let value = 0;
+    value < 256;
+    value += 1
+  ) {
+    accumulated += histogram[value];
+    if (accumulated >= percentileCount) {
+      low = value;
+      break;
+    }
+  }
+
+  accumulated = 0;
+  for (
+    let value = 255;
+    value >= 0;
+    value -= 1
+  ) {
+    accumulated += histogram[value];
+    if (accumulated >= percentileCount) {
+      high = value;
+      break;
+    }
+  }
+
+  const range = Math.max(
+    32,
+    high - low,
+  );
+  const invert =
+    luminanceTotal /
+      pixelCount <
+    105;
+
+  for (
+    let index = 0;
+    index < pixels.data.length;
+    index += 4
+  ) {
+    const luminance =
+      pixels.data[index] * 0.2126 +
+      pixels.data[index + 1] * 0.7152 +
+      pixels.data[index + 2] * 0.0722;
+    let adjusted = Math.max(
+      0,
+      Math.min(
+        255,
+        ((luminance - low) * 255) /
+          range,
+      ),
+    );
+
+    if (invert) adjusted = 255 - adjusted;
+    pixels.data[index] = adjusted;
+    pixels.data[index + 1] = adjusted;
+    pixels.data[index + 2] = adjusted;
+    pixels.data[index + 3] = 255;
+  }
+
+  enhancedContext.putImageData(
+    pixels,
+    0,
+    0,
+  );
+
+  return { original, enhanced };
+}
+
+function ocrResultScore(
+  text: string,
+  confidence: number,
+) {
+  const usefulCharacters =
+    text.match(/[\p{L}\p{N}]/gu)
+      ?.length ?? 0;
+  const lines = text
+    .split(/\r?\n/)
+    .filter((line) =>
+      /[\p{L}\p{N}]/u.test(line),
+    ).length;
+
+  return (
+    confidence +
+    Math.min(20, usefulCharacters / 8) +
+    Math.min(15, lines * 1.5)
+  );
+}
+
 export default function EventPage() {
   const router = useRouter();
 
@@ -876,10 +1142,29 @@ export default function EventPage() {
     setUploadStatus('Preparing menu photo...');
     setUploading('camera');
 
+    let preparedPhoto:
+      | PreparedMenuPhoto
+      | null = null;
+
     try {
       if (file.size > 10 * 1024 * 1024) {
         throw new Error('Choose a photo smaller than 10 MB.');
       }
+
+      if (
+        file.type &&
+        !file.type.startsWith('image/')
+      ) {
+        throw new Error(
+          'Choose a valid image file.',
+        );
+      }
+
+      preparedPhoto =
+        await prepareMenuPhoto(file);
+      setUploadStatus(
+        'Improving photo clarity for menu detection...',
+      );
 
       const {
         createWorker,
@@ -892,6 +1177,8 @@ export default function EventPage() {
             >
           >
         | null = null;
+      let recognitionPass =
+        'Reading improved menu photo';
 
       try {
         const workerOptions = {
@@ -906,7 +1193,7 @@ export default function EventPage() {
               'recognizing text'
             ) {
               setUploadStatus(
-                `Reading menu photo... ${Math.round((message.progress ?? 0) * 100)}%`,
+                `${recognitionPass}... ${Math.round((message.progress ?? 0) * 100)}%`,
               );
             }
           },
@@ -935,15 +1222,55 @@ export default function EventPage() {
             PSM.SPARSE_TEXT,
           preserve_interword_spaces:
             '1',
+          user_defined_dpi: '220',
         });
-        const result =
+        const enhancedResult =
           await worker.recognize(
-            file,
+            preparedPhoto.enhanced,
+            { rotateAuto: true },
           );
+        let bestResult =
+          enhancedResult;
+        const enhancedCharacters =
+          enhancedResult.data.text.match(
+            /[\p{L}\p{N}]/gu,
+          )?.length ?? 0;
+
+        if (
+          enhancedResult.data.confidence < 68 ||
+          enhancedCharacters < 35
+        ) {
+          recognitionPass =
+            'Trying alternate photo detection';
+          await worker.setParameters({
+            tessedit_pageseg_mode:
+              PSM.AUTO,
+          });
+          const originalResult =
+            await worker.recognize(
+              preparedPhoto.original,
+              { rotateAuto: true },
+            );
+
+          if (
+            ocrResultScore(
+              originalResult.data.text,
+              originalResult.data
+                .confidence,
+            ) >
+            ocrResultScore(
+              enhancedResult.data.text,
+              enhancedResult.data
+                .confidence,
+            )
+          ) {
+            bestResult = originalResult;
+          }
+        }
 
         saveExtractedMenu(
           file.name,
-          result.data.text,
+          bestResult.data.text,
           'Menu photo',
         );
       } finally {
@@ -957,6 +1284,12 @@ export default function EventPage() {
           : 'The menu photo could not be read. Please try a clearer photo.',
       );
     } finally {
+      if (preparedPhoto) {
+        preparedPhoto.original.width = 0;
+        preparedPhoto.original.height = 0;
+        preparedPhoto.enhanced.width = 0;
+        preparedPhoto.enhanced.height = 0;
+      }
       setUploading(null);
     }
   }
