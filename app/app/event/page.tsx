@@ -54,8 +54,6 @@ Butter Naan
 Sweet
 Gulab Jamun`;
 
-type MenuInputMode = 'upload' | 'paste';
-
 type DetectedEventDetails = Partial<
   Pick<
     EventDetails,
@@ -307,16 +305,13 @@ export default function EventPage() {
   const [uploadStatus, setUploadStatus] =
     useState('');
 
-  const [menuInputMode, setMenuInputMode] =
-    useState<MenuInputMode>('paste');
-
   const [detectedEventDetails, setDetectedEventDetails] =
     useState<DetectedEventDetails>({});
 
   const [detectionPreview, setDetectionPreview] =
     useState<MenuDetectionPreview | null>(null);
 
-  const [queuedSuggestionCount, setQueuedSuggestionCount] =
+  const [, setQueuedSuggestionCount] =
     useState(0);
 
   const [selectedPreviewIds, setSelectedPreviewIds] =
@@ -339,12 +334,6 @@ export default function EventPage() {
       );
 
       setWork(savedWork);
-      setMenuInputMode(
-        savedWork.event.uploadFileName
-          ? 'upload'
-          : 'paste',
-      );
-
       catalogSyncRef.current =
         syncDishCostItemsFromServer();
     }
@@ -669,7 +658,6 @@ export default function EventPage() {
     };
 
     persistWork(nextWork);
-    setMenuInputMode('upload');
     setDetectionPreview(null);
     setSelectedPreviewIds(new Set());
     setDetectedEventDetails(
@@ -1009,38 +997,6 @@ export default function EventPage() {
     }
   }
 
-  function clearPage() {
-    if (!work) return;
-    if (!window.confirm('Clear the event details and pasted menu from this page?')) return;
-
-    const nextWork: WorkState = {
-      ...work,
-
-      event: {
-        ...work.event,
-        clientName: '',
-        eventName: '',
-        eventDate: '',
-        functionType: '',
-        pax: 0,
-        city: '',
-        venue: '',
-        uploadFileName: '',
-        rawMenuText: '',
-      },
-
-      menu: [],
-    };
-
-    setError('');
-    setUploadStatus('');
-    setDetectedEventDetails({});
-    setDetectionPreview(null);
-    setSelectedPreviewIds(new Set());
-    setMenuInputMode('paste');
-    persistWork(nextWork);
-  }
-
   function useSampleMenu() {
     if (!work) return;
     if (work.event.rawMenuText.trim() && !window.confirm('Replace the current menu text with the sample format?')) return;
@@ -1345,53 +1301,15 @@ export default function EventPage() {
 
         <div className="glass-card event-menu-card">
           <div className="form-grid">
-            <div className="menu-source-choices" aria-label="Menu input method">
-              <button
-                className={`menu-source-choice ${menuInputMode === 'upload' ? 'is-active' : ''}`}
-                type="button"
-                aria-pressed={menuInputMode === 'upload'}
-                onClick={() => {
-                  setMenuInputMode('upload');
-                  setError('');
-                }}
-              >
-                <span className="menu-source-number">01</span>
-                <div>
-                  <b>Upload a menu</b>
-                  <p>PDF or camera photo</p>
-                </div>
-                <span className="menu-source-check" aria-hidden="true">✓</span>
-              </button>
-
-              <button
-                className={`menu-source-choice ${menuInputMode === 'paste' ? 'is-active' : ''}`}
-                type="button"
-                aria-pressed={menuInputMode === 'paste'}
-                onClick={() => {
-                  setMenuInputMode('paste');
-                  setError('');
-                }}
-              >
-                <span className="menu-source-number">02</span>
-                <div>
-                  <b>Paste menu text</b>
-                  <p>WhatsApp or typed menu</p>
-                </div>
-                <span className="menu-source-check" aria-hidden="true">✓</span>
-              </button>
-
-            </div>
-
             <div className="menu-source-workspace">
               <div className="menu-source-workspace-heading">
                 <div>
-                  <span>{menuInputMode === 'upload' ? 'Import menu' : 'Paste menu'}</span>
-                  <h3>{menuInputMode === 'upload' ? 'Choose your file source' : 'Paste the full menu below'}</h3>
+                  <span>Menu input</span>
+                  <h3>Upload a file or paste menu text</h3>
                 </div>
               </div>
 
-              {menuInputMode === 'upload' ? (
-                <div className="menu-upload-options">
+              <div className="menu-upload-options">
                   <div className="menu-upload-option">
                     <span className="menu-upload-icon" aria-hidden="true">PDF</span>
                     <div>
@@ -1444,8 +1362,7 @@ export default function EventPage() {
                       }}
                     />
                   </div>
-                </div>
-              ) : null}
+              </div>
 
               {uploadStatus ? (
                 <div className="menu-upload-status" role="status" aria-live="polite">
@@ -1497,12 +1414,9 @@ export default function EventPage() {
                 </div>
               ) : null}
 
-              {menuInputMode === 'paste' || work.event.rawMenuText ? (
-                <div className="field menu-text-field">
+              <div className="field menu-text-field">
                   <div className="event-menu-text-heading">
-                    <label htmlFor="rawMenuText">
-                      {menuInputMode === 'upload' ? 'Extracted menu text' : 'Menu text'}
-                    </label>
+                    <label htmlFor="rawMenuText">Menu text</label>
                     <div>
                       <button className="event-text-action" type="button" onClick={useSampleMenu}>Use sample</button>
                       {work.event.rawMenuText ? <button className="event-text-action danger" type="button" onClick={clearMenuText}>Clear</button> : null}
@@ -1541,21 +1455,7 @@ Gulab Jamun`}
                     <span>{menuLines} non-empty lines • {work.event.rawMenuText.length.toLocaleString('en-IN')} characters</span>
                     <span>English • Roman Hindi • Hindi • Gujarati</span>
                   </div>
-                  <div className="menu-multiday-tip">
-                    <span aria-hidden="true">2D</span>
-                    <div>
-                      <b>Multi-day event?</b>
-                      <p>Start each menu with a heading such as <code>Day 1 • Dinner • 300 Members</code> and <code>Day 2 • Breakfast • 180 Members</code>.</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="menu-upload-empty">
-                  <span aria-hidden="true">↑</span>
-                  <b>Select a PDF or take a menu photo</b>
-                  <p>We will extract the text so you can review it before detection.</p>
-                </div>
-              )}
+              </div>
             </div>
 
             {error ? (
@@ -1564,16 +1464,6 @@ Gulab Jamun`}
                 <p>{error}</p>
               </div>
             ) : null}
-
-            <div className="event-detection-note">
-              <b>Dish-only detection</b>
-              <p>
-                Catalog dishes include their saved rate. Likely new dishes appear with “Rate needed” so you can enter a rate manually.
-                {queuedSuggestionCount > 0
-                  ? ` ${queuedSuggestionCount} new ${queuedSuggestionCount === 1 ? 'dish is' : 'dishes are'} also waiting for Admin approval.`
-                  : ' Headings and unrelated document text are ignored.'}
-              </p>
-            </div>
 
             {detectionPreview ? (
               <div
@@ -1769,11 +1659,7 @@ Gulab Jamun`}
               </div>
             ) : null}
 
-            <div className={`event-page-actions ${work.event.rawMenuText.trim() ? 'is-ready' : ''}`}>
-              <div>
-                <b>{work.event.rawMenuText.trim() ? `${menuLines} lines ready for detection` : 'Add a menu to continue'}</b>
-                <span>{work.event.rawMenuText.trim() ? 'Meals, guest counts and categories will stay organized.' : 'Upload a file, paste text, or choose dishes manually.'}</span>
-              </div>
+            <div className="action-row event-detect-action">
               <button
                 className="primary-button"
                 type="button"
@@ -1785,15 +1671,6 @@ Gulab Jamun`}
                   : detectionPreview
                     ? 'Refresh Detection Preview'
                     : `Detect Menu${menuLines > 0 ? ` • ${menuLines} lines` : ''}`}
-              </button>
-
-              <button
-                className="ghost-button"
-                type="button"
-                onClick={clearPage}
-                disabled={detecting || Boolean(uploading)}
-              >
-                Clear page
               </button>
             </div>
           </div>

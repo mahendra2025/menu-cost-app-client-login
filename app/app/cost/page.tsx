@@ -59,37 +59,6 @@ export default function CostPage() {
   const hasWeddingServices = result.serviceSummaries.some(
     (service) => service.serviceId !== 'default',
   );
-  const manpowerSummaryMap = new Map<
-    string,
-    {
-      serviceId: string;
-      dayLabel: string;
-      mealLabel: string;
-      people: number;
-      cost: number;
-    }
-  >();
-
-  work.manpower.forEach((row) => {
-    const serviceId = row.serviceId ?? 'general';
-    const current = manpowerSummaryMap.get(serviceId) ?? {
-      serviceId,
-      dayLabel: row.dayLabel ?? '',
-      mealLabel: row.mealLabel ?? 'General Event Staff',
-      people: 0,
-      cost: 0,
-    };
-
-    current.people += Math.max(0, Number(row.quantity) || 0);
-    current.cost +=
-      Math.max(0, Number(row.quantity) || 0) *
-      Math.max(0, Number(row.rate) || 0);
-    manpowerSummaryMap.set(serviceId, current);
-  });
-
-  const manpowerSummaries = Array.from(
-    manpowerSummaryMap.values(),
-  ).filter((summary) => summary.people > 0 || summary.cost > 0);
 
   function persist(next: WorkState) {
     if (!session) return;
@@ -413,58 +382,6 @@ export default function CostPage() {
               )}
             </>
           )}
-        </div>
-
-        <div className="glass-card">
-          <div className="cost-extra-heading">
-            <div>
-              <h2>Extra Cost Summary</h2>
-              <p className="muted">Transport, gas/fuel and disposable supplies are managed on the Extra Cost page.</p>
-            </div>
-            <button className="ghost-button" type="button" onClick={() => router.push('/app/extra-cost')}>Edit Extra Costs</button>
-          </div>
-          <div className="stat-grid" style={{ marginTop: 16 }}>
-            <StatCard label="Manpower" value={money(work.extras.staff)} />
-            <StatCard label="Transport" value={money(work.extras.transport)} />
-            <StatCard label="Gas / Fuel" value={money(work.extras.gasFuel)} />
-            <StatCard label="Disposables" value={money(work.extras.disposable)} />
-          </div>
-          {manpowerSummaries.length > 0 ? (
-            <div style={{ marginTop: 18 }}>
-              <h3>Manpower by Function</h3>
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Day</th>
-                      <th>Function</th>
-                      <th>Staff</th>
-                      <th>Cost</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {manpowerSummaries.map((summary) => (
-                      <tr key={summary.serviceId}>
-                        <td>{summary.dayLabel || '-'}</td>
-                        <td><b>{summary.mealLabel}</b></td>
-                        <td>{summary.people}</td>
-                        <td><b>{money(summary.cost)}</b></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : null}
-          <div className="action-row" style={{ marginTop: 14 }}>
-            <button
-              className="ghost-button"
-              type="button"
-              onClick={() => router.push('/app/manpower')}
-            >
-              Edit Manpower
-            </button>
-          </div>
         </div>
 
         <div className="action-row page-actions">
