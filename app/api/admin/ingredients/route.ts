@@ -17,7 +17,7 @@ async function requireAdmin() {
 }
 
 function recipeIngredientUsage(dishes: unknown) {
-  const usage = new Map<string, Array<{ id: string; name: string }>>();
+  const usage = new Map<string, Array<{ id: string; name: string; quantity: number; unit: string }>>();
   if (!Array.isArray(dishes)) return usage;
   dishes.forEach((dish, index) => {
     if (!dish || typeof dish !== 'object') return;
@@ -26,8 +26,23 @@ function recipeIngredientUsage(dishes: unknown) {
     if (!Array.isArray(ingredients)) return;
     const name = String(recipe.name || recipe.dishName || `Recipe ${index + 1}`).trim();
     const id = String(recipe.id || `recipe_${index + 1}`).trim();
-    new Set(ingredients.map((item) => item && typeof item === 'object' ? String((item as Record<string, unknown>).rateKey || '') : '').filter(Boolean))
-      .forEach((rateKey) => usage.set(rateKey, [...(usage.get(rateKey) || []), { id, name }]));
+    const recipeUsage = new Map<string, { quantity: number; unit: string }>();
+    ingredients.forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+      const ingredient = item as Record<string, unknown>;
+      const rateKey = String(ingredient.rateKey || '').trim();
+      if (!rateKey) return;
+      const quantity = Math.max(0, Number(ingredient.qty ?? ingredient.quantity) || 0);
+      const unit = String(ingredient.unit || ingredient.rateUnit || '').trim();
+      const existing = recipeUsage.get(rateKey);
+      recipeUsage.set(rateKey, {
+        quantity: existing && existing.unit === unit ? existing.quantity + quantity : quantity,
+        unit: unit || existing?.unit || '',
+      });
+    });
+    recipeUsage.forEach((amount, rateKey) => {
+      usage.set(rateKey, [...(usage.get(rateKey) || []), { id, name, ...amount }]);
+    });
   });
   return usage;
 }

@@ -13,7 +13,7 @@ import {
 } from '../../../lib/ingredientCatalog';
 
 type IngredientRow = IngredientRate & { rowKey: string; originalId: string };
-type RecipeUsage = { id: string; name: string };
+type RecipeUsage = { id: string; name: string; quantity: number; unit: string };
 type UsageMap = Record<string, RecipeUsage[]>;
 type IngredientStatus = 'ALL' | 'ATTENTION' | 'LINKED' | 'UNLINKED';
 type IngredientSort = 'NAME_ASC' | 'NAME_DESC' | 'RATE_HIGH' | 'RATE_LOW' | 'MOST_USED';
@@ -29,6 +29,11 @@ function rowKey() {
 function hasDuplicate(rows: IngredientRow[], row: IngredientRow) {
   const id = normalizeIngredientId(row.name, row.unit);
   return rows.some((item) => item.rowKey !== row.rowKey && normalizeIngredientId(item.name, item.unit) === id);
+}
+
+function formatIngredientQuantity(quantity: number, unit: string) {
+  if (!(quantity > 0)) return 'Quantity not set';
+  return `${quantity.toLocaleString('en-IN', { maximumFractionDigits: 3 })}${unit ? ` ${unit}` : ''}`;
 }
 
 export default function AdminIngredientsPage() {
@@ -551,9 +556,10 @@ export default function AdminIngredientsPage() {
                         <td data-label="Recipe usage">
                           {usedBy ? (
                             <div className="ingredient-recipe-links" aria-label={`${row.name} is used in ${usedBy} recipe${usedBy === 1 ? '' : 's'}`}>
+                              <strong>{usedBy} recipe{usedBy === 1 ? '' : 's'}</strong>
                               {usedByRecipes.map((recipe) => (
                                 <a key={recipe.id} href={`/admin/dishes?recipe=${encodeURIComponent(recipe.name)}#recipes`} title={`Open ${recipe.name} in Recipe Studio`}>
-                                  <span>{recipe.name}</span><small>Open</small>
+                                  <span>{recipe.name}</span><small>{formatIngredientQuantity(recipe.quantity, recipe.unit)}</small>
                                 </a>
                               ))}
                             </div>
