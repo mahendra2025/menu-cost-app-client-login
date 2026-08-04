@@ -1237,7 +1237,7 @@ function handleCsvImport(
         {ready ? (
           <div className="glass-card dish-master-list-card">
             <div className="dish-list-heading">
-              <div><span className="section-kicker">Catalog editor</span><h2>Dish list</h2><p className="muted">Double-click a dish to open its recipe. Prices are per serving.</p></div>
+              <div><span className="section-kicker">Catalog editor</span><h2>Dish list</h2><p className="muted">Click a dish to open its recipe. Prices are per serving.</p></div>
               <div className="dish-list-actions">
                 <span className="badge">{visibleStart}–{visibleEnd} of {filteredRows.length}</span>
                 <button className="secondary-button" onClick={saveAll} disabled={saving || !dirty}>
@@ -1256,8 +1256,8 @@ function handleCsvImport(
                   <div
                     className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`}
                     key={row.id}
-                    title={row.name.trim() ? `Double-click to open ${row.name.trim()} recipe` : undefined}
-                    onDoubleClick={(event) => {
+                    title={row.name.trim() ? `Open ${row.name.trim()} recipe` : undefined}
+                    onClick={(event) => {
                       if (!row.name.trim()) return;
                       if ((event.target as HTMLElement).closest('button, input, select, textarea, summary, a, label')) return;
                       openRecipeForDish(row);
