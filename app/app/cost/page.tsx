@@ -131,6 +131,23 @@ export default function CostPage() {
     });
   }
 
+  function removeDish(id: string) {
+    if (!work) return;
+    const selectedDish = work.menu.find((item) => item.id === id);
+
+    if (
+      selectedDish &&
+      !window.confirm(`Remove ${selectedDish.name} from this menu?`)
+    ) {
+      return;
+    }
+
+    persist({
+      ...work,
+      menu: work.menu.filter((item) => item.id !== id),
+    });
+  }
+
   return (
     <AppShell title="Cost" subtitle="Step 4 of 6: review food, manpower and extra costs">
       <section className="content-grid">
@@ -248,11 +265,13 @@ export default function CostPage() {
                         <tr>
                           <th>Dish &amp; meal</th>
                           <th>Category</th>
+                          <th>Serving quantity</th>
                           <th>Members</th>
                           <th>Base cost / plate</th>
                           <th>Portion</th>
                           <th>Adjusted / plate</th>
                           <th>Total cost</th>
+                          <th>Action</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -265,6 +284,13 @@ export default function CostPage() {
                               </div>
                             </td>
                             <td><span className="dish-category-chip">{item.category}</span></td>
+                            <td>
+                              <span className="dish-serving-quantity">
+                                {Number(item.portionQuantity) > 0
+                                  ? `${item.portionQuantity} ${item.portionUnit || 'serving'}`
+                                  : 'Not set'}
+                              </span>
+                            </td>
                             <td>{item.effectivePax.toLocaleString('en-IN')}</td>
                             <td>
                               <label className="dish-rate-input">
@@ -328,6 +354,16 @@ export default function CostPage() {
                             </td>
                             <td>{money(item.adjustedCostPerPlate)}</td>
                             <td><strong className="dish-total-cost">{money(item.itemTotalCost)}</strong></td>
+                            <td>
+                              <button
+                                className="dish-remove-button"
+                                type="button"
+                                onClick={() => removeDish(item.id)}
+                                aria-label={`Remove ${item.name} from menu`}
+                              >
+                                Remove
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -346,6 +382,14 @@ export default function CostPage() {
                         </div>
                         <div className="dish-cost-card-grid">
                           <div><small>Members</small><b>{item.effectivePax.toLocaleString('en-IN')}</b></div>
+                          <div>
+                            <small>Serving quantity</small>
+                            <b>
+                              {Number(item.portionQuantity) > 0
+                                ? `${item.portionQuantity} ${item.portionUnit || 'serving'}`
+                                : 'Not set'}
+                            </b>
+                          </div>
                           <div><small>Portion</small><b>{Math.round(item.portionPercent * 100) / 100}%</b></div>
                           <div><small>Adjusted / plate</small><b>{money(item.adjustedCostPerPlate)}</b></div>
                           <div><small>Total cost</small><b>{money(item.itemTotalCost)}</b></div>
@@ -366,6 +410,13 @@ export default function CostPage() {
                             />
                           </label>
                         </div>
+                        <button
+                          className="dish-remove-button dish-remove-button-mobile"
+                          type="button"
+                          onClick={() => removeDish(item.id)}
+                        >
+                          Remove dish
+                        </button>
                       </article>
                     ))}
                   </div>
