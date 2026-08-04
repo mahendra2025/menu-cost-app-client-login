@@ -17,12 +17,11 @@ import {
 } from '../../../lib/pdfMenuExtraction';
 
 import {
-  getSession,
   findPendingDishCandidates,
+  getSession,
   loadWork,
   parseMenuText,
   saveWork,
-  uid,
 } from '../../../lib/store';
 
 import type {
@@ -306,7 +305,7 @@ export default function EventPage() {
   const [detectionPreview, setDetectionPreview] =
     useState<MenuDetectionPreview | null>(null);
 
-  const [, setQueuedSuggestionCount] =
+  const [pendingReviewCount, setPendingReviewCount] =
     useState(0);
 
   const [selectedPreviewIds, setSelectedPreviewIds] =
@@ -372,6 +371,7 @@ export default function EventPage() {
       work.event.rawMenuText.trim();
 
     setError('');
+    setPendingReviewCount(0);
 
     if (!rawMenuText) {
       setError(
@@ -394,47 +394,22 @@ export default function EventPage() {
       await syncDishCostItemsFromServer();
 
       /*
-       * parseMenuText reads dishes from
-       * the refreshed indexed catalog.
-       *
-       * Catalog matches receive their
-       * catalog category and rate.
-       *
-       * Catalog-confirmed dishes receive
-       * their saved rates. Structured new
-       * dish candidates remain available
-       * with a blank manual rate.
+       * Only catalog-confirmed names and aliases are returned. Unknown,
+       * ambiguous, or non-dish OCR text is intentionally excluded instead
+       * of being turned into a zero-rate dish.
        */
-      const [catalogMenu, pendingCandidates] =
-        await Promise.all([
-          parseMenuText(rawMenuText),
-          findPendingDishCandidates(rawMenuText),
-        ]);
-      const manualMenu: MenuItem[] =
-        pendingCandidates.map(
-          (candidate) => ({
-            id: uid('dish'),
-            name: candidate.name,
-            category:
-              candidate.categoryHint,
-            costPerPlate: 0,
-            portionQuantity: 1,
-            portionUnit: 'serving',
-            serviceId:
-              candidate.serviceId,
-            dayLabel:
-              candidate.dayLabel,
-            mealLabel:
-              candidate.mealLabel,
-            servicePax:
-              candidate.servicePax,
-          }),
-        );
-      const detectedMenu = [
-        ...catalogMenu,
-        ...manualMenu,
-      ];
-      let queuedCount = 0;
+      const [
+        detectedMenu,
+        pendingCandidates,
+      ] = await Promise.all([
+        parseMenuText(rawMenuText),
+        findPendingDishCandidates(
+          rawMenuText,
+        ),
+      ]);
+
+      let queuedForReview = 0;
+      let reviewQueueFailed = false;
 
       if (pendingCandidates.length) {
         try {
@@ -459,30 +434,29 @@ export default function EventPage() {
           const queueData =
             await queueResponse.json();
 
-          if (queueResponse.ok) {
-            queuedCount = Math.max(
-              0,
-              Number(
-                queueData.queued,
-              ) || 0,
-            );
-          } else {
-            console.warn(
-              'Could not queue new dishes:',
-              queueData.error,
+          if (!queueResponse.ok) {
+            throw new Error(
+              queueData.error ||
+                'New dishes could not be sent to the owner for review.',
             );
           }
+
+          queuedForReview = Math.max(
+            0,
+            Number(queueData.queued) || 0,
+          );
+          setPendingReviewCount(
+            queuedForReview,
+          );
         } catch (queueError) {
-          console.warn(
-            'Could not queue new dishes:',
-            queueError,
+          reviewQueueFailed = true;
+          setError(
+            queueError instanceof Error
+              ? queueError.message
+              : 'New dishes could not be sent to the owner for review.',
           );
         }
       }
-
-      setQueuedSuggestionCount(
-        queuedCount,
-      );
 
       console.log(
         'Detected menu:',
@@ -491,14 +465,18 @@ export default function EventPage() {
 
       if (!detectedMenu.length) {
         setError(
-          'No likely dishes were found. Check the extracted text or select dishes manually.',
+          queuedForReview > 0
+            ? `${queuedForReview} possible new ${queuedForReview === 1 ? 'dish was' : 'dishes were'} sent to the owner for approval. Run detection again after approval.`
+            : reviewQueueFailed
+              ? 'No catalog-confirmed dishes were found, and possible new dishes could not be sent for owner review. Please try again.'
+              : 'No catalog-confirmed dishes were found. Check the extracted text or ask the owner to add the missing dishes to the Dish Catalog.',
         );
 
         return;
       }
 
       console.info(
-        `Menu detection complete: ${catalogMenu.length} catalog dishes and ${manualMenu.length} new dishes detected.`,
+        `Menu detection complete: ${detectedMenu.length} catalog-confirmed dishes detected.`,
       );
 
       const detectedDetails =
@@ -601,7 +579,6 @@ export default function EventPage() {
 
     persistWork(nextWork);
     setDetectionPreview(null);
-    setQueuedSuggestionCount(0);
     setSelectedPreviewIds(
       new Set(),
     );
@@ -1089,12 +1066,6 @@ export default function EventPage() {
       previewGroupMap.values(),
     );
 
-  const previewMissingRateCount =
-    selectedPreviewMenu.filter(
-      (item) =>
-        !(Number(item.costPerPlate) > 0),
-    ).length;
-
   const existingMenuKeys =
     new Set(
       work.menu.map(
@@ -1329,18 +1300,38 @@ export default function EventPage() {
                       <b>Take a photo</b>
                       <p>Use a clear, straight menu photo.</p>
                     </div>
-                    <label
-                      className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
-                      htmlFor="menuCamera"
-                    >
-                      {uploading === 'camera' ? 'Scanning photo...' : 'Open Camera'}
-                    </label>
+                    <div className="menu-photo-actions">
+                      <label
+                        className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                        htmlFor="menuCamera"
+                      >
+                        {uploading === 'camera' ? 'Scanning photo...' : 'Open Camera'}
+                      </label>
+                      <label
+                        className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                        htmlFor="menuPhoto"
+                      >
+                        Upload Photo
+                      </label>
+                    </div>
                     <input
                       id="menuCamera"
                       className="visually-hidden-file"
                       type="file"
                       accept="image/*"
                       capture="environment"
+                      disabled={Boolean(uploading)}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = '';
+                        if (file) void readMenuPhoto(file);
+                      }}
+                    />
+                    <input
+                      id="menuPhoto"
+                      className="visually-hidden-file"
+                      type="file"
+                      accept="image/*"
                       disabled={Boolean(uploading)}
                       onChange={(event) => {
                         const file = event.target.files?.[0];
@@ -1461,16 +1452,26 @@ Gulab Jamun`}
                   <div>
                     <span className="section-kicker">Detection preview</span>
                     <h3>Review before saving</h3>
-                    <p>Review catalog dishes and new dishes needing a manual rate, then replace or merge the menu.</p>
+                    <p>Only dishes confirmed by the Dish Catalog are shown. Unmatched and ambiguous text is excluded.</p>
                   </div>
                   <div className="menu-preview-metrics">
                     <span><b>{selectedPreviewMenu.length}</b> selected</span>
                     <span><b>{detectionPreviewGroups.length}</b> functions</span>
-                    <span className={previewMissingRateCount > 0 ? 'needs-attention' : ''}>
-                      <b>{previewMissingRateCount}</b> rates missing
-                    </span>
+                    <span><b>{detectionPreview.menu.length}</b> confirmed</span>
+                    {pendingReviewCount > 0 ? (
+                      <span className="needs-attention"><b>{pendingReviewCount}</b> awaiting owner</span>
+                    ) : null}
                   </div>
                 </div>
+
+                {pendingReviewCount > 0 ? (
+                  <div className="event-detection-note" role="status">
+                    <b>New dishes sent for owner review</b>
+                    <p>
+                      {pendingReviewCount} possible new {pendingReviewCount === 1 ? 'dish is' : 'dishes are'} excluded from this menu until the owner approves {pendingReviewCount === 1 ? 'it' : 'them'}. Run detection again after approval.
+                    </p>
+                  </div>
+                ) : null}
 
                 <div className="menu-preview-toolbar">
                   <b>{selectedPreviewMenu.length} of {detectionPreview.menu.length} dishes selected</b>

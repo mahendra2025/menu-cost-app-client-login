@@ -102,16 +102,20 @@ export async function POST(
       0,
       Number(body.rate) || 0,
     );
+    const googleVerified =
+      body.googleVerified === true;
 
     if (
       !id ||
       !name ||
-      !category
+      !category ||
+      !(rate > 0) ||
+      !googleVerified
     ) {
       return NextResponse.json(
         {
           error:
-            'Name and category are required',
+            'Google verification, name, category, and a positive rate are required',
         },
         { status: 400 },
       );

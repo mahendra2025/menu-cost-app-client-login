@@ -27,6 +27,22 @@ type EditableSuggestion =
     rate: string;
   };
 
+type GoogleDishResult = {
+  title: string;
+  link: string;
+  snippet: string;
+};
+
+type DishVerification = {
+  loading: boolean;
+  searched: boolean;
+  confirmed: boolean;
+  automatic: boolean;
+  searchUrl: string;
+  results: GoogleDishResult[];
+  error: string;
+};
+
 export default function NewDishesPage() {
   const [rows, setRows] =
     useState<EditableSuggestion[]>(
@@ -46,6 +62,8 @@ export default function NewDishesPage() {
     );
   const [query, setQuery] =
     useState('');
+  const [verifications, setVerifications] =
+    useState<Record<string, DishVerification>>({});
 
   async function loadQueue() {
     setLoading(true);
@@ -110,6 +128,7 @@ export default function NewDishesPage() {
           }),
         ),
       );
+      setVerifications({});
     } catch (error) {
       setMessageType('error');
       setMessage(
@@ -139,18 +158,134 @@ export default function NewDishesPage() {
           : row,
       ),
     );
+
+    if (changes.dishName !== undefined) {
+      setVerifications((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+    }
+  }
+
+  async function verifyOnGoogle(
+    row: EditableSuggestion,
+  ) {
+    const dishName =
+      row.dishName.trim();
+
+    if (!dishName) {
+      setMessageType('error');
+      setMessage(
+        'Enter the dish name before searching Google.',
+      );
+      return;
+    }
+
+    setVerifications((current) => ({
+      ...current,
+      [row.id]: {
+        loading: true,
+        searched: false,
+        confirmed: false,
+        automatic: false,
+        searchUrl: '',
+        results: [],
+        error: '',
+      },
+    }));
+
+    try {
+      const response = await fetch(
+        `/api/admin/dish-suggestions/google-search?q=${encodeURIComponent(dishName)}`,
+        { cache: 'no-store' },
+      );
+      const data = await response.json() as {
+        configured?: boolean;
+        searchUrl?: string;
+        results?: GoogleDishResult[];
+        error?: string;
+      };
+      const searchUrl =
+        String(data.searchUrl || '');
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Google search failed',
+        );
+      }
+
+      const results =
+        Array.isArray(data.results)
+          ? data.results
+          : [];
+
+      setVerifications((current) => ({
+        ...current,
+        [row.id]: {
+          loading: false,
+          searched: true,
+          confirmed: false,
+          automatic:
+            Boolean(data.configured),
+          searchUrl,
+          results,
+          error: '',
+        },
+      }));
+
+      if (!data.configured && searchUrl) {
+        window.open(
+          searchUrl,
+          '_blank',
+          'noopener,noreferrer',
+        );
+      }
+    } catch (error) {
+      setVerifications((current) => ({
+        ...current,
+        [row.id]: {
+          loading: false,
+          searched: false,
+          confirmed: false,
+          automatic: false,
+          searchUrl: '',
+          results: [],
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Google search failed',
+        },
+      }));
+    }
+  }
+
+  function confirmGoogleDish(id: string) {
+    setVerifications((current) => ({
+      ...current,
+      [id]: {
+        ...current[id],
+        confirmed: true,
+      },
+    }));
   }
 
   async function approve(
     row: EditableSuggestion,
   ) {
+    const verification =
+      verifications[row.id];
+
     if (
       !row.dishName.trim() ||
-      !row.category
+      !row.category ||
+      !(Number(row.rate) > 0) ||
+      !verification?.confirmed
     ) {
       setMessageType('error');
       setMessage(
-        'Enter a dish name and category before adding it.',
+        'Verify the dish on Google, then enter its name, category, and a positive manual rate.',
       );
       return;
     }
@@ -175,6 +310,7 @@ export default function NewDishesPage() {
               row.subcategory,
             rate:
               Number(row.rate) || 0,
+            googleVerified: true,
           }),
         },
       );
@@ -396,6 +532,98 @@ export default function NewDishesPage() {
                   </div>
                 </div>
 
+                <div className="new-dish-verification">
+                  <div className="new-dish-verification-heading">
+                    <div>
+                      <b>Google dish verification</b>
+                      <span>
+                        Search for food or recipe evidence, review it, then confirm manually.
+                      </span>
+                    </div>
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={() =>
+                        void verifyOnGoogle(row)
+                      }
+                      disabled={
+                        Boolean(workingId) ||
+                        verifications[row.id]
+                          ?.loading
+                      }
+                    >
+                      {verifications[row.id]
+                        ?.loading
+                        ? 'Searching…'
+                        : 'Search Google'}
+                    </button>
+                  </div>
+
+                  {verifications[row.id]
+                    ?.error ? (
+                    <p className="new-dish-verification-error">
+                      {verifications[row.id].error}
+                    </p>
+                  ) : null}
+
+                  {verifications[row.id]
+                    ?.searched ? (
+                    <div className="new-dish-search-results">
+                      {verifications[row.id]
+                        .results.length ? (
+                        verifications[row.id]
+                          .results.map(
+                            (result) => (
+                              <a
+                                href={result.link}
+                                key={result.link}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <b>{result.title}</b>
+                                <span>{result.snippet}</span>
+                              </a>
+                            ),
+                          )
+                      ) : (
+                        <p>
+                          Review the Google results in the opened tab. Automatic in-app results require the optional Google API configuration.
+                        </p>
+                      )}
+
+                      <div className="new-dish-verification-confirm">
+                        {verifications[row.id]
+                          .searchUrl ? (
+                          <a
+                            href={verifications[row.id].searchUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Open full Google search
+                          </a>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            confirmGoogleDish(
+                              row.id,
+                            )
+                          }
+                          disabled={
+                            verifications[row.id]
+                              .confirmed
+                          }
+                        >
+                          {verifications[row.id]
+                            .confirmed
+                            ? '✓ Dish confirmed'
+                            : 'Confirm this is a dish'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+
                 <div className="new-dish-fields">
                   <div className="field">
                     <label>
@@ -468,7 +696,7 @@ export default function NewDishesPage() {
                     <input
                       className="input"
                       type="number"
-                      min="0"
+                      min="0.01"
                       step="0.01"
                       value={row.rate}
                       onChange={(event) =>
@@ -509,7 +737,10 @@ export default function NewDishesPage() {
                       void approve(row)
                     }
                     disabled={
-                      Boolean(workingId)
+                      Boolean(workingId) ||
+                      !verifications[row.id]
+                        ?.confirmed ||
+                      !(Number(row.rate) > 0)
                     }
                   >
                     {workingId === row.id

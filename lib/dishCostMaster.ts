@@ -2277,13 +2277,34 @@ export function findDishesInText(
   });
 
   /*
+   * A shared catalog alias is not enough evidence to select one dish.
+   * Reject every match at an ambiguous span instead of relying on the
+   * alphabetical sort order below to silently choose a winner.
+   */
+  const dishesBySpan = new Map<string, Set<string>>();
+
+  matches.forEach((match) => {
+    const spanKey = `${match.start}:${match.end}`;
+    const dishKey = `${normalizeDishName(match.dish.name)}-${match.dish.category}`;
+    const spanDishes = dishesBySpan.get(spanKey) ?? new Set<string>();
+
+    spanDishes.add(dishKey);
+    dishesBySpan.set(spanKey, spanDishes);
+  });
+
+  const unambiguousMatches = matches.filter(
+    (match) =>
+      dishesBySpan.get(`${match.start}:${match.end}`)?.size === 1,
+  );
+
+  /*
    * Prefer the longest name when catalog aliases overlap, then keep only
    * non-overlapping spans. For example, "Paneer Butter Masala" should not
    * also be treated as a shorter paneer dish.
    */
   const selected: typeof matches = [];
 
-  matches
+  unambiguousMatches
     .sort(
       (left, right) =>
         left.start - right.start ||

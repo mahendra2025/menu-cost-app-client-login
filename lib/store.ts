@@ -1371,7 +1371,6 @@ function splitMenuText(
 function detectDishesFromLine(
   menuLine: string,
   catalog: DishCatalogModule,
-  categoryHint?: Category,
 ): DishCostItem[] {
   const candidates =
     createDishCandidates(menuLine);
@@ -1393,26 +1392,9 @@ function detectDishesFromLine(
     }
   }
 
-  const fuzzyCandidates = Array.from(
-    new Set([
-      candidates[0],
-      candidates[1],
-      candidates[candidates.length - 1],
-    ].filter((candidate): candidate is string => Boolean(candidate))),
-  );
-
-  for (const candidate of fuzzyCandidates) {
-    const fuzzyMatch =
-      catalog.findFuzzyDishByName(
-        candidate,
-        categoryHint,
-      );
-
-    if (fuzzyMatch) {
-      return [fuzzyMatch];
-    }
-  }
-
+  // Never guess during automatic menu detection. Fuzzy and phonetic
+  // matches can silently replace OCR text with the wrong catalog dish.
+  // Misspellings must be represented by an explicit catalog alias instead.
   return [];
 }
 
@@ -1432,7 +1414,7 @@ function analyzeMenuLines(text: string) {
   const result = loadDishCatalog().then((catalog) => {
     const menuLines = splitMenuText(text);
     const catalogMatches = menuLines.map((line) =>
-      detectDishesFromLine(line.text, catalog, line.categoryHint),
+      detectDishesFromLine(line.text, catalog),
     );
 
     return { catalog, menuLines, catalogMatches };

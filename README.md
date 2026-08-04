@@ -98,6 +98,17 @@ https://www.menu-costing.com/api/webhooks/razorpay
 
 Subscribe to subscription authenticated, activated, charged, pending, halted, cancelled, and completed events. Use separate keys, plan IDs, and webhook secrets for Test and Live modes.
 
+## Optional Google dish verification
+
+The owner review queue always includes a one-click Google search. Existing Google Custom Search JSON API customers can also show results inside the app by configuring:
+
+```bash
+GOOGLE_CUSTOM_SEARCH_API_KEY=your_google_api_key
+GOOGLE_CUSTOM_SEARCH_ENGINE_ID=your_programmable_search_engine_id
+```
+
+Without these optional variables, the owner verifies a dish in a normal Google search tab before confirming it and entering the manual rate.
+
 Open:
 
 ```txt
