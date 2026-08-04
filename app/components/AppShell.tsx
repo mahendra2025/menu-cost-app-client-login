@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
-import { syncDishCostItemsFromServer } from '../../lib/dishCostMaster';
 import { getSession, logout, refreshSessionFromClient } from '../../lib/store';
 import type { Session } from '../../lib/types';
 
@@ -73,11 +72,6 @@ export default function AppShell({
     setSession(current);
     setReady(true);
   }, [router]);
-
-  useEffect(() => {
-    if (!ready) return;
-    void syncDishCostItemsFromServer();
-  }, [ready]);
 
   const nav = useMemo(() => (session?.role === 'ADMIN' ? adminNav : clientNav), [session]);
   const activeIndex = Math.max(0, nav.findIndex((item) => item.href === pathname));

@@ -8,23 +8,30 @@ export default function PwaRegister() {
 
     const register = async () => {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js', {
+        await navigator.serviceWorker.register('/sw.js', {
           scope: '/',
           updateViaCache: 'none',
         });
-        await registration.update();
       } catch {
         // The web app continues to work normally if PWA registration is unavailable.
       }
     };
 
+    let timer = 0;
+    const scheduleRegistration = () => {
+      timer = window.setTimeout(() => void register(), 1200);
+    };
+
     if (document.readyState === 'complete') {
-      void register();
-      return;
+      scheduleRegistration();
+      return () => window.clearTimeout(timer);
     }
 
-    window.addEventListener('load', register, { once: true });
-    return () => window.removeEventListener('load', register);
+    window.addEventListener('load', scheduleRegistration, { once: true });
+    return () => {
+      window.removeEventListener('load', scheduleRegistration);
+      window.clearTimeout(timer);
+    };
   }, []);
 
   return null;

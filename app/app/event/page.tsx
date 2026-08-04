@@ -2,7 +2,6 @@
 
 import {
   useEffect,
-  useRef,
   useState,
 } from 'react';
 
@@ -11,10 +10,6 @@ import { useRouter } from 'next/navigation';
 import AppShell, {
   LockedCard,
 } from '../../components/AppShell';
-
-import {
-  syncDishCostItemsFromServer,
-} from '../../../lib/dishCostMaster';
 
 import {
   pdfPageNeedsOcr,
@@ -319,10 +314,6 @@ export default function EventPage() {
       () => new Set(),
     );
 
-  const catalogSyncRef = useRef<
-    ReturnType<typeof syncDishCostItemsFromServer> | null
-  >(null);
-
   useEffect(() => {
     const currentSession = getSession();
 
@@ -334,8 +325,6 @@ export default function EventPage() {
       );
 
       setWork(savedWork);
-      catalogSyncRef.current =
-        syncDishCostItemsFromServer();
     }
   }, []);
 
@@ -400,10 +389,9 @@ export default function EventPage() {
        * This ensures newly added Admin dishes can be detected even
        * when this browser still has an older local catalog.
        */
-      await (
-        catalogSyncRef.current ??
-        syncDishCostItemsFromServer()
-      );
+      const { syncDishCostItemsFromServer } =
+        await import('../../../lib/dishCostMaster');
+      await syncDishCostItemsFromServer();
 
       /*
        * parseMenuText reads dishes from
@@ -417,12 +405,11 @@ export default function EventPage() {
        * dish candidates remain available
        * with a blank manual rate.
        */
-      const catalogMenu =
-        parseMenuText(rawMenuText);
-      const pendingCandidates =
-        findPendingDishCandidates(
-          rawMenuText,
-        );
+      const [catalogMenu, pendingCandidates] =
+        await Promise.all([
+          parseMenuText(rawMenuText),
+          findPendingDishCandidates(rawMenuText),
+        ]);
       const manualMenu: MenuItem[] =
         pendingCandidates.map(
           (candidate) => ({

@@ -1,15 +1,10 @@
 
 'use client';
 
-import {
-  CATEGORY_BASE_COST,
-  CATEGORIES,
-  findDishesInText,
-  findDishByName,
-  findFuzzyDishByName,
+import type {
+  Category,
+  DishCostItem,
 } from './dishCostMaster';
-
-import type { Category } from './dishCostMaster';
 
 import type {
   ClientUser,
@@ -23,6 +18,15 @@ import type {
 } from './types';
 
 const CLIENTS_KEY = 'menu_cost_clients_v1';
+
+type DishCatalogModule = typeof import('./dishCostMaster');
+
+let dishCatalogPromise: Promise<DishCatalogModule> | null = null;
+
+function loadDishCatalog() {
+  dishCatalogPromise ??= import('./dishCostMaster');
+  return dishCatalogPromise;
+}
 
 export const SESSION_KEY = 'menu_cost_session';
 
@@ -262,6 +266,45 @@ function workKey(tenantId: string): string {
   return `menu_cost_work_${tenantId}_v1`;
 }
 
+const pendingWorkSaves = new Map<string, WorkState>();
+const workSaveTimers = new Map<string, number>();
+let workSaveFlushListenersReady = false;
+
+function writeWorkNow(tenantId: string, work: WorkState) {
+  window.localStorage.setItem(
+    workKey(tenantId),
+    JSON.stringify(work),
+  );
+}
+
+function flushWorkSave(tenantId: string) {
+  if (typeof window === 'undefined') return;
+
+  const pending = pendingWorkSaves.get(tenantId);
+  if (!pending) return;
+
+  const timer = workSaveTimers.get(tenantId);
+  if (timer !== undefined) window.clearTimeout(timer);
+
+  pendingWorkSaves.delete(tenantId);
+  workSaveTimers.delete(tenantId);
+  writeWorkNow(tenantId, pending);
+}
+
+function flushAllWorkSaves() {
+  Array.from(pendingWorkSaves.keys()).forEach(flushWorkSave);
+}
+
+function ensureWorkSaveFlushListeners() {
+  if (workSaveFlushListenersReady || typeof window === 'undefined') return;
+  workSaveFlushListenersReady = true;
+
+  window.addEventListener('pagehide', flushAllWorkSaves);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushAllWorkSaves();
+  });
+}
+
 export function createEmptyWorkState(
   session?: Session | null,
 ): WorkState {
@@ -312,6 +355,8 @@ export function loadWork(
   if (typeof window === 'undefined') {
     return fallback;
   }
+
+  flushWorkSave(tenantId);
 
   const savedWork = safeJsonParse<Partial<WorkState> | null>(
     window.localStorage.getItem(
@@ -427,16 +472,26 @@ export function saveWork(
       new Date().toISOString(),
   };
 
-  window.localStorage.setItem(
-    workKey(tenantId),
-    JSON.stringify(nextWork),
+  pendingWorkSaves.set(tenantId, nextWork);
+  const existingTimer = workSaveTimers.get(tenantId);
+  if (existingTimer !== undefined) window.clearTimeout(existingTimer);
+
+  workSaveTimers.set(
+    tenantId,
+    window.setTimeout(() => flushWorkSave(tenantId), 140),
   );
+  ensureWorkSaveFlushListeners();
 }
 
 export function clearWork(
   tenantId: string,
 ): void {
   if (typeof window === 'undefined') return;
+
+  const timer = workSaveTimers.get(tenantId);
+  if (timer !== undefined) window.clearTimeout(timer);
+  workSaveTimers.delete(tenantId);
+  pendingWorkSaves.delete(tenantId);
 
   window.localStorage.removeItem(
     workKey(tenantId),
@@ -1315,10 +1370,9 @@ function splitMenuText(
 
 function detectDishesFromLine(
   menuLine: string,
+  catalog: DishCatalogModule,
   categoryHint?: Category,
-): NonNullable<
-  ReturnType<typeof findDishByName>
->[] {
+): DishCostItem[] {
   const candidates =
     createDishCandidates(menuLine);
 
@@ -1329,7 +1383,7 @@ function detectDishesFromLine(
    * the Menu page while still supporting several dishes on one line.
    */
   for (const candidate of candidates) {
-    const matchedDishes = findDishesInText(
+    const matchedDishes = catalog.findDishesInText(
       candidate,
       false,
     );
@@ -1349,7 +1403,7 @@ function detectDishesFromLine(
 
   for (const candidate of fuzzyCandidates) {
     const fuzzyMatch =
-      findFuzzyDishByName(
+      catalog.findFuzzyDishByName(
         candidate,
         categoryHint,
       );
@@ -1362,18 +1416,39 @@ function detectDishesFromLine(
   return [];
 }
 
-export function findPendingDishCandidates(
-  text: string,
-): PendingDishCandidate[] {
-  const menuLines =
-    splitMenuText(text);
-  const catalogMatches =
-    menuLines.map((line) =>
-      detectDishesFromLine(
-        line.text,
-        line.categoryHint,
-      ),
+type MenuLineAnalysis = {
+  catalog: DishCatalogModule;
+  menuLines: ParsedMenuLine[];
+  catalogMatches: DishCostItem[][];
+};
+
+let recentMenuAnalysis:
+  | { text: string; result: Promise<MenuLineAnalysis> }
+  | null = null;
+
+function analyzeMenuLines(text: string) {
+  if (recentMenuAnalysis?.text === text) return recentMenuAnalysis.result;
+
+  const result = loadDishCatalog().then((catalog) => {
+    const menuLines = splitMenuText(text);
+    const catalogMatches = menuLines.map((line) =>
+      detectDishesFromLine(line.text, catalog, line.categoryHint),
     );
+
+    return { catalog, menuLines, catalogMatches };
+  });
+
+  recentMenuAnalysis = { text, result };
+  void result.catch(() => {
+    if (recentMenuAnalysis?.result === result) recentMenuAnalysis = null;
+  });
+  return result;
+}
+
+export async function findPendingDishCandidates(
+  text: string,
+): Promise<PendingDishCandidate[]> {
+  const { menuLines, catalogMatches } = await analyzeMenuLines(text);
   const candidates = menuLines
     .map((line, index) => ({
       line,
@@ -1440,11 +1515,10 @@ export function findPendingDishCandidates(
   );
 }
 
-export function parseMenuText(
+export async function parseMenuText(
   text: string,
-): MenuItem[] {
-  const menuLines =
-    splitMenuText(text);
+): Promise<MenuItem[]> {
+  const { catalog, menuLines, catalogMatches } = await analyzeMenuLines(text);
 
   if (!menuLines.length) {
     console.warn(
@@ -1456,13 +1530,9 @@ export function parseMenuText(
 
   const menuItems: MenuItem[] = [];
 
-  for (const menuLine of menuLines) {
+  for (const [menuLineIndex, menuLine] of menuLines.entries()) {
     const line = menuLine.text;
-    const matchedDishes =
-      detectDishesFromLine(
-        line,
-        menuLine.categoryHint,
-      );
+    const matchedDishes = catalogMatches[menuLineIndex] ?? [];
 
     if (matchedDishes.length) {
       matchedDishes.forEach(
@@ -1482,6 +1552,7 @@ export function parseMenuText(
           ) ||
           getCategoryBaseCost(
             matchedDish.category,
+            catalog,
           ),
 
         portionQuantity:
@@ -1537,18 +1608,19 @@ export function parseMenuText(
 
 function getCategoryBaseCost(
   category: string,
+  catalog: DishCatalogModule,
 ): number {
   if (
-    CATEGORIES.includes(
+    catalog.CATEGORIES.includes(
       category as (
-        typeof CATEGORIES
+        typeof catalog.CATEGORIES
       )[number],
     )
   ) {
     return (
-      CATEGORY_BASE_COST[
+      catalog.CATEGORY_BASE_COST[
         category as (
-          typeof CATEGORIES
+          typeof catalog.CATEGORIES
         )[number]
       ] ?? 0
     );

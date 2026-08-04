@@ -5728,3 +5728,15 @@ td:last-child {
     min-height: 44px;
   }
 }
+
+/* Skip layout and paint work for long, off-screen workflow sections. */
+@supports (content-visibility: auto) {
+  .client-theme .menu-service-group,
+  .client-theme .manpower-function-card,
+  .client-theme .dish-cost-card,
+  .client-theme .disposable-cost-row,
+  .client-theme .quotation-menu-group {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 260px;
+  }
+}
