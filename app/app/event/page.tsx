@@ -22,6 +22,7 @@ import {
   loadWork,
   parseMenuText,
   saveWork,
+  uid,
 } from '../../../lib/store';
 
 import type {
@@ -571,8 +572,10 @@ export default function EventPage() {
   const [detectionPreview, setDetectionPreview] =
     useState<MenuDetectionPreview | null>(null);
 
-  const [pendingReviewCount, setPendingReviewCount] =
-    useState(0);
+  const [manualRateIds, setManualRateIds] =
+    useState<Set<string>>(
+      () => new Set(),
+    );
 
   const [selectedPreviewIds, setSelectedPreviewIds] =
     useState<Set<string>>(
@@ -637,7 +640,7 @@ export default function EventPage() {
       work.event.rawMenuText.trim();
 
     setError('');
-    setPendingReviewCount(0);
+    setManualRateIds(new Set());
 
     if (!rawMenuText) {
       setError(
@@ -659,13 +662,8 @@ export default function EventPage() {
         await import('../../../lib/dishCostMaster');
       await syncDishCostItemsFromServer();
 
-      /*
-       * Only catalog-confirmed names and aliases are returned. Unknown,
-       * ambiguous, or non-dish OCR text is intentionally excluded instead
-       * of being turned into a zero-rate dish.
-       */
       const [
-        detectedMenu,
+        catalogMenu,
         pendingCandidates,
       ] = await Promise.all([
         parseMenuText(rawMenuText),
@@ -673,56 +671,31 @@ export default function EventPage() {
           rawMenuText,
         ),
       ]);
-
-      let queuedForReview = 0;
-      let reviewQueueFailed = false;
-
-      if (pendingCandidates.length) {
-        try {
-          const queueResponse =
-            await fetch(
-              '/api/dish-suggestions',
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type':
-                    'application/json',
-                },
-                body: JSON.stringify({
-                  candidates:
-                    pendingCandidates,
-                  sourceFileName:
-                    work.event
-                      .uploadFileName,
-                }),
-              },
-            );
-          const queueData =
-            await queueResponse.json();
-
-          if (!queueResponse.ok) {
-            throw new Error(
-              queueData.error ||
-                'New dishes could not be sent to the owner for review.',
-            );
-          }
-
-          queuedForReview = Math.max(
-            0,
-            Number(queueData.queued) || 0,
-          );
-          setPendingReviewCount(
-            queuedForReview,
-          );
-        } catch (queueError) {
-          reviewQueueFailed = true;
-          setError(
-            queueError instanceof Error
-              ? queueError.message
-              : 'New dishes could not be sent to the owner for review.',
-          );
-        }
-      }
+      const manualMenu: MenuItem[] =
+        pendingCandidates.map(
+          (candidate) => ({
+            id: uid('dish'),
+            name: candidate.name,
+            category:
+              candidate.categoryHint ||
+              'Other',
+            costPerPlate: 0,
+            portionQuantity: 1,
+            portionUnit: 'serving',
+            serviceId:
+              candidate.serviceId,
+            dayLabel:
+              candidate.dayLabel,
+            mealLabel:
+              candidate.mealLabel,
+            servicePax:
+              candidate.servicePax,
+          }),
+        );
+      const detectedMenu = [
+        ...catalogMenu,
+        ...manualMenu,
+      ];
 
       console.log(
         'Detected menu:',
@@ -731,18 +704,14 @@ export default function EventPage() {
 
       if (!detectedMenu.length) {
         setError(
-          queuedForReview > 0
-            ? `${queuedForReview} possible new ${queuedForReview === 1 ? 'dish was' : 'dishes were'} sent to the owner for approval. Run detection again after approval.`
-            : reviewQueueFailed
-              ? 'No catalog-confirmed dishes were found, and possible new dishes could not be sent for owner review. Please try again.'
-              : 'No catalog-confirmed dishes were found. Check the extracted text or ask the owner to add the missing dishes to the Dish Catalog.',
+          'No likely dishes were found. Check the extracted menu text and try again.',
         );
 
         return;
       }
 
       console.info(
-        `Menu detection complete: ${detectedMenu.length} catalog-confirmed dishes detected.`,
+        `Menu detection complete: ${catalogMenu.length} catalog dishes and ${manualMenu.length} dishes needing manual rates.`,
       );
 
       const detectedDetails =
@@ -755,6 +724,13 @@ export default function EventPage() {
         menu: detectedMenu,
         eventDetails: detectedDetails,
       });
+      setManualRateIds(
+        new Set(
+          manualMenu.map(
+            (item) => item.id,
+          ),
+        ),
+      );
       setSelectedPreviewIds(
         new Set(
           detectedMenu.map(
@@ -808,6 +784,20 @@ export default function EventPage() {
     if (!selectedMenu.length) {
       setError(
         'Select at least one detected dish before continuing.',
+      );
+      return;
+    }
+
+    const missingManualRates =
+      selectedMenu.filter(
+        (item) =>
+          manualRateIds.has(item.id) &&
+          !(Number(item.costPerPlate) > 0),
+      );
+
+    if (missingManualRates.length) {
+      setError(
+        `Enter a positive manual rate for ${missingManualRates.length} new ${missingManualRates.length === 1 ? 'dish' : 'dishes'} before continuing.`,
       );
       return;
     }
@@ -1348,8 +1338,14 @@ export default function EventPage() {
       (item) =>
         selectedPreviewIds.has(
           item.id,
-        ),
+      ),
     ) ?? [];
+  const selectedMissingManualRateCount =
+    selectedPreviewMenu.filter(
+      (item) =>
+        manualRateIds.has(item.id) &&
+        !(Number(item.costPerPlate) > 0),
+    ).length;
 
   const previewGroupMap =
     new Map<
@@ -1785,23 +1781,25 @@ Gulab Jamun`}
                   <div>
                     <span className="section-kicker">Detection preview</span>
                     <h3>Review before saving</h3>
-                    <p>Only dishes confirmed by the Dish Catalog are shown. Unmatched and ambiguous text is excluded.</p>
+                    <p>Catalog dishes use saved rates. Enter a manual rate for each newly detected dish.</p>
                   </div>
                   <div className="menu-preview-metrics">
                     <span><b>{selectedPreviewMenu.length}</b> selected</span>
                     <span><b>{detectionPreviewGroups.length}</b> functions</span>
-                    <span><b>{detectionPreview.menu.length}</b> confirmed</span>
-                    {pendingReviewCount > 0 ? (
-                      <span className="needs-attention"><b>{pendingReviewCount}</b> awaiting owner</span>
+                    <span><b>{detectionPreview.menu.length - manualRateIds.size}</b> catalog</span>
+                    {manualRateIds.size > 0 ? (
+                      <span className={selectedMissingManualRateCount > 0 ? 'needs-attention' : ''}>
+                        <b>{manualRateIds.size}</b> manual rate
+                      </span>
                     ) : null}
                   </div>
                 </div>
 
-                {pendingReviewCount > 0 ? (
+                {manualRateIds.size > 0 ? (
                   <div className="event-detection-note" role="status">
-                    <b>New dishes sent for owner review</b>
+                    <b>Add rates for new dishes</b>
                     <p>
-                      {pendingReviewCount} possible new {pendingReviewCount === 1 ? 'dish is' : 'dishes are'} excluded from this menu until the owner approves {pendingReviewCount === 1 ? 'it' : 'them'}. Run detection again after approval.
+                      {manualRateIds.size} new {manualRateIds.size === 1 ? 'dish was' : 'dishes were'} found. Enter the per-plate rate below; owner approval is not required.
                     </p>
                   </div>
                 ) : null}
@@ -1877,42 +1875,71 @@ Gulab Jamun`}
                               );
 
                             return (
-                              <label
-                                className={`menu-preview-item ${isSelected ? 'is-selected' : ''}`}
+                              <div
+                                className={`menu-preview-item ${isSelected ? 'is-selected' : ''} ${manualRateIds.has(item.id) ? 'needs-manual-rate' : ''}`}
                                 key={item.id}
                               >
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={(event) => {
-                                    const nextIds =
-                                      new Set(
-                                        selectedPreviewIds,
+                                <label className="menu-preview-selector" aria-label={`Select ${item.name}`}>
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(event) => {
+                                      const nextIds =
+                                        new Set(
+                                          selectedPreviewIds,
+                                        );
+
+                                      if (event.target.checked) {
+                                        nextIds.add(item.id);
+                                      } else {
+                                        nextIds.delete(item.id);
+                                      }
+
+                                      setSelectedPreviewIds(
+                                        nextIds,
                                       );
-
-                                    if (event.target.checked) {
-                                      nextIds.add(item.id);
-                                    } else {
-                                      nextIds.delete(item.id);
-                                    }
-
-                                    setSelectedPreviewIds(
-                                      nextIds,
-                                    );
-                                    setError('');
-                                  }}
-                                />
-                                <span className="menu-preview-checkbox" aria-hidden="true">✓</span>
+                                      setError('');
+                                    }}
+                                  />
+                                  <span className="menu-preview-checkbox" aria-hidden="true">✓</span>
+                                </label>
                                 <div>
                                   <b>{item.name}</b>
                                   <small>{item.category}</small>
                                 </div>
-                                <strong className={Number(item.costPerPlate) > 0 ? '' : 'missing'}>
-                                  {Number(item.costPerPlate) > 0
-                                    ? `₹${Number(item.costPerPlate).toFixed(2)}`
-                                    : 'Rate needed'}
-                                </strong>
-                              </label>
+                                {manualRateIds.has(item.id) ? (
+                                  <label className="menu-preview-rate">
+                                    <span>₹</span>
+                                    <input
+                                      type="number"
+                                      min="0.01"
+                                      step="0.01"
+                                      inputMode="decimal"
+                                      value={item.costPerPlate || ''}
+                                      onChange={(event) => {
+                                        const rate = Math.max(0, Number(event.target.value) || 0);
+                                        setDetectionPreview((current) =>
+                                          current
+                                            ? {
+                                                ...current,
+                                                menu: current.menu.map((menuItem) =>
+                                                  menuItem.id === item.id
+                                                    ? { ...menuItem, costPerPlate: rate }
+                                                    : menuItem,
+                                                ),
+                                              }
+                                            : current,
+                                        );
+                                        setError('');
+                                      }}
+                                      aria-label={`Rate for ${item.name}`}
+                                      placeholder="Rate"
+                                    />
+                                  </label>
+                                ) : (
+                                  <strong>₹{Number(item.costPerPlate).toFixed(2)}</strong>
+                                )}
+                              </div>
                             );
                           })}
                         </div>
