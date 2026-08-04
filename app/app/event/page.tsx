@@ -1085,16 +1085,6 @@ export default function EventPage() {
     );
   }
 
-  const eventChecklist = [
-    { label: 'Client', complete: Boolean(work.event.clientName.trim()) },
-    { label: 'Event', complete: Boolean(work.event.eventName.trim()) },
-    { label: 'Date', complete: Boolean(work.event.eventDate) },
-    { label: 'Guests', complete: work.event.pax > 0 },
-    { label: 'Location', complete: Boolean(work.event.venue.trim() || work.event.city.trim()) },
-    { label: 'Menu', complete: Boolean(work.event.rawMenuText.trim() || work.menu.length) },
-  ];
-  const completedEventItems = eventChecklist.filter((item) => item.complete).length;
-  const eventProgress = Math.round((completedEventItems / eventChecklist.length) * 100);
   const menuLines = work.event.rawMenuText
     .split('\n')
     .map((line) => line.trim())
@@ -1180,24 +1170,9 @@ export default function EventPage() {
   return (
     <AppShell
       title="Create Event"
-      subtitle="Step 1 of 6: add the event brief and bring in the complete menu"
+      hidePageTitle
     >
       <section className="content-grid">
-        <div className="event-overview-card">
-          <div className="event-overview-copy">
-            <span className="page-eyebrow">Event setup</span>
-            <h2>{work.event.eventName || 'New catering event'}</h2>
-            <p>{work.event.clientName ? `Prepared for ${work.event.clientName}` : 'Add the client and event details to begin.'}</p>
-          </div>
-          <div className="event-progress-card">
-            <div><span>Setup progress</span><b>{eventProgress}%</b></div>
-            <div className="event-progress-track" aria-label={`${eventProgress}% of event setup complete`}><i style={{ width: `${eventProgress}%` }} /></div>
-            <div className="event-checklist">
-              {eventChecklist.map((item) => <span className={item.complete ? 'is-complete' : ''} key={item.label}>{item.label}</span>)}
-            </div>
-          </div>
-        </div>
-
         <div className="glass-card event-details-card">
           <div className="event-section-heading">
             <div>
@@ -1376,20 +1351,6 @@ export default function EventPage() {
         </div>
 
         <div className="glass-card event-menu-card">
-          <div className="event-section-heading">
-            <div>
-              <span className="section-kicker">Menu detection</span>
-              <h2>How would you like to add the menu?</h2>
-              <p>Choose one method now. You can review and correct every dish before costing.</p>
-            </div>
-            <div className="event-menu-stats">
-              <span><b>{menuLines}</b> text lines</span>
-              <span className={work.event.rawMenuText.trim() ? 'is-ready' : ''}>
-                {work.event.rawMenuText.trim() ? 'Ready to detect' : 'Waiting for menu'}
-              </span>
-            </div>
-          </div>
-
           <div className="form-grid">
             <div className="menu-source-choices" aria-label="Menu input method">
               <button

@@ -23,7 +23,17 @@ const adminNav = [
   { href: '/app/profile', label: 'Profile', description: 'Workspace settings', mark: 'P' },
 ];
 
-export default function AppShell({ children, title, subtitle }: { children: ReactNode; title: string; subtitle?: string }) {
+export default function AppShell({
+  children,
+  title,
+  subtitle,
+  hidePageTitle = false,
+}: {
+  children: ReactNode;
+  title: string;
+  subtitle?: string;
+  hidePageTitle?: boolean;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [session, setSession] = useState<Session | null>(null);
@@ -121,17 +131,19 @@ export default function AppShell({ children, title, subtitle }: { children: Reac
             </div>
           ) : null}
 
-          <section className="page-title no-print">
-            <div>
-              <span className="page-eyebrow">{isAdmin ? 'Menu Cost Admin' : 'Catering workspace'}</span>
-              <h1>{title}</h1>
-              <p>{subtitle ?? 'Plan, price and present every event with confidence.'}</p>
-            </div>
-            <div className="page-progress" aria-label={isAdmin ? 'Admin workspace' : `Step ${activeIndex + 1} of ${clientNav.length}`}>
-              <span>{isAdmin ? 'Workspace' : `${activeIndex + 1}/${clientNav.length}`}</span>
-              <div><i style={{ width: `${progress}%` }} /></div>
-            </div>
-          </section>
+          {!hidePageTitle ? (
+            <section className="page-title no-print">
+              <div>
+                <span className="page-eyebrow">{isAdmin ? 'Menu Cost Admin' : 'Catering workspace'}</span>
+                <h1>{title}</h1>
+                <p>{subtitle ?? 'Plan, price and present every event with confidence.'}</p>
+              </div>
+              <div className="page-progress" aria-label={isAdmin ? 'Admin workspace' : `Step ${activeIndex + 1} of ${clientNav.length}`}>
+                <span>{isAdmin ? 'Workspace' : `${activeIndex + 1}/${clientNav.length}`}</span>
+                <div><i style={{ width: `${progress}%` }} /></div>
+              </div>
+            </section>
+          ) : null}
 
           {children}
         </div>
