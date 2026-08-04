@@ -62,7 +62,7 @@ export default function PdfPage() {
   ).length;
   const quoteIssues = [
     work.menu.length === 0
-      ? { label: 'Add menu dishes', route: '/app/menu' }
+      ? { label: 'Add menu dishes', route: '/app/event' }
       : null,
     result.totalCovers <= 0
       ? { label: 'Enter member counts', route: '/app/event' }
@@ -70,7 +70,7 @@ export default function PdfPage() {
     missingRateCount > 0
       ? {
         label: `Enter ${missingRateCount} missing dish rate${missingRateCount === 1 ? '' : 's'}`,
-        route: '/app/menu',
+        route: '/app/event',
       }
       : null,
     work.sellingPricePerPlate <= 0

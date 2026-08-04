@@ -139,7 +139,7 @@ a { color: inherit; text-decoration: none; }
 .action-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .page-actions { margin-top: 18px; }
 
-.menu-source-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.menu-source-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .menu-source-choice {
   position: relative;
   display: grid;

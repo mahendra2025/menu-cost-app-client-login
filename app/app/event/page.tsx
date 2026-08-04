@@ -629,7 +629,7 @@ export default function EventPage() {
     setSelectedPreviewIds(
       new Set(),
     );
-    router.push('/app/menu');
+    router.push('/app/manpower');
   }
 
   function saveExtractedMenu(
@@ -1063,10 +1063,6 @@ export default function EventPage() {
     updateEvent('rawMenuText', '');
   }
 
-  function selectMenuManually() {
-    router.push('/app/menu?mode=manual');
-  }
-
   if (!work || !session) {
     return (
       <AppShell title="Event Details">
@@ -1430,19 +1426,6 @@ export default function EventPage() {
                 <span className="menu-source-check" aria-hidden="true">✓</span>
               </button>
 
-              <button
-                className="menu-source-choice manual"
-                type="button"
-                onClick={selectMenuManually}
-                disabled={Boolean(uploading)}
-              >
-                <span className="menu-source-number">03</span>
-                <div>
-                  <b>Select dishes manually</b>
-                  <p>Build from the dish catalog</p>
-                </div>
-                <span className="menu-source-arrow" aria-hidden="true">→</span>
-              </button>
             </div>
 
             <div className="menu-source-workspace">

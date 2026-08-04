@@ -187,7 +187,7 @@ export default function CostPage() {
                 <h3>Add dishes to calculate food cost</h3>
                 <p>Paste or type the event menu, review the detected dishes, then return here for the complete cost.</p>
               </div>
-              <button className="primary-button" type="button" onClick={() => router.push('/app/menu')}>Open Menu</button>
+              <button className="primary-button" type="button" onClick={() => router.push('/app/event')}>Open Event</button>
             </div>
           ) : (
             <>
@@ -217,7 +217,7 @@ export default function CostPage() {
                     {dishCategories.map((category) => <option key={category} value={category}>{category}</option>)}
                   </select>
                 </div>
-                <button className="ghost-button" type="button" onClick={() => router.push('/app/menu')}>Edit menu</button>
+                <button className="ghost-button" type="button" onClick={() => router.push('/app/event')}>Edit menu</button>
               </div>
 
               <div className="dish-portion-note">

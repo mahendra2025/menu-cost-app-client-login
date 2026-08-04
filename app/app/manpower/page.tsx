@@ -599,9 +599,9 @@ export default function ManpowerPage() {
           <button
             className="ghost-button"
             type="button"
-            onClick={() => router.push('/app/menu')}
+            onClick={() => router.push('/app/event')}
           >
-            Back to Menu
+            Back to Event
           </button>
         </div>
       </section>
