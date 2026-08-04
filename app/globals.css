@@ -4410,7 +4410,7 @@ td:last-child {
 .dish-row-editor > .dish-subcategory-field,
 .dish-row-editor > .dish-price-field { grid-column: span 2; }
 .dish-field-hint { color: var(--muted); font-size: 9px; }
-.admin-dish-row-heading { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 12px 14px; background: #f8fafc; }
+.admin-dish-row-heading { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 12px 14px; background: #f8fafc; cursor: pointer; }
 .dish-row-number { display: grid; width: 27px; height: 27px; flex: 0 0 auto; place-items: center; border: 1px solid #dfe5ec; border-radius: 8px; color: #697587; background: #fff; font-size: 9px; font-weight: 900; }
 .admin-dish-row-heading > div { min-width: 0; flex: 1; }
 .admin-dish-row-heading strong,
