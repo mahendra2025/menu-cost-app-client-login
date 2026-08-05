@@ -788,20 +788,6 @@ export default function EventPage() {
       return;
     }
 
-    const missingManualRates =
-      selectedMenu.filter(
-        (item) =>
-          manualRateIds.has(item.id) &&
-          !(Number(item.costPerPlate) > 0),
-      );
-
-    if (missingManualRates.length) {
-      setError(
-        `Enter a positive manual rate for ${missingManualRates.length} new ${missingManualRates.length === 1 ? 'dish' : 'dishes'} before continuing.`,
-      );
-      return;
-    }
-
     let nextMenu = selectedMenu;
 
     if (mode === 'merge') {
@@ -1802,7 +1788,7 @@ Gulab Jamun`}
                   <div>
                     <span className="section-kicker">Detection preview</span>
                     <h3>Review before saving</h3>
-                    <p>Catalog dishes use saved rates. Enter a manual rate for each newly detected dish.</p>
+                    <p>Catalog dishes use saved rates. New dishes can continue with ₹0 and be priced later.</p>
                   </div>
                   <div className="menu-preview-metrics">
                     <span><b>{selectedPreviewMenu.length}</b> selected</span>
@@ -1818,9 +1804,9 @@ Gulab Jamun`}
 
                 {manualRateIds.size > 0 ? (
                   <div className="event-detection-note" role="status">
-                    <b>Add rates for new dishes</b>
+                    <b>Optional rates for new dishes</b>
                     <p>
-                      {manualRateIds.size} new {manualRateIds.size === 1 ? 'dish was' : 'dishes were'} found. Enter the per-plate rate below; owner approval is not required.
+                      {manualRateIds.size} new {manualRateIds.size === 1 ? 'dish was' : 'dishes were'} found. Enter the per-plate rate now or continue with ₹0 and update it later.
                     </p>
                   </div>
                 ) : null}
@@ -1933,7 +1919,7 @@ Gulab Jamun`}
                                     <span>₹</span>
                                     <input
                                       type="number"
-                                      min="0.01"
+                                      min="0"
                                       step="0.01"
                                       inputMode="decimal"
                                       value={item.costPerPlate || ''}
@@ -1954,7 +1940,7 @@ Gulab Jamun`}
                                         setError('');
                                       }}
                                       aria-label={`Rate for ${item.name}`}
-                                      placeholder="Rate"
+                                      placeholder="Optional"
                                     />
                                   </label>
                                 ) : (
