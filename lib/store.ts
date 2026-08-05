@@ -277,7 +277,7 @@ function writeWorkNow(tenantId: string, work: WorkState) {
   );
 }
 
-function flushWorkSave(tenantId: string) {
+export function flushWorkSave(tenantId: string) {
   if (typeof window === 'undefined') return;
 
   const pending = pendingWorkSaves.get(tenantId);

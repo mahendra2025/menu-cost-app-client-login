@@ -145,8 +145,13 @@ export default function ManpowerPage() {
 
   useEffect(() => {
     const current = getSession();
+
+    if (!current) {
+      router.replace('/login');
+      return;
+    }
+
     setSession(current);
-    if (!current) return;
 
     const savedWork = loadWork(current.tenantId);
     const initializedWork = initializeFunctionManpower(savedWork);
@@ -155,7 +160,7 @@ export default function ManpowerPage() {
     if (initializedWork !== savedWork) {
       saveWork(current.tenantId, initializedWork);
     }
-  }, []);
+  }, [router]);
 
   const manpowerGroups = useMemo<ManpowerGroup[]>(() => {
     if (!work) return [];

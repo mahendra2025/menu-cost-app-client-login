@@ -18,6 +18,7 @@ import {
 
 import {
   findPendingDishCandidates,
+  flushWorkSave,
   getSession,
   loadWork,
   parseMenuText,
@@ -768,6 +769,7 @@ export default function EventPage() {
   ) {
     if (
       !work ||
+      !session ||
       !detectionPreview
     ) {
       return;
@@ -819,12 +821,24 @@ export default function EventPage() {
       menu: nextMenu,
     };
 
-    persistWork(nextWork);
-    setDetectionPreview(null);
-    setSelectedPreviewIds(
-      new Set(),
-    );
-    router.push('/app/manpower');
+    try {
+      persistWork(nextWork);
+
+      // Complete local-storage saving before opening the next page.
+      flushWorkSave(session.tenantId);
+
+      // Full navigation prevents the next page from getting stuck.
+      window.location.assign('/app/manpower');
+    } catch (saveError) {
+      console.error(
+        'Detected menu save failed:',
+        saveError,
+      );
+
+      setError(
+        'The detected menu could not be saved. Please try again.',
+      );
+    }
   }
 
   function saveExtractedMenu(
