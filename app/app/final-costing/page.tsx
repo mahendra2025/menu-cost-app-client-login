@@ -57,10 +57,58 @@ export default function FinalCostingPage() {
 
   async function downloadPdf() {
     if (!work || pdfBusy) return;
+
     setPdfBusy(true);
+
     try {
-      const { downloadFinalCostingPdf } = await import('../../../lib/finalCostingPdf');
-      downloadFinalCostingPdf(work);
+      const { downloadFinalCostingPdf } =
+        await import(
+          '../../../lib/finalCostingPdf'
+        );
+
+      let recipes: unknown[] = [];
+
+      try {
+        const response = await fetch(
+          '/api/recipe-ingredients',
+          {
+            method: 'POST',
+            cache: 'no-store',
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+            body: JSON.stringify({
+              dishNames: work.menu.map(
+                (item) => item.name,
+              ),
+            }),
+          },
+        );
+
+        if (response.ok) {
+          const data =
+            await response.json() as {
+              recipes?: unknown[];
+            };
+
+          recipes = Array.isArray(
+            data.recipes,
+          )
+            ? data.recipes
+            : [];
+        }
+      } catch (recipeError) {
+        console.warn(
+          'Ingredient list could not be loaded:',
+          recipeError,
+        );
+      }
+
+      downloadFinalCostingPdf(
+        work,
+        recipes,
+      );
     } finally {
       setPdfBusy(false);
     }

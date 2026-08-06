@@ -36,8 +36,245 @@ function addSectionTitle(doc: jsPDF, title: string, y: number) {
   doc.text(title, 14, y);
 }
 
-export function downloadFinalCostingPdf(work: WorkState) {
+type PdfRecipe = {
+  name: string;
+  aliases: string[];
+  baseGuests: number;
+  ingredients: Array<{
+    name: string;
+    quantity: number;
+    unit: string;
+  }>;
+};
+
+function normalizeRecipeName(value: string) {
+  return value
+    .trim()
+    .toLocaleLowerCase('en-IN')
+    .replace(/\s+/g, ' ');
+}
+
+function readPdfRecipe(
+  value: unknown,
+): PdfRecipe | null {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value)
+  ) {
+    return null;
+  }
+
+  const row = value as Record<string, unknown>;
+
+  const name = String(
+    row.name || row.dishName || '',
+  ).trim();
+
+  if (!name) return null;
+
+  const aliases = Array.isArray(row.aliases)
+    ? row.aliases
+        .map((alias) =>
+          String(alias || '').trim(),
+        )
+        .filter(Boolean)
+    : [];
+
+  const ingredients = Array.isArray(
+    row.ingredients,
+  )
+    ? row.ingredients.flatMap((value) => {
+        if (
+          !value ||
+          typeof value !== 'object' ||
+          Array.isArray(value)
+        ) {
+          return [];
+        }
+
+        const ingredient =
+          value as Record<string, unknown>;
+
+        const ingredientName = String(
+          ingredient.name ||
+            ingredient.ingredientName ||
+            '',
+        ).trim();
+
+        const quantity = Math.max(
+          0,
+          Number(
+            ingredient.quantity ??
+              ingredient.qty,
+          ) || 0,
+        );
+
+        const unit = String(
+          ingredient.unit ||
+            ingredient.rateUnit ||
+            '',
+        ).trim();
+
+        if (
+          !ingredientName ||
+          !(quantity > 0) ||
+          !unit
+        ) {
+          return [];
+        }
+
+        return [{
+          name: ingredientName,
+          quantity,
+          unit,
+        }];
+      })
+    : [];
+
+  return {
+    name,
+    aliases,
+    baseGuests: Math.max(
+      1,
+      Number(row.baseGuests) || 100,
+    ),
+    ingredients,
+  };
+}
+
+function ingredientQuantity(value: number) {
+  return value.toLocaleString('en-IN', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  });
+}
+
+export function downloadFinalCostingPdf(
+  work: WorkState,
+  recipes: unknown[] = [],
+) {
   const result = calculate(work);
+
+  const recipeByName =
+    new Map<string, PdfRecipe>();
+
+  recipes.forEach((value) => {
+    const recipe = readPdfRecipe(value);
+
+    if (!recipe) return;
+
+    [
+      recipe.name,
+      ...recipe.aliases,
+    ].forEach((name) => {
+      const key = normalizeRecipeName(name);
+
+      if (key) {
+        recipeByName.set(key, recipe);
+      }
+    });
+  });
+
+  const ingredientSummary = new Map<
+    string,
+    {
+      name: string;
+      quantity: number;
+      unit: string;
+      usedIn: Set<string>;
+    }
+  >();
+
+  result.menuBreakdown.forEach((item) => {
+    const recipe = recipeByName.get(
+      normalizeRecipeName(item.name),
+    );
+
+    if (!recipe) return;
+
+    const effectivePax = Math.max(
+      0,
+      Number(item.effectivePax) || 0,
+    );
+
+    const portionPercent = Math.max(
+      0,
+      Number(item.portionPercent) || 0,
+    );
+
+    const scale =
+      (effectivePax / recipe.baseGuests) *
+      (portionPercent / 100);
+
+    const usedInLabel = [
+      item.dayLabel,
+      item.mealLabel,
+      item.name,
+    ]
+      .filter(Boolean)
+      .join(' - ');
+
+    recipe.ingredients.forEach(
+      (ingredient) => {
+        const key = [
+          ingredient.name
+            .trim()
+            .toLocaleLowerCase('en-IN'),
+          ingredient.unit
+            .trim()
+            .toLocaleLowerCase('en-IN'),
+        ].join('__');
+
+        const requiredQuantity =
+          ingredient.quantity * scale;
+
+        const existing =
+          ingredientSummary.get(key);
+
+        if (existing) {
+          existing.quantity +=
+            requiredQuantity;
+
+          existing.usedIn.add(
+            usedInLabel || item.name,
+          );
+
+          return;
+        }
+
+        ingredientSummary.set(key, {
+          name: ingredient.name,
+          quantity: requiredQuantity,
+          unit: ingredient.unit,
+          usedIn: new Set([
+            usedInLabel || item.name,
+          ]),
+        });
+      },
+    );
+  });
+
+  const ingredientRows: RowInput[] =
+    Array.from(
+      ingredientSummary.values(),
+    )
+      .sort((left, right) =>
+        left.name.localeCompare(
+          right.name,
+        ),
+      )
+      .map((ingredient) => [
+        ingredient.name,
+        ingredientQuantity(
+          ingredient.quantity,
+        ),
+        ingredient.unit,
+        Array.from(
+          ingredient.usedIn,
+        ).join(', '),
+      ]);
+
   const menuCostingRows: RowInput[] = [];
   const activeManpowerRows = work.manpower.filter(
     (row) => Number(row.quantity) > 0,
@@ -264,13 +501,104 @@ export function downloadFinalCostingPdf(work: WorkState) {
     },
   });
 
-  cursorY = tableEnd(doc, cursorY + 24) + 9;
+  cursorY =
+    tableEnd(
+      doc,
+      cursorY + 24,
+    ) + 9;
+
+  if (cursorY > 220) {
+    doc.addPage();
+    cursorY = 18;
+  }
+
+  addSectionTitle(
+    doc,
+    'Ingredient Requirement',
+    cursorY,
+  );
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 110, 126);
+  doc.text(
+    'Calculated from recipe quantities, members and selected portion percentage.',
+    14,
+    cursorY + 5,
+  );
+
+  autoTable(doc, {
+    startY: cursorY + 8,
+    margin: {
+      left: 14,
+      right: 14,
+      bottom: 16,
+    },
+    theme: 'grid',
+    head: [[
+      'Ingredient',
+      'Required Quantity',
+      'Unit',
+      'Used In',
+    ]],
+    body: ingredientRows.length
+      ? ingredientRows
+      : [[
+          'No linked recipe ingredients found',
+          '-',
+          '-',
+          'Link dishes with recipes in Recipe Studio',
+        ]],
+    headStyles: {
+      fillColor: [16, 24, 39],
+      textColor: 255,
+      fontStyle: 'bold',
+    },
+    alternateRowStyles: {
+      fillColor: [246, 249, 252],
+    },
+    columnStyles: {
+      0: {
+        cellWidth: 52,
+      },
+      1: {
+        cellWidth: 32,
+        halign: 'right',
+        fontStyle: 'bold',
+      },
+      2: {
+        cellWidth: 22,
+      },
+      3: {
+        cellWidth: 76,
+      },
+    },
+    styles: {
+      font: 'helvetica',
+      fontSize: 7.5,
+      cellPadding: 2,
+      overflow: 'linebreak',
+      valign: 'middle',
+      textColor: [31, 41, 55],
+    },
+  });
+
+  cursorY =
+    tableEnd(
+      doc,
+      cursorY + 30,
+    ) + 9;
+
   if (cursorY > 235) {
     doc.addPage();
     cursorY = 18;
   }
 
-  addSectionTitle(doc, 'Manpower Detail', cursorY);
+  addSectionTitle(
+    doc,
+    'Manpower Detail',
+    cursorY,
+  );
   autoTable(doc, {
     startY: cursorY + 3,
     margin: {
