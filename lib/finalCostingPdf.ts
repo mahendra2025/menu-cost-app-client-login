@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { RowInput } from 'jspdf-autotable';
 import { calculate } from './store';
+import { buildIngredientRequirementRows } from './pdfIngredientRequirements';
 import type { WorkState } from './types';
 
 type PdfWithTable = jsPDF & {

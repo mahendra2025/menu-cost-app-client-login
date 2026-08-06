@@ -18,6 +18,32 @@ type UsageMap = Record<string, RecipeUsage[]>;
 type IngredientStatus = 'ALL' | 'ATTENTION' | 'LINKED' | 'UNLINKED';
 type IngredientSort = 'NAME_ASC' | 'NAME_DESC' | 'RATE_HIGH' | 'RATE_LOW' | 'MOST_USED';
 
+type MarketRateProposal = {
+  ingredientId: string;
+  ingredientName: string;
+  unit: IngredientUnit;
+  currentRate: number;
+  proposedRate: number;
+  changePercent: number;
+  commodity: string;
+  market: string;
+  arrivalDate: string;
+  source: string;
+  confidence: 'HIGH' | 'REVIEW';
+};
+
+type MarketRatePreview = {
+  city: string;
+  marketType: string;
+  rateDate: string;
+  source: string;
+  marketsChecked: string[];
+  proposals: MarketRateProposal[];
+  unmatched: string[];
+  supplierRequired: string[];
+  warning?: string;
+};
+
 const PAGE_SIZE = 30;
 
 function rowKey() {
@@ -56,6 +82,9 @@ export default function AdminIngredientsPage() {
   const [bulkRateChange, setBulkRateChange] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const [marketBusy, setMarketBusy] = useState(false);
+  const [marketPreview, setMarketPreview] =
+    useState<MarketRatePreview | null>(null);
 
   async function loadIngredients() {
     setReady(false);
@@ -210,6 +239,126 @@ export default function AdminIngredientsPage() {
   function discardChanges() {
     if (!dirty || !window.confirm('Discard all unsaved ingredient changes?')) return;
     void loadIngredients();
+  }
+
+  async function fetchCurrentMarketRates() {
+    setMarketBusy(true);
+    setMessage('');
+    setMarketPreview(null);
+
+    try {
+      const response = await fetch(
+        '/api/admin/ingredient-market-rates',
+        {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            city: 'Silvassa',
+            marketType: 'Wholesale',
+            rates: rows.map((row) => ({
+              id:
+                row.originalId ||
+                row.id ||
+                normalizeIngredientId(
+                  row.name,
+                  row.unit,
+                ),
+              name: row.name,
+              category: row.category,
+              rate: Number(row.rate) || 0,
+              unit: row.unit,
+            })),
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not fetch market rates.',
+        );
+      }
+
+      setMarketPreview(
+        data as MarketRatePreview,
+      );
+      setMessageType('success');
+      setMessage(
+        `${data.proposals.length} wholesale rate proposal${
+          data.proposals.length === 1 ? '' : 's'
+        } found. Review before applying.`,
+      );
+    } catch (error) {
+      setMessageType('error');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not fetch market rates.',
+      );
+    } finally {
+      setMarketBusy(false);
+    }
+  }
+
+  function applySafeMarketRates() {
+    if (!marketPreview) return;
+
+    const safeProposals =
+      marketPreview.proposals.filter(
+        (proposal) =>
+          proposal.confidence === 'HIGH',
+      );
+
+    if (!safeProposals.length) {
+      setMessageType('error');
+      setMessage(
+        'No safe automatic matches are available. Review and update rates manually.',
+      );
+      return;
+    }
+
+    const proposalById = new Map(
+      safeProposals.map((proposal) => [
+        proposal.ingredientId,
+        proposal,
+      ]),
+    );
+
+    setRows((current) =>
+      current.map((row) => {
+        const id =
+          row.originalId ||
+          row.id ||
+          normalizeIngredientId(
+            row.name,
+            row.unit,
+          );
+
+        const proposal =
+          proposalById.get(id);
+
+        return proposal
+          ? {
+              ...row,
+              rate:
+                proposal.proposedRate,
+            }
+          : row;
+      }),
+    );
+
+    setDirty(true);
+    setMessageType('success');
+    setMessage(
+      `${safeProposals.length} safe market rate${
+        safeProposals.length === 1 ? '' : 's'
+      } applied. Save all changes to update linked recipes.`,
+    );
   }
 
   function addIngredient() {
@@ -391,6 +540,240 @@ export default function AdminIngredientsPage() {
           {dirty ? <div className="dish-unsaved"><span />You have unsaved ingredient changes</div> : null}
           {message ? <div className={`admin-message ${messageType}`}>{message}</div> : null}
           {!catalogReady ? <div className="admin-message error">Open Recipe Studio once to initialise the PostgreSQL recipe catalog.</div> : null}
+        </div>
+
+        <div className="glass-card market-rate-profile">
+          <div className="market-rate-profile-heading">
+            <div>
+              <span className="section-kicker">
+                Current market profile
+              </span>
+              <h2>Silvassa wholesale rates</h2>
+              <p className="muted">
+                Fetch AGMARKNET modal wholesale rates and keep supplier-only ingredients for manual review.
+              </p>
+            </div>
+
+            <button
+              className="primary-button"
+              type="button"
+              disabled={marketBusy || !catalogReady}
+              onClick={() =>
+                void fetchCurrentMarketRates()
+              }
+            >
+              {marketBusy
+                ? 'Fetching rates…'
+                : 'Fetch current rates'}
+            </button>
+          </div>
+
+          <div className="market-rate-profile-grid">
+            <div>
+              <small>City</small>
+              <strong>Silvassa</strong>
+            </div>
+            <div>
+              <small>Market type</small>
+              <strong>Wholesale</strong>
+            </div>
+            <div>
+              <small>Rate date</small>
+              <strong>
+                {new Date().toLocaleDateString(
+                  'en-IN',
+                  {
+                    timeZone:
+                      'Asia/Kolkata',
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  },
+                )}
+              </strong>
+            </div>
+            <div>
+              <small>Source</small>
+              <strong>
+                AGMARKNET + Suppliers
+              </strong>
+            </div>
+          </div>
+
+          {marketPreview ? (
+            <div className="market-rate-preview">
+              <div className="market-rate-summary">
+                <span>
+                  <b>
+                    {
+                      marketPreview.proposals
+                        .length
+                    }
+                  </b>
+                  <small>Matched</small>
+                </span>
+                <span>
+                  <b>
+                    {
+                      marketPreview.proposals.filter(
+                        (proposal) =>
+                          proposal.confidence ===
+                          'HIGH',
+                      ).length
+                    }
+                  </b>
+                  <small>Safe matches</small>
+                </span>
+                <span>
+                  <b>
+                    {
+                      marketPreview
+                        .supplierRequired
+                        .length
+                    }
+                  </b>
+                  <small>Supplier rates</small>
+                </span>
+                <span>
+                  <b>
+                    {
+                      marketPreview.unmatched
+                        .length
+                    }
+                  </b>
+                  <small>Not matched</small>
+                </span>
+              </div>
+
+              {marketPreview.warning ? (
+                <div className="admin-message error">
+                  {marketPreview.warning}
+                </div>
+              ) : null}
+
+              {marketPreview.proposals.length ? (
+                <>
+                  <div className="table-wrap market-rate-table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Ingredient</th>
+                          <th>Current</th>
+                          <th>Proposed</th>
+                          <th>Change</th>
+                          <th>Market</th>
+                          <th>Rate date</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {marketPreview.proposals
+                          .slice(0, 30)
+                          .map((proposal) => (
+                            <tr
+                              key={`${proposal.ingredientId}-${proposal.commodity}`}
+                            >
+                              <td>
+                                <b>
+                                  {
+                                    proposal.ingredientName
+                                  }
+                                </b>
+                                <small>
+                                  {
+                                    proposal.commodity
+                                  }
+                                </small>
+                              </td>
+                              <td>
+                                ₹
+                                {proposal.currentRate.toLocaleString(
+                                  'en-IN',
+                                )}
+                                /{proposal.unit}
+                              </td>
+                              <td>
+                                <b>
+                                  ₹
+                                  {proposal.proposedRate.toLocaleString(
+                                    'en-IN',
+                                  )}
+                                  /{proposal.unit}
+                                </b>
+                              </td>
+                              <td>
+                                {proposal.changePercent >
+                                0
+                                  ? '+'
+                                  : ''}
+                                {
+                                  proposal.changePercent
+                                }
+                                %
+                              </td>
+                              <td>
+                                {proposal.market}
+                              </td>
+                              <td>
+                                {
+                                  proposal.arrivalDate
+                                }
+                              </td>
+                              <td>
+                                <span
+                                  className={
+                                    proposal.confidence ===
+                                    'HIGH'
+                                      ? 'market-match-safe'
+                                      : 'market-match-review'
+                                  }
+                                >
+                                  {proposal.confidence ===
+                                  'HIGH'
+                                    ? 'Safe match'
+                                    : 'Review'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="action-row">
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={
+                        applySafeMarketRates
+                      }
+                    >
+                      Apply safe matches
+                    </button>
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={() =>
+                        setMarketPreview(null)
+                      }
+                    >
+                      Clear preview
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="admin-empty">
+                  <strong>
+                    No automatic market matches
+                  </strong>
+                  <span>
+                    Update supplier and unmatched
+                    ingredients manually.
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : null}
         </div>
 
         <details className="glass-card dish-category-manager">

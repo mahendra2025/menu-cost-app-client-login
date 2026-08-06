@@ -7,216 +7,111 @@ import {
 } from '../../../lib/clientAuth';
 import { prisma } from '../../../lib/prisma';
 
-type PublicRecipe = {
-  name: string;
-  aliases: string[];
-  baseGuests: number;
-  ingredients: Array<{
-    name: string;
-    quantity: number;
-    unit: string;
-  }>;
-};
-
-function cleanText(value: unknown, maxLength = 160) {
+function normalize(value: unknown) {
   return String(value || '')
     .normalize('NFKC')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, maxLength);
-}
-
-function normalizeDishName(value: string) {
-  return value
     .trim()
     .toLocaleLowerCase('en-IN')
     .replace(/\s+/g, ' ');
 }
 
-function readRecipe(value: unknown): PublicRecipe | null {
+function readRecipe(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
 
   const row = value as Record<string, unknown>;
-  const name = cleanText(row.name || row.dishName);
+  const name = String(row.name || row.dishName || '').trim();
 
   if (!name) return null;
 
-  const aliases = Array.isArray(row.aliases)
-    ? row.aliases
-        .map((alias) => cleanText(alias))
-        .filter(Boolean)
-    : [];
-
-  const ingredients = Array.isArray(row.ingredients)
-    ? row.ingredients.flatMap((value) => {
-        if (
-          !value ||
-          typeof value !== 'object' ||
-          Array.isArray(value)
-        ) {
-          return [];
-        }
-
-        const ingredient =
-          value as Record<string, unknown>;
-
-        const ingredientName = cleanText(
-          ingredient.name ||
-            ingredient.ingredientName,
-        );
-
-        const quantity = Math.max(
-          0,
-          Number(
-            ingredient.quantity ??
-              ingredient.qty,
-          ) || 0,
-        );
-
-        const unit = cleanText(
-          ingredient.unit ||
-            ingredient.rateUnit,
-          30,
-        );
-
-        if (
-          !ingredientName ||
-          !(quantity > 0) ||
-          !unit
-        ) {
-          return [];
-        }
-
-        return [{
-          name: ingredientName,
-          quantity,
-          unit,
-        }];
-      })
-    : [];
-
   return {
     name,
-    aliases,
-    baseGuests: Math.max(
-      1,
-      Number(row.baseGuests) || 100,
-    ),
-    ingredients,
+    aliases: Array.isArray(row.aliases)
+      ? row.aliases.map(String).map((item) => item.trim()).filter(Boolean)
+      : [],
+    baseGuests: Math.max(1, Number(row.baseGuests) || 100),
+    ingredients: Array.isArray(row.ingredients)
+      ? row.ingredients.flatMap((value) => {
+          if (!value || typeof value !== 'object' || Array.isArray(value)) {
+            return [];
+          }
+
+          const ingredient = value as Record<string, unknown>;
+          const ingredientName = String(
+            ingredient.name || ingredient.ingredientName || '',
+          ).trim();
+          const quantity = Math.max(
+            0,
+            Number(ingredient.quantity ?? ingredient.qty) || 0,
+          );
+          const unit = String(
+            ingredient.unit || ingredient.rateUnit || '',
+          ).trim();
+
+          if (!ingredientName || !(quantity > 0) || !unit) return [];
+
+          return [{
+            name: ingredientName,
+            quantity,
+            unit,
+          }];
+        })
+      : [],
   };
 }
 
 export async function POST(request: Request) {
   try {
     const cookieStore = await cookies();
-    const sessionToken = cookieStore.get(
-      getClientCookieName(),
-    )?.value;
+    const token = cookieStore.get(getClientCookieName())?.value;
 
-    if (!readClientSessionToken(sessionToken)) {
+    if (!readClientSessionToken(token)) {
       return NextResponse.json(
         { error: 'Client login required' },
         { status: 401 },
       );
     }
 
-    const body =
-      await request.json() as Record<
-        string,
-        unknown
-      >;
-
-    const requestedNames = Array.isArray(
-      body.dishNames,
-    )
-      ? Array.from(
-          new Set(
-            body.dishNames
-              .map((name) => cleanText(name))
-              .filter(Boolean)
-              .slice(0, 500),
-          ),
-        )
+    const body = await request.json() as Record<string, unknown>;
+    const requestedNames = Array.isArray(body.dishNames)
+      ? body.dishNames.map(normalize).filter(Boolean)
       : [];
 
-    if (!requestedNames.length) {
-      return NextResponse.json({
-        recipes: [],
-      });
-    }
+    const catalog = await prisma.recipeCatalog.findUnique({
+      where: { id: 'global' },
+      select: { dishes: true },
+    });
 
-    const catalog =
-      await prisma.recipeCatalog.findUnique({
-        where: { id: 'global' },
-        select: { dishes: true },
-      });
+    const recipeMap = new Map<string, ReturnType<typeof readRecipe>>();
 
-    const sourceRecipes = [
-      ...(Array.isArray(defaultRecipesData)
-        ? defaultRecipesData
-        : []),
-      ...(Array.isArray(catalog?.dishes)
-        ? catalog.dishes
-        : []),
-    ];
-
-    const recipeByKey =
-      new Map<string, PublicRecipe>();
-
-    sourceRecipes.forEach((value) => {
+    [
+      ...(Array.isArray(defaultRecipesData) ? defaultRecipesData : []),
+      ...(Array.isArray(catalog?.dishes) ? catalog.dishes : []),
+    ].forEach((value) => {
       const recipe = readRecipe(value);
       if (!recipe) return;
 
-      [
-        recipe.name,
-        ...recipe.aliases,
-      ].forEach((key) => {
-        const normalized =
-          normalizeDishName(key);
-
-        if (normalized) {
-          recipeByKey.set(
-            normalized,
-            recipe,
-          );
-        }
+      [recipe.name, ...recipe.aliases].forEach((name) => {
+        recipeMap.set(normalize(name), recipe);
       });
     });
 
-    const matchedRecipes =
-      new Map<string, PublicRecipe>();
+    const matched = new Map<string, NonNullable<ReturnType<typeof readRecipe>>>();
 
-    requestedNames.forEach((dishName) => {
-      const recipe = recipeByKey.get(
-        normalizeDishName(dishName),
-      );
-
-      if (recipe) {
-        matchedRecipes.set(
-          normalizeDishName(recipe.name),
-          recipe,
-        );
-      }
+    requestedNames.forEach((name) => {
+      const recipe = recipeMap.get(name);
+      if (recipe) matched.set(normalize(recipe.name), recipe);
     });
 
     return NextResponse.json({
-      recipes: Array.from(
-        matchedRecipes.values(),
-      ),
+      recipes: Array.from(matched.values()),
     });
   } catch (error) {
-    console.error(
-      'Recipe ingredient lookup failed:',
-      error,
-    );
+    console.error('Recipe ingredient lookup failed:', error);
 
     return NextResponse.json(
-      {
-        error:
-          'Failed to load recipe ingredients',
-      },
+      { error: 'Failed to load recipe ingredients' },
       { status: 500 },
     );
   }

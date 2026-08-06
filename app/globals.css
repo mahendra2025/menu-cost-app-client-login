@@ -5919,3 +5919,108 @@ td:last-child {
     contain-intrinsic-size: auto 260px;
   }
 }
+
+
+.market-rate-profile {
+  display: grid;
+  gap: 20px;
+}
+
+.market-rate-profile-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.market-rate-profile-heading h2 {
+  margin: 4px 0 6px;
+}
+
+.market-rate-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.market-rate-profile-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.68);
+}
+
+.market-rate-profile-grid small,
+.market-rate-summary small {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.market-rate-preview {
+  display: grid;
+  gap: 16px;
+}
+
+.market-rate-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.market-rate-summary span {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  text-align: center;
+  border-radius: 12px;
+  background: rgba(226, 232, 240, 0.52);
+}
+
+.market-rate-summary b {
+  font-size: 1.2rem;
+}
+
+.market-rate-table-wrap td small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+}
+
+.market-match-safe,
+.market-match-review {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.market-match-safe {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.market-match-review {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+@media (max-width: 850px) {
+  .market-rate-profile-heading {
+    flex-direction: column;
+  }
+
+  .market-rate-profile-grid,
+  .market-rate-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .market-rate-profile-grid,
+  .market-rate-summary {
+    grid-template-columns: 1fr;
+  }
+}
