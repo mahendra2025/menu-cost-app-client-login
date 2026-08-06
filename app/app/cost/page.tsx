@@ -352,6 +352,78 @@ export default function CostPage() {
                           <div><small>Adjusted / plate</small><b>{money(item.adjustedCostPerPlate)}</b></div>
                           <div><small>Total cost</small><b>{money(item.itemTotalCost)}</b></div>
                         </div>
+                        <div className="field">
+                          <label htmlFor={`mobile-portion-mode-${item.id}`}>
+                            Client portion
+                          </label>
+
+                          <div className="cost-portion-control">
+                            <select
+                              id={`mobile-portion-mode-${item.id}`}
+                              className="select"
+                              value={item.portionMode}
+                              aria-label={`Portion allocation for ${item.name}`}
+                              onChange={(event) => {
+                                const mode = event.target.value as
+                                  | 'AUTO'
+                                  | 'CUSTOM';
+
+                                updateDishPortion(item.id, {
+                                  portionMode: mode,
+                                  portionPercent:
+                                    mode === 'CUSTOM'
+                                      ? item.portionPercent
+                                      : undefined,
+                                });
+                              }}
+                            >
+                              <option value="AUTO">
+                                Automatic portion
+                              </option>
+                              <option value="CUSTOM">
+                                Custom portion
+                              </option>
+                            </select>
+
+                            {item.portionMode === 'CUSTOM' ? (
+                              <label className="portion-percent-input compact">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="300"
+                                  step="1"
+                                  inputMode="decimal"
+                                  value={item.portionPercent}
+                                  aria-label={`Custom portion percentage for ${item.name}`}
+                                  onChange={(event) =>
+                                    updateDishPortion(item.id, {
+                                      portionMode: 'CUSTOM',
+                                      portionPercent: Math.min(
+                                        300,
+                                        Math.max(
+                                          0,
+                                          Number(event.target.value) || 0,
+                                        ),
+                                      ),
+                                    })
+                                  }
+                                />
+                                <span>%</span>
+                              </label>
+                            ) : (
+                              <span className="portion-chip">
+                                {item.categoryCount > 1
+                                  ? `1/${item.categoryCount}`
+                                  : 'Full'}
+                              </span>
+                            )}
+                          </div>
+
+                          <small className="muted">
+                            50% charges half cost. 100% charges full cost.
+                          </small>
+                        </div>
+
                         <div className="field dish-cost-card-rate">
                           <label htmlFor={`mobile-rate-${item.id}`}>Base cost / plate</label>
                           <label className="dish-rate-input" htmlFor={`mobile-rate-${item.id}`}>
