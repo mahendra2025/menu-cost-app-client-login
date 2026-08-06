@@ -39,6 +39,54 @@ function addSectionTitle(doc: jsPDF, title: string, y: number) {
 export function downloadFinalCostingPdf(work: WorkState) {
   const result = calculate(work);
   const menuCostingRows: RowInput[] = [];
+  const activeManpowerRows = work.manpower.filter(
+    (row) => Number(row.quantity) > 0,
+  );
+  const manpowerTableRows: RowInput[] = activeManpowerRows.length
+    ? activeManpowerRows.map((row) => [
+        [row.dayLabel, row.mealLabel]
+          .filter(Boolean)
+          .join(' - ') || 'General Event',
+        row.role || 'Staff',
+        Math.max(
+          0,
+          Number(row.quantity) || 0,
+        ).toLocaleString('en-IN'),
+        pdfMoney(
+          Math.max(
+            0,
+            Number(row.rate) || 0,
+          ),
+        ),
+        pdfMoney(
+          Math.max(
+            0,
+            Number(row.quantity) || 0,
+          ) *
+            Math.max(
+              0,
+              Number(row.rate) || 0,
+            ),
+        ),
+      ])
+    : [[
+        'General Event',
+        'No manpower entered',
+        '-',
+        '-',
+        pdfMoney(0),
+      ]];
+
+  if (activeManpowerRows.length) {
+    manpowerTableRows.push([
+      '',
+      '',
+      '',
+      'Total Manpower',
+      pdfMoney(work.extras.staff),
+    ]);
+  }
+
   let previousMealKey = '';
 
   result.menuBreakdown.forEach((item) => {
@@ -217,10 +265,82 @@ export function downloadFinalCostingPdf(work: WorkState) {
   });
 
   cursorY = tableEnd(doc, cursorY + 24) + 9;
+  if (cursorY > 235) {
+    doc.addPage();
+    cursorY = 18;
+  }
+
+  addSectionTitle(doc, 'Manpower Detail', cursorY);
+  autoTable(doc, {
+    startY: cursorY + 3,
+    margin: {
+      left: 14,
+      right: 14,
+      bottom: 16,
+    },
+    theme: 'grid',
+    head: [[
+      'Function',
+      'Staff Role',
+      'People',
+      'Rate / Person',
+      'Total',
+    ]],
+    body: manpowerTableRows,
+    headStyles: {
+      fillColor: [16, 24, 39],
+      textColor: 255,
+      fontStyle: 'bold',
+    },
+    alternateRowStyles: {
+      fillColor: [246, 249, 252],
+    },
+    didParseCell: (data) => {
+      if (
+        data.section === 'body' &&
+        data.row.index === manpowerTableRows.length - 1 &&
+        activeManpowerRows.length > 0
+      ) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [232, 240, 250];
+      }
+    },
+    columnStyles: {
+      0: {
+        cellWidth: 44,
+      },
+      1: {
+        cellWidth: 52,
+      },
+      2: {
+        cellWidth: 20,
+        halign: 'right',
+      },
+      3: {
+        cellWidth: 32,
+        halign: 'right',
+      },
+      4: {
+        cellWidth: 34,
+        halign: 'right',
+        fontStyle: 'bold',
+      },
+    },
+    styles: {
+      font: 'helvetica',
+      fontSize: 8,
+      cellPadding: 2.2,
+      overflow: 'linebreak',
+      valign: 'middle',
+    },
+  });
+
+  cursorY = tableEnd(doc, cursorY + 30) + 9;
   if (cursorY > 250) {
     doc.addPage();
     cursorY = 18;
   }
+
   addSectionTitle(doc, 'Additional Costs', cursorY);
   autoTable(doc, {
     startY: cursorY + 3,
