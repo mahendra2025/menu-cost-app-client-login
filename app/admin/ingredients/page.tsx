@@ -140,6 +140,34 @@ export default function AdminIngredientsPage() {
     return categories.filter((category) => !search || category.toLowerCase().includes(search));
   }, [categories, categoryQuery]);
   const recipeLinkedCount = useMemo(() => rows.filter((row) => (usage[row.originalId]?.length || 0) > 0).length, [rows, usage]);
+
+  const usedIngredientRows = useMemo(
+    () =>
+      rows
+        .filter(
+          (row) =>
+            (usage[row.originalId]?.length || 0) > 0,
+        )
+        .sort((a, b) =>
+          a.name.localeCompare(
+            b.name,
+            undefined,
+            { sensitivity: 'base' },
+          ),
+        ),
+    [rows, usage],
+  );
+
+  const totalRecipeLinks = useMemo(
+    () =>
+      usedIngredientRows.reduce(
+        (total, row) =>
+          total +
+          (usage[row.originalId]?.length || 0),
+        0,
+      ),
+    [usedIngredientRows, usage],
+  );
   const duplicateCount = useMemo(() => rows.filter((row) => hasDuplicate(rows, row)).length, [rows]);
   const missingRateCount = useMemo(() => rows.filter((row) => !(Number(row.rate) > 0)).length, [rows]);
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
@@ -602,6 +630,69 @@ export default function AdminIngredientsPage() {
     }
   }
 
+  function downloadUsedIngredientsCsv() {
+    const escapeCsv = (value: unknown) => {
+      const text = String(value ?? '');
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const csvRows = [
+      [
+        'Ingredient',
+        'Category',
+        'Market Rate',
+        'Unit',
+        'Recipe Count',
+        'Used In Recipes',
+      ],
+      ...usedIngredientRows.map((row) => {
+        const recipeUsage =
+          usage[row.originalId] || [];
+
+        return [
+          row.name,
+          row.category,
+          Number(row.rate) || 0,
+          row.unit,
+          recipeUsage.length,
+          recipeUsage
+            .map((recipe) => recipe.name)
+            .join(', '),
+        ];
+      }),
+    ];
+
+    const csv = csvRows
+      .map((row) =>
+        row.map(escapeCsv).join(','),
+      )
+      .join('\n');
+
+    const blob = new Blob(
+      ['\ufeff', csv],
+      {
+        type:
+          'text/csv;charset=utf-8;',
+      },
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement('a');
+
+    link.href = url;
+    link.download =
+      'used-ingredients.csv';
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
+  }
+
   async function saveAll() {
     if (rows.some((row) => !row.name.trim())) {
       setMessageType('error');
@@ -939,6 +1030,257 @@ export default function AdminIngredientsPage() {
             </div>
           ) : null}
         </div>
+
+        <details
+          className="glass-card used-ingredient-card"
+          open
+        >
+          <summary>
+            <div>
+              <span className="section-kicker">
+                Recipe usage
+              </span>
+
+              <h2>
+                Used Ingredients
+              </h2>
+
+              <p className="muted">
+                Ingredients currently used by one or more recipes in the app.
+              </p>
+            </div>
+
+            <span className="dish-category-summary-count">
+              {usedIngredientRows.length} ingredients
+            </span>
+          </summary>
+
+          <div className="used-ingredient-body">
+            <div className="used-ingredient-summary">
+              <span>
+                <b>
+                  {usedIngredientRows.length}
+                </b>
+                <small>
+                  Used ingredients
+                </small>
+              </span>
+
+              <span>
+                <b>
+                  {totalRecipeLinks}
+                </b>
+                <small>
+                  Recipe links
+                </small>
+              </span>
+
+              <span>
+                <b>
+                  {
+                    usedIngredientRows.filter(
+                      (row) =>
+                        Number(row.rate) > 0,
+                    ).length
+                  }
+                </b>
+                <small>
+                  Rates ready
+                </small>
+              </span>
+
+              <span>
+                <b>
+                  {
+                    usedIngredientRows.filter(
+                      (row) =>
+                        !(Number(row.rate) > 0),
+                    ).length
+                  }
+                </b>
+                <small>
+                  Missing rates
+                </small>
+              </span>
+            </div>
+
+            <div className="used-ingredient-toolbar">
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={!usedIngredientRows.length}
+                onClick={
+                  downloadUsedIngredientsCsv
+                }
+              >
+                Download CSV
+              </button>
+
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => {
+                  setStatusFilter('LINKED');
+                  setQuery('');
+                  setCategoryFilter('ALL');
+                  setSort('MOST_USED');
+                  setPage(1);
+
+                  document
+                    .getElementById(
+                      'ingredient-search',
+                    )
+                    ?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'center',
+                    });
+                }}
+              >
+                Open in editor
+              </button>
+            </div>
+
+            {usedIngredientRows.length ? (
+              <div className="table-wrap used-ingredient-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>
+                        Ingredient
+                      </th>
+
+                      <th>
+                        Category
+                      </th>
+
+                      <th>
+                        Market rate
+                      </th>
+
+                      <th>
+                        Unit
+                      </th>
+
+                      <th>
+                        Recipes
+                      </th>
+
+                      <th>
+                        Used in
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {usedIngredientRows.map(
+                      (row) => {
+                        const recipeUsage =
+                          usage[
+                            row.originalId
+                          ] || [];
+
+                        return (
+                          <tr
+                            key={
+                              row.rowKey
+                            }
+                          >
+                            <td>
+                              <strong>
+                                {row.name}
+                              </strong>
+                            </td>
+
+                            <td>
+                              {row.category}
+                            </td>
+
+                            <td>
+                              {Number(
+                                row.rate,
+                              ) > 0 ? (
+                                <strong>
+                                  ₹
+                                  {Number(
+                                    row.rate,
+                                  ).toLocaleString(
+                                    'en-IN',
+                                    {
+                                      maximumFractionDigits: 3,
+                                    },
+                                  )}
+                                </strong>
+                              ) : (
+                                <span className="used-ingredient-missing-rate">
+                                  Missing
+                                </span>
+                              )}
+                            </td>
+
+                            <td>
+                              {row.unit}
+                            </td>
+
+                            <td>
+                              <span className="badge">
+                                {
+                                  recipeUsage.length
+                                }
+                              </span>
+                            </td>
+
+                            <td>
+                              <div className="used-ingredient-recipes">
+                                {recipeUsage
+                                  .slice(0, 5)
+                                  .map(
+                                    (
+                                      recipe,
+                                    ) => (
+                                      <span
+                                        key={
+                                          recipe.id
+                                        }
+                                      >
+                                        {
+                                          recipe.name
+                                        }
+                                      </span>
+                                    ),
+                                  )}
+
+                                {recipeUsage.length >
+                                5 ? (
+                                  <small>
+                                    +
+                                    {recipeUsage.length -
+                                      5}{' '}
+                                    more
+                                  </small>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      },
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="admin-empty">
+                <strong>
+                  No used ingredients found
+                </strong>
+
+                <span>
+                  Link ingredients to recipes
+                  first.
+                </span>
+              </div>
+            )}
+          </div>
+        </details>
 
         <details className="glass-card dish-category-manager">
           <summary>
