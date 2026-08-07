@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import AppShell from '../../components/AppShell';
+import BulkIngredientImporter, {
+  type BulkIngredientImportItem,
+} from './BulkIngredientImporter';
 import {
   INGREDIENT_CATEGORIES,
   INGREDIENT_UNITS,
@@ -452,6 +455,124 @@ export default function AdminIngredientsPage() {
     }
   }
 
+  function importBulkIngredients(
+    items: BulkIngredientImportItem[],
+  ) {
+    if (!items.length) return;
+
+    const existingIds =
+      new Set(
+        rows.map((row) =>
+          normalizeIngredientId(
+            row.name,
+            row.unit,
+          ),
+        ),
+      );
+
+    const addedCount =
+      items.filter(
+        (item) =>
+          !existingIds.has(
+            normalizeIngredientId(
+              item.name,
+              item.unit,
+            ),
+          ),
+      ).length;
+
+    const updatedCount =
+      items.length -
+      addedCount;
+
+    setRows((current) => {
+      const next = [...current];
+
+      items.forEach((item) => {
+        const id =
+          normalizeIngredientId(
+            item.name,
+            item.unit,
+          );
+
+        const index =
+          next.findIndex(
+            (row) =>
+              normalizeIngredientId(
+                row.name,
+                row.unit,
+              ) === id,
+          );
+
+        if (index >= 0) {
+          next[index] = {
+            ...next[index],
+            name: item.name,
+            rate: item.rate,
+            unit: item.unit,
+            category:
+              item.category ||
+              next[index].category,
+          };
+
+          return;
+        }
+
+        next.push({
+          rowKey: rowKey(),
+          originalId: '',
+          id,
+          name: item.name,
+          rate: item.rate,
+          unit: item.unit,
+          category:
+            item.category ||
+            inferIngredientCategory(
+              item.name,
+            ),
+        });
+      });
+
+      return next;
+    });
+
+    const importedCategories =
+      items
+        .map((item) =>
+          item.category.trim(),
+        )
+        .filter(Boolean);
+
+    setCategories((current) =>
+      Array.from(
+        new Map(
+          [
+            ...current,
+            ...importedCategories,
+          ].map((category) => [
+            category.toLowerCase(),
+            category,
+          ]),
+        ).values(),
+      ),
+    );
+
+    setDirty(true);
+    setStatusFilter('ALL');
+    setCategoryFilter('ALL');
+    setQuery('');
+    setPage(1);
+
+    setMessageType('success');
+    setMessage(
+      `${addedCount} ingredient${
+        addedCount === 1 ? '' : 's'
+      } added · ${updatedCount} existing ingredient${
+        updatedCount === 1 ? '' : 's'
+      } updated. Save all changes to publish.`,
+    );
+  }
+
   function addIngredient() {
     const key = rowKey();
     setRows((current) => [{
@@ -796,6 +917,11 @@ export default function AdminIngredientsPage() {
           {message ? <div className={`admin-message ${messageType}`}>{message}</div> : null}
           {!catalogReady ? <div className="admin-message error">Open Recipe Studio once to initialise the PostgreSQL recipe catalog.</div> : null}
         </div>
+
+        <BulkIngredientImporter
+          categories={categories}
+          onImport={importBulkIngredients}
+        />
 
         <div className="glass-card market-rate-profile">
           <div className="market-rate-profile-heading">
