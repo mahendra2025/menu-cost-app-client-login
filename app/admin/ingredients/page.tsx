@@ -70,6 +70,8 @@ export default function AdminIngredientsPage() {
   const [catalogReady, setCatalogReady] = useState(true);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fillingZeroRates, setFillingZeroRates] = useState(false);
+  const [fillingMissingRates, setFillingMissingRates] = useState(false);
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [categoryQuery, setCategoryQuery] = useState('');
@@ -361,6 +363,67 @@ export default function AdminIngredientsPage() {
     );
   }
 
+  async function fillAllMissingRecipeRates() {
+    if (dirty) {
+      setMessageType('error');
+      setMessage(
+        'Save or discard your current ingredient changes before filling missing rates.',
+      );
+      return;
+    }
+
+    if (
+      !window.confirm(
+        'Add all missing recipe ingredients and fill all available missing rates? Existing positive rates will stay unchanged.',
+      )
+    ) {
+      return;
+    }
+
+    setFillingMissingRates(true);
+    setMessage('');
+
+    try {
+      const response = await fetch(
+        '/api/admin/ingredients/fill-missing',
+        {
+          method: 'POST',
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not fill missing rates.',
+        );
+      }
+
+      await loadIngredients();
+
+      setMessageType('success');
+
+      setMessage(
+        `${data.addedIngredients} missing ingredient${
+          data.addedIngredients === 1 ? '' : 's'
+        } added · ${data.filledRates} missing rate${
+          data.filledRates === 1 ? '' : 's'
+        } filled · ${data.stillMissingRates} still need manual rates.`,
+      );
+    } catch (error) {
+      setMessageType('error');
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not fill missing rates.',
+      );
+    } finally {
+      setFillingMissingRates(false);
+    }
+  }
+
   function addIngredient() {
     const key = rowKey();
     setRows((current) => [{
@@ -473,6 +536,72 @@ export default function AdminIngredientsPage() {
     setMessage(`${category} deleted${assignedCount ? ` and ${assignedCount} ingredient${assignedCount === 1 ? '' : 's'} moved to Other` : ''}. Save all changes to publish.`);
   }
 
+  async function fillZeroMarketRates() {
+    if (dirty) {
+      setMessageType('error');
+      setMessage(
+        'Save your current ingredient changes first.',
+      );
+      return;
+    }
+
+    if (
+      !window.confirm(
+        'Fill every ₹0 ingredient with a reference market rate? Existing positive rates will not change.',
+      )
+    ) {
+      return;
+    }
+
+    setFillingZeroRates(true);
+    setMessage('');
+
+    try {
+      const response = await fetch(
+        '/api/admin/ingredients/fill-zero-rates',
+        {
+          method: 'POST',
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not fill zero rates.',
+        );
+      }
+
+      await loadIngredients();
+
+      setMessageType('success');
+
+      setMessage(
+        `${data.updated} ₹0 rate${
+          data.updated === 1 ? '' : 's'
+        } filled · ${data.fromRecipeData} from recipe data · ${
+          data.fromExactReference
+        } from ingredient reference · ${
+          data.fromCategoryEstimate
+        } estimated · ${data.stillZero} still ₹0.`,
+      );
+
+      setStatusFilter('ALL');
+      setPage(1);
+    } catch (error) {
+      setMessageType('error');
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not fill zero rates.',
+      );
+    } finally {
+      setFillingZeroRates(false);
+    }
+  }
+
   async function saveAll() {
     if (rows.some((row) => !row.name.trim())) {
       setMessageType('error');
@@ -533,6 +662,41 @@ export default function AdminIngredientsPage() {
           <div className="ingredient-actions">
             <button className="primary-button" type="button" onClick={addIngredient} disabled={!catalogReady}><span aria-hidden="true">＋</span> Add ingredient</button>
             <button className="ghost-button" type="button" onClick={addCategory} disabled={!catalogReady}><span aria-hidden="true">＋</span> Add category</button>
+            <button
+              className="ghost-button"
+              type="button"
+              disabled={
+                fillingMissingRates ||
+                dirty ||
+                !catalogReady
+              }
+              onClick={() =>
+                void fillAllMissingRecipeRates()
+              }
+            >
+              <span aria-hidden="true">₹</span>
+              {fillingMissingRates
+                ? 'Filling rates…'
+                : 'Fill all missing rates'}
+            </button>
+            <button
+              className="ghost-button"
+              type="button"
+              disabled={
+                fillingZeroRates ||
+                missingRateCount === 0 ||
+                dirty ||
+                !catalogReady
+              }
+              onClick={() =>
+                void fillZeroMarketRates()
+              }
+            >
+              <span aria-hidden="true">₹</span>
+              {fillingZeroRates
+                ? 'Filling ₹0 rates…'
+                : `Fill ₹0 rates (${missingRateCount})`}
+            </button>
             <button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>
               {saving ? 'Saving…' : dirty ? 'Save all changes' : 'All changes saved'}
             </button>
