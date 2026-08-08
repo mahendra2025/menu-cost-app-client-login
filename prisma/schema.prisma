@@ -15,6 +15,7 @@ model Tenant {
   plan                   String     @default("PRO")
   status                 String     @default("ACTIVE")
   works                  MenuWork[]
+  ingredientRates        TenantIngredientRate[]
   createdAt              DateTime   @default(now())
   razorpayCustomerId     String?
   razorpaySubscriptionId String?    @unique
@@ -82,4 +83,20 @@ model RazorpayWebhookEvent {
   id        String   @id
   eventType String
   createdAt DateTime @default(now())
+}
+
+
+model TenantIngredientRate {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  ingredientId String
+  rate         Float
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, ingredientId])
+  @@index([tenantId])
 }

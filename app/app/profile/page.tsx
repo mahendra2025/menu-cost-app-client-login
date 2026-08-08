@@ -207,8 +207,8 @@ export default function ProfilePage() {
             <div className="section-kicker">Costing data</div>
             <h2>Ingredient Index</h2>
             <p className="muted">
-              View the ingredient names, market rates, purchase units,
-              categories and recipe usage currently used by your costing.
+              View Ingredient Master data and set your own purchase rates.
+              Your rate changes affect only your account.
             </p>
             <div className="action-row">
               <Link

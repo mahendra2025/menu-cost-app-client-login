@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+
 import {
   useEffect,
   useMemo,
@@ -10,8 +11,21 @@ import {
 import AppShell from '../../components/AppShell';
 
 import {
+  getSession,
+  loadWork,
+  saveWork,
+} from '../../../lib/store';
+
+import {
   type IngredientRate,
 } from '../../../lib/ingredientCatalog';
+
+type ClientIngredientRate =
+  IngredientRate & {
+    defaultRate: number;
+    isCustomRate: boolean;
+    customUpdatedAt?: string | null;
+  };
 
 type RecipeUsage = {
   id: string;
@@ -19,11 +33,16 @@ type RecipeUsage = {
 };
 
 type UsageMap =
-  Record<string, RecipeUsage[]>;
+  Record<
+    string,
+    RecipeUsage[]
+  >;
 
 export default function ClientIngredientIndexPage() {
   const [rates, setRates] =
-    useState<IngredientRate[]>([]);
+    useState<
+      ClientIngredientRate[]
+    >([]);
 
   const [usage, setUsage] =
     useState<UsageMap>({});
@@ -37,11 +56,21 @@ export default function ClientIngredientIndexPage() {
   const [ready, setReady] =
     useState(false);
 
+  const [saving, setSaving] =
+    useState(false);
+
   const [message, setMessage] =
     useState('');
 
-  const [updatedAt, setUpdatedAt] =
-    useState<string | null>(null);
+  const [changedIds, setChangedIds] =
+    useState<Set<string>>(
+      new Set(),
+    );
+
+  const [resetIds, setResetIds] =
+    useState<Set<string>>(
+      new Set(),
+    );
 
   useEffect(() => {
     void loadIngredients();
@@ -49,15 +78,15 @@ export default function ClientIngredientIndexPage() {
 
   async function loadIngredients() {
     setReady(false);
-    setMessage('');
 
     try {
-      const response = await fetch(
-        '/api/client/ingredients',
-        {
-          cache: 'no-store',
-        },
-      );
+      const response =
+        await fetch(
+          '/api/client/ingredients',
+          {
+            cache: 'no-store',
+          },
+        );
 
       const data =
         await response.json();
@@ -65,113 +94,392 @@ export default function ClientIngredientIndexPage() {
       if (!response.ok) {
         throw new Error(
           data.error ||
-            'Could not load Ingredient Index.',
+            'Could not load ingredients.',
         );
       }
 
       setRates(
-        Array.isArray(data.rates)
+        Array.isArray(
+          data.rates,
+        )
           ? data.rates
           : [],
       );
 
       setUsage(
         data.usage &&
-        typeof data.usage === 'object'
+        typeof data.usage ===
+          'object'
           ? data.usage
           : {},
       );
 
-      setUpdatedAt(
-        data.updatedAt || null,
+      setChangedIds(
+        new Set(),
+      );
+
+      setResetIds(
+        new Set(),
       );
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : 'Could not load Ingredient Index.',
+          : 'Could not load ingredients.',
       );
     } finally {
       setReady(true);
     }
   }
 
-  const categories = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          rates
-            .map(
+  const categories =
+    useMemo(
+      () =>
+        Array.from(
+          new Set(
+            rates.map(
               (rate) =>
                 rate.category,
+            ),
+          ),
+        ).sort(),
+      [rates],
+    );
+
+  const filteredRates =
+    useMemo(() => {
+      const search =
+        query
+          .trim()
+          .toLowerCase();
+
+      return rates
+        .filter((rate) => {
+          return (
+            (
+              category ===
+                'ALL' ||
+              rate.category ===
+                category
+            ) &&
+            (
+              !search ||
+              rate.name
+                .toLowerCase()
+                .includes(
+                  search,
+                ) ||
+              rate.category
+                .toLowerCase()
+                .includes(
+                  search,
+                )
             )
-            .filter(Boolean),
-        ),
-      ).sort(),
-    [rates],
-  );
-
-  const filteredRates = useMemo(() => {
-    const search =
-      query
-        .trim()
-        .toLowerCase();
-
-    return rates
-      .filter((rate) => {
-        const matchesSearch =
-          !search ||
-          rate.name
-            .toLowerCase()
-            .includes(search) ||
-          rate.category
-            .toLowerCase()
-            .includes(search) ||
-          rate.unit.includes(search);
-
-        const matchesCategory =
-          category === 'ALL' ||
-          rate.category === category;
-
-        return (
-          matchesSearch &&
-          matchesCategory
+          );
+        })
+        .sort((a, b) =>
+          a.name.localeCompare(
+            b.name,
+            undefined,
+            {
+              sensitivity:
+                'base',
+            },
+          ),
         );
-      })
-      .sort((a, b) =>
-        a.name.localeCompare(
-          b.name,
-          undefined,
-          {
-            sensitivity: 'base',
-          },
+    }, [
+      rates,
+      query,
+      category,
+    ]);
+
+  function updateRate(
+    id: string,
+    value: number,
+  ) {
+    setRates(
+      (current) =>
+        current.map(
+          (rate) =>
+            rate.id === id
+              ? {
+                  ...rate,
+                  rate: value,
+                  isCustomRate:
+                    true,
+                }
+              : rate,
+        ),
+    );
+
+    setChangedIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(id);
+
+        return next;
+      },
+    );
+
+    setResetIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.delete(id);
+
+        return next;
+      },
+    );
+  }
+
+  function useAdminRate(
+    row: ClientIngredientRate,
+  ) {
+    setRates(
+      (current) =>
+        current.map(
+          (rate) =>
+            rate.id === row.id
+              ? {
+                  ...rate,
+                  rate:
+                    row.defaultRate,
+                  isCustomRate:
+                    false,
+                }
+              : rate,
+        ),
+    );
+
+    setChangedIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.delete(
+          row.id,
+        );
+
+        return next;
+      },
+    );
+
+    setResetIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          row.id,
+        );
+
+        return next;
+      },
+    );
+  }
+
+  async function refreshCurrentMenuCosts() {
+    const response =
+      await fetch(
+        '/api/dishes',
+        {
+          cache: 'no-store',
+        },
+      );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data =
+      await response.json();
+
+    const items =
+      Array.isArray(
+        data.items,
+      )
+        ? data.items
+        : [];
+
+    const costByName =
+      new Map<
+        string,
+        number
+      >(
+        items.map(
+          (
+            item: {
+              name?: string;
+              rate?: number;
+            },
+          ) => [
+            String(
+              item.name || '',
+            )
+              .trim()
+              .toLowerCase(),
+
+            Number(
+              item.rate,
+            ) || 0,
+          ],
         ),
       );
-  }, [
-    rates,
-    query,
-    category,
-  ]);
 
-  const linkedCount =
+    const session =
+      getSession();
+
+    if (!session) return;
+
+    const work =
+      loadWork(
+        session.tenantId,
+      );
+
+    const menu =
+      work.menu.map(
+        (item) => {
+          const newRate =
+            costByName.get(
+              item.name
+                .trim()
+                .toLowerCase(),
+            );
+
+          return newRate &&
+            newRate > 0
+            ? {
+                ...item,
+                costPerPlate:
+                  newRate,
+              }
+            : item;
+        },
+      );
+
+    saveWork(
+      session.tenantId,
+      {
+        ...work,
+        menu,
+      },
+    );
+  }
+
+  async function saveMyRates() {
+    if (
+      !changedIds.size &&
+      !resetIds.size
+    ) return;
+
+    const changedRates =
+      rates
+        .filter(
+          (rate) =>
+            changedIds.has(
+              rate.id,
+            ),
+        )
+        .map((rate) => ({
+          ingredientId:
+            rate.id,
+
+          rate:
+            Number(
+              rate.rate,
+            ),
+        }));
+
+    const invalid =
+      changedRates.find(
+        (item) =>
+          !Number.isFinite(
+            item.rate,
+          ) ||
+          item.rate <= 0,
+      );
+
+    if (invalid) {
+      setMessage(
+        'Every personal rate must be greater than ₹0.',
+      );
+
+      return;
+    }
+
+    setSaving(true);
+    setMessage('');
+
+    try {
+      const response =
+        await fetch(
+          '/api/client/ingredients',
+          {
+            method: 'PUT',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+
+            body:
+              JSON.stringify({
+                rates:
+                  changedRates,
+
+                resetIngredientIds:
+                  Array.from(
+                    resetIds,
+                  ),
+              }),
+          },
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not save your rates.',
+        );
+      }
+
+      await refreshCurrentMenuCosts();
+
+      await loadIngredients();
+
+      setMessage(
+        'Your ingredient rates are saved. Your current and future dish costing now uses your personal rates.',
+      );
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not save your rates.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const customCount =
     rates.filter(
       (rate) =>
-        (
-          usage[rate.id]
-            ?.length || 0
-        ) > 0,
+        rate.isCustomRate,
     ).length;
 
-  const missingRateCount =
-    rates.filter(
-      (rate) =>
-        !(Number(rate.rate) > 0),
-    ).length;
+  const unsavedCount =
+    changedIds.size +
+    resetIds.size;
 
   return (
     <AppShell
       title="Ingredient Index"
-      subtitle="Ingredient names, market rates and units currently used by your menu costing"
+      subtitle="Set your own ingredient purchase rates without changing any other user's rates"
     >
       <section className="content-grid">
 
@@ -184,43 +492,46 @@ export default function ClientIngredientIndexPage() {
               {rates.length}
             </strong>
             <span>
-              Master catalog
+              Admin master
             </span>
           </div>
 
           <div className="stat-card">
             <small>
-              Categories
+              My custom rates
             </small>
             <strong>
-              {categories.length}
+              {customCount}
             </strong>
             <span>
-              Ingredient groups
+              Only your account
             </span>
           </div>
 
           <div className="stat-card">
             <small>
-              Recipe linked
+              Admin defaults
             </small>
             <strong>
-              {linkedCount}
+              {
+                rates.length -
+                customCount
+              }
             </strong>
             <span>
-              Used in recipes
+              Using master rate
             </span>
           </div>
 
           <div className="stat-card">
             <small>
-              Missing rates
+              Unsaved
             </small>
             <strong>
-              {missingRateCount}
+              {unsavedCount}
             </strong>
             <span>
-              Need admin review
+              Rate changes
             </span>
           </div>
         </div>
@@ -229,54 +540,53 @@ export default function ClientIngredientIndexPage() {
           <div className="dish-list-heading">
             <div>
               <span className="section-kicker">
-                Costing reference
+                Personal costing
               </span>
 
               <h2>
-                Your Ingredient Index
+                My Ingredient Rates
               </h2>
 
               <p className="muted">
-                These are the master rates currently
-                used when recipe costs are calculated.
+                You can edit only the rate.
+                Ingredient name, category and
+                purchase unit are controlled by
+                the Admin Ingredient Master.
               </p>
             </div>
 
             <div className="action-row">
               <button
-                className="ghost-button"
+                className="primary-button"
                 type="button"
+                disabled={
+                  saving ||
+                  unsavedCount === 0
+                }
                 onClick={() =>
-                  void loadIngredients()
+                  void saveMyRates()
                 }
               >
-                Refresh
+                {saving
+                  ? 'Saving…'
+                  : `Save My Rates${
+                      unsavedCount
+                        ? ` (${unsavedCount})`
+                        : ''
+                    }`}
               </button>
 
               <Link
                 href="/app/profile"
-                className="secondary-button"
+                className="ghost-button"
               >
-                Back to Profile
+                Profile
               </Link>
             </div>
           </div>
 
-          {updatedAt ? (
-            <p className="muted">
-              Last master update:{' '}
-              <b>
-                {new Date(
-                  updatedAt,
-                ).toLocaleString(
-                  'en-IN',
-                )}
-              </b>
-            </p>
-          ) : null}
-
           {message ? (
-            <div className="admin-message error">
+            <div className="admin-message">
               {message}
             </div>
           ) : null}
@@ -284,16 +594,15 @@ export default function ClientIngredientIndexPage() {
 
         <div className="glass-card">
           <div className="ingredient-filter-grid">
-            <div className="field ingredient-search-field">
-              <label htmlFor="client-ingredient-search">
-                Search ingredient
+            <div className="field">
+              <label>
+                Search
               </label>
 
               <input
-                id="client-ingredient-search"
                 className="input"
                 value={query}
-                placeholder="Paneer, tomato, rice..."
+                placeholder="Search ingredient..."
                 onChange={(event) =>
                   setQuery(
                     event.target.value,
@@ -303,12 +612,11 @@ export default function ClientIngredientIndexPage() {
             </div>
 
             <div className="field">
-              <label htmlFor="client-ingredient-category">
+              <label>
                 Category
               </label>
 
               <select
-                id="client-ingredient-category"
                 className="select"
                 value={category}
                 onChange={(event) =>
@@ -340,11 +648,11 @@ export default function ClientIngredientIndexPage() {
           <div className="dish-list-heading">
             <div>
               <span className="section-kicker">
-                Ingredient master
+                Tenant rates
               </span>
 
               <h2>
-                Ingredient Rates
+                Ingredient Index
               </h2>
             </div>
 
@@ -358,11 +666,9 @@ export default function ClientIngredientIndexPage() {
 
           {!ready ? (
             <div className="admin-empty">
-              <strong>
-                Loading ingredients…
-              </strong>
+              Loading…
             </div>
-          ) : filteredRates.length ? (
+          ) : (
             <div className="table-wrap">
               <table>
                 <thead>
@@ -376,7 +682,11 @@ export default function ClientIngredientIndexPage() {
                     </th>
 
                     <th>
-                      Market Rate
+                      Admin Rate
+                    </th>
+
+                    <th>
+                      My Rate
                     </th>
 
                     <th>
@@ -388,64 +698,80 @@ export default function ClientIngredientIndexPage() {
                     </th>
 
                     <th>
-                      Used In
+                      Action
                     </th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {filteredRates.map(
-                    (rate) => {
+                    (row) => {
                       const recipes =
                         usage[
-                          rate.id
+                          row.id
                         ] || [];
 
                       return (
-                        <tr
-                          key={
-                            rate.id
-                          }
-                        >
+                        <tr key={row.id}>
                           <td>
                             <strong>
-                              {
-                                rate.name
-                              }
+                              {row.name}
                             </strong>
+
+                            {row.isCustomRate ? (
+                              <small>
+                                My custom rate
+                              </small>
+                            ) : null}
                           </td>
 
                           <td>
                             {
-                              rate.category
+                              row.category
                             }
                           </td>
 
                           <td>
+                            ₹
                             {Number(
-                              rate.rate,
-                            ) > 0 ? (
-                              <strong>
-                                ₹
-                                {Number(
-                                  rate.rate,
-                                ).toLocaleString(
-                                  'en-IN',
-                                  {
-                                    maximumFractionDigits: 3,
-                                  },
-                                )}
-                              </strong>
-                            ) : (
-                              <span>
-                                Rate pending
-                              </span>
+                              row.defaultRate,
+                            ).toLocaleString(
+                              'en-IN',
                             )}
                           </td>
 
                           <td>
+                            <label className="dish-rate-input">
+                              <span>
+                                ₹
+                              </span>
+
+                              <input
+                                type="number"
+                                min="0.01"
+                                step="0.01"
+                                value={
+                                  row.rate
+                                }
+                                onChange={(
+                                  event,
+                                ) =>
+                                  updateRate(
+                                    row.id,
+                                    Number(
+                                      event
+                                        .target
+                                        .value,
+                                    ),
+                                  )
+                                }
+                              />
+                            </label>
+                          </td>
+
+                          <td>
                             {
-                              rate.unit
+                              row.unit
                             }
                           </td>
 
@@ -458,30 +784,23 @@ export default function ClientIngredientIndexPage() {
                           </td>
 
                           <td>
-                            {recipes.length
-                              ? recipes
-                                  .slice(
-                                    0,
-                                    4,
-                                  )
-                                  .map(
-                                    (
-                                      recipe,
-                                    ) =>
-                                      recipe.name,
-                                  )
-                                  .join(
-                                    ', ',
-                                  )
-                              : 'Not linked'}
-
-                            {recipes.length >
-                            4
-                              ? ` +${
-                                  recipes.length -
-                                  4
-                                } more`
-                              : ''}
+                            <button
+                              className="ghost-button"
+                              type="button"
+                              disabled={
+                                !row.isCustomRate &&
+                                !changedIds.has(
+                                  row.id,
+                                )
+                              }
+                              onClick={() =>
+                                useAdminRate(
+                                  row,
+                                )
+                              }
+                            >
+                              Use Admin Rate
+                            </button>
                           </td>
                         </tr>
                       );
@@ -490,29 +809,7 @@ export default function ClientIngredientIndexPage() {
                 </tbody>
               </table>
             </div>
-          ) : (
-            <div className="admin-empty">
-              <strong>
-                No ingredients found
-              </strong>
-
-              <span>
-                Try another search
-                or category.
-              </span>
-            </div>
           )}
-        </div>
-
-        <div className="glass-card">
-          <strong>
-            Ingredient rates are managed by your account administrator.
-          </strong>
-
-          <p className="muted">
-            When the master rate changes, your recipe
-            costing uses the updated approved rate.
-          </p>
         </div>
 
       </section>
