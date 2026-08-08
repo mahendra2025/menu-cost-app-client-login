@@ -1354,6 +1354,47 @@ export default function EventPage() {
     .map((line) => line.trim())
     .filter(Boolean).length;
 
+  const firstMenuEventReady =
+    Boolean(
+      work.event.eventName.trim() ||
+      work.event.clientName.trim() ||
+      Number(work.event.pax) > 0,
+    );
+
+  const firstMenuTextReady =
+    work.event.rawMenuText.trim().length > 0;
+
+  const firstMenuDetected =
+    Boolean(
+      detectionPreview &&
+      detectionPreview.menu.length > 0,
+    );
+
+  const firstMenuSaved =
+    work.menu.length > 0;
+
+  const showFirstMenuGuide =
+    !firstMenuSaved;
+
+  const firstMenuCompletedSteps =
+    [
+      firstMenuEventReady,
+      firstMenuTextReady,
+      firstMenuDetected,
+      firstMenuSaved,
+    ].filter(Boolean).length;
+
+  function scrollToFirstMenuSection(
+    id: string,
+  ) {
+    document
+      .getElementById(id)
+      ?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+  }
+
   const selectedPreviewMenu =
     detectionPreview?.menu.filter(
       (item) =>
@@ -1437,7 +1478,261 @@ export default function EventPage() {
       hidePageTitle
     >
       <section className="content-grid">
-        <div className="glass-card event-details-card">
+        {showFirstMenuGuide ? (
+          <div className="first-menu-guide">
+            <div className="first-menu-guide-top">
+              <div>
+                <span className="section-kicker">
+                  First costing
+                </span>
+
+                <h2>
+                  Create your first menu costing
+                </h2>
+
+                <p>
+                  Follow these four steps.
+                  Menu Cost will guide you from
+                  event details to a saved menu.
+                </p>
+              </div>
+
+              <div className="first-menu-guide-progress">
+                <strong>
+                  {firstMenuCompletedSteps}/4
+                </strong>
+
+                <span>
+                  steps complete
+                </span>
+              </div>
+            </div>
+
+            <div className="first-menu-progress-bar">
+              <span
+                style={{
+                  width:
+                    `${Math.max(
+                      5,
+                      (
+                        firstMenuCompletedSteps /
+                        4
+                      ) * 100,
+                    )}%`,
+                }}
+              />
+            </div>
+
+            <div className="first-menu-steps">
+              <button
+                type="button"
+                className={
+                  firstMenuEventReady
+                    ? 'is-complete'
+                    : 'is-current'
+                }
+                onClick={() =>
+                  scrollToFirstMenuSection(
+                    'eventInformation',
+                  )
+                }
+              >
+                <span className="first-menu-step-number">
+                  {firstMenuEventReady
+                    ? '✓'
+                    : '1'}
+                </span>
+
+                <span>
+                  <b>
+                    Event details
+                  </b>
+
+                  <small>
+                    Client, event or guest count
+                  </small>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={
+                  firstMenuTextReady
+                    ? 'is-complete'
+                    : firstMenuEventReady
+                      ? 'is-current'
+                      : ''
+                }
+                onClick={() =>
+                  scrollToFirstMenuSection(
+                    'menuInput',
+                  )
+                }
+              >
+                <span className="first-menu-step-number">
+                  {firstMenuTextReady
+                    ? '✓'
+                    : '2'}
+                </span>
+
+                <span>
+                  <b>
+                    Add menu
+                  </b>
+
+                  <small>
+                    PDF, photo or pasted text
+                  </small>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={
+                  firstMenuDetected
+                    ? 'is-complete'
+                    : firstMenuTextReady
+                      ? 'is-current'
+                      : ''
+                }
+                onClick={() => {
+                  if (
+                    firstMenuTextReady &&
+                    !detecting
+                  ) {
+                    void detectAndNext();
+                  } else {
+                    scrollToFirstMenuSection(
+                      'menuInput',
+                    );
+                  }
+                }}
+              >
+                <span className="first-menu-step-number">
+                  {firstMenuDetected
+                    ? '✓'
+                    : '3'}
+                </span>
+
+                <span>
+                  <b>
+                    Detect dishes
+                  </b>
+
+                  <small>
+                    Review what Menu Cost found
+                  </small>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={
+                  firstMenuSaved
+                    ? 'is-complete'
+                    : firstMenuDetected
+                      ? 'is-current'
+                      : ''
+                }
+                onClick={() =>
+                  scrollToFirstMenuSection(
+                    firstMenuDetected
+                      ? 'menuDetectionPreview'
+                      : 'menuInput',
+                  )
+                }
+              >
+                <span className="first-menu-step-number">
+                  {firstMenuSaved
+                    ? '✓'
+                    : '4'}
+                </span>
+
+                <span>
+                  <b>
+                    Save menu
+                  </b>
+
+                  <small>
+                    Continue to costing
+                  </small>
+                </span>
+              </button>
+            </div>
+
+            {!firstMenuTextReady ? (
+              <div className="first-menu-guide-actions">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => {
+                    useSampleMenu();
+
+                    window.setTimeout(
+                      () =>
+                        scrollToFirstMenuSection(
+                          'menuInput',
+                        ),
+                      50,
+                    );
+                  }}
+                >
+                  Try Sample Menu
+                </button>
+
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() =>
+                    scrollToFirstMenuSection(
+                      'menuInput',
+                    )
+                  }
+                >
+                  Add My Menu
+                </button>
+              </div>
+            ) : firstMenuTextReady &&
+              !firstMenuDetected ? (
+              <div className="first-menu-guide-actions">
+                <button
+                  className="primary-button"
+                  type="button"
+                  disabled={
+                    detecting ||
+                    Boolean(uploading)
+                  }
+                  onClick={() =>
+                    void detectAndNext()
+                  }
+                >
+                  {detecting
+                    ? 'Detecting…'
+                    : 'Detect My Menu'}
+                </button>
+              </div>
+            ) : firstMenuDetected ? (
+              <div className="first-menu-guide-actions">
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() =>
+                    scrollToFirstMenuSection(
+                      'menuDetectionPreview',
+                    )
+                  }
+                >
+                  Review Detected Dishes
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <div
+          id="eventInformation"
+          className="glass-card event-details-card"
+        >
           <div className="event-section-heading">
             <div>
               <span className="section-kicker">Event brief</span>
@@ -1607,7 +1902,10 @@ export default function EventPage() {
           </div>
         </div>
 
-        <div className="glass-card event-menu-card">
+        <div
+          id="menuInput"
+          className="glass-card event-menu-card"
+        >
           <div className="form-grid">
             <div className="menu-source-workspace">
               <div className="menu-source-workspace-heading">
