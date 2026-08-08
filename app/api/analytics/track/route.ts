@@ -29,6 +29,7 @@ const allowedEvents =
     'final_costing_viewed',
     'final_costing_complete',
     'pdf_exported',
+    'costing_duplicated',
   ]);
 
 function cleanString(
