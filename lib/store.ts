@@ -270,6 +270,80 @@ const pendingWorkSaves = new Map<string, WorkState>();
 const workSaveTimers = new Map<string, number>();
 let workSaveFlushListenersReady = false;
 
+const draftServerSyncTimers =
+  new Map<string, number>();
+
+function hasMeaningfulDraft(
+  work: WorkState,
+) {
+  return Boolean(
+    work.menu.length ||
+      work.event.rawMenuText.trim() ||
+      work.event.eventName.trim() ||
+      work.event.clientName.trim() ||
+      work.event.eventDate.trim() ||
+      work.event.pax > 0 ||
+      work.sellingPricePerPlate > 0 ||
+      work.manpower.some(
+        (row) =>
+          Number(row.quantity) > 0,
+      ) ||
+      Object.values(
+        work.extras,
+      ).some(
+        (value) =>
+          Number(value) > 0,
+      ),
+  );
+}
+
+async function syncDraftToServer(
+  work: WorkState,
+) {
+  if (!hasMeaningfulDraft(work)) return;
+
+  try {
+    const result = calculate(work);
+
+    await fetch('/api/client/drafts', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        work,
+        totalCovers: result.totalCovers,
+        totalCost: result.totalCost,
+        totalSelling: result.totalSelling,
+        totalProfit: result.totalProfit,
+      }),
+    });
+  } catch {
+    // Browser auto-save remains available if server draft sync fails.
+  }
+}
+
+function scheduleDraftServerSync(
+  tenantId: string,
+  work: WorkState,
+) {
+  const existing =
+    draftServerSyncTimers.get(tenantId);
+
+  if (existing !== undefined) {
+    window.clearTimeout(existing);
+  }
+
+  draftServerSyncTimers.set(
+    tenantId,
+    window.setTimeout(() => {
+      draftServerSyncTimers.delete(tenantId);
+      void syncDraftToServer(work);
+    }, 1200),
+  );
+}
+
+
 function writeWorkNow(tenantId: string, work: WorkState) {
   window.localStorage.setItem(
     workKey(tenantId),
@@ -483,6 +557,7 @@ export function saveWork(
     window.setTimeout(() => flushWorkSave(tenantId), 140),
   );
   ensureWorkSaveFlushListeners();
+  scheduleDraftServerSync(tenantId, nextWork);
 }
 
 export function clearWork(

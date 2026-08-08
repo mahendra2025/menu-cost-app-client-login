@@ -22,6 +22,7 @@ model Tenant {
   ingredientRates        TenantIngredientRate[]
   freeCostings            TenantFreeCosting[]
   costingHistory          TenantCostingHistory[]
+  draftCostings            TenantDraftCosting[]
   createdAt              DateTime   @default(now())
   razorpayCustomerId     String?
   razorpaySubscriptionId String?    @unique
@@ -137,9 +138,33 @@ model TenantCostingHistory {
   completedAt          DateTime @default(now())
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+  archivedAt           DateTime?
 
   @@unique([tenantId, costingId])
   @@index([tenantId, completedAt])
+}
+
+
+model TenantDraftCosting {
+  id                   String   @id @default(cuid())
+  tenantId             String
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  costingId            String
+  eventName            String   @default("")
+  clientName           String   @default("")
+  eventDate            String   @default("")
+  menuCount            Int      @default(0)
+  totalCovers          Int      @default(0)
+  totalCost            Float    @default(0)
+  sellingPricePerPlate Float    @default(0)
+  totalSelling         Float    @default(0)
+  totalProfit          Float    @default(0)
+  workData             Json
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([tenantId, costingId])
+  @@index([tenantId, updatedAt])
 }
 
 model TenantIngredientRate {

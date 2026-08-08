@@ -77,6 +77,7 @@ export default function AppShell({
   const nav = useMemo(() => (session?.role === 'ADMIN' ? adminNav : clientNav), [session]);
   const isAdmin = session?.role === 'ADMIN';
   const isIngredientIndex = !isAdmin && pathname === '/app/ingredients';
+  const isHistory = !isAdmin && pathname === '/app/history';
   const directActiveIndex = nav.findIndex((item) => item.href === pathname);
   const profileIndex = nav.findIndex((item) => item.href === '/app/profile');
   const activeIndex = directActiveIndex >= 0
@@ -84,9 +85,11 @@ export default function AppShell({
     : isIngredientIndex && profileIndex >= 0
       ? profileIndex
       : 0;
-  const activeItem = isIngredientIndex
-    ? { mobileLabel: 'Ingredients' }
-    : nav[activeIndex];
+  const activeItem = isHistory
+    ? { mobileLabel: 'History' }
+    : isIngredientIndex
+      ? { mobileLabel: 'Ingredients' }
+      : nav[activeIndex];
   const progress = isAdmin ? 100 : ((activeIndex + 1) / clientNav.length) * 100;
 
   if (!ready) {
@@ -108,6 +111,7 @@ export default function AppShell({
           </span>
         </Link>
         <div className="topbar-actions">
+          {!isAdmin ? <Link href="/app/history" className="ghost-button history-shortcut">History</Link> : null}
           <span className="mobile-page-context" aria-hidden="true">{activeItem?.mobileLabel}</span>
           <span className={`account-status ${session?.status === 'ACTIVE' ? 'active' : ''}`}>
             <i aria-hidden="true" />
