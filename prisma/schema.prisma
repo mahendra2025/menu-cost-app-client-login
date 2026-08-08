@@ -14,6 +14,10 @@ model Tenant {
   password               String
   plan                   String     @default("PRO")
   status                 String     @default("ACTIVE")
+  ownerName              String     @default("")
+  phone                  String     @default("")
+  city                   String     @default("")
+  onboardingCompleted    Boolean    @default(true)
   works                  MenuWork[]
   ingredientRates        TenantIngredientRate[]
   createdAt              DateTime   @default(now())

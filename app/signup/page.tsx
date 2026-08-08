@@ -130,7 +130,7 @@ export default function SignupPage() {
       );
 
       router.replace(
-        '/app/event',
+        '/onboarding',
       );
 
       router.refresh();

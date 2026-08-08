@@ -66,6 +66,7 @@ export async function POST(request: Request) {
         email: tenant.email,
         plan: tenant.plan,
         status: tenant.status === 'ACTIVE' ? 'ACTIVE' : 'EXPIRED',
+        onboardingCompleted: tenant.onboardingCompleted,
       },
     });
     response.cookies.set({

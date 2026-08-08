@@ -156,6 +156,7 @@ export async function POST(request: Request) {
 
           plan: 'FREE',
           status: 'ACTIVE',
+          onboardingCompleted: false,
         },
 
         select: {

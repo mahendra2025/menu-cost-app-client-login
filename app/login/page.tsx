@@ -62,7 +62,11 @@ export default function LoginPage() {
 
       localStorage.setItem(SESSION_KEY, JSON.stringify(clientSession));
 
-      router.push('/app/event');
+      router.push(
+        data.session.onboardingCompleted === false
+          ? '/onboarding'
+          : '/app/event'
+      );
     } catch {
       setError('Server connection failed. Please try again.');
     } finally {
