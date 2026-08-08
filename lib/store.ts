@@ -309,6 +309,8 @@ export function createEmptyWorkState(
   session?: Session | null,
 ): WorkState {
   return {
+    costingId: uid('costing'),
+
     event: {
       ...emptyEvent,
     },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import FinalCostingUsage from '../../components/FinalCostingUsage';
 import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
 import { calculate, getSession, loadWork, saveWork } from '../../../lib/store';
@@ -333,7 +334,9 @@ export default function FinalCostingPage() {
           <button className="primary-button" type="button" onClick={() => router.push('/app/profile')}>Next: Profile</button>
           <button className="ghost-button" type="button" onClick={() => router.push('/app/cost')}>Back to Cost</button>
         </div>
-      </section>
+              <FinalCostingUsage tenantId={session.tenantId} work={work} />
+
+</section>
     </AppShell>
   );
 }

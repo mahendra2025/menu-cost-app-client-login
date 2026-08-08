@@ -86,6 +86,7 @@ export type BusinessProfile = {
 };
 
 export type WorkState = {
+  costingId: string;
   event: EventDetails;
   menu: MenuItem[];
   manpower: ManpowerRow[];

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
+import CostingHistoryCard from '../../components/CostingHistoryCard';
 import { clearWork, getClients, getSession, loadWork, logout, saveWork, upsertClient } from '../../../lib/store';
 import type { ClientUser, Session, WorkState } from '../../../lib/types';
 
@@ -79,7 +80,7 @@ export default function ProfilePage() {
       const checkout = new window.Razorpay({
         key: data.keyId,
         subscription_id: data.subscriptionId,
-        name: 'Menu Costing App',
+        name: 'Menu Costing',
         description: 'Monthly Pro · ₹999',
         prefill: { email: session?.userId || '' },
         theme: { color: '#007aff' },
@@ -263,7 +264,7 @@ export default function ProfilePage() {
             <span>
               {session.role === 'CLIENT'
                 ? billing?.plan === 'FREE'
-                  ? 'Starter account'
+                  ? '5 free completed costings'
                   : 'Monthly Pro'
                 : 'Workspace'}
             </span>
@@ -412,6 +413,8 @@ export default function ProfilePage() {
             </div>
           </div>
         ) : null}
+
+        {session.role === 'CLIENT' ? <CostingHistoryCard /> : null}
 
         <div className="glass-card">
           <h2>Business Profile</h2>

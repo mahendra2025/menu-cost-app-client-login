@@ -1834,7 +1834,7 @@ export default function HomePage() {
             <div className="mc-trust-row">
               <span>
                 <i>✓</i>
-                No payment required to create account
+                5 completed costings free · No card required
               </span>
 
               <span>
@@ -2377,7 +2377,7 @@ export default function HomePage() {
             </h2>
 
             <p>
-              Create your account without entering payment details. Menu Costing Pro is currently ₹999 per month.
+              Create your account and complete 5 costings free. Menu Costing Pro is ₹999 per month for unlimited costings.
             </p>
           </div>
 
@@ -2431,7 +2431,7 @@ export default function HomePage() {
             </Link>
 
             <p className="mc-no-card">
-              No payment details required to create your account.
+              5 completed costings free. No payment details required.
             </p>
           </div>
         </div>
@@ -2543,7 +2543,7 @@ export default function HomePage() {
         <span>
           Cost your next menu
           <small>
-            No payment required to create account
+            5 completed costings free · No card required
           </small>
         </span>
 

@@ -7,6 +7,8 @@ import {
 
 import { useRouter } from 'next/navigation';
 
+import FreeLimitPaywall from '../../components/FreeLimitPaywall';
+
 import AppShell, {
   LockedCard,
 } from '../../components/AppShell';
@@ -566,6 +568,8 @@ export default function EventPage() {
   const [error, setError] =
     useState('');
 
+  const [freeLimitBlocked, setFreeLimitBlocked] = useState(false);
+
   const [uploading, setUploading] =
     useState<'pdf' | 'camera' | null>(null);
 
@@ -785,7 +789,7 @@ export default function EventPage() {
     }
   }
 
-  function applyDetectionPreview(
+  async function applyDetectionPreview(
     mode: 'replace' | 'merge',
   ) {
     if (
@@ -808,6 +812,28 @@ export default function EventPage() {
       setError(
         'Select at least one detected dish before continuing.',
       );
+      return;
+    }
+
+    setFreeLimitBlocked(false);
+
+    try {
+      const usageResponse = await fetch(
+        `/api/client/free-usage?costingId=${encodeURIComponent(work.costingId)}`,
+        { cache: 'no-store' },
+      );
+      if (!usageResponse.ok) {
+        setError('Could not verify your costing allowance. Please try again.');
+        return;
+      }
+      const usage = await usageResponse.json();
+      if (!usage.canUseCurrentCosting) {
+        setFreeLimitBlocked(true);
+        setError('Your 5 free costings are used. Upgrade to Pro to start a new costing.');
+        return;
+      }
+    } catch {
+      setError('Could not verify your costing allowance. Please try again.');
       return;
     }
 
@@ -2383,6 +2409,11 @@ Gulab Jamun`}
           </div>
         </div>
       </section>
-    </AppShell>
+            <FreeLimitPaywall
+          open={freeLimitBlocked}
+          onClose={() => setFreeLimitBlocked(false)}
+        />
+
+</AppShell>
   );
 }

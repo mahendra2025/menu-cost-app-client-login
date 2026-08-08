@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { getSession, logout, refreshSessionFromClient } from '../../lib/store';
 import type { Session } from '../../lib/types';
+import FreeUsageMeter from './FreeUsageMeter';
 
 type NavIcon = 'event' | 'team' | 'extras' | 'cost' | 'final' | 'profile' | 'clients' | 'dishes' | 'ingredients';
 
@@ -159,6 +160,8 @@ export default function AppShell({
         </aside>
 
         <div className="app-workspace">
+          {!isAdmin ? <FreeUsageMeter /> : null}
+
           {session?.status === 'EXPIRED' && session.role === 'CLIENT' ? (
             <div className="alert-card no-print">
               <b>Plan expired.</b> Upload, cost and final costing are locked. Renew ₹999/month from admin to continue.
