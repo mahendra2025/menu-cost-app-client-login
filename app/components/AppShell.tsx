@@ -91,7 +91,7 @@ export default function AppShell({
   if (!ready) {
     return (
       <main className="page-shell center-screen">
-        <div className="loader-card">Opening Menu Cost App...</div>
+        <div className="loader-card">Opening Menu Costing App...</div>
       </main>
     );
   }
@@ -102,7 +102,7 @@ export default function AppShell({
         <Link href={isAdmin ? '/admin/users' : '/app/event'} className="brand-chip">
           <span className="brand-logo">MC</span>
           <span className="brand-copy">
-            <b>Menu Cost</b>
+            <b>Menu Costing</b>
             <small>{session?.businessName}</small>
           </span>
         </Link>
@@ -114,7 +114,7 @@ export default function AppShell({
           </span>
           <button
             className="ghost-button logout-button"
-            aria-label="Log out of Menu Cost"
+            aria-label="Log out of Menu Costing"
             onClick={() => {
               logout();
               void fetch('/api/client/session', { method: 'DELETE' });
@@ -168,7 +168,7 @@ export default function AppShell({
           {!hidePageTitle ? (
             <section className="page-title no-print">
               <div>
-                <span className="page-eyebrow">{isAdmin ? 'Menu Cost Admin' : 'Catering workspace'}</span>
+                <span className="page-eyebrow">{isAdmin ? 'Menu Costing Admin' : 'Catering workspace'}</span>
                 <h1>{title}</h1>
                 <p>{subtitle ?? 'Plan, price and present every event with confidence.'}</p>
               </div>

@@ -79,7 +79,7 @@ export default function ProfilePage() {
       const checkout = new window.Razorpay({
         key: data.keyId,
         subscription_id: data.subscriptionId,
-        name: 'Menu Cost App',
+        name: 'Menu Costing App',
         description: 'Monthly Pro · ₹999',
         prefill: { email: session?.userId || '' },
         theme: { color: '#007aff' },
@@ -275,7 +275,7 @@ export default function ProfilePage() {
         {session.role === 'CLIENT' ? (
           <div className="glass-card billing-card">
             <div className="billing-heading">
-              <div><div className="section-kicker">Razorpay Subscription</div><h2>Monthly Pro</h2><p className="muted">Full Menu Cost access with secure recurring billing.</p></div>
+              <div><div className="section-kicker">Razorpay Subscription</div><h2>Monthly Pro</h2><p className="muted">Full Menu Costing access with secure recurring billing.</p></div>
               <div className="billing-price"><strong>₹999</strong><span>/ month</span></div>
             </div>
             <div className="billing-details">

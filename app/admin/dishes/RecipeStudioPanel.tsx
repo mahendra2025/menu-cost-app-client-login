@@ -437,7 +437,7 @@ export default function RecipeStudioPanel({
             ref={frameRef}
             className="recipe-studio-frame"
             src="/recipe-cost-studio.html?embedded=1&theme=dark"
-            title="Menu Cost Recipe Cost Studio"
+            title="Menu Costing Recipe Cost Studio"
             onLoad={() => {
               setLoading(false);
               setSlowLoad(false);

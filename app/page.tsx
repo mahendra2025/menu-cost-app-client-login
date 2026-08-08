@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 
   title: {
     default:
-      'Menu Cost — Catering Menu Costing Software for India',
+      'Menu Costing — Catering Menu Costing Software for India',
     template:
-      '%s | Menu Cost',
+      '%s | Menu Costing',
   },
 
   description:
@@ -40,13 +40,13 @@ export const metadata: Metadata = {
 
   openGraph: {
     title:
-      'Menu Cost — Know Your Catering Cost Before You Quote',
+      'Menu Costing — Know Your Catering Cost Before You Quote',
     description:
       'Upload a catering menu, detect dishes, use your own ingredient rates and calculate the event cost before you send the quote.',
     url:
       'https://menu-costing.com',
     siteName:
-      'Menu Cost',
+      'Menu Costing',
     type:
       'website',
   },
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     card:
       'summary_large_image',
     title:
-      'Menu Cost — Catering Menu Costing Software',
+      'Menu Costing — Catering Menu Costing Software',
     description:
       'Know your catering cost before you quote.',
   },
@@ -105,7 +105,7 @@ const workflow = [
     title:
       'Review detected dishes',
     text:
-      'Menu Cost matches catalog dishes and surfaces new dishes that need a manual rate.',
+      'Menu Costing matches catalog dishes and surfaces new dishes that need a manual rate.',
   },
   {
     no: '03',
@@ -166,7 +166,7 @@ const comparison = [
 const faqs = [
   [
     'Do I need a card to create an account?',
-    'No. You can create your Menu Cost account without entering payment details.',
+    'No. You can create your Menu Costing account without entering payment details.',
   ],
   [
     'Can I use my own ingredient rates?',
@@ -189,8 +189,8 @@ const faqs = [
     'Yes. The app includes manpower, extra-cost and final-costing stages so you can review more than food alone.',
   ],
   [
-    'How much is Menu Cost Pro?',
-    'Menu Cost Pro is currently ₹999 per month.',
+    'How much is Menu Costing Pro?',
+    'Menu Costing Pro is currently ₹999 per month.',
   ],
 ];
 
@@ -1741,7 +1741,7 @@ export default function HomePage() {
           <Link
             href="/"
             className="mc-brand"
-            aria-label="Menu Cost home"
+            aria-label="Menu Costing home"
           >
             <span className="mc-brand-mark">
               MC
@@ -1749,7 +1749,7 @@ export default function HomePage() {
 
             <span className="mc-brand-copy">
               <b>
-                Menu Cost
+                Menu Costing
               </b>
 
               <small>
@@ -1764,7 +1764,7 @@ export default function HomePage() {
             </a>
 
             <a href="#why">
-              Why Menu Cost
+              Why Menu Costing
             </a>
 
             <a href="#pricing">
@@ -1851,7 +1851,7 @@ export default function HomePage() {
 
           <div
             className="mc-product-shell"
-            aria-label="Menu Cost product preview"
+            aria-label="Menu Costing product preview"
           >
             <div className="mc-product-glow" />
 
@@ -1879,7 +1879,7 @@ export default function HomePage() {
                       MC
                     </b>
                     <span>
-                      Menu Cost
+                      Menu Costing
                     </span>
                   </div>
 
@@ -2074,7 +2074,7 @@ export default function HomePage() {
             </h2>
 
             <p>
-              Menu Cost is built around the question a caterer needs answered before quoting: “What will this event actually cost me?”
+              Menu Costing is built around the question a caterer needs answered before quoting: “What will this event actually cost me?”
             </p>
           </div>
 
@@ -2333,7 +2333,7 @@ export default function HomePage() {
                   </th>
 
                   <th>
-                    Menu Cost
+                    Menu Costing
                   </th>
                 </tr>
               </thead>
@@ -2377,7 +2377,7 @@ export default function HomePage() {
             </h2>
 
             <p>
-              Create your account without entering payment details. Menu Cost Pro is currently ₹999 per month.
+              Create your account without entering payment details. Menu Costing Pro is currently ₹999 per month.
             </p>
           </div>
 
@@ -2385,7 +2385,7 @@ export default function HomePage() {
             <div className="mc-price-top">
               <div>
                 <span>
-                  Menu Cost Pro
+                  Menu Costing Pro
                 </span>
 
                 <h3>
@@ -2448,7 +2448,7 @@ export default function HomePage() {
             </span>
 
             <h2>
-              Everything you need to know before trying Menu Cost.
+              Everything you need to know before trying Menu Costing.
             </h2>
           </div>
 
@@ -2482,7 +2482,7 @@ export default function HomePage() {
             </h2>
 
             <p>
-              Start with a real event menu and see how Menu Cost fits your catering workflow.
+              Start with a real event menu and see how Menu Costing fits your catering workflow.
             </p>
 
             <div className="mc-final-actions">
@@ -2514,7 +2514,7 @@ export default function HomePage() {
 
             <span className="mc-brand-copy">
               <b>
-                Menu Cost
+                Menu Costing
               </b>
 
               <small>

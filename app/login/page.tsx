@@ -92,7 +92,7 @@ export default function LoginPage() {
         <section className="login-card">
           <div className="login-heading">
             <p className="eyebrow">Welcome back</p>
-            <h2>Sign in to Menu Cost</h2>
+            <h2>Sign in to Menu Costing</h2>
             <p className="muted">Use the login details provided by your account administrator.</p>
           </div>
 
@@ -132,7 +132,7 @@ export default function LoginPage() {
           </form>
 
           <p className="login-help">
-            New to Menu Cost?{' '}
+            New to Menu Costing?{' '}
             <Link
               href="/signup"
               style={{ color: '#007aff', fontWeight: 800 }}

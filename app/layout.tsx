@@ -3,14 +3,14 @@ import PwaRegister from './components/PwaRegister';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Menu Cost App',
+  title: 'Menu Costing App',
   description: 'Client login based menu costing app for caterers',
-  applicationName: 'Menu Cost App',
+  applicationName: 'Menu Costing App',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Menu Cost',
+    title: 'Menu Costing',
   },
   formatDetection: {
     telephone: false,

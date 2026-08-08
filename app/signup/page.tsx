@@ -164,14 +164,14 @@ export default function SignupPage() {
           </h1>
 
           <p>
-            Create your Menu Cost
+            Create your Menu Costing
             account and start with
             your first catering menu.
           </p>
 
           <div
             className="auth-benefits"
-            aria-label="Menu Cost benefits"
+            aria-label="Menu Costing benefits"
           >
             <div>
               <span>
@@ -227,7 +227,7 @@ export default function SignupPage() {
             </p>
 
             <h2>
-              Start with Menu Cost
+              Start with Menu Costing
             </h2>
 
             <p className="muted">

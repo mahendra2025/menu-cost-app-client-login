@@ -1492,7 +1492,7 @@ export default function EventPage() {
 
                 <p>
                   Follow these four steps.
-                  Menu Cost will guide you from
+                  Menu Costing will guide you from
                   event details to a saved menu.
                 </p>
               </div>
@@ -1620,7 +1620,7 @@ export default function EventPage() {
                   </b>
 
                   <small>
-                    Review what Menu Cost found
+                    Review what Menu Costing found
                   </small>
                 </span>
               </button>

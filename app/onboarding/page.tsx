@@ -623,7 +623,7 @@ export default function OnboardingPage() {
     return (
       <main className="page-shell center-screen">
         <div className="login-card">
-          Preparing your Menu Cost workspace…
+          Preparing your Menu Costing workspace…
         </div>
       </main>
     );
@@ -802,7 +802,7 @@ export default function OnboardingPage() {
           <div className="onboarding-brand">
             <div>
               <span className="section-kicker">
-                Welcome to Menu Cost
+                Welcome to Menu Costing
               </span>
 
               <h1>
@@ -848,7 +848,7 @@ export default function OnboardingPage() {
               </h2>
 
               <p>
-                These details will be used inside your Menu Cost workspace.
+                These details will be used inside your Menu Costing workspace.
               </p>
 
               <div className="form-grid">
@@ -1085,7 +1085,7 @@ export default function OnboardingPage() {
               </h2>
 
               <p>
-                Now add your first event menu. Menu Cost will detect the dishes and start building your costing.
+                Now add your first event menu. Menu Costing will detect the dishes and start building your costing.
               </p>
 
               <div className="onboarding-actions" style={{

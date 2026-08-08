@@ -581,7 +581,7 @@ export default function FirstMenuSuccessGuide() {
           ],
           [
             'Detect dishes',
-            'Review what Menu Cost found',
+            'Review what Menu Costing found',
           ],
           [
             'Save menu',
