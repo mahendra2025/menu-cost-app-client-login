@@ -22,6 +22,7 @@ model Tenant {
   ingredientRates        TenantIngredientRate[]
   freeCostings            TenantFreeCosting[]
   costingHistory          TenantCostingHistory[]
+  quotations              TenantQuotation[]
   draftCostings            TenantDraftCosting[]
   createdAt              DateTime   @default(now())
   razorpayCustomerId     String?
@@ -165,6 +166,45 @@ model TenantDraftCosting {
 
   @@unique([tenantId, costingId])
   @@index([tenantId, updatedAt])
+}
+
+
+model TenantQuotation {
+  id                   String   @id @default(cuid())
+  tenantId             String
+  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  costingId            String
+  quotationNumber      String   @unique
+  status               String   @default("DRAFT")
+  clientName           String   @default("")
+  clientPhone          String   @default("")
+  eventName            String   @default("")
+  eventDate            String   @default("")
+  venue                String   @default("")
+  city                 String   @default("")
+  totalCovers          Int      @default(0)
+  pricePerCover        Float    @default(0)
+  includeTotal         Boolean  @default(true)
+  subtotal             Float    @default(0)
+  gstPercent           Float    @default(0)
+  gstAmount            Float    @default(0)
+  extraLabel           String   @default("")
+  extraAmount          Float    @default(0)
+  grandTotal           Float    @default(0)
+  validityDays         Int      @default(7)
+  advancePercent       Float    @default(50)
+  paymentTerms         String   @default("")
+  terms                Json     @default("[]")
+  notes                String   @default("")
+  publicSnapshot       Json     @default("{}")
+  sentAt               DateTime?
+  acceptedAt           DateTime?
+  rejectedAt           DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([tenantId, costingId])
+  @@index([tenantId, status, updatedAt])
 }
 
 model TenantIngredientRate {

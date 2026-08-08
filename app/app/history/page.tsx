@@ -483,6 +483,7 @@ export default function HistoryPage() {
                         <button className="hist-action primary" disabled={isBusy} onClick={() => void openCompleted(item.costingId)}>Open</button>
                         <button className="hist-action" disabled={isBusy} onClick={() => void duplicate(item.costingId)}>Duplicate</button>
                         <button className="hist-action" disabled={isBusy} onClick={() => void pdf(item.costingId)}>PDF</button>
+                        <Link className="hist-action" href={`/app/quotation?costingId=${encodeURIComponent(item.costingId)}`}>Quotation</Link>
                         <button className="hist-action" disabled={isBusy} onClick={() => void archiveCosting(item.costingId, item.kind !== 'ARCHIVED')}>{item.kind === 'ARCHIVED' ? 'Restore' : 'Archive'}</button>
                       </>
                     )}

@@ -331,6 +331,16 @@ export default function FinalCostingPage() {
           <button className="secondary-button" type="button" onClick={downloadPdf} disabled={pdfBusy}>
             {pdfBusy ? 'Preparing PDF…' : 'Download Menu & Costing PDF'}
           </button>
+          <button
+            className="primary-button"
+            type="button"
+            disabled={!finalCostReady}
+            onClick={() =>
+              router.push('/app/quotation')
+            }
+          >
+            Create Client Quotation
+          </button>
           <button className="primary-button" type="button" onClick={() => router.push('/app/profile')}>Next: Profile</button>
           <button className="ghost-button" type="button" onClick={() => router.push('/app/cost')}>Back to Cost</button>
         </div>

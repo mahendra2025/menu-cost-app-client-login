@@ -29,6 +29,10 @@ const allowedEvents =
     'final_costing_viewed',
     'final_costing_complete',
     'pdf_exported',
+    'quotation_accepted',
+    'quotation_whatsapp',
+    'quotation_pdf',
+    'quotation_saved',
     'costing_duplicated',
   ]);
 
