@@ -251,7 +251,23 @@ export default function ProfilePage() {
       <section className="content-grid">
         <div className="stat-grid">
           <div className="stat-card"><small>Role</small><strong>{session.role}</strong><span>{session.userId}</span></div>
-          <div className="stat-card"><small>Plan</small><strong>{session.role === 'CLIENT' ? '₹999' : 'Admin'}</strong><span>Monthly Pro</span></div>
+          <div className="stat-card">
+            <small>Plan</small>
+            <strong>
+              {session.role === 'CLIENT'
+                ? billing?.plan === 'FREE'
+                  ? 'Free'
+                  : '₹999'
+                : 'Admin'}
+            </strong>
+            <span>
+              {session.role === 'CLIENT'
+                ? billing?.plan === 'FREE'
+                  ? 'Starter account'
+                  : 'Monthly Pro'
+                : 'Workspace'}
+            </span>
+          </div>
           <div className="stat-card"><small>Status</small><strong>{session.status}</strong><span>{client?.expiryDate ? `Expiry ${client.expiryDate}` : 'No expiry'}</span></div>
           <div className="stat-card"><small>Saving</small><strong>Auto-saved</strong><span>Stored on this device</span></div>
         </div>

@@ -966,12 +966,18 @@ export default function HomePage() {
           </nav>
 
           <div className="lp-actions">
-            <a href="#how" className="lp-btn lp-secondary">
-              See product
-            </a>
-
-            <Link href="/login" className="lp-btn lp-primary">
+            <Link
+              href="/login"
+              className="lp-btn lp-secondary"
+            >
               Sign in
+            </Link>
+
+            <Link
+              href="/signup"
+              className="lp-btn lp-primary"
+            >
+              Start Free
             </Link>
           </div>
         </div>
@@ -998,13 +1004,19 @@ export default function HomePage() {
             </p>
 
             <div className="lp-hero-buttons">
-              <a href="#how" className="lp-btn lp-primary">
+              <Link
+                href="/signup"
+                className="lp-btn lp-primary"
+              >
+                Start Free
+              </Link>
+
+              <a
+                href="#how"
+                className="lp-btn lp-secondary"
+              >
                 See how it works
               </a>
-
-              <Link href="/login" className="lp-btn lp-secondary">
-                Open Menu Cost
-              </Link>
             </div>
 
             <div className="lp-points">
@@ -1280,16 +1292,16 @@ export default function HomePage() {
             </div>
 
             <Link
-              href="/login"
+              href="/signup"
               className="lp-btn lp-primary"
               style={{ width: '100%' }}
             >
-              Open Menu Cost
+              Start Free
             </Link>
 
             <p className="price-note">
-              Account access is currently activated and
-              managed through Menu Cost administration.
+              Create a free account now. Upgrade to
+              Menu Cost Pro when you are ready.
             </p>
           </div>
         </div>
@@ -1340,10 +1352,10 @@ export default function HomePage() {
 
               <div className="lp-hero-buttons">
                 <Link
-                  href="/login"
+                  href="/signup"
                   className="lp-btn lp-primary"
                 >
-                  Open Menu Cost
+                  Start Free
                 </Link>
 
                 <a
