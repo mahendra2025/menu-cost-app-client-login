@@ -11,5 +11,28 @@ export async function GET() {
     select: { plan: true, status: true, subscriptionStatus: true, currentPeriodEnd: true, cancelAtPeriodEnd: true, razorpaySubscriptionId: true },
   });
   if (!tenant) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-  return NextResponse.json({ ...tenant, configured: getRazorpayConfig().configured });
+  const subscriptionStatus =
+    String(
+      tenant.subscriptionStatus || '',
+    ).toLowerCase();
+
+  const hasProAccess =
+    tenant.plan !== 'FREE' &&
+    ![
+      'halted',
+      'cancelled',
+      'completed',
+      'paused',
+      'expired',
+    ].includes(
+      subscriptionStatus,
+    );
+
+  return NextResponse.json({
+    ...tenant,
+    hasProAccess,
+    configured:
+      getRazorpayConfig()
+        .configured,
+  });
 }

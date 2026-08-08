@@ -15,6 +15,16 @@ export async function POST(request: Request) {
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
   if (!tenant || tenant.razorpaySubscriptionId !== subscriptionId) return NextResponse.json({ error: 'Subscription mismatch' }, { status: 400 });
   if (!verifyRazorpaySignature(`${paymentId}|${subscriptionId}`, signature, config.keySecret)) return NextResponse.json({ error: 'Payment signature verification failed' }, { status: 400 });
-  await prisma.tenant.update({ where: { id: tenantId }, data: { subscriptionStatus: 'authenticated' } });
+  await prisma.tenant.update({
+    where: {
+      id: tenantId,
+    },
+    data: {
+      subscriptionStatus:
+        'authenticated',
+      plan: 'PRO',
+      status: 'ACTIVE',
+    },
+  });
   return NextResponse.json({ ok: true });
 }

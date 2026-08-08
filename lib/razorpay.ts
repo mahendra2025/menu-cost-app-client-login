@@ -1,4 +1,7 @@
-import { createHmac, timingSafeEqual } from 'crypto';
+import {
+  createHmac,
+  timingSafeEqual,
+} from 'crypto';
 
 export function getRazorpayConfig() {
   const keyId = process.env.RAZORPAY_KEY_ID?.trim() || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.trim() || '';
@@ -28,4 +31,49 @@ export function verifyRazorpaySignature(payload: string, signature: string, secr
   const expected = Buffer.from(createHmac('sha256', secret).update(payload).digest('hex'));
   const provided = Buffer.from(signature || '');
   return expected.length === provided.length && timingSafeEqual(expected, provided);
+}
+
+
+export function getRazorpayWebhookSecret() {
+  return (
+    process.env.RAZORPAY_WEBHOOK_SECRET
+      ?.trim() || ''
+  );
+}
+
+export function verifyRazorpayWebhookSignature(
+  rawBody: string,
+  signature: string,
+  secret: string,
+) {
+  if (
+    !rawBody ||
+    !signature ||
+    !secret
+  ) {
+    return false;
+  }
+
+  const expected =
+    createHmac(
+      'sha256',
+      secret,
+    )
+      .update(rawBody)
+      .digest('hex');
+
+  const expectedBuffer =
+    Buffer.from(expected);
+
+  const receivedBuffer =
+    Buffer.from(signature);
+
+  return (
+    expectedBuffer.length ===
+      receivedBuffer.length &&
+    timingSafeEqual(
+      expectedBuffer,
+      receivedBuffer,
+    )
+  );
 }
