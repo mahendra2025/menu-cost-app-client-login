@@ -26,6 +26,11 @@ import {
   uid,
 } from '../../../lib/store';
 
+import {
+  getCostingAnalyticsKey,
+  trackProductEvent,
+} from '../../../lib/productAnalytics';
+
 import type {
   EventDetails,
   MenuItem,
@@ -725,6 +730,22 @@ export default function EventPage() {
         menu: detectedMenu,
         eventDetails: detectedDetails,
       });
+      void trackProductEvent(
+        'menu_detected',
+        {
+          dishCount:
+            detectedMenu.length,
+          catalogDishCount:
+            catalogMenu.length,
+          missingRateCount:
+            manualMenu.length,
+          source:
+            work.event.uploadFileName
+              ? 'upload'
+              : 'text',
+        },
+      );
+
       setManualRateIds(
         new Set(
           manualMenu.map(
@@ -826,6 +847,25 @@ export default function EventPage() {
 
       // Complete local-storage saving before opening the next page.
       flushWorkSave(session.tenantId);
+
+      const costingKey =
+        getCostingAnalyticsKey(
+          nextWork,
+        );
+
+      void trackProductEvent(
+        'menu_saved',
+        {
+          costingKey,
+          dishCount:
+            nextWork.menu.length,
+          mode,
+        },
+        {
+          onceKey:
+            `menu_saved:${costingKey}`,
+        },
+      );
 
       // Full navigation prevents the next page from getting stuck.
       window.location.assign('/app/manpower');

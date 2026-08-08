@@ -90,6 +90,21 @@ model RazorpayWebhookEvent {
 }
 
 
+model ProductAnalyticsEvent {
+  id        String   @id @default(cuid())
+  eventName String
+  tenantId  String?
+  visitorId String
+  path      String   @default("")
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([eventName, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([visitorId, createdAt])
+}
+
+
 model TenantIngredientRate {
   id           String   @id @default(cuid())
   tenantId     String

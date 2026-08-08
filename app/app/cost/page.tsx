@@ -6,6 +6,10 @@ import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
 import { calculate, getSession, loadWork, saveWork } from '../../../lib/store';
 import type { Session, WorkState } from '../../../lib/types';
+import {
+  getCostingAnalyticsKey,
+  trackProductEvent,
+} from '../../../lib/productAnalytics';
 
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
@@ -24,6 +28,44 @@ export default function CostPage() {
     setSession(current);
     if (current) setWork(loadWork(current.tenantId));
   }, []);
+
+  useEffect(() => {
+    if (
+      !work ||
+      !session ||
+      session.status === 'EXPIRED' ||
+      work.menu.length === 0
+    ) {
+      return;
+    }
+
+    const result =
+      calculate(work);
+
+    const costingKey =
+      getCostingAnalyticsKey(
+        work,
+      );
+
+    void trackProductEvent(
+      'cost_reviewed',
+      {
+        costingKey,
+        dishCount:
+          work.menu.length,
+        totalCovers:
+          result.totalCovers,
+        totalCost:
+          Math.round(
+            result.totalCost,
+          ),
+      },
+      {
+        onceKey:
+          `cost_reviewed:${costingKey}`,
+      },
+    );
+  }, [work, session]);
 
   if (!work || !session) return <AppShell title="Cost"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
   if (session.status === 'EXPIRED') return <AppShell title="Cost"><LockedCard /></AppShell>;

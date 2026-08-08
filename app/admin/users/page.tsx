@@ -1480,6 +1480,9 @@ export default function AdminUsersPage() {
           >
             Clients
           </Link>
+          <Link href="/admin/analytics">
+            Analytics
+          </Link>
 
           <Link href="/admin/dishes">
             Dishes

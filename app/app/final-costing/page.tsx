@@ -6,6 +6,10 @@ import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
 import { calculate, getSession, loadWork, saveWork } from '../../../lib/store';
 import type { Session, WorkState } from '../../../lib/types';
+import {
+  getCostingAnalyticsKey,
+  trackProductEvent,
+} from '../../../lib/productAnalytics';
 
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
@@ -22,6 +26,83 @@ export default function FinalCostingPage() {
     setSession(current);
     if (current) setWork(loadWork(current.tenantId));
   }, []);
+
+  useEffect(() => {
+    if (
+      !work ||
+      !session ||
+      session.status === 'EXPIRED' ||
+      work.menu.length === 0
+    ) {
+      return;
+    }
+
+    const result =
+      calculate(work);
+
+    const missingRateCount =
+      work.menu.filter(
+        (item) =>
+          !(
+            Number(
+              item.costPerPlate,
+            ) > 0
+          ),
+      ).length;
+
+    const finalReady =
+      work.menu.length > 0 &&
+      result.totalCovers > 0 &&
+      missingRateCount === 0 &&
+      work.sellingPricePerPlate > 0;
+
+    const costingKey =
+      getCostingAnalyticsKey(
+        work,
+      );
+
+    void trackProductEvent(
+      'final_costing_viewed',
+      {
+        costingKey,
+        totalCovers:
+          result.totalCovers,
+      },
+      {
+        onceKey:
+          `final_viewed:${costingKey}`,
+      },
+    );
+
+    if (finalReady) {
+      void trackProductEvent(
+        'final_costing_complete',
+        {
+          costingKey,
+          dishCount:
+            work.menu.length,
+          totalCovers:
+            result.totalCovers,
+          totalCost:
+            Math.round(
+              result.totalCost,
+            ),
+          totalSelling:
+            Math.round(
+              result.totalSelling,
+            ),
+          totalProfit:
+            Math.round(
+              result.totalProfit,
+            ),
+        },
+        {
+          onceKey:
+            `final_complete:${costingKey}`,
+        },
+      );
+    }
+  }, [work, session]);
 
   if (!work || !session) {
     return <AppShell title="Final Costing"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
@@ -108,6 +189,20 @@ export default function FinalCostingPage() {
       downloadFinalCostingPdf(
         work,
         recipes,
+      );
+
+      const costingKey =
+        getCostingAnalyticsKey(
+          work,
+        );
+
+      void trackProductEvent(
+        'pdf_exported',
+        {
+          costingKey,
+          dishCount:
+            work.menu.length,
+        },
       );
     } finally {
       setPdfBusy(false);
