@@ -31,6 +31,12 @@ export default function ProfilePage() {
   const [message, setMessage] = useState('');
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [billingBusy, setBillingBusy] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
     const current = getSession();
@@ -116,6 +122,95 @@ export default function ProfilePage() {
     }
   }
 
+  async function changeMyPassword() {
+    setPasswordMessage('');
+    setPasswordError(false);
+
+    if (
+      !currentPassword ||
+      !newPassword ||
+      !confirmPassword
+    ) {
+      setPasswordError(true);
+      setPasswordMessage(
+        'Complete all password fields.',
+      );
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError(true);
+      setPasswordMessage(
+        'New password must contain at least 8 characters.',
+      );
+      return;
+    }
+
+    if (
+      newPassword !==
+      confirmPassword
+    ) {
+      setPasswordError(true);
+      setPasswordMessage(
+        'New passwords do not match.',
+      );
+      return;
+    }
+
+    setPasswordBusy(true);
+
+    try {
+      const response =
+        await fetch(
+          '/api/client/change-password',
+          {
+            method: 'PUT',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+
+            body:
+              JSON.stringify({
+                currentPassword,
+                newPassword,
+                confirmPassword,
+              }),
+          },
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not change password.',
+        );
+      }
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+
+      setPasswordError(false);
+      setPasswordMessage(
+        'Password changed successfully.',
+      );
+    } catch (error) {
+      setPasswordError(true);
+
+      setPasswordMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not change password.',
+      );
+    } finally {
+      setPasswordBusy(false);
+    }
+  }
+
   if (!work || !session) return <AppShell title="Profile"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
 
   function persist(next: WorkState) {
@@ -177,6 +272,127 @@ export default function ProfilePage() {
               {billing?.configured && !['active', 'authenticated', 'pending'].includes(billing?.subscriptionStatus || '') ? <button className="primary-button" disabled={billingBusy} onClick={subscribe}>{billingBusy ? 'Opening…' : 'Subscribe ₹999/month'}</button> : null}
               {billing?.razorpaySubscriptionId && !billing.cancelAtPeriodEnd ? <button className="danger-button" disabled={billingBusy} onClick={cancelSubscription}>Cancel renewal</button> : null}
               <button className="ghost-button" disabled={billingBusy} onClick={loadBilling}>Refresh status</button>
+            </div>
+          </div>
+        ) : null}
+
+        {session.role === 'CLIENT' ? (
+          <div className="glass-card">
+            <div className="section-kicker">
+              Account security
+            </div>
+
+            <h2>
+              Change Password
+            </h2>
+
+            <p className="muted">
+              Change the password for only your account.
+              Your current password is required.
+            </p>
+
+            <div className="form-grid">
+              <div className="field">
+                <label
+                  htmlFor="current-password"
+                >
+                  Current Password
+                </label>
+
+                <input
+                  id="current-password"
+                  className="input"
+                  type="password"
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(event) =>
+                    setCurrentPassword(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Enter current password"
+                />
+              </div>
+
+              <div className="two-grid">
+                <div className="field">
+                  <label
+                    htmlFor="new-password"
+                  >
+                    New Password
+                  </label>
+
+                  <input
+                    id="new-password"
+                    className="input"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={newPassword}
+                    onChange={(event) =>
+                      setNewPassword(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="Minimum 8 characters"
+                  />
+                </div>
+
+                <div className="field">
+                  <label
+                    htmlFor="confirm-password"
+                  >
+                    Confirm New Password
+                  </label>
+
+                  <input
+                    id="confirm-password"
+                    className="input"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={confirmPassword}
+                    onChange={(event) =>
+                      setConfirmPassword(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="Enter new password again"
+                  />
+                </div>
+              </div>
+
+              {passwordMessage ? (
+                <div
+                  className={`admin-message ${
+                    passwordError
+                      ? 'error'
+                      : 'success'
+                  }`}
+                >
+                  {passwordMessage}
+                </div>
+              ) : null}
+
+              <div className="action-row">
+                <button
+                  className="primary-button"
+                  type="button"
+                  disabled={
+                    passwordBusy ||
+                    !currentPassword ||
+                    !newPassword ||
+                    !confirmPassword
+                  }
+                  onClick={() =>
+                    void changeMyPassword()
+                  }
+                >
+                  {passwordBusy
+                    ? 'Changing…'
+                    : 'Change Password'}
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
