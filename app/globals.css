@@ -6427,3 +6427,458 @@ td:last-child {
     width: 100%;
   }
 }
+
+/* MENU COST — FORCED PRODUCT DARK THEME
+   Product UI only. Public marketing homepage (.lp) is intentionally untouched. */
+
+.app-frame,
+.auth-page,
+.onboarding-page,
+.admin-page {
+  color-scheme: dark;
+  --bg: #07090d;
+  --card: #10141b;
+  --card-solid: #11161e;
+  --text: #f5f7fa;
+  --muted: #929baa;
+  --border: #272d37;
+  --blue: #4a9cff;
+  --blue-dark: #2384f5;
+  --green: #3ddc84;
+  --orange: #ffad42;
+  --red: #ff6259;
+  --surface-hover: #171c24;
+  --shadow: 0 24px 70px rgba(0, 0, 0, .52);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, .32);
+  color: var(--text);
+}
+
+.app-frame.page-shell,
+.auth-page.page-shell,
+.onboarding-page.page-shell,
+.admin-page {
+  background:
+    radial-gradient(circle at 7% 0%, rgba(74, 156, 255, .15), transparent 31rem),
+    radial-gradient(circle at 94% 5%, rgba(117, 92, 255, .09), transparent 27rem),
+    linear-gradient(180deg, #0b0e13 0%, #06080b 100%) !important;
+}
+
+.app-frame :where(
+  .loader-card,
+  .login-card,
+  .glass-card,
+  .locked-card,
+  .alert-card,
+  .panel,
+  .stat-card,
+  .helper-card,
+  .menu-row,
+  .admin-dish-row,
+  .table-wrap,
+  .menu-source-workspace,
+  .menu-upload-option,
+  .menu-detection-preview,
+  .menu-preview-group,
+  .menu-preview-item,
+  .event-detected-details,
+  .event-detection-note,
+  .menu-preview-toolbar,
+  .menu-preview-duplicate-note,
+  .billing-details > div,
+  .quotation-review-metrics > div,
+  .empty-state,
+  .readiness-card,
+  .dish-master-overview,
+  .dish-master-health span,
+  .new-dish-overview,
+  .new-dish-card,
+  .new-dish-search-results > a
+),
+.auth-page :where(
+  .login-card,
+  .helper-card
+),
+.onboarding-page :where(
+  .login-card,
+  .glass-card,
+  .panel,
+  .onboarding-top,
+  .onboarding-card,
+  .onboarding-rate
+) {
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  background: rgba(16, 20, 27, .96) !important;
+  box-shadow: var(--shadow-soft) !important;
+}
+
+.app-frame .topbar {
+  color: var(--text) !important;
+  border-color: #272d37 !important;
+  background: rgba(10, 13, 18, .94) !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .34) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+}
+
+.app-frame .brand-copy b,
+.app-frame .page-title h1,
+.app-frame h1,
+.app-frame h2,
+.app-frame h3,
+.app-frame h4,
+.auth-page h1,
+.auth-page h2,
+.onboarding-page h1,
+.onboarding-page h2 {
+  color: #f5f7fa;
+}
+
+.app-frame .brand-copy small,
+.app-frame .page-title p,
+.app-frame .muted,
+.auth-page .muted,
+.onboarding-page .muted {
+  color: var(--muted) !important;
+}
+
+.app-frame .app-sidebar {
+  border: 1px solid #202630;
+  background: linear-gradient(180deg, #11161e 0%, #0a0d12 100%) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, .38) !important;
+}
+
+.app-frame .sidebar-support {
+  border-color: #2b323d !important;
+  background: #151a22 !important;
+}
+
+.app-frame .sidebar-nav a:hover {
+  background: #171c24 !important;
+}
+
+.app-frame .bottom-nav {
+  border-color: #272d37 !important;
+  background: rgba(10, 13, 18, .97) !important;
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, .38) !important;
+}
+
+.app-frame :where(.input, .textarea, .select),
+.auth-page :where(.input, .textarea, .select),
+.onboarding-page :where(.input, .textarea, .select),
+.admin-page :where(.input, .textarea, .select) {
+  color: #f5f7fa !important;
+  border-color: #303743 !important;
+  background: #151a22 !important;
+  box-shadow: none !important;
+  caret-color: #7db7ff;
+}
+
+.app-frame :where(.input, .textarea, .select)::placeholder,
+.auth-page :where(.input, .textarea, .select)::placeholder,
+.onboarding-page :where(.input, .textarea, .select)::placeholder {
+  color: #687383 !important;
+  opacity: 1;
+}
+
+.app-frame :where(.input, .textarea, .select):focus,
+.auth-page :where(.input, .textarea, .select):focus,
+.onboarding-page :where(.input, .textarea, .select):focus {
+  border-color: rgba(74, 156, 255, .68) !important;
+  background: #181e27 !important;
+  box-shadow: 0 0 0 4px rgba(74, 156, 255, .11) !important;
+}
+
+.app-frame select option,
+.auth-page select option,
+.onboarding-page select option,
+.admin-page select option {
+  color: #f5f7fa;
+  background: #11161e;
+}
+
+.app-frame .field label,
+.auth-page .field label,
+.onboarding-page .field label {
+  color: #b5bdc8 !important;
+}
+
+.app-frame .ghost-button,
+.auth-page .ghost-button,
+.onboarding-page .ghost-button {
+  color: #d9dee6 !important;
+  border-color: #303743 !important;
+  background: #171c24 !important;
+}
+
+.app-frame .ghost-button:hover,
+.auth-page .ghost-button:hover,
+.onboarding-page .ghost-button:hover {
+  color: #fff !important;
+  border-color: #46505f !important;
+  background: #202630 !important;
+}
+
+.app-frame .secondary-button {
+  color: #eef2f7 !important;
+  background: #202630 !important;
+}
+
+.app-frame .danger-button {
+  color: #ff8b84 !important;
+  border-color: rgba(255, 98, 89, .2) !important;
+  background: rgba(255, 98, 89, .10) !important;
+}
+
+.app-frame .section-kicker,
+.onboarding-page .section-kicker {
+  color: #8bc0ff !important;
+  border-color: rgba(74, 156, 255, .25) !important;
+  background: rgba(74, 156, 255, .12) !important;
+}
+
+.app-frame .account-status {
+  color: #ffc16b !important;
+  border-color: #303743 !important;
+  background: #18150f !important;
+}
+
+.app-frame .account-status.active {
+  color: #69df9c !important;
+  background: #102018 !important;
+}
+
+.app-frame :where(.badge, .portion-chip) {
+  border-color: #303743 !important;
+}
+
+.app-frame :where(
+  .menu-source-choice,
+  .menu-preview-item,
+  .menu-preview-group,
+  .menu-preview-toolbar,
+  .menu-preview-duplicate-note,
+  .event-menu-card,
+  .event-details-card,
+  .menu-upload-status
+) {
+  color: var(--text) !important;
+  border-color: #2b323d !important;
+  background: #11161e !important;
+}
+
+.app-frame .menu-source-choice:hover,
+.app-frame .menu-preview-item:hover {
+  border-color: #46505f !important;
+  background: #171c24 !important;
+}
+
+.app-frame .menu-source-choice.is-active,
+.app-frame .menu-preview-item.is-selected {
+  border-color: rgba(74, 156, 255, .42) !important;
+  background: rgba(74, 156, 255, .12) !important;
+}
+
+.app-frame .menu-service-group {
+  border-color: #3b3021 !important;
+  background: #17130e !important;
+}
+
+.app-frame .manpower-function-card {
+  border-color: #20354d !important;
+  background: #0e1722 !important;
+}
+
+.app-frame table,
+.app-frame .table-wrap {
+  color: var(--text) !important;
+  border-color: #272d37 !important;
+  background: #0f1319 !important;
+}
+
+.app-frame th {
+  color: #9da7b5 !important;
+  border-color: #272d37 !important;
+  background: #151a22 !important;
+}
+
+.app-frame td {
+  color: #e8ecf2 !important;
+  border-color: #222832 !important;
+  background: #0f1319 !important;
+}
+
+.app-frame tbody tr:hover td {
+  background: #151a22 !important;
+}
+
+.app-frame .empty-state-icon,
+.app-frame .readiness-list span {
+  color: #c5ccd6 !important;
+  border-color: #303743 !important;
+  background: #171c24 !important;
+}
+
+.app-frame .readiness-list span.is-complete {
+  color: #69df9c !important;
+  border-color: rgba(61, 220, 132, .28) !important;
+  background: rgba(61, 220, 132, .08) !important;
+}
+
+.app-frame .first-menu-guide,
+.app-frame .first-success-guide {
+  color: var(--text) !important;
+  border-color: rgba(74, 156, 255, .25) !important;
+  background:
+    linear-gradient(145deg, rgba(74, 156, 255, .10), rgba(16, 20, 27, .98)) !important;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, .42) !important;
+}
+
+.app-frame .first-menu-guide-progress,
+.app-frame .first-menu-steps > button,
+.app-frame .first-success-guide .step {
+  color: var(--text) !important;
+  border-color: #303743 !important;
+  background: #151a22 !important;
+}
+
+.app-frame .first-menu-steps > button.is-current,
+.app-frame .first-success-guide .step.is-current {
+  border-color: rgba(74, 156, 255, .4) !important;
+  background: rgba(74, 156, 255, .12) !important;
+}
+
+.app-frame .first-menu-steps > button.is-complete,
+.app-frame .first-success-guide .step.done {
+  border-color: rgba(61, 220, 132, .28) !important;
+  background: rgba(61, 220, 132, .08) !important;
+}
+
+.app-frame .aha-menu-result {
+  color: var(--text) !important;
+  border-color: rgba(74, 156, 255, .26) !important;
+  background:
+    linear-gradient(145deg, rgba(74, 156, 255, .10), rgba(16, 20, 27, .98)) !important;
+  box-shadow: 0 22px 56px rgba(0, 0, 0, .38) !important;
+}
+
+.app-frame .aha-stat,
+.app-frame .aha-detail-card {
+  color: var(--text) !important;
+  border-color: #303743 !important;
+  background: #11161e !important;
+}
+
+.app-frame .aha-result-primary {
+  border-color: #272d37 !important;
+  background: #0c1016 !important;
+}
+
+.app-frame .aha-stat small,
+.app-frame .aha-stat span,
+.app-frame .aha-rate-line,
+.app-frame .aha-result-note,
+.app-frame .aha-top-dish span {
+  color: var(--muted) !important;
+}
+
+.app-frame .aha-top-dish b,
+.app-frame .aha-rate-line strong {
+  color: #f5f7fa !important;
+}
+
+.auth-page {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(74, 156, 255, .14), transparent 30rem),
+    linear-gradient(180deg, #0b0e13, #06080b) !important;
+}
+
+.auth-page .auth-intro {
+  color: #f5f7fa !important;
+  border-color: #272d37 !important;
+  background: linear-gradient(145deg, #111827, #0b1220) !important;
+}
+
+.auth-page .login-card {
+  color: #f5f7fa !important;
+  border-color: #272d37 !important;
+  background: #10141b !important;
+}
+
+.auth-page .auth-benefits > div {
+  border-color: #2b323d !important;
+  background: rgba(255, 255, 255, .035) !important;
+}
+
+.onboarding-page .onboarding-top,
+.onboarding-page .onboarding-card,
+.onboarding-page .onboarding-rate {
+  color: #f5f7fa !important;
+  border-color: #272d37 !important;
+  background: #10141b !important;
+}
+
+.onboarding-page .onboarding-progress div {
+  background: #252c36 !important;
+}
+
+.onboarding-page .onboarding-progress div.active {
+  background: #4a9cff !important;
+}
+
+.app-frame input[type="date"],
+.app-frame input[type="time"],
+.app-frame input[type="number"],
+.auth-page input,
+.onboarding-page input {
+  color-scheme: dark;
+}
+
+.app-frame .pdf-paper {
+  color: #e8ecf2 !important;
+  border-color: #303743 !important;
+  background: #11161e !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .38) !important;
+}
+
+@media print {
+  .app-frame .pdf-paper,
+  .pdf-paper {
+    color: #1d1d1f !important;
+    border-color: #e5e7eb !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .pdf-paper * {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+@media (max-width: 860px) {
+  .client-theme.page-shell,
+  .app-frame.page-shell {
+    background:
+      radial-gradient(circle at 0% 0%, rgba(74, 156, 255, .13), transparent 34%),
+      linear-gradient(180deg, #0b0e13 0%, #06080b 100%) !important;
+  }
+
+  .client-theme .topbar,
+  .client-theme .bottom-nav {
+    border-color: #272d37 !important;
+    background: rgba(10, 13, 18, .97) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-frame.page-shell,
+  .auth-page.page-shell,
+  .onboarding-page.page-shell {
+    background:
+      radial-gradient(circle at 0% 0%, rgba(74, 156, 255, .13), transparent 34%),
+      linear-gradient(180deg, #0b0e13 0%, #06080b 100%) !important;
+  }
+}
+
+/* END MENU COST — FORCED PRODUCT DARK THEME */
