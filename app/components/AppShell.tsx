@@ -74,9 +74,18 @@ export default function AppShell({
   }, [router]);
 
   const nav = useMemo(() => (session?.role === 'ADMIN' ? adminNav : clientNav), [session]);
-  const activeIndex = Math.max(0, nav.findIndex((item) => item.href === pathname));
-  const activeItem = nav[activeIndex];
   const isAdmin = session?.role === 'ADMIN';
+  const isIngredientIndex = !isAdmin && pathname === '/app/ingredients';
+  const directActiveIndex = nav.findIndex((item) => item.href === pathname);
+  const profileIndex = nav.findIndex((item) => item.href === '/app/profile');
+  const activeIndex = directActiveIndex >= 0
+    ? directActiveIndex
+    : isIngredientIndex && profileIndex >= 0
+      ? profileIndex
+      : 0;
+  const activeItem = isIngredientIndex
+    ? { mobileLabel: 'Ingredients' }
+    : nav[activeIndex];
   const progress = isAdmin ? 100 : ((activeIndex + 1) / clientNav.length) * 100;
 
   if (!ready) {
@@ -132,8 +141,8 @@ export default function AppShell({
               <Link
                 key={item.href}
                 href={item.href}
-                className={pathname === item.href ? 'active' : ''}
-                aria-current={pathname === item.href ? 'page' : undefined}
+                className={pathname === item.href || (isIngredientIndex && item.href === '/app/profile') ? 'active' : ''}
+                aria-current={pathname === item.href || (isIngredientIndex && item.href === '/app/profile') ? 'page' : undefined}
               >
                 <NavIconMark icon={item.icon} />
                 <span className="nav-copy">
@@ -179,8 +188,8 @@ export default function AppShell({
           <Link
             key={item.href}
             href={item.href}
-            className={pathname === item.href ? 'active' : ''}
-            aria-current={pathname === item.href ? 'page' : undefined}
+            className={pathname === item.href || (isIngredientIndex && item.href === '/app/profile') ? 'active' : ''}
+            aria-current={pathname === item.href || (isIngredientIndex && item.href === '/app/profile') ? 'page' : undefined}
           >
             <NavIconMark icon={item.icon} />
             <small>{item.mobileLabel}</small>

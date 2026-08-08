@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import { clearWork, getClients, getSession, loadWork, logout, saveWork, upsertClient } from '../../../lib/store';
@@ -200,6 +201,25 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {session.role === 'CLIENT' ? (
+          <div className="glass-card">
+            <div className="section-kicker">Costing data</div>
+            <h2>Ingredient Index</h2>
+            <p className="muted">
+              View the ingredient names, market rates, purchase units,
+              categories and recipe usage currently used by your costing.
+            </p>
+            <div className="action-row">
+              <Link
+                href="/app/ingredients"
+                className="primary-button"
+              >
+                Open Ingredient Index
+              </Link>
+            </div>
+          </div>
+        ) : null}
 
         <div className="glass-card">
           <h2>Your Data & Access</h2>
