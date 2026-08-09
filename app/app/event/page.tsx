@@ -1798,6 +1798,7 @@ export default function EventPage() {
         <div
           id="eventInformation"
           className="glass-card event-details-card"
+          style={{ order: 2 }}
         >
           <div className="event-section-heading">
             <div>
@@ -1971,6 +1972,7 @@ export default function EventPage() {
         <div
           id="menuInput"
           className="glass-card event-menu-card"
+          style={{ order: 1 }}
         >
           <div className="form-grid">
             <div className="menu-source-workspace">
