@@ -26,6 +26,7 @@ type EditableSuggestion =
     subcategory: string;
     rate: string;
     saveAs: 'new' | 'alias';
+    aliasCategory: string;
     aliasTarget: string;
   };
 
@@ -151,6 +152,7 @@ export default function NewDishesPage() {
             subcategory: '',
             rate: '',
             saveAs: 'new',
+            aliasCategory: '',
             aliasTarget: '',
           }),
         ),
@@ -306,14 +308,17 @@ export default function NewDishesPage() {
     const aliasTarget = catalogDishes.find(
       (dish) =>
         dish.name.toLowerCase() ===
-        row.aliasTarget.trim().toLowerCase(),
+          row.aliasTarget.trim().toLowerCase() &&
+        dish.category.toLowerCase() ===
+          row.aliasCategory.trim().toLowerCase(),
     );
 
     if (
       !row.dishName.trim() ||
       (row.saveAs === 'new' &&
         (!row.category || !(Number(row.rate) > 0))) ||
-      (row.saveAs === 'alias' && !aliasTarget) ||
+      (row.saveAs === 'alias' &&
+        (!row.aliasCategory || !aliasTarget)) ||
       !verification?.confirmed
     ) {
       setMessageType('error');
@@ -438,6 +443,7 @@ export default function NewDishesPage() {
       [
         row.name,
         row.dishName,
+        row.aliasCategory,
         row.aliasTarget,
         row.categoryHint,
         row.sourceFileName,
@@ -673,6 +679,7 @@ export default function NewDishesPage() {
                       className={row.saveAs === 'new' ? 'active' : ''}
                       onClick={() => updateRow(row.id, {
                         saveAs: 'new',
+                        aliasCategory: '',
                         aliasTarget: '',
                       })}
                     >
@@ -710,27 +717,63 @@ export default function NewDishesPage() {
                     />
                   </div>
                   {row.saveAs === 'alias' ? (
-                    <div className="field new-dish-alias-target">
+                    <>
+                    <div className="field">
+                      <label>Present dish category</label>
+                      <select
+                        className="select"
+                        value={row.aliasCategory}
+                        onChange={(event) =>
+                          updateRow(row.id, {
+                            aliasCategory: event.target.value,
+                            aliasTarget: '',
+                          })
+                        }
+                      >
+                        <option value="">Select category…</option>
+                        {Array.from(new Set(
+                          catalogDishes.map((dish) => dish.category).filter(Boolean),
+                        )).sort((left, right) => left.localeCompare(right)).map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="field">
                       <label>Present catalog dish</label>
                       <input
                         className="input"
-                        list="existing-dish-options"
+                        list={`existing-dish-options-${row.id}`}
                         value={row.aliasTarget}
                         onChange={(event) =>
                           updateRow(row.id, {
                             aliasTarget: event.target.value,
                           })
                         }
+                        disabled={!row.aliasCategory}
                         placeholder="Search and select a dish…"
                       />
                       {row.aliasTarget && !catalogDishes.some(
-                        (dish) => dish.name.toLowerCase() === row.aliasTarget.trim().toLowerCase(),
+                        (dish) =>
+                          dish.name.toLowerCase() === row.aliasTarget.trim().toLowerCase() &&
+                          dish.category.toLowerCase() === row.aliasCategory.trim().toLowerCase(),
                       ) ? (
                         <small className="new-dish-field-error">
                           Select an exact dish from the catalog list.
                         </small>
                       ) : null}
+                      <datalist id={`existing-dish-options-${row.id}`}>
+                        {catalogDishes
+                          .filter((dish) => dish.category === row.aliasCategory)
+                          .map((dish) => (
+                            <option key={dish.name} value={dish.name}>
+                              ₹{dish.rate}
+                            </option>
+                          ))}
+                      </datalist>
                     </div>
+                    </>
                   ) : (
                   <><div className="field">
                     <label>
@@ -833,8 +876,10 @@ export default function NewDishesPage() {
                         ?.confirmed ||
                       (row.saveAs === 'new'
                         ? !(Number(row.rate) > 0)
-                        : !catalogDishes.some(
-                            (dish) => dish.name.toLowerCase() === row.aliasTarget.trim().toLowerCase(),
+                        : !row.aliasCategory || !catalogDishes.some(
+                            (dish) =>
+                              dish.name.toLowerCase() === row.aliasTarget.trim().toLowerCase() &&
+                              dish.category.toLowerCase() === row.aliasCategory.trim().toLowerCase(),
                           ))
                     }
                   >
@@ -848,13 +893,6 @@ export default function NewDishesPage() {
               </article>
             ))}
           </div>
-          <datalist id="existing-dish-options">
-            {catalogDishes.map((dish) => (
-              <option key={dish.name} value={dish.name}>
-                {dish.category} · ₹{dish.rate}
-              </option>
-            ))}
-          </datalist>
         </div>
       </section>
     </AppShell>
