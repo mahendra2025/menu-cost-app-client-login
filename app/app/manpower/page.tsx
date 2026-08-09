@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
-import StatCard from '../../components/StatCard';
 import {
   calculate,
   defaultManpower,
@@ -38,6 +37,46 @@ function rowTotal(row: ManpowerRow) {
   return (
     Math.max(0, Number(row.quantity) || 0) *
     Math.max(0, Number(row.rate) || 0)
+  );
+}
+
+function QuantityControl({
+  row,
+  onChange,
+}: {
+  row: ManpowerRow;
+  onChange: (quantity: number) => void;
+}) {
+  const quantity = Math.max(0, Number(row.quantity) || 0);
+
+  return (
+    <div className="manpower-quantity-control">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(0, quantity - 1))}
+        disabled={quantity === 0}
+        aria-label={`Remove one ${row.role}`}
+      >
+        −
+      </button>
+      <input
+        type="number"
+        min="0"
+        step="1"
+        inputMode="numeric"
+        value={row.quantity || ''}
+        onChange={(event) => onChange(Math.max(0, Number(event.target.value) || 0))}
+        placeholder="0"
+        aria-label={`Quantity for ${row.role}`}
+      />
+      <button
+        type="button"
+        onClick={() => onChange(quantity + 1)}
+        aria-label={`Add one ${row.role}`}
+      >
+        +
+      </button>
+    </div>
   );
 }
 
@@ -142,6 +181,8 @@ export default function ManpowerPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
   const [showUnusedRoles, setShowUnusedRoles] = useState(true);
+  const [expandedFunctionIds, setExpandedFunctionIds] = useState<string[]>([]);
+  const [hasInitializedFunctions, setHasInitializedFunctions] = useState(false);
 
   useEffect(() => {
     const current = getSession();
@@ -220,6 +261,23 @@ export default function ManpowerPage() {
       ),
     [work],
   );
+
+  useEffect(() => {
+    if (hasInitializedFunctions || !manpowerGroups.length) return;
+
+    const functionsNeedingAttention = manpowerGroups
+      .filter((group) => group.rows.some(
+        (row) => Number(row.quantity) > 0 && !(Number(row.rate) > 0),
+      ))
+      .map((group) => group.serviceId);
+
+    setExpandedFunctionIds(
+      functionsNeedingAttention.length
+        ? functionsNeedingAttention
+        : [manpowerGroups[0].serviceId],
+    );
+    setHasInitializedFunctions(true);
+  }, [hasInitializedFunctions, manpowerGroups]);
 
   const peopleTotal = useMemo(
     () =>
@@ -307,6 +365,11 @@ export default function ManpowerPage() {
     if (!work) return;
 
     setShowUnusedRoles(true);
+    setExpandedFunctionIds((current) => (
+      current.includes(group.serviceId)
+        ? current
+        : [...current, group.serviceId]
+    ));
 
     persistRows([
       ...work.manpower,
@@ -371,46 +434,59 @@ export default function ManpowerPage() {
     );
   }
 
+  function continueToExtraCost() {
+    if (!missingRateCount) {
+      router.push('/app/extra-cost');
+      return;
+    }
+
+    const firstMissingRate = document.querySelector<HTMLInputElement>(
+      '.manpower-rate-input.is-missing input',
+    );
+    const functionCard = firstMissingRate?.closest('details');
+    const serviceId = functionCard?.dataset.functionId;
+    if (serviceId) {
+      setExpandedFunctionIds((current) => (
+        current.includes(serviceId) ? current : [...current, serviceId]
+      ));
+    }
+    window.requestAnimationFrame(() => {
+      firstMissingRate?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      firstMissingRate?.focus({ preventScroll: true });
+    });
+  }
+
   return (
     <AppShell
       title="Manpower"
       subtitle="Step 2 of 6: plan every staff role function-wise"
     >
-      <section className="content-grid">
-        <div className="manpower-overview">
-          <div>
+      <section className="content-grid manpower-page">
+        <div className="manpower-overview manpower-overview-v2">
+          <div className="manpower-overview-copy">
             <span className="page-eyebrow">Staffing plan</span>
-            <h2>{plannedFunctionCount} of {manpowerGroups.length} functions planned</h2>
-            <p>Assign quantities and day rates function-wise. Every change is included in Cost automatically.</p>
+            <h2>Build the right team for every function</h2>
+            <p>Choose the number of people for each role, then add their per-person rate. Your costing updates automatically.</p>
+            <div className="manpower-progress-row">
+              <div className="manpower-progress-track" aria-hidden="true">
+                <i style={{ width: `${manpowerGroups.length ? (plannedFunctionCount / manpowerGroups.length) * 100 : 0}%` }} />
+              </div>
+              <span>{plannedFunctionCount} of {manpowerGroups.length} functions started</span>
+            </div>
+          </div>
+          <div className="manpower-overview-total">
+            <span>Total manpower cost</span>
+            <b>{money(manpowerTotal)}</b>
+            <small>Included in final costing</small>
           </div>
           <div className="manpower-health" aria-label="Manpower planning status">
+            <span><b>{peopleTotal}</b> staff assignments</span>
             <span><b>{activeRoleCount}</b> active roles</span>
-            <span><b>{peopleTotal}</b> assignments</span>
-            <span className={missingRateCount ? 'needs-attention' : 'is-complete'}><b>{missingRateCount}</b> missing rates</span>
+            <span><b>{result.totalCovers}</b> meal covers</span>
+            <span className={missingRateCount ? 'needs-attention' : 'is-complete'}>
+              <b>{missingRateCount}</b> {missingRateCount === 1 ? 'rate needs attention' : 'rates need attention'}
+            </span>
           </div>
-        </div>
-
-        <div className="stat-grid">
-          <StatCard
-            label="Functions"
-            value={String(manpowerGroups.length)}
-            note="Separate staff plans"
-          />
-          <StatCard
-            label="Team Assignments"
-            value={String(peopleTotal)}
-            note="Across all functions"
-          />
-          <StatCard
-            label="Manpower Cost"
-            value={money(manpowerTotal)}
-            note="Added to wedding cost"
-          />
-          <StatCard
-            label="Meal Covers"
-            value={String(result.totalCovers)}
-            note="From detected functions"
-          />
         </div>
 
         <div className="glass-card manpower-planner-card">
@@ -418,15 +494,11 @@ export default function ManpowerPage() {
             <div>
               <div className="section-kicker">Function-wise Planning</div>
               <h2>Manpower by Function</h2>
-              <p className="muted">
-                Open each function and enter the staff quantity and rate.
-                Every function has its own complete roster.
-              </p>
+              <p className="muted">Open a function, add people to the roles you need, and enter the per-person rate.</p>
             </div>
             <div className="manpower-planner-controls">
-              <div><small>Total manpower</small><strong>{money(manpowerTotal)}</strong></div>
               <button className="ghost-button" type="button" onClick={() => setShowUnusedRoles((current) => !current)}>
-                {showUnusedRoles ? 'Hide unused roles' : 'Show all role templates'}
+                {showUnusedRoles ? 'Show active roles only' : 'Show all role templates'}
               </button>
             </div>
           </div>
@@ -443,22 +515,39 @@ export default function ManpowerPage() {
                 0,
               );
               const activeRows = group.rows.filter((row) => Number(row.quantity) > 0);
+              const groupMissingRates = activeRows.filter((row) => !(Number(row.rate) > 0)).length;
               const visibleRows = showUnusedRoles ? group.rows : activeRows;
 
               return (
                 <details
                   className="manpower-function-card"
                   key={group.serviceId}
+                  data-function-id={group.serviceId}
+                  open={expandedFunctionIds.includes(group.serviceId)}
+                  onToggle={(event) => {
+                    const isOpen = event.currentTarget.open;
+                    setExpandedFunctionIds((current) => (
+                      isOpen
+                        ? current.includes(group.serviceId)
+                          ? current
+                          : [...current, group.serviceId]
+                        : current.filter((serviceId) => serviceId !== group.serviceId)
+                    ));
+                  }}
                 >
                   <summary>
-                    <div>
+                    <div className="manpower-function-title">
                       {group.dayLabel ? (
                         <span className="section-kicker">
                           {group.dayLabel}
                         </span>
                       ) : null}
                       <h3>{group.mealLabel}</h3>
-                      <small className="manpower-function-progress">{activeRows.length} active role{activeRows.length === 1 ? '' : 's'}</small>
+                      <small className="manpower-function-progress">
+                        {activeRows.length
+                          ? `${activeRows.length} active role${activeRows.length === 1 ? '' : 's'} · ${groupPeople} staff`
+                          : 'Not started · choose a role below'}
+                      </small>
                     </div>
                     <div className="manpower-function-meta">
                       {group.servicePax > 0 ? (
@@ -466,12 +555,24 @@ export default function ManpowerPage() {
                           {group.servicePax} members
                         </span>
                       ) : null}
-                      <span className="badge">{groupPeople} staff</span>
-                      <span className="badge orange">
-                        {money(groupCost)}
-                      </span>
+                      {groupMissingRates ? (
+                        <span className="manpower-function-status needs-attention">{groupMissingRates} missing {groupMissingRates === 1 ? 'rate' : 'rates'}</span>
+                      ) : activeRows.length ? (
+                        <span className="manpower-function-status is-complete">Ready</span>
+                      ) : (
+                        <span className="manpower-function-status">Not started</span>
+                      )}
+                      <span className="manpower-function-cost">{money(groupCost)}</span>
                     </div>
                   </summary>
+
+                  <div className={`manpower-function-guidance ${groupMissingRates ? 'needs-attention' : ''}`}>
+                    {groupMissingRates
+                      ? `Add a rate for ${groupMissingRates} active ${groupMissingRates === 1 ? 'role' : 'roles'} to complete this function.`
+                      : activeRows.length
+                        ? 'This function is costed. You can still adjust people or rates below.'
+                        : 'Start with a role below. Use + to add people, then enter the rate per person.'}
+                  </div>
 
                   {visibleRows.length ? (
                     <>
@@ -498,32 +599,25 @@ export default function ManpowerPage() {
                                   />
                                 </td>
                                 <td>
-                                  <input
-                                    className="input manpower-number-input"
-                                    type="number"
-                                    min="0"
-                                    step="1"
-                                    inputMode="numeric"
-                                    value={row.quantity || ''}
-                                    onChange={(event) => updateRow(row.id, { quantity: Math.max(0, Number(event.target.value) || 0) })}
-                                    placeholder="0"
-                                    aria-label={`Quantity for ${row.role}`}
-                                  />
+                                  <QuantityControl row={row} onChange={(quantity) => updateRow(row.id, { quantity })} />
                                 </td>
                                 <td>
-                                  <label className={`manpower-rate-input ${Number(row.quantity) > 0 && !(Number(row.rate) > 0) ? 'is-missing' : ''}`}>
-                                    <span aria-hidden="true">₹</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="1"
-                                      inputMode="decimal"
-                                      value={row.rate || ''}
-                                      onChange={(event) => updateRow(row.id, { rate: Math.max(0, Number(event.target.value) || 0) })}
-                                      placeholder="Add rate"
-                                      aria-label={`Rate for ${row.role}`}
-                                    />
-                                  </label>
+                                  <div className="manpower-rate-field">
+                                    <label className={`manpower-rate-input ${Number(row.quantity) > 0 && !(Number(row.rate) > 0) ? 'is-missing' : ''}`}>
+                                      <span aria-hidden="true">₹</span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        inputMode="decimal"
+                                        value={row.rate || ''}
+                                        onChange={(event) => updateRow(row.id, { rate: Math.max(0, Number(event.target.value) || 0) })}
+                                        placeholder="Add rate"
+                                        aria-label={`Rate for ${row.role}`}
+                                      />
+                                    </label>
+                                    {Number(row.quantity) > 0 && !(Number(row.rate) > 0) ? <small>Rate required</small> : null}
+                                  </div>
                                 </td>
                                 <td><b className="manpower-row-total">{money(rowTotal(row))}</b></td>
                                 <td><button className="manpower-remove-button" type="button" onClick={() => removeRole(row)}>Remove</button></td>
@@ -543,7 +637,7 @@ export default function ManpowerPage() {
                             <div className="manpower-role-card-fields">
                               <div className="field">
                                 <label htmlFor={`quantity-${row.id}`}>People</label>
-                                <input id={`quantity-${row.id}`} className="input" type="number" min="0" step="1" inputMode="numeric" value={row.quantity || ''} onChange={(event) => updateRow(row.id, { quantity: Math.max(0, Number(event.target.value) || 0) })} placeholder="0" />
+                                <QuantityControl row={row} onChange={(quantity) => updateRow(row.id, { quantity })} />
                               </div>
                               <div className="field">
                                 <label htmlFor={`rate-${row.id}`}>Rate / person</label>
@@ -551,6 +645,7 @@ export default function ManpowerPage() {
                                   <span aria-hidden="true">₹</span>
                                   <input id={`rate-${row.id}`} type="number" min="0" step="1" inputMode="decimal" value={row.rate || ''} onChange={(event) => updateRow(row.id, { rate: Math.max(0, Number(event.target.value) || 0) })} placeholder="Add rate" />
                                 </label>
+                                {Number(row.quantity) > 0 && !(Number(row.rate) > 0) ? <small className="manpower-rate-error">Rate required</small> : null}
                               </div>
                             </div>
                             <div className="manpower-role-card-total"><span>Role total</span><b>{money(rowTotal(row))}</b></div>
@@ -581,7 +676,8 @@ export default function ManpowerPage() {
             })}
           </div>
 
-          <div className="action-row" style={{ marginTop: 16 }}>
+          <div className="manpower-reset-row">
+            <span>Need a clean slate? This restores the standard role templates.</span>
             <button
               className="ghost-button"
               type="button"
@@ -592,13 +688,17 @@ export default function ManpowerPage() {
           </div>
         </div>
 
-        <div className="action-row page-actions">
+        <div className="action-row page-actions manpower-page-actions">
+          <div className={`manpower-save-state ${missingRateCount ? 'needs-attention' : ''}`}>
+            <i aria-hidden="true" />
+            <span>{missingRateCount ? `${missingRateCount} missing ${missingRateCount === 1 ? 'rate' : 'rates'} before you continue` : 'All changes saved automatically'}</span>
+          </div>
           <button
             className="primary-button"
             type="button"
-            onClick={() => router.push('/app/extra-cost')}
+            onClick={continueToExtraCost}
           >
-            Next: Extra Cost
+            {missingRateCount ? `Review ${missingRateCount} missing ${missingRateCount === 1 ? 'rate' : 'rates'}` : 'Continue to Extra Cost'}
           </button>
           <button
             className="ghost-button"
