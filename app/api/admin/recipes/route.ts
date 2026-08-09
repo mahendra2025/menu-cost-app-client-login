@@ -7,6 +7,10 @@ import {
   DISH_DELETED_CATEGORIES_KEY,
   readDeletedDishCategories,
 } from '../../../../lib/dishCostMaster';
+import {
+  normalizeIngredientRate,
+  type IngredientRate,
+} from '../../../../lib/ingredientCatalog';
 import { prisma } from '../../../../lib/prisma';
 
 const CATALOG_ID = 'global';
@@ -32,9 +36,19 @@ function readCatalogPayload(value: unknown) {
     .map((id) => String(id).trim())
     .filter(Boolean);
 
+  const rates = body.rates.map(normalizeIngredientRate);
+  if (
+    rates.some((rate) => !rate) ||
+    rates.some((rate) => !(Number(rate?.rate) > 0))
+  ) {
+    return null;
+  }
+
   return {
     dishes: body.dishes,
-    rates: body.rates,
+    rates: rates.filter(
+      (rate): rate is IngredientRate => Boolean(rate),
+    ),
     deletedDishIds: Array.from(new Set(deletedDishIds)),
     catalogVersion: Math.max(1, Math.floor(Number(body.catalogVersion) || 1)),
   };

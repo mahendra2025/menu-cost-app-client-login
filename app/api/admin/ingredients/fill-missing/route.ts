@@ -117,6 +117,42 @@ function ingredientRate(
   return values[0] || 0;
 }
 
+function fallbackMarketRate(
+  category: string,
+  unit: IngredientUnit,
+) {
+  const perKg: Record<string, number> = {
+    'Vegetables & Herbs': 80,
+    Fruits: 120,
+    Dairy: 280,
+    'Grains & Flour': 80,
+    'Pulses & Legumes': 130,
+    'Spices & Seasonings': 300,
+    'Oils & Fats': 180,
+    'Sauces & Condiments': 180,
+    Beverages: 100,
+    Sweeteners: 70,
+    'Bakery & Packaged': 120,
+    Other: 100,
+  };
+
+  const perLitre: Record<string, number> = {
+    Dairy: 80,
+    'Oils & Fats': 160,
+    'Sauces & Condiments': 180,
+    Beverages: 100,
+    Other: 100,
+  };
+
+  if (unit === 'kg') return perKg[category] || 100;
+  if (unit === 'gram') return (perKg[category] || 100) / 1000;
+  if (unit === 'ltr') return perLitre[category] || perKg[category] || 100;
+  if (unit === 'ml') return (perLitre[category] || perKg[category] || 100) / 1000;
+  if (unit === 'piece') return category === 'Bakery & Packaged' ? 10 : 5;
+  if (unit === 'packet') return category === 'Bakery & Packaged' ? 20 : 10;
+  return 1;
+}
+
 function buildDefaultRateMap() {
   const values =
     Array.isArray(defaultRecipesData)
@@ -402,19 +438,27 @@ export async function POST() {
                   ) || [],
                 );
 
+              const category =
+                master?.category ||
+                inferIngredientCategory(
+                  name,
+                );
+
               const availableRate =
                 recipeRate > 0
                   ? recipeRate
-                  : referenceRate;
+                  : referenceRate > 0
+                    ? referenceRate
+                    : fallbackMarketRate(
+                        category,
+                        purchaseUnit,
+                      );
 
               if (!master) {
                 master = {
                   id: normalizedId,
                   name,
-                  category:
-                    inferIngredientCategory(
-                      name,
-                    ),
+                  category,
                   rate:
                     Math.round(
                       availableRate *

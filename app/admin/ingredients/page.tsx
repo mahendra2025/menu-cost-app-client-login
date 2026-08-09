@@ -820,6 +820,16 @@ export default function AdminIngredientsPage() {
       setMessage('Every ingredient needs a name.');
       return;
     }
+    if (rows.some((row) => !(Number(row.rate) > 0))) {
+      setMessageType('error');
+      setMessage('Every ingredient needs a market rate greater than ₹0.');
+      setStatusFilter('ATTENTION');
+      setCategoryFilter('ALL');
+      setQuery('');
+      setSort('RATE_LOW');
+      setPage(1);
+      return;
+    }
     if (duplicateCount) {
       setMessageType('error');
       setMessage('Remove duplicate ingredient name and unit combinations before saving.');
@@ -1576,7 +1586,7 @@ export default function AdminIngredientsPage() {
                         </td>
                         <td data-label="Category"><select className="select ingredient-category-select" value={row.category} onChange={(event) => updateRow(row.rowKey, { category: event.target.value as IngredientCategory })}>{categories.map((category) => <option key={category}>{category}</option>)}</select></td>
                         <td data-label="Purchase unit"><select className="select" value={row.unit} onChange={(event) => updateRow(row.rowKey, { unit: event.target.value as IngredientUnit })}>{INGREDIENT_UNITS.map((unit) => <option key={unit}>{unit}</option>)}</select></td>
-                        <td data-label="Rate per unit"><div className={`ingredient-rate-input ${Number(row.rate) > 0 ? '' : 'is-missing'}`}><span className="ingredient-currency">₹</span><input className="input" aria-label={`Market rate for ${row.name || 'new ingredient'}`} type="number" min="0" step="0.01" value={row.rate || ''} placeholder="0.00" onChange={(event) => updateRow(row.rowKey, { rate: Math.max(0, Number(event.target.value) || 0) })} /><small>/{row.unit}</small></div></td>
+                        <td data-label="Rate per unit"><div className={`ingredient-rate-input ${Number(row.rate) > 0 ? '' : 'is-missing'}`}><span className="ingredient-currency">₹</span><input className="input" aria-label={`Market rate for ${row.name || 'new ingredient'}`} type="number" min="0.01" step="0.01" value={row.rate || ''} placeholder="Required" onChange={(event) => updateRow(row.rowKey, { rate: Math.max(0, Number(event.target.value) || 0) })} /><small>/{row.unit}</small></div></td>
                         <td data-label="Recipe usage">
                           {usedBy ? (
                             <div className="ingredient-recipe-links" aria-label={`${row.name} is used in ${usedBy} recipe${usedBy === 1 ? '' : 's'}`}>

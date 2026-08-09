@@ -119,6 +119,12 @@ export async function PUT(request: Request) {
     const rates = body.rates.map(normalizeIngredientRate);
     if (rates.some((rate) => !rate)) return NextResponse.json({ error: 'Every ingredient needs a name, category, rate and valid unit' }, { status: 400 });
     const cleanedRates = rates.filter((rate): rate is NonNullable<typeof rate> => Boolean(rate));
+    if (cleanedRates.some((rate) => !(Number(rate.rate) > 0))) {
+      return NextResponse.json(
+        { error: 'Every ingredient market rate must be greater than ₹0' },
+        { status: 400 },
+      );
+    }
     if (new Set(cleanedRates.map((rate) => rate.id)).size !== cleanedRates.length) {
       return NextResponse.json({ error: 'Ingredient name and unit combinations must be unique' }, { status: 400 });
     }
