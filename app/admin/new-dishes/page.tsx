@@ -742,9 +742,8 @@ export default function NewDishesPage() {
                     </div>
                     <div className="field">
                       <label>Present catalog dish</label>
-                      <input
-                        className="input"
-                        list={`existing-dish-options-${row.id}`}
+                      <select
+                        className="select"
                         value={row.aliasTarget}
                         onChange={(event) =>
                           updateRow(row.id, {
@@ -752,26 +751,20 @@ export default function NewDishesPage() {
                           })
                         }
                         disabled={!row.aliasCategory}
-                        placeholder="Search and select a dish…"
-                      />
-                      {row.aliasTarget && !catalogDishes.some(
-                        (dish) =>
-                          dish.name.toLowerCase() === row.aliasTarget.trim().toLowerCase() &&
-                          dish.category.toLowerCase() === row.aliasCategory.trim().toLowerCase(),
-                      ) ? (
-                        <small className="new-dish-field-error">
-                          Select an exact dish from the catalog list.
-                        </small>
-                      ) : null}
-                      <datalist id={`existing-dish-options-${row.id}`}>
+                      >
+                        <option value="">
+                          {row.aliasCategory
+                            ? 'Select present dish…'
+                            : 'Select category first…'}
+                        </option>
                         {catalogDishes
                           .filter((dish) => dish.category === row.aliasCategory)
                           .map((dish) => (
                             <option key={dish.name} value={dish.name}>
-                              ₹{dish.rate}
+                              {dish.name} · ₹{dish.rate}
                             </option>
                           ))}
-                      </datalist>
+                      </select>
                     </div>
                     </>
                   ) : (
