@@ -8,6 +8,7 @@ import {
 } from '../../../../lib/adminAuth';
 import {
   CATEGORIES,
+  DISH_COST_ITEMS,
   readDeletedDishCategories,
 } from '../../../../lib/dishCostMaster';
 import { prisma } from '../../../../lib/prisma';
@@ -41,6 +42,16 @@ function cleanText(
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, maxLength);
+}
+
+function normalizeDishName(value: unknown) {
+  return cleanText(value, 120).toLocaleLowerCase('en-IN');
+}
+
+function readAliases(value: unknown) {
+  return Array.isArray(value)
+    ? value.map((alias) => cleanText(alias, 120)).filter(Boolean)
+    : [];
 }
 
 export async function GET() {
@@ -104,18 +115,24 @@ export async function POST(
     );
     const googleVerified =
       body.googleVerified === true;
+    const mode = cleanText(body.mode, 20) === 'alias'
+      ? 'alias'
+      : 'new';
+    const aliasOf = cleanText(body.aliasOf, 120);
 
     if (
       !id ||
       !name ||
-      !category ||
-      !(rate > 0) ||
+      (mode === 'new' && (!category || !(rate > 0))) ||
+      (mode === 'alias' && !aliasOf) ||
       !googleVerified
     ) {
       return NextResponse.json(
         {
           error:
-            'Google verification, name, category, and a positive rate are required',
+            mode === 'alias'
+              ? 'Google verification, alias name, and an existing dish are required'
+              : 'Google verification, name, category, and a positive rate are required',
         },
         { status: 400 },
       );
@@ -136,44 +153,120 @@ export async function POST(
           );
         }
 
-        const existing =
-          await tx.dishMasterItem
-            .findFirst({
-              where: {
-                name: {
-                  equals: name,
-                  mode: 'insensitive',
-                },
-              },
-              select: { id: true },
-            });
+        if (mode === 'alias') {
+          const normalizedAlias = normalizeDishName(name);
+          const normalizedTarget = normalizeDishName(aliasOf);
+          const storedDishes = await tx.dishMasterItem.findMany({
+            select: {
+              id: true,
+              name: true,
+              aliases: true,
+            },
+          });
+          const storedTarget = storedDishes.find(
+            (dish) => normalizeDishName(dish.name) === normalizedTarget,
+          );
+          const defaultTarget = DISH_COST_ITEMS.find(
+            (dish) => normalizeDishName(dish.name) === normalizedTarget,
+          );
 
-        if (existing) {
-          await tx.dishMasterItem
-            .update({
-              where: {
-                id: existing.id,
-              },
+          if (!storedTarget && !defaultTarget) {
+            throw new Error('ALIAS_TARGET_NOT_FOUND');
+          }
+
+          const allKnownDishes = [
+            ...DISH_COST_ITEMS.map((dish) => ({
+              name: dish.name,
+              aliases: dish.aliases ?? [],
+            })),
+            ...storedDishes.map((dish) => ({
+              name: dish.name,
+              aliases: readAliases(dish.aliases),
+            })),
+          ];
+          const conflict = allKnownDishes.find((dish) => {
+            if (normalizeDishName(dish.name) === normalizedTarget) return false;
+            return normalizeDishName(dish.name) === normalizedAlias ||
+              dish.aliases.some((alias) => normalizeDishName(alias) === normalizedAlias);
+          });
+
+          if (conflict) {
+            throw new Error(`ALIAS_CONFLICT:${conflict.name}`);
+          }
+
+          if (storedTarget) {
+            const aliases = readAliases(storedTarget.aliases);
+            if (
+              normalizedAlias !== normalizedTarget &&
+              !aliases.some((alias) => normalizeDishName(alias) === normalizedAlias)
+            ) {
+              aliases.push(name);
+            }
+            await tx.dishMasterItem.update({
+              where: { id: storedTarget.id },
+              data: { aliases },
+            });
+          } else if (defaultTarget) {
+            const aliases = readAliases(defaultTarget.aliases);
+            if (
+              normalizedAlias !== normalizedTarget &&
+              !aliases.some((alias) => normalizeDishName(alias) === normalizedAlias)
+            ) {
+              aliases.push(name);
+            }
+            await tx.dishMasterItem.create({
               data: {
-                name,
-                category,
-                subcategory,
-                rate,
+                name: defaultTarget.name,
+                category: defaultTarget.category,
+                subcategory: defaultTarget.subcategory ?? '',
+                rate: defaultTarget.rate,
+                servingQuantity: defaultTarget.servingQuantity ?? 1,
+                servingUnit: defaultTarget.servingUnit ?? 'serving',
+                aliases,
               },
             });
+          }
         } else {
-          await tx.dishMasterItem
-            .create({
-              data: {
-                name,
-                category,
-                subcategory,
-                rate,
-                aliases: [],
-              },
-            });
+          const existing =
+            await tx.dishMasterItem
+              .findFirst({
+                where: {
+                  name: {
+                    equals: name,
+                    mode: 'insensitive',
+                  },
+                },
+                select: { id: true },
+              });
+
+          if (existing) {
+            await tx.dishMasterItem
+              .update({
+                where: {
+                  id: existing.id,
+                },
+                data: {
+                  name,
+                  category,
+                  subcategory,
+                  rate,
+                },
+              });
+          } else {
+            await tx.dishMasterItem
+              .create({
+                data: {
+                  name,
+                  category,
+                  subcategory,
+                  rate,
+                  aliases: [],
+                },
+              });
+          }
         }
 
+        if (mode === 'new') {
         const categoryCatalog =
           await tx
             .dishCategoryCatalog
@@ -295,6 +388,7 @@ export async function POST(
                 storedSubcategories as Prisma.InputJsonValue,
             },
           });
+        }
 
         await tx
           .pendingDishSuggestion
@@ -319,6 +413,28 @@ export async function POST(
             'This suggestion no longer exists',
         },
         { status: 404 },
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === 'ALIAS_TARGET_NOT_FOUND'
+    ) {
+      return NextResponse.json(
+        { error: 'The selected catalog dish no longer exists' },
+        { status: 404 },
+      );
+    }
+
+    if (
+      error instanceof Error &&
+      error.message.startsWith('ALIAS_CONFLICT:')
+    ) {
+      return NextResponse.json(
+        {
+          error: `This name is already used by ${error.message.slice('ALIAS_CONFLICT:'.length)}`,
+        },
+        { status: 409 },
       );
     }
 

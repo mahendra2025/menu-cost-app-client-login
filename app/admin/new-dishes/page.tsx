@@ -25,7 +25,16 @@ type EditableSuggestion =
     category: string;
     subcategory: string;
     rate: string;
+    saveAs: 'new' | 'alias';
+    aliasTarget: string;
   };
+
+type CatalogDish = {
+  name: string;
+  category: string;
+  rate: number;
+  aliases: string[];
+};
 
 type GoogleDishResult = {
   title: string;
@@ -50,6 +59,8 @@ export default function NewDishesPage() {
     );
   const [categories, setCategories] =
     useState<string[]>([]);
+  const [catalogDishes, setCatalogDishes] =
+    useState<CatalogDish[]>([]);
   const [loading, setLoading] =
     useState(true);
   const [workingId, setWorkingId] =
@@ -106,6 +117,20 @@ export default function NewDishesPage() {
       setCategories(
         availableCategories,
       );
+      setCatalogDishes(
+        Array.isArray(catalogData.items)
+          ? catalogData.items
+              .map((item: Record<string, unknown>) => ({
+                name: String(item.name || '').trim(),
+                category: String(item.category || '').trim(),
+                rate: Math.max(Number(item.rate) || 0, 0),
+                aliases: Array.isArray(item.aliases)
+                  ? item.aliases.map(String).filter(Boolean)
+                  : [],
+              }))
+              .filter((item: CatalogDish) => item.name)
+          : [],
+      );
       setRows(
         (
           queueData.suggestions ||
@@ -125,6 +150,8 @@ export default function NewDishesPage() {
                 : 'Other',
             subcategory: '',
             rate: '',
+            saveAs: 'new',
+            aliasTarget: '',
           }),
         ),
       );
@@ -276,16 +303,24 @@ export default function NewDishesPage() {
   ) {
     const verification =
       verifications[row.id];
+    const aliasTarget = catalogDishes.find(
+      (dish) =>
+        dish.name.toLowerCase() ===
+        row.aliasTarget.trim().toLowerCase(),
+    );
 
     if (
       !row.dishName.trim() ||
-      !row.category ||
-      !(Number(row.rate) > 0) ||
+      (row.saveAs === 'new' &&
+        (!row.category || !(Number(row.rate) > 0))) ||
+      (row.saveAs === 'alias' && !aliasTarget) ||
       !verification?.confirmed
     ) {
       setMessageType('error');
       setMessage(
-        'Verify the dish on Google, then enter its name, category, and a positive manual rate.',
+        row.saveAs === 'alias'
+          ? 'Verify the dish on Google, then choose an existing catalog dish for this alias.'
+          : 'Verify the dish on Google, then enter its name, category, and a positive manual rate.',
       );
       return;
     }
@@ -310,6 +345,8 @@ export default function NewDishesPage() {
               row.subcategory,
             rate:
               Number(row.rate) || 0,
+            mode: row.saveAs,
+            aliasOf: aliasTarget?.name || '',
             googleVerified: true,
           }),
         },
@@ -332,7 +369,9 @@ export default function NewDishesPage() {
       );
       setMessageType('success');
       setMessage(
-        `${row.dishName.trim()} was added to the Dish Catalog.`,
+        row.saveAs === 'alias'
+          ? `${row.dishName.trim()} was added as an alias of ${aliasTarget?.name}.`
+          : `${row.dishName.trim()} was added to the Dish Catalog.`,
       );
     } catch (error) {
       setMessageType('error');
@@ -398,6 +437,8 @@ export default function NewDishesPage() {
     return rows.filter((row) =>
       [
         row.name,
+        row.dishName,
+        row.aliasTarget,
         row.categoryHint,
         row.sourceFileName,
       ].some((value) =>
@@ -460,9 +501,9 @@ export default function NewDishesPage() {
               <h2>Uploaded suggestions</h2>
               <p>
                 Correct the name, choose
-                its category and rate,
-                then add it to the
-                database.
+                whether it is new or an
+                alias of a present dish,
+                then save it.
               </p>
             </div>
             <input
@@ -624,10 +665,35 @@ export default function NewDishesPage() {
                   ) : null}
                 </div>
 
+                <div className="new-dish-save-choice">
+                  <span>Save detected dish as</span>
+                  <div>
+                    <button
+                      type="button"
+                      className={row.saveAs === 'new' ? 'active' : ''}
+                      onClick={() => updateRow(row.id, {
+                        saveAs: 'new',
+                        aliasTarget: '',
+                      })}
+                    >
+                      New catalog dish
+                    </button>
+                    <button
+                      type="button"
+                      className={row.saveAs === 'alias' ? 'active' : ''}
+                      onClick={() => updateRow(row.id, {
+                        saveAs: 'alias',
+                      })}
+                    >
+                      Alias of existing dish
+                    </button>
+                  </div>
+                </div>
+
                 <div className="new-dish-fields">
                   <div className="field">
                     <label>
-                      Dish name
+                      {row.saveAs === 'alias' ? 'Alias name' : 'Dish name'}
                     </label>
                     <input
                       className="input"
@@ -643,7 +709,30 @@ export default function NewDishesPage() {
                       }
                     />
                   </div>
-                  <div className="field">
+                  {row.saveAs === 'alias' ? (
+                    <div className="field new-dish-alias-target">
+                      <label>Present catalog dish</label>
+                      <input
+                        className="input"
+                        list="existing-dish-options"
+                        value={row.aliasTarget}
+                        onChange={(event) =>
+                          updateRow(row.id, {
+                            aliasTarget: event.target.value,
+                          })
+                        }
+                        placeholder="Search and select a dish…"
+                      />
+                      {row.aliasTarget && !catalogDishes.some(
+                        (dish) => dish.name.toLowerCase() === row.aliasTarget.trim().toLowerCase(),
+                      ) ? (
+                        <small className="new-dish-field-error">
+                          Select an exact dish from the catalog list.
+                        </small>
+                      ) : null}
+                    </div>
+                  ) : (
+                  <><div className="field">
                     <label>
                       Category
                     </label>
@@ -709,6 +798,8 @@ export default function NewDishesPage() {
                       placeholder="₹ 0"
                     />
                   </div>
+                  </>
+                  )}
                 </div>
 
                 <div className="new-dish-actions">
@@ -740,17 +831,30 @@ export default function NewDishesPage() {
                       Boolean(workingId) ||
                       !verifications[row.id]
                         ?.confirmed ||
-                      !(Number(row.rate) > 0)
+                      (row.saveAs === 'new'
+                        ? !(Number(row.rate) > 0)
+                        : !catalogDishes.some(
+                            (dish) => dish.name.toLowerCase() === row.aliasTarget.trim().toLowerCase(),
+                          ))
                     }
                   >
                     {workingId === row.id
                       ? 'Saving…'
-                      : 'Add to Dish Catalog'}
+                      : row.saveAs === 'alias'
+                        ? 'Add Alias to Present Dish'
+                        : 'Add to Dish Catalog'}
                   </button>
                 </div>
               </article>
             ))}
           </div>
+          <datalist id="existing-dish-options">
+            {catalogDishes.map((dish) => (
+              <option key={dish.name} value={dish.name}>
+                {dish.category} · ₹{dish.rate}
+              </option>
+            ))}
+          </datalist>
         </div>
       </section>
     </AppShell>
