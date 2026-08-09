@@ -342,6 +342,100 @@ export async function POST() {
     let linkedIngredients = 0;
     let invalidUnitIngredients = 0;
 
+    const builtInRecipes =
+      Array.isArray(defaultRecipesData)
+        ? defaultRecipesData
+        : [];
+
+    builtInRecipes.forEach((value) => {
+      if (
+        !value ||
+        typeof value !== 'object' ||
+        Array.isArray(value)
+      ) {
+        return;
+      }
+
+      const recipe =
+        value as Record<string, unknown>;
+
+      if (!Array.isArray(recipe.ingredients)) {
+        return;
+      }
+
+      recipe.ingredients.forEach((ingredientValue) => {
+        if (
+          !ingredientValue ||
+          typeof ingredientValue !== 'object' ||
+          Array.isArray(ingredientValue)
+        ) {
+          return;
+        }
+
+        const ingredient =
+          ingredientValue as Record<string, unknown>;
+
+        const name = cleanName(
+          ingredient.name ||
+          ingredient.ingredientName,
+        );
+
+        const purchaseUnit = normalizeUnit(
+          ingredient.rateUnit ||
+          ingredient.unit,
+        );
+
+        if (!name || !purchaseUnit) {
+          return;
+        }
+
+        const id = normalizeIngredientId(
+          name,
+          purchaseUnit,
+        );
+
+        const existing = finalRates.get(id);
+        const category =
+          existing?.category ||
+          inferIngredientCategory(name);
+
+        const recipeMarketRate =
+          ingredientRate(ingredient);
+
+        const rate =
+          recipeMarketRate > 0
+            ? recipeMarketRate
+            : fallbackMarketRate(
+                category,
+                purchaseUnit,
+              );
+
+        if (!existing) {
+          finalRates.set(id, {
+            id,
+            name,
+            category,
+            rate:
+              Math.round(rate * 1000) /
+              1000,
+            unit: purchaseUnit,
+          });
+
+          addedIngredients += 1;
+          filledRates += 1;
+        } else if (!(existing.rate > 0)) {
+          finalRates.set(id, {
+            ...existing,
+            rate:
+              Math.round(rate * 1000) /
+              1000,
+          });
+
+          filledRates += 1;
+        }
+      });
+    });
+
     const updatedDishes =
       dishes.map((dish) => {
         if (

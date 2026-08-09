@@ -8,13 +8,60 @@ import {
   readDeletedDishCategories,
 } from '../../../../lib/dishCostMaster';
 import {
+  INGREDIENT_UNITS,
+  inferIngredientCategory,
+  normalizeIngredientId,
   normalizeIngredientRate,
   type IngredientRate,
+  type IngredientUnit,
 } from '../../../../lib/ingredientCatalog';
 import { prisma } from '../../../../lib/prisma';
 
 const CATALOG_ID = 'global';
 const CATEGORY_CATALOG_ID = 'global';
+
+function normalizeRecipeIngredientUnit(
+  value: unknown,
+): IngredientUnit | null {
+  const unit = String(value || '')
+    .trim()
+    .toLowerCase();
+
+  const aliases: Record<string, IngredientUnit> = {
+    kg: 'kg',
+    kgs: 'kg',
+    kilogram: 'kg',
+    kilograms: 'kg',
+    g: 'gram',
+    gm: 'gram',
+    gms: 'gram',
+    gram: 'gram',
+    grams: 'gram',
+    l: 'ltr',
+    lt: 'ltr',
+    ltr: 'ltr',
+    litre: 'ltr',
+    liter: 'ltr',
+    litres: 'ltr',
+    liters: 'ltr',
+    ml: 'ml',
+    pc: 'piece',
+    pcs: 'piece',
+    piece: 'piece',
+    pieces: 'piece',
+    pkt: 'packet',
+    pack: 'packet',
+    packet: 'packet',
+    packets: 'packet',
+  };
+
+  const normalized = aliases[unit];
+
+  return normalized &&
+    INGREDIENT_UNITS.includes(normalized)
+    ? normalized
+    : null;
+}
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -44,11 +91,123 @@ function readCatalogPayload(value: unknown) {
     return null;
   }
 
+  const ratesById = new Map(
+    rates
+      .filter(
+        (rate): rate is IngredientRate => Boolean(rate),
+      )
+      .map((rate) => [rate.id, rate]),
+  );
+
+  let invalidIngredient = false;
+
+  const dishes = body.dishes.map((dishValue) => {
+    if (
+      !dishValue ||
+      typeof dishValue !== 'object' ||
+      Array.isArray(dishValue)
+    ) {
+      return dishValue;
+    }
+
+    const dish = dishValue as Record<string, unknown>;
+
+    if (!Array.isArray(dish.ingredients)) {
+      return dishValue;
+    }
+
+    return {
+      ...dish,
+      ingredients: dish.ingredients.map((ingredientValue) => {
+        if (
+          !ingredientValue ||
+          typeof ingredientValue !== 'object' ||
+          Array.isArray(ingredientValue)
+        ) {
+          invalidIngredient = true;
+          return ingredientValue;
+        }
+
+        const ingredient =
+          ingredientValue as Record<string, unknown>;
+
+        const name = String(
+          ingredient.name ||
+          ingredient.ingredientName ||
+          '',
+        )
+          .trim()
+          .replace(/\s+/g, ' ');
+
+        const unit = normalizeRecipeIngredientUnit(
+          ingredient.rateUnit ||
+          ingredient.unit,
+        );
+
+        if (!name || !unit) {
+          invalidIngredient = true;
+          return ingredientValue;
+        }
+
+        const normalizedId = normalizeIngredientId(
+          name,
+          unit,
+        );
+
+        const linkedId = String(
+          ingredient.rateKey || '',
+        ).trim();
+
+        let master =
+          ratesById.get(linkedId) ||
+          ratesById.get(normalizedId);
+
+        if (!master) {
+          const marketRate = [
+            Number(ingredient.marketRate),
+            Number(ingredient.rate),
+          ].find(
+            (rate) =>
+              Number.isFinite(rate) &&
+              rate > 0,
+          );
+
+          if (!marketRate) {
+            invalidIngredient = true;
+            return ingredientValue;
+          }
+
+          master = {
+            id: normalizedId,
+            name,
+            category:
+              inferIngredientCategory(name),
+            rate: marketRate,
+            unit,
+          };
+
+          ratesById.set(master.id, master);
+        }
+
+        return {
+          ...ingredient,
+          name: master.name,
+          rateKey: master.id,
+          rate: master.rate,
+          marketRate: master.rate,
+          rateUnit: master.unit,
+        };
+      }),
+    };
+  });
+
+  if (invalidIngredient) {
+    return null;
+  }
+
   return {
-    dishes: body.dishes,
-    rates: rates.filter(
-      (rate): rate is IngredientRate => Boolean(rate),
-    ),
+    dishes,
+    rates: Array.from(ratesById.values()),
     deletedDishIds: Array.from(new Set(deletedDishIds)),
     catalogVersion: Math.max(1, Math.floor(Number(body.catalogVersion) || 1)),
   };
