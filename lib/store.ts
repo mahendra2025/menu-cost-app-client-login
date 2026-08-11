@@ -1470,6 +1470,7 @@ function splitMenuText(
 function detectDishesFromLine(
   menuLine: string,
   catalog: DishCatalogModule,
+  preferredCategory?: Category,
 ): DishCostItem[] {
   const candidates =
     createDishCandidates(menuLine);
@@ -1491,9 +1492,25 @@ function detectDishesFromLine(
     }
   }
 
-  // Never guess during automatic menu detection. Fuzzy and phonetic
-  // matches can silently replace OCR text with the wrong catalog dish.
-  // Misspellings must be represented by an explicit catalog alias instead.
+  /*
+   * Uploaded menus commonly contain one- or two-character OCR mistakes.
+   * The catalog's fuzzy matcher only returns a result when there is a
+   * single clear winner within a strict edit-distance threshold. Category
+   * context breaks ties when the menu provides a recognized heading.
+   * Ambiguous text remains unmatched and is shown as a new-dish candidate.
+   */
+  for (const candidate of candidates) {
+    const fuzzyMatch =
+      catalog.findFuzzyDishByName(
+        candidate,
+        preferredCategory,
+      );
+
+    if (fuzzyMatch) {
+      return [fuzzyMatch];
+    }
+  }
+
   return [];
 }
 
@@ -1513,7 +1530,11 @@ function analyzeMenuLines(text: string) {
   const result = loadDishCatalog().then((catalog) => {
     const menuLines = splitMenuText(text);
     const catalogMatches = menuLines.map((line) =>
-      detectDishesFromLine(line.text, catalog),
+      detectDishesFromLine(
+        line.text,
+        catalog,
+        line.categoryHint,
+      ),
     );
 
     return { catalog, menuLines, catalogMatches };
@@ -1585,7 +1606,7 @@ export async function findPendingDishCandidates(
         return (
           words.length >=
             (line.explicitItem ? 1 : 2) &&
-          words.length <= 6 &&
+          words.length <= 8 &&
           !/[!?]|\.(?:\s|$)/.test(
             line.text,
           ) &&
