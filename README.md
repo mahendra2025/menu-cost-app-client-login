@@ -72,24 +72,43 @@ ADMIN_USER_ID=admin
 ADMIN_PASSWORD=change-this-now
 ADMIN_SESSION_SECRET=change-this-too
 DATABASE_URL=your-database-url
-OPENAI_API_KEY=your-openai-project-key
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen3:8b
+OLLAMA_KEEP_ALIVE=30m
 ```
 
 You can copy `.env.example` to `.env.local` and fill in your real values.
 
 If `ADMIN_USER_ID`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, or `DATABASE_URL` are missing, the server will now fail with a clear error instead of silently misbehaving.
 
-## AI-assisted menu detection
+## Self-hosted AI menu detection
 
-When `OPENAI_API_KEY` is configured, the Event page uses the OpenAI Responses API to extract event details, functions, dishes, and categories from pasted or OCR menu text. Saved catalog rates remain authoritative, and all financial calculations stay deterministic. If the AI request is unavailable, the existing local menu parser is used automatically.
+The app supports Ollama as its primary AI provider, so menu extraction and new-recipe generation can run on your own computer or server without a cloud API key. Ollama structured outputs extract event details, functions, dishes, and categories from pasted or OCR menu text. Saved catalog and ingredient rates remain authoritative, and all financial calculations stay deterministic.
 
-The default model can be overridden without changing code:
+Start the optional Docker service and download the model once:
 
 ```bash
+docker compose --profile ai up -d ollama
+docker compose exec ollama ollama pull qwen3:8b
+```
+
+Then configure the Next.js server:
+
+```bash
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen3:8b
+```
+
+If Ollama runs on a different machine, use that private server URL instead. Do not expose port `11434` publicly; keep it behind your private network or firewall. When `OLLAMA_BASE_URL` is set, Ollama is used even if an OpenAI key is also present.
+
+OpenAI remains an optional fallback when Ollama is not configured:
+
+```bash
+OPENAI_API_KEY=your-openai-project-key
 OPENAI_MENU_MODEL=gpt-5.6-sol
 ```
 
-Keep these values in `.env.local` for local development and configure them as secret environment variables on the deployment platform. Never commit API keys to Git.
+If neither provider is available, the existing local menu parser is used automatically. Existing saved dishes and recipes still calculate normally; only AI extraction and recipe generation are skipped.
 
 ## Razorpay subscriptions
 

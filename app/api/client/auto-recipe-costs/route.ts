@@ -12,28 +12,17 @@ import {
   readCostableRecipe,
   type CostableRecipe,
 } from '../../../../lib/recipeCosting';
+import {
+  requestStructuredAi,
+  structuredAiProvider,
+} from '../../../../lib/structuredAi';
 
 const MAX_DISHES = 80;
-const DEFAULT_MODEL = 'gpt-5.6-sol';
 
 type RequestedDish = {
   name: string;
   category: string;
 };
-
-type OpenAIResponse = {
-  output_text?: string;
-  output?: Array<{ content?: Array<{ type?: string; text?: string }> }>;
-};
-
-function outputText(value: OpenAIResponse) {
-  if (typeof value.output_text === 'string') return value.output_text;
-  return (value.output ?? [])
-    .flatMap((item) => item.content ?? [])
-    .filter((item) => item.type === 'output_text')
-    .map((item) => item.text ?? '')
-    .join('');
-}
 
 function cleanDish(value: unknown): RequestedDish | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -55,19 +44,52 @@ async function generateRecipes(
   dishes: RequestedDish[],
   availableIngredients: Array<{ name: string; unit: string }>,
 ) {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey || !dishes.length) return [];
+  if (!structuredAiProvider() || !dishes.length) return [];
 
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
+  const schema: Record<string, unknown> = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['recipes'],
+    properties: {
+      recipes: {
+        type: 'array',
+        maxItems: MAX_DISHES,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['name', 'baseGuests', 'ingredients'],
+          properties: {
+            name: { type: 'string' },
+            baseGuests: { type: 'integer', const: 100 },
+            ingredients: {
+              type: 'array',
+              minItems: 1,
+              maxItems: 30,
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['name', 'quantity', 'unit'],
+                properties: {
+                  name: { type: 'string' },
+                  quantity: { type: 'number', exclusiveMinimum: 0 },
+                  unit: {
+                    type: 'string',
+                    enum: ['kg', 'gram', 'ltr', 'ml', 'piece', 'packet'],
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MENU_MODEL?.trim() || DEFAULT_MODEL,
-      store: false,
-      max_output_tokens: 10_000,
+  };
+
+  try {
+    const raw = await requestStructuredAi({
+      schemaName: 'generated_catering_recipes',
+      schema,
+      maxOutputTokens: 10_000,
       instructions: [
         'Create practical Indian catering production recipes for exactly 100 guests.',
         'Return one recipe for every requested dish and do not add extra dishes.',
@@ -76,73 +98,17 @@ async function generateRecipes(
         'Use kg, gram, ltr, ml, piece, or packet exactly as supplied.',
         'This is an editable costing estimate, so prefer a concise ingredient list of the material cost drivers.',
       ].join('\n'),
-      input: [{
-        role: 'user',
-        content: [{
-          type: 'input_text',
-          text: JSON.stringify({ dishes, availableIngredients }),
-        }],
-      }],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'generated_catering_recipes',
-          strict: true,
-          schema: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['recipes'],
-            properties: {
-              recipes: {
-                type: 'array',
-                maxItems: MAX_DISHES,
-                items: {
-                  type: 'object',
-                  additionalProperties: false,
-                  required: ['name', 'baseGuests', 'ingredients'],
-                  properties: {
-                    name: { type: 'string' },
-                    baseGuests: { type: 'integer', const: 100 },
-                    ingredients: {
-                      type: 'array',
-                      minItems: 1,
-                      maxItems: 30,
-                      items: {
-                        type: 'object',
-                        additionalProperties: false,
-                        required: ['name', 'quantity', 'unit'],
-                        properties: {
-                          name: { type: 'string' },
-                          quantity: { type: 'number', exclusiveMinimum: 0 },
-                          unit: {
-                            type: 'string',
-                            enum: ['kg', 'gram', 'ltr', 'ml', 'piece', 'packet'],
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    }),
-  });
+      input: JSON.stringify({ dishes, availableIngredients }),
+    });
 
-  if (!response.ok) {
-    console.error('Automatic recipe generation failed:', response.status);
+    const parsed = JSON.parse(raw) as { recipes?: unknown[] };
+    return (parsed.recipes ?? [])
+      .map(readCostableRecipe)
+      .filter((recipe): recipe is CostableRecipe => Boolean(recipe));
+  } catch (error) {
+    console.error('Automatic recipe generation failed:', error);
     return [];
   }
-
-  const raw = outputText(await response.json() as OpenAIResponse);
-  if (!raw) return [];
-
-  const parsed = JSON.parse(raw) as { recipes?: unknown[] };
-  return (parsed.recipes ?? [])
-    .map(readCostableRecipe)
-    .filter((recipe): recipe is CostableRecipe => Boolean(recipe));
 }
 
 export async function POST(request: Request) {
