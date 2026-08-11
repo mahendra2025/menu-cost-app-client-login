@@ -1302,6 +1302,28 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .dish-cost-table th { padding-inline: 12px; white-space: nowrap; }
 .dish-cost-table td { padding: 11px 12px; vertical-align: middle; }
 .dish-cost-table tr.dish-rate-missing td { border-color: rgba(255,149,0,.2); background: rgba(255,249,239,.92); }
+.meal-summary-table td { vertical-align: middle; }
+.meal-summary-input {
+  width: 100%;
+  min-width: 72px;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  outline: none;
+}
+.meal-summary-input:hover { border-color: var(--border); }
+.meal-summary-input:focus {
+  border-color: rgba(74, 156, 255, .65);
+  background: rgba(74, 156, 255, .08);
+  box-shadow: 0 0 0 3px rgba(74, 156, 255, .12);
+}
+.meal-summary-day { min-width: 92px; }
+.meal-summary-meal { min-width: 130px; }
+.meal-summary-members { width: 88px; }
 .dish-cost-name { display: grid; gap: 4px; min-width: 150px; }
 .dish-cost-name b { font-size: 13px; }
 .dish-cost-name small { color: var(--muted); font-size: 10px; font-weight: 700; }

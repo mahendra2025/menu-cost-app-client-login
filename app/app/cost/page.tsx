@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
-import { calculate, getSession, loadWork, saveWork } from '../../../lib/store';
+import { calculate, getMenuServiceKey, getSession, loadWork, saveWork } from '../../../lib/store';
 import type { Session, WorkState } from '../../../lib/types';
 import {
   getCostingAnalyticsKey,
@@ -118,6 +118,27 @@ export default function CostPage() {
     });
   }
 
+  function updateMealDetails(
+    serviceKey: string,
+    patch: Pick<WorkState['menu'][number], 'dayLabel' | 'mealLabel' | 'servicePax'>,
+  ) {
+    if (!work) return;
+
+    persist({
+      ...work,
+      menu: work.menu.map((item) =>
+        getMenuServiceKey(item) === serviceKey
+          ? { ...item, ...patch }
+          : item,
+      ),
+      manpower: work.manpower.map((row) =>
+        row.serviceId && getMenuServiceKey(row) === serviceKey
+          ? { ...row, ...patch }
+          : row,
+      ),
+    });
+  }
+
   function updateDishPortion(
     id: string,
     patch: Pick<WorkState['menu'][number], 'portionMode' | 'portionPercent'>,
@@ -163,14 +184,55 @@ export default function CostPage() {
             <h2>Meal-wise Cost Summary</h2>
             <p className="muted">Each meal uses its own member count. Repeated dishes are charged again in every meal where they appear.</p>
             <div className="table-wrap">
-              <table>
+              <table className="meal-summary-table">
                 <thead><tr><th>Day</th><th>Meal</th><th>Members</th><th>Dishes</th><th>Food / Plate</th><th>Meal Food Total</th></tr></thead>
                 <tbody>
                   {result.serviceSummaries.map((service) => (
                     <tr key={service.serviceKey}>
-                      <td>{service.dayLabel || '-'}</td>
-                      <td><b>{service.mealLabel}</b></td>
-                      <td>{service.pax}</td>
+                      <td>
+                        <input
+                          className="meal-summary-input meal-summary-day"
+                          defaultValue={service.dayLabel}
+                          placeholder="Day"
+                          aria-label={`Day for ${service.mealLabel}`}
+                          onBlur={(event) => updateMealDetails(service.serviceKey, {
+                            dayLabel: event.currentTarget.value.trim(),
+                          })}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') event.currentTarget.blur();
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="meal-summary-input meal-summary-meal"
+                          defaultValue={service.mealLabel}
+                          placeholder="Meal name"
+                          aria-label={`Meal name for ${service.dayLabel || 'event'}`}
+                          onBlur={(event) => updateMealDetails(service.serviceKey, {
+                            mealLabel: event.currentTarget.value.trim() || 'Event Menu',
+                          })}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') event.currentTarget.blur();
+                          }}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="meal-summary-input meal-summary-members"
+                          type="number"
+                          min="0"
+                          step="1"
+                          defaultValue={service.pax}
+                          aria-label={`Members for ${service.mealLabel}`}
+                          onBlur={(event) => updateMealDetails(service.serviceKey, {
+                            servicePax: Math.max(0, Math.round(Number(event.currentTarget.value) || 0)),
+                          })}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') event.currentTarget.blur();
+                          }}
+                        />
+                      </td>
                       <td>{service.dishCount}</td>
                       <td>{money(service.menuCostPerPlate)}</td>
                       <td><b>{money(service.totalCost)}</b></td>
