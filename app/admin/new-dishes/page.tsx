@@ -211,6 +211,17 @@ export default function NewDishesPage() {
       return;
     }
 
+    // Open Google directly from the click event. Opening a tab after the
+    // API request completes is treated as a popup and is blocked by many
+    // browsers, which made the verification flow appear to do nothing.
+    const googleSearchUrl =
+      `https://www.google.com/search?q=${encodeURIComponent(`${dishName} dish recipe food`)}`;
+    window.open(
+      googleSearchUrl,
+      '_blank',
+      'noopener,noreferrer',
+    );
+
     setVerifications((current) => ({
       ...current,
       [row.id]: {
@@ -264,13 +275,6 @@ export default function NewDishesPage() {
         },
       }));
 
-      if (!data.configured && searchUrl) {
-        window.open(
-          searchUrl,
-          '_blank',
-          'noopener,noreferrer',
-        );
-      }
     } catch (error) {
       setVerifications((current) => ({
         ...current,
@@ -316,16 +320,19 @@ export default function NewDishesPage() {
     if (
       !row.dishName.trim() ||
       (row.saveAs === 'new' &&
-        (!row.category || !(Number(row.rate) > 0))) ||
+        !row.category) ||
       (row.saveAs === 'alias' &&
-        (!row.aliasCategory || !aliasTarget)) ||
-      !verification?.confirmed
+        (!row.aliasCategory || !aliasTarget))
     ) {
       setMessageType('error');
       setMessage(
-        row.saveAs === 'alias'
-          ? 'Verify the dish on Google, then choose an existing catalog dish for this alias.'
-          : 'Verify the dish on Google, then enter its name, category, and a positive manual rate.',
+        !row.dishName.trim()
+          ? 'Enter a dish name before adding it.'
+          : row.saveAs === 'alias'
+              ? 'Choose an existing catalog dish for this alias.'
+              : !row.category
+                ? 'Choose a category before adding the dish.'
+                : 'Could not add the dish.',
       );
       return;
     }
@@ -352,7 +359,8 @@ export default function NewDishesPage() {
               Number(row.rate) || 0,
             mode: row.saveAs,
             aliasOf: aliasTarget?.name || '',
-            googleVerified: true,
+            googleVerified:
+              Boolean(verification?.confirmed),
           }),
         },
       );
@@ -823,7 +831,7 @@ export default function NewDishesPage() {
                     <input
                       className="input"
                       type="number"
-                      min="0.01"
+                      min="0"
                       step="0.01"
                       value={row.rate}
                       onChange={(event) =>
@@ -833,7 +841,7 @@ export default function NewDishesPage() {
                               .value,
                         })
                       }
-                      placeholder="₹ 0"
+                      placeholder="Optional · ₹0"
                     />
                   </div>
                   </>
@@ -841,11 +849,17 @@ export default function NewDishesPage() {
                 </div>
 
                 <div className="new-dish-actions">
-                  <span>
-                    Suggested category:{' '}
-                    <b>
-                      {row.categoryHint}
-                    </b>
+                  <span className={
+                    row.saveAs === 'alias' && (!row.aliasCategory || !row.aliasTarget)
+                      ? 'new-dish-requirement'
+                      : ''
+                  }>
+                    {row.saveAs === 'alias' && (!row.aliasCategory || !row.aliasTarget)
+                      ? 'Required: Choose the existing catalog dish.'
+                      : <>
+                          Suggested category:{' '}
+                          <b>{row.categoryHint}</b>
+                        </>}
                   </span>
                   <button
                     className="danger-button"
@@ -866,16 +880,7 @@ export default function NewDishesPage() {
                       void approve(row)
                     }
                     disabled={
-                      Boolean(workingId) ||
-                      !verifications[row.id]
-                        ?.confirmed ||
-                      (row.saveAs === 'new'
-                        ? !(Number(row.rate) > 0)
-                        : !row.aliasCategory || !catalogDishes.some(
-                            (dish) =>
-                              dish.name.toLowerCase() === row.aliasTarget.trim().toLowerCase() &&
-                              dish.category.toLowerCase() === row.aliasCategory.trim().toLowerCase(),
-                          ))
+                      Boolean(workingId)
                     }
                   >
                     {workingId === row.id

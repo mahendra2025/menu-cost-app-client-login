@@ -113,8 +113,6 @@ export async function POST(
       0,
       Number(body.rate) || 0,
     );
-    const googleVerified =
-      body.googleVerified === true;
     const mode = cleanText(body.mode, 20) === 'alias'
       ? 'alias'
       : 'new';
@@ -123,16 +121,15 @@ export async function POST(
     if (
       !id ||
       !name ||
-      (mode === 'new' && (!category || !(rate > 0))) ||
-      (mode === 'alias' && !aliasOf) ||
-      !googleVerified
+      (mode === 'new' && !category) ||
+      (mode === 'alias' && !aliasOf)
     ) {
       return NextResponse.json(
         {
           error:
             mode === 'alias'
-              ? 'Google verification, alias name, and an existing dish are required'
-              : 'Google verification, name, category, and a positive rate are required',
+              ? 'Alias name and an existing dish are required'
+              : 'Name and category are required',
         },
         { status: 400 },
       );

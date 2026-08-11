@@ -322,6 +322,10 @@ a { color: inherit; text-decoration: none; }
 .new-dish-verification-confirm > button:disabled { cursor: default; opacity: .75; }
 .new-dish-actions { justify-content: flex-end; }
 .new-dish-actions > span { margin-right: auto; }
+.new-dish-actions > .new-dish-requirement {
+  color: #b45309;
+  font-weight: 750;
+}
 
 .catalog-workspace-tabs {
   display: grid;
