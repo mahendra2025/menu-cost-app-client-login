@@ -72,11 +72,24 @@ ADMIN_USER_ID=admin
 ADMIN_PASSWORD=change-this-now
 ADMIN_SESSION_SECRET=change-this-too
 DATABASE_URL=your-database-url
+OPENAI_API_KEY=your-openai-project-key
 ```
 
 You can copy `.env.example` to `.env.local` and fill in your real values.
 
 If `ADMIN_USER_ID`, `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`, or `DATABASE_URL` are missing, the server will now fail with a clear error instead of silently misbehaving.
+
+## AI-assisted menu detection
+
+When `OPENAI_API_KEY` is configured, the Event page uses the OpenAI Responses API to extract event details, functions, dishes, and categories from pasted or OCR menu text. Saved catalog rates remain authoritative, and all financial calculations stay deterministic. If the AI request is unavailable, the existing local menu parser is used automatically.
+
+The default model can be overridden without changing code:
+
+```bash
+OPENAI_MENU_MODEL=gpt-5.6-sol
+```
+
+Keep these values in `.env.local` for local development and configure them as secret environment variables on the deployment platform. Never commit API keys to Git.
 
 ## Razorpay subscriptions
 

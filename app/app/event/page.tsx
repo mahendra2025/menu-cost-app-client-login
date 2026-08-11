@@ -40,6 +40,10 @@ import type {
   WorkState,
 } from '../../../lib/types';
 
+import type {
+  Category,
+} from '../../../lib/menuCategories';
+
 const SAMPLE_MENU = `Day 1 • Dinner • 300 Members
 Welcome Drink
 Orange Juice
@@ -73,6 +77,25 @@ type DetectedEventDetails = Partial<
 type MenuDetectionPreview = {
   menu: MenuItem[];
   eventDetails: DetectedEventDetails;
+  source: 'ai' | 'rules';
+};
+
+type AiMenuExtraction = {
+  eventDetails?: Partial<
+    Record<
+      keyof DetectedEventDetails,
+      string | number | null
+    >
+  >;
+  services?: Array<{
+    dayLabel?: string | null;
+    mealLabel?: string | null;
+    pax?: number | null;
+    dishes?: Array<{
+      name?: string;
+      category?: string;
+    }>;
+  }>;
 };
 
 const EVENT_DETAIL_LABELS: Record<
@@ -285,6 +308,82 @@ function menuItemIdentity(
     `${normalize(item.dayLabel || 'event')}::${normalize(item.mealLabel || 'event menu')}`;
 
   return `${serviceKey}::${normalize(item.name)}::${normalize(item.category)}`;
+}
+
+async function requestAiMenuExtraction(
+  menuText: string,
+) {
+  const response = await fetch(
+    '/api/client/ai-menu',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type':
+          'application/json',
+      },
+      body: JSON.stringify({
+        menuText,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      'AI menu detection is unavailable',
+    );
+  }
+
+  const data = (await response.json()) as {
+    extraction?: AiMenuExtraction;
+  };
+
+  if (
+    !data.extraction ||
+    !Array.isArray(
+      data.extraction.services,
+    )
+  ) {
+    throw new Error(
+      'AI returned an invalid menu',
+    );
+  }
+
+  return data.extraction;
+}
+
+function normalizeAiEventDetails(
+  extraction: AiMenuExtraction,
+): DetectedEventDetails {
+  const output: DetectedEventDetails = {};
+
+  for (const key of [
+    'clientName',
+    'eventName',
+    'eventDate',
+    'functionType',
+    'city',
+    'venue',
+  ] as const) {
+    const value =
+      extraction.eventDetails?.[key];
+
+    if (
+      typeof value === 'string' &&
+      value.trim()
+    ) {
+      output[key] = value.trim();
+    }
+  }
+
+  const pax = Number(
+    extraction.eventDetails?.pax,
+  );
+
+  if (pax > 0) {
+    output.pax = Math.round(pax);
+  }
+
+  return output;
 }
 
 type PreparedMenuPhoto = {
@@ -672,36 +771,184 @@ export default function EventPage() {
         await import('../../../lib/dishCostMaster');
       await syncDishCostItemsFromServer();
 
-      const [
-        catalogMenu,
-        pendingCandidates,
-      ] = await Promise.all([
-        parseMenuText(rawMenuText),
-        findPendingDishCandidates(
-          rawMenuText,
-        ),
-      ]);
-      const manualMenu: MenuItem[] =
-        pendingCandidates.map(
-          (candidate) => ({
-            id: uid('dish'),
-            name: candidate.name,
-            category:
-              candidate.categoryHint ||
-              'Other',
-            costPerPlate: 0,
-            portionQuantity: 1,
-            portionUnit: 'serving',
-            serviceId:
-              candidate.serviceId,
-            dayLabel:
-              candidate.dayLabel,
-            mealLabel:
-              candidate.mealLabel,
-            servicePax:
-              candidate.servicePax,
-          }),
+      let catalogMenu: MenuItem[] = [];
+      let manualMenu: MenuItem[] = [];
+      let detectedDetails =
+        detectEventDetails(rawMenuText);
+      let detectionSource:
+        | 'ai'
+        | 'rules' = 'rules';
+
+      try {
+        const extraction =
+          await requestAiMenuExtraction(
+            rawMenuText,
+          );
+        const dishCatalog =
+          await import(
+            '../../../lib/dishCostMaster'
+          );
+        const allowedCategories =
+          new Set<string>(
+            dishCatalog.CATEGORIES,
+          );
+        const seenItems =
+          new Set<string>();
+
+        extraction.services?.forEach(
+          (service, serviceIndex) => {
+            const serviceId =
+              `ai_service_${serviceIndex + 1}`;
+            const dayLabel = String(
+              service.dayLabel || '',
+            ).trim();
+            const mealLabel =
+              String(
+                service.mealLabel ||
+                  'Event Menu',
+              ).trim() || 'Event Menu';
+            const servicePax =
+              Math.max(
+                0,
+                Math.round(
+                  Number(service.pax) ||
+                    Number(
+                      extraction
+                        .eventDetails
+                        ?.pax,
+                    ) ||
+                    0,
+                ),
+              ) || undefined;
+
+            service.dishes?.forEach(
+              (dish) => {
+                const name = String(
+                  dish.name || '',
+                )
+                  .replace(/\s+/g, ' ')
+                  .trim();
+
+                if (!name) return;
+
+                const category =
+                  allowedCategories.has(
+                    String(
+                      dish.category || '',
+                    ),
+                  )
+                    ? (dish.category as Category)
+                    : 'Other';
+                const matchedDish =
+                  dishCatalog.findDishByName(
+                    name,
+                  ) ||
+                  dishCatalog.findFuzzyDishByName(
+                    name,
+                    category,
+                  );
+                const item: MenuItem = {
+                  id: uid('dish'),
+                  name:
+                    matchedDish?.name ||
+                    name,
+                  category:
+                    matchedDish?.category ||
+                    category,
+                  costPerPlate:
+                    Number(
+                      matchedDish?.rate,
+                    ) || 0,
+                  portionQuantity:
+                    matchedDish
+                      ?.servingQuantity ?? 1,
+                  portionUnit:
+                    matchedDish
+                      ?.servingUnit ??
+                    'serving',
+                  serviceId,
+                  dayLabel:
+                    dayLabel || undefined,
+                  mealLabel,
+                  servicePax,
+                };
+                const identity =
+                  menuItemIdentity(item);
+
+                if (
+                  seenItems.has(identity)
+                ) {
+                  return;
+                }
+
+                seenItems.add(identity);
+
+                if (matchedDish) {
+                  catalogMenu.push(item);
+                } else {
+                  manualMenu.push(item);
+                }
+              },
+            );
+          },
         );
+
+        if (
+          !catalogMenu.length &&
+          !manualMenu.length
+        ) {
+          throw new Error(
+            'AI found no menu dishes',
+          );
+        }
+
+        detectedDetails = {
+          ...detectedDetails,
+          ...normalizeAiEventDetails(
+            extraction,
+          ),
+        };
+        detectionSource = 'ai';
+      } catch (aiError) {
+        console.warn(
+          'AI menu detection fell back to local rules:',
+          aiError,
+        );
+
+        const [
+          localCatalogMenu,
+          pendingCandidates,
+        ] = await Promise.all([
+          parseMenuText(rawMenuText),
+          findPendingDishCandidates(
+            rawMenuText,
+          ),
+        ]);
+
+        catalogMenu = localCatalogMenu;
+        manualMenu =
+          pendingCandidates.map(
+            (candidate) => ({
+              id: uid('dish'),
+              name: candidate.name,
+              category:
+                candidate.categoryHint ||
+                'Other',
+              costPerPlate: 0,
+              portionQuantity: 1,
+              portionUnit: 'serving',
+              serviceId:
+                candidate.serviceId,
+              dayLabel:
+                candidate.dayLabel,
+              mealLabel:
+                candidate.mealLabel,
+              servicePax:
+                candidate.servicePax,
+            }),
+          );
+      }
+
       const detectedMenu = [
         ...catalogMenu,
         ...manualMenu,
@@ -724,15 +971,13 @@ export default function EventPage() {
         `Menu detection complete: ${catalogMenu.length} catalog dishes and ${manualMenu.length} dishes needing manual rates.`,
       );
 
-      const detectedDetails =
-        detectEventDetails(rawMenuText);
-
       setDetectedEventDetails(
         detectedDetails,
       );
       setDetectionPreview({
         menu: detectedMenu,
         eventDetails: detectedDetails,
+        source: detectionSource,
       });
       void trackProductEvent(
         'menu_detected',
@@ -747,6 +992,8 @@ export default function EventPage() {
             work.event.uploadFileName
               ? 'upload'
               : 'text',
+          detectionMode:
+            detectionSource,
         },
       );
 
@@ -2215,9 +2462,18 @@ Gulab Jamun`}
               >
                 <div className="menu-preview-heading">
                   <div>
-                    <span className="section-kicker">Detection preview</span>
+                    <span className="section-kicker">
+                      {detectionPreview.source === 'ai'
+                        ? 'AI-assisted detection'
+                        : 'Local detection fallback'}
+                    </span>
                     <h3>Review before saving</h3>
-                    <p>Catalog dishes use saved rates. New dishes can continue with ₹0 and be priced later.</p>
+                    <p>
+                      {detectionPreview.source === 'ai'
+                        ? 'AI organized the menu; your catalog remains the source of truth for prices.'
+                        : 'The AI service was unavailable, so the built-in parser handled this menu.'}
+                      {' '}New dishes can continue with ₹0 and be priced later.
+                    </p>
                   </div>
                   <div className="menu-preview-metrics">
                     <span><b>{selectedPreviewMenu.length}</b> selected</span>
