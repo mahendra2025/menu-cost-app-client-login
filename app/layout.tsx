@@ -4,6 +4,7 @@ import ProductAnalyticsTracker from './components/ProductAnalyticsTracker';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://menu-costing.com'),
   title: 'Menu Costing App',
   description: 'Client login based menu costing app for caterers',
   applicationName: 'Menu Costing App',
@@ -26,6 +27,17 @@ export const metadata: Metadata = {
   other: {
     'mobile-web-app-capable': 'yes',
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
 };
 
 export const viewport: Viewport = {
@@ -37,7 +49,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en-IN" data-theme="dark">
       <body>
         {children}
         <ProductAnalyticsTracker />

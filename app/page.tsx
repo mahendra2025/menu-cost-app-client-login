@@ -194,6 +194,57 @@ const faqs = [
   ],
 ];
 
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://menu-costing.com/#organization',
+      name: 'Menu Costing',
+      url: 'https://menu-costing.com/',
+      logo: 'https://menu-costing.com/icons/icon-512.png',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://menu-costing.com/#website',
+      url: 'https://menu-costing.com/',
+      name: 'Menu Costing',
+      publisher: {
+        '@id': 'https://menu-costing.com/#organization',
+      },
+      inLanguage: ['en-IN', 'hi-IN'],
+    },
+    {
+      '@type': 'WebApplication',
+      '@id': 'https://menu-costing.com/#app',
+      name: 'Menu Costing',
+      url: 'https://menu-costing.com/',
+      description:
+        'Catering menu costing software for Indian caterers to calculate food, manpower and event costs before quoting.',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Any',
+      browserRequirements: 'Requires a modern web browser',
+      offers: [
+        {
+          '@type': 'Offer',
+          name: 'First 5 completed costings',
+          price: '0',
+          priceCurrency: 'INR',
+        },
+        {
+          '@type': 'Offer',
+          name: 'Menu Costing Pro monthly plan',
+          price: '999',
+          priceCurrency: 'INR',
+        },
+      ],
+      publisher: {
+        '@id': 'https://menu-costing.com/#organization',
+      },
+    },
+  ],
+};
+
 function Arrow() {
   return (
     <span
@@ -218,7 +269,14 @@ function Check() {
 
 export default function HomePage() {
   return (
-    <main className="mc-site">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+        }}
+      />
+      <main className="mc-site">
       <style>{`
         .mc-site {
           --bg:#07090d;
@@ -2554,6 +2612,7 @@ export default function HomePage() {
           Start Free
         </Link>
       </div>
-    </main>
+      </main>
+    </>
   );
 }
