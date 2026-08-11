@@ -95,10 +95,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    const sourceLineCount = menuText.split(/\r?\n/).filter((line) => line.trim()).length;
     const output = await requestStructuredAi({
       schemaName: 'catering_menu_extraction',
       schema: MENU_SCHEMA,
-      maxOutputTokens: 8_000,
+      maxOutputTokens: Math.min(8_000, Math.max(700, sourceLineCount * 80)),
       instructions: [
         'You extract structured catering menus from OCR or pasted text.',
         'The source may contain English, Hindi, Gujarati, transliteration, spelling errors, columns, headers, addresses, and decorative text.',

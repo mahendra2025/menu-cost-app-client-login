@@ -90,7 +90,7 @@ async function generateRecipes(
     const raw = await requestStructuredAi({
       schemaName: 'generated_catering_recipes',
       schema,
-      maxOutputTokens: 10_000,
+      maxOutputTokens: Math.min(7_000, Math.max(650, dishes.length * 550)),
       instructions: [
         'Create practical Indian catering production recipes for exactly 100 guests.',
         'Return one recipe for every requested dish and do not add extra dishes.',
@@ -176,7 +176,7 @@ export async function POST(request: Request) {
       .map(normalizeIngredientRate)
       .filter((rate): rate is NonNullable<typeof rate> => Boolean(rate))
       .filter((rate) => (overrideMap.get(rate.id) ?? rate.rate) > 0)
-      .slice(0, 800)
+      .slice(0, 350)
       .map((rate) => ({ name: rate.name, unit: rate.unit }));
     const generated = await generateRecipes(missing, ingredientCatalog);
 
