@@ -1,0 +1,5 @@
+menu-cost-explainer/
+marketing-assets/
+outputs/
+*.backup
+*.inspect.ndjson

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <linearGradient id="bg2" x1="40" y1="40" x2="1040" y2="1040" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="0.56" stop-color="#080C13"/>
+      <stop offset="1" stop-color="#0A1D35"/>
+    </linearGradient>
+    <linearGradient id="blue2" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#1677EE"/>
+      <stop offset="1" stop-color="#55A8FF"/>
+    </linearGradient>
+    <linearGradient id="warn2" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FFB24A"/>
+      <stop offset="1" stop-color="#FF7A45"/>
+    </linearGradient>
+    <filter id="shadow2" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#00152F" flood-opacity="0.38"/>
+    </filter>
+    <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="85"/>
+    </filter>
+  </defs>
+
+  <rect width="1080" height="1080" fill="url(#bg2)"/>
+  <circle cx="940" cy="120" r="260" fill="#2388FF" opacity="0.17" filter="url(#blur2)"/>
+  <circle cx="90" cy="990" r="240" fill="#FF9A3D" opacity="0.10" filter="url(#blur2)"/>
+
+  <g transform="translate(72 60)">
+    <rect width="82" height="82" rx="23" fill="#FFFFFF" filter="url(#shadow2)"/>
+    <text x="41" y="55" fill="#075CB8" font-family="Arial, Helvetica, sans-serif" font-size="33" font-weight="800" text-anchor="middle" letter-spacing="-2">MC</text>
+    <text x="106" y="34" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="800">MENU COSTING</text>
+    <text x="106" y="64" fill="#98A3B3" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="600">KNOW THE COST BEFORE YOU QUOTE</text>
+  </g>
+
+  <g transform="translate(72 205)">
+    <rect width="300" height="48" rx="24" fill="#2A1D12" stroke="#FFB24A" stroke-opacity="0.42"/>
+    <circle cx="27" cy="24" r="7" fill="#FFB24A"/>
+    <text x="48" y="32" fill="#FFD6A0" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="800">SMALL MISTAKE. BIG IMPACT.</text>
+  </g>
+
+  <text x="72" y="362" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="70" font-weight="800" letter-spacing="-2">₹20 ki costing mistake</text>
+  <text x="72" y="438" fill="#AEB8C6" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="650">1,000 guests ke event par...</text>
+
+  <g transform="translate(72 500)" filter="url(#shadow2)">
+    <rect width="936" height="230" rx="38" fill="#101823" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <text x="62" y="79" fill="#9AA7B7" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700">₹20  ×  1,000 guests</text>
+    <rect x="62" y="107" width="812" height="2" fill="#FFFFFF" opacity="0.09"/>
+    <text x="62" y="189" fill="url(#warn2)" font-family="Arial, Helvetica, sans-serif" font-size="74" font-weight="900" letter-spacing="-2">₹20,000 ka difference</text>
+  </g>
+
+  <text x="72" y="808" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="750">Quote bhejne se pehle real event cost check karein.</text>
+  <text x="72" y="856" fill="#98A3B3" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="600">Food + manpower + event expenses, ek hi workflow mein.</text>
+
+  <g transform="translate(72 910)">
+    <rect width="936" height="94" rx="28" fill="url(#blue2)"/>
+    <text x="468" y="41" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="850" text-anchor="middle">5 COSTINGS FREE  •  WHATSAPP “DEMO”</text>
+    <text x="468" y="72" fill="#EAF4FF" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800" text-anchor="middle" letter-spacing="1">73573 01137</text>
+  </g>
+
+  <text x="72" y="1044" fill="#687588" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="650">menu-costing.com</text>
+  <text x="1008" y="1044" fill="#687588" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="650" text-anchor="end">Pro ₹999/month</text>
+</svg>

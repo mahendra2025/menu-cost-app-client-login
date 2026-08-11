@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <linearGradient id="bg" x1="55" y1="35" x2="1025" y2="1045" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="0.52" stop-color="#080C13"/>
+      <stop offset="1" stop-color="#061A34"/>
+    </linearGradient>
+    <linearGradient id="cta" x1="335" y1="0" x2="745" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1677EE"/>
+      <stop offset="1" stop-color="#4A9CFF"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="75"/>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#00152F" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+  <circle cx="924" cy="112" r="230" fill="#2E8FFF" opacity="0.18" filter="url(#glow)"/>
+  <circle cx="95" cy="1020" r="225" fill="#FFB24A" opacity="0.11" filter="url(#glow)"/>
+
+  <g transform="translate(72 64)">
+    <rect width="86" height="86" rx="24" fill="#FFFFFF" filter="url(#shadow)"/>
+    <text x="43" y="57" fill="#075CB8" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" text-anchor="middle" letter-spacing="-2">MC</text>
+    <text x="110" y="36" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700">MENU COSTING</text>
+    <text x="110" y="66" fill="#98A3B3" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="600">CATERING COSTING SOFTWARE</text>
+  </g>
+
+  <g transform="translate(72 232)">
+    <rect width="245" height="48" rx="24" fill="#0F2C4F" stroke="#4A9CFF" stroke-opacity="0.42"/>
+    <circle cx="27" cy="24" r="7" fill="#45DB8A"/>
+    <text x="48" y="32" fill="#CBE3FF" font-family="ITF Devanagari, Devanagari Sangam MN, sans-serif" font-size="22" font-weight="700">केटरर्स के लिए</text>
+  </g>
+
+  <text x="72" y="390" fill="#FFFFFF" font-family="ITF Devanagari, Devanagari Sangam MN, sans-serif" font-size="78" font-weight="800">
+    <tspan x="72" dy="0">कोटेशन भेजने से पहले</tspan>
+    <tspan x="72" dy="104" fill="#69B0FF">सही लागत जानिए।</tspan>
+  </text>
+
+  <text x="72" y="590" fill="#B8C2CF" font-family="ITF Devanagari, Devanagari Sangam MN, sans-serif" font-size="34" font-weight="600">फूड कॉस्ट  +  मैनपावर  +  इवेंट खर्च</text>
+
+  <g transform="translate(72 650)">
+    <rect width="936" height="122" rx="30" fill="#111923" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <circle cx="64" cy="61" r="30" fill="#123B2A"/>
+    <path d="M50 61l10 10 20-23" fill="none" stroke="#45DB8A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="115" y="52" fill="#FFFFFF" font-family="ITF Devanagari, Devanagari Sangam MN, sans-serif" font-size="34" font-weight="800">पहली 5 कॉस्टिंग मुफ़्त</text>
+    <text x="115" y="88" fill="#98A3B3" font-family="ITF Devanagari, Devanagari Sangam MN, sans-serif" font-size="22" font-weight="600">कोई कार्ड आवश्यक नहीं</text>
+  </g>
+
+  <g transform="translate(72 820)">
+    <rect width="936" height="116" rx="30" fill="url(#cta)" filter="url(#shadow)"/>
+    <text x="468" y="49" fill="#FFFFFF" font-family="ITF Devanagari, Devanagari Sangam MN, sans-serif" font-size="29" font-weight="800" text-anchor="middle">WhatsApp पर “DEMO” भेजें</text>
+    <text x="468" y="88" fill="#EAF4FF" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="800" text-anchor="middle" letter-spacing="1.2">73573 01137</text>
+  </g>
+
+  <text x="72" y="1013" fill="#667384" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="600">menu-costing.com</text>
+  <text x="1008" y="1013" fill="#667384" font-family="ITF Devanagari, Devanagari Sangam MN, sans-serif" font-size="20" font-weight="600" text-anchor="end">₹999 / महीना · अनलिमिटेड कॉस्टिंग</text>
+</svg>
