@@ -106,6 +106,28 @@ export function uid(prefix = 'id'): string {
     .slice(2, 9)}_${Date.now().toString(36)}`;
 }
 
+/**
+ * A service id is normally unique, but older saved menus may not have one and
+ * separately imported menus can both contain generated ids such as
+ * `service_1`. Include the visible meal identity so portion allocation never
+ * crosses from one meal into another in either case.
+ */
+export function getMenuServiceKey(
+  item: Pick<MenuItem, 'serviceId' | 'dayLabel' | 'mealLabel'>,
+): string {
+  const normalizePart = (value: string | undefined, fallback: string) =>
+    String(value || fallback)
+      .trim()
+      .toLocaleLowerCase('en-IN')
+      .replace(/\s+/g, ' ');
+
+  const serviceId = normalizePart(item.serviceId, 'default');
+  const dayLabel = normalizePart(item.dayLabel, 'event');
+  const mealLabel = normalizePart(item.mealLabel, 'event menu');
+
+  return `${serviceId}::${dayLabel}::${mealLabel}`;
+}
+
 function safeJsonParse<T>(
   value: string | null,
   fallback: T,
@@ -1717,7 +1739,7 @@ export function buildMenuCostBreakdown(
       Record<string, number>
     >(
       (counts, item) => {
-        const serviceKey = item.serviceId ?? 'default';
+        const serviceKey = getMenuServiceKey(item);
         const categoryKey = `${serviceKey}::${item.category}`;
 
         counts[categoryKey] =
@@ -1733,7 +1755,7 @@ export function buildMenuCostBreakdown(
     );
 
   const breakdown = menu.map((item) => {
-    const serviceKey = item.serviceId ?? 'default';
+    const serviceKey = getMenuServiceKey(item);
     const categoryKey = `${serviceKey}::${item.category}`;
     const categoryCount =
       categoryCounts[
@@ -1778,6 +1800,7 @@ export function buildMenuCostBreakdown(
 
     return {
       ...item,
+      serviceKey,
       baseCostPerPlate,
       categoryCount,
       portionFactor,
@@ -1794,8 +1817,7 @@ export function buildMenuCostBreakdown(
 
   const portionTotals = breakdown.reduce<Record<string, number>>(
     (totals, item) => {
-      const serviceKey = item.serviceId ?? 'default';
-      const categoryKey = `${serviceKey}::${item.category}`;
+      const categoryKey = `${item.serviceKey}::${item.category}`;
       totals[categoryKey] = (totals[categoryKey] ?? 0) + item.portionPercent;
       return totals;
     },
@@ -1803,8 +1825,7 @@ export function buildMenuCostBreakdown(
   );
 
   return breakdown.map((item) => {
-    const serviceKey = item.serviceId ?? 'default';
-    const categoryKey = `${serviceKey}::${item.category}`;
+    const categoryKey = `${item.serviceKey}::${item.category}`;
     return {
       ...item,
       portionGroupTotalPercent: portionTotals[categoryKey] ?? item.portionPercent,
@@ -1833,6 +1854,7 @@ export function calculate(
   const serviceSummaryMap = new Map<
     string,
     {
+      serviceKey: string;
       serviceId: string;
       dayLabel: string;
       mealLabel: string;
@@ -1844,9 +1866,10 @@ export function calculate(
   >();
 
   menuBreakdown.forEach((item) => {
-    const serviceId = item.serviceId ?? 'default';
-    const current = serviceSummaryMap.get(serviceId) ?? {
-      serviceId,
+    const serviceKey = item.serviceKey;
+    const current = serviceSummaryMap.get(serviceKey) ?? {
+      serviceKey,
+      serviceId: item.serviceId ?? 'default',
       dayLabel: item.dayLabel ?? '',
       mealLabel: item.mealLabel ?? 'Event Menu',
       pax: item.effectivePax,
@@ -1858,7 +1881,7 @@ export function calculate(
     current.dishCount += 1;
     current.menuCostPerPlate += item.adjustedCostPerPlate;
     current.totalCost += item.itemTotalCost;
-    serviceSummaryMap.set(serviceId, current);
+    serviceSummaryMap.set(serviceKey, current);
   });
 
   const serviceSummaries = Array.from(serviceSummaryMap.values());

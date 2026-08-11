@@ -77,30 +77,30 @@ export default function CostPage() {
   const dishServices = Array.from(
     new Map(
       result.menuBreakdown.map((item) => {
-        const serviceId = item.serviceId ?? 'default';
         const label = item.mealLabel
           ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}`
           : 'Event Menu';
-        return [serviceId, label];
+        return [item.serviceKey, label];
       }),
     ).entries(),
   );
   const normalizedDishQuery = dishQuery.trim().toLocaleLowerCase('en-IN');
   const filteredDishCosts = result.menuBreakdown.filter((item) => {
-    const serviceId = item.serviceId ?? 'default';
     const matchesSearch = !normalizedDishQuery ||
       item.name.toLocaleLowerCase('en-IN').includes(normalizedDishQuery) ||
       item.category.toLocaleLowerCase('en-IN').includes(normalizedDishQuery);
-    const matchesService = dishServiceFilter === 'ALL' || serviceId === dishServiceFilter;
+    const matchesService = dishServiceFilter === 'ALL' || item.serviceKey === dishServiceFilter;
     const matchesCategory = dishCategoryFilter === 'ALL' || item.category === dishCategoryFilter;
     return matchesSearch && matchesService && matchesCategory;
   });
   const missingRateCount = work.menu.filter(
     (item) => !(Number(item.costPerPlate) > 0),
   ).length;
-  const hasWeddingServices = result.serviceSummaries.some(
-    (service) => service.serviceId !== 'default',
-  );
+  const hasWeddingServices =
+    result.serviceSummaries.length > 1 ||
+    result.serviceSummaries.some(
+      (service) => service.serviceId !== 'default',
+    );
 
   function persist(next: WorkState) {
     if (!session) return;
@@ -167,7 +167,7 @@ export default function CostPage() {
                 <thead><tr><th>Day</th><th>Meal</th><th>Members</th><th>Dishes</th><th>Food / Plate</th><th>Meal Food Total</th></tr></thead>
                 <tbody>
                   {result.serviceSummaries.map((service) => (
-                    <tr key={service.serviceId}>
+                    <tr key={service.serviceKey}>
                       <td>{service.dayLabel || '-'}</td>
                       <td><b>{service.mealLabel}</b></td>
                       <td>{service.pax}</td>
@@ -238,7 +238,7 @@ export default function CostPage() {
               </div>
 
               <div className="dish-portion-note">
-                <b>Portion allocation:</b> use automatic equal sharing or set a custom percentage for any dish. A 50% portion charges half its base cost; 150% charges one-and-a-half times.
+                <b>Portion allocation:</b> automatic sharing is calculated separately inside every meal and category. You can also set a custom percentage for any dish: 50% charges half its base cost; 150% charges one-and-a-half times.
               </div>
 
               {filteredDishCosts.length === 0 ? (
