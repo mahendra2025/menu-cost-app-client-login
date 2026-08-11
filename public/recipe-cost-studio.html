@@ -863,6 +863,7 @@ const RATE_STORAGE = "catereros_polished_rates_v1";
 const DELETED_DISH_STORAGE = "catereros_deleted_dish_ids_v1";
 const THEME_STORAGE = "catereros_ui_theme_v1";
 const RECIPE_VERSION_STORAGE = "catereros_recipe_catalog_version";
+const RECIPE_CACHE_MIGRATION_STORAGE = "catereros_recipe_cache_saved_v1";
 const RECIPE_CATALOG_VERSION = 16;
 const RECIPE_CATALOG_API = "/api/admin/recipes";
 
@@ -1147,6 +1148,7 @@ function loadRateArray(){
   return Array.from(merged.values());
 }
 let dishes=loadDishArray().map(withSubcategory);
+const cachedDishesAtStartup=clone(dishes);
 let rates=loadRateArray();
 safeStorageSet(DISH_STORAGE,JSON.stringify(dishes));
 safeStorageSet(RATE_STORAGE,JSON.stringify(rates));
@@ -1157,6 +1159,7 @@ let currentView="editor";
 let dirty=false;
 let catalogReady=false;
 let serverSaveTimer=null;
+let editorAutosaveTimer=null;
 
 function esc(value){
   return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
@@ -1295,12 +1298,13 @@ function notifyParent(){
     type:"recipe-studio-status",
     state,
     text:String(label?.textContent||"Recipe studio ready"),
-    recipes:dishes.length,
-    costedRecipes:dishes.filter(dish=>Array.isArray(dish.ingredients)&&dish.ingredients.length&&dishCost(dish)>0).length,
-    ingredients:rates.length,
-    missingRates:rates.filter(rate=>!(Number(rate.rate)>0)).length,
+    recipes:catalogReady?dishes.length:0,
+    costedRecipes:catalogReady?dishes.filter(dish=>Array.isArray(dish.ingredients)&&dish.ingredients.length&&dishCost(dish)>0).length:0,
+    ingredients:catalogReady?rates.length:0,
+    missingRates:catalogReady?rates.filter(rate=>!(Number(rate.rate)>0)).length:0,
     selectedRecipe:selectedDish()?.name||"",
-    dirty
+    dirty,
+    ready:catalogReady
   },window.location.origin);
 }
 function setStorageStatus(text,state=""){
@@ -1358,11 +1362,21 @@ async function hydrateRecipeCatalog(){
       const deletedIdSet=new Set(deletedIds);
       const needsCatalogUpgrade=Number(catalog.catalogVersion||0)<RECIPE_CATALOG_VERSION;
       const savedDishes=needsCatalogUpgrade?[]:catalog.dishes;
-      const mergedDishes=new Map(savedDishes.map(dish=>[String(dish?.name||"").trim().toLowerCase(),dish]));
+      const migrationPending=safeStorageGet(RECIPE_CACHE_MIGRATION_STORAGE)!=="saved"&&cachedDishesAtStartup.length>0;
+      const recipeKey=dish=>String(dish?.name||"").trim().toLowerCase().replace(/\s+/g," ");
+      const mergedDishes=new Map(savedDishes.map(dish=>[recipeKey(dish),dish]));
+      if(migrationPending){
+        cachedDishesAtStartup
+          .filter(dish=>dish?.name&&!deletedIdSet.has(dish.id))
+          .forEach(dish=>mergedDishes.set(recipeKey(dish),clone(dish)));
+      }
       if(needsCatalogUpgrade){
         DEFAULT_DISHES
           .filter(dish=>Number(dish.catalogVersion)===RECIPE_CATALOG_VERSION&&!deletedIdSet.has(dish.id))
-          .forEach(dish=>mergedDishes.set(String(dish.name).trim().toLowerCase(),clone(dish)));
+          .forEach(dish=>{
+            const key=recipeKey(dish);
+            if(!mergedDishes.has(key))mergedDishes.set(key,clone(dish));
+          });
       }
       dishes=Array.from(mergedDishes.values()).filter(dish=>dish?.name&&!deletedIdSet.has(dish.id)).map(withSubcategory);
       if(needsCatalogUpgrade){
@@ -1381,7 +1395,13 @@ async function hydrateRecipeCatalog(){
       catalogReady=true;
       setStorageStatus("Saved to PostgreSQL","saved");
       renderDishList();loadSelectedDish();renderRateTable();renderSelectedRate();
-      if(needsCatalogUpgrade)await persistRecipeCatalog();
+      if(needsCatalogUpgrade||migrationPending){
+        const persisted=await persistRecipeCatalog();
+        if(persisted&&migrationPending){
+          safeStorageSet(RECIPE_CACHE_MIGRATION_STORAGE,"saved");
+          showToast(`${cachedDishesAtStartup.length} cached recipes saved to PostgreSQL`);
+        }
+      }
       return;
     }
     catalogReady=true;
@@ -1628,7 +1648,7 @@ function commitVisualRecipe(){
   }));
   $("jsonEditor").value=JSON.stringify(data,null,2);
   setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");
-  updateLineNumbers();renderJsonSummary();
+  updateLineNumbers();renderJsonSummary();queueEditorAutosave();
 }
 function renderRateTable(){
   const q=$("rateSearch").value.trim().toLowerCase(),unit=$("unitFilter").value,sort=$("rateSort").value;
@@ -2002,6 +2022,20 @@ async function applyJson(){
   }catch(error){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${error.message}`,"error")}
 }
 
+function queueEditorAutosave(){
+  if(editorAutosaveTimer)clearTimeout(editorAutosaveTimer);
+  editorAutosaveTimer=setTimeout(()=>{
+    editorAutosaveTimer=null;
+    if(!catalogReady||!dirty)return;
+    try{
+      const data=parseJson();
+      if(validateDishJson(data).length)return;
+      setStatus("Autosaving to PostgreSQL…","ok");
+      void applyJson();
+    }catch{}
+  },900);
+}
+
 $("downloadRecipeTemplate").addEventListener("click",()=>{
   const rows=[
     ["recipeName","category","subcategory","baseGuests","servingSize","servingUnit","dishRate","aliases","ingredientName","quantity","unit","marketRate","rateUnit"],
@@ -2040,7 +2074,8 @@ $("newRecipe").addEventListener("click",()=>{
   collapsedSubcategories.delete(`${category.trim()}::${subcategory.trim()}`);
   $("dishSearch").value="";$("categoryFilter").value="All";
   saveState();switchView("editor");loadSelectedDish();setDirty(true);
-  setStatus("New recipe ready. Add ingredients in the JSON, then select Apply & save.","ok");
+  queueEditorAutosave();
+  setStatus("New recipe ready. Add ingredients to continue autosaving.","ok");
   showToast("New recipe created");
   $("sidebar").classList.remove("open");$("jsonEditor").focus();
 });
@@ -2127,7 +2162,8 @@ window.addEventListener("message",event=>{
   switchView("editor");
   loadSelectedDish();
   setDirty(true);
-  setStatus("Recipe created from Dish Catalog. Add ingredients, then select Apply & save.","ok");
+  queueEditorAutosave();
+  setStatus("Recipe created from Dish Catalog. Valid changes autosave to PostgreSQL.","ok");
   showToast(`Recipe ready for ${name}`);
   $("sidebar").classList.remove("open");
   $("jsonEditor").focus();
@@ -2135,9 +2171,9 @@ window.addEventListener("message",event=>{
   openRequestedDish();
 });
 $("dishSearch").addEventListener("input",renderDishList);$("categoryFilter").addEventListener("change",renderDishList);
-$("jsonEditor").addEventListener("input",()=>{setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");updateLineNumbers();renderJsonSummary()});
+$("jsonEditor").addEventListener("input",()=>{setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");updateLineNumbers();renderJsonSummary();queueEditorAutosave()});
 $("jsonEditor").addEventListener("scroll",()=>{$("lineNumbers").scrollTop=$("jsonEditor").scrollTop});
-$("formatJson").addEventListener("click",()=>{try{$("jsonEditor").value=JSON.stringify(parseJson(),null,2);updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();setDirty(true);setStatus("JSON formatted.","ok")}catch(e){setStatus(`Invalid JSON: ${e.message}`,"error")}});
+$("formatJson").addEventListener("click",()=>{try{$("jsonEditor").value=JSON.stringify(parseJson(),null,2);updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();setDirty(true);setStatus("JSON formatted.","ok");queueEditorAutosave()}catch(e){setStatus(`Invalid JSON: ${e.message}`,"error")}});
 $("validateJson").addEventListener("click",()=>{try{const errors=validateDishJson(parseJson());if(errors.length){setValidation("invalid",`${errors.length} issue${errors.length>1?"s":""}`);setStatus(errors[0],"error")}else{setValidation("valid","Valid");setStatus("JSON is valid and ready to save.","ok")}}catch(e){setValidation("invalid","JSON error");setStatus(`Invalid JSON: ${e.message}`,"error")}});
 $("applyJson").addEventListener("click",applyJson);
 function addDishAliasFromInput(){
@@ -2155,8 +2191,9 @@ function addDishAliasFromInput(){
   data.aliases=normalizeAliases([...existing,alias],data.dishName);
   $("jsonEditor").value=JSON.stringify(data,null,2);
   input.value="";
-  setDirty(true);setValidation("","Not checked");setStatus("Dish alias added. Save to apply.","ok");
+  setDirty(true);setValidation("","Not checked");setStatus("Dish alias added. Autosaving…","ok");
   updateLineNumbers();renderJsonSummary();renderDishAliases(data);
+  queueEditorAutosave();
   input.focus();
 }
 $("addDishAlias").addEventListener("click",addDishAliasFromInput);
@@ -2173,8 +2210,9 @@ $("dishAliasChips").addEventListener("click",event=>{
   aliases.splice(Number(button.dataset.removeAlias),1);
   data.aliases=aliases;
   $("jsonEditor").value=JSON.stringify(data,null,2);
-  setDirty(true);setValidation("","Not checked");setStatus("Dish alias removed. Save to apply.");
+  setDirty(true);setValidation("","Not checked");setStatus("Dish alias removed. Autosaving…");
   updateLineNumbers();renderJsonSummary();renderDishAliases(data);
+  queueEditorAutosave();
 });
 $("visualRecipeEditor").addEventListener("change",event=>{
   if(!event.target.matches("input,select"))return;
@@ -2192,8 +2230,9 @@ $("ingredientCards").addEventListener("click",event=>{
   const data=parseJson();
   data.ingredients.splice(Number(removeButton.dataset.removeIngredient),1);
   $("jsonEditor").value=JSON.stringify(data,null,2);
-  setDirty(true);setValidation("","Not checked");setStatus("Ingredient removed. Save to apply.");
+  setDirty(true);setValidation("","Not checked");setStatus("Ingredient removed. Autosaving…");
   updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();
+  queueEditorAutosave();
 });
 $("addIngredientCard").addEventListener("click",()=>{
   const data=parseJson();
@@ -2202,6 +2241,7 @@ $("addIngredientCard").addEventListener("click",()=>{
   $("jsonEditor").value=JSON.stringify(data,null,2);
   setDirty(true);setValidation("","Not checked");setStatus("New ingredient added. Complete its details and save.");
   updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();
+  queueEditorAutosave();
   const lastCard=$("ingredientCards").lastElementChild;
   lastCard?.querySelector('[data-ingredient-field="name"]')?.focus();
 });
@@ -2252,7 +2292,10 @@ document.addEventListener("keydown",e=>{
 window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue=""}});
 document.documentElement.dataset.theme=new URLSearchParams(window.location.search).get("theme")||safeStorageGet(THEME_STORAGE)||"light";
 renderDishList();loadSelectedDish();renderRateTable();renderSelectedRate();
-void hydrateRecipeCatalog().then(()=>importDishCatalog());
+void hydrateRecipeCatalog().then(async()=>{
+  await importDishCatalog();
+  notifyParent();
+});
 </script>
 </body>
 </html>

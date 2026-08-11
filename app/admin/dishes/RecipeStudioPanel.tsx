@@ -19,6 +19,7 @@ type StudioStatus = {
   missingRates: number;
   selectedRecipe: string;
   dirty: boolean;
+  ready: boolean;
 };
 
 export type RecipeStudioDishRequest = {
@@ -37,6 +38,7 @@ const INITIAL_STATUS: StudioStatus = {
   missingRates: 0,
   selectedRecipe: '',
   dirty: false,
+  ready: false,
 };
 
 export default function RecipeStudioPanel({
@@ -164,7 +166,12 @@ export default function RecipeStudioPanel({
           payload.selectedRecipe || '',
         ),
         dirty: Boolean(payload.dirty),
+        ready: Boolean(payload.ready),
       });
+      if (payload.ready) {
+        setLoading(false);
+        setSlowLoad(false);
+      }
     };
 
     window.addEventListener(
@@ -439,8 +446,9 @@ export default function RecipeStudioPanel({
             src="/recipe-cost-studio.html?embedded=1&theme=dark"
             title="Menu Costing Recipe Cost Studio"
             onLoad={() => {
-              setLoading(false);
-              setSlowLoad(false);
+              // The document can load before its PostgreSQL catalog has
+              // hydrated. The studio status message dismisses this overlay
+              // once the authoritative recipe data is ready.
             }}
             onError={() => {
               setLoading(false);

@@ -85,8 +85,7 @@ function readCatalogPayload(value: unknown) {
 
   const rates = body.rates.map(normalizeIngredientRate);
   if (
-    rates.some((rate) => !rate) ||
-    rates.some((rate) => !(Number(rate?.rate) > 0))
+    rates.some((rate) => !rate)
   ) {
     return null;
   }
@@ -172,17 +171,12 @@ function readCatalogPayload(value: unknown) {
               rate > 0,
           );
 
-          if (!marketRate) {
-            invalidIngredient = true;
-            return ingredientValue;
-          }
-
           master = {
             id: normalizedId,
             name,
             category:
               inferIngredientCategory(name),
-            rate: marketRate,
+            rate: marketRate || 0,
             unit,
           };
 
