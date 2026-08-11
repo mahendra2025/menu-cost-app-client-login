@@ -1,0 +1,728 @@
+import { Prisma } from '@prisma/client';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+
+import defaultRecipesData from '../../../../../lib/defaultRecipes.json';
+import {
+  getAdminCookieName,
+  isValidAdminSessionToken,
+} from '../../../../../lib/adminAuth';
+import {
+  normalizeIngredientRate,
+} from '../../../../../lib/ingredientCatalog';
+import { prisma } from '../../../../../lib/prisma';
+import {
+  buildRecipeMap,
+  calculateRecipeCost,
+  fillRecipeIngredientRates,
+  normalizeRecipeName,
+  readCostableRecipe,
+  type CostableRecipe,
+} from '../../../../../lib/recipeCosting';
+import {
+  requestStructuredAi,
+  structuredAiProvider,
+} from '../../../../../lib/structuredAi';
+
+const WASTAGE_RATE = 0.08;
+
+function clean(
+  value: unknown,
+  max = 120,
+) {
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+}
+
+function withWastage(
+  rawCostPerPlate: number,
+) {
+  return Math.round(
+    rawCostPerPlate *
+      (1 + WASTAGE_RATE) *
+      100,
+  ) / 100;
+}
+
+function costingSummary(
+  rawCostPerPlate: number,
+  baseGuests: number,
+) {
+  const guests =
+    Math.max(
+      1,
+      baseGuests,
+    );
+
+  const rawTotal =
+    rawCostPerPlate *
+    guests;
+
+  const wastageTotal =
+    rawTotal *
+    WASTAGE_RATE;
+
+  const totalCost =
+    rawTotal +
+    wastageTotal;
+
+  return {
+    rawCostPerPlate:
+      Math.round(
+        rawCostPerPlate *
+          100,
+      ) / 100,
+
+    wastagePercent: 8,
+
+    wastagePerPlate:
+      Math.round(
+        rawCostPerPlate *
+          WASTAGE_RATE *
+          100,
+      ) / 100,
+
+    costPerPlate:
+      Math.round(
+        totalCost /
+          guests *
+          100,
+      ) / 100,
+
+    rawTotal:
+      Math.round(
+        rawTotal *
+          100,
+      ) / 100,
+
+    wastageTotal:
+      Math.round(
+        wastageTotal *
+          100,
+      ) / 100,
+
+    totalCost:
+      Math.round(
+        totalCost *
+          100,
+      ) / 100,
+  };
+}
+
+async function requireAdmin() {
+  const cookieStore =
+    await cookies();
+
+  const token =
+    cookieStore.get(
+      getAdminCookieName(),
+    )?.value;
+
+  if (
+    !isValidAdminSessionToken(
+      token,
+    )
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          'Admin login required',
+      },
+      {
+        status: 401,
+      },
+    );
+  }
+
+  return null;
+}
+
+async function generateRecipe(
+  name: string,
+  category: string,
+  availableIngredients:
+    Array<{
+      name: string;
+      unit: string;
+    }>,
+) {
+  if (!structuredAiProvider()) {
+    return null;
+  }
+
+  const schema:
+    Record<string, unknown> = {
+    type: 'object',
+    additionalProperties:
+      false,
+
+    required: [
+      'recipe',
+    ],
+
+    properties: {
+      recipe: {
+        type: 'object',
+        additionalProperties:
+          false,
+
+        required: [
+          'name',
+          'baseGuests',
+          'ingredients',
+        ],
+
+        properties: {
+          name: {
+            type: 'string',
+          },
+
+          baseGuests: {
+            type: 'integer',
+            const: 100,
+          },
+
+          ingredients: {
+            type: 'array',
+            minItems: 4,
+            maxItems: 15,
+
+            items: {
+              type: 'object',
+              additionalProperties:
+                false,
+
+              required: [
+                'name',
+                'quantity',
+                'unit',
+              ],
+
+              properties: {
+                name: {
+                  type: 'string',
+                },
+
+                quantity: {
+                  type: 'number',
+                  exclusiveMinimum: 0,
+                },
+
+                unit: {
+                  type: 'string',
+
+                  enum: [
+                    'kg',
+                    'gram',
+                    'ltr',
+                    'ml',
+                    'piece',
+                    'packet',
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  const raw =
+    await requestStructuredAi({
+      schemaName:
+        'approved_dish_auto_recipe',
+
+      schema,
+
+      maxOutputTokens:
+        1400,
+
+      instructions: [
+        'Create one practical Indian catering production recipe for exactly 100 guests.',
+        'Return the requested dish only.',
+        'Use realistic bulk catering quantities.',
+        'Prefer supplied Ingredient Master names and units.',
+        'Include the important material cost drivers.',
+        'Use 6 to 12 ingredients when appropriate.',
+        'Do not include optional garnish unless it materially affects cost.',
+        'Use kg, gram, ltr, ml, piece, or packet only.',
+        'Do not apply wastage inside ingredient quantities; the costing system applies exactly 8% wastage separately.',
+      ].join('\n'),
+
+      input:
+        JSON.stringify({
+          dish: {
+            name,
+            category,
+          },
+
+          availableIngredients,
+        }),
+    });
+
+  const parsed =
+    JSON.parse(raw) as {
+      recipe?: unknown;
+    };
+
+  return readCostableRecipe(
+    parsed.recipe,
+  );
+}
+
+export async function POST(
+  request: Request,
+) {
+  try {
+    const authError =
+      await requireAdmin();
+
+    if (authError) {
+      return authError;
+    }
+
+    const body =
+      await request.json() as
+        Record<
+          string,
+          unknown
+        >;
+
+    const tenantId =
+      clean(
+        body.tenantId,
+        90,
+      );
+
+    const name =
+      clean(
+        body.name,
+        120,
+      );
+
+    const category =
+      clean(
+        body.category,
+        60,
+      ) || 'Other';
+
+    if (
+      !tenantId ||
+      !name
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Tenant and dish name are required',
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const tenant =
+      await prisma
+        .tenant
+        .findUnique({
+          where: {
+            id: tenantId,
+          },
+
+          select: {
+            id: true,
+          },
+        });
+
+    if (!tenant) {
+      return NextResponse.json(
+        {
+          error:
+            'Source tenant no longer exists',
+        },
+        {
+          status: 404,
+        },
+      );
+    }
+
+    const normalizedName =
+      normalizeRecipeName(
+        name,
+      );
+
+    const [
+      catalog,
+      overrides,
+      saved,
+    ] =
+      await Promise.all([
+        prisma.recipeCatalog
+          .findUnique({
+            where: {
+              id: 'global',
+            },
+
+            select: {
+              dishes: true,
+              rates: true,
+            },
+          }),
+
+        prisma.tenantIngredientRate
+          .findMany({
+            where: {
+              tenantId,
+            },
+
+            select: {
+              ingredientId:
+                true,
+              rate: true,
+            },
+          }),
+
+        prisma.tenantAutoRecipe
+          .findUnique({
+            where: {
+              tenantId_normalizedName:
+                {
+                  tenantId,
+                  normalizedName,
+                },
+            },
+          }),
+      ]);
+
+    const masterRates =
+      Array.isArray(
+        catalog?.rates,
+      )
+        ? catalog.rates
+        : [];
+
+    const historicalRecipes = [
+      ...(
+        Array.isArray(
+          defaultRecipesData,
+        )
+          ? defaultRecipesData
+          : []
+      ),
+
+      ...(
+        Array.isArray(
+          catalog?.dishes,
+        )
+          ? catalog.dishes
+          : []
+      ),
+    ];
+
+    const catalogMap =
+      buildRecipeMap(
+        historicalRecipes,
+      );
+
+    const overrideMap =
+      new Map(
+        overrides.map(
+          (item) => [
+            item.ingredientId,
+            item.rate,
+          ],
+        ),
+      );
+
+    let recipe:
+      CostableRecipe | null =
+        catalogMap.get(
+          normalizedName,
+        ) || null;
+
+    let source =
+      recipe
+        ? 'catalog_recipe'
+        : '';
+
+    if (
+      !recipe &&
+      saved
+    ) {
+      recipe =
+        readCostableRecipe({
+          name:
+            saved.name,
+
+          baseGuests:
+            saved.baseGuests,
+
+          ingredients:
+            saved.ingredients,
+        });
+
+      source =
+        recipe
+          ? 'saved_recipe'
+          : '';
+    }
+
+    if (!recipe) {
+      const availableIngredients =
+        masterRates
+          .map(
+            normalizeIngredientRate,
+          )
+          .filter(
+            (
+              rate,
+            ): rate is
+              NonNullable<
+                typeof rate
+              > =>
+                Boolean(rate),
+          )
+          .filter(
+            (rate) =>
+              rate.rate > 0,
+          )
+          .slice(
+            0,
+            180,
+          )
+          .map(
+            (rate) => ({
+              name:
+                rate.name,
+              unit:
+                rate.unit,
+            }),
+          );
+
+      recipe =
+        await generateRecipe(
+          name,
+          category,
+          availableIngredients,
+        );
+
+      source =
+        recipe
+          ? 'ai_recipe'
+          : '';
+    }
+
+    if (!recipe) {
+      return NextResponse.json(
+        {
+          error:
+            structuredAiProvider()
+              ? 'Recipe generation returned no usable recipe'
+              : 'OpenAI is not configured and no existing recipe was found',
+        },
+        {
+          status: 503,
+        },
+      );
+    }
+
+    /*
+     * Tenant-specific costing uses that tenant's ingredient overrides.
+     */
+    const tenantPriced =
+      fillRecipeIngredientRates(
+        recipe,
+        masterRates,
+        historicalRecipes,
+        overrideMap,
+      );
+
+    const tenantRaw =
+      calculateRecipeCost(
+        tenantPriced.recipe,
+        masterRates,
+        overrideMap,
+      );
+
+    const tenantCost =
+      costingSummary(
+        tenantRaw.costPerPlate,
+        tenantPriced
+          .recipe
+          .baseGuests,
+      );
+
+    /*
+     * Standard master rate uses Ingredient Master values only.
+     * This prevents one client's custom rates from becoming the
+     * global Dish Master rate.
+     */
+    const standardPriced =
+      fillRecipeIngredientRates(
+        recipe,
+        masterRates,
+        historicalRecipes,
+        new Map(),
+      );
+
+    const standardRaw =
+      calculateRecipeCost(
+        standardPriced.recipe,
+        masterRates,
+        new Map(),
+      );
+
+    const standardCost =
+      costingSummary(
+        standardRaw.costPerPlate,
+        standardPriced
+          .recipe
+          .baseGuests,
+      );
+
+    await prisma
+      .$transaction(
+        async (tx) => {
+          await tx
+            .tenantAutoRecipe
+            .upsert({
+              where: {
+                tenantId_normalizedName:
+                  {
+                    tenantId,
+                    normalizedName,
+                  },
+              },
+
+              create: {
+                tenantId,
+                normalizedName,
+                name,
+                category,
+
+                baseGuests:
+                  tenantPriced
+                    .recipe
+                    .baseGuests,
+
+                ingredients:
+                  tenantPriced
+                    .recipe
+                    .ingredients as Prisma.InputJsonValue,
+
+                costPerPlate:
+                  tenantCost
+                    .costPerPlate,
+              },
+
+              update: {
+                name,
+                category,
+
+                baseGuests:
+                  tenantPriced
+                    .recipe
+                    .baseGuests,
+
+                ingredients:
+                  tenantPriced
+                    .recipe
+                    .ingredients as Prisma.InputJsonValue,
+
+                costPerPlate:
+                  tenantCost
+                    .costPerPlate,
+              },
+            });
+
+          const masterDish =
+            await tx
+              .dishMasterItem
+              .findFirst({
+                where: {
+                  name: {
+                    equals:
+                      name,
+
+                    mode:
+                      'insensitive',
+                  },
+                },
+
+                select: {
+                  id: true,
+                },
+              });
+
+          if (masterDish) {
+            await tx
+              .dishMasterItem
+              .update({
+                where: {
+                  id:
+                    masterDish.id,
+                },
+
+                data: {
+                  rate:
+                    standardCost
+                      .costPerPlate,
+                },
+              });
+          }
+        },
+      );
+
+    return NextResponse.json({
+      ok: true,
+      name,
+      tenantId,
+      source,
+
+      baseGuests:
+        tenantPriced
+          .recipe
+          .baseGuests,
+
+      ingredientCount:
+        tenantPriced
+          .recipe
+          .ingredients
+          .length,
+
+      estimatedIngredientRates:
+        tenantPriced
+          .estimatedRates,
+
+      missingRates:
+        tenantRaw
+          .missingRates,
+
+      cost:
+        tenantCost,
+
+      standardCostPerPlate:
+        standardCost
+          .costPerPlate,
+    });
+  } catch (error) {
+    console.error(
+      'Admin auto recipe build failed:',
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          'Could not automatically build and cost the recipe',
+      },
+      {
+        status: 500,
+      },
+    );
+  }
+}

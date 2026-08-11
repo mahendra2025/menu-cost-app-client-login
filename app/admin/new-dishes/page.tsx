@@ -90,6 +90,27 @@ type CatalogMatch = {
   reason: string;
 };
 
+type AutoBuildResult = {
+  name: string;
+  tenantId: string;
+  source: string;
+  baseGuests: number;
+  ingredientCount: number;
+  estimatedIngredientRates: number;
+  missingRates: number;
+  standardCostPerPlate: number;
+
+  cost: {
+    rawCostPerPlate: number;
+    wastagePercent: number;
+    wastagePerPlate: number;
+    costPerPlate: number;
+    rawTotal: number;
+    wastageTotal: number;
+    totalCost: number;
+  };
+};
+
 function normalizeReviewText(
   value: string,
 ) {
@@ -347,6 +368,14 @@ export default function NewDishesPage() {
     useState(false);
   const [requestedRecipeDish, setRequestedRecipeDish] =
     useState<RecipeStudioDishRequest | null>(null);
+
+  const [
+    lastAutoBuild,
+    setLastAutoBuild,
+  ] =
+    useState<AutoBuildResult | null>(
+      null,
+    );
 
   async function loadQueue() {
     setLoading(true);
@@ -849,33 +878,136 @@ export default function NewDishesPage() {
         );
       }
 
+      let autoBuildResult:
+        AutoBuildResult | null =
+          null;
+
+      let autoBuildError = '';
+
+      if (
+        buildRecipe &&
+        row.saveAs === 'new'
+      ) {
+        try {
+          const buildResponse =
+            await fetch(
+              '/api/admin/dish-suggestions/auto-build',
+              {
+                method: 'POST',
+
+                headers: {
+                  'Content-Type':
+                    'application/json',
+                },
+
+                body:
+                  JSON.stringify({
+                    tenantId:
+                      row.tenantId,
+
+                    name:
+                      row.dishName
+                        .trim(),
+
+                    category:
+                      row.category
+                        .trim() ||
+                      'Other',
+
+                    subcategory:
+                      row.subcategory
+                        .trim(),
+                  }),
+              },
+            );
+
+          const buildData =
+            await buildResponse
+              .json() as
+                AutoBuildResult & {
+                  error?: string;
+                };
+
+          if (
+            !buildResponse.ok
+          ) {
+            throw new Error(
+              buildData.error ||
+                'Automatic recipe build failed',
+            );
+          }
+
+          autoBuildResult =
+            buildData;
+
+          setLastAutoBuild(
+            buildData,
+          );
+        } catch (
+          buildError
+        ) {
+          autoBuildError =
+            buildError instanceof
+            Error
+              ? buildError.message
+              : 'Automatic recipe build failed';
+        }
+      }
+
       setRows((current) =>
         current.filter(
           (item) =>
             item.id !== row.id,
         ),
       );
-      setMessageType('success');
-      setMessage(
-        buildRecipe
-          ? `${row.dishName.trim()} was added. Its recipe is ready below.`
-          : row.saveAs === 'alias'
-          ? `${row.dishName.trim()} was added as an alias of ${aliasTarget?.name}.`
-          : `${row.dishName.trim()} was added to the Dish Catalog.`,
-      );
-      if (buildRecipe && row.saveAs === 'new') {
+
+      if (autoBuildResult) {
+        setMessageType(
+          'success',
+        );
+
+        setMessage(
+          `${row.dishName.trim()} approved, 100-pax recipe saved and costed at ₹${autoBuildResult.cost.costPerPlate.toFixed(2)}/plate including 8% wastage.`,
+        );
+      } else if (
+        autoBuildError
+      ) {
+        setMessageType(
+          'error',
+        );
+
+        setMessage(
+          `${row.dishName.trim()} was approved, but automatic recipe building failed: ${autoBuildError}`,
+        );
+
         setRequestedRecipeDish({
-          requestId: `new_dish_recipe_${row.id}_${Date.now()}`,
-          name: row.dishName.trim(),
-          category: row.category.trim() || 'Other',
-          subcategory: row.subcategory.trim(),
+          requestId:
+            `new_dish_recipe_${row.id}_${Date.now()}`,
+
+          name:
+            row.dishName.trim(),
+
+          category:
+            row.category.trim() ||
+            'Other',
+
+          subcategory:
+            row.subcategory.trim(),
         });
-        setRecipeStudioOpened(true);
-        window.requestAnimationFrame(() => {
-          document
-            .getElementById('new-dish-recipe-studio')
-            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
+
+        setRecipeStudioOpened(
+          true,
+        );
+      } else {
+        setMessageType(
+          'success',
+        );
+
+        setMessage(
+          row.saveAs === 'alias'
+            ? `${row.dishName.trim()} was added as an alias of ${aliasTarget?.name}.`
+            : `${row.dishName.trim()} was added to the Dish Catalog.`,
+        );
       }
     } catch (error) {
       setMessageType('error');
@@ -2298,7 +2430,7 @@ export default function NewDishesPage() {
                     >
                       {workingId === row.id
                         ? 'Saving…'
-                        : 'Add Dish & Build Recipe'}
+                        : 'Approve + Auto Build'}
                     </button>
                   ) : null}
                 </div>
@@ -2306,6 +2438,150 @@ export default function NewDishesPage() {
             ))}
           </div>
         </div>
+
+        {lastAutoBuild ? (
+          <div className="glass-card new-dish-auto-build-result">
+            <div className="new-dish-auto-build-heading">
+              <div>
+                <span className="section-kicker">
+                  Latest automatic recipe
+                </span>
+
+                <h2>
+                  {lastAutoBuild.name}
+                </h2>
+
+                <p>
+                  100-pax recipe saved and ready for menu costing.
+                </p>
+              </div>
+
+              <span className="new-dish-auto-build-ready">
+                ✓ Ready for Costing
+              </span>
+            </div>
+
+            <div className="new-dish-auto-build-grid">
+              <div>
+                <span>
+                  Raw ingredient cost
+                </span>
+
+                <strong>
+                  ₹
+                  {lastAutoBuild.cost.rawCostPerPlate.toFixed(2)}
+                </strong>
+
+                <small>
+                  Per plate
+                </small>
+              </div>
+
+              <div>
+                <span>
+                  Wastage
+                </span>
+
+                <strong>
+                  8%
+                </strong>
+
+                <small>
+                  ₹
+                  {lastAutoBuild.cost.wastagePerPlate.toFixed(2)}
+                  {' '}per plate
+                </small>
+              </div>
+
+              <div className="is-primary">
+                <span>
+                  Final dish cost
+                </span>
+
+                <strong>
+                  ₹
+                  {lastAutoBuild.cost.costPerPlate.toFixed(2)}
+                </strong>
+
+                <small>
+                  Including wastage
+                </small>
+              </div>
+
+              <div>
+                <span>
+                  100-pax total
+                </span>
+
+                <strong>
+                  ₹
+                  {lastAutoBuild.cost.totalCost.toFixed(2)}
+                </strong>
+
+                <small>
+                  Full batch
+                </small>
+              </div>
+
+              <div>
+                <span>
+                  Ingredients
+                </span>
+
+                <strong>
+                  {lastAutoBuild.ingredientCount}
+                </strong>
+
+                <small>
+                  Recipe items
+                </small>
+              </div>
+
+              <div>
+                <span>
+                  Estimated rates
+                </span>
+
+                <strong>
+                  {lastAutoBuild.estimatedIngredientRates}
+                </strong>
+
+                <small>
+                  Need later review
+                </small>
+              </div>
+            </div>
+
+            <div className="new-dish-auto-build-footer">
+              <span>
+                Source:{' '}
+                <b>
+                  {lastAutoBuild.source.replaceAll('_', ' ')}
+                </b>
+              </span>
+
+              <span>
+                Standard master cost:{' '}
+                <b>
+                  ₹
+                  {lastAutoBuild.standardCostPerPlate.toFixed(2)}
+                </b>
+              </span>
+
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() =>
+                  setRecipeStudioOpened(
+                    true,
+                  )
+                }
+              >
+                Review / Edit Recipe
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div id="new-dish-recipe-studio">
           {recipeStudioOpened ? (

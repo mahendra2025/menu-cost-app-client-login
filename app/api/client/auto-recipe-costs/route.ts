@@ -19,6 +19,13 @@ import {
 } from '../../../../lib/structuredAi';
 
 const MAX_DISHES = 80;
+const WASTAGE_RATE = 0.08;
+
+function withWastage(costPerPlate: number) {
+  return Math.round(
+    costPerPlate * (1 + WASTAGE_RATE) * 100,
+  ) / 100;
+}
 
 type RequestedDish = {
   name: string;
@@ -204,14 +211,14 @@ export async function POST(request: Request) {
           category: requested.category,
           baseGuests: priced.recipe.baseGuests,
           ingredients: priced.recipe.ingredients as Prisma.InputJsonValue,
-          costPerPlate: costing.costPerPlate,
+          costPerPlate: withWastage(costing.costPerPlate),
         },
         update: {
           name: requested.name,
           category: requested.category,
           baseGuests: priced.recipe.baseGuests,
           ingredients: priced.recipe.ingredients as Prisma.InputJsonValue,
-          costPerPlate: costing.costPerPlate,
+          costPerPlate: withWastage(costing.costPerPlate),
         },
       });
       savedMap.set(key, { ...priced.recipe, name: requested.name });
@@ -236,7 +243,9 @@ export async function POST(request: Request) {
       return {
         requestedName: dish.name,
         matchedName: recipe?.name || dish.name,
-        costPerPlate: costing.costPerPlate,
+        costPerPlate: withWastage(costing.costPerPlate),
+        rawCostPerPlate: costing.costPerPlate,
+        wastagePercent: 8,
         missingRates: costing.missingRates,
         estimatedIngredientRates: priced?.estimatedRates || 0,
         recipeAvailable: Boolean(recipe),
