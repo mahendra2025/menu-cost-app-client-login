@@ -1665,15 +1665,16 @@ export async function findPendingDishCandidates(
           );
 
         /*
-         * A meal/service heading alone is not enough evidence: OCR often
-         * reads client, venue, and footer text inside the same section.
-         * Unknown text is offered as a manual dish only when it is under a
-         * recognized food category, explicitly bulleted, or surrounded by
-         * two catalog-confirmed dishes.
+         * Recall-first menu detection.
+         *
+         * Keep short unknown menu-looking lines when they are inside a
+         * recognized meal/service. It is safer to show a possible dish in
+         * preview than to silently lose a real dish.
          */
         return Boolean(
           line.categoryHint ||
             line.explicitItem ||
+            Boolean(line.serviceId) ||
             (previousIsDish &&
               nextIsDish),
         );
@@ -1697,8 +1698,7 @@ export async function findPendingDishCandidates(
           .filter(Boolean);
 
         return (
-          words.length >=
-            (line.explicitItem ? 1 : 2) &&
+          words.length >= 1 &&
           words.length <= 8 &&
           !/[!?]|\.(?:\s|$)/.test(
             line.text,

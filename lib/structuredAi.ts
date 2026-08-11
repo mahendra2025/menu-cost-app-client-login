@@ -36,7 +36,6 @@ function readOpenAIOutput(value: OpenAIResponse) {
 }
 
 export function structuredAiProvider() {
-  if (process.env.OLLAMA_BASE_URL?.trim()) return 'ollama' as const;
   if (process.env.OPENAI_API_KEY?.trim()) return 'openai' as const;
   return null;
 }

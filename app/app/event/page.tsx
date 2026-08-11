@@ -790,6 +790,40 @@ export default function EventPage() {
         | 'ai'
         | 'rules' = 'rules';
 
+      /*
+       * Always run deterministic local detection alongside AI.
+       *
+       * Previously local detection only ran when AI completely failed.
+       * This meant a successful AI response could still silently omit
+       * several dishes.
+       */
+      const localDetectionPromise =
+        Promise.all([
+          parseMenuText(rawMenuText),
+          findPendingDishCandidates(
+            rawMenuText,
+          ),
+        ]);
+
+      const coverageKey = (
+        item: Pick<
+          MenuItem,
+          | 'name'
+          | 'dayLabel'
+          | 'mealLabel'
+        >,
+      ) =>
+        [
+          dishNameKey(
+            item.dayLabel || 'event',
+          ),
+          dishNameKey(
+            item.mealLabel ||
+              'event menu',
+          ),
+          dishNameKey(item.name),
+        ].join('::');
+
       try {
         const extraction =
           await requestAiMenuExtraction(
@@ -901,6 +935,88 @@ export default function EventPage() {
                 }
               },
             );
+          },
+        );
+
+        /*
+         * Merge local detection with AI detection.
+         *
+         * AI understands unusual/new dish names.
+         * Local detection is reliable for known catalog dishes.
+         * Combining both gives much better recall.
+         */
+        const [
+          localCatalogMenu,
+          pendingCandidates,
+        ] =
+          await localDetectionPromise;
+
+        const detectedKeys =
+          new Set(
+            [
+              ...catalogMenu,
+              ...manualMenu,
+            ].map(coverageKey),
+          );
+
+        localCatalogMenu.forEach(
+          (item) => {
+            const key =
+              coverageKey(item);
+
+            if (
+              detectedKeys.has(key)
+            ) {
+              return;
+            }
+
+            detectedKeys.add(key);
+
+            catalogMenu.push(item);
+          },
+        );
+
+        pendingCandidates.forEach(
+          (candidate) => {
+            const item: MenuItem = {
+              id: uid('dish'),
+
+              name: candidate.name,
+
+              category:
+                candidate.categoryHint ||
+                'Other',
+
+              costPerPlate: 0,
+
+              portionQuantity: 1,
+              portionUnit: 'serving',
+
+              serviceId:
+                candidate.serviceId,
+
+              dayLabel:
+                candidate.dayLabel,
+
+              mealLabel:
+                candidate.mealLabel,
+
+              servicePax:
+                candidate.servicePax,
+            };
+
+            const key =
+              coverageKey(item);
+
+            if (
+              detectedKeys.has(key)
+            ) {
+              return;
+            }
+
+            detectedKeys.add(key);
+
+            manualMenu.push(item);
           },
         );
 

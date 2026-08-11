@@ -99,10 +99,21 @@ export async function POST(request: Request) {
     const output = await requestStructuredAi({
       schemaName: 'catering_menu_extraction',
       schema: MENU_SCHEMA,
-      maxOutputTokens: Math.min(8_000, Math.max(700, sourceLineCount * 80)),
+      maxOutputTokens: Math.min(
+        20_000,
+        Math.max(
+          1_500,
+          sourceLineCount * 120,
+        ),
+      ),
       instructions: [
         'You extract structured catering menus from OCR or pasted text.',
         'The source may contain English, Hindi, Gujarati, transliteration, spelling errors, columns, headers, addresses, and decorative text.',
+        'Completeness is critical. Inspect every source line and return every distinct real food or beverage item.',
+        'Include unfamiliar or completely new dishes even when they do not exist in a known recipe catalog.',
+        'If one source line contains multiple dishes separated by commas, slashes, pipes, bullets, numbering, or repeated spacing, split them into separate dish objects.',
+        'Do not omit a real dish merely because its spelling is uncertain.',
+        'Preserve the recognizable source dish name and correct only obvious OCR mistakes.',
         'Return only real food or beverage dishes. Never treat people, venues, phone numbers, slogans, prices, package names, or generic sentences as dishes.',
         'Preserve the recognizable dish name, correcting obvious OCR spacing and spelling only when confident.',
         'Group dishes by day and meal/function. Use Event Menu when no meal is stated.',
