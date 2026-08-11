@@ -8,6 +8,7 @@ import { prisma } from '../../../../lib/prisma';
 import {
   buildRecipeMap,
   calculateRecipeCost,
+  fillRecipeIngredientRates,
   normalizeRecipeName,
   readCostableRecipe,
   type CostableRecipe,
@@ -93,7 +94,8 @@ async function generateRecipes(
       instructions: [
         'Create practical Indian catering production recipes for exactly 100 guests.',
         'Return one recipe for every requested dish and do not add extra dishes.',
-        'Use only ingredient names and purchase units from the supplied ingredient catalog.',
+        'Prefer ingredient names and purchase units from the supplied ingredient catalog.',
+        'If an essential ingredient is missing from the catalog, include its standard market name and the most appropriate supported purchase unit.',
         'Quantities must be realistic production quantities, not per-person quantities.',
         'Use kg, gram, ltr, ml, piece, or packet exactly as supplied.',
         'This is an editable costing estimate, so prefer a concise ingredient list of the material cost drivers.',
@@ -152,6 +154,10 @@ export async function POST(request: Request) {
       ...(Array.isArray(defaultRecipesData) ? defaultRecipesData : []),
       ...(Array.isArray(catalog?.dishes) ? catalog.dishes : []),
     ]);
+    const historicalRecipes = [
+      ...(Array.isArray(defaultRecipesData) ? defaultRecipesData : []),
+      ...(Array.isArray(catalog?.dishes) ? catalog.dishes : []),
+    ];
     const savedMap = new Map(
       savedRecipes.flatMap((saved) => {
         const recipe = readCostableRecipe({
@@ -172,15 +178,23 @@ export async function POST(request: Request) {
       .filter((rate) => (overrideMap.get(rate.id) ?? rate.rate) > 0)
       .slice(0, 800)
       .map((rate) => ({ name: rate.name, unit: rate.unit }));
-    const generated = ingredientCatalog.length
-      ? await generateRecipes(missing, ingredientCatalog)
-      : [];
+    const generated = await generateRecipes(missing, ingredientCatalog);
 
     for (const recipe of generated) {
       const key = normalizeRecipeName(recipe.name);
       const requested = unique.get(key);
       if (!requested) continue;
-      const costing = calculateRecipeCost(recipe, masterRates, overrideMap);
+      const priced = fillRecipeIngredientRates(
+        recipe,
+        masterRates,
+        historicalRecipes,
+        overrideMap,
+      );
+      const costing = calculateRecipeCost(
+        priced.recipe,
+        masterRates,
+        overrideMap,
+      );
       await prisma.tenantAutoRecipe.upsert({
         where: { tenantId_normalizedName: { tenantId, normalizedName: key } },
         create: {
@@ -188,24 +202,33 @@ export async function POST(request: Request) {
           normalizedName: key,
           name: requested.name,
           category: requested.category,
-          baseGuests: recipe.baseGuests,
-          ingredients: recipe.ingredients as Prisma.InputJsonValue,
+          baseGuests: priced.recipe.baseGuests,
+          ingredients: priced.recipe.ingredients as Prisma.InputJsonValue,
           costPerPlate: costing.costPerPlate,
         },
         update: {
           name: requested.name,
           category: requested.category,
-          baseGuests: recipe.baseGuests,
-          ingredients: recipe.ingredients as Prisma.InputJsonValue,
+          baseGuests: priced.recipe.baseGuests,
+          ingredients: priced.recipe.ingredients as Prisma.InputJsonValue,
           costPerPlate: costing.costPerPlate,
         },
       });
-      savedMap.set(key, { ...recipe, name: requested.name });
+      savedMap.set(key, { ...priced.recipe, name: requested.name });
     }
 
     const results = Array.from(unique.entries()).map(([key, dish]) => {
       const catalogRecipe = catalogMap.get(key);
-      const recipe = catalogRecipe || savedMap.get(key);
+      const storedRecipe = catalogRecipe || savedMap.get(key);
+      const priced = storedRecipe
+        ? fillRecipeIngredientRates(
+            storedRecipe,
+            masterRates,
+            historicalRecipes,
+            overrideMap,
+          )
+        : null;
+      const recipe = priced?.recipe;
       const costing = recipe
         ? calculateRecipeCost(recipe, masterRates, overrideMap)
         : { costPerPlate: 0, missingRates: 0 };
@@ -215,6 +238,7 @@ export async function POST(request: Request) {
         matchedName: recipe?.name || dish.name,
         costPerPlate: costing.costPerPlate,
         missingRates: costing.missingRates,
+        estimatedIngredientRates: priced?.estimatedRates || 0,
         recipeAvailable: Boolean(recipe),
         source: catalogRecipe ? 'catalog_recipe' : recipe ? 'ai_recipe' : 'unresolved',
       };
