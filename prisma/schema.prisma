@@ -20,6 +20,7 @@ model Tenant {
   onboardingCompleted    Boolean    @default(true)
   works                  MenuWork[]
   ingredientRates        TenantIngredientRate[]
+  autoRecipes            TenantAutoRecipe[]
   freeCostings            TenantFreeCosting[]
   costingHistory          TenantCostingHistory[]
   quotations              TenantQuotation[]
@@ -30,6 +31,23 @@ model Tenant {
   subscriptionStatus     String?
   currentPeriodEnd       DateTime?
   cancelAtPeriodEnd      Boolean    @default(false)
+}
+
+model TenantAutoRecipe {
+  id             String   @id @default(cuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  normalizedName String
+  name           String
+  category       String   @default("Other")
+  baseGuests     Int      @default(100)
+  ingredients    Json
+  costPerPlate   Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([tenantId, normalizedName])
+  @@index([tenantId, updatedAt])
 }
 
 model MenuWork {

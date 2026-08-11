@@ -49,6 +49,7 @@ export type MenuItem = {
   dayLabel?: string;
   mealLabel?: string;
   servicePax?: number;
+  costSource?: 'catalog' | 'catalog_recipe' | 'ai_recipe' | 'manual';
 };
 
 export type ExtraCost = {

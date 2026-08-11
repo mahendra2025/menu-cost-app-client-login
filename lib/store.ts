@@ -358,6 +358,18 @@ async function syncDraftToServer(
   }
 }
 
+export async function flushDraftToServer(
+  tenantId: string,
+  work: WorkState,
+) {
+  const timer = draftServerSyncTimers.get(tenantId);
+  if (timer !== undefined) {
+    window.clearTimeout(timer);
+    draftServerSyncTimers.delete(tenantId);
+  }
+  await syncDraftToServer(work);
+}
+
 function scheduleDraftServerSync(
   tenantId: string,
   work: WorkState,

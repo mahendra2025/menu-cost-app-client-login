@@ -342,7 +342,10 @@ export default function CostPage() {
                             <td>
                               <div className="dish-cost-name">
                                 <b>{item.name}</b>
-                                <small>{item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}</small>
+                                <small>
+                                  {item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}
+                                  {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
+                                </small>
                               </div>
                             </td>
                             <td><span className="dish-category-chip">{item.category}</span></td>

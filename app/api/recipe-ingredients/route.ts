@@ -66,7 +66,9 @@ export async function POST(request: Request) {
     const cookieStore = await cookies();
     const token = cookieStore.get(getClientCookieName())?.value;
 
-    if (!readClientSessionToken(token)) {
+    const tenantId = readClientSessionToken(token);
+
+    if (!tenantId) {
       return NextResponse.json(
         { error: 'Client login required' },
         { status: 401 },
@@ -78,16 +80,27 @@ export async function POST(request: Request) {
       ? body.dishNames.map(normalize).filter(Boolean)
       : [];
 
-    const catalog = await prisma.recipeCatalog.findUnique({
-      where: { id: 'global' },
-      select: { dishes: true },
-    });
+    const [catalog, autoRecipes] = await Promise.all([
+      prisma.recipeCatalog.findUnique({
+        where: { id: 'global' },
+        select: { dishes: true },
+      }),
+      prisma.tenantAutoRecipe.findMany({
+        where: { tenantId },
+        select: {
+          name: true,
+          baseGuests: true,
+          ingredients: true,
+        },
+      }),
+    ]);
 
     const recipeMap = new Map<string, ReturnType<typeof readRecipe>>();
 
     [
       ...(Array.isArray(defaultRecipesData) ? defaultRecipesData : []),
       ...(Array.isArray(catalog?.dishes) ? catalog.dishes : []),
+      ...autoRecipes,
     ].forEach((value) => {
       const recipe = readRecipe(value);
       if (!recipe) return;

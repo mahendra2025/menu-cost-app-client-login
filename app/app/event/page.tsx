@@ -20,6 +20,7 @@ import {
 
 import {
   findPendingDishCandidates,
+  flushDraftToServer,
   flushWorkSave,
   getSession,
   loadWork,
@@ -308,6 +309,16 @@ function menuItemIdentity(
     `${normalize(item.dayLabel || 'event')}::${normalize(item.mealLabel || 'event menu')}`;
 
   return `${serviceKey}::${normalize(item.name)}::${normalize(item.category)}`;
+}
+
+function dishNameKey(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 async function requestAiMenuExtraction(
@@ -949,7 +960,7 @@ export default function EventPage() {
           );
       }
 
-      const detectedMenu = [
+      let detectedMenu = [
         ...catalogMenu,
         ...manualMenu,
       ];
@@ -967,8 +978,72 @@ export default function EventPage() {
         return;
       }
 
+      try {
+        const recipeResponse = await fetch(
+          '/api/client/auto-recipe-costs',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              dishes: detectedMenu
+                .filter((item) => !(Number(item.costPerPlate) > 0))
+                .map((item) => ({
+                  name: item.name,
+                  category: item.category,
+                })),
+            }),
+          },
+        );
+        const recipeData = await recipeResponse.json() as {
+          results?: Array<{
+            requestedName?: string;
+            matchedName?: string;
+            costPerPlate?: number;
+            source?: 'catalog_recipe' | 'ai_recipe' | 'unresolved';
+          }>;
+        };
+
+        if (recipeResponse.ok && Array.isArray(recipeData.results)) {
+          const recipeCosts = new Map(
+            recipeData.results.map((result) => [
+              dishNameKey(String(result.requestedName || '')),
+              result,
+            ]),
+          );
+
+          detectedMenu = detectedMenu.map((item) => {
+            const result = recipeCosts.get(dishNameKey(item.name));
+            const recipeCost = Math.max(0, Number(result?.costPerPlate) || 0);
+
+            if (!(recipeCost > 0) || (Number(item.costPerPlate) > 0)) {
+              return {
+                ...item,
+                costSource: Number(item.costPerPlate) > 0 ? 'catalog' : 'manual',
+              };
+            }
+
+            return {
+              ...item,
+              name: String(result?.matchedName || item.name),
+              costPerPlate: recipeCost,
+              costSource: result?.source === 'ai_recipe'
+                ? 'ai_recipe'
+                : 'catalog_recipe',
+            };
+          });
+        }
+      } catch (recipeError) {
+        console.warn('Automatic recipe costing skipped:', recipeError);
+      }
+
+      const unresolvedMenu = detectedMenu.filter(
+        (item) => !(Number(item.costPerPlate) > 0),
+      );
+
       console.info(
-        `Menu detection complete: ${catalogMenu.length} catalog dishes and ${manualMenu.length} dishes needing manual rates.`,
+        `Menu detection complete: ${detectedMenu.length - unresolvedMenu.length} costed dishes and ${unresolvedMenu.length} dishes needing manual rates.`,
       );
 
       setDetectedEventDetails(
@@ -987,7 +1062,7 @@ export default function EventPage() {
           catalogDishCount:
             catalogMenu.length,
           missingRateCount:
-            manualMenu.length,
+            unresolvedMenu.length,
           source:
             work.event.uploadFileName
               ? 'upload'
@@ -999,7 +1074,7 @@ export default function EventPage() {
 
       setManualRateIds(
         new Set(
-          manualMenu.map(
+          unresolvedMenu.map(
             (item) => item.id,
           ),
         ),
@@ -1167,6 +1242,8 @@ export default function EventPage() {
 
       // Complete local-storage saving before opening the next page.
       flushWorkSave(session.tenantId);
+      // Persist the detected menu and calculated dish costs before navigation.
+      await flushDraftToServer(session.tenantId, nextWork);
 
       const costingKey =
         getCostingAnalyticsKey(
@@ -2470,15 +2547,18 @@ Gulab Jamun`}
                     <h3>Review before saving</h3>
                     <p>
                       {detectionPreview.source === 'ai'
-                        ? 'AI organized the menu; your catalog remains the source of truth for prices.'
+                        ? 'AI organized the menu, matched saved recipes, and calculated available dish costs.'
                         : 'The AI service was unavailable, so the built-in parser handled this menu.'}
-                      {' '}New dishes can continue with ₹0 and be priced later.
+                      {' '}AI recipe estimates are marked for review; unresolved dishes can continue with ₹0.
                     </p>
                   </div>
                   <div className="menu-preview-metrics">
                     <span><b>{selectedPreviewMenu.length}</b> selected</span>
                     <span><b>{detectionPreviewGroups.length}</b> functions</span>
-                    <span><b>{detectionPreview.menu.length - manualRateIds.size}</b> catalog</span>
+                    <span><b>{detectionPreview.menu.length - manualRateIds.size}</b> costed</span>
+                    {detectionPreview.menu.some((item) => item.costSource === 'ai_recipe') ? (
+                      <span><b>{detectionPreview.menu.filter((item) => item.costSource === 'ai_recipe').length}</b> AI recipe</span>
+                    ) : null}
                     {manualRateIds.size > 0 ? (
                       <span className={selectedMissingManualRateCount > 0 ? 'needs-attention' : ''}>
                         <b>{manualRateIds.size}</b> manual rate
@@ -2597,7 +2677,10 @@ Gulab Jamun`}
                                 </label>
                                 <div>
                                   <b>{item.name}</b>
-                                  <small>{item.category}</small>
+                                  <small>
+                                    {item.category}
+                                    {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
+                                  </small>
                                 </div>
                                 {manualRateIds.has(item.id) ? (
                                   <label className="menu-preview-rate">
