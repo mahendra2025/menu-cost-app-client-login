@@ -18,6 +18,20 @@ type Suggestion = {
   tenantId: string;
   sourceFileName: string;
   occurrences: number;
+
+  status?: string;
+  canonicalName?: string;
+  suggestedCategory?: string;
+  suggestedSubcategory?: string;
+  aiConfidence?: number;
+  duplicateScore?: number;
+  matchedDishName?: string;
+  recommendation?: string;
+  riskLevel?: string;
+  analysisReason?: string;
+  adminNotes?: string;
+  analyzedAt?: string | null;
+
   createdAt: string;
   updatedAt: string;
 };
@@ -283,6 +297,19 @@ export default function NewDishesPage() {
     useState(true);
   const [workingId, setWorkingId] =
     useState('');
+
+  const [
+    analyzingId,
+    setAnalyzingId,
+  ] =
+    useState('');
+
+  const [
+    analyzingAll,
+    setAnalyzingAll,
+  ] =
+    useState(false);
+
   const [message, setMessage] =
     useState('');
   const [messageType, setMessageType] =
@@ -389,11 +416,22 @@ export default function NewDishesPage() {
               suggestion.name,
             category:
               availableCategories.includes(
-                suggestion.categoryHint,
+                suggestion.suggestedCategory ||
+                  '',
               )
-                ? suggestion.categoryHint
-                : 'Other',
-            subcategory: '',
+                ? (
+                    suggestion.suggestedCategory ||
+                    'Other'
+                  )
+                : availableCategories.includes(
+                    suggestion.categoryHint,
+                  )
+                  ? suggestion.categoryHint
+                  : 'Other',
+
+            subcategory:
+              suggestion.suggestedSubcategory ||
+              '',
             rate: '',
             saveAs: 'new',
             aliasCategory: '',
@@ -438,6 +476,198 @@ export default function NewDishesPage() {
         delete next[id];
         return next;
       });
+    }
+  }
+
+  async function analyzeSuggestions(
+    ids?: string[],
+  ) {
+    const targetIds =
+      (
+        ids?.length
+          ? ids
+          : rows
+              .slice(0, 30)
+              .map(
+                (row) =>
+                  row.id,
+              )
+      ).filter(Boolean);
+
+    if (!targetIds.length) {
+      return;
+    }
+
+    const single =
+      targetIds.length === 1;
+
+    if (single) {
+      setAnalyzingId(
+        targetIds[0],
+      );
+    } else {
+      setAnalyzingAll(
+        true,
+      );
+    }
+
+    setMessage('');
+
+    try {
+      const response =
+        await fetch(
+          '/api/admin/dish-suggestions/analyze',
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+
+            body:
+              JSON.stringify({
+                ids:
+                  targetIds,
+              }),
+          },
+        );
+
+      const data =
+        await response.json() as {
+          results?: Suggestion[];
+          analyzed?: number;
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'AI analysis failed',
+        );
+      }
+
+      const analysisMap =
+        new Map(
+          (
+            data.results ||
+            []
+          ).map(
+            (result) => [
+              result.id,
+              result,
+            ],
+          ),
+        );
+
+      setRows(
+        (current) =>
+          current.map(
+            (row) => {
+              const analysis =
+                analysisMap.get(
+                  row.id,
+                );
+
+              if (!analysis) {
+                return row;
+              }
+
+              const suggestedCategory =
+                analysis
+                  .suggestedCategory &&
+                categories.includes(
+                  analysis
+                    .suggestedCategory,
+                )
+                  ? analysis
+                      .suggestedCategory
+                  : row.category;
+
+              const matched =
+                catalogDishes.find(
+                  (dish) =>
+                    dish.name
+                      .toLowerCase() ===
+                    String(
+                      analysis
+                        .matchedDishName ||
+                        '',
+                    )
+                      .toLowerCase(),
+                );
+
+              return {
+                ...row,
+                ...analysis,
+
+                dishName:
+                  analysis
+                    .canonicalName ||
+                  row.dishName,
+
+                category:
+                  suggestedCategory,
+
+                subcategory:
+                  analysis
+                    .suggestedSubcategory ||
+                  row.subcategory,
+
+                saveAs:
+                  analysis
+                    .recommendation ===
+                    'ALIAS' &&
+                  matched
+                    ? 'alias'
+                    : analysis
+                          .recommendation ===
+                        'NEW_DISH'
+                      ? 'new'
+                      : row.saveAs,
+
+                aliasCategory:
+                  analysis
+                    .recommendation ===
+                    'ALIAS' &&
+                  matched
+                    ? matched.category
+                    : row
+                        .aliasCategory,
+
+                aliasTarget:
+                  analysis
+                    .recommendation ===
+                    'ALIAS' &&
+                  matched
+                    ? matched.name
+                    : row
+                        .aliasTarget,
+              };
+            },
+          ),
+      );
+
+      setMessageType(
+        'success',
+      );
+
+      setMessage(
+        `${Number(data.analyzed) || 0} dish${Number(data.analyzed) === 1 ? '' : 'es'} analyzed and saved.`,
+      );
+    } catch (error) {
+      setMessageType(
+        'error',
+      );
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'AI analysis failed',
+      );
+    } finally {
+      setAnalyzingId('');
+      setAnalyzingAll(false);
     }
   }
 
@@ -1040,6 +1270,24 @@ export default function NewDishesPage() {
           </div>
           <div className="new-dish-overview-actions">
             <button
+              className="primary-button"
+              type="button"
+              onClick={() =>
+                void analyzeSuggestions()
+              }
+              disabled={
+                loading ||
+                analyzingAll ||
+                !rows.length
+              }
+            >
+              {analyzingAll
+                ? 'AI analyzing…'
+                : `AI Analyze ${Math.min(rows.length, 30)}`
+              }
+            </button>
+
+            <button
               className="ghost-button"
               type="button"
               onClick={() => void loadQueue()}
@@ -1408,6 +1656,207 @@ export default function NewDishesPage() {
                       row.updatedAt,
                     )}
                   </span>
+                </div>
+
+                <div
+                  className={`new-dish-ai-panel ${
+                    row.riskLevel
+                      ? `risk-${row.riskLevel.toLowerCase()}`
+                      : ''
+                  }`}
+                >
+                  <div className="new-dish-ai-heading">
+                    <div>
+                      <span className="section-kicker">
+                        AI decision intelligence
+                      </span>
+
+                      <strong>
+                        {row.analyzedAt
+                          ? (
+                              row.canonicalName ||
+                              row.dishName
+                            )
+                          : 'Not analyzed yet'}
+                      </strong>
+                    </div>
+
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() =>
+                        void analyzeSuggestions([
+                          row.id,
+                        ])
+                      }
+                      disabled={
+                        analyzingAll ||
+                        analyzingId ===
+                          row.id ||
+                        Boolean(
+                          workingId,
+                        )
+                      }
+                    >
+                      {analyzingId ===
+                      row.id
+                        ? 'Analyzing…'
+                        : row.analyzedAt
+                          ? 'Re-analyze'
+                          : 'Analyze dish'}
+                    </button>
+                  </div>
+
+                  {row.analyzedAt ? (
+                    <>
+                      <div className="new-dish-ai-metrics">
+                        <div>
+                          <span>
+                            AI confidence
+                          </span>
+                          <strong>
+                            {Math.round(
+                              Number(
+                                row.aiConfidence,
+                              ) || 0,
+                            )}
+                            %
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            Duplicate
+                          </span>
+                          <strong>
+                            {Math.round(
+                              Number(
+                                row.duplicateScore,
+                              ) || 0,
+                            )}
+                            %
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            Decision
+                          </span>
+                          <strong>
+                            {row.recommendation ||
+                              'REVIEW'}
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>
+                            Risk
+                          </span>
+                          <strong>
+                            {row.riskLevel ||
+                              'MEDIUM'}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div className="new-dish-ai-details">
+                        <div>
+                          <span>
+                            Canonical name
+                          </span>
+                          <b>
+                            {row.canonicalName ||
+                              row.dishName}
+                          </b>
+                        </div>
+
+                        <div>
+                          <span>
+                            Suggested classification
+                          </span>
+                          <b>
+                            {row.suggestedCategory ||
+                              row.category}
+                            {row.suggestedSubcategory
+                              ? ` → ${row.suggestedSubcategory}`
+                              : ''}
+                          </b>
+                        </div>
+
+                        {row.matchedDishName ? (
+                          <div>
+                            <span>
+                              Existing match
+                            </span>
+                            <b>
+                              {row.matchedDishName}
+                            </b>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {row.analysisReason ? (
+                        <p className="new-dish-ai-reason">
+                          {row.analysisReason}
+                        </p>
+                      ) : null}
+
+                      <div className="new-dish-readiness">
+                        <span className={
+                          Number(row.aiConfidence) >= 80
+                            ? 'ready'
+                            : ''
+                        }>
+                          {Number(row.aiConfidence) >= 80
+                            ? '✓'
+                            : '○'} Identity
+                        </span>
+
+                        <span className={
+                          row.suggestedCategory
+                            ? 'ready'
+                            : ''
+                        }>
+                          {row.suggestedCategory
+                            ? '✓'
+                            : '○'} Category
+                        </span>
+
+                        <span className={
+                          row.recommendation &&
+                          row.recommendation !==
+                            'REVIEW'
+                            ? 'ready'
+                            : ''
+                        }>
+                          {row.recommendation &&
+                          row.recommendation !==
+                            'REVIEW'
+                            ? '✓'
+                            : '○'} Decision
+                        </span>
+
+                        <span className={
+                          row.riskLevel === 'LOW'
+                            ? 'ready'
+                            : ''
+                        }>
+                          {row.riskLevel === 'LOW'
+                            ? '✓'
+                            : '○'} Low risk
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="new-dish-ai-empty">
+                      <strong>
+                        Run AI analysis
+                      </strong>
+                      <span>
+                        Classify the dish, clean its name, estimate duplicate risk and recommend New Dish, Alias, Review or Reject.
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="new-dish-match-panel">

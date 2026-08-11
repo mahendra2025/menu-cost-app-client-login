@@ -73,17 +73,33 @@ model DishMasterItem {
 }
 
 model PendingDishSuggestion {
-  id             String   @id @default(cuid())
-  name           String
-  normalizedName String   @unique
-  categoryHint   String   @default("Other")
-  tenantId       String
-  sourceFileName String   @default("")
-  occurrences    Int      @default(1)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                   String    @id @default(cuid())
+  name                 String
+  normalizedName       String    @unique
+  categoryHint         String    @default("Other")
+  tenantId             String
+  sourceFileName       String    @default("")
+  occurrences          Int       @default(1)
+
+  status               String    @default("PENDING")
+  canonicalName        String    @default("")
+  suggestedCategory    String    @default("")
+  suggestedSubcategory String    @default("")
+  aiConfidence         Float     @default(0)
+  duplicateScore       Float     @default(0)
+  matchedDishName      String    @default("")
+  recommendation       String    @default("")
+  riskLevel            String    @default("")
+  analysisReason       String    @default("")
+  adminNotes           String    @default("")
+  analyzedAt           DateTime?
+
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   @@index([updatedAt])
+  @@index([status, updatedAt])
+  @@index([riskLevel, updatedAt])
 }
 
 model DishCategoryCatalog {
