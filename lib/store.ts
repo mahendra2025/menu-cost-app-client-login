@@ -680,7 +680,7 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   dishes: null,
   'menu item': null,
   'menu items': null,
-  breakfast: 'Breakfast',
+  breakfast: null,
   lunch: null,
   dinner: null,
   'hi tea': 'Beverage',

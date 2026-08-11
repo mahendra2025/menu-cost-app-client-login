@@ -41,7 +41,6 @@ export const CATEGORIES = [
   'Farsan',
   'Beverage',
   'Live Counter',
-  'Breakfast',
   'Snacks',
   'Sandwich',
   'Pizza',
@@ -141,7 +140,6 @@ export const CATEGORY_BASE_COST: Record<Category, number> = {
   Farsan: 24,
   Beverage: 16,
   'Live Counter': 70,
-  Breakfast: 55,
   Snacks: 38,
   Sandwich: 40,
   Pizza: 55,
@@ -1672,13 +1670,13 @@ const DISH_COST_ITEMS_PART_3: readonly DishCostItem[] = [
   { name: 'Live Jalebi Counter', category: 'Live Counter', rate: 64, aliases: ["live jalebi counter","लाइव जलेबी काउंटर","લાઇવ જલેબી કાઉંટર"] },
   { name: 'Live Pizza Counter', category: 'Live Counter', rate: 92, aliases: ["live pizza counter","लाइव पिज़्ज़ा काउंटर","લાઇવ પિજ઼્જ઼ા કાઉંટર"] },
 
-  // Breakfast
-  { name: 'Poha', category: 'Breakfast', rate: 34, aliases: ["poha","पोहा","પોહા"] },
-  { name: 'Upma Breakfast', category: 'Breakfast', rate: 36, aliases: ["upma breakfast","उपमा ब्रेकफास्ट","ઉપમા બ્રેકફાસ્ટ"] },
-  { name: 'Thepla Breakfast', category: 'Breakfast', rate: 38, aliases: ["thepla breakfast","थेप्ल ब्रेकफास्ट","થેપ્લ બ્રેકફાસ્ટ"] },
-  { name: 'Puri Bhaji', category: 'Breakfast', rate: 48, aliases: ["puri bhaji","पूरी भाजी","પૂરી ભાજી"] },
-  { name: 'Aloo Paratha', category: 'Breakfast', rate: 52, aliases: ["aloo paratha","आलू पराठा","આલૂ પરાઠા"] },
-  { name: 'Bread Pakora', category: 'Breakfast', rate: 40, aliases: ["bread pakora","ब्रेड पकौड़ा","બ્રેડ પકોડા"] },
+  // Breakfast dishes distributed into the existing food categories
+  { name: 'Poha', category: 'Farsan', subcategory: 'Steamed Farsan', rate: 34, aliases: ["poha","पोहा","પોહા"] },
+  { name: 'Upma Breakfast', category: 'South Indian', subcategory: 'South Indian Special', rate: 36, aliases: ["upma breakfast","उपमा ब्रेकफास्ट","ઉપમા બ્રેકફાસ્ટ"] },
+  { name: 'Thepla Breakfast', category: 'Bread', subcategory: 'Roti & Chapati', rate: 38, aliases: ["thepla breakfast","थेप्ल ब्रेकफास्ट","થેપ્લ બ્રેકફાસ્ટ"] },
+  { name: 'Puri Bhaji', category: 'Sabji', subcategory: 'Gravy Sabji', rate: 48, aliases: ["puri bhaji","पूरी भाजी","પૂરી ભાજી"] },
+  { name: 'Aloo Paratha', category: 'Bread', subcategory: 'Paratha', rate: 52, aliases: ["aloo paratha","आलू पराठा","આલૂ પરાઠા"] },
+  { name: 'Bread Pakora', category: 'Farsan', subcategory: 'Fried Farsan', rate: 40, aliases: ["bread pakora","ब्रेड पकौड़ा","બ્રેડ પકોડા"] },
 
   // Jain
   { name: 'Jain Paneer Masala', category: 'Jain', rate: 78, aliases: ["jain paneer masala","जैन पनीर मसाला","જૈન પનીર મસાલા"] },
@@ -2004,10 +2002,9 @@ const categoryAliases: Record<Category, string[]> = {
   'Ice Cream': ['ice cream', 'icecream', 'kulfi'],
   Salad: ['salad', 'kachumber', 'cucumber', 'onion salad'],
   Papad: ['papad'],
-  Farsan: ['farsan', 'dhokla', 'khaman', 'khandvi', 'samosa', 'kachori'],
+  Farsan: ['farsan', 'dhokla', 'khaman', 'khandvi', 'samosa', 'kachori', 'poha'],
   Beverage: ['tea', 'coffee', 'milk', 'chaas', 'lassi'],
   'Live Counter': ['live counter', 'live'],
-  Breakfast: ['breakfast', 'poha', 'upma', 'breakfast platter'],
   Snacks: ['snack', 'snacks', 'namkeen', 'pakora', 'pakoda'],
   Sandwich: ['sandwich', 'toastie', 'sub sandwich'],
   Pizza: ['pizza', 'calzone'],
