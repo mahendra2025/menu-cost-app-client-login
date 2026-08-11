@@ -65,7 +65,7 @@ async function generateRecipes(
             ingredients: {
               type: 'array',
               minItems: 1,
-              maxItems: 30,
+              maxItems: 15,
               items: {
                 type: 'object',
                 additionalProperties: false,
@@ -90,7 +90,7 @@ async function generateRecipes(
     const raw = await requestStructuredAi({
       schemaName: 'generated_catering_recipes',
       schema,
-      maxOutputTokens: Math.min(7_000, Math.max(650, dishes.length * 550)),
+      maxOutputTokens: Math.min(6_000, Math.max(450, dishes.length * 420)),
       instructions: [
         'Create practical Indian catering production recipes for exactly 100 guests.',
         'Return one recipe for every requested dish and do not add extra dishes.',
@@ -98,7 +98,7 @@ async function generateRecipes(
         'If an essential ingredient is missing from the catalog, include its standard market name and the most appropriate supported purchase unit.',
         'Quantities must be realistic production quantities, not per-person quantities.',
         'Use kg, gram, ltr, ml, piece, or packet exactly as supplied.',
-        'This is an editable costing estimate, so prefer a concise ingredient list of the material cost drivers.',
+        'This is an editable costing estimate. Return 6 to 12 material cost drivers per dish, never minor garnishes or optional ingredients.',
       ].join('\n'),
       input: JSON.stringify({ dishes, availableIngredients }),
     });
@@ -176,7 +176,7 @@ export async function POST(request: Request) {
       .map(normalizeIngredientRate)
       .filter((rate): rate is NonNullable<typeof rate> => Boolean(rate))
       .filter((rate) => (overrideMap.get(rate.id) ?? rate.rate) > 0)
-      .slice(0, 350)
+      .slice(0, 120)
       .map((rate) => ({ name: rate.name, unit: rate.unit }));
     const generated = await generateRecipes(missing, ingredientCatalog);
 
