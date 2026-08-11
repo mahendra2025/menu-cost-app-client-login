@@ -50,6 +50,22 @@ export type MenuItem = {
   mealLabel?: string;
   servicePax?: number;
   costSource?: 'catalog' | 'catalog_recipe' | 'ai_recipe' | 'manual';
+
+  coverageStatus?:
+    | 'COSTED'
+    | 'REVIEW'
+    | 'NEW_DISH_PENDING'
+    | 'REJECTED'
+    | 'UNRESOLVED';
+
+  costQualityStatus?:
+    | 'READY'
+    | 'REVIEW'
+    | 'BLOCKED';
+
+  costConfidence?: number;
+  rateCoveragePercent?: number;
+  coverageReason?: string;
 };
 
 export type ExtraCost = {

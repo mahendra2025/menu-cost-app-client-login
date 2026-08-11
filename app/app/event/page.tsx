@@ -34,6 +34,12 @@ import {
   trackProductEvent,
 } from '../../../lib/productAnalytics';
 
+import {
+  getMenuCoverageStatus,
+  menuCoverageStatusLabel,
+  summarizeMenuCoverage,
+} from '../../../lib/menuCoverage';
+
 import type {
   EventDetails,
   MenuItem,
@@ -1081,6 +1087,62 @@ export default function EventPage() {
         ...manualMenu,
       ];
 
+      const pendingMenuIds =
+        new Set(
+          manualMenu.map(
+            (item) =>
+              item.id,
+          ),
+        );
+
+      detectedMenu =
+        detectedMenu.map(
+          (item) => {
+            const hasCatalogCost =
+              Number(
+                item.costPerPlate,
+              ) > 0;
+
+            const isPending =
+              pendingMenuIds.has(
+                item.id,
+              );
+
+            return {
+              ...item,
+
+              coverageStatus:
+                hasCatalogCost
+                  ? 'COSTED'
+                  : isPending
+                    ? 'NEW_DISH_PENDING'
+                    : 'UNRESOLVED',
+
+              costQualityStatus:
+                hasCatalogCost
+                  ? 'READY'
+                  : undefined,
+
+              costConfidence:
+                hasCatalogCost
+                  ? 100
+                  : 0,
+
+              rateCoveragePercent:
+                hasCatalogCost
+                  ? 100
+                  : 0,
+
+              coverageReason:
+                hasCatalogCost
+                  ? 'Dish Master cost available'
+                  : isPending
+                    ? 'Dish is not yet fully costed'
+                    : 'No usable cost found',
+            };
+          },
+        );
+
       console.log(
         'Detected menu:',
         detectedMenu,
@@ -1118,6 +1180,20 @@ export default function EventPage() {
             matchedName?: string;
             costPerPlate?: number;
             source?: 'catalog_recipe' | 'ai_recipe' | 'unresolved';
+
+            quality?: {
+              status?:
+                | 'READY'
+                | 'REVIEW'
+                | 'BLOCKED';
+
+              score?: number;
+              rateCoveragePercent?: number;
+
+              issues?: Array<{
+                message?: string;
+              }>;
+            };
           }>;
         };
 
@@ -1131,22 +1207,131 @@ export default function EventPage() {
 
           detectedMenu = detectedMenu.map((item) => {
             const result = recipeCosts.get(dishNameKey(item.name));
-            const recipeCost = Math.max(0, Number(result?.costPerPlate) || 0);
+            const recipeCost = Math.max(
+              0,
+              Number(
+                result?.costPerPlate,
+              ) || 0,
+            );
+
+            const quality =
+              result?.quality;
 
             if (!(recipeCost > 0) || (Number(item.costPerPlate) > 0)) {
+              const hasExistingCost =
+                Number(
+                  item.costPerPlate,
+                ) > 0;
+
               return {
                 ...item,
-                costSource: Number(item.costPerPlate) > 0 ? 'catalog' : 'manual',
+
+                costSource:
+                  hasExistingCost
+                    ? 'catalog'
+                    : 'manual',
+
+                coverageStatus:
+                  hasExistingCost
+                    ? 'COSTED'
+                    : item.coverageStatus ||
+                      'UNRESOLVED',
+
+                costQualityStatus:
+                  hasExistingCost
+                    ? 'READY'
+                    : quality?.status,
+
+                costConfidence:
+                  hasExistingCost
+                    ? 100
+                    : Math.max(
+                        0,
+                        Number(
+                          quality?.score,
+                        ) || 0,
+                      ),
+
+                rateCoveragePercent:
+                  hasExistingCost
+                    ? 100
+                    : Math.max(
+                        0,
+                        Number(
+                          quality
+                            ?.rateCoveragePercent,
+                        ) || 0,
+                      ),
+
+                coverageReason:
+                  hasExistingCost
+                    ? 'Dish Master cost available'
+                    : quality
+                        ?.issues
+                        ?.[0]
+                        ?.message ||
+                      item.coverageReason ||
+                      'Dish still needs a usable cost',
               };
             }
 
+            const qualityStatus =
+              quality?.status ||
+              'READY';
+
             return {
               ...item,
-              name: String(result?.matchedName || item.name),
-              costPerPlate: recipeCost,
-              costSource: result?.source === 'ai_recipe'
-                ? 'ai_recipe'
-                : 'catalog_recipe',
+
+              name:
+                String(
+                  result?.matchedName ||
+                  item.name,
+                ),
+
+              costPerPlate:
+                recipeCost,
+
+              costSource:
+                result?.source ===
+                  'ai_recipe'
+                  ? 'ai_recipe'
+                  : 'catalog_recipe',
+
+              coverageStatus:
+                qualityStatus ===
+                  'READY'
+                  ? 'COSTED'
+                  : 'REVIEW',
+
+              costQualityStatus:
+                qualityStatus,
+
+              costConfidence:
+                Math.max(
+                  0,
+                  Number(
+                    quality?.score,
+                  ) || 100,
+                ),
+
+              rateCoveragePercent:
+                Math.max(
+                  0,
+                  Number(
+                    quality
+                      ?.rateCoveragePercent,
+                  ) || 100,
+                ),
+
+              coverageReason:
+                qualityStatus ===
+                  'READY'
+                  ? 'Recipe cost passed automatic QA'
+                  : quality
+                      ?.issues
+                      ?.[0]
+                      ?.message ||
+                    'Recipe cost needs review',
             };
           });
         }
@@ -1250,6 +1435,34 @@ export default function EventPage() {
       setError(
         'Select at least one detected dish before continuing.',
       );
+      return;
+    }
+
+    const blockingCoverage =
+      selectedMenu.filter(
+        (item) => {
+          const status =
+            getMenuCoverageStatus(
+              item,
+              true,
+            );
+
+          return (
+            status ===
+              'UNRESOLVED' ||
+            status ===
+              'NEW_DISH_PENDING'
+          );
+        },
+      );
+
+    if (
+      blockingCoverage.length
+    ) {
+      setError(
+        `${blockingCoverage.length} selected dish${blockingCoverage.length === 1 ? '' : 'es'} still need a cost. Enter a rate, resolve the dish, or deselect it before continuing.`,
+      );
+
       return;
     }
 
@@ -1964,6 +2177,13 @@ export default function EventPage() {
         !(Number(item.costPerPlate) > 0),
     ).length;
 
+  const menuCoverageAudit =
+    summarizeMenuCoverage(
+      detectionPreview?.menu ||
+        [],
+      selectedPreviewIds,
+    );
+
   const previewGroupMap =
     new Map<
       string,
@@ -2671,7 +2891,12 @@ Gulab Jamun`}
                   <div className="menu-preview-metrics">
                     <span><b>{selectedPreviewMenu.length}</b> selected</span>
                     <span><b>{detectionPreviewGroups.length}</b> functions</span>
-                    <span><b>{detectionPreview.menu.length - manualRateIds.size}</b> costed</span>
+                    <span>
+                      <b>
+                        {menuCoverageAudit.counts.COSTED}
+                      </b>{' '}
+                      costed
+                    </span>
                     {detectionPreview.menu.some((item) => item.costSource === 'ai_recipe') ? (
                       <span><b>{detectionPreview.menu.filter((item) => item.costSource === 'ai_recipe').length}</b> AI recipe</span>
                     ) : null}
@@ -2720,6 +2945,112 @@ Gulab Jamun`}
                       Clear selection
                     </button>
                   </div>
+                </div>
+
+                <div className="menu-coverage-audit">
+                  <div className="menu-coverage-head">
+                    <div>
+                      <span>
+                        Menu Coverage Audit
+                      </span>
+
+                      <strong>
+                        {menuCoverageAudit.coveragePercent.toFixed(1)}
+                        %
+                      </strong>
+
+                      <small>
+                        {menuCoverageAudit.accounted}
+                        /
+                        {menuCoverageAudit.total}
+                        {' '}dishes have an explicit state
+                      </small>
+                    </div>
+
+                    <div
+                      className={`menu-coverage-grade ${
+                        menuCoverageAudit.unresolved === 0
+                          ? 'complete'
+                          : 'attention'
+                      }`}
+                    >
+                      {menuCoverageAudit.unresolved === 0
+                        ? '✓ Complete'
+                        : `${menuCoverageAudit.unresolved} unresolved`}
+                    </div>
+                  </div>
+
+                  <div className="menu-coverage-progress">
+                    <span
+                      style={{
+                        width:
+                          `${menuCoverageAudit.coveragePercent}%`,
+                      }}
+                    />
+                  </div>
+
+                  <div className="menu-coverage-states">
+                    <div className="costed">
+                      <b>
+                        {menuCoverageAudit.counts.COSTED}
+                      </b>
+
+                      <span>
+                        Costed
+                      </span>
+                    </div>
+
+                    <div className="review">
+                      <b>
+                        {menuCoverageAudit.counts.REVIEW}
+                      </b>
+
+                      <span>
+                        Needs Review
+                      </span>
+                    </div>
+
+                    <div className="pending">
+                      <b>
+                        {menuCoverageAudit.counts.NEW_DISH_PENDING}
+                      </b>
+
+                      <span>
+                        New Dish Pending
+                      </span>
+                    </div>
+
+                    <div className="rejected">
+                      <b>
+                        {menuCoverageAudit.counts.REJECTED}
+                      </b>
+
+                      <span>
+                        Rejected
+                      </span>
+                    </div>
+
+                    <div className="unresolved">
+                      <b>
+                        {menuCoverageAudit.counts.UNRESOLVED}
+                      </b>
+
+                      <span>
+                        Unresolved
+                      </span>
+                    </div>
+                  </div>
+
+                  {menuCoverageAudit.unresolved > 0 ? (
+                    <p className="menu-coverage-warning">
+                      No menu item will be silently dropped.
+                      Resolve each unresolved dish or intentionally deselect it.
+                    </p>
+                  ) : (
+                    <p className="menu-coverage-success">
+                      ✓ Every detected dish is accounted for.
+                    </p>
+                  )}
                 </div>
 
                 <div className="menu-preview-groups">
@@ -2797,6 +3128,30 @@ Gulab Jamun`}
                                     {item.category}
                                     {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
                                   </small>
+
+                                  <span
+                                    className={`menu-coverage-badge ${getMenuCoverageStatus(
+                                      item,
+                                      isSelected,
+                                    )
+                                      .toLowerCase()
+                                      .replaceAll(
+                                        '_',
+                                        '-',
+                                      )}`}
+                                  >
+                                    {menuCoverageStatusLabel(
+                                      getMenuCoverageStatus(
+                                        item,
+                                        isSelected,
+                                      ),
+                                    )}
+
+                                    {item.costConfidence !== undefined &&
+                                    isSelected
+                                      ? ` · ${Math.round(item.costConfidence)}%`
+                                      : ''}
+                                  </span>
                                 </div>
                                 {manualRateIds.has(item.id) ? (
                                   <label className="menu-preview-rate">
@@ -2815,7 +3170,42 @@ Gulab Jamun`}
                                                 ...current,
                                                 menu: current.menu.map((menuItem) =>
                                                   menuItem.id === item.id
-                                                    ? { ...menuItem, costPerPlate: rate }
+                                                    ? {
+                                                        ...menuItem,
+
+                                                        costPerPlate:
+                                                          rate,
+
+                                                        costSource:
+                                                          rate > 0
+                                                            ? 'manual'
+                                                            : menuItem.costSource,
+
+                                                        coverageStatus:
+                                                          rate > 0
+                                                            ? 'COSTED'
+                                                            : 'NEW_DISH_PENDING',
+
+                                                        costQualityStatus:
+                                                          rate > 0
+                                                            ? 'READY'
+                                                            : undefined,
+
+                                                        costConfidence:
+                                                          rate > 0
+                                                            ? 100
+                                                            : 0,
+
+                                                        rateCoveragePercent:
+                                                          rate > 0
+                                                            ? 100
+                                                            : 0,
+
+                                                        coverageReason:
+                                                          rate > 0
+                                                            ? 'Manual rate entered by user'
+                                                            : 'Manual rate required',
+                                                      }
                                                     : menuItem,
                                                 ),
                                               }
