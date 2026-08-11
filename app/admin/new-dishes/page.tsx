@@ -56,6 +56,220 @@ type DishVerification = {
   error: string;
 };
 
+type ReviewFilter =
+  | 'ALL'
+  | 'HIGH_PRIORITY'
+  | 'LIKELY_DUPLICATE'
+  | 'VERIFIED'
+  | 'UNVERIFIED';
+
+type QueueSort =
+  | 'PRIORITY'
+  | 'MOST_SEEN'
+  | 'NEWEST'
+  | 'OLDEST'
+  | 'NAME';
+
+type CatalogMatch = {
+  dish: CatalogDish;
+  score: number;
+  reason: string;
+};
+
+function normalizeReviewText(
+  value: string,
+) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLocaleLowerCase('en-IN')
+    .replace(
+      /[^\p{L}\p{N}]+/gu,
+      ' ',
+    )
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function reviewTokens(value: string) {
+  return normalizeReviewText(value)
+    .split(' ')
+    .filter(Boolean);
+}
+
+function scoreCatalogCandidate(
+  input: string,
+  candidate: string,
+) {
+  const left =
+    normalizeReviewText(input);
+
+  const right =
+    normalizeReviewText(candidate);
+
+  if (!left || !right) {
+    return 0;
+  }
+
+  if (left === right) {
+    return 1;
+  }
+
+  if (
+    Math.min(
+      left.length,
+      right.length,
+    ) >= 4 &&
+    (
+      left.includes(right) ||
+      right.includes(left)
+    )
+  ) {
+    return 0.9;
+  }
+
+  const leftTokens =
+    new Set(reviewTokens(left));
+
+  const rightTokens =
+    new Set(reviewTokens(right));
+
+  if (
+    !leftTokens.size ||
+    !rightTokens.size
+  ) {
+    return 0;
+  }
+
+  const intersection =
+    [...leftTokens].filter(
+      (token) =>
+        rightTokens.has(token),
+    ).length;
+
+  const union =
+    new Set([
+      ...leftTokens,
+      ...rightTokens,
+    ]).size;
+
+  const jaccard =
+    intersection /
+    Math.max(union, 1);
+
+  const coverage =
+    intersection /
+    Math.max(
+      Math.min(
+        leftTokens.size,
+        rightTokens.size,
+      ),
+      1,
+    );
+
+  return Math.min(
+    0.89,
+    (
+      jaccard * 0.58 +
+      coverage * 0.32
+    ),
+  );
+}
+
+function findCatalogMatches(
+  dishName: string,
+  catalog: CatalogDish[],
+): CatalogMatch[] {
+  const input =
+    normalizeReviewText(
+      dishName,
+    );
+
+  if (!input) return [];
+
+  return catalog
+    .map((dish) => {
+      let bestScore =
+        scoreCatalogCandidate(
+          input,
+          dish.name,
+        );
+
+      let reason =
+        bestScore === 1
+          ? 'Exact dish name'
+          : bestScore >= 0.9
+            ? 'Very similar name'
+            : 'Similar words';
+
+      for (
+        const alias of
+        dish.aliases ?? []
+      ) {
+        const aliasScore =
+          scoreCatalogCandidate(
+            input,
+            alias,
+          );
+
+        if (
+          aliasScore >
+          bestScore
+        ) {
+          bestScore =
+            aliasScore;
+
+          reason =
+            aliasScore === 1
+              ? 'Exact alias'
+              : aliasScore >= 0.9
+                ? 'Very similar alias'
+                : 'Similar alias';
+        }
+      }
+
+      return {
+        dish,
+        score:
+          bestScore,
+        reason,
+      };
+    })
+    .filter(
+      (match) =>
+        match.score >= 0.42,
+    )
+    .sort(
+      (left, right) =>
+        right.score -
+        left.score,
+    )
+    .slice(0, 3);
+}
+
+function formatReviewDate(
+  value: string,
+) {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return 'Unknown';
+  }
+
+  return date.toLocaleDateString(
+    'en-IN',
+    {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    },
+  );
+}
+
 export default function NewDishesPage() {
   const [rows, setRows] =
     useState<EditableSuggestion[]>(
@@ -77,6 +291,29 @@ export default function NewDishesPage() {
     );
   const [query, setQuery] =
     useState('');
+
+  const [
+    reviewFilter,
+    setReviewFilter,
+  ] =
+    useState<ReviewFilter>(
+      'ALL',
+    );
+
+  const [
+    categoryFilter,
+    setCategoryFilter,
+  ] =
+    useState('ALL');
+
+  const [
+    queueSort,
+    setQueueSort,
+  ] =
+    useState<QueueSort>(
+      'PRIORITY',
+    );
+
   const [verifications, setVerifications] =
     useState<Record<string, DishVerification>>({});
   const [recipeStudioOpened, setRecipeStudioOpened] =
@@ -465,32 +702,323 @@ export default function NewDishesPage() {
     }
   }
 
-  const visibleRows = useMemo(() => {
-    const search =
-      query.trim().toLowerCase();
-
-    if (!search) return rows;
-
-    return rows.filter((row) =>
+  const catalogMatchMap =
+    useMemo(
+      () =>
+        new Map(
+          rows.map(
+            (row) => [
+              row.id,
+              findCatalogMatches(
+                row.dishName ||
+                  row.name,
+                catalogDishes,
+              ),
+            ],
+          ),
+        ),
       [
-        row.name,
-        row.dishName,
-        row.aliasCategory,
-        row.aliasTarget,
-        row.categoryHint,
-        row.sourceFileName,
-      ].some((value) =>
-        value
-          .toLowerCase()
-          .includes(search),
-      ),
+        rows,
+        catalogDishes,
+      ],
     );
-  }, [query, rows]);
+
+  function catalogMatchesFor(
+    row: EditableSuggestion,
+  ) {
+    return (
+      catalogMatchMap.get(
+        row.id,
+      ) ?? []
+    );
+  }
+
+  function bestMatchFor(
+    row: EditableSuggestion,
+  ) {
+    return catalogMatchesFor(
+      row,
+    )[0];
+  }
+
+  function isLikelyDuplicate(
+    row: EditableSuggestion,
+  ) {
+    return (
+      (
+        bestMatchFor(row)
+          ?.score ?? 0
+      ) >= 0.72
+    );
+  }
+
+  function applyCatalogMatch(
+    row: EditableSuggestion,
+    match: CatalogMatch,
+  ) {
+    updateRow(
+      row.id,
+      {
+        saveAs: 'alias',
+        aliasCategory:
+          match.dish.category,
+        aliasTarget:
+          match.dish.name,
+      },
+    );
+
+    setMessageType(
+      'success',
+    );
+
+    setMessage(
+      `${row.dishName} linked for review as an alias of ${match.dish.name}.`,
+    );
+  }
+
+  const queueStats =
+    useMemo(
+      () => ({
+        total:
+          rows.length,
+
+        highPriority:
+          rows.filter(
+            (row) =>
+              row.occurrences >= 3,
+          ).length,
+
+        likelyDuplicate:
+          rows.filter(
+            (row) =>
+              (
+                catalogMatchMap.get(
+                  row.id,
+                )?.[0]
+                  ?.score ?? 0
+              ) >= 0.72,
+          ).length,
+
+        verified:
+          rows.filter(
+            (row) =>
+              Boolean(
+                verifications[
+                  row.id
+                ]?.confirmed,
+              ),
+          ).length,
+      }),
+      [
+        rows,
+        catalogMatchMap,
+        verifications,
+      ],
+    );
+
+  const visibleRows =
+    useMemo(() => {
+      const search =
+        query
+          .trim()
+          .toLowerCase();
+
+      const filtered =
+        rows.filter(
+          (row) => {
+            const matchesSearch =
+              !search ||
+              [
+                row.name,
+                row.dishName,
+                row.aliasCategory,
+                row.aliasTarget,
+                row.categoryHint,
+                row.category,
+                row.sourceFileName,
+              ].some(
+                (value) =>
+                  String(
+                    value || '',
+                  )
+                    .toLowerCase()
+                    .includes(
+                      search,
+                    ),
+              );
+
+            if (
+              !matchesSearch
+            ) {
+              return false;
+            }
+
+            if (
+              categoryFilter !==
+                'ALL' &&
+              row.category !==
+                categoryFilter &&
+              row.categoryHint !==
+                categoryFilter
+            ) {
+              return false;
+            }
+
+            const bestMatch =
+              catalogMatchMap.get(
+                row.id,
+              )?.[0];
+
+            const verified =
+              Boolean(
+                verifications[
+                  row.id
+                ]?.confirmed,
+              );
+
+            if (
+              reviewFilter ===
+                'HIGH_PRIORITY' &&
+              row.occurrences < 3
+            ) {
+              return false;
+            }
+
+            if (
+              reviewFilter ===
+                'LIKELY_DUPLICATE' &&
+              (
+                bestMatch
+                  ?.score ?? 0
+              ) < 0.72
+            ) {
+              return false;
+            }
+
+            if (
+              reviewFilter ===
+                'VERIFIED' &&
+              !verified
+            ) {
+              return false;
+            }
+
+            if (
+              reviewFilter ===
+                'UNVERIFIED' &&
+              verified
+            ) {
+              return false;
+            }
+
+            return true;
+          },
+        );
+
+      return [
+        ...filtered,
+      ].sort(
+        (left, right) => {
+          if (
+            queueSort ===
+            'MOST_SEEN'
+          ) {
+            return (
+              right.occurrences -
+              left.occurrences
+            );
+          }
+
+          if (
+            queueSort ===
+            'NEWEST'
+          ) {
+            return (
+              new Date(
+                right.updatedAt,
+              ).getTime() -
+              new Date(
+                left.updatedAt,
+              ).getTime()
+            );
+          }
+
+          if (
+            queueSort ===
+            'OLDEST'
+          ) {
+            return (
+              new Date(
+                left.createdAt,
+              ).getTime() -
+              new Date(
+                right.createdAt,
+              ).getTime()
+            );
+          }
+
+          if (
+            queueSort ===
+            'NAME'
+          ) {
+            return left.dishName
+              .localeCompare(
+                right.dishName,
+              );
+          }
+
+          const leftMatch =
+            catalogMatchMap.get(
+              left.id,
+            )?.[0]?.score ?? 0;
+
+          const rightMatch =
+            catalogMatchMap.get(
+              right.id,
+            )?.[0]?.score ?? 0;
+
+          const leftScore =
+            left.occurrences * 10 +
+            leftMatch * 40 +
+            (
+              verifications[
+                left.id
+              ]?.confirmed
+                ? 0
+                : 5
+            );
+
+          const rightScore =
+            right.occurrences * 10 +
+            rightMatch * 40 +
+            (
+              verifications[
+                right.id
+              ]?.confirmed
+                ? 0
+                : 5
+            );
+
+          return (
+            rightScore -
+            leftScore
+          );
+        },
+      );
+    }, [
+      rows,
+      query,
+      categoryFilter,
+      reviewFilter,
+      queueSort,
+      catalogMatchMap,
+      verifications,
+    ]);
 
   return (
     <AppShell
-      title="New Dishes"
-      subtitle="Review dishes found in client uploads and add each one to Available Dishes as a new dish or an alias"
+      title="New Dish Intelligence"
+      subtitle="Review, match, verify and publish dishes detected from client menus"
     >
       <section className="content-grid">
         <div className="new-dish-overview">
@@ -536,6 +1064,115 @@ export default function NewDishesPage() {
           </div>
         </div>
 
+        <div
+          className="new-dish-smart-summary"
+          aria-label="New dish queue summary"
+        >
+          <button
+            type="button"
+            className={
+              reviewFilter ===
+              'ALL'
+                ? 'is-active'
+                : ''
+            }
+            onClick={() =>
+              setReviewFilter(
+                'ALL',
+              )
+            }
+          >
+            <span>
+              Queue
+            </span>
+            <strong>
+              {queueStats.total}
+            </strong>
+            <small>
+              Total candidates
+            </small>
+          </button>
+
+          <button
+            type="button"
+            className={
+              reviewFilter ===
+              'HIGH_PRIORITY'
+                ? 'is-active'
+                : ''
+            }
+            onClick={() =>
+              setReviewFilter(
+                'HIGH_PRIORITY',
+              )
+            }
+          >
+            <span>
+              Priority
+            </span>
+            <strong>
+              {
+                queueStats.highPriority
+              }
+            </strong>
+            <small>
+              Seen 3+ times
+            </small>
+          </button>
+
+          <button
+            type="button"
+            className={
+              reviewFilter ===
+              'LIKELY_DUPLICATE'
+                ? 'is-active'
+                : ''
+            }
+            onClick={() =>
+              setReviewFilter(
+                'LIKELY_DUPLICATE',
+              )
+            }
+          >
+            <span>
+              Matches
+            </span>
+            <strong>
+              {
+                queueStats.likelyDuplicate
+              }
+            </strong>
+            <small>
+              Likely aliases
+            </small>
+          </button>
+
+          <button
+            type="button"
+            className={
+              reviewFilter ===
+              'VERIFIED'
+                ? 'is-active'
+                : ''
+            }
+            onClick={() =>
+              setReviewFilter(
+                'VERIFIED',
+              )
+            }
+          >
+            <span>
+              Verified
+            </span>
+            <strong>
+              {queueStats.verified}
+            </strong>
+            <small>
+              Confirmed dishes
+            </small>
+          </button>
+        </div>
+
         {message ? (
           <div
             className={`admin-message ${messageType}`}
@@ -556,17 +1193,118 @@ export default function NewDishesPage() {
                 or link the name as an alias.
               </p>
             </div>
-            <input
-              className="input"
-              value={query}
-              onChange={(event) =>
-                setQuery(
-                  event.target.value,
-                )
-              }
-              placeholder="Search suggestions…"
-              aria-label="Search new dish suggestions"
-            />
+            <div className="new-dish-smart-controls">
+              <input
+                className="input"
+                value={query}
+                onChange={(event) =>
+                  setQuery(
+                    event.target.value,
+                  )
+                }
+                placeholder="Search dish, category or source…"
+                aria-label="Search new dish suggestions"
+              />
+
+              <select
+                className="select"
+                value={
+                  categoryFilter
+                }
+                onChange={(event) =>
+                  setCategoryFilter(
+                    event.target
+                      .value,
+                  )
+                }
+                aria-label="Filter by category"
+              >
+                <option value="ALL">
+                  All categories
+                </option>
+
+                {categories.map(
+                  (category) => (
+                    <option
+                      key={
+                        category
+                      }
+                      value={
+                        category
+                      }
+                    >
+                      {category}
+                    </option>
+                  ),
+                )}
+              </select>
+
+              <select
+                className="select"
+                value={
+                  reviewFilter
+                }
+                onChange={(event) =>
+                  setReviewFilter(
+                    event.target
+                      .value as ReviewFilter,
+                  )
+                }
+                aria-label="Review status"
+              >
+                <option value="ALL">
+                  All review states
+                </option>
+
+                <option value="HIGH_PRIORITY">
+                  High priority
+                </option>
+
+                <option value="LIKELY_DUPLICATE">
+                  Likely duplicate
+                </option>
+
+                <option value="VERIFIED">
+                  Verified
+                </option>
+
+                <option value="UNVERIFIED">
+                  Unverified
+                </option>
+              </select>
+
+              <select
+                className="select"
+                value={queueSort}
+                onChange={(event) =>
+                  setQueueSort(
+                    event.target
+                      .value as QueueSort,
+                  )
+                }
+                aria-label="Sort review queue"
+              >
+                <option value="PRIORITY">
+                  Smart priority
+                </option>
+
+                <option value="MOST_SEEN">
+                  Most detected
+                </option>
+
+                <option value="NEWEST">
+                  Newest
+                </option>
+
+                <option value="OLDEST">
+                  Oldest
+                </option>
+
+                <option value="NAME">
+                  Dish name A–Z
+                </option>
+              </select>
+            </div>
           </div>
 
           {loading ? (
@@ -621,6 +1359,183 @@ export default function NewDishesPage() {
                         'Pasted menu'}
                     </small>
                   </div>
+                </div>
+
+                <div className="new-dish-signal-bar">
+                  <span
+                    className={
+                      row.occurrences >= 3
+                        ? 'new-dish-signal priority'
+                        : 'new-dish-signal'
+                    }
+                  >
+                    {row.occurrences >= 3
+                      ? '⚡ High priority'
+                      : 'Normal priority'}
+                  </span>
+
+                  <span
+                    className={
+                      isLikelyDuplicate(
+                        row,
+                      )
+                        ? 'new-dish-signal duplicate'
+                        : 'new-dish-signal new'
+                    }
+                  >
+                    {isLikelyDuplicate(
+                      row,
+                    )
+                      ? `↔ Likely alias ${Math.round((bestMatchFor(row)?.score ?? 0) * 100)}%`
+                      : '＋ Likely new dish'}
+                  </span>
+
+                  {verifications[
+                    row.id
+                  ]?.confirmed ? (
+                    <span className="new-dish-signal verified">
+                      ✓ Verified
+                    </span>
+                  ) : (
+                    <span className="new-dish-signal pending">
+                      Verification pending
+                    </span>
+                  )}
+
+                  <span className="new-dish-signal date">
+                    Updated{' '}
+                    {formatReviewDate(
+                      row.updatedAt,
+                    )}
+                  </span>
+                </div>
+
+                <div className="new-dish-match-panel">
+                  <div className="new-dish-match-heading">
+                    <div>
+                      <span className="section-kicker">
+                        Catalog intelligence
+                      </span>
+
+                      <strong>
+                        {isLikelyDuplicate(
+                          row,
+                        )
+                          ? 'Existing dish match found'
+                          : 'Checking against Dish Master'}
+                      </strong>
+                    </div>
+
+                    <span
+                      className={
+                        isLikelyDuplicate(
+                          row,
+                        )
+                          ? 'new-dish-recommendation alias'
+                          : 'new-dish-recommendation new'
+                      }
+                    >
+                      {isLikelyDuplicate(
+                        row,
+                      )
+                        ? 'Recommended: Alias'
+                        : 'Recommended: New Dish'}
+                    </span>
+                  </div>
+
+                  {catalogMatchesFor(
+                    row,
+                  ).length ? (
+                    <div className="new-dish-match-list">
+                      {catalogMatchesFor(
+                        row,
+                      ).map(
+                        (
+                          match,
+                          index,
+                        ) => (
+                          <div
+                            className="new-dish-match"
+                            key={`${row.id}-${match.dish.category}-${match.dish.name}`}
+                          >
+                            <div className="new-dish-match-score">
+                              <strong>
+                                {Math.round(
+                                  match.score *
+                                    100,
+                                )}
+                                %
+                              </strong>
+
+                              <span>
+                                match
+                              </span>
+                            </div>
+
+                            <div className="new-dish-match-copy">
+                              <strong>
+                                {
+                                  match
+                                    .dish
+                                    .name
+                                }
+                              </strong>
+
+                              <span>
+                                {
+                                  match
+                                    .dish
+                                    .category
+                                }
+                                {' · ₹'}
+                                {
+                                  match
+                                    .dish
+                                    .rate
+                                }
+                                {' · '}
+                                {
+                                  match.reason
+                                }
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              className={
+                                index === 0
+                                  ? 'primary-button'
+                                  : 'ghost-button'
+                              }
+                              onClick={() =>
+                                applyCatalogMatch(
+                                  row,
+                                  match,
+                                )
+                              }
+                              disabled={
+                                Boolean(
+                                  workingId,
+                                )
+                              }
+                            >
+                              Use as Alias
+                            </button>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <div className="new-dish-no-match">
+                      <strong>
+                        No strong catalog match
+                      </strong>
+
+                      <span>
+                        This candidate appears different from your current Dish Master and is more likely to be a genuine new dish.
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="new-dish-verification">
