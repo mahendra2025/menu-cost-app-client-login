@@ -6,6 +6,7 @@ import { requireClientTenantId } from '../../../../lib/billingAuth';
 import { normalizeIngredientRate } from '../../../../lib/ingredientCatalog';
 import { prisma } from '../../../../lib/prisma';
 import {
+  assessRecipeQuality,
   buildRecipeMap,
   calculateRecipeCost,
   fillRecipeIngredientRates,
@@ -240,13 +241,38 @@ export async function POST(request: Request) {
         ? calculateRecipeCost(recipe, masterRates, overrideMap)
         : { costPerPlate: 0, missingRates: 0 };
 
+      const finalCostPerPlate =
+        withWastage(
+          costing.costPerPlate,
+        );
+
+      const quality =
+        assessRecipeQuality(
+          recipe,
+          {
+            missingRates:
+              costing.missingRates,
+
+            estimatedRates:
+              priced?.estimatedRates ||
+              0,
+
+            costPerPlate:
+              finalCostPerPlate,
+          },
+        );
+
       return {
         requestedName: dish.name,
         matchedName: recipe?.name || dish.name,
-        costPerPlate: withWastage(costing.costPerPlate),
-        rawCostPerPlate: costing.costPerPlate,
+        costPerPlate:
+          finalCostPerPlate,
+        rawCostPerPlate:
+          costing.costPerPlate,
         wastagePercent: 8,
-        missingRates: costing.missingRates,
+        missingRates:
+          costing.missingRates,
+        quality,
         estimatedIngredientRates: priced?.estimatedRates || 0,
         recipeAvailable: Boolean(recipe),
         source: catalogRecipe ? 'catalog_recipe' : recipe ? 'ai_recipe' : 'unresolved',

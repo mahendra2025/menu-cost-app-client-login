@@ -12,6 +12,7 @@ import {
 } from '../../../../../lib/ingredientCatalog';
 import { prisma } from '../../../../../lib/prisma';
 import {
+  assessRecipeQuality,
   buildRecipeMap,
   calculateRecipeCost,
   fillRecipeIngredientRates,
@@ -556,6 +557,24 @@ export async function POST(
           .baseGuests,
       );
 
+    const quality =
+      assessRecipeQuality(
+        tenantPriced.recipe,
+        {
+          missingRates:
+            tenantRaw
+              .missingRates,
+
+          estimatedRates:
+            tenantPriced
+              .estimatedRates,
+
+          costPerPlate:
+            tenantCost
+              .costPerPlate,
+        },
+      );
+
     /*
      * Standard master rate uses Ingredient Master values only.
      * This prevents one client's custom rates from becoming the
@@ -704,6 +723,8 @@ export async function POST(
 
       cost:
         tenantCost,
+
+      quality,
 
       standardCostPerPlate:
         standardCost

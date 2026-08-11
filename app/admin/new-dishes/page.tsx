@@ -100,6 +100,32 @@ type AutoBuildResult = {
   missingRates: number;
   standardCostPerPlate: number;
 
+  quality: {
+    status:
+      | 'READY'
+      | 'REVIEW'
+      | 'BLOCKED';
+
+    score: number;
+    ingredientCount: number;
+    trustedRateCount: number;
+    rateCoveragePercent: number;
+    estimatedRates: number;
+    missingRates: number;
+    warningCount: number;
+    errorCount: number;
+
+    issues: Array<{
+      severity:
+        | 'warning'
+        | 'error';
+
+      code: string;
+      message: string;
+      ingredient?: string;
+    }>;
+  };
+
   cost: {
     rawCostPerPlate: number;
     wastagePercent: number;
@@ -2456,8 +2482,14 @@ export default function NewDishesPage() {
                 </p>
               </div>
 
-              <span className="new-dish-auto-build-ready">
-                ✓ Ready for Costing
+              <span
+                className={`new-dish-auto-build-ready status-${lastAutoBuild.quality.status.toLowerCase()}`}
+              >
+                {lastAutoBuild.quality.status === 'READY'
+                  ? '✓ Ready for Costing'
+                  : lastAutoBuild.quality.status === 'REVIEW'
+                    ? '⚠ Review Recommended'
+                    : '✕ Costing Blocked'}
               </span>
             </div>
 
@@ -2550,6 +2582,123 @@ export default function NewDishesPage() {
                   Need later review
                 </small>
               </div>
+            </div>
+
+            <div className="new-dish-quality-panel">
+              <div className="new-dish-quality-heading">
+                <div>
+                  <span className="section-kicker">
+                    Cost confidence
+                  </span>
+
+                  <strong>
+                    {lastAutoBuild.quality.score}%
+                  </strong>
+                </div>
+
+                <span
+                  className={`quality-status ${lastAutoBuild.quality.status.toLowerCase()}`}
+                >
+                  {lastAutoBuild.quality.status}
+                </span>
+              </div>
+
+              <div className="new-dish-quality-grid">
+                <div>
+                  <span>
+                    Rate coverage
+                  </span>
+
+                  <strong>
+                    {lastAutoBuild.quality.rateCoveragePercent}%
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Trusted rates
+                  </span>
+
+                  <strong>
+                    {lastAutoBuild.quality.trustedRateCount}
+                    /
+                    {lastAutoBuild.quality.ingredientCount}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Estimated
+                  </span>
+
+                  <strong>
+                    {lastAutoBuild.quality.estimatedRates}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Missing
+                  </span>
+
+                  <strong>
+                    {lastAutoBuild.quality.missingRates}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Warnings
+                  </span>
+
+                  <strong>
+                    {lastAutoBuild.quality.warningCount}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Errors
+                  </span>
+
+                  <strong>
+                    {lastAutoBuild.quality.errorCount}
+                  </strong>
+                </div>
+              </div>
+
+              {lastAutoBuild.quality.issues.length ? (
+                <div className="new-dish-quality-issues">
+                  {lastAutoBuild.quality.issues.map(
+                    (issue, index) => (
+                      <div
+                        className={`quality-issue ${issue.severity}`}
+                        key={`${issue.code}-${index}`}
+                      >
+                        <span>
+                          {issue.severity === 'error'
+                            ? '✕'
+                            : '⚠'}
+                        </span>
+
+                        <div>
+                          <strong>
+                            {issue.code.replaceAll('_', ' ')}
+                          </strong>
+
+                          <small>
+                            {issue.message}
+                          </small>
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <div className="new-dish-quality-clean">
+                  ✓ Recipe passed all automatic costing checks.
+                </div>
+              )}
             </div>
 
             <div className="new-dish-auto-build-footer">

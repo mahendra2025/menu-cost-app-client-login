@@ -279,3 +279,382 @@ export function fillRecipeIngredientRates(
     estimatedRates,
   };
 }
+
+
+export type RecipeQualityStatus =
+  | 'READY'
+  | 'REVIEW'
+  | 'BLOCKED';
+
+export type RecipeQualityIssue = {
+  severity:
+    | 'warning'
+    | 'error';
+  code: string;
+  message: string;
+  ingredient?: string;
+};
+
+export type RecipeQualityResult = {
+  status: RecipeQualityStatus;
+  score: number;
+  ingredientCount: number;
+  trustedRateCount: number;
+  rateCoveragePercent: number;
+  estimatedRates: number;
+  missingRates: number;
+  warningCount: number;
+  errorCount: number;
+  issues: RecipeQualityIssue[];
+};
+
+export function assessRecipeQuality(
+  recipe:
+    | CostableRecipe
+    | null
+    | undefined,
+  options: {
+    missingRates?: number;
+    estimatedRates?: number;
+    costPerPlate?: number;
+  } = {},
+): RecipeQualityResult {
+  const issues:
+    RecipeQualityIssue[] = [];
+
+  if (!recipe) {
+    return {
+      status: 'BLOCKED',
+      score: 0,
+      ingredientCount: 0,
+      trustedRateCount: 0,
+      rateCoveragePercent: 0,
+      estimatedRates: 0,
+      missingRates: 0,
+      warningCount: 0,
+      errorCount: 1,
+      issues: [
+        {
+          severity: 'error',
+          code: 'NO_RECIPE',
+          message:
+            'No usable recipe is available.',
+        },
+      ],
+    };
+  }
+
+  let score = 100;
+
+  const ingredientCount =
+    recipe.ingredients.length;
+
+  const missingRates =
+    Math.max(
+      0,
+      Math.round(
+        Number(
+          options.missingRates,
+        ) || 0,
+      ),
+    );
+
+  const estimatedRates =
+    Math.max(
+      0,
+      Math.round(
+        Number(
+          options.estimatedRates,
+        ) || 0,
+      ),
+    );
+
+  const costPerPlate =
+    Math.max(
+      0,
+      Number(
+        options.costPerPlate,
+      ) || 0,
+    );
+
+  if (recipe.baseGuests !== 100) {
+    score -= 6;
+
+    issues.push({
+      severity: 'warning',
+      code: 'NON_STANDARD_BATCH',
+      message:
+        `Recipe batch is ${recipe.baseGuests} guests instead of the 100-pax standard.`,
+    });
+  }
+
+  if (ingredientCount < 4) {
+    score -= 25;
+
+    issues.push({
+      severity: 'error',
+      code: 'TOO_FEW_INGREDIENTS',
+      message:
+        'Recipe has too few ingredients for reliable costing.',
+    });
+  }
+
+  if (ingredientCount > 15) {
+    score -= 8;
+
+    issues.push({
+      severity: 'warning',
+      code: 'TOO_MANY_INGREDIENTS',
+      message:
+        'Recipe contains more than 15 costing ingredients and should be reviewed.',
+    });
+  }
+
+  const supportedUnits =
+    new Set([
+      'kg',
+      'gram',
+      'ltr',
+      'ml',
+      'piece',
+      'packet',
+    ]);
+
+  const seenIngredients =
+    new Set<string>();
+
+  recipe.ingredients.forEach(
+    (ingredient) => {
+      const normalizedName =
+        normalizeRecipeName(
+          ingredient.name,
+        );
+
+      if (
+        seenIngredients.has(
+          normalizedName,
+        )
+      ) {
+        score -= 8;
+
+        issues.push({
+          severity: 'warning',
+          code:
+            'DUPLICATE_INGREDIENT',
+          message:
+            `${ingredient.name} appears more than once in the recipe.`,
+          ingredient:
+            ingredient.name,
+        });
+      }
+
+      seenIngredients.add(
+        normalizedName,
+      );
+
+      if (
+        !supportedUnits.has(
+          ingredient.unit,
+        )
+      ) {
+        score -= 18;
+
+        issues.push({
+          severity: 'error',
+          code:
+            'UNSUPPORTED_UNIT',
+          message:
+            `${ingredient.name} uses unsupported unit "${ingredient.unit}".`,
+          ingredient:
+            ingredient.name,
+        });
+      }
+
+      const quantity =
+        Number(
+          ingredient.quantity,
+        ) || 0;
+
+      if (!(quantity > 0)) {
+        score -= 20;
+
+        issues.push({
+          severity: 'error',
+          code:
+            'INVALID_QUANTITY',
+          message:
+            `${ingredient.name} has an invalid quantity.`,
+          ingredient:
+            ingredient.name,
+        });
+
+        return;
+      }
+
+      const suspicious =
+        (
+          ingredient.unit ===
+            'kg' &&
+          quantity > 40
+        ) ||
+        (
+          ingredient.unit ===
+            'gram' &&
+          quantity > 40000
+        ) ||
+        (
+          ingredient.unit ===
+            'ltr' &&
+          quantity > 40
+        ) ||
+        (
+          ingredient.unit ===
+            'ml' &&
+          quantity > 40000
+        ) ||
+        (
+          ingredient.unit ===
+            'piece' &&
+          quantity > 1000
+        ) ||
+        (
+          ingredient.unit ===
+            'packet' &&
+          quantity > 500
+        );
+
+      if (suspicious) {
+        score -= 6;
+
+        issues.push({
+          severity: 'warning',
+          code:
+            'HIGH_QUANTITY',
+          message:
+            `${ingredient.name} quantity ${quantity} ${ingredient.unit} looks unusually high for 100 guests.`,
+          ingredient:
+            ingredient.name,
+        });
+      }
+    },
+  );
+
+  if (missingRates > 0) {
+    score -= Math.min(
+      40,
+      missingRates * 12,
+    );
+
+    issues.push({
+      severity: 'error',
+      code: 'MISSING_RATES',
+      message:
+        `${missingRates} ingredient rate${missingRates === 1 ? ' is' : 's are'} missing.`,
+    });
+  }
+
+  if (estimatedRates > 0) {
+    score -= Math.min(
+      25,
+      estimatedRates * 5,
+    );
+
+    issues.push({
+      severity: 'warning',
+      code: 'ESTIMATED_RATES',
+      message:
+        `${estimatedRates} ingredient rate${estimatedRates === 1 ? ' is' : 's are'} estimated instead of coming from Ingredient Master.`,
+    });
+  }
+
+  if (!(costPerPlate > 0)) {
+    score -= 35;
+
+    issues.push({
+      severity: 'error',
+      code: 'ZERO_COST',
+      message:
+        'Calculated dish cost is zero.',
+    });
+  } else if (costPerPlate < 2) {
+    score -= 10;
+
+    issues.push({
+      severity: 'warning',
+      code: 'VERY_LOW_COST',
+      message:
+        `₹${costPerPlate.toFixed(2)} per plate looks unusually low.`,
+    });
+  } else if (costPerPlate > 300) {
+    score -= 10;
+
+    issues.push({
+      severity: 'warning',
+      code: 'VERY_HIGH_COST',
+      message:
+        `₹${costPerPlate.toFixed(2)} per plate looks unusually high and should be checked.`,
+    });
+  }
+
+  score =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(score),
+      ),
+    );
+
+  const errorCount =
+    issues.filter(
+      (issue) =>
+        issue.severity ===
+        'error',
+    ).length;
+
+  const warningCount =
+    issues.filter(
+      (issue) =>
+        issue.severity ===
+        'warning',
+    ).length;
+
+  const trustedRateCount =
+    Math.max(
+      0,
+      ingredientCount -
+        missingRates -
+        estimatedRates,
+    );
+
+  const rateCoveragePercent =
+    ingredientCount
+      ? Math.round(
+          trustedRateCount /
+            ingredientCount *
+            100,
+        )
+      : 0;
+
+  const status:
+    RecipeQualityStatus =
+      errorCount > 0
+        ? 'BLOCKED'
+        : warningCount > 0 ||
+            score < 90
+          ? 'REVIEW'
+          : 'READY';
+
+  return {
+    status,
+    score,
+    ingredientCount,
+    trustedRateCount,
+    rateCoveragePercent,
+    estimatedRates,
+    missingRates,
+    warningCount,
+    errorCount,
+    issues,
+  };
+}
