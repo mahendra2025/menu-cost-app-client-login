@@ -161,6 +161,19 @@ function normalizeText(value: string): string {
     .replace(/\bnan\b/g, 'naan')
     .replace(/\bkabab\b/g, 'kebab')
     .replace(/\bmanchau\b/g, 'manchow')
+    .replace(/\btamoto\b/g, 'tomato')
+    .replace(/\bmachurian\b/g, 'manchurian')
+    .replace(/\bnoddles\b/g, 'noodles')
+    .replace(/\bkopta\b/g, 'kofta')
+    .replace(/\bkohlapuri\b/g, 'kolhapuri')
+    .replace(/\bstrarter\b/g, 'starter')
+    .replace(/\bvegitables?\b/g, 'vegetable')
+    .replace(/\bchinnes\b/g, 'chinese')
+    .replace(/\bitaliyan\b/g, 'italian')
+    .replace(/\bfriuts\b/g, 'fruits')
+    .replace(/\bmoctail\b/g, 'mocktail')
+    .replace(/\blauch\b/g, 'lunch')
+    .replace(/\bchat\b/g, 'chaat')
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -804,7 +817,9 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   juices: 'Welcome Drink',
   'indian bread': 'Bread',
   'indian breads': 'Bread',
+  'india bread': 'Bread',
   'dal and rice': null,
+  'rice and dal': null,
   sides: 'Condiments',
   'side items': 'Condiments',
   'snacks counter': 'Starter',
@@ -813,6 +828,8 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   'special counters': 'Live Counter',
   'bihari counter': 'Live Counter',
   'chaat counter': 'Chaat',
+  'mocktail counter': 'Mocktail',
+  'mojito counter': 'Mocktail',
   'south indian counter': 'South Indian',
   'italian counter': 'Italian',
   'fruit counter': 'Fruit',
@@ -908,6 +925,56 @@ const COMMON_DISH_ALIASES: Record<
 
   'paneer bm':
     'paneer butter masala',
+
+  chai: 'masala tea',
+
+  tea: 'masala tea',
+
+  idli: 'plain idli',
+
+  upma: 'rava upma',
+
+  naan: 'plain naan',
+
+  biryani: 'veg biryani',
+
+  rice: 'steamed rice',
+
+  'plain rice': 'steamed rice',
+
+  'plane rice': 'steamed rice',
+
+  manchurian:
+    'veg manchurian gravy',
+
+  machurian:
+    'veg manchurian gravy',
+
+  noodles: 'veg hakka noodles',
+
+  noddles: 'veg hakka noodles',
+
+  'chese corn ball':
+    'corn cheese balls',
+
+  'cheese corn ball':
+    'corn cheese balls',
+
+  'mineral bottle':
+    'mineral water',
+
+  'mineral bottles':
+    'mineral water',
+
+  'minerals bottles':
+    'mineral water',
+
+  'minerls bottles':
+    'mineral water',
+
+  'idli tat': 'thatte idli',
+
+  'tat idli': 'thatte idli',
 
   'paneer butter mashala':
     'paneer butter masala',
@@ -1091,6 +1158,12 @@ function createDishCandidates(
 
   candidates.add(
     cleaned
+      .replace(/\s*[\[(].*$/u, '')
+      .trim(),
+  );
+
+  candidates.add(
+    cleaned
       .split('—')[0]
       .trim(),
   );
@@ -1248,8 +1321,11 @@ function parseServiceHeading(value: string): {
   const simpleTrailingPax = cleaned.match(
     /^(.*?)\s+(\d+(?:\.\d+)?)\s*(?:pax|members?|guests?|persons?|people)\s*$/i,
   );
-  const labelSource = trailingPax?.[1] || leadingPax?.[2] || simpleTrailingPax?.[1] || '';
-  const paxSource = trailingPax?.[2] || leadingPax?.[1] || simpleTrailingPax?.[2] || '';
+  const labelThenPax = cleaned.match(
+    /^(.*?)\s+(?:\d{1,2}(?::\d{2})?\s*(?:am|pm)\.?\s+)?(?:pax|members?|guests?|persons?|people)\s*[:\-]?\s*(\d+(?:\.\d+)?)(?:\s+(?:timing|time)?\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)\.?)?\s*$/i,
+  );
+  const labelSource = trailingPax?.[1] || leadingPax?.[2] || simpleTrailingPax?.[1] || labelThenPax?.[1] || '';
+  const paxSource = trailingPax?.[2] || leadingPax?.[1] || simpleTrailingPax?.[2] || labelThenPax?.[2] || '';
   const mealKey = normalizeMenuHeading(labelSource);
   const knownMeal = MEAL_SERVICE_LABELS[mealKey];
   const servicePax = Math.max(0, Number(paxSource) || 0);
@@ -1506,7 +1582,12 @@ function detectDishesFromLine(
         preferredCategory,
       );
 
-    if (fuzzyMatch) {
+    if (
+      fuzzyMatch &&
+      (!preferredCategory ||
+        fuzzyMatch.category ===
+          preferredCategory)
+    ) {
       return [fuzzyMatch];
     }
   }

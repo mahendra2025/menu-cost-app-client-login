@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     const supplied = Array.isArray(
       body.candidates,
     )
-      ? body.candidates.slice(0, 100)
+      ? body.candidates.slice(0, 500)
       : [];
     const unique = new Map<
       string,
