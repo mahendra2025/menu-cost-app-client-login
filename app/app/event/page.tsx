@@ -869,6 +869,53 @@ export default function EventPage() {
     };
 
     try {
+      const newDishCandidates =
+        selectedMenu
+          .filter((item) =>
+            manualRateIds.has(item.id),
+          )
+          .map((item) => ({
+            name: item.name,
+            categoryHint:
+              item.category || 'Other',
+          }));
+
+      if (newDishCandidates.length) {
+        const suggestionResponse =
+          await fetch(
+            '/api/dish-suggestions',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body: JSON.stringify({
+                sourceFileName:
+                  work.event
+                    .uploadFileName ||
+                  'Pasted menu',
+                candidates:
+                  newDishCandidates,
+              }),
+            },
+          );
+
+        if (!suggestionResponse.ok) {
+          const suggestionData =
+            (await suggestionResponse
+              .json()
+              .catch(() => ({}))) as {
+              error?: string;
+            };
+
+          throw new Error(
+            suggestionData.error ||
+              'New dishes could not be sent for admin review. Please try again.',
+          );
+        }
+      }
+
       persistWork(nextWork);
 
       // Complete local-storage saving before opening the next page.
@@ -902,7 +949,9 @@ export default function EventPage() {
       );
 
       setError(
-        'The detected menu could not be saved. Please try again.',
+        saveError instanceof Error
+          ? saveError.message
+          : 'The detected menu could not be saved. Please try again.',
       );
     }
   }

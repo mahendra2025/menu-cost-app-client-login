@@ -458,7 +458,7 @@ export default function NewDishesPage() {
   return (
     <AppShell
       title="New Dishes"
-      subtitle="Review possible dishes found in client uploads before adding them to the shared catalog"
+      subtitle="Review dishes found in client uploads and add each one to Available Dishes as a new dish or an alias"
     >
       <section className="content-grid">
         <div className="new-dish-overview">
@@ -506,10 +506,10 @@ export default function NewDishesPage() {
             <div>
               <h2>Uploaded suggestions</h2>
               <p>
-                Correct the name, choose
-                whether it is new or an
-                alias of a present dish,
-                then save it.
+                For each incoming dish,
+                choose one of two options:
+                create a new available dish
+                or link the name as an alias.
               </p>
             </div>
             <input
@@ -672,27 +672,29 @@ export default function NewDishesPage() {
                 </div>
 
                 <div className="new-dish-save-choice">
-                  <span>Save detected dish as</span>
-                  <div>
+                  <span>Add to Available Dishes as</span>
+                  <div role="group" aria-label={`How to add ${row.dishName}`}>
                     <button
                       type="button"
                       className={row.saveAs === 'new' ? 'active' : ''}
+                      aria-pressed={row.saveAs === 'new'}
                       onClick={() => updateRow(row.id, {
                         saveAs: 'new',
                         aliasCategory: '',
                         aliasTarget: '',
                       })}
                     >
-                      New catalog dish
+                      New Dish
                     </button>
                     <button
                       type="button"
                       className={row.saveAs === 'alias' ? 'active' : ''}
+                      aria-pressed={row.saveAs === 'alias'}
                       onClick={() => updateRow(row.id, {
                         saveAs: 'alias',
                       })}
                     >
-                      Alias of existing dish
+                      Alias of Available Dish
                     </button>
                   </div>
                 </div>
@@ -879,8 +881,8 @@ export default function NewDishesPage() {
                     {workingId === row.id
                       ? 'Saving…'
                       : row.saveAs === 'alias'
-                        ? 'Add Alias to Present Dish'
-                        : 'Add to Dish Catalog'}
+                        ? 'Add as Alias'
+                        : 'Add as New Dish'}
                   </button>
                 </div>
               </article>
