@@ -7,6 +7,9 @@ import {
 } from 'react';
 
 import AppShell from '../../components/AppShell';
+import RecipeStudioPanel, {
+  type RecipeStudioDishRequest,
+} from '../dishes/RecipeStudioPanel';
 
 type Suggestion = {
   id: string;
@@ -76,6 +79,10 @@ export default function NewDishesPage() {
     useState('');
   const [verifications, setVerifications] =
     useState<Record<string, DishVerification>>({});
+  const [recipeStudioOpened, setRecipeStudioOpened] =
+    useState(false);
+  const [requestedRecipeDish, setRequestedRecipeDish] =
+    useState<RecipeStudioDishRequest | null>(null);
 
   async function loadQueue() {
     setLoading(true);
@@ -306,6 +313,7 @@ export default function NewDishesPage() {
 
   async function approve(
     row: EditableSuggestion,
+    buildRecipe = false,
   ) {
     const verification =
       verifications[row.id];
@@ -382,10 +390,26 @@ export default function NewDishesPage() {
       );
       setMessageType('success');
       setMessage(
-        row.saveAs === 'alias'
+        buildRecipe
+          ? `${row.dishName.trim()} was added. Its recipe is ready below.`
+          : row.saveAs === 'alias'
           ? `${row.dishName.trim()} was added as an alias of ${aliasTarget?.name}.`
           : `${row.dishName.trim()} was added to the Dish Catalog.`,
       );
+      if (buildRecipe && row.saveAs === 'new') {
+        setRequestedRecipeDish({
+          requestId: `new_dish_recipe_${row.id}_${Date.now()}`,
+          name: row.dishName.trim(),
+          category: row.category.trim() || 'Other',
+          subcategory: row.subcategory.trim(),
+        });
+        setRecipeStudioOpened(true);
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById('new-dish-recipe-studio')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
     } catch (error) {
       setMessageType('error');
       setMessage(
@@ -486,18 +510,30 @@ export default function NewDishesPage() {
               before publishing it.
             </p>
           </div>
-          <button
-            className="ghost-button"
-            type="button"
-            onClick={() =>
-              void loadQueue()
-            }
-            disabled={loading}
-          >
-            {loading
-              ? 'Refreshing…'
-              : 'Refresh queue'}
-          </button>
+          <div className="new-dish-overview-actions">
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() => void loadQueue()}
+              disabled={loading}
+            >
+              {loading ? 'Refreshing…' : 'Refresh queue'}
+            </button>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                setRecipeStudioOpened(true);
+                window.requestAnimationFrame(() => {
+                  document
+                    .getElementById('new-dish-recipe-studio')
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+              }}
+            >
+              Open Recipe Studio
+            </button>
+          </div>
         </div>
 
         {message ? (
@@ -889,10 +925,46 @@ export default function NewDishesPage() {
                         ? 'Add as Alias'
                         : 'Add as New Dish'}
                   </button>
+                  {row.saveAs === 'new' ? (
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => void approve(row, true)}
+                      disabled={Boolean(workingId)}
+                    >
+                      {workingId === row.id
+                        ? 'Saving…'
+                        : 'Add Dish & Build Recipe'}
+                    </button>
+                  ) : null}
                 </div>
               </article>
             ))}
           </div>
+        </div>
+
+        <div id="new-dish-recipe-studio">
+          {recipeStudioOpened ? (
+            <RecipeStudioPanel requestedDish={requestedRecipeDish} />
+          ) : (
+            <div className="glass-card new-dish-recipe-prompt">
+              <div>
+                <span className="section-kicker">Recipes</span>
+                <h2>Add recipes without leaving this page</h2>
+                <p>
+                  Approve a new dish with “Add Dish &amp; Build Recipe”, or open
+                  Recipe Studio to work on any existing recipe.
+                </p>
+              </div>
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => setRecipeStudioOpened(true)}
+              >
+                Open Recipe Studio
+              </button>
+            </div>
+          )}
         </div>
       </section>
     </AppShell>
