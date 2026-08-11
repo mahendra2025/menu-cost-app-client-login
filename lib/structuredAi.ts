@@ -124,7 +124,6 @@ async function requestOpenAI(options: StructuredAiRequest) {
 
 export async function requestStructuredAi(options: StructuredAiRequest) {
   const provider = structuredAiProvider();
-  if (provider === 'ollama') return requestOllama(options);
   if (provider === 'openai') return requestOpenAI(options);
   throw new Error('No structured AI provider is configured');
 }
