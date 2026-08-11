@@ -1194,6 +1194,33 @@ export default function EventPage() {
                 message?: string;
               }>;
             };
+
+            accuracy?: {
+              risk?:
+                | 'NEW_BASELINE'
+                | 'STABLE'
+                | 'WATCH'
+                | 'HIGH';
+
+              baselineSource?:
+                | 'previous_tenant_recipe'
+                | 'dish_master'
+                | 'built_in_catalog'
+                | 'none';
+
+              currentCostPerPlate?: number;
+              previousCostPerPlate?: number;
+              changeAmount?: number;
+              changePercent?: number;
+
+              direction?:
+                | 'UP'
+                | 'DOWN'
+                | 'FLAT'
+                | 'NEW';
+
+              reason?: string;
+            };
           }>;
         };
 
@@ -1279,6 +1306,13 @@ export default function EventPage() {
               quality?.status ||
               'READY';
 
+            const accuracy =
+              result?.accuracy;
+
+            const accuracyNeedsReview =
+              accuracy?.risk ===
+                'HIGH';
+
             return {
               ...item,
 
@@ -1299,7 +1333,8 @@ export default function EventPage() {
 
               coverageStatus:
                 qualityStatus ===
-                  'READY'
+                  'READY' &&
+                !accuracyNeedsReview
                   ? 'COSTED'
                   : 'REVIEW',
 
@@ -1324,14 +1359,49 @@ export default function EventPage() {
                 ),
 
               coverageReason:
-                qualityStatus ===
-                  'READY'
-                  ? 'Recipe cost passed automatic QA'
-                  : quality
-                      ?.issues
-                      ?.[0]
-                      ?.message ||
-                    'Recipe cost needs review',
+                accuracyNeedsReview
+                  ? accuracy?.reason ||
+                    'Large cost movement needs review'
+                  : qualityStatus ===
+                      'READY'
+                    ? 'Recipe cost passed automatic QA'
+                    : quality
+                        ?.issues
+                        ?.[0]
+                        ?.message ||
+                      'Recipe cost needs review',
+
+              accuracyRisk:
+                accuracy?.risk,
+
+              previousCostPerPlate:
+                Math.max(
+                  0,
+                  Number(
+                    accuracy
+                      ?.previousCostPerPlate,
+                  ) || 0,
+                ),
+
+              costChangeAmount:
+                Number(
+                  accuracy
+                    ?.changeAmount,
+                ) || 0,
+
+              costChangePercent:
+                Number(
+                  accuracy
+                    ?.changePercent,
+                ) || 0,
+
+              costBaselineSource:
+                accuracy
+                  ?.baselineSource,
+
+              accuracyReason:
+                accuracy?.reason ||
+                '',
             };
           });
         }
@@ -2183,6 +2253,71 @@ export default function EventPage() {
         [],
       selectedPreviewIds,
     );
+
+  const accuracyAuditMenu =
+    (
+      detectionPreview?.menu ||
+      []
+    ).filter(
+      (item) =>
+        selectedPreviewIds.has(
+          item.id,
+        ),
+    );
+
+  const highAccuracyRiskCount =
+    accuracyAuditMenu.filter(
+      (item) =>
+        item.accuracyRisk ===
+        'HIGH',
+    ).length;
+
+  const watchAccuracyRiskCount =
+    accuracyAuditMenu.filter(
+      (item) =>
+        item.accuracyRisk ===
+        'WATCH',
+    ).length;
+
+  const stableAccuracyCount =
+    accuracyAuditMenu.filter(
+      (item) =>
+        item.accuracyRisk ===
+        'STABLE',
+    ).length;
+
+  const newBaselineCount =
+    accuracyAuditMenu.filter(
+      (item) =>
+        item.accuracyRisk ===
+        'NEW_BASELINE',
+    ).length;
+
+  const largestCostMovements =
+    accuracyAuditMenu
+      .filter(
+        (item) =>
+          item.accuracyRisk ===
+            'HIGH' ||
+          item.accuracyRisk ===
+            'WATCH',
+      )
+      .sort(
+        (left, right) =>
+          Math.abs(
+            Number(
+              right
+                .costChangePercent,
+            ) || 0,
+          ) -
+          Math.abs(
+            Number(
+              left
+                .costChangePercent,
+            ) || 0,
+          ),
+      )
+      .slice(0, 5);
 
   const previewGroupMap =
     new Map<
@@ -3053,6 +3188,153 @@ Gulab Jamun`}
                   )}
                 </div>
 
+                <div className="menu-cost-accuracy-audit">
+                  <div className="menu-cost-accuracy-head">
+                    <div>
+                      <span>
+                        Costing Accuracy Audit
+                      </span>
+
+                      <strong>
+                        {highAccuracyRiskCount > 0
+                          ? `${highAccuracyRiskCount} high-risk change${highAccuracyRiskCount === 1 ? '' : 's'}`
+                          : watchAccuracyRiskCount > 0
+                            ? `${watchAccuracyRiskCount} change${watchAccuracyRiskCount === 1 ? '' : 's'} to review`
+                            : 'Costs look stable'}
+                      </strong>
+
+                      <small>
+                        Current recipe costs are compared with the previous tenant cost or catalog baseline.
+                      </small>
+                    </div>
+
+                    <div
+                      className={`cost-accuracy-overall ${
+                        highAccuracyRiskCount > 0
+                          ? 'high'
+                          : watchAccuracyRiskCount > 0
+                            ? 'watch'
+                            : 'stable'
+                      }`}
+                    >
+                      {highAccuracyRiskCount > 0
+                        ? '⚠ Review required'
+                        : watchAccuracyRiskCount > 0
+                          ? '◷ Check changes'
+                          : '✓ Stable'}
+                    </div>
+                  </div>
+
+                  <div className="menu-cost-accuracy-stats">
+                    <div className="high">
+                      <b>
+                        {highAccuracyRiskCount}
+                      </b>
+
+                      <span>
+                        High Risk
+                      </span>
+                    </div>
+
+                    <div className="watch">
+                      <b>
+                        {watchAccuracyRiskCount}
+                      </b>
+
+                      <span>
+                        Watch
+                      </span>
+                    </div>
+
+                    <div className="stable">
+                      <b>
+                        {stableAccuracyCount}
+                      </b>
+
+                      <span>
+                        Stable
+                      </span>
+                    </div>
+
+                    <div className="baseline">
+                      <b>
+                        {newBaselineCount}
+                      </b>
+
+                      <span>
+                        New Baseline
+                      </span>
+                    </div>
+                  </div>
+
+                  {largestCostMovements.length ? (
+                    <div className="menu-cost-movement-list">
+                      {largestCostMovements.map(
+                        (item) => (
+                          <div
+                            className={`menu-cost-movement ${
+                              item.accuracyRisk === 'HIGH'
+                                ? 'high'
+                                : 'watch'
+                            }`}
+                            key={`accuracy-${item.id}`}
+                          >
+                            <div>
+                              <strong>
+                                {item.name}
+                              </strong>
+
+                              <small>
+                                Previous ₹
+                                {Number(
+                                  item.previousCostPerPlate,
+                                ).toFixed(2)}
+                                {' → '}
+                                Current ₹
+                                {Number(
+                                  item.costPerPlate,
+                                ).toFixed(2)}
+                              </small>
+                            </div>
+
+                            <div className="menu-cost-movement-change">
+                              <b>
+                                {Number(
+                                  item.costChangePercent,
+                                ) >= 0
+                                  ? '+'
+                                  : ''}
+                                {Number(
+                                  item.costChangePercent,
+                                ).toFixed(1)}
+                                %
+                              </b>
+
+                              <span>
+                                {Number(
+                                  item.costChangeAmount,
+                                ) >= 0
+                                  ? '+'
+                                  : '-'}
+                                ₹
+                                {Math.abs(
+                                  Number(
+                                    item.costChangeAmount,
+                                  ),
+                                ).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  ) : (
+                    <p className="menu-cost-accuracy-clean">
+                      ✓ No abnormal historical cost movements detected in the selected menu.
+                    </p>
+                  )}
+                </div>
+
                 <div className="menu-preview-groups">
                   {detectionPreviewGroups.map((group) => {
                     const selectedInGroup =
@@ -3128,6 +3410,28 @@ Gulab Jamun`}
                                     {item.category}
                                     {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
                                   </small>
+
+                                  {item.accuracyRisk &&
+                                  item.accuracyRisk !==
+                                    'NEW_BASELINE' ? (
+                                    <span
+                                      className={`menu-accuracy-badge ${item.accuracyRisk.toLowerCase()}`}
+                                      title={
+                                        item.accuracyReason ||
+                                        ''
+                                      }
+                                    >
+                                      {item.accuracyRisk === 'HIGH'
+                                        ? '⚠ Cost jump'
+                                        : item.accuracyRisk === 'WATCH'
+                                          ? '◷ Cost changed'
+                                          : '✓ Cost stable'}
+
+                                      {item.costChangePercent !== undefined
+                                        ? ` · ${Number(item.costChangePercent) >= 0 ? '+' : ''}${Number(item.costChangePercent).toFixed(1)}%`
+                                        : ''}
+                                    </span>
+                                  ) : null}
 
                                   <span
                                     className={`menu-coverage-badge ${getMenuCoverageStatus(

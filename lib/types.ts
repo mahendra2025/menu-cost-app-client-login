@@ -66,6 +66,24 @@ export type MenuItem = {
   costConfidence?: number;
   rateCoveragePercent?: number;
   coverageReason?: string;
+
+  accuracyRisk?:
+    | 'NEW_BASELINE'
+    | 'STABLE'
+    | 'WATCH'
+    | 'HIGH';
+
+  previousCostPerPlate?: number;
+  costChangeAmount?: number;
+  costChangePercent?: number;
+
+  costBaselineSource?:
+    | 'previous_tenant_recipe'
+    | 'dish_master'
+    | 'built_in_catalog'
+    | 'none';
+
+  accuracyReason?: string;
 };
 
 export type ExtraCost = {

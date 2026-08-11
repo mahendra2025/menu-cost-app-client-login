@@ -4,6 +4,16 @@ import { NextResponse } from 'next/server';
 import defaultRecipesData from '../../../../lib/defaultRecipes.json';
 import { requireClientTenantId } from '../../../../lib/billingAuth';
 import { normalizeIngredientRate } from '../../../../lib/ingredientCatalog';
+
+import {
+  assessCostAccuracy,
+  type CostBaselineSource,
+} from '../../../../lib/costAccuracy';
+
+import {
+  DISH_COST_ITEMS,
+} from '../../../../lib/dishCostMaster';
+
 import { prisma } from '../../../../lib/prisma';
 import {
   assessRecipeQuality,
@@ -142,17 +152,82 @@ export async function POST(request: Request) {
       return NextResponse.json({ results: [], generated: 0 });
     }
 
-    const [catalog, overrides, savedRecipes] = await Promise.all([
+    const [
+      catalog,
+      overrides,
+      savedRecipes,
+      masterDishes,
+    ] = await Promise.all([
       prisma.recipeCatalog.findUnique({
         where: { id: 'global' },
         select: { dishes: true, rates: true },
       }),
+
       prisma.tenantIngredientRate.findMany({
         where: { tenantId },
         select: { ingredientId: true, rate: true },
       }),
-      prisma.tenantAutoRecipe.findMany({ where: { tenantId } }),
+
+      prisma.tenantAutoRecipe.findMany({
+        where: { tenantId },
+      }),
+
+      prisma.dishMasterItem.findMany({
+        select: {
+          name: true,
+          rate: true,
+        },
+      }),
     ]);
+
+    const previousTenantCostMap =
+      new Map(
+        savedRecipes.map(
+          (saved) => [
+            saved.normalizedName,
+            Math.max(
+              0,
+              Number(
+                saved.costPerPlate,
+              ) || 0,
+            ),
+          ],
+        ),
+      );
+
+    const dishMasterCostMap =
+      new Map(
+        masterDishes.map(
+          (dish) => [
+            normalizeRecipeName(
+              dish.name,
+            ),
+            Math.max(
+              0,
+              Number(
+                dish.rate,
+              ) || 0,
+            ),
+          ],
+        ),
+      );
+
+    const builtInCostMap =
+      new Map(
+        DISH_COST_ITEMS.map(
+          (dish) => [
+            normalizeRecipeName(
+              dish.name,
+            ),
+            Math.max(
+              0,
+              Number(
+                dish.rate,
+              ) || 0,
+            ),
+          ],
+        ),
+      );
 
     const masterRates = Array.isArray(catalog?.rates) ? catalog.rates : [];
     const overrideMap = new Map(
@@ -262,6 +337,60 @@ export async function POST(request: Request) {
           },
         );
 
+      const previousTenantCost =
+        previousTenantCostMap.get(
+          key,
+        ) || 0;
+
+      const dishMasterCost =
+        dishMasterCostMap.get(
+          key,
+        ) || 0;
+
+      const builtInCost =
+        builtInCostMap.get(
+          key,
+        ) || 0;
+
+      let baselineCost = 0;
+
+      let baselineSource:
+        CostBaselineSource =
+          'none';
+
+      if (
+        previousTenantCost > 0
+      ) {
+        baselineCost =
+          previousTenantCost;
+
+        baselineSource =
+          'previous_tenant_recipe';
+      } else if (
+        dishMasterCost > 0
+      ) {
+        baselineCost =
+          dishMasterCost;
+
+        baselineSource =
+          'dish_master';
+      } else if (
+        builtInCost > 0
+      ) {
+        baselineCost =
+          builtInCost;
+
+        baselineSource =
+          'built_in_catalog';
+      }
+
+      const accuracy =
+        assessCostAccuracy(
+          finalCostPerPlate,
+          baselineCost,
+          baselineSource,
+        );
+
       return {
         requestedName: dish.name,
         matchedName: recipe?.name || dish.name,
@@ -273,6 +402,7 @@ export async function POST(request: Request) {
         missingRates:
           costing.missingRates,
         quality,
+        accuracy,
         estimatedIngredientRates: priced?.estimatedRates || 0,
         recipeAvailable: Boolean(recipe),
         source: catalogRecipe ? 'catalog_recipe' : recipe ? 'ai_recipe' : 'unresolved',

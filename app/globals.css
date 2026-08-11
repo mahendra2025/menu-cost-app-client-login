@@ -8476,3 +8476,221 @@ td:last-child {
     flex-direction: column;
   }
 }
+
+
+/* =========================================================
+   COSTING ACCURACY AUDIT
+   ========================================================= */
+
+.menu-cost-accuracy-audit {
+  display: grid;
+  gap: 13px;
+  margin: 0 0 20px;
+  padding: 17px;
+  border: 1px solid rgba(88,86,214,.16);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(88,86,214,.045),
+      rgba(255,255,255,.94)
+    );
+}
+
+.menu-cost-accuracy-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.menu-cost-accuracy-head > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.menu-cost-accuracy-head > div:first-child > span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.menu-cost-accuracy-head strong {
+  font-size: 17px;
+}
+
+.menu-cost-accuracy-head small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.cost-accuracy-overall {
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.cost-accuracy-overall.stable {
+  color: #187b35;
+  background: rgba(52,199,89,.1);
+}
+
+.cost-accuracy-overall.watch {
+  color: #9a5a00;
+  background: rgba(255,149,0,.11);
+}
+
+.cost-accuracy-overall.high {
+  color: #b42318;
+  background: rgba(255,59,48,.1);
+}
+
+.menu-cost-accuracy-stats {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0,1fr));
+  gap: 7px;
+}
+
+.menu-cost-accuracy-stats > div {
+  display: grid;
+  gap: 2px;
+  padding: 9px;
+  border: 1px solid rgba(15,23,42,.07);
+  border-radius: 11px;
+  background: rgba(255,255,255,.82);
+}
+
+.menu-cost-accuracy-stats b {
+  font-size: 16px;
+}
+
+.menu-cost-accuracy-stats span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.menu-cost-accuracy-stats .high b {
+  color: #b42318;
+}
+
+.menu-cost-accuracy-stats .watch b {
+  color: #9a5a00;
+}
+
+.menu-cost-accuracy-stats .stable b {
+  color: #187b35;
+}
+
+.menu-cost-accuracy-stats .baseline b {
+  color: #075db7;
+}
+
+.menu-cost-movement-list {
+  display: grid;
+  gap: 7px;
+}
+
+.menu-cost-movement {
+  display: grid;
+  grid-template-columns:
+    minmax(0,1fr)
+    auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 11px;
+  border-radius: 11px;
+}
+
+.menu-cost-movement.high {
+  border: 1px solid rgba(255,59,48,.14);
+  background: rgba(255,59,48,.055);
+}
+
+.menu-cost-movement.watch {
+  border: 1px solid rgba(255,149,0,.16);
+  background: rgba(255,149,0,.055);
+}
+
+.menu-cost-movement > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.menu-cost-movement strong {
+  font-size: 10px;
+}
+
+.menu-cost-movement small {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.menu-cost-movement-change {
+  display: grid;
+  gap: 1px;
+  text-align: right;
+}
+
+.menu-cost-movement-change b {
+  font-size: 12px;
+}
+
+.menu-cost-movement-change span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.menu-cost-accuracy-clean {
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  color: #187b35;
+  background: rgba(52,199,89,.07);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.menu-accuracy-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 5px;
+  margin-right: 5px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.menu-accuracy-badge.stable {
+  color: #187b35;
+  background: rgba(52,199,89,.09);
+}
+
+.menu-accuracy-badge.watch {
+  color: #9a5a00;
+  background: rgba(255,149,0,.1);
+}
+
+.menu-accuracy-badge.high {
+  color: #b42318;
+  background: rgba(255,59,48,.09);
+}
+
+@media (max-width: 650px) {
+  .menu-cost-accuracy-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .menu-cost-accuracy-stats {
+    grid-template-columns:
+      repeat(2, minmax(0,1fr));
+  }
+}
