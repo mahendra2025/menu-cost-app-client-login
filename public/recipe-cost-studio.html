@@ -578,6 +578,11 @@ tbody tr.selected{background:var(--brand-soft)}
           <input class="field" id="dishSearch" placeholder="Search dishes">
         </label>
         <select class="select" id="categoryFilter"><option value="All">All categories</option></select>
+        <select class="select" id="recipeFilter" aria-label="Filter dishes by recipe status">
+          <option value="All">All dishes</option>
+          <option value="WITHOUT_RECIPE">Without recipes</option>
+          <option value="WITH_RECIPE">With recipes</option>
+        </select>
       </div>
     </div>
     <div class="dishList" id="dishList"></div>
@@ -1494,11 +1499,13 @@ function syncDishCategoryFilterOptions(){
 }
 function renderDishList(){
   syncDishCategoryFilterOptions();
-  const q=$("dishSearch").value.trim().toLowerCase(),cat=$("categoryFilter").value;
+  const q=$("dishSearch").value.trim().toLowerCase(),cat=$("categoryFilter").value,recipeFilter=$("recipeFilter").value;
   const filtered=dishes.filter(d=>{
     const subcategory=getDishSubcategory(d);
     const aliases=normalizeAliases(d.aliases,d.name);
-    return (!q||d.name.toLowerCase().includes(q)||d.category.toLowerCase().includes(q)||subcategory.toLowerCase().includes(q)||aliases.some(alias=>alias.toLowerCase().includes(q)))&&(cat==="All"||d.category===cat);
+    const hasRecipe=Array.isArray(d.ingredients)&&d.ingredients.length>0;
+    const matchesRecipeFilter=recipeFilter==="All"||(recipeFilter==="WITH_RECIPE"&&hasRecipe)||(recipeFilter==="WITHOUT_RECIPE"&&!hasRecipe);
+    return (!q||d.name.toLowerCase().includes(q)||d.category.toLowerCase().includes(q)||subcategory.toLowerCase().includes(q)||aliases.some(alias=>alias.toLowerCase().includes(q)))&&(cat==="All"||d.category===cat)&&matchesRecipeFilter;
   });
   $("visibleDishCount").textContent=filtered.length;$("totalDishCount").textContent=dishes.length;
 
@@ -1535,7 +1542,7 @@ function renderDishList(){
             ${groupDishes.map(d=>`<button class="dishItem ${d.id===selectedDishId?"active":""}" data-id="${esc(d.id)}">
               <span class="dishItemMain">
                 <span class="dishName">${esc(d.name)}</span>
-                <span class="dishMeta">${d.ingredients?.length||0} ingredients${normalizeAliases(d.aliases,d.name).length?` · ${normalizeAliases(d.aliases,d.name).length} aliases`:""}</span>
+                <span class="dishMeta">${d.ingredients?.length?`${d.ingredients.length} ingredients`:"No recipe"}${normalizeAliases(d.aliases,d.name).length?` · ${normalizeAliases(d.aliases,d.name).length} aliases`:""}</span>
               </span>
               <span class="dishCost">${money(dishCost(d)/(d.baseGuests||100))}</span>
             </button>`).join("")}
@@ -2170,7 +2177,7 @@ window.addEventListener("message",event=>{
   };
   openRequestedDish();
 });
-$("dishSearch").addEventListener("input",renderDishList);$("categoryFilter").addEventListener("change",renderDishList);
+$("dishSearch").addEventListener("input",renderDishList);$("categoryFilter").addEventListener("change",renderDishList);$("recipeFilter").addEventListener("change",renderDishList);
 $("jsonEditor").addEventListener("input",()=>{setDirty(true);setValidation("","Not checked");setStatus("Unsaved changes.");updateLineNumbers();renderJsonSummary();queueEditorAutosave()});
 $("jsonEditor").addEventListener("scroll",()=>{$("lineNumbers").scrollTop=$("jsonEditor").scrollTop});
 $("formatJson").addEventListener("click",()=>{try{$("jsonEditor").value=JSON.stringify(parseJson(),null,2);updateLineNumbers();renderJsonSummary();renderVisualRecipeEditor();setDirty(true);setStatus("JSON formatted.","ok");queueEditorAutosave()}catch(e){setStatus(`Invalid JSON: ${e.message}`,"error")}});
