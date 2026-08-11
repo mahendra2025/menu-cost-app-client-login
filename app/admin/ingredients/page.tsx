@@ -686,17 +686,9 @@ export default function AdminIngredientsPage() {
   }
 
   async function fillZeroMarketRates() {
-    if (dirty) {
-      setMessageType('error');
-      setMessage(
-        'Save your current ingredient changes first.',
-      );
-      return;
-    }
-
     if (
       !window.confirm(
-        'Fill every ₹0 ingredient with a reference market rate? Existing positive rates will not change.',
+        'Add a market rate to every ₹0 ingredient? Existing positive rates will not change. Review the suggested rates before saving.',
       )
     ) {
       return;
@@ -710,6 +702,17 @@ export default function AdminIngredientsPage() {
         '/api/admin/ingredients/fill-zero-rates',
         {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            previewOnly: true,
+            rates: rows.filter(
+              (row) =>
+                row.name.trim() &&
+                !(Number(row.rate) > 0),
+            ),
+          }),
         },
       );
 
@@ -722,7 +725,31 @@ export default function AdminIngredientsPage() {
         );
       }
 
-      await loadIngredients();
+      const suggestedRates = new Map<string, number>(
+        (Array.isArray(data.rates) ? data.rates : []).map(
+          (rate: { id?: string; rate?: number }) => [
+            String(rate.id || ''),
+            Number(rate.rate) || 0,
+          ],
+        ),
+      );
+
+      setRows((current) =>
+        current.map((row) => {
+          if (Number(row.rate) > 0) return row;
+
+          const id = normalizeIngredientId(
+            row.name,
+            row.unit,
+          );
+          const suggestedRate = suggestedRates.get(id);
+
+          return Number(suggestedRate) > 0
+            ? { ...row, rate: Number(suggestedRate) }
+            : row;
+        }),
+      );
+      setDirty(true);
 
       setMessageType('success');
 
@@ -733,7 +760,7 @@ export default function AdminIngredientsPage() {
           data.fromExactReference
         } from ingredient reference · ${
           data.fromCategoryEstimate
-        } estimated · ${data.stillZero} still ₹0.`,
+        } estimated · ${data.stillZero} still ₹0. Review and save all changes.`,
       );
 
       setStatusFilter('ALL');
@@ -907,7 +934,6 @@ export default function AdminIngredientsPage() {
               disabled={
                 fillingZeroRates ||
                 missingRateCount === 0 ||
-                dirty ||
                 !catalogReady
               }
               onClick={() =>
@@ -916,8 +942,8 @@ export default function AdminIngredientsPage() {
             >
               <span aria-hidden="true">₹</span>
               {fillingZeroRates
-                ? 'Filling ₹0 rates…'
-                : `Fill ₹0 rates (${missingRateCount})`}
+                ? 'Adding market rates…'
+                : `Add market rates (${missingRateCount})`}
             </button>
             <button className="secondary-button" type="button" onClick={saveAll} disabled={!dirty || saving || !catalogReady}>
               {saving ? 'Saving…' : dirty ? 'Save all changes' : 'All changes saved'}

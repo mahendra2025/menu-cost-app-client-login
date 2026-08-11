@@ -359,11 +359,16 @@ function recipeRateMap(dishes: unknown[]) {
   return map;
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const authError = await requireAdmin();
 
     if (authError) return authError;
+
+    const body = await request.json().catch(() => ({})) as {
+      previewOnly?: boolean;
+      rates?: unknown[];
+    };
 
     const catalog = await prisma.recipeCatalog.findUnique({
       where: { id: CATALOG_ID },
@@ -380,14 +385,23 @@ export async function POST() {
       ? catalog.dishes
       : [];
 
-    const rates = Array.isArray(catalog.rates)
+    const suppliedRates = Array.isArray(body.rates)
+      ? body.rates
+          .map(normalizeIngredientRate)
+          .filter(
+            (rate): rate is IngredientRate =>
+              Boolean(rate),
+          )
+      : null;
+
+    const rates = suppliedRates || (Array.isArray(catalog.rates)
       ? catalog.rates
           .map(normalizeIngredientRate)
           .filter(
             (rate): rate is IngredientRate =>
               Boolean(rate),
           )
-      : [];
+      : []);
 
     const recipeRates = recipeRateMap(dishes);
 
@@ -566,17 +580,19 @@ export async function POST() {
       };
     });
 
-    await prisma.recipeCatalog.update({
-      where: { id: CATALOG_ID },
+    if (!body.previewOnly) {
+      await prisma.recipeCatalog.update({
+        where: { id: CATALOG_ID },
 
-      data: {
-        rates:
-          updatedRates as unknown as Prisma.InputJsonValue,
+        data: {
+          rates:
+            updatedRates as unknown as Prisma.InputJsonValue,
 
-        dishes:
-          updatedDishes as Prisma.InputJsonValue,
-      },
-    });
+          dishes:
+            updatedDishes as Prisma.InputJsonValue,
+        },
+      });
+    }
 
     const stillZero = updatedRates.filter(
       (rate) => !(Number(rate.rate) > 0),
@@ -596,6 +612,7 @@ export async function POST() {
       stillZero,
       totalIngredients:
         updatedRates.length,
+      rates: updatedRates,
     });
   } catch (error) {
     console.error(
