@@ -334,6 +334,21 @@ function hasHardCostBlock(
 function requiresCostApproval(
   item: MenuItem,
 ) {
+  /*
+   * Category estimates are intentionally
+   * labelled REVIEW but are allowed as a
+   * temporary automatic fallback.
+   *
+   * They remain visible on the Cost page
+   * so the caterer can improve them later.
+   */
+  if (
+    item.costSource ===
+      'category_estimate'
+  ) {
+    return false;
+  }
+
   return (
     item.costQualityStatus ===
       'REVIEW' ||
@@ -647,6 +662,20 @@ export default function EventPage() {
                     name,
                     category,
                   );
+
+                const matchedCategoryCost =
+                  matchedDish
+                    ? Math.max(
+                        0,
+                        Number(
+                          dishCatalog
+                            .CATEGORY_BASE_COST[
+                            matchedDish.category as keyof typeof dishCatalog.CATEGORY_BASE_COST
+                          ],
+                        ) || 0,
+                      )
+                    : 0;
+
                 const item: MenuItem = {
                   id: uid('dish'),
                   name:
@@ -658,7 +687,8 @@ export default function EventPage() {
                   costPerPlate:
                     Number(
                       matchedDish?.rate,
-                    ) || 0,
+                    ) ||
+                    matchedCategoryCost,
                   portionQuantity:
                     matchedDish
                       ?.servingQuantity ?? 1,
@@ -1228,6 +1258,115 @@ export default function EventPage() {
         console.warn('Automatic recipe costing skipped:', recipeError);
       }
 
+      /*
+       * Permanent final fallback.
+       *
+       * Recipe generation may occasionally be
+       * unavailable because of an AI/provider,
+       * network, ingredient-rate or recipe issue.
+       *
+       * Do not turn a 150-dish wedding menu into
+       * 150 manual data-entry tasks.
+       *
+       * Give every remaining dish a transparent
+       * category estimate instead.
+       */
+      const stillMissingBeforeFallback =
+        detectedMenu.filter(
+          (item) =>
+            !(
+              Number(
+                item.costPerPlate,
+              ) > 0
+            ),
+        );
+
+      if (
+        stillMissingBeforeFallback.length
+      ) {
+        try {
+          const dishCatalog =
+            await import(
+              '../../../lib/dishCostMaster'
+            );
+
+          detectedMenu =
+            detectedMenu.map(
+              (item) => {
+                if (
+                  Number(
+                    item.costPerPlate,
+                  ) > 0
+                ) {
+                  return item;
+                }
+
+                const categoryRate =
+                  Math.max(
+                    0,
+                    Number(
+                      dishCatalog
+                        .CATEGORY_BASE_COST[
+                        item.category as keyof typeof dishCatalog.CATEGORY_BASE_COST
+                      ],
+                    ) || 0,
+                  );
+
+                const otherRate =
+                  Math.max(
+                    0,
+                    Number(
+                      dishCatalog
+                        .CATEGORY_BASE_COST
+                        .Other,
+                    ) || 40,
+                  );
+
+                const estimatedCost =
+                  categoryRate > 0
+                    ? categoryRate
+                    : otherRate;
+
+                return {
+                  ...item,
+
+                  costPerPlate:
+                    estimatedCost,
+
+                  costSource:
+                    'category_estimate',
+
+                  coverageStatus:
+                    'REVIEW',
+
+                  costQualityStatus:
+                    'REVIEW',
+
+                  costConfidence: 35,
+
+                  rateCoveragePercent: 0,
+
+                  coverageReason:
+                    `Temporary ${item.category || 'Other'} category estimate. Add a Dish Master rate or recipe to improve accuracy.`,
+
+                  costApprovalStatus:
+                    'NOT_REQUIRED',
+
+                  costApprovalReason:
+                    'Automatic category estimate used because no recipe or Dish Master cost was available.',
+                };
+              },
+            );
+        } catch (
+          fallbackError
+        ) {
+          console.warn(
+            'Category fallback costing skipped:',
+            fallbackError,
+          );
+        }
+      }
+
       const unresolvedMenu = detectedMenu.filter(
         (item) => !(Number(item.costPerPlate) > 0),
       );
@@ -1262,10 +1401,18 @@ export default function EventPage() {
         },
       );
 
+      /*
+       * Keep original new-dish identity even after
+       * automatic costing.
+       *
+       * This lets Admin > New Dishes continue
+       * learning the catalog while the client
+       * can continue costing immediately.
+       */
       setManualRateIds(
         new Set(
-          unresolvedMenu.map(
-            (item) => item.id,
+          Array.from(
+            pendingMenuIds,
           ),
         ),
       );

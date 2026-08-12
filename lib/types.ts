@@ -49,7 +49,12 @@ export type MenuItem = {
   dayLabel?: string;
   mealLabel?: string;
   servicePax?: number;
-  costSource?: 'catalog' | 'catalog_recipe' | 'ai_recipe' | 'manual';
+  costSource?:
+    | 'catalog'
+    | 'catalog_recipe'
+    | 'ai_recipe'
+    | 'category_estimate'
+    | 'manual';
 
   coverageStatus?:
     | 'COSTED'

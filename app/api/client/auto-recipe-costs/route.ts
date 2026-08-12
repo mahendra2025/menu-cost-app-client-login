@@ -33,7 +33,22 @@ import {
   structuredAiProvider,
 } from '../../../../lib/structuredAi';
 
-const MAX_DISHES = 80;
+/*
+ * Permanent large-menu costing limits.
+ *
+ * A wedding menu may contain hundreds of dishes.
+ * Never silently ignore dishes after item 80.
+ */
+const MAX_REQUEST_DISHES = 300;
+
+/*
+ * Generate recipes in small groups.
+ * This gives structured AI much better reliability
+ * than asking it for 100+ recipes in one response.
+ */
+const AI_GENERATION_BATCH_SIZE = 12;
+const AI_GENERATION_CONCURRENCY = 2;
+
 const WASTAGE_RATE = 0.08;
 
 function withWastage(costPerPlate: number) {
@@ -76,13 +91,23 @@ async function generateRecipes(
     properties: {
       recipes: {
         type: 'array',
-        maxItems: MAX_DISHES,
+        maxItems: AI_GENERATION_BATCH_SIZE,
         items: {
           type: 'object',
           additionalProperties: false,
-          required: ['name', 'baseGuests', 'ingredients'],
+          required: [
+            'requestedName',
+            'name',
+            'baseGuests',
+            'ingredients',
+          ],
           properties: {
-            name: { type: 'string' },
+            requestedName: {
+              type: 'string',
+            },
+            name: {
+              type: 'string',
+            },
             baseGuests: { type: 'integer', const: 100 },
             ingredients: {
               type: 'array',
@@ -116,6 +141,8 @@ async function generateRecipes(
       instructions: [
         'Create practical Indian catering production recipes for exactly 100 guests.',
         'Return one recipe for every requested dish and do not add extra dishes.',
+        'Return recipes in exactly the same order as the requested dishes.',
+        'Copy the original requested dish name exactly into requestedName. Never translate, correct, shorten, normalize, or rename requestedName.',
         'Prefer ingredient names and purchase units from the supplied ingredient catalog.',
         'If an essential ingredient is missing from the catalog, include its standard market name and the most appropriate supported purchase unit.',
         'Quantities must be realistic production quantities, not per-person quantities.',
@@ -125,10 +152,91 @@ async function generateRecipes(
       input: JSON.stringify({ dishes, availableIngredients }),
     });
 
-    const parsed = JSON.parse(raw) as { recipes?: unknown[] };
-    return (parsed.recipes ?? [])
-      .map(readCostableRecipe)
-      .filter((recipe): recipe is CostableRecipe => Boolean(recipe));
+    const parsed =
+      JSON.parse(raw) as {
+        recipes?: unknown[];
+      };
+
+    const requestedByName =
+      new Map(
+        dishes.map(
+          (dish) => [
+            normalizeRecipeName(
+              dish.name,
+            ),
+            dish,
+          ],
+        ),
+      );
+
+    return (
+      parsed.recipes ?? []
+    )
+      .map(
+        (
+          value,
+          index,
+        ) => {
+          if (
+            !value ||
+            typeof value !== 'object' ||
+            Array.isArray(value)
+          ) {
+            return null;
+          }
+
+          const row =
+            value as Record<
+              string,
+              unknown
+            >;
+
+          const returnedRequestedName =
+            String(
+              row.requestedName ||
+              row.name ||
+              '',
+            )
+              .replace(/\s+/g, ' ')
+              .trim();
+
+          /*
+           * Prefer requestedName.
+           *
+           * If AI changed spelling anyway,
+           * fall back to the original input
+           * at the same array position.
+           */
+          const requested =
+            requestedByName.get(
+              normalizeRecipeName(
+                returnedRequestedName,
+              ),
+            ) ||
+            dishes[index];
+
+          if (!requested) {
+            return null;
+          }
+
+          return readCostableRecipe({
+            ...row,
+
+            /*
+             * Store the generated recipe under
+             * the exact original menu dish.
+             */
+            name:
+              requested.name,
+          });
+        },
+      )
+      .filter(
+        (
+          item,
+        ): item is CostableRecipe =>
+          Boolean(item),
+      );
   } catch (error) {
     console.error('Automatic recipe generation failed:', error);
     return [];
@@ -144,7 +252,14 @@ export async function POST(request: Request) {
 
     const body = await request.json() as Record<string, unknown>;
     const unique = new Map<string, RequestedDish>();
-    (Array.isArray(body.dishes) ? body.dishes.slice(0, MAX_DISHES) : [])
+    (
+      Array.isArray(body.dishes)
+        ? body.dishes.slice(
+            0,
+            MAX_REQUEST_DISHES,
+          )
+        : []
+    )
       .map(cleanDish)
       .forEach((dish) => {
         if (!dish) return;
@@ -291,7 +406,67 @@ export async function POST(request: Request) {
       .filter((rate) => (overrideMap.get(rate.id) ?? rate.rate) > 0)
       .slice(0, 120)
       .map((rate) => ({ name: rate.name, unit: rate.unit }));
-    const generated = await generateRecipes(missing, ingredientCatalog);
+    /*
+     * Process every missing dish.
+     *
+     * Example:
+     * 152 new dishes
+     * -> 13 small AI batches
+     * -> two batches processed together.
+     */
+    const generationBatches =
+      Array.from(
+        {
+          length:
+            Math.ceil(
+              missing.length /
+              AI_GENERATION_BATCH_SIZE,
+            ),
+        },
+        (_, index) =>
+          missing.slice(
+            index *
+              AI_GENERATION_BATCH_SIZE,
+
+            (
+              index + 1
+            ) *
+              AI_GENERATION_BATCH_SIZE,
+          ),
+      );
+
+    const generated:
+      CostableRecipe[] = [];
+
+    for (
+      let batchIndex = 0;
+      batchIndex <
+        generationBatches.length;
+      batchIndex +=
+        AI_GENERATION_CONCURRENCY
+    ) {
+      const wave =
+        generationBatches.slice(
+          batchIndex,
+          batchIndex +
+            AI_GENERATION_CONCURRENCY,
+        );
+
+      const waveResults =
+        await Promise.all(
+          wave.map(
+            (batch) =>
+              generateRecipes(
+                batch,
+                ingredientCatalog,
+              ),
+          ),
+        );
+
+      generated.push(
+        ...waveResults.flat(),
+      );
+    }
 
     for (const recipe of generated) {
       const key = normalizeRecipeName(recipe.name);

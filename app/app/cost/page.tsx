@@ -344,7 +344,11 @@ export default function CostPage() {
                                 <b>{item.name}</b>
                                 <small>
                                   {item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}
-                                  {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
+                                  {item.costSource === 'ai_recipe'
+                                    ? ' • AI recipe estimate'
+                                    : item.costSource === 'category_estimate'
+                                      ? ' • Category estimate — review recommended'
+                                      : ''}
                                 </small>
                               </div>
                             </td>
