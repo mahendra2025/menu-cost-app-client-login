@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useDeferredValue,
   useEffect,
   useMemo,
   useState,
@@ -365,6 +366,12 @@ export default function NewDishesPage() {
     );
   const [query, setQuery] =
     useState('');
+
+  const deferredQuery =
+    useDeferredValue(query);
+
+  const deferredRowsForMatching =
+    useDeferredValue(rows);
 
   const [
     reviewFilter,
@@ -1094,7 +1101,7 @@ export default function NewDishesPage() {
     useMemo(
       () =>
         new Map(
-          rows.map(
+          deferredRowsForMatching.map(
             (row) => [
               row.id,
               findCatalogMatches(
@@ -1106,7 +1113,7 @@ export default function NewDishesPage() {
           ),
         ),
       [
-        rows,
+        deferredRowsForMatching,
         catalogDishes,
       ],
     );
@@ -1207,7 +1214,7 @@ export default function NewDishesPage() {
   const visibleRows =
     useMemo(() => {
       const search =
-        query
+        deferredQuery
           .trim()
           .toLowerCase();
 
@@ -1395,7 +1402,7 @@ export default function NewDishesPage() {
       );
     }, [
       rows,
-      query,
+      deferredQuery,
       categoryFilter,
       reviewFilter,
       queueSort,

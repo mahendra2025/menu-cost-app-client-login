@@ -1,13 +1,12 @@
 'use client';
 
 import {
+  useDeferredValue,
   useEffect,
   useMemo,
   useState,
   type ChangeEvent,
 } from 'react';
-
-import Papa from 'papaparse';
 
 import AppShell from '../../components/AppShell';
 import RecipeStudioPanel, {
@@ -222,7 +221,18 @@ export default function AdminDishesPage() {
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const rowErrors = useMemo(() => validateRows(rows), [rows]);
+
+  const deferredQuery =
+    useDeferredValue(query);
+
+  const deferredCategoryQuery =
+    useDeferredValue(categoryQuery);
+
+  const rowErrors =
+    useMemo(
+      () => validateRows(rows),
+      [rows],
+    );
   const availableCategories = useMemo(
     () => Array.from(new Set([
       ...categories,
@@ -231,13 +241,20 @@ export default function AdminDishesPage() {
     [categories, rows],
   );
   const visibleCategories = useMemo(() => {
-    const search = categoryQuery.trim().toLowerCase();
+    const search =
+      deferredCategoryQuery
+        .trim()
+        .toLowerCase();
     return availableCategories.filter((category) =>
       !search ||
       category.toLowerCase().includes(search) ||
       (subcategories[category] ?? []).some((subcategory) => subcategory.toLowerCase().includes(search))
     );
-  }, [availableCategories, categoryQuery, subcategories]);
+  }, [
+    availableCategories,
+    deferredCategoryQuery,
+    subcategories,
+  ]);
   const subcategoryCount = useMemo(
     () => Object.values(subcategories).reduce((total, items) => total + items.length, 0),
     [subcategories],
@@ -424,7 +441,10 @@ export default function AdminDishesPage() {
   }, []);
 
   const filteredRows = useMemo(() => {
-    const search = query.trim().toLowerCase();
+    const search =
+      deferredQuery
+        .trim()
+        .toLowerCase();
     const matches = rows.filter((row) => {
       const matchesCategory = categoryFilter === 'ALL' || row.category === categoryFilter;
       const matchesSubcategory = subcategoryFilter === 'ALL' || row.subcategory === subcategoryFilter;
@@ -445,7 +465,15 @@ export default function AdminDishesPage() {
       const nameOrder = left.name.localeCompare(right.name, undefined, { sensitivity: 'base' });
       return sort === 'NAME_DESC' ? -nameOrder : nameOrder;
     });
-  }, [rows, query, categoryFilter, subcategoryFilter, statusFilter, rowErrors, sort]);
+  }, [
+    rows,
+    deferredQuery,
+    categoryFilter,
+    subcategoryFilter,
+    statusFilter,
+    rowErrors,
+    sort,
+  ]);
   const recipeLinkedCount = useMemo(
     () => rows.filter((row) => row.recipeLinked).length,
     [rows],
@@ -795,7 +823,7 @@ export default function AdminDishesPage() {
       setSaving(false);
     }
   }
-function handleCsvImport(
+async function handleCsvImport(
   event: ChangeEvent<HTMLInputElement>,
 ) {
   const input = event.currentTarget;
@@ -804,6 +832,12 @@ function handleCsvImport(
   if (!file) return;
 
   setMessage('');
+
+  const PapaModule =
+    await import('papaparse');
+
+  const Papa =
+    PapaModule.default;
 
   Papa.parse<CsvDishRow>(file, {
     header: true,

@@ -1,6 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import AppShell from '../../components/AppShell';
 import BulkIngredientImporter, {
   type BulkIngredientImportItem,
@@ -91,6 +96,66 @@ export default function AdminIngredientsPage() {
   const [marketPreview, setMarketPreview] =
     useState<MarketRatePreview | null>(null);
 
+  const deferredQuery =
+    useDeferredValue(query);
+
+  const deferredCategoryQuery =
+    useDeferredValue(categoryQuery);
+
+  /*
+   * Fast duplicate index.
+   * Previous code rescanned every ingredient
+   * for every row.
+   */
+  const duplicateIdCounts =
+    useMemo(() => {
+      const counts =
+        new Map<string, number>();
+
+      rows.forEach((row) => {
+        const id =
+          normalizeIngredientId(
+            row.name,
+            row.unit,
+          );
+
+        counts.set(
+          id,
+          (counts.get(id) || 0) + 1,
+        );
+      });
+
+      return counts;
+    }, [rows]);
+
+  const duplicateRowKeys =
+    useMemo(() => {
+      const duplicateKeys =
+        new Set<string>();
+
+      rows.forEach((row) => {
+        const id =
+          normalizeIngredientId(
+            row.name,
+            row.unit,
+          );
+
+        if (
+          (duplicateIdCounts.get(id) || 0) >
+          1
+        ) {
+          duplicateKeys.add(
+            row.rowKey,
+          );
+        }
+      });
+
+      return duplicateKeys;
+    }, [
+      rows,
+      duplicateIdCounts,
+    ]);
+
   async function loadIngredients() {
     setReady(false);
     setMessage('');
@@ -116,11 +181,14 @@ export default function AdminIngredientsPage() {
   useEffect(() => { void loadIngredients(); }, []);
 
   const filteredRows = useMemo(() => {
-    const search = query.trim().toLowerCase();
+    const search =
+      deferredQuery
+        .trim()
+        .toLowerCase();
     return rows
       .filter((row) => {
         const usedBy = usage[row.originalId]?.length || 0;
-        const needsAttention = !(Number(row.rate) > 0) || !row.name.trim() || hasDuplicate(rows, row);
+        const needsAttention = !(Number(row.rate) > 0) || !row.name.trim() || duplicateRowKeys.has(row.rowKey);
         const matchesStatus = statusFilter === 'ALL' ||
           (statusFilter === 'ATTENTION' && needsAttention) ||
           (statusFilter === 'LINKED' && usedBy > 0) ||
@@ -136,12 +204,26 @@ export default function AdminIngredientsPage() {
         const nameOrder = a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
         return sort === 'NAME_DESC' ? -nameOrder : nameOrder;
       });
-  }, [rows, query, categoryFilter, statusFilter, sort, usage]);
+  }, [
+    rows,
+    deferredQuery,
+    categoryFilter,
+    statusFilter,
+    sort,
+    usage,
+    duplicateRowKeys,
+  ]);
   const categoryCount = categories.length;
   const visibleCategories = useMemo(() => {
-    const search = categoryQuery.trim().toLowerCase();
+    const search =
+      deferredCategoryQuery
+        .trim()
+        .toLowerCase();
     return categories.filter((category) => !search || category.toLowerCase().includes(search));
-  }, [categories, categoryQuery]);
+  }, [
+    categories,
+    deferredCategoryQuery,
+  ]);
   const recipeLinkedCount = useMemo(() => rows.filter((row) => (usage[row.originalId]?.length || 0) > 0).length, [rows, usage]);
 
   const usedIngredientRows = useMemo(
@@ -171,7 +253,8 @@ export default function AdminIngredientsPage() {
       ),
     [usedIngredientRows, usage],
   );
-  const duplicateCount = useMemo(() => rows.filter((row) => hasDuplicate(rows, row)).length, [rows]);
+  const duplicateCount =
+    duplicateRowKeys.size;
   const missingRateCount = useMemo(() => rows.filter((row) => !(Number(row.rate) > 0)).length, [rows]);
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
   const visibleRows = filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -1523,7 +1606,7 @@ export default function AdminIngredientsPage() {
           <div className="ingredient-status-filters" aria-label="Filter ingredients by status">
             {([
               ['ALL', 'All ingredients', rows.length],
-              ['ATTENTION', 'Needs attention', rows.filter((row) => !(Number(row.rate) > 0) || !row.name.trim() || hasDuplicate(rows, row)).length],
+              ['ATTENTION', 'Needs attention', rows.filter((row) => !(Number(row.rate) > 0) || !row.name.trim() || duplicateRowKeys.has(row.rowKey)).length],
               ['LINKED', 'Recipe linked', recipeLinkedCount],
               ['UNLINKED', 'Not linked', rows.length - recipeLinkedCount],
             ] as const).map(([value, label, count]) => (
@@ -1580,7 +1663,7 @@ export default function AdminIngredientsPage() {
                   {visibleRows.map((row) => {
                     const usedByRecipes = usage[row.originalId] || [];
                     const usedBy = usedByRecipes.length;
-                    const duplicate = hasDuplicate(rows, row);
+                    const duplicate = duplicateRowKeys.has(row.rowKey);
                     return (
                       <tr
                         key={row.rowKey}

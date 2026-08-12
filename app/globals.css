@@ -9540,3 +9540,42 @@ main {
   color: #f5f5f7;
 }
 
+
+
+/* ADMIN FAST RENDER */
+
+/*
+ * New Dish review cards contain many fields,
+ * match calculations and AI panels.
+ * Off-screen cards can be skipped by Chrome.
+ */
+.new-dish-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 760px;
+}
+
+/*
+ * Prevent large cards from forcing layout
+ * recalculation across the full admin page.
+ */
+.new-dish-card,
+.new-dish-ai-panel,
+.new-dish-match-panel {
+  contain: layout paint;
+}
+
+/*
+ * Lightweight loading state for future
+ * lazy-loaded admin tools.
+ */
+.admin-lazy-loading {
+  display: grid;
+  min-height: 100px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+}
