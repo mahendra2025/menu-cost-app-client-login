@@ -22,6 +22,7 @@ import {
   parseMenuText,
   saveWork,
   uid,
+  type PendingDishCandidate,
 } from '../../../lib/store';
 
 import {
@@ -79,8 +80,16 @@ type DetectedEventDetails = Partial<
 
 type MenuDetectionPreview = {
   menu: MenuItem[];
-  eventDetails: DetectedEventDetails;
-  source: 'ai' | 'rules';
+
+  possibleMissed:
+    PendingDishCandidate[];
+
+  eventDetails:
+    DetectedEventDetails;
+
+  source:
+    | 'ai'
+    | 'rules';
 };
 
 type AiMenuExtraction = {
@@ -321,6 +330,32 @@ function dishNameKey(value: string) {
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function sourceDishCoverageKey(
+  item: {
+    name: string;
+    dayLabel?: string;
+    mealLabel?: string;
+  },
+) {
+  return [
+    dishNameKey(
+      item.dayLabel ||
+      'event',
+    ),
+
+    dishNameKey(
+      item.mealLabel ||
+      'event menu',
+    ),
+
+    dishNameKey(
+      item.name,
+    ),
+  ].join(
+    '::',
+  );
 }
 
 const GENERIC_AI_SINGLE_DISH_WORDS =
@@ -1791,6 +1826,271 @@ export default function EventPage() {
     setError('');
   }
 
+  function addPossibleMissedDish(
+    candidate:
+      PendingDishCandidate,
+  ) {
+    if (!detectionPreview) {
+      return;
+    }
+
+    const name =
+      candidate.name
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!name) {
+      return;
+    }
+
+    const candidateKey =
+      sourceDishCoverageKey({
+        name,
+
+        dayLabel:
+          candidate.dayLabel,
+
+        mealLabel:
+          candidate.mealLabel,
+      });
+
+    const alreadyExists =
+      detectionPreview.menu.some(
+        (item) =>
+          sourceDishCoverageKey(
+            item,
+          ) ===
+          candidateKey,
+      );
+
+    if (alreadyExists) {
+      setDetectionPreview(
+        (current) =>
+          current
+            ? {
+                ...current,
+
+                possibleMissed:
+                  current
+                    .possibleMissed
+                    .filter(
+                      (item) =>
+                        sourceDishCoverageKey(
+                          item,
+                        ) !==
+                        candidateKey,
+                    ),
+              }
+            : current,
+      );
+
+      return;
+    }
+
+    const category:
+      Category =
+        CATEGORIES.includes(
+          candidate.categoryHint as
+            Category,
+        )
+          ? (
+              candidate.categoryHint as
+                Category
+            )
+          : 'Other';
+
+    const newItem:
+      MenuItem = {
+        id:
+          uid('dish'),
+
+        name,
+
+        category,
+
+        costPerPlate:
+          0,
+
+        portionQuantity:
+          1,
+
+        portionUnit:
+          'serving',
+
+        serviceId:
+          candidate.serviceId,
+
+        dayLabel:
+          candidate.dayLabel,
+
+        mealLabel:
+          candidate.mealLabel ||
+          'Event Menu',
+
+        servicePax:
+          Number(
+            candidate.servicePax,
+          ) ||
+          Number(
+            work?.event.pax,
+          ) ||
+          0,
+
+        /*
+         * Human confirmation upgrades this
+         * source line to trusted detection.
+         */
+        detectionSource:
+          'manual',
+
+        detectionConfidence:
+          100,
+
+        detectionReason:
+          'User confirmed a possible missed source-menu dish',
+
+        coverageStatus:
+          'NEW_DISH_PENDING',
+
+        costConfidence:
+          0,
+
+        rateCoveragePercent:
+          0,
+
+        coverageReason:
+          'Recovered dish needs a confirmed cost.',
+
+        costApprovalStatus:
+          'PENDING',
+
+        costApprovalReason:
+          'Recovered dish needs a confirmed cost.',
+      };
+
+    setDetectionPreview(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              menu: [
+                ...current.menu,
+                newItem,
+              ],
+
+              possibleMissed:
+                current
+                  .possibleMissed
+                  .filter(
+                    (item) =>
+                      sourceDishCoverageKey(
+                        item,
+                      ) !==
+                      candidateKey,
+                  ),
+            }
+          : current,
+    );
+
+    setSelectedPreviewIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          newItem.id,
+        );
+
+        return next;
+      },
+    );
+
+    setManualRateIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          newItem.id,
+        );
+
+        return next;
+      },
+    );
+
+    /*
+     * Confirmed missed dish becomes
+     * tenant-specific learning.
+     */
+    void saveTenantDishLearning({
+      aliasName:
+        name,
+
+      canonicalName:
+        name,
+
+      category,
+
+      action:
+        'MAP',
+    });
+
+    setDetectionReviewFilter(
+      'ALL',
+    );
+
+    setError('');
+  }
+
+  function dismissPossibleMissedDish(
+    candidate:
+      PendingDishCandidate,
+  ) {
+    const candidateKey =
+      sourceDishCoverageKey(
+        candidate,
+      );
+
+    setDetectionPreview(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              possibleMissed:
+                current
+                  .possibleMissed
+                  .filter(
+                    (item) =>
+                      sourceDishCoverageKey(
+                        item,
+                      ) !==
+                      candidateKey,
+                  ),
+            }
+          : current,
+    );
+
+    /*
+     * Explicit false-positive confirmation
+     * is learned for this tenant.
+     */
+    void saveTenantDishLearning({
+      aliasName:
+        candidate.name,
+
+      category:
+        candidate.categoryHint ||
+        'Other',
+
+      action:
+        'REJECT',
+    });
+
+    setError('');
+  }
+
   function addMissedDetectedDish() {
     if (!detectionPreview) {
       return;
@@ -2671,6 +2971,123 @@ export default function EventPage() {
           learnedDetectedByKey.values(),
         );
 
+      /*
+       * Source Coverage Recovery
+       *
+       * The same local detection promise can
+       * safely be awaited again. Promise
+       * results are cached after resolution.
+       *
+       * This avoids separate AI-success and
+       * AI-fallback bookkeeping.
+       */
+      const [
+        ,
+        sourcePendingCandidates,
+      ] =
+        await localDetectionPromise;
+
+      const detectedCoverageKeys =
+        new Set(
+          detectedMenu.map(
+            sourceDishCoverageKey,
+          ),
+        );
+
+      const learnedRejectedKeys =
+        new Set(
+          tenantDishAliases
+            .filter(
+              (rule) =>
+                rule.action ===
+                'REJECT',
+            )
+            .map(
+              (rule) =>
+                dishNameKey(
+                  rule.aliasName,
+                ),
+            ),
+        );
+
+      const possibleMissedMap =
+        new Map<
+          string,
+          PendingDishCandidate
+        >();
+
+      sourcePendingCandidates
+        .filter(
+          (candidate) =>
+            candidate.confidence ===
+              'LOW' &&
+            candidate
+              .confidenceScore >=
+              10,
+        )
+        .forEach(
+          (candidate) => {
+            const candidateKey =
+              sourceDishCoverageKey(
+                candidate,
+              );
+
+            if (
+              detectedCoverageKeys.has(
+                candidateKey,
+              )
+            ) {
+              return;
+            }
+
+            if (
+              learnedRejectedKeys.has(
+                dishNameKey(
+                  candidate.name,
+                ),
+              )
+            ) {
+              return;
+            }
+
+            const existing =
+              possibleMissedMap.get(
+                candidateKey,
+              );
+
+            /*
+             * If duplicate source candidates
+             * exist, keep the strongest one.
+             */
+            if (
+              !existing ||
+              candidate
+                .confidenceScore >
+                existing
+                  .confidenceScore
+            ) {
+              possibleMissedMap.set(
+                candidateKey,
+                candidate,
+              );
+            }
+          },
+        );
+
+      const possibleMissedDishes =
+        Array.from(
+          possibleMissedMap.values(),
+        )
+          .sort(
+            (left, right) =>
+              right.confidenceScore -
+              left.confidenceScore,
+          )
+          .slice(
+            0,
+            40,
+          );
+
       const pendingMenuIds =
         new Set(
           detectedMenu
@@ -3195,9 +3612,17 @@ export default function EventPage() {
         detectedDetails,
       );
       setDetectionPreview({
-        menu: detectedMenu,
-        eventDetails: detectedDetails,
-        source: detectionSource,
+        menu:
+          detectedMenu,
+
+        possibleMissed:
+          possibleMissedDishes,
+
+        eventDetails:
+          detectedDetails,
+
+        source:
+          detectionSource,
       });
       setDetectionReviewFilter(
         'ALL',
@@ -3212,6 +3637,10 @@ export default function EventPage() {
             catalogMenu.length,
           missingRateCount:
             unresolvedMenu.length,
+
+          possibleMissedCount:
+            possibleMissedDishes.length,
+
           source:
             work.event.uploadFileName
               ? 'upload'
@@ -4887,6 +5316,121 @@ Gulab Jamun`}
                     <p>
                       {manualRateIds.size} {manualRateIds.size === 1 ? 'dish needs' : 'dishes need'} a confirmed per-plate rate before saving. New and corrected dishes are also available for admin review.
                     </p>
+                  </div>
+                ) : null}
+
+                {detectionPreview
+                  .possibleMissed
+                  .length ? (
+                  <div className="menu-missed-recovery">
+                    <div className="menu-missed-recovery-head">
+                      <div>
+                        <span>
+                          Source Coverage Check
+                        </span>
+
+                        <strong>
+                          {
+                            detectionPreview
+                              .possibleMissed
+                              .length
+                          }{' '}
+                          possible missed{' '}
+                          {detectionPreview
+                            .possibleMissed
+                            .length === 1
+                            ? 'dish'
+                            : 'dishes'}
+                        </strong>
+
+                        <small>
+                          These lines came from the uploaded menu but were too uncertain to add automatically.
+                        </small>
+                      </div>
+
+                      <div className="menu-missed-recovery-count">
+                        {
+                          detectionPreview
+                            .possibleMissed
+                            .length
+                        }
+                      </div>
+                    </div>
+
+                    <div className="menu-missed-recovery-list">
+                      {detectionPreview
+                        .possibleMissed
+                        .map(
+                          (candidate) => (
+                            <div
+                              className="menu-missed-recovery-item"
+                              key={
+                                sourceDishCoverageKey(
+                                  candidate,
+                                )
+                              }
+                            >
+                              <div>
+                                <strong>
+                                  {
+                                    candidate.name
+                                  }
+                                </strong>
+
+                                <span>
+                                  {[
+                                    candidate.dayLabel,
+                                    candidate.mealLabel,
+                                    candidate.categoryHint,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(
+                                      ' • ',
+                                    ) ||
+                                    'Menu source line'}
+                                </span>
+
+                                <small>
+                                  {
+                                    candidate.confidenceScore
+                                  }
+                                  % parser confidence
+                                  {' · '}
+                                  {
+                                    candidate.detectionReason
+                                  }
+                                </small>
+                              </div>
+
+                              <div className="menu-missed-recovery-actions">
+                                <button
+                                  type="button"
+                                  className="primary-button"
+                                  onClick={() =>
+                                    addPossibleMissedDish(
+                                      candidate,
+                                    )
+                                  }
+                                >
+                                  + Add Dish
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="ghost-button"
+                                  onClick={() =>
+                                    dismissPossibleMissedDish(
+                                      candidate,
+                                    )
+                                  }
+                                >
+                                  Not a dish
+                                </button>
+                              </div>
+                            </div>
+                          ),
+                        )}
+                    </div>
                   </div>
                 ) : null}
 
