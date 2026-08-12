@@ -2383,12 +2383,8 @@ export default function EventPage() {
         const [
           localCatalogMenu,
           pendingCandidates,
-        ] = await Promise.all([
-          parseMenuText(rawMenuText),
-          findPendingDishCandidates(
-            rawMenuText,
-          ),
-        ]);
+        ] =
+          await localDetectionPromise;
 
         catalogMenu = localCatalogMenu;
         manualMenu =
