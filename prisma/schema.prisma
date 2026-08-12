@@ -8,29 +8,30 @@ datasource db {
 }
 
 model Tenant {
-  id                     String     @id @default(cuid())
+  id                     String                 @id @default(cuid())
   name                   String
-  email                  String     @unique
+  email                  String                 @unique
   password               String
-  plan                   String     @default("PRO")
-  status                 String     @default("ACTIVE")
-  ownerName              String     @default("")
-  phone                  String     @default("")
-  city                   String     @default("")
-  onboardingCompleted    Boolean    @default(true)
+  plan                   String                 @default("PRO")
+  status                 String                 @default("ACTIVE")
+  ownerName              String                 @default("")
+  phone                  String                 @default("")
+  city                   String                 @default("")
+  onboardingCompleted    Boolean                @default(true)
   works                  MenuWork[]
   ingredientRates        TenantIngredientRate[]
   autoRecipes            TenantAutoRecipe[]
-  freeCostings            TenantFreeCosting[]
-  costingHistory          TenantCostingHistory[]
-  quotations              TenantQuotation[]
-  draftCostings            TenantDraftCosting[]
-  createdAt              DateTime   @default(now())
+  dishAliases            TenantDishAlias[]
+  freeCostings           TenantFreeCosting[]
+  costingHistory         TenantCostingHistory[]
+  quotations             TenantQuotation[]
+  draftCostings          TenantDraftCosting[]
+  createdAt              DateTime               @default(now())
   razorpayCustomerId     String?
-  razorpaySubscriptionId String?    @unique
+  razorpaySubscriptionId String?                @unique
   subscriptionStatus     String?
   currentPeriodEnd       DateTime?
-  cancelAtPeriodEnd      Boolean    @default(false)
+  cancelAtPeriodEnd      Boolean                @default(false)
 }
 
 model TenantAutoRecipe {
@@ -47,6 +48,27 @@ model TenantAutoRecipe {
   updatedAt      DateTime @updatedAt
 
   @@unique([tenantId, normalizedName])
+  @@index([tenantId, updatedAt])
+}
+
+model TenantDishAlias {
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  aliasKey  String
+  aliasName String
+
+  canonicalName String @default("")
+  category      String @default("Other")
+
+  action     String @default("MAP")
+  usageCount Int    @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, aliasKey])
   @@index([tenantId, updatedAt])
 }
 
@@ -73,13 +95,13 @@ model DishMasterItem {
 }
 
 model PendingDishSuggestion {
-  id                   String    @id @default(cuid())
-  name                 String
-  normalizedName       String    @unique
-  categoryHint         String    @default("Other")
-  tenantId             String
-  sourceFileName       String    @default("")
-  occurrences          Int       @default(1)
+  id             String @id @default(cuid())
+  name           String
+  normalizedName String @unique
+  categoryHint   String @default("Other")
+  tenantId       String
+  sourceFileName String @default("")
+  occurrences    Int    @default(1)
 
   status               String    @default("PENDING")
   canonicalName        String    @default("")
@@ -94,8 +116,8 @@ model PendingDishSuggestion {
   adminNotes           String    @default("")
   analyzedAt           DateTime?
 
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([updatedAt])
   @@index([status, updatedAt])
@@ -127,7 +149,6 @@ model RazorpayWebhookEvent {
   createdAt DateTime @default(now())
 }
 
-
 model ProductAnalyticsEvent {
   id        String   @id @default(cuid())
   eventName String
@@ -142,8 +163,6 @@ model ProductAnalyticsEvent {
   @@index([visitorId, createdAt])
 }
 
-
-
 model TenantFreeCosting {
   id        String   @id @default(cuid())
   tenantId  String
@@ -156,29 +175,28 @@ model TenantFreeCosting {
 }
 
 model TenantCostingHistory {
-  id                   String   @id @default(cuid())
+  id                   String    @id @default(cuid())
   tenantId             String
-  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   costingId            String
-  eventName            String   @default("")
-  clientName           String   @default("")
-  eventDate            String   @default("")
-  menuCount            Int      @default(0)
-  totalCovers          Int      @default(0)
-  totalCost            Float    @default(0)
-  sellingPricePerPlate Float    @default(0)
-  totalSelling         Float    @default(0)
-  totalProfit          Float    @default(0)
+  eventName            String    @default("")
+  clientName           String    @default("")
+  eventDate            String    @default("")
+  menuCount            Int       @default(0)
+  totalCovers          Int       @default(0)
+  totalCost            Float     @default(0)
+  sellingPricePerPlate Float     @default(0)
+  totalSelling         Float     @default(0)
+  totalProfit          Float     @default(0)
   snapshot             Json
-  completedAt          DateTime @default(now())
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  completedAt          DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
   archivedAt           DateTime?
 
   @@unique([tenantId, costingId])
   @@index([tenantId, completedAt])
 }
-
 
 model TenantDraftCosting {
   id                   String   @id @default(cuid())
@@ -202,55 +220,54 @@ model TenantDraftCosting {
   @@index([tenantId, updatedAt])
 }
 
-
 model TenantQuotation {
-  id                   String   @id @default(cuid())
-  tenantId             String
-  tenant               Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  costingId            String
-  quotationNumber      String   @unique
-  status               String   @default("DRAFT")
-  clientName           String   @default("")
-  clientPhone          String   @default("")
-  eventName            String   @default("")
-  eventDate            String   @default("")
-  venue                String   @default("")
-  city                 String   @default("")
-  totalCovers          Int      @default(0)
-  pricePerCover        Float    @default(0)
-  includeTotal         Boolean  @default(true)
-  subtotal             Float    @default(0)
-  gstPercent           Float    @default(0)
-  gstAmount            Float    @default(0)
-  extraLabel           String   @default("")
-  extraAmount          Float    @default(0)
-  grandTotal           Float    @default(0)
-  validityDays         Int      @default(7)
-  advancePercent       Float    @default(50)
-  paymentTerms         String   @default("")
-  terms                Json     @default("[]")
-  notes                String   @default("")
-  publicSnapshot       Json     @default("{}")
-  sentAt               DateTime?
-  acceptedAt           DateTime?
-  rejectedAt           DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  costingId       String
+  quotationNumber String    @unique
+  status          String    @default("DRAFT")
+  clientName      String    @default("")
+  clientPhone     String    @default("")
+  eventName       String    @default("")
+  eventDate       String    @default("")
+  venue           String    @default("")
+  city            String    @default("")
+  totalCovers     Int       @default(0)
+  pricePerCover   Float     @default(0)
+  includeTotal    Boolean   @default(true)
+  subtotal        Float     @default(0)
+  gstPercent      Float     @default(0)
+  gstAmount       Float     @default(0)
+  extraLabel      String    @default("")
+  extraAmount     Float     @default(0)
+  grandTotal      Float     @default(0)
+  validityDays    Int       @default(7)
+  advancePercent  Float     @default(50)
+  paymentTerms    String    @default("")
+  terms           Json      @default("[]")
+  notes           String    @default("")
+  publicSnapshot  Json      @default("{}")
+  sentAt          DateTime?
+  acceptedAt      DateTime?
+  rejectedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@unique([tenantId, costingId])
   @@index([tenantId, status, updatedAt])
 }
 
 model TenantIngredientRate {
-  id           String   @id @default(cuid())
-  tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id       String @id @default(cuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   ingredientId String
   rate         Float
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([tenantId, ingredientId])
   @@index([tenantId])

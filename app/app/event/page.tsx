@@ -638,6 +638,358 @@ function requiresCostApproval(
   );
 }
 
+type TenantDishAliasRule = {
+  aliasName: string;
+  canonicalName: string;
+  category: string;
+  action:
+    | 'MAP'
+    | 'REJECT';
+  usageCount: number;
+};
+
+async function requestTenantDishAliases():
+  Promise<
+    TenantDishAliasRule[]
+  > {
+  try {
+    const response =
+      await fetch(
+        '/api/client/dish-aliases',
+        {
+          cache:
+            'no-store',
+        },
+      );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data =
+      await response.json() as {
+        aliases?: unknown[];
+      };
+
+    if (
+      !Array.isArray(
+        data.aliases,
+      )
+    ) {
+      return [];
+    }
+
+    return data.aliases
+      .map(
+        (value) => {
+          if (
+            !value ||
+            typeof value !==
+              'object' ||
+            Array.isArray(
+              value,
+            )
+          ) {
+            return null;
+          }
+
+          const row =
+            value as Record<
+              string,
+              unknown
+            >;
+
+          const aliasName =
+            String(
+              row.aliasName ||
+              '',
+            ).trim();
+
+          const action =
+            String(
+              row.action ||
+              'MAP',
+            )
+              .trim()
+              .toUpperCase();
+
+          if (
+            !aliasName ||
+            ![
+              'MAP',
+              'REJECT',
+            ].includes(
+              action,
+            )
+          ) {
+            return null;
+          }
+
+          return {
+            aliasName,
+
+            canonicalName:
+              String(
+                row.canonicalName ||
+                '',
+              ).trim(),
+
+            category:
+              String(
+                row.category ||
+                'Other',
+              ).trim() ||
+              'Other',
+
+            action:
+              action as
+                | 'MAP'
+                | 'REJECT',
+
+            usageCount:
+              Number(
+                row.usageCount,
+              ) || 0,
+          };
+        },
+      )
+      .filter(
+        (
+          item,
+        ): item is
+          TenantDishAliasRule =>
+          Boolean(item),
+      );
+
+  } catch (
+    aliasError
+  ) {
+    console.warn(
+      'Tenant dish aliases unavailable:',
+      aliasError,
+    );
+
+    return [];
+  }
+}
+
+async function saveTenantDishLearning(
+  input: {
+    aliasName: string;
+    canonicalName?: string;
+    category?: string;
+    action:
+      | 'MAP'
+      | 'REJECT';
+  },
+) {
+  try {
+    await fetch(
+      '/api/client/dish-aliases',
+      {
+        method:
+          'POST',
+
+        headers: {
+          'Content-Type':
+            'application/json',
+        },
+
+        body:
+          JSON.stringify(
+            input,
+          ),
+      },
+    );
+  } catch (
+    learningError
+  ) {
+    /*
+     * Learning is useful but should never
+     * block the user from correcting a menu.
+     */
+    console.warn(
+      'Dish correction learning skipped:',
+      learningError,
+    );
+  }
+}
+
+async function applyTenantDishLearning(
+  menu: MenuItem[],
+  rules:
+    TenantDishAliasRule[],
+): Promise<MenuItem[]> {
+  if (
+    !menu.length ||
+    !rules.length
+  ) {
+    return menu;
+  }
+
+  const ruleMap =
+    new Map(
+      rules.map(
+        (rule) => [
+          dishNameKey(
+            rule.aliasName,
+          ),
+          rule,
+        ],
+      ),
+    );
+
+  const dishCatalog =
+    await import(
+      '../../../lib/dishCostMaster'
+    );
+
+  return menu.flatMap<MenuItem>(
+    (
+      item,
+    ): MenuItem[] => {
+      const rule =
+        ruleMap.get(
+          dishNameKey(
+            item.name,
+          ),
+        );
+
+      if (!rule) {
+        return [
+          item,
+        ];
+      }
+
+      /*
+       * A previously confirmed false
+       * positive must disappear before
+       * costing.
+       */
+      if (
+        rule.action ===
+        'REJECT'
+      ) {
+        console.info(
+          'Ignored learned false positive:',
+          item.name,
+        );
+
+        return [];
+      }
+
+      const canonicalName =
+        rule.canonicalName ||
+        item.name;
+
+      /*
+       * Convert stored database strings
+       * back into the application's strict
+       * Category union safely.
+       */
+      const learnedCategory:
+        Category =
+          CATEGORIES.includes(
+            rule.category as
+              Category,
+          )
+            ? (
+                rule.category as
+                  Category
+              )
+            : CATEGORIES.includes(
+                  item.category as
+                    Category,
+                )
+              ? (
+                  item.category as
+                    Category
+                )
+              : 'Other';
+
+      const masterDish =
+        dishCatalog
+          .findDishByName(
+            canonicalName,
+          ) ||
+        dishCatalog
+          .findFuzzyDishByName(
+            canonicalName,
+            learnedCategory,
+          );
+
+      const canonicalCategory:
+        Category =
+          masterDish &&
+          CATEGORIES.includes(
+            masterDish.category as
+              Category,
+          )
+            ? (
+                masterDish.category as
+                  Category
+              )
+            : learnedCategory;
+
+      const masterRate =
+        Math.max(
+          0,
+          Number(
+            masterDish?.rate,
+          ) || 0,
+        );
+
+      const learnedItem:
+        MenuItem = {
+          ...item,
+
+          name:
+            masterDish?.name ||
+            canonicalName,
+
+          category:
+            canonicalCategory,
+
+          /*
+           * If the correction resolves to a
+           * Dish Master row, safely reuse its
+           * rate immediately.
+           *
+           * Otherwise the normal recipe engine
+           * will calculate the cost afterwards.
+           */
+          costPerPlate:
+            masterRate,
+
+          portionQuantity:
+            masterDish
+              ?.servingQuantity ??
+            item.portionQuantity ??
+            1,
+
+          portionUnit:
+            masterDish
+              ?.servingUnit ||
+            item.portionUnit ||
+            'serving',
+
+          detectionSource:
+            'manual',
+
+          detectionConfidence:
+            100,
+
+          detectionReason:
+            `Learned from a previous correction: "${rule.aliasName}" → "${canonicalName}"`,
+        };
+
+      return [
+        learnedItem,
+      ];
+    },
+  );
+}
+
 async function requestAiMenuExtraction(
   menuText: string,
 ) {
@@ -1091,6 +1443,26 @@ export default function EventPage() {
       'ALL',
     );
 
+    /*
+     * Teach future detections.
+     *
+     * This is tenant-specific and does not
+     * modify the global Dish Master.
+     */
+    void saveTenantDishLearning({
+      aliasName:
+        currentItem.name,
+
+      canonicalName:
+        name,
+
+      category:
+        editDetectionCategory,
+
+      action:
+        'MAP',
+    });
+
     cancelDetectionEdit();
 
     setError('');
@@ -1213,6 +1585,38 @@ export default function EventPage() {
         return next;
       },
     );
+
+    if (restoring) {
+      /*
+       * Restoring a dish means it should no
+       * longer be treated as a learned false
+       * positive in future menus.
+       */
+      void saveTenantDishLearning({
+        aliasName:
+          item.name,
+
+        canonicalName:
+          item.name,
+
+        category:
+          item.category,
+
+        action:
+          'MAP',
+      });
+    } else {
+      void saveTenantDishLearning({
+        aliasName:
+          item.name,
+
+        category:
+          item.category,
+
+        action:
+          'REJECT',
+      });
+    }
 
     setError('');
   }
@@ -1384,6 +1788,25 @@ export default function EventPage() {
       '',
     );
 
+    /*
+     * A manually added dish is valid menu
+     * knowledge too. Saving a self-alias
+     * remembers its category next time.
+     */
+    void saveTenantDishLearning({
+      aliasName:
+        name,
+
+      canonicalName:
+        name,
+
+      category:
+        newDetectionDishCategory,
+
+      action:
+        'MAP',
+    });
+
     setNewDetectionDishCategory(
       'Other',
     );
@@ -1445,6 +1868,14 @@ export default function EventPage() {
       const { syncDishCostItemsFromServer } =
         await import('../../../lib/dishCostMaster');
       await syncDishCostItemsFromServer();
+
+      /*
+       * Load this caterer's previously
+       * confirmed corrections in parallel
+       * with menu detection.
+       */
+      const tenantDishAliasPromise =
+        requestTenantDishAliases();
 
       let catalogMenu: MenuItem[] = [];
       let manualMenu: MenuItem[] = [];
@@ -2005,12 +2436,66 @@ export default function EventPage() {
           mergedDetectedByKey.values(),
         );
 
+      /*
+       * Apply previous corrections before
+       * cost coverage is calculated.
+       *
+       * Example:
+       *   Panner Tikka
+       *        ↓ learned alias
+       *   Paneer Tikka
+       *        ↓
+       *   Dish Master / recipe costing
+       */
+      detectedMenu =
+        await applyTenantDishLearning(
+          detectedMenu,
+
+          await tenantDishAliasPromise,
+        );
+
+      /*
+       * Two different OCR spellings may both
+       * resolve to the same learned canonical
+       * dish. Deduplicate again after learning.
+       */
+      const learnedDetectedByKey =
+        new Map<
+          string,
+          MenuItem
+        >();
+
+      detectedMenu.forEach(
+        (item) => {
+          learnedDetectedByKey.set(
+            coverageKey(item),
+            item,
+          );
+        },
+      );
+
+      detectedMenu =
+        Array.from(
+          learnedDetectedByKey.values(),
+        );
+
       const pendingMenuIds =
         new Set(
-          manualMenu.map(
-            (item) =>
-              item.id,
-          ),
+          detectedMenu
+            .filter(
+              (item) =>
+                item.detectionSource !==
+                  'catalog' &&
+                !(
+                  Number(
+                    item.costPerPlate,
+                  ) > 0
+                ),
+            )
+            .map(
+              (item) =>
+                item.id,
+            ),
         );
 
       detectedMenu =
