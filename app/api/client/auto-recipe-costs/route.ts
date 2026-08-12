@@ -14,6 +14,10 @@ import {
   DISH_COST_ITEMS,
 } from '../../../../lib/dishCostMaster';
 
+import {
+  buildIngredientCostDrivers,
+} from '../../../../lib/ingredientCostDrivers';
+
 import { prisma } from '../../../../lib/prisma';
 import {
   assessRecipeQuality,
@@ -192,6 +196,32 @@ export async function POST(request: Request) {
               ) || 0,
             ),
           ],
+        ),
+      );
+
+    const previousSavedRecipeMap =
+      new Map(
+        savedRecipes.flatMap(
+          (saved) => {
+            const recipe =
+              readCostableRecipe({
+                name:
+                  saved.name,
+
+                baseGuests:
+                  saved.baseGuests,
+
+                ingredients:
+                  saved.ingredients,
+              });
+
+            return recipe
+              ? [[
+                  saved.normalizedName,
+                  recipe,
+                ] as const]
+              : [];
+          },
         ),
       );
 
@@ -390,6 +420,22 @@ export async function POST(request: Request) {
           baselineCost,
           baselineSource,
         );
+
+      const costDrivers =
+        recipe
+          ? buildIngredientCostDrivers(
+              recipe,
+              previousSavedRecipeMap.get(
+                key,
+              ),
+              {
+                wastageRate:
+                  WASTAGE_RATE,
+
+                limit: 6,
+              },
+            )
+          : [];
 
       return {
         requestedName: dish.name,

@@ -92,6 +92,34 @@ export type MenuItem = {
 
   costApprovedAt?: string;
   costApprovalReason?: string;
+
+  ingredientCostDrivers?: Array<{
+    name: string;
+
+    quantity: number;
+    unit: string;
+
+    rate: number;
+    rateUnit: string;
+    rateSource: string;
+
+    batchCost: number;
+
+    rawCostPerPlate: number;
+    finalCostPerPlate: number;
+
+    contributionPercent: number;
+
+    previousCostPerPlate: number;
+    changePerPlate: number;
+    changePercent: number;
+
+    direction:
+      | 'UP'
+      | 'DOWN'
+      | 'FLAT'
+      | 'NEW';
+  }>;
 };
 
 export type ExtraCost = {
