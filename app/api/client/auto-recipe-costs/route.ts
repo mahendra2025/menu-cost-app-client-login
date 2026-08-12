@@ -432,7 +432,7 @@ export async function POST(request: Request) {
                 wastageRate:
                   WASTAGE_RATE,
 
-                limit: 6,
+                limit: 20,
               },
             )
           : [];
@@ -449,6 +449,7 @@ export async function POST(request: Request) {
           costing.missingRates,
         quality,
         accuracy,
+        costDrivers,
         estimatedIngredientRates: priced?.estimatedRates || 0,
         recipeAvailable: Boolean(recipe),
         source: catalogRecipe ? 'catalog_recipe' : recipe ? 'ai_recipe' : 'unresolved',

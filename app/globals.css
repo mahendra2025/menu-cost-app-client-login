@@ -8927,3 +8927,233 @@ td:last-child {
     width: 100%;
   }
 }
+
+
+/* =========================================================
+   INGREDIENT COST DRIVER INTELLIGENCE
+   ========================================================= */
+
+.ingredient-driver-intelligence {
+  display: grid;
+  gap: 13px;
+  margin: 0 0 20px;
+  padding: 17px;
+  border: 1px solid rgba(88,86,214,.16);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(88,86,214,.045),
+      rgba(255,255,255,.95)
+    );
+}
+
+.ingredient-driver-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ingredient-driver-head > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.ingredient-driver-head > div:first-child > span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.ingredient-driver-head strong {
+  font-size: 17px;
+}
+
+.ingredient-driver-head small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.ingredient-driver-count {
+  display: grid;
+  min-width: 90px;
+  padding: 9px 11px;
+  border: 1px solid rgba(88,86,214,.12);
+  border-radius: 11px;
+  background: rgba(255,255,255,.8);
+  text-align: center;
+}
+
+.ingredient-driver-count b {
+  font-size: 18px;
+}
+
+.ingredient-driver-count span {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.ingredient-driver-list {
+  display: grid;
+  gap: 7px;
+}
+
+.ingredient-driver-row {
+  display: grid;
+  grid-template-columns:
+    minmax(110px,.8fr)
+    minmax(100px,1fr)
+    85px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(15,23,42,.065);
+  border-radius: 11px;
+  background: rgba(255,255,255,.8);
+}
+
+.ingredient-driver-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ingredient-driver-copy strong {
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ingredient-driver-copy small {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.ingredient-driver-bar {
+  overflow: hidden;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.07);
+}
+
+.ingredient-driver-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #5856d6;
+}
+
+.ingredient-driver-cost {
+  display: grid;
+  font-size: 11px;
+  font-weight: 850;
+  text-align: right;
+}
+
+.ingredient-driver-cost small {
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.ingredient-driver-empty {
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  color: var(--muted);
+  background: rgba(15,23,42,.035);
+  font-size: 9px;
+}
+
+.dish-cost-driver-details {
+  width: 100%;
+  margin-top: 7px;
+}
+
+.dish-cost-driver-details summary {
+  width: fit-content;
+  cursor: pointer;
+  color: #4c4ab2;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.dish-cost-driver-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 7px;
+  padding: 8px;
+  border: 1px solid rgba(88,86,214,.1);
+  border-radius: 10px;
+  background: rgba(88,86,214,.025);
+}
+
+.dish-cost-driver-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0,1fr)
+    auto;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(15,23,42,.055);
+}
+
+.dish-cost-driver-row:last-child {
+  border-bottom: 0;
+}
+
+.dish-cost-driver-row > div {
+  display: grid;
+  gap: 1px;
+}
+
+.dish-cost-driver-row > div:last-child {
+  text-align: right;
+}
+
+.dish-cost-driver-row strong,
+.dish-cost-driver-row b {
+  font-size: 9px;
+}
+
+.dish-cost-driver-row small {
+  color: var(--muted);
+  font-size: 7px;
+}
+
+.driver-change-up,
+.driver-change-down {
+  font-size: 7px;
+  font-weight: 850;
+}
+
+.driver-change-up {
+  color: #b42318;
+}
+
+.driver-change-down {
+  color: #187b35;
+}
+
+@media (max-width: 700px) {
+  .ingredient-driver-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ingredient-driver-row {
+    grid-template-columns:
+      minmax(0,1fr)
+      75px;
+  }
+
+  .ingredient-driver-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}

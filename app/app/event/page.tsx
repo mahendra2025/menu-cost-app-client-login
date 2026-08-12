@@ -1206,6 +1206,34 @@ export default function EventPage() {
             costPerPlate?: number;
             source?: 'catalog_recipe' | 'ai_recipe' | 'unresolved';
 
+            costDrivers?: Array<{
+              name: string;
+
+              quantity: number;
+              unit: string;
+
+              rate: number;
+              rateUnit: string;
+              rateSource: string;
+
+              batchCost: number;
+
+              rawCostPerPlate: number;
+              finalCostPerPlate: number;
+
+              contributionPercent: number;
+
+              previousCostPerPlate: number;
+              changePerPlate: number;
+              changePercent: number;
+
+              direction:
+                | 'UP'
+                | 'DOWN'
+                | 'FLAT'
+                | 'NEW';
+            }>;
+
             quality?: {
               status?:
                 | 'READY'
@@ -1442,6 +1470,10 @@ export default function EventPage() {
               accuracyReason:
                 accuracy?.reason ||
                 '',
+
+              ingredientCostDrivers:
+                result?.costDrivers ||
+                [],
 
               costApprovalStatus:
                 hardCostBlock ||
@@ -2412,6 +2444,91 @@ export default function EventPage() {
         item.costApprovalStatus ===
           'APPROVED',
     );
+
+  const menuIngredientDriverMap =
+    new Map<
+      string,
+      {
+        name: string;
+        costPerPlate: number;
+        dishCount: number;
+        estimatedCount: number;
+      }
+    >();
+
+  selectedPreviewMenu.forEach(
+    (item) => {
+      (
+        item.ingredientCostDrivers ||
+        []
+      ).forEach(
+        (driver) => {
+          const key =
+            dishNameKey(
+              `${driver.name} ${driver.rateUnit}`,
+            );
+
+          const existing =
+            menuIngredientDriverMap.get(
+              key,
+            );
+
+          menuIngredientDriverMap.set(
+            key,
+            {
+              name:
+                existing?.name ||
+                driver.name,
+
+              costPerPlate:
+                (
+                  existing
+                    ?.costPerPlate ||
+                  0
+                ) +
+                Number(
+                  driver.finalCostPerPlate,
+                ),
+
+              dishCount:
+                (
+                  existing
+                    ?.dishCount ||
+                  0
+                ) + 1,
+
+              estimatedCount:
+                (
+                  existing
+                    ?.estimatedCount ||
+                  0
+                ) +
+                (
+                  driver.rateSource ===
+                    'category_estimate'
+                    ? 1
+                    : 0
+                ),
+            },
+          );
+        },
+      );
+    },
+  );
+
+  const topMenuIngredientDrivers =
+    Array.from(
+      menuIngredientDriverMap.values(),
+    )
+      .sort(
+        (left, right) =>
+          right.costPerPlate -
+          left.costPerPlate,
+      )
+      .slice(
+        0,
+        6,
+      );
 
   const largestCostMovements =
     accuracyAuditMenu
@@ -3455,6 +3572,111 @@ Gulab Jamun`}
                   )}
                 </div>
 
+                <div className="ingredient-driver-intelligence">
+                  <div className="ingredient-driver-head">
+                    <div>
+                      <span>
+                        Ingredient Cost Drivers
+                      </span>
+
+                      <strong>
+                        What is driving this menu cost?
+                      </strong>
+
+                      <small>
+                        Based on actual recipe quantities and the ingredient rates used in costing.
+                      </small>
+                    </div>
+
+                    <div className="ingredient-driver-count">
+                      <b>
+                        {topMenuIngredientDrivers.length}
+                      </b>
+
+                      <span>
+                        top drivers
+                      </span>
+                    </div>
+                  </div>
+
+                  {topMenuIngredientDrivers.length ? (
+                    <div className="ingredient-driver-list">
+                      {topMenuIngredientDrivers.map(
+                        (driver) => {
+                          const highest =
+                            Math.max(
+                              0.01,
+                              topMenuIngredientDrivers[
+                                0
+                              ]?.costPerPlate ||
+                                0.01,
+                            );
+
+                          const width =
+                            Math.max(
+                              5,
+                              Math.min(
+                                100,
+                                driver.costPerPlate /
+                                  highest *
+                                  100,
+                              ),
+                            );
+
+                          return (
+                            <div
+                              className="ingredient-driver-row"
+                              key={`driver-${dishNameKey(driver.name)}`}
+                            >
+                              <div className="ingredient-driver-copy">
+                                <strong>
+                                  {driver.name}
+                                </strong>
+
+                                <small>
+                                  {driver.dishCount}
+                                  {' '}
+                                  dish
+                                  {driver.dishCount === 1
+                                    ? ''
+                                    : 'es'}
+
+                                  {driver.estimatedCount
+                                    ? ` · ${driver.estimatedCount} estimated`
+                                    : ''}
+                                </small>
+                              </div>
+
+                              <div className="ingredient-driver-bar">
+                                <span
+                                  style={{
+                                    width:
+                                      `${width}%`,
+                                  }}
+                                />
+                              </div>
+
+                              <div className="ingredient-driver-cost">
+                                ₹
+                                {driver.costPerPlate.toFixed(
+                                  2,
+                                )}
+                                <small>
+                                  / plate
+                                </small>
+                              </div>
+                            </div>
+                          );
+                        },
+                      )}
+                    </div>
+                  ) : (
+                    <p className="ingredient-driver-empty">
+                      Ingredient driver data appears when a priced recipe is available.
+                    </p>
+                  )}
+                </div>
+
                 <div
                   className={`cost-approval-gate ${
                     hardBlockedCostItems.length
@@ -3788,6 +4010,89 @@ Gulab Jamun`}
                                     {item.category}
                                     {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
                                   </small>
+
+                                  {item.ingredientCostDrivers?.length ? (
+                                    <details className="dish-cost-driver-details">
+                                      <summary>
+                                        View cost drivers
+                                      </summary>
+
+                                      <div className="dish-cost-driver-list">
+                                        {item.ingredientCostDrivers.map(
+                                          (driver) => (
+                                            <div
+                                              className="dish-cost-driver-row"
+                                              key={`${item.id}-${dishNameKey(driver.name)}-${driver.rateUnit}`}
+                                            >
+                                              <div>
+                                                <strong>
+                                                  {driver.name}
+                                                </strong>
+
+                                                <small>
+                                                  {driver.quantity}
+                                                  {' '}
+                                                  {driver.unit}
+                                                  {' × ₹'}
+                                                  {driver.rate.toFixed(
+                                                    2,
+                                                  )}
+                                                  /
+                                                  {driver.rateUnit}
+                                                </small>
+
+                                                <small>
+                                                  Rate source:{' '}
+                                                  {driver.rateSource.replaceAll(
+                                                    '_',
+                                                    ' ',
+                                                  )}
+                                                </small>
+                                              </div>
+
+                                              <div>
+                                                <b>
+                                                  ₹
+                                                  {driver.finalCostPerPlate.toFixed(
+                                                    2,
+                                                  )}
+                                                </b>
+
+                                                <small>
+                                                  {driver.contributionPercent.toFixed(
+                                                    1,
+                                                  )}
+                                                  % of dish
+                                                </small>
+
+                                                {driver.direction ===
+                                                  'UP' ? (
+                                                  <span className="driver-change-up">
+                                                    +₹
+                                                    {Math.abs(
+                                                      driver.changePerPlate,
+                                                    ).toFixed(
+                                                      2,
+                                                    )}
+                                                  </span>
+                                                ) : driver.direction ===
+                                                  'DOWN' ? (
+                                                  <span className="driver-change-down">
+                                                    -₹
+                                                    {Math.abs(
+                                                      driver.changePerPlate,
+                                                    ).toFixed(
+                                                      2,
+                                                    )}
+                                                  </span>
+                                                ) : null}
+                                              </div>
+                                            </div>
+                                          ),
+                                        )}
+                                      </div>
+                                    </details>
+                                  ) : null}
 
                                   {item.costApprovalStatus ===
                                   'APPROVED' ? (
