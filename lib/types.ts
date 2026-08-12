@@ -84,6 +84,14 @@ export type MenuItem = {
     | 'none';
 
   accuracyReason?: string;
+
+  costApprovalStatus?:
+    | 'NOT_REQUIRED'
+    | 'PENDING'
+    | 'APPROVED';
+
+  costApprovedAt?: string;
+  costApprovalReason?: string;
 };
 
 export type ExtraCost = {

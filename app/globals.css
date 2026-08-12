@@ -8694,3 +8694,236 @@ td:last-child {
       repeat(2, minmax(0,1fr));
   }
 }
+
+
+/* =========================================================
+   COST APPROVAL GATE
+   ========================================================= */
+
+.cost-approval-gate {
+  display: grid;
+  gap: 13px;
+  margin: 0 0 20px;
+  padding: 17px;
+  border: 1px solid rgba(52,199,89,.18);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(52,199,89,.045),
+      rgba(255,255,255,.95)
+    );
+}
+
+.cost-approval-gate.pending {
+  border-color: rgba(255,149,0,.22);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,149,0,.05),
+      rgba(255,255,255,.95)
+    );
+}
+
+.cost-approval-gate.blocked {
+  border-color: rgba(255,59,48,.22);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,59,48,.045),
+      rgba(255,255,255,.95)
+    );
+}
+
+.cost-approval-gate-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.cost-approval-gate-head > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.cost-approval-gate-head span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.cost-approval-gate-head strong {
+  font-size: 17px;
+}
+
+.cost-approval-gate-head small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.cost-approval-gate-status {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.055);
+  font-size: 9px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.cost-approval-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0,1fr));
+  gap: 7px;
+}
+
+.cost-approval-summary > div {
+  display: grid;
+  gap: 2px;
+  padding: 9px;
+  border: 1px solid rgba(15,23,42,.07);
+  border-radius: 11px;
+  background: rgba(255,255,255,.8);
+}
+
+.cost-approval-summary b {
+  font-size: 16px;
+}
+
+.cost-approval-summary span {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.cost-approval-list {
+  display: grid;
+  gap: 7px;
+}
+
+.cost-approval-item {
+  display: grid;
+  grid-template-columns:
+    minmax(0,1fr)
+    auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px;
+  border-radius: 12px;
+}
+
+.cost-approval-item.pending {
+  border: 1px solid rgba(255,149,0,.15);
+  background: rgba(255,149,0,.055);
+}
+
+.cost-approval-item.blocked {
+  border: 1px solid rgba(255,59,48,.15);
+  background: rgba(255,59,48,.05);
+}
+
+.cost-approval-item.approved {
+  border: 1px solid rgba(52,199,89,.15);
+  background: rgba(52,199,89,.05);
+}
+
+.cost-approval-item-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.cost-approval-item-copy strong {
+  font-size: 11px;
+}
+
+.cost-approval-item-copy small {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.cost-approval-item-copy p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.cost-approval-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cost-approval-actions button {
+  min-height: 36px;
+  padding: 7px 10px;
+  font-size: 9px;
+}
+
+.cost-approved-pill {
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #187b35;
+  background: rgba(52,199,89,.1);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.cost-approval-clear {
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  color: #187b35;
+  background: rgba(52,199,89,.07);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.cost-approve-all {
+  justify-self: end;
+}
+
+.menu-cost-approved-badge,
+.menu-cost-pending-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 5px;
+  margin-right: 5px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.menu-cost-approved-badge {
+  color: #187b35;
+  background: rgba(52,199,89,.09);
+}
+
+.menu-cost-pending-badge {
+  color: #9a5a00;
+  background: rgba(255,149,0,.1);
+}
+
+@media (max-width: 700px) {
+  .cost-approval-gate-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cost-approval-item {
+    grid-template-columns: 1fr;
+  }
+
+  .cost-approval-actions button {
+    width: 100%;
+  }
+
+  .cost-approve-all {
+    width: 100%;
+  }
+}

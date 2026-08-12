@@ -327,6 +327,26 @@ function dishNameKey(value: string) {
     .trim();
 }
 
+function hasHardCostBlock(
+  item: MenuItem,
+) {
+  return (
+    item.costQualityStatus ===
+    'BLOCKED'
+  );
+}
+
+function requiresCostApproval(
+  item: MenuItem,
+) {
+  return (
+    item.costQualityStatus ===
+      'REVIEW' ||
+    item.accuracyRisk ===
+      'HIGH'
+  );
+}
+
 async function requestAiMenuExtraction(
   menuText: string,
 ) {
@@ -1139,6 +1159,11 @@ export default function EventPage() {
                   : isPending
                     ? 'Dish is not yet fully costed'
                     : 'No usable cost found',
+
+              costApprovalStatus:
+                hasCatalogCost
+                  ? 'NOT_REQUIRED'
+                  : 'PENDING',
             };
           },
         );
@@ -1299,6 +1324,12 @@ export default function EventPage() {
                         ?.message ||
                       item.coverageReason ||
                       'Dish still needs a usable cost',
+
+                costApprovalStatus:
+                  hasExistingCost
+                    ? 'NOT_REQUIRED'
+                    : item.costApprovalStatus ||
+                      'PENDING',
               };
             }
 
@@ -1312,6 +1343,15 @@ export default function EventPage() {
             const accuracyNeedsReview =
               accuracy?.risk ===
                 'HIGH';
+
+            const hardCostBlock =
+              qualityStatus ===
+                'BLOCKED';
+
+            const approvalRequired =
+              qualityStatus ===
+                'REVIEW' ||
+              accuracyNeedsReview;
 
             return {
               ...item,
@@ -1402,6 +1442,24 @@ export default function EventPage() {
               accuracyReason:
                 accuracy?.reason ||
                 '',
+
+              costApprovalStatus:
+                hardCostBlock ||
+                approvalRequired
+                  ? 'PENDING'
+                  : 'NOT_REQUIRED',
+
+              costApprovedAt:
+                undefined,
+
+              costApprovalReason:
+                hardCostBlock
+                  ? 'Recipe QA is blocked and must be corrected'
+                  : approvalRequired
+                    ? accuracyNeedsReview
+                      ? 'High historical cost movement requires approval'
+                      : 'Recipe QA review requires approval'
+                    : 'No approval required',
             };
           });
         }
@@ -1531,6 +1589,41 @@ export default function EventPage() {
     ) {
       setError(
         `${blockingCoverage.length} selected dish${blockingCoverage.length === 1 ? '' : 'es'} still need a cost. Enter a rate, resolve the dish, or deselect it before continuing.`,
+      );
+
+      return;
+    }
+
+    const hardBlockedCosts =
+      selectedMenu.filter(
+        hasHardCostBlock,
+      );
+
+    if (
+      hardBlockedCosts.length
+    ) {
+      setError(
+        `${hardBlockedCosts.length} selected dish${hardBlockedCosts.length === 1 ? ' has' : 'es have'} blocked recipe QA. Correct the recipe or enter a manual rate before continuing.`,
+      );
+
+      return;
+    }
+
+    const pendingApprovals =
+      selectedMenu.filter(
+        (item) =>
+          requiresCostApproval(
+            item,
+          ) &&
+          item.costApprovalStatus !==
+            'APPROVED',
+      );
+
+    if (
+      pendingApprovals.length
+    ) {
+      setError(
+        `${pendingApprovals.length} selected dish cost${pendingApprovals.length === 1 ? ' requires' : 's require'} approval before continuing.`,
       );
 
       return;
@@ -2292,6 +2385,33 @@ export default function EventPage() {
         item.accuracyRisk ===
         'NEW_BASELINE',
     ).length;
+
+  const approvalGateItems =
+    selectedPreviewMenu.filter(
+      (item) =>
+        hasHardCostBlock(item) ||
+        requiresCostApproval(item),
+    );
+
+  const hardBlockedCostItems =
+    approvalGateItems.filter(
+      hasHardCostBlock,
+    );
+
+  const pendingCostApprovalItems =
+    approvalGateItems.filter(
+      (item) =>
+        !hasHardCostBlock(item) &&
+        item.costApprovalStatus !==
+          'APPROVED',
+    );
+
+  const approvedCostReviewItems =
+    approvalGateItems.filter(
+      (item) =>
+        item.costApprovalStatus ===
+          'APPROVED',
+    );
 
   const largestCostMovements =
     accuracyAuditMenu
@@ -3335,6 +3455,264 @@ Gulab Jamun`}
                   )}
                 </div>
 
+                <div
+                  className={`cost-approval-gate ${
+                    hardBlockedCostItems.length
+                      ? 'blocked'
+                      : pendingCostApprovalItems.length
+                        ? 'pending'
+                        : 'clear'
+                  }`}
+                >
+                  <div className="cost-approval-gate-head">
+                    <div>
+                      <span>
+                        Cost Approval Gate
+                      </span>
+
+                      <strong>
+                        {hardBlockedCostItems.length
+                          ? `${hardBlockedCostItems.length} blocked cost${hardBlockedCostItems.length === 1 ? '' : 's'}`
+                          : pendingCostApprovalItems.length
+                            ? `${pendingCostApprovalItems.length} approval${pendingCostApprovalItems.length === 1 ? '' : 's'} required`
+                            : 'Ready to continue'}
+                      </strong>
+
+                      <small>
+                        Risky costs must be accepted or corrected before they enter final costing.
+                      </small>
+                    </div>
+
+                    <div className="cost-approval-gate-status">
+                      {hardBlockedCostItems.length
+                        ? '✕ Fix required'
+                        : pendingCostApprovalItems.length
+                          ? '⚠ Approval required'
+                          : '✓ Gate passed'}
+                    </div>
+                  </div>
+
+                  <div className="cost-approval-summary">
+                    <div>
+                      <b>
+                        {hardBlockedCostItems.length}
+                      </b>
+                      <span>
+                        Blocked
+                      </span>
+                    </div>
+
+                    <div>
+                      <b>
+                        {pendingCostApprovalItems.length}
+                      </b>
+                      <span>
+                        Pending
+                      </span>
+                    </div>
+
+                    <div>
+                      <b>
+                        {approvedCostReviewItems.length}
+                      </b>
+                      <span>
+                        Approved
+                      </span>
+                    </div>
+                  </div>
+
+                  {approvalGateItems.length ? (
+                    <div className="cost-approval-list">
+                      {approvalGateItems.map(
+                        (item) => {
+                          const hardBlocked =
+                            hasHardCostBlock(
+                              item,
+                            );
+
+                          const approved =
+                            item.costApprovalStatus ===
+                            'APPROVED';
+
+                          return (
+                            <div
+                              className={`cost-approval-item ${
+                                hardBlocked
+                                  ? 'blocked'
+                                  : approved
+                                    ? 'approved'
+                                    : 'pending'
+                              }`}
+                              key={`approval-${item.id}`}
+                            >
+                              <div className="cost-approval-item-copy">
+                                <strong>
+                                  {item.name}
+                                </strong>
+
+                                <small>
+                                  Current ₹
+                                  {Number(
+                                    item.costPerPlate,
+                                  ).toFixed(2)}
+
+                                  {Number(
+                                    item.previousCostPerPlate,
+                                  ) > 0
+                                    ? ` · Previous ₹${Number(item.previousCostPerPlate).toFixed(2)}`
+                                    : ''}
+
+                                  {item.costChangePercent !== undefined &&
+                                  Number(
+                                    item.previousCostPerPlate,
+                                  ) > 0
+                                    ? ` · ${Number(item.costChangePercent) >= 0 ? '+' : ''}${Number(item.costChangePercent).toFixed(1)}%`
+                                    : ''}
+                                </small>
+
+                                <p>
+                                  {hardBlocked
+                                    ? item.coverageReason ||
+                                      'Recipe QA must be corrected.'
+                                    : item.accuracyRisk ===
+                                        'HIGH'
+                                      ? item.accuracyReason ||
+                                        'Large cost movement requires approval.'
+                                      : item.coverageReason ||
+                                        'This cost requires review.'}
+                                </p>
+                              </div>
+
+                              <div className="cost-approval-actions">
+                                {hardBlocked ? (
+                                  <button
+                                    className="secondary-button"
+                                    type="button"
+                                    onClick={() => {
+                                      setManualRateIds(
+                                        (current) => {
+                                          const next =
+                                            new Set(
+                                              current,
+                                            );
+
+                                          next.add(
+                                            item.id,
+                                          );
+
+                                          return next;
+                                        },
+                                      );
+                                    }}
+                                  >
+                                    Enter Manual Rate
+                                  </button>
+                                ) : approved ? (
+                                  <span className="cost-approved-pill">
+                                    ✓ Approved
+                                  </span>
+                                ) : (
+                                  <button
+                                    className="primary-button"
+                                    type="button"
+                                    onClick={() => {
+                                      setDetectionPreview(
+                                        (current) =>
+                                          current
+                                            ? {
+                                                ...current,
+
+                                                menu:
+                                                  current.menu.map(
+                                                    (
+                                                      menuItem,
+                                                    ) =>
+                                                      menuItem.id ===
+                                                      item.id
+                                                        ? {
+                                                            ...menuItem,
+
+                                                            costApprovalStatus:
+                                                              'APPROVED',
+
+                                                            costApprovedAt:
+                                                              new Date().toISOString(),
+
+                                                            costApprovalReason:
+                                                              'User explicitly accepted reviewed cost',
+                                                          }
+                                                        : menuItem,
+                                                  ),
+                                              }
+                                            : current,
+                                      );
+                                    }}
+                                  >
+                                    Accept Current Cost
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        },
+                      )}
+                    </div>
+                  ) : (
+                    <p className="cost-approval-clear">
+                      ✓ No selected dish requires manual cost approval.
+                    </p>
+                  )}
+
+                  {pendingCostApprovalItems.length > 1 &&
+                  !hardBlockedCostItems.length ? (
+                    <button
+                      className="secondary-button cost-approve-all"
+                      type="button"
+                      onClick={() => {
+                        const pendingIds =
+                          new Set(
+                            pendingCostApprovalItems.map(
+                              (item) =>
+                                item.id,
+                            ),
+                          );
+
+                        setDetectionPreview(
+                          (current) =>
+                            current
+                              ? {
+                                  ...current,
+
+                                  menu:
+                                    current.menu.map(
+                                      (item) =>
+                                        pendingIds.has(
+                                          item.id,
+                                        )
+                                          ? {
+                                              ...item,
+
+                                              costApprovalStatus:
+                                                'APPROVED',
+
+                                              costApprovedAt:
+                                                new Date().toISOString(),
+
+                                              costApprovalReason:
+                                                'User bulk-approved reviewed costs',
+                                            }
+                                          : item,
+                                    ),
+                                }
+                              : current,
+                        );
+                      }}
+                    >
+                      Approve All Review Costs
+                    </button>
+                  ) : null}
+                </div>
+
                 <div className="menu-preview-groups">
                   {detectionPreviewGroups.map((group) => {
                     const selectedInGroup =
@@ -3410,6 +3788,19 @@ Gulab Jamun`}
                                     {item.category}
                                     {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
                                   </small>
+
+                                  {item.costApprovalStatus ===
+                                  'APPROVED' ? (
+                                    <span className="menu-cost-approved-badge">
+                                      ✓ Cost approved
+                                    </span>
+                                  ) : requiresCostApproval(
+                                      item,
+                                    ) ? (
+                                    <span className="menu-cost-pending-badge">
+                                      ⚠ Approval pending
+                                    </span>
+                                  ) : null}
 
                                   {item.accuracyRisk &&
                                   item.accuracyRisk !==
@@ -3508,6 +3899,21 @@ Gulab Jamun`}
                                                         coverageReason:
                                                           rate > 0
                                                             ? 'Manual rate entered by user'
+                                                            : 'Manual rate required',
+
+                                                        costApprovalStatus:
+                                                          rate > 0
+                                                            ? 'APPROVED'
+                                                            : 'PENDING',
+
+                                                        costApprovedAt:
+                                                          rate > 0
+                                                            ? new Date().toISOString()
+                                                            : undefined,
+
+                                                        costApprovalReason:
+                                                          rate > 0
+                                                            ? 'User manually entered and accepted this rate'
                                                             : 'Manual rate required',
                                                       }
                                                     : menuItem,
