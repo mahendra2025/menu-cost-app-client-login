@@ -815,6 +815,132 @@ async function saveTenantDishLearning(
   }
 }
 
+function preprocessMenuTextWithTenantLearning(
+  menuText: string,
+  rules:
+    TenantDishAliasRule[],
+) {
+  if (!rules.length) {
+    return {
+      menuText,
+      replacements: 0,
+    };
+  }
+
+  /*
+   * Rules arrive newest first.
+   * Keep the newest correction when the
+   * same normalized alias appears twice.
+   */
+  const mapRules =
+    new Map<
+      string,
+      TenantDishAliasRule
+    >();
+
+  for (const rule of rules) {
+    if (
+      rule.action !==
+        'MAP' ||
+      !rule.canonicalName
+    ) {
+      continue;
+    }
+
+    const key =
+      dishNameKey(
+        rule.aliasName,
+      );
+
+    if (
+      key &&
+      !mapRules.has(key)
+    ) {
+      mapRules.set(
+        key,
+        rule,
+      );
+    }
+  }
+
+  let replacements = 0;
+
+  const learnedText =
+    String(menuText || '')
+      .split(/\r?\n/)
+      .map(
+        (line) => {
+          /*
+           * Preserve bullets / numbering while
+           * replacing only an exact dish line.
+           *
+           * Examples:
+           * • Panner Tikka
+           * 1. Panner Tikka
+           * Panner Tikka
+           */
+          const match =
+            line.match(
+              /^(\s*(?:(?:[•●▪►*-]|\d+[.)])\s*)?)(.*)$/,
+            );
+
+          const prefix =
+            match?.[1] ||
+            '';
+
+          const body =
+            (
+              match?.[2] ||
+              line
+            ).trim();
+
+          if (!body) {
+            return line;
+          }
+
+          const rule =
+            mapRules.get(
+              dishNameKey(
+                body,
+              ),
+            );
+
+          if (
+            !rule ||
+            !rule.canonicalName
+          ) {
+            return line;
+          }
+
+          if (
+            dishNameKey(
+              body,
+            ) ===
+            dishNameKey(
+              rule.canonicalName,
+            )
+          ) {
+            return line;
+          }
+
+          replacements += 1;
+
+          return (
+            prefix +
+            rule.canonicalName
+          );
+        },
+      )
+      .join('\n');
+
+  return {
+    menuText:
+      learnedText,
+
+    replacements,
+  };
+}
+
 async function applyTenantDishLearning(
   menu: MenuItem[],
   rules:
@@ -828,16 +954,60 @@ async function applyTenantDishLearning(
   }
 
   const ruleMap =
-    new Map(
-      rules.map(
-        (rule) => [
-          dishNameKey(
-            rule.aliasName,
-          ),
+    new Map<
+      string,
+      TenantDishAliasRule
+    >();
+
+  /*
+   * API returns newest rules first.
+   * First match wins.
+   */
+  for (const rule of rules) {
+    const aliasKey =
+      dishNameKey(
+        rule.aliasName,
+      );
+
+    if (
+      aliasKey &&
+      !ruleMap.has(
+        aliasKey,
+      )
+    ) {
+      ruleMap.set(
+        aliasKey,
+        rule,
+      );
+    }
+
+    /*
+     * Also recognize the canonical name
+     * after pre-detection rewriting.
+     */
+    if (
+      rule.action ===
+        'MAP' &&
+      rule.canonicalName
+    ) {
+      const canonicalKey =
+        dishNameKey(
+          rule.canonicalName,
+        );
+
+      if (
+        canonicalKey &&
+        !ruleMap.has(
+          canonicalKey,
+        )
+      ) {
+        ruleMap.set(
+          canonicalKey,
           rule,
-        ],
-      ),
-    );
+        );
+      }
+    }
+  }
 
   const dishCatalog =
     await import(
@@ -1870,12 +2040,32 @@ export default function EventPage() {
       await syncDishCostItemsFromServer();
 
       /*
-       * Load this caterer's previously
-       * confirmed corrections in parallel
-       * with menu detection.
+       * Load this caterer's learned corrections
+       * before AI/local parsing.
+       *
+       * This lets a known OCR spelling become
+       * its canonical dish before either
+       * detector sees it.
        */
-      const tenantDishAliasPromise =
-        requestTenantDishAliases();
+      const tenantDishAliases =
+        await requestTenantDishAliases();
+
+      const learnedMenu =
+        preprocessMenuTextWithTenantLearning(
+          rawMenuText,
+          tenantDishAliases,
+        );
+
+      const detectionMenuText =
+        learnedMenu.menuText;
+
+      if (
+        learnedMenu.replacements > 0
+      ) {
+        console.info(
+          `Applied ${learnedMenu.replacements} learned menu correction(s) before detection.`,
+        );
+      }
 
       let catalogMenu: MenuItem[] = [];
       let manualMenu: MenuItem[] = [];
@@ -1894,9 +2084,12 @@ export default function EventPage() {
        */
       const localDetectionPromise =
         Promise.all([
-          parseMenuText(rawMenuText),
+          parseMenuText(
+            detectionMenuText,
+          ),
+
           findPendingDishCandidates(
-            rawMenuText,
+            detectionMenuText,
           ),
         ]);
 
@@ -1922,7 +2115,7 @@ export default function EventPage() {
       try {
         const extraction =
           await requestAiMenuExtraction(
-            rawMenuText,
+            detectionMenuText,
           );
         const dishCatalog =
           await import(
@@ -2013,7 +2206,7 @@ export default function EventPage() {
                   matchedDish
                     ? 100
                     : getDishSourceEvidenceScore(
-                        rawMenuText,
+                        detectionMenuText,
                         name,
                       );
 
@@ -2450,8 +2643,7 @@ export default function EventPage() {
       detectedMenu =
         await applyTenantDishLearning(
           detectedMenu,
-
-          await tenantDishAliasPromise,
+          tenantDishAliases,
         );
 
       /*
