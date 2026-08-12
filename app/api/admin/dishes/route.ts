@@ -270,7 +270,7 @@ function syncRecipeCatalogWithDishes(
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
@@ -341,11 +341,174 @@ export async function GET() {
       [...alignedItems, ...recipeHierarchy],
     );
 
+    const url =
+      new URL(request.url);
+
+    const paginationRequested =
+      url.searchParams.has('page') ||
+      url.searchParams.has('limit') ||
+      url.searchParams.has('q') ||
+      url.searchParams.has('category') ||
+      url.searchParams.has('subcategory') ||
+      url.searchParams.has('sort');
+
+    // Keep old clients fully compatible.
+    if (!paginationRequested) {
+      return NextResponse.json({
+        items: alignedItems,
+        categories,
+        subcategories,
+        hierarchySource:
+          recipeCatalog?.dishes
+            ? 'recipes'
+            : 'defaults',
+      });
+    }
+
+    const query =
+      String(
+        url.searchParams.get('q') || '',
+      )
+        .trim()
+        .toLowerCase();
+
+    const category =
+      String(
+        url.searchParams.get('category') ||
+        'ALL',
+      ).trim();
+
+    const subcategory =
+      String(
+        url.searchParams.get('subcategory') ||
+        'ALL',
+      ).trim();
+
+    const sort =
+      String(
+        url.searchParams.get('sort') ||
+        'NAME_ASC',
+      );
+
+    const pageSize =
+      Math.min(
+        100,
+        Math.max(
+          1,
+          Number(
+            url.searchParams.get('limit'),
+          ) || 30,
+        ),
+      );
+
+    const requestedPage =
+      Math.max(
+        1,
+        Number(
+          url.searchParams.get('page'),
+        ) || 1,
+      );
+
+    const filteredItems =
+      alignedItems
+        .filter((item) => {
+          const aliases =
+            Array.isArray(item.aliases)
+              ? item.aliases
+              : [];
+
+          const matchesQuery =
+            !query ||
+            item.name
+              .toLowerCase()
+              .includes(query) ||
+            item.category
+              .toLowerCase()
+              .includes(query) ||
+            String(item.subcategory || '')
+              .toLowerCase()
+              .includes(query) ||
+            aliases.some((alias) =>
+              String(alias)
+                .toLowerCase()
+                .includes(query),
+            );
+
+          return (
+            matchesQuery &&
+            (
+              category === 'ALL' ||
+              item.category === category
+            ) &&
+            (
+              subcategory === 'ALL' ||
+              String(item.subcategory || '') ===
+                subcategory
+            )
+          );
+        })
+        .sort((left, right) => {
+          if (sort === 'RATE_HIGH') {
+            return Number(right.rate) - Number(left.rate);
+          }
+
+          if (sort === 'RATE_LOW') {
+            return Number(left.rate) - Number(right.rate);
+          }
+
+          const order =
+            left.name.localeCompare(
+              right.name,
+              undefined,
+              { sensitivity: 'base' },
+            );
+
+          return sort === 'NAME_DESC'
+            ? -order
+            : order;
+        });
+
+    const total =
+      filteredItems.length;
+
+    const pageCount =
+      Math.max(
+        1,
+        Math.ceil(total / pageSize),
+      );
+
+    const page =
+      Math.min(
+        requestedPage,
+        pageCount,
+      );
+
+    const start =
+      (page - 1) * pageSize;
+
     return NextResponse.json({
-      items: alignedItems,
+      items:
+        filteredItems.slice(
+          start,
+          start + pageSize,
+        ),
+
       categories,
       subcategories,
-      hierarchySource: recipeCatalog?.dishes ? 'recipes' : 'defaults',
+
+      hierarchySource:
+        recipeCatalog?.dishes
+          ? 'recipes'
+          : 'defaults',
+
+      pagination: {
+        page,
+        pageSize,
+        pageCount,
+        total,
+        hasPrevious: page > 1,
+        hasNext: page < pageCount,
+      },
     });
   } catch {
     return NextResponse.json({ error: 'Failed to load dishes' }, { status: 500 });

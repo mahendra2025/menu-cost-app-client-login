@@ -88,7 +88,7 @@ function updateRecipeIngredients(
   });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
@@ -97,14 +97,215 @@ export async function GET() {
       select: { rates: true, ingredientCategories: true, dishes: true, updatedAt: true },
     });
     if (!catalog) return NextResponse.json({ rates: [], categories: INGREDIENT_CATEGORIES, usage: {}, ready: true });
-    const usage = Object.fromEntries(recipeIngredientUsage(catalog.dishes));
+    const usageMap =
+      recipeIngredientUsage(
+        catalog.dishes,
+      );
+
+    const usage =
+      Object.fromEntries(
+        usageMap,
+      );
     const rates = Array.isArray(catalog.rates)
       ? catalog.rates
         .map(normalizeIngredientRate)
         .filter((rate): rate is NonNullable<typeof rate> => Boolean(rate))
       : [];
-    const categories = normalizeCategories(catalog.ingredientCategories, rates);
-    return NextResponse.json({ rates, categories, usage, ready: true, updatedAt: catalog.updatedAt });
+    const categories =
+      normalizeCategories(
+        catalog.ingredientCategories,
+        rates,
+      );
+
+    const url =
+      new URL(request.url);
+
+    const paginationRequested =
+      url.searchParams.has('page') ||
+      url.searchParams.has('limit') ||
+      url.searchParams.has('q') ||
+      url.searchParams.has('category') ||
+      url.searchParams.has('status') ||
+      url.searchParams.has('sort');
+
+    // Existing full-catalog calls remain unchanged.
+    if (!paginationRequested) {
+      return NextResponse.json({
+        rates,
+        categories,
+        usage,
+        ready: true,
+        updatedAt:
+          catalog.updatedAt,
+      });
+    }
+
+    const query =
+      String(
+        url.searchParams.get('q') || '',
+      )
+        .trim()
+        .toLowerCase();
+
+    const category =
+      String(
+        url.searchParams.get('category') ||
+        'ALL',
+      ).trim();
+
+    const status =
+      String(
+        url.searchParams.get('status') ||
+        'ALL',
+      ).trim();
+
+    const sort =
+      String(
+        url.searchParams.get('sort') ||
+        'NAME_ASC',
+      );
+
+    const pageSize =
+      Math.min(
+        100,
+        Math.max(
+          1,
+          Number(
+            url.searchParams.get('limit'),
+          ) || 30,
+        ),
+      );
+
+    const requestedPage =
+      Math.max(
+        1,
+        Number(
+          url.searchParams.get('page'),
+        ) || 1,
+      );
+
+    const filteredRates =
+      rates
+        .filter((rate) => {
+          const used =
+            usageMap.get(rate.id)?.length || 0;
+
+          const matchesStatus =
+            status === 'ALL' ||
+            (
+              status === 'ATTENTION' &&
+              !(Number(rate.rate) > 0)
+            ) ||
+            (
+              status === 'LINKED' &&
+              used > 0
+            ) ||
+            (
+              status === 'UNLINKED' &&
+              used === 0
+            );
+
+          const matchesQuery =
+            !query ||
+            rate.name
+              .toLowerCase()
+              .includes(query) ||
+            rate.category
+              .toLowerCase()
+              .includes(query) ||
+            rate.unit
+              .toLowerCase()
+              .includes(query);
+
+          return (
+            matchesStatus &&
+            matchesQuery &&
+            (
+              category === 'ALL' ||
+              rate.category === category
+            )
+          );
+        })
+        .sort((left, right) => {
+          if (sort === 'RATE_HIGH') {
+            return Number(right.rate) - Number(left.rate);
+          }
+
+          if (sort === 'RATE_LOW') {
+            return Number(left.rate) - Number(right.rate);
+          }
+
+          if (sort === 'MOST_USED') {
+            const usageOrder =
+              (usageMap.get(right.id)?.length || 0) -
+              (usageMap.get(left.id)?.length || 0);
+
+            if (usageOrder) {
+              return usageOrder;
+            }
+          }
+
+          const order =
+            left.name.localeCompare(
+              right.name,
+              undefined,
+              { sensitivity: 'base' },
+            );
+
+          return sort === 'NAME_DESC'
+            ? -order
+            : order;
+        });
+
+    const total =
+      filteredRates.length;
+
+    const pageCount =
+      Math.max(
+        1,
+        Math.ceil(total / pageSize),
+      );
+
+    const page =
+      Math.min(
+        requestedPage,
+        pageCount,
+      );
+
+    const start =
+      (page - 1) * pageSize;
+
+    const pageRates =
+      filteredRates.slice(
+        start,
+        start + pageSize,
+      );
+
+    return NextResponse.json({
+      rates: pageRates,
+      categories,
+
+      usage:
+        Object.fromEntries(
+          pageRates.map((rate) => [
+            rate.id,
+            usageMap.get(rate.id) || [],
+          ]),
+        ),
+
+      ready: true,
+      updatedAt:
+        catalog.updatedAt,
+
+      pagination: {
+        page,
+        pageSize,
+        pageCount,
+        total,
+        hasPrevious: page > 1,
+        hasNext: page < pageCount,
+      },
+    });
   } catch {
     return NextResponse.json({ error: 'Failed to load ingredients' }, { status: 500 });
   }

@@ -40,12 +40,8 @@ import {
   type CsvDishRow,
 } from '../../../lib/csvDishImport';
 
-import {
-  createRecipeNameCatalog,
-  createRecipeServingCatalog,
-  findDishServing,
-  hasDishRecipe,
-  type RecipeServing,
+import type {
+  RecipeServing,
 } from '../../../lib/recipeServings';
 
 import { getSession, uid } from '../../../lib/store';
@@ -92,17 +88,14 @@ function isPlaceholderServing(item: DishCostItem) {
 
 function toEditableDish(
   item: DishCostItem,
-  recipeCatalog = createRecipeServingCatalog(),
-  recipeNames = createRecipeNameCatalog(),
+  recipeServing?: RecipeServing,
+  recipeLinked = false,
 ): EditableDish {
   const aliases = item.aliases ?? [];
-  const recipeServing = findDishServing(
-    item.name,
-    item.category,
-    recipeCatalog,
+  const useRecipeServing = Boolean(
+    recipeServing &&
+    isPlaceholderServing(item),
   );
-  const recipeLinked = hasDishRecipe(item.name, recipeNames);
-  const useRecipeServing = Boolean(recipeServing && isPlaceholderServing(item));
 
   return {
     ...item,
@@ -115,6 +108,27 @@ function toEditableDish(
     aliasesText: aliases.filter((alias) => !HINDI_SCRIPT.test(alias) && !GUJARATI_SCRIPT.test(alias)).join(', '),
     hindiAliasesText: aliases.filter((alias) => HINDI_SCRIPT.test(alias)).join(', '),
     gujaratiAliasesText: aliases.filter((alias) => GUJARATI_SCRIPT.test(alias)).join(', '),
+  };
+}
+
+async function loadRecipeMetadata() {
+  const recipeModule =
+    await import(
+      '../../../lib/recipeServings'
+    );
+
+  const servingCatalog =
+    recipeModule
+      .createRecipeServingCatalog();
+
+  const nameCatalog =
+    recipeModule
+      .createRecipeNameCatalog();
+
+  return {
+    recipeModule,
+    servingCatalog,
+    nameCatalog,
   };
 }
 
@@ -243,6 +257,46 @@ export default function AdminDishesPage() {
   const deferredCategoryQuery =
     useDeferredValue(categoryQuery);
 
+  async function refreshRecipeMetadata() {
+    try {
+      const {
+        recipeModule,
+        servingCatalog,
+        nameCatalog,
+      } =
+        await loadRecipeMetadata();
+
+      setRows(
+        (current) =>
+          current.map(
+            (row) => ({
+              ...row,
+
+              recipeServing:
+                recipeModule
+                  .findDishServing(
+                    row.name,
+                    row.category,
+                    servingCatalog,
+                  ),
+
+              recipeLinked:
+                recipeModule
+                  .hasDishRecipe(
+                    row.name,
+                    nameCatalog,
+                  ),
+            }),
+          ),
+      );
+    } catch (error) {
+      console.warn(
+        'Recipe metadata could not be loaded:',
+        error,
+      );
+    }
+  }
+
   const rowErrors =
     useMemo(
       () => validateRows(rows),
@@ -328,14 +382,11 @@ export default function AdminDishesPage() {
     setWorkspaceView(view);
     if (view === 'recipes') {
       setRecipeStudioOpened(true);
+
+      void refreshRecipeMetadata();
+
     } else if (recipeStudioOpened) {
-      const recipeCatalog = createRecipeServingCatalog();
-      const recipeNames = createRecipeNameCatalog();
-      setRows((current) => current.map((row) => ({
-        ...row,
-        recipeServing: findDishServing(row.name, row.category, recipeCatalog),
-        recipeLinked: hasDishRecipe(row.name, recipeNames),
-      })));
+      void refreshRecipeMetadata();
     }
     window.history.replaceState(
       null,
@@ -370,11 +421,34 @@ export default function AdminDishesPage() {
       if (!response.ok) throw new Error();
       const data = await response.json();
       const dishItems = parseDishItems(data.items);
-      const recipeCatalog = createRecipeServingCatalog();
-      const recipeNames = createRecipeNameCatalog();
-      const refreshedRows = dishItems.map((item) =>
-        toEditableDish(item, recipeCatalog, recipeNames),
-      );
+
+      const {
+        recipeModule,
+        servingCatalog,
+        nameCatalog,
+      } =
+        await loadRecipeMetadata();
+
+      const refreshedRows =
+        dishItems.map(
+          (item) =>
+            toEditableDish(
+              item,
+
+              recipeModule
+                .findDishServing(
+                  item.name,
+                  item.category,
+                  servingCatalog,
+                ),
+
+              recipeModule
+                .hasDishRecipe(
+                  item.name,
+                  nameCatalog,
+                ),
+            ),
+        );
       const refreshedCategories = Array.isArray(data.categories)
         ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
         : [...CATEGORIES];
@@ -417,8 +491,6 @@ export default function AdminDishesPage() {
         const response = await fetch('/api/admin/dishes', { cache: 'no-store' });
         if (!response.ok) throw new Error('Could not load dishes');
         const data = await response.json();
-        const recipeCatalog = createRecipeServingCatalog();
-        const recipeNames = createRecipeNameCatalog();
         const dishItems = parseDishItems(data.items);
         const loadedCategories = Array.isArray(data.categories)
           ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
@@ -429,20 +501,59 @@ export default function AdminDishesPage() {
             Array.isArray(values) ? values.map((value) => String(value).trim()).filter(Boolean) : [],
           ]))
           : {};
-        const cleaned = dishItems.map((item) => toEditableDish(item, recipeCatalog, recipeNames));
-        const loadedRecipeServings = cleaned.some((item, index) =>
-          item.servingQuantity !== dishItems[index]?.servingQuantity ||
-          item.servingUnit !== dishItems[index]?.servingUnit
-        );
+        const cleaned =
+          dishItems.map(
+            (item) =>
+              toEditableDish(item),
+          );
 
         setRows(cleaned);
         setCategories(Array.from(new Set([...loadedCategories, ...cleaned.map((item) => item.category), 'Other'])));
         setSubcategories(loadedSubcategories);
-        saveDishCostItems(cleaned.map(toDishCostItem));
-        if (loadedRecipeServings) {
-          setDirty(true);
-          setMessageType('success');
-          setMessage('Serving quantities loaded from Recipes. Save all changes to publish them to client menus.');
+        saveDishCostItems(
+          cleaned.map(
+            toDishCostItem,
+          ),
+        );
+
+        /*
+         * Recipe metadata is useful but not
+         * required for the first catalog paint.
+         *
+         * Let the Dish Master become interactive
+         * first, then load the large recipe
+         * catalog during browser idle time.
+         */
+        const idleWindow =
+          window as Window & {
+            requestIdleCallback?: (
+              callback: () => void,
+              options?: {
+                timeout: number;
+              },
+            ) => number;
+          };
+
+        if (
+          idleWindow
+            .requestIdleCallback
+        ) {
+          idleWindow
+            .requestIdleCallback(
+              () => {
+                void refreshRecipeMetadata();
+              },
+              {
+                timeout: 1800,
+              },
+            );
+        } else {
+          window.setTimeout(
+            () => {
+              void refreshRecipeMetadata();
+            },
+            500,
+          );
         }
       } catch {
         setMessageType('error');
@@ -818,15 +929,68 @@ export default function AdminDishesPage() {
         }),
       });
       if (!response.ok) throw new Error();
-      const saveResult = await response.json();
-      saveDishCostItems(cleaned);
-      const recipeCatalog = createRecipeServingCatalog();
-      const recipeNames = createRecipeNameCatalog();
-      const recipesSynced = Number(saveResult.syncedRecipes) > 0;
-      setRows(cleaned.map((item) => {
-        const editable = toEditableDish(item, recipeCatalog, recipeNames);
-        return recipesSynced ? { ...editable, recipeLinked: true } : editable;
-      }));
+      const saveResult =
+        await response.json();
+
+      saveDishCostItems(
+        cleaned,
+      );
+
+      const recipesSynced =
+        Number(
+          saveResult
+            .syncedRecipes,
+        ) > 0;
+
+      const previousMetadata =
+        new Map(
+          rows.map(
+            (row) => [
+              normalizeToken(
+                row.name,
+              ),
+              {
+                recipeServing:
+                  row.recipeServing,
+
+                recipeLinked:
+                  row.recipeLinked,
+              },
+            ],
+          ),
+        );
+
+      setRows(
+        cleaned.map(
+          (item) => {
+            const previous =
+              previousMetadata.get(
+                normalizeToken(
+                  item.name,
+                ),
+              );
+
+            return toEditableDish(
+              item,
+              previous
+                ?.recipeServing,
+              recipesSynced
+                ? true
+                : Boolean(
+                    previous
+                      ?.recipeLinked,
+                  ),
+            );
+          },
+        ),
+      );
+
+      window.setTimeout(
+        () => {
+          void refreshRecipeMetadata();
+        },
+        0,
+      );
       setDirty(false);
       setCatalogRevision((current) => current + 1);
       setMessageType('success');
@@ -909,15 +1073,20 @@ async function handleCsvImport(
           ...importedDishes,
         ]);
 
-        const recipeCatalog =
-          createRecipeServingCatalog();
-        const recipeNames =
-          createRecipeNameCatalog();
-
         setRows(
-          mergedDishes.map((dish) =>
-            toEditableDish(dish, recipeCatalog, recipeNames),
+          mergedDishes.map(
+            (dish) =>
+              toEditableDish(
+                dish,
+              ),
           ),
+        );
+
+        window.setTimeout(
+          () => {
+            void refreshRecipeMetadata();
+          },
+          0,
         );
 
         setCategories((current) =>
@@ -975,11 +1144,46 @@ async function handleCsvImport(
       return;
     }
 
-    const reload = await fetch('/api/admin/dishes', { cache: 'no-store' });
-    const data = await reload.json();
-    const recipeCatalog = createRecipeServingCatalog();
-    const recipeNames = createRecipeNameCatalog();
-    const defaults = parseDishItems(data.items).map((item) => toEditableDish(item, recipeCatalog, recipeNames));
+    const reload =
+      await fetch(
+        '/api/admin/dishes',
+        {
+          cache: 'no-store',
+        },
+      );
+
+    const data =
+      await reload.json();
+
+    const {
+      recipeModule,
+      servingCatalog,
+      nameCatalog,
+    } =
+      await loadRecipeMetadata();
+
+    const defaults =
+      parseDishItems(
+        data.items,
+      ).map(
+        (item) =>
+          toEditableDish(
+            item,
+
+            recipeModule
+              .findDishServing(
+                item.name,
+                item.category,
+                servingCatalog,
+              ),
+
+            recipeModule
+              .hasDishRecipe(
+                item.name,
+                nameCatalog,
+              ),
+          ),
+      );
     saveDishCostItems(defaults.map(toDishCostItem));
     setRows(defaults);
     setCategories(Array.isArray(data.categories) ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean) : [...CATEGORIES]);
