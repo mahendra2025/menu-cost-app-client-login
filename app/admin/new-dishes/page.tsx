@@ -370,9 +370,6 @@ export default function NewDishesPage() {
   const deferredQuery =
     useDeferredValue(query);
 
-  const deferredRowsForMatching =
-    useDeferredValue(rows);
-
   const [
     reviewFilter,
     setReviewFilter,
@@ -439,6 +436,13 @@ export default function NewDishesPage() {
         );
       }
 
+      if (!catalogResponse.ok) {
+        throw new Error(
+          catalogData.error ||
+            'Could not load Dish Catalog',
+        );
+      }
+
       const availableCategories =
         Array.isArray(
           catalogData.categories,
@@ -451,20 +455,65 @@ export default function NewDishesPage() {
       setCategories(
         availableCategories,
       );
+      const catalogRows:
+        CatalogDish[] =
+          Array.isArray(
+            catalogData.items,
+          )
+            ? catalogData.items
+                .map(
+                  (
+                    item:
+                      Record<
+                        string,
+                        unknown
+                      >,
+                  ) => ({
+                    name:
+                      String(
+                        item.name ||
+                        '',
+                      ).trim(),
+
+                    category:
+                      String(
+                        item.category ||
+                        '',
+                      ).trim(),
+
+                    rate:
+                      Math.max(
+                        Number(
+                          item.rate,
+                        ) || 0,
+                        0,
+                      ),
+
+                    aliases:
+                      Array.isArray(
+                        item.aliases,
+                      )
+                        ? item.aliases
+                            .map(String)
+                            .filter(Boolean)
+                        : [],
+                  }),
+                )
+                .filter(
+                  (
+                    item:
+                      CatalogDish,
+                  ) =>
+                    Boolean(
+                      item.name,
+                    ),
+                )
+            : [];
+
       setCatalogDishes(
-        Array.isArray(catalogData.items)
-          ? catalogData.items
-              .map((item: Record<string, unknown>) => ({
-                name: String(item.name || '').trim(),
-                category: String(item.category || '').trim(),
-                rate: Math.max(Number(item.rate) || 0, 0),
-                aliases: Array.isArray(item.aliases)
-                  ? item.aliases.map(String).filter(Boolean)
-                  : [],
-              }))
-              .filter((item: CatalogDish) => item.name)
-          : [],
+        catalogRows,
       );
+
       setRows(
         (
           queueData.suggestions ||
@@ -475,6 +524,8 @@ export default function NewDishesPage() {
           ): EditableSuggestion => ({
             ...suggestion,
             dishName:
+              suggestion
+                .canonicalName ||
               suggestion.name,
             category:
               availableCategories.includes(
@@ -495,9 +546,58 @@ export default function NewDishesPage() {
               suggestion.suggestedSubcategory ||
               '',
             rate: '',
-            saveAs: 'new',
-            aliasCategory: '',
-            aliasTarget: '',
+
+            saveAs:
+              suggestion
+                .recommendation ===
+                'ALIAS' &&
+              catalogRows.some(
+                (dish) =>
+                  dish.name
+                    .toLowerCase() ===
+                  String(
+                    suggestion
+                      .matchedDishName ||
+                      '',
+                  )
+                    .toLowerCase(),
+              )
+                ? 'alias'
+                : 'new',
+
+            aliasCategory:
+              catalogRows.find(
+                (dish) =>
+                  dish.name
+                    .toLowerCase() ===
+                  String(
+                    suggestion
+                      .matchedDishName ||
+                      '',
+                  )
+                    .toLowerCase(),
+              )?.category ||
+              '',
+
+            aliasTarget:
+              suggestion
+                .recommendation ===
+                'ALIAS'
+                ? (
+                    catalogRows.find(
+                      (dish) =>
+                        dish.name
+                          .toLowerCase() ===
+                        String(
+                          suggestion
+                            .matchedDishName ||
+                            '',
+                        )
+                          .toLowerCase(),
+                    )?.name ||
+                    ''
+                  )
+                : '',
           }),
         ),
       );
@@ -846,30 +946,69 @@ export default function NewDishesPage() {
   ) {
     const verification =
       verifications[row.id];
-    const aliasTarget = catalogDishes.find(
-      (dish) =>
-        dish.name.toLowerCase() ===
-          row.aliasTarget.trim().toLowerCase() &&
-        dish.category.toLowerCase() ===
-          row.aliasCategory.trim().toLowerCase(),
-    );
+
+    const aliasTarget =
+      catalogDishes.find(
+        (dish) =>
+          dish.name
+            .toLowerCase() ===
+            row.aliasTarget
+              .trim()
+              .toLowerCase() &&
+          dish.category
+            .toLowerCase() ===
+            row.aliasCategory
+              .trim()
+              .toLowerCase(),
+      );
+
+    const manualRate =
+      Math.max(
+        0,
+        Number(row.rate) || 0,
+      );
+
+    if (!row.dishName.trim()) {
+      setMessageType('error');
+      setMessage(
+        'Enter a dish name.',
+      );
+      return;
+    }
 
     if (
-      !row.dishName.trim() ||
-      (row.saveAs === 'new' &&
-        !row.category) ||
-      (row.saveAs === 'alias' &&
-        (!row.aliasCategory || !aliasTarget))
+      row.saveAs === 'new' &&
+      !row.category
     ) {
       setMessageType('error');
       setMessage(
-        !row.dishName.trim()
-          ? 'Enter a dish name before adding it.'
-          : row.saveAs === 'alias'
-              ? 'Choose an existing catalog dish for this alias.'
-              : !row.category
-                ? 'Choose a category before adding the dish.'
-                : 'Could not add the dish.',
+        'Choose a category.',
+      );
+      return;
+    }
+
+    if (
+      row.saveAs === 'alias' &&
+      (
+        !row.aliasCategory ||
+        !aliasTarget
+      )
+    ) {
+      setMessageType('error');
+      setMessage(
+        'Choose the existing Dish Master item for this alias.',
+      );
+      return;
+    }
+
+    if (
+      row.saveAs === 'new' &&
+      !buildRecipe &&
+      !(manualRate > 0)
+    ) {
+      setMessageType('error');
+      setMessage(
+        'Enter a positive dish rate or use Approve + Auto Build.',
       );
       return;
     }
@@ -878,120 +1017,255 @@ export default function NewDishesPage() {
     setMessage('');
 
     try {
-      const response = await fetch(
-        '/api/admin/dish-suggestions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type':
-              'application/json',
+      let autoBuildResult:
+        AutoBuildResult | null =
+          null;
+
+      let finalRate =
+        manualRate;
+
+      /*
+       * Build FIRST.
+       *
+       * If recipe generation fails the
+       * pending suggestion stays in DB.
+       */
+      if (
+        buildRecipe &&
+        row.saveAs === 'new'
+      ) {
+        const buildResponse =
+          await fetch(
+            '/api/admin/dish-suggestions/auto-build',
+            {
+              method: 'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  tenantId:
+                    row.tenantId,
+
+                  name:
+                    row.dishName
+                      .trim(),
+
+                  category:
+                    row.category
+                      .trim() ||
+                    'Other',
+
+                  subcategory:
+                    row.subcategory
+                      .trim(),
+                }),
+            },
+          );
+
+        const buildData =
+          await buildResponse
+            .json() as
+              AutoBuildResult & {
+                error?: string;
+              };
+
+        if (!buildResponse.ok) {
+          throw new Error(
+            buildData.error ||
+              'Auto Build failed. Suggestion was kept for retry.',
+          );
+        }
+
+        finalRate =
+          Math.max(
+            Number(
+              buildData
+                .standardCostPerPlate,
+            ) || 0,
+            0,
+          );
+
+        if (!(finalRate > 0)) {
+          throw new Error(
+            'Auto Build created no usable cost. Suggestion was kept.',
+          );
+        }
+
+        autoBuildResult =
+          buildData;
+      }
+
+      /*
+       * Publish only AFTER preparation
+       * succeeds.
+       */
+      const response =
+        await fetch(
+          '/api/admin/dish-suggestions',
+          {
+            method: 'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+
+            body:
+              JSON.stringify({
+                id:
+                  row.id,
+
+                name:
+                  row.dishName,
+
+                category:
+                  row.category,
+
+                subcategory:
+                  row.subcategory,
+
+                rate:
+                  finalRate,
+
+                mode:
+                  row.saveAs,
+
+                aliasOf:
+                  aliasTarget
+                    ?.name ||
+                  '',
+
+                googleVerified:
+                  Boolean(
+                    verification
+                      ?.confirmed,
+                  ),
+              }),
           },
-          body: JSON.stringify({
-            id: row.id,
-            name: row.dishName,
-            category: row.category,
-            subcategory:
-              row.subcategory,
-            rate:
-              Number(row.rate) || 0,
-            mode: row.saveAs,
-            aliasOf: aliasTarget?.name || '',
-            googleVerified:
-              Boolean(verification?.confirmed),
-          }),
-        },
-      );
+        );
+
       const data =
         await response.json();
 
       if (!response.ok) {
         throw new Error(
           data.error ||
-            'Could not add the dish',
+            'Could not publish the dish',
         );
       }
 
-      let autoBuildResult:
-        AutoBuildResult | null =
-          null;
+      if (autoBuildResult) {
+        setLastAutoBuild(
+          autoBuildResult,
+        );
 
-      let autoBuildError = '';
+        setRequestedRecipeDish({
+          requestId:
+            `approved_${row.id}_${Date.now()}`,
 
-      if (
-        buildRecipe &&
-        row.saveAs === 'new'
-      ) {
-        try {
-          const buildResponse =
-            await fetch(
-              '/api/admin/dish-suggestions/auto-build',
-              {
-                method: 'POST',
+          name:
+            row.dishName
+              .trim(),
 
-                headers: {
-                  'Content-Type':
-                    'application/json',
-                },
+          category:
+            row.category
+              .trim() ||
+            'Other',
 
-                body:
-                  JSON.stringify({
-                    tenantId:
-                      row.tenantId,
+          subcategory:
+            row.subcategory
+              .trim(),
+        });
+      }
 
-                    name:
-                      row.dishName
-                        .trim(),
-
-                    category:
-                      row.category
-                        .trim() ||
-                      'Other',
-
-                    subcategory:
-                      row.subcategory
-                        .trim(),
-                  }),
-              },
-            );
-
-          const buildData =
-            await buildResponse
-              .json() as
-                AutoBuildResult & {
-                  error?: string;
-                };
-
+      /*
+       * Update local catalog immediately.
+       */
+      setCatalogDishes(
+        (current) => {
           if (
-            !buildResponse.ok
+            row.saveAs === 'alias' &&
+            aliasTarget
           ) {
-            throw new Error(
-              buildData.error ||
-                'Automatic recipe build failed',
+            return current.map(
+              (dish) =>
+                dish.name ===
+                  aliasTarget.name
+                  ? {
+                      ...dish,
+
+                      aliases:
+                        Array.from(
+                          new Set([
+                            ...dish.aliases,
+                            row.dishName
+                              .trim(),
+                          ]),
+                        ),
+                    }
+                  : dish,
             );
           }
 
-          autoBuildResult =
-            buildData;
+          const nextDish:
+            CatalogDish = {
+              name:
+                row.dishName
+                  .trim(),
 
-          setLastAutoBuild(
-            buildData,
+              category:
+                row.category
+                  .trim() ||
+                'Other',
+
+              rate:
+                finalRate,
+
+              aliases: [],
+            };
+
+          const exists =
+            current.some(
+              (dish) =>
+                dish.name
+                  .toLowerCase() ===
+                nextDish.name
+                  .toLowerCase(),
+            );
+
+          if (!exists) {
+            return [
+              ...current,
+              nextDish,
+            ];
+          }
+
+          return current.map(
+            (dish) =>
+              dish.name
+                .toLowerCase() ===
+              nextDish.name
+                .toLowerCase()
+                ? {
+                    ...dish,
+                    ...nextDish,
+                  }
+                : dish,
           );
-        } catch (
-          buildError
-        ) {
-          autoBuildError =
-            buildError instanceof
-            Error
-              ? buildError.message
-              : 'Automatic recipe build failed';
-        }
-      }
+        },
+      );
 
-      setRows((current) =>
-        current.filter(
-          (item) =>
-            item.id !== row.id,
-        ),
+      setRows(
+        (current) =>
+          current.filter(
+            (item) =>
+              item.id !==
+              row.id,
+          ),
       );
 
       if (autoBuildResult) {
@@ -1000,36 +1274,17 @@ export default function NewDishesPage() {
         );
 
         setMessage(
-          `${row.dishName.trim()} approved, 100-pax recipe saved and costed at ₹${autoBuildResult.cost.costPerPlate.toFixed(2)}/plate including 8% wastage.`,
+          `${row.dishName.trim()} approved. Recipe built and standard cost ₹${finalRate.toFixed(2)}/plate.`,
         );
       } else if (
-        autoBuildError
+        row.saveAs === 'alias'
       ) {
         setMessageType(
-          'error',
+          'success',
         );
 
         setMessage(
-          `${row.dishName.trim()} was approved, but automatic recipe building failed: ${autoBuildError}`,
-        );
-
-        setRequestedRecipeDish({
-          requestId:
-            `new_dish_recipe_${row.id}_${Date.now()}`,
-
-          name:
-            row.dishName.trim(),
-
-          category:
-            row.category.trim() ||
-            'Other',
-
-          subcategory:
-            row.subcategory.trim(),
-        });
-
-        setRecipeStudioOpened(
-          true,
+          `${row.dishName.trim()} added as alias of ${aliasTarget?.name}.`,
         );
       } else {
         setMessageType(
@@ -1037,17 +1292,17 @@ export default function NewDishesPage() {
         );
 
         setMessage(
-          row.saveAs === 'alias'
-            ? `${row.dishName.trim()} was added as an alias of ${aliasTarget?.name}.`
-            : `${row.dishName.trim()} was added to the Dish Catalog.`,
+          `${row.dishName.trim()} added to Dish Master at ₹${finalRate.toFixed(2)}/plate.`,
         );
       }
+
     } catch (error) {
       setMessageType('error');
+
       setMessage(
         error instanceof Error
           ? error.message
-          : 'Could not add the dish',
+          : 'Could not process this dish',
       );
     } finally {
       setWorkingId('');
@@ -1101,7 +1356,7 @@ export default function NewDishesPage() {
     useMemo(
       () =>
         new Map(
-          deferredRowsForMatching.map(
+          rows.map(
             (row) => [
               row.id,
               findCatalogMatches(
@@ -1113,7 +1368,7 @@ export default function NewDishesPage() {
           ),
         ),
       [
-        deferredRowsForMatching,
+        rows,
         catalogDishes,
       ],
     );
@@ -2748,7 +3003,7 @@ export default function NewDishesPage() {
                 <span className="section-kicker">Recipes</span>
                 <h2>Add recipes without leaving this page</h2>
                 <p>
-                  Approve a new dish with “Add Dish &amp; Build Recipe”, or open
+                  Approve a new dish with “Approve + Auto Build”, or open
                   Recipe Studio to work on any existing recipe.
                 </p>
               </div>

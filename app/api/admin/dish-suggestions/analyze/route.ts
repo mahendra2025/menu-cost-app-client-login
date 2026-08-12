@@ -201,20 +201,6 @@ export async function POST(
       return authError;
     }
 
-    if (
-      !structuredAiProvider()
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            'OpenAI is not configured',
-        },
-        {
-          status: 503,
-        },
-      );
-    }
-
     const body =
       await request.json() as {
         ids?: unknown;
@@ -366,6 +352,118 @@ export async function POST(
             ),
         }),
       );
+
+    if (
+      !structuredAiProvider()
+    ) {
+      const results = [];
+
+      for (
+        const suggestion of
+        suggestions
+      ) {
+        const matches =
+          catalogMatches(
+            suggestion.name,
+            catalog,
+          );
+
+        const best =
+          matches[0];
+
+        const strongAlias =
+          (
+            best?.score ||
+            0
+          ) >= 72;
+
+        const category =
+          CATEGORIES.includes(
+            suggestion
+              .categoryHint as (
+                typeof CATEGORIES
+              )[number],
+          )
+            ? suggestion
+                .categoryHint
+            : 'Other';
+
+        const saved =
+          await prisma
+            .pendingDishSuggestion
+            .update({
+              where: {
+                id:
+                  suggestion.id,
+              },
+
+              data: {
+                status:
+                  'ANALYZED',
+
+                canonicalName:
+                  suggestion.name,
+
+                suggestedCategory:
+                  category,
+
+                suggestedSubcategory:
+                  strongAlias
+                    ? (
+                        best
+                          ?.subcategory ||
+                        ''
+                      )
+                    : '',
+
+                aiConfidence:
+                  strongAlias
+                    ? 72
+                    : 50,
+
+                duplicateScore:
+                  best
+                    ?.score ||
+                  0,
+
+                matchedDishName:
+                  strongAlias
+                    ? (
+                        best
+                          ?.name ||
+                        ''
+                      )
+                    : '',
+
+                recommendation:
+                  strongAlias
+                    ? 'ALIAS'
+                    : 'REVIEW',
+
+                riskLevel:
+                  'MEDIUM',
+
+                analysisReason:
+                  strongAlias
+                    ? 'Local Dish Master matching found a strong alias candidate. OpenAI was unavailable, so admin review is required.'
+                    : 'OpenAI was unavailable. Local matching found no strong duplicate. Review manually before publishing.',
+
+                analyzedAt:
+                  new Date(),
+              },
+            });
+
+        results.push(saved);
+      }
+
+      return NextResponse.json({
+        results,
+        analyzed:
+          results.length,
+        source:
+          'local',
+      });
+    }
 
     const schema = {
       type: 'object',

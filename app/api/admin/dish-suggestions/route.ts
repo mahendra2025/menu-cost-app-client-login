@@ -135,6 +135,21 @@ export async function POST(
       );
     }
 
+    if (
+      mode === 'new' &&
+      !(rate > 0)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Positive dish rate required. Enter a rate or use Auto Build.',
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
     await prisma.$transaction(
       async (tx) => {
         const suggestion =

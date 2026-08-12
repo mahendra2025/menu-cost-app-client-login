@@ -311,6 +311,12 @@ export async function POST(
         60,
       ) || 'Other';
 
+    const subcategory =
+      clean(
+        body.subcategory,
+        60,
+      );
+
     if (
       !tenantId ||
       !name
@@ -371,6 +377,7 @@ export async function POST(
             select: {
               dishes: true,
               rates: true,
+              deletedDishIds: true,
             },
           }),
 
@@ -603,9 +610,114 @@ export async function POST(
           .baseGuests,
       );
 
+    const existingGlobalRecipes =
+      Array.isArray(
+        catalog?.dishes,
+      )
+        ? catalog.dishes
+        : [];
+
+    const globalRecipe = {
+      dishName:
+        name,
+
+      name,
+
+      category,
+
+      subcategory,
+
+      aliases: [],
+
+      baseGuests:
+        standardPriced
+          .recipe
+          .baseGuests,
+
+      dishRate:
+        standardCost
+          .costPerPlate,
+
+      ingredients:
+        standardPriced
+          .recipe
+          .ingredients,
+    };
+
+    const nextGlobalRecipes =
+      [
+        ...existingGlobalRecipes
+          .filter(
+            (item) => {
+              if (
+                !item ||
+                typeof item !==
+                  'object' ||
+                Array.isArray(item)
+              ) {
+                return true;
+              }
+
+              const record =
+                item as
+                  Record<
+                    string,
+                    unknown
+                  >;
+
+              return (
+                normalizeRecipeName(
+                  record.name ||
+                  record.dishName,
+                ) !==
+                normalizedName
+              );
+            },
+          ),
+
+        globalRecipe,
+      ];
+
     await prisma
       .$transaction(
         async (tx) => {
+
+          await tx
+            .recipeCatalog
+            .upsert({
+              where: {
+                id:
+                  'global',
+              },
+
+              create: {
+                id:
+                  'global',
+
+                dishes:
+                  nextGlobalRecipes as Prisma.InputJsonValue,
+
+                rates:
+                  masterRates as Prisma.InputJsonValue,
+
+                deletedDishIds:
+                  (
+                    catalog
+                      ?.deletedDishIds ||
+                    []
+                  ) as Prisma.InputJsonValue,
+              },
+
+              update: {
+                dishes:
+                  nextGlobalRecipes as Prisma.InputJsonValue,
+
+                catalogVersion: {
+                  increment: 1,
+                },
+              },
+            });
+
           await tx
             .tenantAutoRecipe
             .upsert({
