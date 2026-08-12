@@ -322,68 +322,284 @@ function dishNameKey(value: string) {
     .trim();
 }
 
-function menuTextSupportsDishName(
+const GENERIC_AI_SINGLE_DISH_WORDS =
+  new Set([
+    'menu',
+    'food',
+    'item',
+    'items',
+    'starter',
+    'starters',
+    'sweet',
+    'sweets',
+    'dessert',
+    'desserts',
+    'drink',
+    'drinks',
+    'juice',
+    'juices',
+    'salad',
+    'salads',
+    'rice',
+    'bread',
+    'breads',
+    'sabji',
+    'sabzi',
+    'paneer',
+    'dal',
+    'kadhi',
+    'chaat',
+    'farsan',
+    'mocktail',
+    'mocktails',
+    'soup',
+    'soups',
+  ]);
+
+function tokenWithinOneEdit(
+  left: string,
+  right: string,
+) {
+  if (left === right) {
+    return true;
+  }
+
+  if (
+    Math.abs(
+      left.length -
+      right.length,
+    ) > 1
+  ) {
+    return false;
+  }
+
+  /*
+   * Do not fuzzy-match tiny words.
+   */
+  if (
+    Math.min(
+      left.length,
+      right.length,
+    ) < 5
+  ) {
+    return false;
+  }
+
+  let leftIndex = 0;
+  let rightIndex = 0;
+  let edits = 0;
+
+  while (
+    leftIndex < left.length &&
+    rightIndex < right.length
+  ) {
+    if (
+      left[leftIndex] ===
+      right[rightIndex]
+    ) {
+      leftIndex += 1;
+      rightIndex += 1;
+      continue;
+    }
+
+    edits += 1;
+
+    if (edits > 1) {
+      return false;
+    }
+
+    if (
+      left.length >
+      right.length
+    ) {
+      leftIndex += 1;
+    } else if (
+      right.length >
+      left.length
+    ) {
+      rightIndex += 1;
+    } else {
+      leftIndex += 1;
+      rightIndex += 1;
+    }
+  }
+
+  if (
+    leftIndex < left.length ||
+    rightIndex < right.length
+  ) {
+    edits += 1;
+  }
+
+  return edits <= 1;
+}
+
+function getDishSourceEvidenceScore(
   menuText: string,
   dishName: string,
 ) {
-  const menu =
-    dishNameKey(
-      menuText,
-    );
-
   const dish =
     dishNameKey(
       dishName,
     );
 
   if (!dish) {
-    return false;
+    return 0;
   }
 
-  /*
-   * Exact normalized phrase in source menu.
-   */
-  if (
-    menu.includes(dish)
-  ) {
-    return true;
-  }
-
-  /*
-   * AI may clean minor OCR mistakes.
-   * Require strong token overlap instead
-   * of blindly trusting an invented name.
-   */
   const dishTokens =
     dish
       .split(' ')
-      .filter(
-        (token) =>
-          token.length > 2,
-      );
+      .filter(Boolean);
 
   if (!dishTokens.length) {
-    return false;
+    return 0;
   }
 
-  const menuTokens =
-    new Set(
-      menu
+  /*
+   * Generic single words are normally
+   * headings/categories, not a real dish.
+   */
+  if (
+    dishTokens.length === 1 &&
+    GENERIC_AI_SINGLE_DISH_WORDS.has(
+      dishTokens[0],
+    )
+  ) {
+    return 0;
+  }
+
+  /*
+   * Important:
+   * compare against individual menu lines.
+   *
+   * Do not collect matching words from
+   * completely different parts of a
+   * multi-page wedding menu.
+   */
+  const sourceLines =
+    String(menuText || '')
+      .normalize('NFKC')
+      .replace(
+        /[•▪●◦◆◇■□✓✔*]/g,
+        '\n',
+      )
+      .replace(
+        /[|;,]+/g,
+        '\n',
+      )
+      .split(/\r?\n/)
+      .map(
+        (line) =>
+          dishNameKey(line),
+      )
+      .filter(Boolean);
+
+  let bestScore = 0;
+
+  for (
+    const sourceLine
+    of sourceLines
+  ) {
+    /*
+     * Very long prose/OCR lines are
+     * weak dish evidence.
+     */
+    const lineTokens =
+      sourceLine
         .split(' ')
-        .filter(Boolean),
-    );
+        .filter(Boolean);
 
-  const matches =
-    dishTokens.filter(
-      (token) =>
-        menuTokens.has(token),
-    ).length;
+    if (
+      lineTokens.length > 14
+    ) {
+      continue;
+    }
 
-  return (
-    matches /
-      dishTokens.length >=
-    0.75
-  );
+    if (
+      sourceLine === dish
+    ) {
+      return 100;
+    }
+
+    if (
+      sourceLine.includes(dish)
+    ) {
+      bestScore =
+        Math.max(
+          bestScore,
+          96,
+        );
+    }
+
+    let matched = 0;
+
+    for (
+      const dishToken
+      of dishTokens
+    ) {
+      const tokenFound =
+        lineTokens.some(
+          (lineToken) =>
+            lineToken ===
+              dishToken ||
+            tokenWithinOneEdit(
+              dishToken,
+              lineToken,
+            ),
+        );
+
+      if (tokenFound) {
+        matched += 1;
+      }
+    }
+
+    const coverage =
+      matched /
+      dishTokens.length;
+
+    let score = 0;
+
+    if (coverage >= 1) {
+      score =
+        dishTokens.length >= 2
+          ? 92
+          : 82;
+    } else if (
+      coverage >= 0.8
+    ) {
+      score = 84;
+    } else if (
+      coverage >= 0.66 &&
+      dishTokens.length >= 3
+    ) {
+      score = 68;
+    }
+
+    /*
+     * A close-length menu line is
+     * stronger evidence than a line
+     * containing many unrelated words.
+     */
+    if (
+      score > 0 &&
+      lineTokens.length <=
+        dishTokens.length + 2
+    ) {
+      score += 5;
+    }
+
+    bestScore =
+      Math.max(
+        bestScore,
+        Math.min(
+          score,
+          100,
+        ),
+      );
+  }
+
+  return bestScore;
 }
 
 function hasHardCostBlock(
@@ -741,22 +957,29 @@ export default function EventPage() {
                     : 0;
 
                 /*
-                 * An unmatched AI dish must have
-                 * evidence in the actual source menu.
+                 * Source evidence is evaluated
+                 * against individual menu lines.
                  *
-                 * This prevents AI-generated food names
-                 * from entering the customer's menu.
+                 * This prevents AI from combining
+                 * unrelated words from different
+                 * menu sections into a fake dish.
                  */
+                const sourceEvidenceScore =
+                  matchedDish
+                    ? 100
+                    : getDishSourceEvidenceScore(
+                        rawMenuText,
+                        name,
+                      );
+
                 if (
                   !matchedDish &&
-                  !menuTextSupportsDishName(
-                    rawMenuText,
-                    name,
-                  )
+                  sourceEvidenceScore < 65
                 ) {
                   console.info(
-                    'Ignored unsupported AI dish:',
+                    'Ignored weak AI dish:',
                     name,
+                    sourceEvidenceScore,
                   );
 
                   return;
@@ -796,12 +1019,14 @@ export default function EventPage() {
                   detectionConfidence:
                     matchedDish
                       ? 100
-                      : 72,
+                      : sourceEvidenceScore,
 
                   detectionReason:
                     matchedDish
                       ? 'AI dish matched Dish Master/catalog'
-                      : 'AI detected dish and source menu supports the name',
+                      : sourceEvidenceScore >= 90
+                        ? 'AI dish strongly matches one source menu line'
+                        : 'AI dish has strong same-line OCR/menu evidence',
                 };
                 const identity =
                   menuItemIdentity(item);
