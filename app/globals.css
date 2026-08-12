@@ -9838,3 +9838,197 @@ main {
     width: 100%;
   }
 }
+
+/* Menu Detection V5 correction tools */
+
+.menu-detection-correction-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 13px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px;
+  background: #101012;
+}
+
+.menu-detection-correction-bar > div {
+  display: grid;
+  gap: 3px;
+}
+
+.menu-detection-correction-bar b {
+  font-size: 11px;
+}
+
+.menu-detection-correction-bar span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.menu-detection-correction-bar > button,
+.menu-detection-item-actions button {
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid rgba(0,122,255,.22);
+  border-radius: 9px;
+  color: #8fc7ff;
+  background: rgba(0,122,255,.08);
+  font-size: 9px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.menu-add-missed-dish {
+  display: grid;
+  grid-template-columns:
+    minmax(0,1.5fr)
+    minmax(150px,.8fr)
+    minmax(160px,1fr);
+  gap: 10px;
+  align-items: end;
+  padding: 13px;
+  border: 1px solid rgba(0,122,255,.22);
+  border-radius: 14px;
+  background: rgba(0,122,255,.045);
+}
+
+.menu-add-missed-dish label {
+  display: grid;
+  gap: 6px;
+}
+
+.menu-add-missed-dish label > span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.menu-add-missed-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.menu-add-missed-actions button {
+  min-height: 36px;
+  padding: 8px 13px;
+  font-size: 10px;
+}
+
+.menu-detection-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.menu-detection-item-actions {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.menu-detection-item-actions button {
+  min-height: 25px;
+  padding: 4px 7px;
+  font-size: 8px;
+}
+
+.menu-detection-item-actions button.reject {
+  border-color: rgba(255,59,48,.24);
+  color: #ff7b73;
+  background: rgba(255,59,48,.07);
+}
+
+.menu-detection-item-actions button.restore {
+  border-color: rgba(52,199,89,.26);
+  color: #72df8b;
+  background: rgba(52,199,89,.07);
+}
+
+.menu-detection-edit-form {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 10px;
+  border: 1px solid rgba(0,122,255,.24);
+  border-radius: 11px;
+  background: rgba(0,122,255,.05);
+}
+
+.menu-detection-edit-form > div {
+  display: flex;
+  gap: 7px;
+}
+
+.menu-detection-edit-form button {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 9px;
+}
+
+.menu-detection-edit-form > small {
+  color: #ffb44c;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.menu-preview-item.is-rejected {
+  opacity: .55;
+  border-color: rgba(255,59,48,.18) !important;
+  background: rgba(255,59,48,.035) !important;
+}
+
+.menu-preview-item.is-rejected
+.menu-preview-checkbox {
+  cursor: not-allowed;
+}
+
+.menu-detection-source.manual {
+  border-color: rgba(52,199,89,.30);
+  color: #72df8b;
+  background: rgba(52,199,89,.08);
+}
+
+@media (max-width: 760px) {
+  .menu-detection-correction-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .menu-detection-correction-bar > button {
+    width: 100%;
+  }
+
+  .menu-add-missed-dish {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-add-missed-actions {
+    grid-column: auto;
+    flex-direction: column;
+  }
+
+  .menu-add-missed-actions button {
+    width: 100%;
+  }
+
+  .menu-detection-title-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .menu-detection-item-actions {
+    width: 100%;
+  }
+
+  .menu-detection-item-actions button {
+    flex: 1;
+  }
+
+  .menu-detection-edit-form > div {
+    flex-direction: column;
+  }
+}

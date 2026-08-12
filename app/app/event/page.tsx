@@ -42,8 +42,9 @@ import type {
   WorkState,
 } from '../../../lib/types';
 
-import type {
-  Category,
+import {
+  CATEGORIES,
+  type Category,
 } from '../../../lib/menuCategories';
 
 const SAMPLE_MENU = `Day 1 • Dinner • 300 Members
@@ -765,6 +766,54 @@ export default function EventPage() {
       | 'RULES'
     >('ALL');
 
+  const [
+    editingDetectionId,
+    setEditingDetectionId,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
+    editDetectionName,
+    setEditDetectionName,
+  ] =
+    useState('');
+
+  const [
+    editDetectionCategory,
+    setEditDetectionCategory,
+  ] =
+    useState<Category>(
+      'Other',
+    );
+
+  const [
+    showAddMissedDish,
+    setShowAddMissedDish,
+  ] =
+    useState(false);
+
+  const [
+    newDetectionDishName,
+    setNewDetectionDishName,
+  ] =
+    useState('');
+
+  const [
+    newDetectionDishCategory,
+    setNewDetectionDishCategory,
+  ] =
+    useState<Category>(
+      'Other',
+    );
+
+  const [
+    newDetectionDishGroupKey,
+    setNewDetectionDishGroupKey,
+  ] =
+    useState('');
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -810,6 +859,546 @@ export default function EventPage() {
     persistWork(nextWork);
   }
 
+  function detectionGroupKeyForItem(
+    item: Pick<
+      MenuItem,
+      | 'serviceId'
+      | 'dayLabel'
+      | 'mealLabel'
+    >,
+  ) {
+    return (
+      item.serviceId ||
+      `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`
+    );
+  }
+
+  function beginDetectionEdit(
+    item: MenuItem,
+  ) {
+    setError('');
+
+    setEditingDetectionId(
+      item.id,
+    );
+
+    setEditDetectionName(
+      item.name,
+    );
+
+    setEditDetectionCategory(
+      CATEGORIES.includes(
+        item.category as Category,
+      )
+        ? (
+            item.category as Category
+          )
+        : 'Other',
+    );
+  }
+
+  function cancelDetectionEdit() {
+    setEditingDetectionId(
+      null,
+    );
+
+    setEditDetectionName(
+      '',
+    );
+
+    setEditDetectionCategory(
+      'Other',
+    );
+  }
+
+  function saveDetectionEdit(
+    itemId: string,
+  ) {
+    if (!detectionPreview) {
+      return;
+    }
+
+    const name =
+      editDetectionName
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!name) {
+      setError(
+        'Dish name cannot be empty.',
+      );
+      return;
+    }
+
+    const currentItem =
+      detectionPreview.menu.find(
+        (item) =>
+          item.id === itemId,
+      );
+
+    if (!currentItem) {
+      return;
+    }
+
+    const currentGroup =
+      detectionGroupKeyForItem(
+        currentItem,
+      );
+
+    const duplicate =
+      detectionPreview.menu.some(
+        (item) =>
+          item.id !== itemId &&
+          detectionGroupKeyForItem(
+            item,
+          ) === currentGroup &&
+          dishNameKey(
+            item.name,
+          ) ===
+            dishNameKey(
+              name,
+            ),
+      );
+
+    if (duplicate) {
+      setError(
+        `${name} already exists in this function.`,
+      );
+      return;
+    }
+
+    /*
+     * Critical safety rule:
+     *
+     * If detection name/category changes,
+     * the previous recipe/catalog cost may
+     * belong to a completely different dish.
+     *
+     * Never keep that stale cost.
+     */
+    setDetectionPreview(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              menu:
+                current.menu.map(
+                  (item) =>
+                    item.id ===
+                    itemId
+                      ? {
+                          ...item,
+
+                          name,
+
+                          category:
+                            editDetectionCategory,
+
+                          costPerPlate:
+                            0,
+
+                          costSource:
+                            undefined,
+
+                          coverageStatus:
+                            'NEW_DISH_PENDING',
+
+                          costQualityStatus:
+                            undefined,
+
+                          costConfidence:
+                            0,
+
+                          rateCoveragePercent:
+                            0,
+
+                          coverageReason:
+                            'Detection was corrected by the user. Confirm a new rate before saving.',
+
+                          accuracyRisk:
+                            undefined,
+
+                          previousCostPerPlate:
+                            undefined,
+
+                          costChangeAmount:
+                            undefined,
+
+                          costChangePercent:
+                            undefined,
+
+                          costBaselineSource:
+                            undefined,
+
+                          accuracyReason:
+                            undefined,
+
+                          ingredientCostDrivers:
+                            [],
+
+                          costApprovalStatus:
+                            'PENDING',
+
+                          costApprovedAt:
+                            undefined,
+
+                          costApprovalReason:
+                            'Corrected dish needs a newly confirmed cost.',
+
+                          detectionSource:
+                            'manual',
+
+                          detectionConfidence:
+                            100,
+
+                          detectionReason:
+                            'User corrected the detected dish name or category',
+                        }
+                      : item,
+                ),
+            }
+          : current,
+    );
+
+    setManualRateIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          itemId,
+        );
+
+        return next;
+      },
+    );
+
+    setSelectedPreviewIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          itemId,
+        );
+
+        return next;
+      },
+    );
+
+    setDetectionReviewFilter(
+      'ALL',
+    );
+
+    cancelDetectionEdit();
+
+    setError('');
+  }
+
+  function toggleDetectedDishRejection(
+    item: MenuItem,
+  ) {
+    const restoring =
+      item.coverageStatus ===
+      'REJECTED';
+
+    setDetectionPreview(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              menu:
+                current.menu.map(
+                  (menuItem) => {
+                    if (
+                      menuItem.id !==
+                      item.id
+                    ) {
+                      return menuItem;
+                    }
+
+                    if (restoring) {
+                      const hasCost =
+                        Number(
+                          menuItem
+                            .costPerPlate,
+                        ) > 0;
+
+                      return {
+                        ...menuItem,
+
+                        coverageStatus:
+                          hasCost
+                            ? menuItem
+                                  .costQualityStatus ===
+                                'REVIEW'
+                              ? 'REVIEW'
+                              : 'COSTED'
+                            : 'NEW_DISH_PENDING',
+
+                        detectionSource:
+                          'manual',
+
+                        detectionConfidence:
+                          100,
+
+                        detectionReason:
+                          'User restored this detected dish',
+                      };
+                    }
+
+                    return {
+                      ...menuItem,
+
+                      coverageStatus:
+                        'REJECTED',
+
+                      detectionSource:
+                        'manual',
+
+                      detectionConfidence:
+                        100,
+
+                      detectionReason:
+                        'User marked this detection as a false positive',
+                    };
+                  },
+                ),
+            }
+          : current,
+    );
+
+    setSelectedPreviewIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        if (restoring) {
+          next.add(
+            item.id,
+          );
+        } else {
+          next.delete(
+            item.id,
+          );
+        }
+
+        return next;
+      },
+    );
+
+    setManualRateIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        if (!restoring) {
+          next.delete(
+            item.id,
+          );
+        } else if (
+          !(
+            Number(
+              item.costPerPlate,
+            ) > 0
+          )
+        ) {
+          next.add(
+            item.id,
+          );
+        }
+
+        return next;
+      },
+    );
+
+    setError('');
+  }
+
+  function addMissedDetectedDish() {
+    if (!detectionPreview) {
+      return;
+    }
+
+    const name =
+      newDetectionDishName
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!name) {
+      setError(
+        'Enter the missed dish name.',
+      );
+      return;
+    }
+
+    const groupSource =
+      detectionPreview.menu.find(
+        (item) =>
+          detectionGroupKeyForItem(
+            item,
+          ) ===
+          newDetectionDishGroupKey,
+      );
+
+    const duplicate =
+      detectionPreview.menu.some(
+        (item) =>
+          detectionGroupKeyForItem(
+            item,
+          ) ===
+            (
+              newDetectionDishGroupKey ||
+              detectionGroupKeyForItem(
+                groupSource || {},
+              )
+            ) &&
+          dishNameKey(
+            item.name,
+          ) ===
+            dishNameKey(
+              name,
+            ),
+      );
+
+    if (duplicate) {
+      setError(
+        `${name} already exists in this function.`,
+      );
+      return;
+    }
+
+    const newItem:
+      MenuItem = {
+        id:
+          uid('dish'),
+
+        name,
+
+        category:
+          newDetectionDishCategory,
+
+        costPerPlate:
+          0,
+
+        portionQuantity:
+          1,
+
+        portionUnit:
+          'serving',
+
+        serviceId:
+          groupSource
+            ?.serviceId,
+
+        dayLabel:
+          groupSource
+            ?.dayLabel,
+
+        mealLabel:
+          groupSource
+            ?.mealLabel ||
+          'Event Menu',
+
+        servicePax:
+          Number(
+            groupSource
+              ?.servicePax,
+          ) ||
+          Number(
+            work?.event.pax,
+          ) ||
+          0,
+
+        detectionSource:
+          'manual',
+
+        detectionConfidence:
+          100,
+
+        detectionReason:
+          'User manually added a dish missed by detection',
+
+        coverageStatus:
+          'NEW_DISH_PENDING',
+
+        costConfidence:
+          0,
+
+        rateCoveragePercent:
+          0,
+
+        coverageReason:
+          'Manually added dish needs a confirmed cost.',
+
+        costApprovalStatus:
+          'PENDING',
+
+        costApprovalReason:
+          'Manually added dish needs a confirmed cost.',
+      };
+
+    setDetectionPreview(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              menu: [
+                ...current.menu,
+                newItem,
+              ],
+            }
+          : current,
+    );
+
+    setSelectedPreviewIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          newItem.id,
+        );
+
+        return next;
+      },
+    );
+
+    setManualRateIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          newItem.id,
+        );
+
+        return next;
+      },
+    );
+
+    setNewDetectionDishName(
+      '',
+    );
+
+    setNewDetectionDishCategory(
+      'Other',
+    );
+
+    setShowAddMissedDish(
+      false,
+    );
+
+    setDetectionReviewFilter(
+      'ALL',
+    );
+
+    setError('');
+  }
+
   async function detectAndNext() {
     if (
       !work ||
@@ -824,6 +1413,18 @@ export default function EventPage() {
 
     setError('');
     setManualRateIds(new Set());
+
+    setEditingDetectionId(
+      null,
+    );
+
+    setShowAddMissedDish(
+      false,
+    );
+
+    setNewDetectionDishName(
+      '',
+    );
 
     if (!rawMenuText) {
       setError(
@@ -2829,6 +3430,53 @@ export default function EventPage() {
       )
       .slice(0, 5);
 
+  const detectionFunctionMap =
+    new Map<
+      string,
+      {
+        key: string;
+        label: string;
+      }
+    >();
+
+  detectionReviewItems.forEach(
+    (item) => {
+      const key =
+        detectionGroupKeyForItem(
+          item,
+        );
+
+      if (
+        detectionFunctionMap.has(
+          key,
+        )
+      ) {
+        return;
+      }
+
+      detectionFunctionMap.set(
+        key,
+        {
+          key,
+
+          label:
+            [
+              item.dayLabel,
+              item.mealLabel,
+            ]
+              .filter(Boolean)
+              .join(' • ') ||
+            'Event Menu',
+        },
+      );
+    },
+  );
+
+  const detectionFunctionOptions =
+    Array.from(
+      detectionFunctionMap.values(),
+    );
+
   const previewGroupMap =
     new Map<
       string,
@@ -3558,10 +4206,182 @@ Gulab Jamun`}
 
                 {manualRateIds.size > 0 ? (
                   <div className="event-detection-note" role="status">
-                    <b>Optional rates for new dishes</b>
+                    <b>Rates for new or corrected dishes</b>
                     <p>
-                      {manualRateIds.size} new {manualRateIds.size === 1 ? 'dish was' : 'dishes were'} found. Enter the per-plate rate now or continue with ₹0 and update it later.
+                      {manualRateIds.size} {manualRateIds.size === 1 ? 'dish needs' : 'dishes need'} a confirmed per-plate rate before saving. New and corrected dishes are also available for admin review.
                     </p>
+                  </div>
+                ) : null}
+
+                <div className="menu-detection-correction-bar">
+                  <div>
+                    <b>
+                      Detection corrections
+                    </b>
+
+                    <span>
+                      Fix wrong results or add a dish that was missed.
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddMissedDish(
+                        (current) =>
+                          !current,
+                      );
+
+                      if (
+                        !newDetectionDishGroupKey &&
+                        detectionFunctionOptions
+                          .length
+                      ) {
+                        setNewDetectionDishGroupKey(
+                          detectionFunctionOptions[
+                            0
+                          ].key,
+                        );
+                      }
+
+                      setError('');
+                    }}
+                  >
+                    + Add missed dish
+                  </button>
+                </div>
+
+                {showAddMissedDish ? (
+                  <div className="menu-add-missed-dish">
+                    <label>
+                      <span>
+                        Dish name
+                      </span>
+
+                      <input
+                        className="input"
+                        value={
+                          newDetectionDishName
+                        }
+                        onChange={(event) =>
+                          setNewDetectionDishName(
+                            event.target
+                              .value,
+                          )
+                        }
+                        placeholder="Example: Rajwadi Paneer"
+                        autoFocus
+                      />
+                    </label>
+
+                    <label>
+                      <span>
+                        Category
+                      </span>
+
+                      <select
+                        className="select"
+                        value={
+                          newDetectionDishCategory
+                        }
+                        onChange={(event) =>
+                          setNewDetectionDishCategory(
+                            event.target
+                              .value as Category,
+                          )
+                        }
+                      >
+                        {CATEGORIES.map(
+                          (category) => (
+                            <option
+                              key={
+                                category
+                              }
+                              value={
+                                category
+                              }
+                            >
+                              {
+                                category
+                              }
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+
+                    <label>
+                      <span>
+                        Function / Meal
+                      </span>
+
+                      <select
+                        className="select"
+                        value={
+                          newDetectionDishGroupKey
+                        }
+                        onChange={(event) =>
+                          setNewDetectionDishGroupKey(
+                            event.target
+                              .value,
+                          )
+                        }
+                      >
+                        {!detectionFunctionOptions
+                          .length ? (
+                          <option value="">
+                            Event Menu
+                          </option>
+                        ) : null}
+
+                        {detectionFunctionOptions.map(
+                          (group) => (
+                            <option
+                              key={
+                                group.key
+                              }
+                              value={
+                                group.key
+                              }
+                            >
+                              {
+                                group.label
+                              }
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </label>
+
+                    <div className="menu-add-missed-actions">
+                      <button
+                        type="button"
+                        className="primary-button"
+                        onClick={
+                          addMissedDetectedDish
+                        }
+                      >
+                        Add Dish
+                      </button>
+
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => {
+                          setShowAddMissedDish(
+                            false,
+                          );
+
+                          setNewDetectionDishName(
+                            '',
+                          );
+
+                          setError('');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 ) : null}
 
@@ -4464,13 +5284,17 @@ Gulab Jamun`}
 
                             return (
                               <div
-                                className={`menu-preview-item ${isSelected ? 'is-selected' : ''} ${manualRateIds.has(item.id) ? 'needs-manual-rate' : ''}`}
+                                className={`menu-preview-item ${isSelected ? 'is-selected' : ''} ${manualRateIds.has(item.id) ? 'needs-manual-rate' : ''} ${item.coverageStatus === 'REJECTED' ? 'is-rejected' : ''}`}
                                 key={item.id}
                               >
                                 <label className="menu-preview-selector" aria-label={`Select ${item.name}`}>
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
+                                    disabled={
+                                      item.coverageStatus ===
+                                      'REJECTED'
+                                    }
                                     onChange={(event) => {
                                       const nextIds =
                                         new Set(
@@ -4492,7 +5316,130 @@ Gulab Jamun`}
                                   <span className="menu-preview-checkbox" aria-hidden="true">✓</span>
                                 </label>
                                 <div>
-                                  <b>{item.name}</b>
+                                  <div className="menu-detection-title-row">
+                                    <b>
+                                      {
+                                        item.name
+                                      }
+                                    </b>
+
+                                    <div className="menu-detection-item-actions">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          beginDetectionEdit(
+                                            item,
+                                          )
+                                        }
+                                        disabled={
+                                          item.coverageStatus ===
+                                          'REJECTED'
+                                        }
+                                      >
+                                        Edit
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        className={
+                                          item.coverageStatus ===
+                                          'REJECTED'
+                                            ? 'restore'
+                                            : 'reject'
+                                        }
+                                        onClick={() =>
+                                          toggleDetectedDishRejection(
+                                            item,
+                                          )
+                                        }
+                                      >
+                                        {item.coverageStatus ===
+                                        'REJECTED'
+                                          ? 'Restore'
+                                          : 'Reject'}
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {editingDetectionId ===
+                                  item.id ? (
+                                    <div className="menu-detection-edit-form">
+                                      <input
+                                        className="input"
+                                        value={
+                                          editDetectionName
+                                        }
+                                        onChange={(event) =>
+                                          setEditDetectionName(
+                                            event.target
+                                              .value,
+                                          )
+                                        }
+                                        aria-label={`Correct name for ${item.name}`}
+                                      />
+
+                                      <select
+                                        className="select"
+                                        value={
+                                          editDetectionCategory
+                                        }
+                                        onChange={(event) =>
+                                          setEditDetectionCategory(
+                                            event.target
+                                              .value as Category,
+                                          )
+                                        }
+                                      >
+                                        {CATEGORIES.map(
+                                          (
+                                            category,
+                                          ) => (
+                                            <option
+                                              key={
+                                                category
+                                              }
+                                              value={
+                                                category
+                                              }
+                                            >
+                                              {
+                                                category
+                                              }
+                                            </option>
+                                          ),
+                                        )}
+                                      </select>
+
+                                      <div>
+                                        <button
+                                          type="button"
+                                          className="primary-button"
+                                          onClick={() =>
+                                            saveDetectionEdit(
+                                              item.id,
+                                            )
+                                          }
+                                        >
+                                          Save Correction
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          className="ghost-button"
+                                          onClick={
+                                            cancelDetectionEdit
+                                          }
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+
+                                      <small>
+                                        Changing the dish clears its old cost so a price from the wrong dish cannot be reused.
+                                      </small>
+                                    </div>
+                                  ) : null}
+
                                   <small>
                                     {item.category}
                                     {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
@@ -4515,7 +5462,10 @@ Gulab Jamun`}
                                           : item.detectionSource ===
                                               'ai'
                                             ? 'AI'
-                                            : 'Rules'}
+                                            : item.detectionSource ===
+                                                'manual'
+                                              ? '✓ User Corrected'
+                                              : 'Rules'}
                                     </span>
 
                                     <span

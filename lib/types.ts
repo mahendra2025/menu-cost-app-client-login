@@ -61,7 +61,8 @@ export type MenuItem = {
     | 'catalog'
     | 'ai'
     | 'rules'
-    | 'consensus';
+    | 'consensus'
+    | 'manual';
 
   detectionConfidence?: number;
   detectionReason?: string;
