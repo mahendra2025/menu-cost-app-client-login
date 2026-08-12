@@ -10,7 +10,8 @@
     "build": "prisma generate && next build",
     "start": "prisma db push --accept-data-loss && next start",
     "db:push": "prisma db push",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:menu-detection": "rm -rf .tmp-menu-tests && tsc -p tsconfig.menu-tests.json && node --test .tmp-menu-tests/tests/menuDetectionCore.test.js; status=$?; rm -rf .tmp-menu-tests; exit $status"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "incremental": false,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2022",
+    "outDir": ".tmp-menu-tests",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "lib/menuDetectionCore.ts",
+    "tests/menuDetectionCore.test.ts"
+  ]
+}
