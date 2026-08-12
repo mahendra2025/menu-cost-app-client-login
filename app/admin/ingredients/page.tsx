@@ -6,10 +6,25 @@ import {
   useMemo,
   useState,
 } from 'react';
+import dynamic from 'next/dynamic';
+
 import AppShell from '../../components/AppShell';
-import BulkIngredientImporter, {
-  type BulkIngredientImportItem,
+
+import type {
+  BulkIngredientImportItem,
 } from './BulkIngredientImporter';
+
+const BulkIngredientImporter = dynamic(
+  () => import('./BulkIngredientImporter'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="admin-lazy-loading">
+        Opening Bulk Importer…
+      </div>
+    ),
+  },
+);
 import {
   INGREDIENT_CATEGORIES,
   INGREDIENT_UNITS,
@@ -58,11 +73,6 @@ function rowKey() {
   return typeof crypto !== 'undefined' && crypto.randomUUID
     ? crypto.randomUUID()
     : `ingredient_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-}
-
-function hasDuplicate(rows: IngredientRow[], row: IngredientRow) {
-  const id = normalizeIngredientId(row.name, row.unit);
-  return rows.some((item) => item.rowKey !== row.rowKey && normalizeIngredientId(item.name, item.unit) === id);
 }
 
 function formatIngredientQuantity(quantity: number, unit: string) {

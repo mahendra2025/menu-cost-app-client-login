@@ -7,10 +7,26 @@ import {
   useState,
 } from 'react';
 
+import dynamic from 'next/dynamic';
+
 import AppShell from '../../components/AppShell';
-import RecipeStudioPanel, {
-  type RecipeStudioDishRequest,
+
+import type {
+  RecipeStudioDishRequest,
 } from '../dishes/RecipeStudioPanel';
+
+const RecipeStudioPanel = dynamic(
+  () =>
+    import('../dishes/RecipeStudioPanel'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="admin-lazy-loading">
+        Opening Recipe Studio…
+      </div>
+    ),
+  },
+);
 
 type Suggestion = {
   id: string;

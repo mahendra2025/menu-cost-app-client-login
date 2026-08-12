@@ -8,10 +8,25 @@ import {
   type ChangeEvent,
 } from 'react';
 
+import dynamic from 'next/dynamic';
+
 import AppShell from '../../components/AppShell';
-import RecipeStudioPanel, {
-  type RecipeStudioDishRequest,
+
+import type {
+  RecipeStudioDishRequest,
 } from './RecipeStudioPanel';
+
+const RecipeStudioPanel = dynamic(
+  () => import('./RecipeStudioPanel'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="admin-lazy-loading">
+        Opening Recipe Studio…
+      </div>
+    ),
+  },
+);
 
 import {
   CATEGORIES,

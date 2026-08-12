@@ -9,3 +9,9 @@ out
 .env
 .env.local
 next-env.d.ts
+
+# Generated / obsolete project files
+*.backup
+*.ingredient-backup
+outputs/
+menu-cost-explainer/
