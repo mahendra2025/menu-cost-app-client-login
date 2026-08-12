@@ -752,6 +752,19 @@ export default function EventPage() {
       () => new Set(),
     );
 
+  const [
+    detectionReviewFilter,
+    setDetectionReviewFilter,
+  ] =
+    useState<
+      | 'ALL'
+      | 'UNCERTAIN'
+      | 'CATALOG'
+      | 'CONSENSUS'
+      | 'AI'
+      | 'RULES'
+    >('ALL');
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -1908,6 +1921,10 @@ export default function EventPage() {
         eventDetails: detectedDetails,
         source: detectionSource,
       });
+      setDetectionReviewFilter(
+        'ALL',
+      );
+
       void trackProductEvent(
         'menu_detected',
         {
@@ -2481,6 +2498,146 @@ export default function EventPage() {
           item.id,
       ),
     ) ?? [];
+  const detectionReviewItems =
+    detectionPreview?.menu || [];
+
+  function normalizedDetectionConfidence(
+    item: MenuItem,
+  ) {
+    if (
+      item.detectionConfidence ===
+      undefined
+    ) {
+      return item.detectionSource ===
+        'catalog'
+        ? 100
+        : 70;
+    }
+
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        Number(
+          item.detectionConfidence,
+        ) || 0,
+      ),
+    );
+  }
+
+  function detectionNeedsReview(
+    item: MenuItem,
+  ) {
+    const confidence =
+      normalizedDetectionConfidence(
+        item,
+      );
+
+    return (
+      confidence < 85 ||
+      item.detectionSource ===
+        'rules'
+    );
+  }
+
+  const detectionSourceCounts = {
+    catalog:
+      detectionReviewItems.filter(
+        (item) =>
+          item.detectionSource ===
+          'catalog',
+      ).length,
+
+    consensus:
+      detectionReviewItems.filter(
+        (item) =>
+          item.detectionSource ===
+          'consensus',
+      ).length,
+
+    ai:
+      detectionReviewItems.filter(
+        (item) =>
+          item.detectionSource ===
+          'ai',
+      ).length,
+
+    rules:
+      detectionReviewItems.filter(
+        (item) =>
+          item.detectionSource ===
+          'rules',
+      ).length,
+
+    uncertain:
+      detectionReviewItems.filter(
+        detectionNeedsReview,
+      ).length,
+  };
+
+  const filteredDetectionMenu =
+    detectionReviewItems.filter(
+      (item) => {
+        if (
+          detectionReviewFilter ===
+          'ALL'
+        ) {
+          return true;
+        }
+
+        if (
+          detectionReviewFilter ===
+          'UNCERTAIN'
+        ) {
+          return detectionNeedsReview(
+            item,
+          );
+        }
+
+        if (
+          detectionReviewFilter ===
+          'CATALOG'
+        ) {
+          return (
+            item.detectionSource ===
+            'catalog'
+          );
+        }
+
+        if (
+          detectionReviewFilter ===
+          'CONSENSUS'
+        ) {
+          return (
+            item.detectionSource ===
+            'consensus'
+          );
+        }
+
+        if (
+          detectionReviewFilter ===
+          'AI'
+        ) {
+          return (
+            item.detectionSource ===
+            'ai'
+          );
+        }
+
+        return (
+          item.detectionSource ===
+          'rules'
+        );
+      },
+    );
+
+  const filteredDetectionIds =
+    new Set(
+      filteredDetectionMenu.map(
+        (item) => item.id,
+      ),
+    );
+
   const selectedMissingManualRateCount =
     selectedPreviewMenu.filter(
       (item) =>
@@ -2684,7 +2841,10 @@ export default function EventPage() {
       }
     >();
 
-  for (const item of detectionPreview?.menu ?? []) {
+  for (
+    const item
+    of filteredDetectionMenu
+  ) {
     const groupKey =
       item.serviceId ||
       `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`;
@@ -3405,9 +3565,208 @@ Gulab Jamun`}
                   </div>
                 ) : null}
 
+                <div className="menu-detection-filterbar">
+                  <button
+                    type="button"
+                    className={
+                      detectionReviewFilter ===
+                      'ALL'
+                        ? 'active'
+                        : ''
+                    }
+                    onClick={() =>
+                      setDetectionReviewFilter(
+                        'ALL',
+                      )
+                    }
+                  >
+                    All
+                    <b>
+                      {
+                        detectionPreview
+                          .menu.length
+                      }
+                    </b>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      detectionReviewFilter ===
+                      'UNCERTAIN'
+                        ? 'active attention'
+                        : detectionSourceCounts
+                              .uncertain > 0
+                          ? 'attention'
+                          : ''
+                    }
+                    onClick={() =>
+                      setDetectionReviewFilter(
+                        'UNCERTAIN',
+                      )
+                    }
+                  >
+                    Review
+                    <b>
+                      {
+                        detectionSourceCounts
+                          .uncertain
+                      }
+                    </b>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      detectionReviewFilter ===
+                      'CATALOG'
+                        ? 'active'
+                        : ''
+                    }
+                    onClick={() =>
+                      setDetectionReviewFilter(
+                        'CATALOG',
+                      )
+                    }
+                  >
+                    Catalog
+                    <b>
+                      {
+                        detectionSourceCounts
+                          .catalog
+                      }
+                    </b>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      detectionReviewFilter ===
+                      'CONSENSUS'
+                        ? 'active'
+                        : ''
+                    }
+                    onClick={() =>
+                      setDetectionReviewFilter(
+                        'CONSENSUS',
+                      )
+                    }
+                  >
+                    AI + Rules
+                    <b>
+                      {
+                        detectionSourceCounts
+                          .consensus
+                      }
+                    </b>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      detectionReviewFilter ===
+                      'AI'
+                        ? 'active'
+                        : ''
+                    }
+                    onClick={() =>
+                      setDetectionReviewFilter(
+                        'AI',
+                      )
+                    }
+                  >
+                    AI
+                    <b>
+                      {
+                        detectionSourceCounts
+                          .ai
+                      }
+                    </b>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={
+                      detectionReviewFilter ===
+                      'RULES'
+                        ? 'active'
+                        : ''
+                    }
+                    onClick={() =>
+                      setDetectionReviewFilter(
+                        'RULES',
+                      )
+                    }
+                  >
+                    Rules
+                    <b>
+                      {
+                        detectionSourceCounts
+                          .rules
+                      }
+                    </b>
+                  </button>
+                </div>
+
                 <div className="menu-preview-toolbar">
                   <b>{selectedPreviewMenu.length} of {detectionPreview.menu.length} dishes selected</b>
                   <div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedPreviewIds(
+                          (current) => {
+                            const next =
+                              new Set(
+                                current,
+                              );
+
+                            filteredDetectionMenu.forEach(
+                              (item) =>
+                                next.add(
+                                  item.id,
+                                ),
+                            );
+
+                            return next;
+                          },
+                        )
+                      }
+                      disabled={
+                        !filteredDetectionMenu.length
+                      }
+                    >
+                      Select visible
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedPreviewIds(
+                          (current) => {
+                            const next =
+                              new Set(
+                                current,
+                              );
+
+                            filteredDetectionIds.forEach(
+                              (id) =>
+                                next.delete(
+                                  id,
+                                ),
+                            );
+
+                            return next;
+                          },
+                        )
+                      }
+                      disabled={
+                        !filteredDetectionMenu.length
+                      }
+                    >
+                      Clear visible
+                    </button>
+
                     <button
                       type="button"
                       onClick={() =>
@@ -4052,6 +4411,18 @@ Gulab Jamun`}
                 </div>
 
                 <div className="menu-preview-groups">
+                  {!detectionPreviewGroups.length ? (
+                    <div className="menu-detection-filter-empty">
+                      <b>
+                        Nothing needs review here
+                      </b>
+
+                      <span>
+                        Try another detection filter.
+                      </span>
+                    </div>
+                  ) : null}
+
                   {detectionPreviewGroups.map((group) => {
                     const selectedInGroup =
                       group.items.filter(
@@ -4126,6 +4497,68 @@ Gulab Jamun`}
                                     {item.category}
                                     {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
                                   </small>
+
+                                  <div className="menu-detection-badges">
+                                    <span
+                                      className={`menu-detection-source ${item.detectionSource || 'rules'}`}
+                                      title={
+                                        item.detectionReason ||
+                                        ''
+                                      }
+                                    >
+                                      {item.detectionSource ===
+                                      'catalog'
+                                        ? '✓ Catalog'
+                                        : item.detectionSource ===
+                                            'consensus'
+                                          ? '✓ AI + Rules'
+                                          : item.detectionSource ===
+                                              'ai'
+                                            ? 'AI'
+                                            : 'Rules'}
+                                    </span>
+
+                                    <span
+                                      className={`menu-detection-confidence ${
+                                        normalizedDetectionConfidence(
+                                          item,
+                                        ) >= 90
+                                          ? 'high'
+                                          : normalizedDetectionConfidence(
+                                                item,
+                                              ) >= 75
+                                            ? 'good'
+                                            : 'review'
+                                      }`}
+                                      title={
+                                        item.detectionReason ||
+                                        'Detection confidence'
+                                      }
+                                    >
+                                      {
+                                        normalizedDetectionConfidence(
+                                          item,
+                                        )
+                                      }
+                                      % detection
+                                    </span>
+
+                                    {detectionNeedsReview(
+                                      item,
+                                    ) ? (
+                                      <span className="menu-detection-review-badge">
+                                        Review
+                                      </span>
+                                    ) : null}
+                                  </div>
+
+                                  {item.detectionReason ? (
+                                    <small className="menu-detection-reason">
+                                      {
+                                        item.detectionReason
+                                      }
+                                    </small>
+                                  ) : null}
 
                                   {item.ingredientCostDrivers?.length ? (
                                     <details className="dish-cost-driver-details">
