@@ -322,6 +322,70 @@ function dishNameKey(value: string) {
     .trim();
 }
 
+function menuTextSupportsDishName(
+  menuText: string,
+  dishName: string,
+) {
+  const menu =
+    dishNameKey(
+      menuText,
+    );
+
+  const dish =
+    dishNameKey(
+      dishName,
+    );
+
+  if (!dish) {
+    return false;
+  }
+
+  /*
+   * Exact normalized phrase in source menu.
+   */
+  if (
+    menu.includes(dish)
+  ) {
+    return true;
+  }
+
+  /*
+   * AI may clean minor OCR mistakes.
+   * Require strong token overlap instead
+   * of blindly trusting an invented name.
+   */
+  const dishTokens =
+    dish
+      .split(' ')
+      .filter(
+        (token) =>
+          token.length > 2,
+      );
+
+  if (!dishTokens.length) {
+    return false;
+  }
+
+  const menuTokens =
+    new Set(
+      menu
+        .split(' ')
+        .filter(Boolean),
+    );
+
+  const matches =
+    dishTokens.filter(
+      (token) =>
+        menuTokens.has(token),
+    ).length;
+
+  return (
+    matches /
+      dishTokens.length >=
+    0.75
+  );
+}
+
 function hasHardCostBlock(
   item: MenuItem,
 ) {
@@ -676,6 +740,28 @@ export default function EventPage() {
                       )
                     : 0;
 
+                /*
+                 * An unmatched AI dish must have
+                 * evidence in the actual source menu.
+                 *
+                 * This prevents AI-generated food names
+                 * from entering the customer's menu.
+                 */
+                if (
+                  !matchedDish &&
+                  !menuTextSupportsDishName(
+                    rawMenuText,
+                    name,
+                  )
+                ) {
+                  console.info(
+                    'Ignored unsupported AI dish:',
+                    name,
+                  );
+
+                  return;
+                }
+
                 const item: MenuItem = {
                   id: uid('dish'),
                   name:
@@ -701,6 +787,21 @@ export default function EventPage() {
                     dayLabel || undefined,
                   mealLabel,
                   servicePax,
+
+                  detectionSource:
+                    matchedDish
+                      ? 'catalog'
+                      : 'ai',
+
+                  detectionConfidence:
+                    matchedDish
+                      ? 100
+                      : 72,
+
+                  detectionReason:
+                    matchedDish
+                      ? 'AI dish matched Dish Master/catalog'
+                      : 'AI detected dish and source menu supports the name',
                 };
                 const identity =
                   menuItemIdentity(item);
@@ -736,12 +837,36 @@ export default function EventPage() {
         ] =
           await localDetectionPromise;
 
-        const detectedKeys =
-          new Set(
-            [
-              ...catalogMenu,
-              ...manualMenu,
-            ].map(coverageKey),
+        /*
+         * Confidence-based detection merge.
+         *
+         * Priority:
+         *   1. Known catalog dish
+         *   2. AI + local consensus
+         *   3. AI-supported unknown
+         *   4. Medium/high local unknown
+         *
+         * A known catalog match must always
+         * replace an AI 'unknown' version.
+         */
+        const catalogByKey =
+          new Map(
+            catalogMenu.map(
+              (item) => [
+                coverageKey(item),
+                item,
+              ],
+            ),
+          );
+
+        const manualByKey =
+          new Map(
+            manualMenu.map(
+              (item) => [
+                coverageKey(item),
+                item,
+              ],
+            ),
           );
 
         localCatalogMenu.forEach(
@@ -749,61 +874,170 @@ export default function EventPage() {
             const key =
               coverageKey(item);
 
-            if (
-              detectedKeys.has(key)
-            ) {
-              return;
-            }
+            catalogByKey.set(
+              key,
+              {
+                ...item,
 
-            detectedKeys.add(key);
+                detectionSource:
+                  'catalog',
 
-            catalogMenu.push(item);
+                detectionConfidence:
+                  100,
+
+                detectionReason:
+                  'Local rules matched Dish Master/catalog',
+              },
+            );
+
+            /*
+             * Critical:
+             * known catalog result beats
+             * an AI unknown for same dish/meal.
+             */
+            manualByKey.delete(
+              key,
+            );
           },
         );
 
         pendingCandidates.forEach(
           (candidate) => {
-            const item: MenuItem = {
-              id: uid('dish'),
+            const item:
+              MenuItem = {
+                id:
+                  uid('dish'),
 
-              name: candidate.name,
+                name:
+                  candidate.name,
 
-              category:
-                candidate.categoryHint ||
-                'Other',
+                category:
+                  candidate.categoryHint ||
+                  'Other',
 
-              costPerPlate: 0,
+                costPerPlate: 0,
 
-              portionQuantity: 1,
-              portionUnit: 'serving',
+                portionQuantity:
+                  1,
 
-              serviceId:
-                candidate.serviceId,
+                portionUnit:
+                  'serving',
 
-              dayLabel:
-                candidate.dayLabel,
+                serviceId:
+                  candidate.serviceId,
 
-              mealLabel:
-                candidate.mealLabel,
+                dayLabel:
+                  candidate.dayLabel,
 
-              servicePax:
-                candidate.servicePax,
-            };
+                mealLabel:
+                  candidate.mealLabel,
+
+                servicePax:
+                  candidate.servicePax,
+
+                detectionSource:
+                  'rules',
+
+                detectionConfidence:
+                  candidate
+                    .confidenceScore,
+
+                detectionReason:
+                  candidate
+                    .detectionReason,
+              };
 
             const key =
               coverageKey(item);
 
             if (
-              detectedKeys.has(key)
+              catalogByKey.has(
+                key,
+              )
             ) {
               return;
             }
 
-            detectedKeys.add(key);
+            const existingAi =
+              manualByKey.get(
+                key,
+              );
 
-            manualMenu.push(item);
+            /*
+             * AI + local rules agree:
+             * very strong new-dish signal.
+             */
+            if (existingAi) {
+              manualByKey.set(
+                key,
+                {
+                  ...existingAi,
+
+                  category:
+                    existingAi
+                      .category ===
+                      'Other'
+                      ? candidate
+                          .categoryHint ||
+                        'Other'
+                      : existingAi
+                          .category,
+
+                  detectionSource:
+                    'consensus',
+
+                  detectionConfidence:
+                    Math.max(
+                      90,
+                      Number(
+                        existingAi
+                          .detectionConfidence,
+                      ) || 0,
+                      candidate
+                        .confidenceScore,
+                    ),
+
+                  detectionReason:
+                    'AI and local menu rules both detected this dish',
+                },
+              );
+
+              return;
+            }
+
+            /*
+             * Low-confidence local-only text is
+             * shown neither as a dish nor selected.
+             * This removes OCR notes/prose noise.
+             */
+            if (
+              candidate.confidence ===
+              'LOW'
+            ) {
+              console.info(
+                'Ignored low-confidence menu text:',
+                candidate.name,
+              );
+
+              return;
+            }
+
+            manualByKey.set(
+              key,
+              item,
+            );
           },
         );
+
+        catalogMenu =
+          Array.from(
+            catalogByKey.values(),
+          );
+
+        manualMenu =
+          Array.from(
+            manualByKey.values(),
+          );
 
         if (
           !catalogMenu.length &&
@@ -839,32 +1073,98 @@ export default function EventPage() {
 
         catalogMenu = localCatalogMenu;
         manualMenu =
-          pendingCandidates.map(
-            (candidate) => ({
-              id: uid('dish'),
-              name: candidate.name,
-              category:
-                candidate.categoryHint ||
-                'Other',
-              costPerPlate: 0,
-              portionQuantity: 1,
-              portionUnit: 'serving',
-              serviceId:
-                candidate.serviceId,
-              dayLabel:
-                candidate.dayLabel,
-              mealLabel:
-                candidate.mealLabel,
-              servicePax:
-                candidate.servicePax,
-            }),
-          );
+          pendingCandidates
+            .filter(
+              (candidate) =>
+                candidate.confidence !==
+                'LOW',
+            )
+            .map(
+              (candidate) => ({
+                id:
+                  uid('dish'),
+
+                name:
+                  candidate.name,
+
+                category:
+                  candidate.categoryHint ||
+                  'Other',
+
+                costPerPlate:
+                  0,
+
+                portionQuantity:
+                  1,
+
+                portionUnit:
+                  'serving',
+
+                serviceId:
+                  candidate.serviceId,
+
+                dayLabel:
+                  candidate.dayLabel,
+
+                mealLabel:
+                  candidate.mealLabel,
+
+                servicePax:
+                  candidate.servicePax,
+
+                detectionSource:
+                  'rules' as const,
+
+                detectionConfidence:
+                  candidate
+                    .confidenceScore,
+
+                detectionReason:
+                  candidate
+                    .detectionReason,
+              }),
+            );
       }
 
-      let detectedMenu = [
-        ...catalogMenu,
-        ...manualMenu,
-      ];
+      /*
+       * Final meal-aware dedupe.
+       *
+       * Manual items are inserted first,
+       * catalog items second so a trusted
+       * catalog dish always wins.
+       *
+       * Same dish in different meals remains
+       * separate because coverageKey includes
+       * day + meal.
+       */
+      const mergedDetectedByKey =
+        new Map<
+          string,
+          MenuItem
+        >();
+
+      manualMenu.forEach(
+        (item) => {
+          mergedDetectedByKey.set(
+            coverageKey(item),
+            item,
+          );
+        },
+      );
+
+      catalogMenu.forEach(
+        (item) => {
+          mergedDetectedByKey.set(
+            coverageKey(item),
+            item,
+          );
+        },
+      );
+
+      let detectedMenu =
+        Array.from(
+          mergedDetectedByKey.values(),
+        );
 
       const pendingMenuIds =
         new Set(
@@ -1416,11 +1716,30 @@ export default function EventPage() {
           ),
         ),
       );
+      /*
+       * Automatically select only dishes with
+       * reasonable detection confidence.
+       *
+       * Catalog dishes are 100.
+       * AI-supported dishes are ~72.
+       * AI + rules consensus is >= 90.
+       */
       setSelectedPreviewIds(
         new Set(
-          detectedMenu.map(
-            (item) => item.id,
-          ),
+          detectedMenu
+            .filter(
+              (item) =>
+                (
+                  Number(
+                    item
+                      .detectionConfidence,
+                  ) || 100
+                ) >= 45,
+            )
+            .map(
+              (item) =>
+                item.id,
+            ),
         ),
       );
 

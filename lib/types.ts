@@ -49,6 +49,23 @@ export type MenuItem = {
   dayLabel?: string;
   mealLabel?: string;
   servicePax?: number;
+
+  /*
+   * Detection metadata is separate from
+   * costing confidence.
+   *
+   * A dish may be detected with 100%
+   * confidence but still use an estimated cost.
+   */
+  detectionSource?:
+    | 'catalog'
+    | 'ai'
+    | 'rules'
+    | 'consensus';
+
+  detectionConfidence?: number;
+  detectionReason?: string;
+
   costSource?:
     | 'catalog'
     | 'catalog_recipe'

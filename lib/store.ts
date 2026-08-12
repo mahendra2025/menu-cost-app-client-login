@@ -1234,7 +1234,123 @@ export type PendingDishCandidate = {
   dayLabel?: string;
   mealLabel?: string;
   servicePax?: number;
+
+  /*
+   * Confidence describes whether an unknown
+   * line really looks like a menu dish.
+   *
+   * It does NOT describe cost accuracy.
+   */
+  confidence:
+    | 'HIGH'
+    | 'MEDIUM'
+    | 'LOW';
+
+  confidenceScore: number;
+  detectionReason: string;
 };
+
+function scorePendingDishCandidate(
+  line: ParsedMenuLine,
+  previousIsDish: boolean,
+  nextIsDish: boolean,
+) {
+  let score = 0;
+
+  const reasons:
+    string[] = [];
+
+  if (line.explicitItem) {
+    score += 50;
+    reasons.push(
+      'explicit menu bullet/item',
+    );
+  }
+
+  if (line.categoryHint) {
+    score += 30;
+    reasons.push(
+      'inside a food category',
+    );
+  }
+
+  if (line.serviceId) {
+    score += 15;
+    reasons.push(
+      'inside a meal/service',
+    );
+  }
+
+  if (previousIsDish) {
+    score += 10;
+    reasons.push(
+      'previous line is a known dish',
+    );
+  }
+
+  if (nextIsDish) {
+    score += 10;
+    reasons.push(
+      'next line is a known dish',
+    );
+  }
+
+  const words =
+    normalizeMenuHeading(
+      line.text,
+    )
+      .split(' ')
+      .filter(Boolean);
+
+  if (
+    words.length >= 1 &&
+    words.length <= 5
+  ) {
+    score += 5;
+  }
+
+  /*
+   * Long unknown sentences are much more
+   * likely to be OCR notes/instructions.
+   */
+  if (
+    line.text.length > 70
+  ) {
+    score -= 20;
+    reasons.push(
+      'long text penalty',
+    );
+  }
+
+  const confidenceScore =
+    Math.min(
+      100,
+      Math.max(
+        0,
+        score,
+      ),
+    );
+
+  const confidence:
+    PendingDishCandidate[
+      'confidence'
+    ] =
+      confidenceScore >= 70
+        ? 'HIGH'
+        : confidenceScore >= 35
+          ? 'MEDIUM'
+          : 'LOW';
+
+  return {
+    confidence,
+    confidenceScore,
+
+    detectionReason:
+      reasons.length
+        ? reasons.join(', ')
+        : 'weak menu context',
+  };
+}
 
 const NON_DISH_TEXT_PATTERN =
   /^(?:days?\s*\d+|members?|as\s+per\s+(?:selection|choice)|menu\s+for|wedding\s+menu|party\s+menu|client|customer|event|function|occasion|venue|date|time|pax|guests?|persons?|contact|phone|mobile|address|location|package|price|rate|total|amount|notes?|instructions?|services?|staff|transport|decoration|photography|music|dj|tables?|chairs?|tax|gst|terms?|ग्राहक|कार्यक्रम|स्थान|तारीख|समय|मेहमान|संपर्क|मोबाइल|पता|कुल|नोट|ગ્રાહક|કાર્યક્રમ|સ્થળ|તારીખ|સમય|મહેમાન|સંપર્ક|મોબાઇલ|સરનામું|કુલ|નોંધ)(?:\b|[\s:()–—-]|$)/i;
@@ -1709,16 +1825,52 @@ export async function findPendingDishCandidates(
         );
       },
     )
-    .map(({ line }) => ({
-      name: line.text,
-      categoryHint:
-        line.categoryHint ||
-        'Other',
-      serviceId: line.serviceId,
-      dayLabel: line.dayLabel,
-      mealLabel: line.mealLabel,
-      servicePax: line.servicePax,
-    }));
+    .map(
+      ({
+        line,
+        index,
+      }) => {
+        const assessment =
+          scorePendingDishCandidate(
+            line,
+
+            Boolean(
+              catalogMatches[
+                index - 1
+              ]?.length,
+            ),
+
+            Boolean(
+              catalogMatches[
+                index + 1
+              ]?.length,
+            ),
+          );
+
+        return {
+          name:
+            line.text,
+
+          categoryHint:
+            line.categoryHint ||
+            'Other',
+
+          serviceId:
+            line.serviceId,
+
+          dayLabel:
+            line.dayLabel,
+
+          mealLabel:
+            line.mealLabel,
+
+          servicePax:
+            line.servicePax,
+
+          ...assessment,
+        };
+      },
+    );
 
   return Array.from(
     new Map(
@@ -1780,6 +1932,15 @@ export async function parseMenuText(
         dayLabel: menuLine.dayLabel,
         mealLabel: menuLine.mealLabel,
         servicePax: menuLine.servicePax,
+
+        detectionSource:
+          'catalog',
+
+        detectionConfidence:
+          100,
+
+        detectionReason:
+          'Matched Dish Master/catalog',
       });
         },
       );
