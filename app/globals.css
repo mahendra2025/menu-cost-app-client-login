@@ -9157,3 +9157,386 @@ td:last-child {
     grid-row: 2;
   }
 }
+
+/* =========================================================
+   CATERERSOS — GLOBAL BLACK UI
+   Remove white / light card interface
+   ========================================================= */
+
+:root {
+  --bg: #050505;
+  --card: rgba(16, 16, 18, 0.92);
+  --card-solid: #101012;
+  --text: #f5f5f7;
+  --muted: #9b9ba1;
+  --border: rgba(255, 255, 255, 0.10);
+
+  --blue: #0a84ff;
+  --blue-dark: #006edb;
+  --green: #30d158;
+  --orange: #ff9f0a;
+  --red: #ff453a;
+
+  --shadow:
+    0 24px 70px rgba(0, 0, 0, 0.55);
+
+  --shadow-soft:
+    0 10px 30px rgba(0, 0, 0, 0.34);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: #050505;
+  color: var(--text);
+}
+
+.page-shell {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(10, 132, 255, 0.13),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 90% 8%,
+      rgba(88, 86, 214, 0.10),
+      transparent 22%
+    ),
+    linear-gradient(
+      180deg,
+      #09090a 0%,
+      #050505 100%
+    );
+}
+
+/* Main cards */
+
+.loader-card,
+.login-card,
+.glass-card,
+.locked-card,
+.alert-card,
+.panel {
+  background: rgba(16, 16, 18, 0.92);
+  border-color: rgba(255,255,255,.09);
+  box-shadow:
+    0 14px 40px rgba(0,0,0,.32);
+}
+
+/* Inputs */
+
+.input,
+.textarea,
+.select,
+input,
+textarea,
+select {
+  color: #f5f5f7;
+}
+
+.input,
+.textarea,
+.select {
+  background: #111113;
+  border-color: rgba(255,255,255,.11);
+}
+
+.input::placeholder,
+.textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #68686e;
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  background: #151517;
+  border-color: rgba(10,132,255,.65);
+  box-shadow:
+    0 0 0 4px rgba(10,132,255,.12);
+}
+
+.select-locked {
+  background: #0d0d0f;
+  color: #73737a;
+}
+
+/* Labels */
+
+.field label {
+  color: #c7c7cc;
+}
+
+/* Helper cards */
+
+.helper-card {
+  background:
+    linear-gradient(
+      180deg,
+      #131315 0%,
+      #0e0e10 100%
+    );
+  border-color: rgba(255,255,255,.09);
+}
+
+/* Buttons */
+
+.secondary-button {
+  background: #242426;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.secondary-button:hover {
+  background: #303033;
+}
+
+.ghost-button {
+  background: #151517;
+  color: #f5f5f7;
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+.ghost-button:hover {
+  background: #202023;
+}
+
+/* Menu source */
+
+.menu-source-choice {
+  background: #101012;
+  border-color: rgba(255,255,255,.09);
+}
+
+.menu-source-choice:hover {
+  background: #171719;
+  border-color: rgba(10,132,255,.38);
+  box-shadow:
+    0 10px 26px rgba(0,0,0,.30);
+}
+
+.menu-source-choice.is-active {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10,132,255,.15),
+      #121214
+    );
+}
+
+/* New dish admin */
+
+.new-dish-overview {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10,132,255,.12),
+      #101012
+    );
+  border-color: rgba(10,132,255,.20);
+}
+
+.new-dish-card {
+  background: #101012;
+  border-color: rgba(255,255,255,.09);
+}
+
+.new-dish-save-choice {
+  background: #0b0b0d;
+  border-color: rgba(255,255,255,.09);
+}
+
+/* Event / detected menu */
+
+.menu-preview-item,
+.menu-preview-group,
+.menu-preview-toolbar,
+.event-detection-note,
+.menu-preview-duplicate-note {
+  background-color: #101012 !important;
+  border-color: rgba(255,255,255,.09) !important;
+}
+
+.menu-preview-item.is-selected {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10,132,255,.10),
+      #111113
+    ) !important;
+}
+
+/* Coverage */
+
+.menu-coverage-audit {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10,132,255,.08),
+      #0f0f11
+    ) !important;
+  border-color: rgba(10,132,255,.18) !important;
+}
+
+.menu-coverage-states > div {
+  background: #151517 !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+/* Cost accuracy */
+
+.menu-cost-accuracy-audit {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(88,86,214,.08),
+      #0f0f11
+    ) !important;
+  border-color: rgba(88,86,214,.20) !important;
+}
+
+.menu-cost-accuracy-stats > div {
+  background: #151517 !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+.menu-cost-movement.high {
+  background: rgba(255,69,58,.08) !important;
+}
+
+.menu-cost-movement.watch {
+  background: rgba(255,159,10,.08) !important;
+}
+
+/* Cost approval */
+
+.cost-approval-gate,
+.cost-approval-gate.clear {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(48,209,88,.06),
+      #0f0f11
+    ) !important;
+}
+
+.cost-approval-gate.pending {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,159,10,.07),
+      #0f0f11
+    ) !important;
+}
+
+.cost-approval-gate.blocked {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,69,58,.07),
+      #0f0f11
+    ) !important;
+}
+
+.cost-approval-summary > div {
+  background: #151517 !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+.cost-approval-item.pending {
+  background: rgba(255,159,10,.075) !important;
+}
+
+.cost-approval-item.blocked {
+  background: rgba(255,69,58,.075) !important;
+}
+
+.cost-approval-item.approved {
+  background: rgba(48,209,88,.075) !important;
+}
+
+/* Ingredient intelligence */
+
+.ingredient-driver-intelligence {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(94,92,230,.08),
+      #0f0f11
+    ) !important;
+}
+
+.ingredient-driver-count,
+.ingredient-driver-row {
+  background: #151517 !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+.dish-cost-driver-list {
+  background: #0c0c0e !important;
+  border-color: rgba(255,255,255,.08) !important;
+}
+
+/* Generic white cards from older UI */
+
+[class*="card"],
+[class*="panel"] {
+  border-color: rgba(255,255,255,.09);
+}
+
+/* Tables */
+
+table {
+  color: #f5f5f7;
+}
+
+thead {
+  background: #111113;
+}
+
+tbody tr {
+  border-color: rgba(255,255,255,.07);
+}
+
+/* Scrollbar */
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080809;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #303034;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #46464c;
+}
+
+/* Native autofill */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f5f5f7;
+  -webkit-box-shadow:
+    0 0 0 1000px #111113 inset;
+}
+
+/* Avoid accidental bright white surfaces */
+
+.app-frame,
+.content-grid,
+main {
+  color: #f5f5f7;
+}
+
