@@ -1224,8 +1224,8 @@ export default function CostPage() {
                                   min="0"
                                   step="0.01"
                                   inputMode="decimal"
-                                  value={item.baseCostPerPlate || ''}
-                                  placeholder="Add rate"
+                                  value={item.baseCostPerPlate}
+                                  placeholder="0"
                                   aria-label={`Base cost per plate for ${item.name}`}
                                   onFocus={(event) => {
                                     if (needsManualRate(item)) event.currentTarget.select();
@@ -1425,8 +1425,8 @@ export default function CostPage() {
                               min="0"
                               step="0.01"
                               inputMode="decimal"
-                              value={item.baseCostPerPlate || ''}
-                              placeholder="Add rate"
+                              value={item.baseCostPerPlate}
+                              placeholder="0"
                               onFocus={(event) => {
                                 if (needsManualRate(item)) event.currentTarget.select();
                               }}

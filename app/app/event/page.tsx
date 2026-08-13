@@ -4318,113 +4318,31 @@ export default function EventPage() {
       }
 
       /*
-       * Permanent final fallback.
+       * Keep unmatched dishes at ₹0.
        *
-       * Recipe generation may occasionally be
-       * unavailable because of an AI/provider,
-       * network, ingredient-rate or recipe issue.
-       *
-       * Do not turn a 150-dish wedding menu into
-       * 150 manual data-entry tasks.
-       *
-       * Give every remaining dish a transparent
-       * category estimate instead.
+       * A category average is not the detected
+       * dish's real rate. Leaving the value at zero
+       * makes the missing rate explicit on Cost and
+       * lets the user enter an accurate manual rate.
        */
-      const stillMissingBeforeFallback =
-        detectedMenu.filter(
-          (item) =>
-            !(
-              Number(
-                item.costPerPlate,
-              ) > 0
-            ),
-        );
-
-      if (
-        stillMissingBeforeFallback.length
-      ) {
-        try {
-          const dishCatalog =
-            await import(
-              '../../../lib/dishCostMaster'
-            );
-
-          detectedMenu =
-            detectedMenu.map(
-              (item) => {
-                if (
-                  Number(
-                    item.costPerPlate,
-                  ) > 0
-                ) {
-                  return item;
-                }
-
-                const categoryRate =
-                  Math.max(
-                    0,
-                    Number(
-                      dishCatalog
-                        .CATEGORY_BASE_COST[
-                        item.category as keyof typeof dishCatalog.CATEGORY_BASE_COST
-                      ],
-                    ) || 0,
-                  );
-
-                const otherRate =
-                  Math.max(
-                    0,
-                    Number(
-                      dishCatalog
-                        .CATEGORY_BASE_COST
-                        .Other,
-                    ) || 40,
-                  );
-
-                const estimatedCost =
-                  categoryRate > 0
-                    ? categoryRate
-                    : otherRate;
-
-                return {
-                  ...item,
-
-                  costPerPlate:
-                    estimatedCost,
-
-                  costSource:
-                    'category_estimate',
-
-                  coverageStatus:
-                    'REVIEW',
-
-                  costQualityStatus:
-                    'REVIEW',
-
-                  costConfidence: 35,
-
-                  rateCoveragePercent: 0,
-
-                  coverageReason:
-                    `Temporary ${item.category || 'Other'} category estimate. Add a Dish Master rate or recipe to improve accuracy.`,
-
-                  costApprovalStatus:
-                    'NOT_REQUIRED',
-
-                  costApprovalReason:
-                    'Automatic category estimate used because no recipe or Dish Master cost was available.',
-                };
-              },
-            );
-        } catch (
-          fallbackError
-        ) {
-          console.warn(
-            'Category fallback costing skipped:',
-            fallbackError,
-          );
+      detectedMenu = detectedMenu.map((item) => {
+        if (Number(item.costPerPlate) > 0) {
+          return item;
         }
-      }
+
+        return {
+          ...item,
+          costPerPlate: 0,
+          costSource: 'manual',
+          coverageStatus: 'UNRESOLVED',
+          costQualityStatus: undefined,
+          costConfidence: 0,
+          rateCoveragePercent: 0,
+          coverageReason: 'Dish not found with a usable rate. Add a manual rate on Cost.',
+          costApprovalStatus: 'PENDING',
+          costApprovalReason: 'Manual rate required',
+        };
+      });
 
       const unresolvedMenu = detectedMenu.filter(
         (item) => !(Number(item.costPerPlate) > 0),
