@@ -4505,14 +4505,215 @@ export default function EventPage() {
         ),
       );
 
-      window.setTimeout(() => {
-        document
-          .getElementById('menuDetectionPreview')
-          ?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          });
-      }, 80);
+      /*
+       * Direct Menu Detection Flow
+       *
+       * Detection is now the menu-building step.
+       * Once dishes are detected, save them
+       * immediately and continue to Cost.
+       *
+       * The Cost page already provides editable
+       * ₹/plate inputs, so unknown/new dishes can
+       * be priced there instead of forcing a
+       * separate detection-review screen.
+       */
+
+      try {
+        const usageResponse =
+          await fetch(
+            `/api/client/free-usage?costingId=${encodeURIComponent(
+              work.costingId,
+            )}`,
+            {
+              cache: 'no-store',
+            },
+          );
+
+        if (!usageResponse.ok) {
+          setError(
+            'Could not verify your costing allowance. Please try again.',
+          );
+
+          return;
+        }
+
+        const usage =
+          await usageResponse.json();
+
+        if (
+          !usage.canUseCurrentCosting
+        ) {
+          setFreeLimitBlocked(
+            true,
+          );
+
+          setError(
+            'Your 5 free costings are used. Upgrade to Pro to start a new costing.',
+          );
+
+          return;
+        }
+      } catch {
+        setError(
+          'Could not verify your costing allowance. Please try again.',
+        );
+
+        return;
+      }
+
+      /*
+       * Every item reaching detectedMenu has
+       * already passed the detection/evidence
+       * pipeline.
+       *
+       * Low-confidence local noise was removed
+       * earlier, so all remaining detected dishes
+       * can safely be taken to costing.
+       */
+      const directMenu =
+        detectedMenu.filter(
+          (item) =>
+            item.coverageStatus !==
+            'REJECTED',
+        );
+
+      const nextWork:
+        WorkState = {
+          ...work,
+
+          event:
+            mergeDetectedEventDetails(
+              work.event,
+              detectedDetails,
+            ),
+
+          menu:
+            directMenu,
+        };
+
+      /*
+       * Continue feeding genuinely new dishes
+       * to Admin > New Dishes.
+       *
+       * Admin-learning failure must not block
+       * the caterer from reaching Cost.
+       */
+      try {
+        const newDishCandidates =
+          directMenu
+            .filter(
+              (item) =>
+                pendingMenuIds.has(
+                  item.id,
+                ),
+            )
+            .map(
+              (item) => ({
+                name:
+                  item.name,
+
+                categoryHint:
+                  item.category ||
+                  'Other',
+              }),
+            );
+
+        if (
+          newDishCandidates.length
+        ) {
+          const suggestionResponse =
+            await fetch(
+              '/api/dish-suggestions',
+              {
+                method:
+                  'POST',
+
+                headers: {
+                  'Content-Type':
+                    'application/json',
+                },
+
+                body:
+                  JSON.stringify({
+                    sourceFileName:
+                      work.event
+                        .uploadFileName ||
+                      'Pasted menu',
+
+                    candidates:
+                      newDishCandidates,
+                  }),
+              },
+            );
+
+          if (
+            !suggestionResponse.ok
+          ) {
+            console.warn(
+              'New-dish admin queue could not be updated.',
+            );
+          }
+        }
+      } catch (
+        suggestionError
+      ) {
+        console.warn(
+          'New-dish admin queue skipped:',
+          suggestionError,
+        );
+      }
+
+      /*
+       * Save locally first so /app/cost can
+       * render immediately after navigation.
+       */
+      persistWork(
+        nextWork,
+      );
+
+      flushWorkSave(
+        session.tenantId,
+      );
+
+      /*
+       * Also save the same detected menu
+       * to the server draft.
+       */
+      await flushDraftToServer(
+        session.tenantId,
+        nextWork,
+      );
+
+      const costingKey =
+        getCostingAnalyticsKey(
+          nextWork,
+        );
+
+      void trackProductEvent(
+        'menu_saved',
+        {
+          costingKey,
+
+          dishCount:
+            nextWork.menu.length,
+
+          mode:
+            'direct_after_detection',
+        },
+        {
+          onceKey:
+            `menu_saved:${costingKey}`,
+        },
+      );
+
+      /*
+       * No intermediate Detected Menu screen.
+       */
+      window.location.assign(
+        '/app/cost',
+      );
+
+      return;
     } catch (detectError) {
       console.error(
         'Menu detection error:',
