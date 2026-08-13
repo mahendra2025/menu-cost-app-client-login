@@ -285,10 +285,15 @@ export function refreshSessionFromClient():
     status: client.status,
   };
 
-  window.localStorage.setItem(
-    SESSION_KEY,
-    JSON.stringify(nextSession),
-  );
+  if (
+    nextSession.businessName !== session.businessName ||
+    nextSession.status !== session.status
+  ) {
+    window.localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify(nextSession),
+    );
+  }
 
   return nextSession;
 }
@@ -303,6 +308,8 @@ function workKey(tenantId: string): string {
 
 const pendingWorkSaves = new Map<string, WorkState>();
 const workSaveTimers = new Map<string, number>();
+const workSaveIdleCallbacks = new Map<string, number>();
+const cachedWorkByTenant = new Map<string, WorkState>();
 let workSaveFlushListenersReady = false;
 
 const draftServerSyncTimers =
@@ -407,8 +414,17 @@ export function flushWorkSave(tenantId: string) {
   const timer = workSaveTimers.get(tenantId);
   if (timer !== undefined) window.clearTimeout(timer);
 
+  const idleCallback = workSaveIdleCallbacks.get(tenantId);
+  if (
+    idleCallback !== undefined &&
+    'cancelIdleCallback' in window
+  ) {
+    window.cancelIdleCallback(idleCallback);
+  }
+
   pendingWorkSaves.delete(tenantId);
   workSaveTimers.delete(tenantId);
+  workSaveIdleCallbacks.delete(tenantId);
   writeWorkNow(tenantId, pending);
 }
 
@@ -470,16 +486,17 @@ export function createEmptyWorkState(
 export function loadWork(
   tenantId: string,
 ): WorkState {
-  const session = getSession();
-
-  const fallback =
-    createEmptyWorkState(session);
-
   if (typeof window === 'undefined') {
-    return fallback;
+    return createEmptyWorkState();
   }
 
   flushWorkSave(tenantId);
+
+  const cachedWork = cachedWorkByTenant.get(tenantId);
+  if (cachedWork) return cachedWork;
+
+  const session = getSession();
+  const fallback = createEmptyWorkState(session);
 
   const savedWork = safeJsonParse<Partial<WorkState> | null>(
     window.localStorage.getItem(
@@ -488,7 +505,10 @@ export function loadWork(
     null,
   );
 
-  if (!savedWork) return fallback;
+  if (!savedWork) {
+    cachedWorkByTenant.set(tenantId, fallback);
+    return fallback;
+  }
 
   const savedStaffCost = Math.max(
     0,
@@ -562,7 +582,7 @@ export function loadWork(
     });
   }
 
-  return {
+  const normalizedWork: WorkState = {
     ...fallback,
     ...savedWork,
     event: {
@@ -581,6 +601,9 @@ export function loadWork(
       ...savedWork.profile,
     },
   };
+
+  cachedWorkByTenant.set(tenantId, normalizedWork);
+  return normalizedWork;
 }
 
 export function saveWork(
@@ -595,13 +618,31 @@ export function saveWork(
       new Date().toISOString(),
   };
 
+  cachedWorkByTenant.set(tenantId, nextWork);
   pendingWorkSaves.set(tenantId, nextWork);
   const existingTimer = workSaveTimers.get(tenantId);
   if (existingTimer !== undefined) window.clearTimeout(existingTimer);
 
   workSaveTimers.set(
     tenantId,
-    window.setTimeout(() => flushWorkSave(tenantId), 140),
+    window.setTimeout(() => {
+      workSaveTimers.delete(tenantId);
+
+      if ('requestIdleCallback' in window) {
+        const idleCallback = window.requestIdleCallback(
+          () => {
+            workSaveIdleCallbacks.delete(tenantId);
+            flushWorkSave(tenantId);
+          },
+          { timeout: 900 },
+        );
+
+        workSaveIdleCallbacks.set(tenantId, idleCallback);
+        return;
+      }
+
+      flushWorkSave(tenantId);
+    }, 180),
   );
   ensureWorkSaveFlushListeners();
   scheduleDraftServerSync(tenantId, nextWork);
@@ -615,7 +656,17 @@ export function clearWork(
   const timer = workSaveTimers.get(tenantId);
   if (timer !== undefined) window.clearTimeout(timer);
   workSaveTimers.delete(tenantId);
+
+  const idleCallback = workSaveIdleCallbacks.get(tenantId);
+  if (
+    idleCallback !== undefined &&
+    'cancelIdleCallback' in window
+  ) {
+    window.cancelIdleCallback(idleCallback);
+  }
+  workSaveIdleCallbacks.delete(tenantId);
   pendingWorkSaves.delete(tenantId);
+  cachedWorkByTenant.delete(tenantId);
 
   window.localStorage.removeItem(
     workKey(tenantId),

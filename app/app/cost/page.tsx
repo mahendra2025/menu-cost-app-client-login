@@ -1,6 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
@@ -134,6 +139,7 @@ export default function CostPage() {
   const [dishServiceFilter, setDishServiceFilter] = useState('ALL');
   const [dishCategoryFilter, setDishCategoryFilter] = useState('ALL');
   const [showOnlyManualRates, setShowOnlyManualRates] = useState(false);
+  const deferredDishQuery = useDeferredValue(dishQuery);
 
   const [
     showAddDish,
@@ -173,18 +179,21 @@ export default function CostPage() {
     if (current) setWork(loadWork(current.tenantId));
   }, []);
 
+  const result = useMemo(
+    () => work ? calculate(work) : null,
+    [work],
+  );
+
   useEffect(() => {
     if (
       !work ||
       !session ||
+      !result ||
       session.status === 'EXPIRED' ||
       work.menu.length === 0
     ) {
       return;
     }
-
-    const result =
-      calculate(work);
 
     const costingKey =
       getCostingAnalyticsKey(
@@ -209,12 +218,11 @@ export default function CostPage() {
           `cost_reviewed:${costingKey}`,
       },
     );
-  }, [work, session]);
+  }, [work, session, result]);
 
-  if (!work || !session) return <AppShell title="Cost"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
+  if (!work || !session || !result) return <AppShell title="Cost"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
   if (session.status === 'EXPIRED') return <AppShell title="Cost"><LockedCard /></AppShell>;
 
-  const result = calculate(work);
   const dishCategories = Array.from(
     new Set(result.menuBreakdown.map((item) => item.category)),
   ).sort((a, b) => a.localeCompare(b));
@@ -338,7 +346,7 @@ export default function CostPage() {
   ).length;
   const manualRateFilterActive =
     showOnlyManualRates && missingRateCount > 0;
-  const normalizedDishQuery = dishQuery.trim().toLocaleLowerCase('en-IN');
+  const normalizedDishQuery = deferredDishQuery.trim().toLocaleLowerCase('en-IN');
   const filteredDishCosts = result.menuBreakdown.filter((item) => {
     const matchesSearch = !normalizedDishQuery ||
       item.name.toLocaleLowerCase('en-IN').includes(normalizedDishQuery) ||
@@ -361,7 +369,7 @@ export default function CostPage() {
   }
 
   function addNewCostDish() {
-    if (!work) {
+    if (!work || !result) {
       return;
     }
 

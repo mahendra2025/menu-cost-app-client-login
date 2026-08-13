@@ -10,19 +10,52 @@ type Usage = {
   remaining: number | null;
 };
 
-export default function FreeUsageMeter() {
-  const [usage, setUsage] = useState<Usage | null>(null);
+const USAGE_CACHE_MS = 30_000;
+let cachedUsage: Usage | null = null;
+let cachedAt = 0;
+let usageRequest: Promise<Usage | null> | null = null;
 
-  const load = useCallback(async () => {
-    try {
-      const response = await fetch('/api/client/free-usage', { cache: 'no-store' });
-      if (response.ok) setUsage(await response.json());
-    } catch {}
+async function fetchUsage(force = false) {
+  if (
+    !force &&
+    cachedUsage &&
+    Date.now() - cachedAt < USAGE_CACHE_MS
+  ) {
+    return cachedUsage;
+  }
+
+  if (!usageRequest) {
+    usageRequest = fetch('/api/client/free-usage', {
+      cache: 'no-store',
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+
+        const usage = await response.json() as Usage;
+        cachedUsage = usage;
+        cachedAt = Date.now();
+        return usage;
+      })
+      .catch(() => null)
+      .finally(() => {
+        usageRequest = null;
+      });
+  }
+
+  return usageRequest;
+}
+
+export default function FreeUsageMeter() {
+  const [usage, setUsage] = useState<Usage | null>(() => cachedUsage);
+
+  const load = useCallback(async (force = false) => {
+    const nextUsage = await fetchUsage(force);
+    if (nextUsage) setUsage(nextUsage);
   }, []);
 
   useEffect(() => {
     void load();
-    const refresh = () => void load();
+    const refresh = () => void load(true);
     window.addEventListener('menu-costing-usage-updated', refresh);
     return () => window.removeEventListener('menu-costing-usage-updated', refresh);
   }, [load]);

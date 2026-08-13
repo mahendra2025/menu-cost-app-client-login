@@ -308,7 +308,12 @@ export default function ManpowerPage() {
     [manpowerGroups],
   );
 
-  if (!work || !session) {
+  const result = useMemo(
+    () => work ? calculate(work) : null,
+    [work],
+  );
+
+  if (!work || !session || !result) {
     return (
       <AppShell title="Manpower">
         <div className="content-grid">
@@ -325,8 +330,6 @@ export default function ManpowerPage() {
       </AppShell>
     );
   }
-
-  const result = calculate(work);
 
   function persistRows(rows: ManpowerRow[]) {
     if (!session || !work) return;

@@ -26,6 +26,8 @@ const adminNav = [
   { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Workspace settings', icon: 'profile' as NavIcon },
 ];
 
+let cachedShellSession: Session | null = null;
+
 function NavIconMark({ icon }: { icon: NavIcon }) {
   const paths: Record<NavIcon, ReactNode> = {
     event: <><path d="M4 6.5h16v13H4z"/><path d="M8 3.5v5M16 3.5v5M4 10.5h16"/></>,
@@ -61,15 +63,21 @@ export default function AppShell({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [session, setSession] = useState<Session | null>(null);
-  const [ready, setReady] = useState(false);
+  const [session, setSession] = useState<Session | null>(
+    () => cachedShellSession,
+  );
+  const [ready, setReady] = useState(
+    () => cachedShellSession !== null,
+  );
 
   useEffect(() => {
     const current = refreshSessionFromClient() ?? getSession();
     if (!current) {
+      cachedShellSession = null;
       router.replace('/login');
       return;
     }
+    cachedShellSession = current;
     setSession(current);
     setReady(true);
   }, [router]);
@@ -121,6 +129,7 @@ export default function AppShell({
             className="ghost-button logout-button"
             aria-label="Log out of Menu Costing"
             onClick={() => {
+              cachedShellSession = null;
               logout();
               void fetch('/api/client/session', { method: 'DELETE' });
               router.replace('/login');
