@@ -49,6 +49,7 @@ import {
 } from '../../../lib/menuCategories';
 
 import {
+  cleanupMenuSourceText,
   dishNameKey,
   getDishSourceEvidenceScore,
   preprocessMenuTextWithTenantLearning,
@@ -2837,9 +2838,93 @@ export default function EventPage() {
       const tenantDishAliases =
         await requestTenantDishAliases();
 
+      /*
+       * V20:
+       *
+       * Repair conservative OCR/PDF extraction
+       * problems BEFORE tenant alias learning,
+       * local rules and AI see the menu.
+       *
+       * Original rawMenuText remains untouched
+       * for the V19 source comparison screen.
+       */
+      const sourceCatalog =
+        await import(
+          '../../../lib/dishCostMaster'
+        );
+
+      const learnedDishKeys =
+        new Set(
+          tenantDishAliases
+            .filter(
+              (rule) =>
+                rule.action ===
+                'MAP',
+            )
+            .flatMap(
+              (rule) => [
+                dishNameKey(
+                  rule.aliasName,
+                ),
+
+                dishNameKey(
+                  rule.canonicalName,
+                ),
+              ],
+            )
+            .filter(Boolean),
+        );
+
+      const sourceCleanup =
+        cleanupMenuSourceText(
+          rawMenuText,
+
+          (candidate) =>
+            Boolean(
+              sourceCatalog
+                .findDishByName(
+                  candidate,
+                ),
+            ) ||
+            learnedDishKeys.has(
+              dishNameKey(
+                candidate,
+              ),
+            ),
+        );
+
+      if (
+        sourceCleanup
+          .mergedWrappedLines >
+          0 ||
+        sourceCleanup
+          .normalizedColumns >
+          0 ||
+        sourceCleanup
+          .normalizedArtifacts >
+          0
+      ) {
+        void trackProductEvent(
+          'menu_source_cleanup',
+          {
+            mergedWrappedLines:
+              sourceCleanup
+                .mergedWrappedLines,
+
+            normalizedColumns:
+              sourceCleanup
+                .normalizedColumns,
+
+            normalizedArtifacts:
+              sourceCleanup
+                .normalizedArtifacts,
+          },
+        );
+      }
+
       const learnedMenu =
         preprocessMenuTextWithTenantLearning(
-          rawMenuText,
+          sourceCleanup.menuText,
           tenantDishAliases,
         );
 

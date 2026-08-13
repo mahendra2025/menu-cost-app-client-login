@@ -338,6 +338,491 @@ export function getDishSourceEvidenceScore(
   return bestScore;
 }
 
+
+export type MenuSourceCleanupResult = {
+  menuText: string;
+
+  mergedWrappedLines: number;
+  normalizedColumns: number;
+  normalizedArtifacts: number;
+};
+
+type KnownDishMatcher = (
+  candidate: string,
+) => boolean;
+
+function menuCleanupLineParts(
+  line: string,
+) {
+  const match =
+    String(line || '')
+      .match(
+        /^(\s*(?:(?:[•*-]|\d+[.)])\s*)?)(.*)$/u,
+      );
+
+  return {
+    prefix:
+      match?.[1] || '',
+
+    body:
+      (
+        match?.[2] ||
+        line
+      ).trim(),
+
+    hasExplicitPrefix:
+      Boolean(
+        match?.[1]?.trim(),
+      ),
+  };
+}
+
+/**
+ * Clean common OCR / PDF extraction noise
+ * before AI + local menu detection.
+ *
+ * Important:
+ * Wrapped lines are merged ONLY when the
+ * combined text resolves to a known dish.
+ * This prevents ordinary headings or notes
+ * from being invented into dishes.
+ */
+export function cleanupMenuSourceText(
+  menuText: string,
+  isKnownDish:
+    KnownDishMatcher =
+      () => false,
+): MenuSourceCleanupResult {
+  const rawText =
+    String(
+      menuText ||
+      '',
+    );
+
+  /*
+   * Full-width ｜ becomes normal |
+   * during NFKC normalization.
+   *
+   * Count it before normalization so
+   * cleanup telemetry stays accurate.
+   */
+  const compatibilityPipeMatches =
+    rawText.match(
+      /｜/g,
+    ) || [];
+
+  let normalizedArtifacts =
+    compatibilityPipeMatches.length;
+
+  let text =
+    rawText.normalize(
+      'NFKC',
+    );
+
+  let normalizedColumns =
+    0;
+
+  let mergedWrappedLines =
+    0;
+
+  /*
+   * Invisible OCR artifacts.
+   */
+  const invisibleMatches =
+    text.match(
+      /[\u200B-\u200D\uFEFF]/g,
+    ) || [];
+
+  normalizedArtifacts +=
+    invisibleMatches.length;
+
+  text = text.replace(
+    /[\u200B-\u200D\uFEFF]/g,
+    '',
+  );
+
+  /*
+   * Non-breaking spaces.
+   */
+  const nbspMatches =
+    text.match(
+      /\u00A0/g,
+    ) || [];
+
+  normalizedArtifacts +=
+    nbspMatches.length;
+
+  text = text.replace(
+    /\u00A0/g,
+    ' ',
+  );
+
+  /*
+   * Normalize line endings / page breaks.
+   */
+  text = text
+    .replace(
+      /\r\n?/g,
+      '\n',
+    )
+    .replace(
+      /\f+/g,
+      '\n',
+    );
+
+  /*
+   * OCR often produces visually similar
+   * vertical separators.
+   */
+  const oddPipeMatches =
+    text.match(
+      /[¦｜]/g,
+    ) || [];
+
+  normalizedArtifacts +=
+    oddPipeMatches.length;
+
+  text = text.replace(
+    /[¦｜]/g,
+    '|',
+  );
+
+  /*
+   * Normalize common bullet glyphs.
+   */
+  const bulletMatches =
+    text.match(
+      /[●▪◦◆◇■□✓✔]/g,
+    ) || [];
+
+  normalizedArtifacts +=
+    bulletMatches.length;
+
+  text = text.replace(
+    /[●▪◦◆◇■□✓✔]/g,
+    '•',
+  );
+
+  /*
+   * PDF tables commonly become tab-separated
+   * columns after extraction.
+   */
+  const tabGroups =
+    text.match(
+      /\t+/g,
+    ) || [];
+
+  normalizedColumns +=
+    tabGroups.length;
+
+  text = text.replace(
+    /\t+/g,
+    ' | ',
+  );
+
+  let lines =
+    text.split(
+      '\n',
+    );
+
+  /*
+   * Multiple spaces can represent columns.
+   *
+   * Only split these when at least two
+   * resulting cells are known dishes.
+   *
+   * Example:
+   *
+   * Paneer Tikka    Gulab Jamun
+   *
+   * becomes:
+   *
+   * Paneer Tikka | Gulab Jamun
+   *
+   * while:
+   *
+   * Dinner    300 Pax
+   *
+   * stays unchanged.
+   */
+  lines =
+    lines.map(
+      (line) => {
+        const chunks =
+          line
+            .trim()
+            .split(
+              /\s{4,}/,
+            )
+            .map(
+              (chunk) =>
+                chunk.trim(),
+            )
+            .filter(Boolean);
+
+        if (
+          chunks.length <
+          2
+        ) {
+          return line;
+        }
+
+        const knownChunks =
+          chunks.filter(
+            (chunk) =>
+              isKnownDish(
+                chunk,
+              ),
+          );
+
+        if (
+          knownChunks.length <
+          2
+        ) {
+          return line;
+        }
+
+        normalizedColumns +=
+          chunks.length -
+          1;
+
+        return chunks.join(
+          ' | ',
+        );
+      },
+    );
+
+  /*
+   * Keep pipe spacing predictable.
+   */
+  lines =
+    lines.map(
+      (line) =>
+        line
+          .replace(
+            /\s*\|\s*/g,
+            ' | ',
+          )
+          .replace(
+            /^\s*[●▪◦◆◇■□✓✔]\s*/u,
+            '• ',
+          )
+          .trimEnd(),
+    );
+
+  const output:
+    string[] = [];
+
+  /*
+   * Conservative wrapped-line repair.
+   *
+   * Longest known match wins:
+   *
+   * Paneer
+   * Butter
+   * Masala
+   *
+   * → Paneer Butter Masala
+   *
+   * Separate bullet items are NEVER merged.
+   */
+  for (
+    let index = 0;
+    index < lines.length;
+  ) {
+    const currentLine =
+      lines[index];
+
+    if (
+      !currentLine.trim()
+    ) {
+      output.push(
+        '',
+      );
+
+      index += 1;
+
+      continue;
+    }
+
+    const first =
+      menuCleanupLineParts(
+        currentLine,
+      );
+
+    let repaired:
+      string | null =
+        null;
+
+    let consumed =
+      1;
+
+    for (
+      const span
+      of [
+        3,
+        2,
+      ]
+    ) {
+      if (
+        index +
+        span >
+        lines.length
+      ) {
+        continue;
+      }
+
+      const candidateLines =
+        lines.slice(
+          index,
+          index +
+          span,
+        );
+
+      const parts =
+        candidateLines.map(
+          menuCleanupLineParts,
+        );
+
+      const valid =
+        parts.every(
+          (
+            part,
+            partIndex,
+          ) => {
+            if (
+              !part.body ||
+              part.body.includes(
+                '|',
+              ) ||
+              part.body.endsWith(
+                ':',
+              )
+            ) {
+              return false;
+            }
+
+            /*
+             * A new bullet/number means a new
+             * menu item, never a continuation.
+             */
+            if (
+              partIndex >
+                0 &&
+              part
+                .hasExplicitPrefix
+            ) {
+              return false;
+            }
+
+            const wordCount =
+              dishNameKey(
+                part.body,
+              )
+                .split(
+                  ' ',
+                )
+                .filter(
+                  Boolean,
+                )
+                .length;
+
+            return (
+              wordCount >
+                0 &&
+              wordCount <=
+                5
+            );
+          },
+        );
+
+      if (!valid) {
+        continue;
+      }
+
+      const combined =
+        parts
+          .map(
+            (part) =>
+              part.body,
+          )
+          .join(
+            ' ',
+          )
+          .replace(
+            /\s+/g,
+            ' ',
+          )
+          .trim();
+
+      /*
+       * Do not merge if the first line
+       * already represents a complete known
+       * dish.
+       */
+      if (
+        isKnownDish(
+          first.body,
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        !isKnownDish(
+          combined,
+        )
+      ) {
+        continue;
+      }
+
+      repaired =
+        first.prefix +
+        combined;
+
+      consumed =
+        span;
+
+      break;
+    }
+
+    if (repaired) {
+      output.push(
+        repaired,
+      );
+
+      mergedWrappedLines +=
+        consumed -
+        1;
+
+      index +=
+        consumed;
+
+      continue;
+    }
+
+    output.push(
+      currentLine,
+    );
+
+    index += 1;
+  }
+
+  return {
+    menuText:
+      output.join(
+        '\n',
+      ),
+
+    mergedWrappedLines,
+
+    normalizedColumns,
+
+    normalizedArtifacts,
+  };
+}
+
+
 export function preprocessMenuTextWithTenantLearning(
   menuText: string,
   rules:
