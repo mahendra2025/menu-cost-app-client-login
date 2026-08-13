@@ -11,6 +11,10 @@ import dynamic from 'next/dynamic';
 
 import AppShell from '../../components/AppShell';
 
+import {
+  CATEGORIES,
+} from '../../../lib/dishCostMaster';
+
 import type {
   RecipeStudioDishRequest,
 } from '../dishes/RecipeStudioPanel';
@@ -342,7 +346,9 @@ export default function NewDishesPage() {
       [],
     );
   const [categories, setCategories] =
-    useState<string[]>([]);
+    useState<string[]>([
+      ...CATEGORIES,
+    ]);
   const [catalogDishes, setCatalogDishes] =
     useState<CatalogDish[]>([]);
   const [loading, setLoading] =
@@ -435,13 +441,29 @@ export default function NewDishesPage() {
       }
 
       const availableCategories =
-        Array.isArray(
-          queueData.categories,
-        )
-          ? queueData.categories
-              .map(String)
+        Array.from(
+          new Map(
+            [
+              ...CATEGORIES,
+              ...(Array.isArray(
+                queueData.categories,
+              )
+                ? queueData.categories
+                : []),
+              'Other',
+            ]
+              .map((category) =>
+                String(category)
+                  .trim()
+                  .replace(/\s+/g, ' '),
+              )
               .filter(Boolean)
-          : ['Other'];
+              .map((category) => [
+                category.toLowerCase(),
+                category,
+              ]),
+          ).values(),
+        );
 
       setCategories(
         availableCategories,
