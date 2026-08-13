@@ -107,6 +107,14 @@ type CatalogMatch = {
   reason: string;
 };
 
+type CatalogSearchDish = {
+  dish: CatalogDish;
+  names: Array<{
+    normalized: string;
+    alias: boolean;
+  }>;
+};
+
 type AutoBuildResult = {
   name: string;
   tenantId: string;
@@ -168,22 +176,10 @@ function normalizeReviewText(
     .trim();
 }
 
-function reviewTokens(value: string) {
-  return normalizeReviewText(value)
-    .split(' ')
-    .filter(Boolean);
-}
-
-function scoreCatalogCandidate(
-  input: string,
-  candidate: string,
+function scoreNormalizedCatalogCandidate(
+  left: string,
+  right: string,
 ) {
-  const left =
-    normalizeReviewText(input);
-
-  const right =
-    normalizeReviewText(candidate);
-
   if (!left || !right) {
     return 0;
   }
@@ -206,10 +202,14 @@ function scoreCatalogCandidate(
   }
 
   const leftTokens =
-    new Set(reviewTokens(left));
+    new Set(
+      left.split(' ').filter(Boolean),
+    );
 
   const rightTokens =
-    new Set(reviewTokens(right));
+    new Set(
+      right.split(' ').filter(Boolean),
+    );
 
   if (
     !leftTokens.size ||
@@ -255,7 +255,7 @@ function scoreCatalogCandidate(
 
 function findCatalogMatches(
   dishName: string,
-  catalog: CatalogDish[],
+  catalog: CatalogSearchDish[],
 ): CatalogMatch[] {
   const input =
     normalizeReviewText(
@@ -265,48 +265,36 @@ function findCatalogMatches(
   if (!input) return [];
 
   return catalog
-    .map((dish) => {
-      let bestScore =
-        scoreCatalogCandidate(
+    .map((entry) => {
+      let bestScore = 0;
+      let matchedAlias = false;
+
+      entry.names.forEach((candidate) => {
+        const score = scoreNormalizedCatalogCandidate(
           input,
-          dish.name,
+          candidate.normalized,
         );
 
-      let reason =
-        bestScore === 1
+        if (score > bestScore) {
+          bestScore = score;
+          matchedAlias = candidate.alias;
+        }
+      });
+
+      const reason = matchedAlias
+        ? bestScore === 1
+          ? 'Exact alias'
+          : bestScore >= 0.9
+            ? 'Very similar alias'
+            : 'Similar alias'
+        : bestScore === 1
           ? 'Exact dish name'
           : bestScore >= 0.9
             ? 'Very similar name'
             : 'Similar words';
 
-      for (
-        const alias of
-        dish.aliases ?? []
-      ) {
-        const aliasScore =
-          scoreCatalogCandidate(
-            input,
-            alias,
-          );
-
-        if (
-          aliasScore >
-          bestScore
-        ) {
-          bestScore =
-            aliasScore;
-
-          reason =
-            aliasScore === 1
-              ? 'Exact alias'
-              : aliasScore >= 0.9
-                ? 'Very similar alias'
-                : 'Similar alias';
-        }
-      }
-
       return {
-        dish,
+        dish: entry.dish,
         score:
           bestScore,
         reason,
@@ -409,6 +397,8 @@ export default function NewDishesPage() {
     useState<QueueSort>(
       'PRIORITY',
     );
+  const [visibleLimit, setVisibleLimit] =
+    useState(40);
 
   const [verifications, setVerifications] =
     useState<Record<string, DishVerification>>({});
@@ -430,22 +420,12 @@ export default function NewDishesPage() {
     setMessage('');
 
     try {
-      const [
-        queueResponse,
-        catalogResponse,
-      ] = await Promise.all([
-        fetch(
-          '/api/admin/dish-suggestions',
-          { cache: 'no-store' },
-        ),
-        fetch('/api/admin/dishes', {
-          cache: 'no-store',
-        }),
-      ]);
+      const queueResponse = await fetch(
+        '/api/admin/dish-suggestions?context=1',
+        { cache: 'no-store' },
+      );
       const queueData =
         await queueResponse.json();
-      const catalogData =
-        await catalogResponse.json();
 
       if (!queueResponse.ok) {
         throw new Error(
@@ -454,18 +434,11 @@ export default function NewDishesPage() {
         );
       }
 
-      if (!catalogResponse.ok) {
-        throw new Error(
-          catalogData.error ||
-            'Could not load Dish Catalog',
-        );
-      }
-
       const availableCategories =
         Array.isArray(
-          catalogData.categories,
+          queueData.categories,
         )
-          ? catalogData.categories
+          ? queueData.categories
               .map(String)
               .filter(Boolean)
           : ['Other'];
@@ -474,11 +447,11 @@ export default function NewDishesPage() {
         availableCategories,
       );
       const catalogRows:
-        CatalogDish[] =
+          CatalogDish[] =
           Array.isArray(
-            catalogData.items,
+            queueData.items,
           )
-            ? catalogData.items
+            ? queueData.items
                 .map(
                   (
                     item:
@@ -1356,6 +1329,29 @@ export default function NewDishesPage() {
     }
   }
 
+  const catalogSearchIndex =
+    useMemo<CatalogSearchDish[]>(
+      () =>
+        catalogDishes.map((dish) => ({
+          dish,
+          names: [
+            {
+              normalized: normalizeReviewText(dish.name),
+              alias: false,
+            },
+            ...(dish.aliases ?? []).map((alias) => ({
+              normalized: normalizeReviewText(alias),
+              alias: true,
+            })),
+          ].filter((candidate) => candidate.normalized),
+        })),
+      [catalogDishes],
+    );
+
+  const catalogMatchIdentity = rows
+    .map((row) => `${row.id}:${row.dishName || row.name}`)
+    .join('\u0000');
+
   const catalogMatchMap =
     useMemo(
       () =>
@@ -1366,14 +1362,14 @@ export default function NewDishesPage() {
               findCatalogMatches(
                 row.dishName ||
                   row.name,
-                catalogDishes,
+                catalogSearchIndex,
               ),
             ],
           ),
         ),
       [
-        rows,
-        catalogDishes,
+        catalogMatchIdentity,
+        catalogSearchIndex,
       ],
     );
 
@@ -1471,7 +1467,7 @@ export default function NewDishesPage() {
       ],
     );
 
-  const visibleRows =
+  const filteredRows =
     useMemo(() => {
       const search =
         deferredQuery
@@ -1669,6 +1665,20 @@ export default function NewDishesPage() {
       catalogMatchMap,
       verifications,
     ]);
+
+  useEffect(() => {
+    setVisibleLimit(40);
+  }, [
+    deferredQuery,
+    categoryFilter,
+    reviewFilter,
+    queueSort,
+  ]);
+
+  const visibleRows = useMemo(
+    () => filteredRows.slice(0, visibleLimit),
+    [filteredRows, visibleLimit],
+  );
 
   return (
     <AppShell
@@ -2743,6 +2753,23 @@ export default function NewDishesPage() {
               </article>
             ))}
           </div>
+
+          {visibleRows.length < filteredRows.length ? (
+            <div className="new-dish-load-more">
+              <span>
+                Showing {visibleRows.length} of {filteredRows.length} matching dishes
+              </span>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() =>
+                  setVisibleLimit((current) => current + 40)
+                }
+              >
+                Load 40 more
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {lastAutoBuild ? (

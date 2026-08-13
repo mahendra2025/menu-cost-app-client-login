@@ -9,6 +9,8 @@ import {
 import {
   CATEGORIES,
   DISH_COST_ITEMS,
+  filterDishCatalogByStoredCategories,
+  mergeDishCatalog,
   readDeletedDishCategories,
 } from '../../../../lib/dishCostMaster';
 import { prisma } from '../../../../lib/prisma';
@@ -54,23 +56,109 @@ function readAliases(value: unknown) {
     : [];
 }
 
-export async function GET() {
+export async function GET(
+  request: Request,
+) {
   try {
     const authError =
       await requireAdmin();
     if (authError) return authError;
 
-    const suggestions =
-      await prisma
-        .pendingDishSuggestion
-        .findMany({
-          orderBy: {
-            updatedAt: 'desc',
-          },
-        });
+    const includeContext =
+      new URL(request.url)
+        .searchParams
+        .get('context') === '1';
+
+    if (!includeContext) {
+      const suggestions =
+        await prisma
+          .pendingDishSuggestion
+          .findMany({
+            orderBy: {
+              updatedAt: 'desc',
+            },
+          });
+
+      return NextResponse.json({
+        suggestions,
+      });
+    }
+
+    const [
+      suggestions,
+      storedItems,
+      categoryCatalog,
+    ] = await Promise.all([
+      prisma.pendingDishSuggestion.findMany({
+        orderBy: {
+          updatedAt: 'desc',
+        },
+      }),
+      prisma.dishMasterItem.findMany({
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          subcategory: true,
+          rate: true,
+          servingQuantity: true,
+          servingUnit: true,
+          aliases: true,
+        },
+      }),
+      prisma.dishCategoryCatalog.findUnique({
+        where: { id: CATEGORY_CATALOG_ID },
+        select: {
+          categories: true,
+          subcategories: true,
+        },
+      }),
+    ]);
+
+    const mergedItems = storedItems.length
+      ? mergeDishCatalog(
+          storedItems.map((item) => ({
+            ...item,
+            aliases: readAliases(item.aliases),
+          })),
+        )
+      : DISH_COST_ITEMS;
+    const catalogItems =
+      filterDishCatalogByStoredCategories(
+        mergedItems,
+        categoryCatalog?.categories,
+        readDeletedDishCategories(
+          categoryCatalog?.subcategories,
+        ),
+      );
+    const sourceCategories = Array.isArray(
+      categoryCatalog?.categories,
+    )
+      ? categoryCatalog.categories
+      : CATEGORIES;
+    const categories = Array.from(
+      new Map(
+        [
+          ...sourceCategories.map(String),
+          ...catalogItems.map((item) => item.category),
+          'Other',
+        ]
+          .map((value) => value.trim().replace(/\s+/g, ' '))
+          .filter(Boolean)
+          .map((value) => [value.toLowerCase(), value]),
+      ).values(),
+    );
 
     return NextResponse.json({
       suggestions,
+      categories,
+      items: catalogItems.map((item) => ({
+        name: item.name,
+        category: item.category,
+        rate: item.rate,
+        aliases: item.aliases ?? [],
+      })),
     });
   } catch {
     return NextResponse.json(
