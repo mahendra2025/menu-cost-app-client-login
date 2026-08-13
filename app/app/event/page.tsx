@@ -853,6 +853,9 @@ export default function EventPage() {
   const [photoToCrop, setPhotoToCrop] =
     useState<File | null>(null);
 
+  const [detectCroppedPhoto, setDetectCroppedPhoto] =
+    useState(false);
+
   const [importFunctionName, setImportFunctionName] =
     useState('');
 
@@ -996,6 +999,26 @@ export default function EventPage() {
       );
     }
   }, []);
+
+  useEffect(() => {
+    if (
+      !detectCroppedPhoto ||
+      uploading !== null ||
+      detecting ||
+      !work?.event.rawMenuText.trim()
+    ) {
+      return;
+    }
+
+    setDetectCroppedPhoto(false);
+    void detectAndNext();
+  }, [
+    detectCroppedPhoto,
+    detecting,
+    importFunctionName,
+    uploading,
+    work?.event.rawMenuText,
+  ]);
 
   useEffect(() => {
     function handleDetectionReviewShortcut(
@@ -4955,6 +4978,17 @@ export default function EventPage() {
     };
 
     persistWork(nextWork);
+
+    if (!importFunctionName.trim()) {
+      setImportFunctionName(
+        String(
+          detectedDetails.functionType ||
+          work.event.functionType ||
+          'Event Menu',
+        ),
+      );
+    }
+
     setDetectionPreview(null);
     setSelectedPreviewIds(new Set());
     setDetectedEventDetails(
@@ -5057,6 +5091,11 @@ export default function EventPage() {
         result.text,
         result.sourceLabel,
       );
+
+      setUploadStatus(
+        'Cropped photo read successfully. Detecting dishes now…',
+      );
+      setDetectCroppedPhoto(true);
 
     } catch (uploadError) {
       setUploadStatus('');

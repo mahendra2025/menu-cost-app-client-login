@@ -1530,6 +1530,35 @@ a { color: inherit; text-decoration: none; }
 .menu-crop-handle.bottom-right { transform: translate(-85%, -85%); }
 .menu-crop-hand-tip { display: flex; align-items: center; gap: 7px; margin: 10px 0 0; color: var(--muted); font-size: 11px; }
 .menu-crop-hand-tip span { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; color: #f6b94a; background: rgba(246, 185, 74, .12); font-weight: 900; }
+.menu-crop-zoom {
+  display: grid;
+  grid-template-columns: auto 40px minmax(120px, 1fr) 40px;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-strong);
+}
+.menu-crop-zoom > div { display: grid; min-width: 58px; }
+.menu-crop-zoom b { font-size: 12px; }
+.menu-crop-zoom span { color: var(--muted); font-size: 10px; }
+.menu-crop-zoom button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--panel);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.menu-crop-zoom button:disabled { opacity: .4; cursor: default; }
+.menu-crop-zoom input { width: 100%; accent-color: #f6b94a; }
 .menu-crop-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; margin-top: 16px; }
 .menu-crop-controls label { display: grid; grid-template-columns: 50px 1fr 36px; align-items: center; gap: 8px; font-size: 12px; }
 .menu-crop-controls input { width: 100%; accent-color: #f6b94a; }
@@ -1719,6 +1748,7 @@ a { color: inherit; text-decoration: none; }
   .menu-crop-stage,
   .menu-crop-stage img { max-height: 42vh; }
   .menu-crop-controls { grid-template-columns: 1fr; gap: 8px; }
+  .menu-crop-zoom { grid-template-columns: 54px 42px minmax(80px, 1fr) 42px; }
   .menu-crop-actions { position: sticky; bottom: -16px; margin: 14px -16px -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--panel); }
   .function-import-context { grid-template-columns: 1fr; }
   .event-overview-card { grid-template-columns: 1fr; gap: 18px; padding: 19px; }

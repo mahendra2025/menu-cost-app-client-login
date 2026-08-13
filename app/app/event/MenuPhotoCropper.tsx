@@ -123,6 +123,12 @@ export default function MenuPhotoCropper({
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
   const cropStageRef = useRef<HTMLDivElement>(null);
+  const cropWidth = 100 - crop.left - crop.right;
+  const cropHeight = 100 - crop.top - crop.bottom;
+  const zoom = Math.min(
+    300,
+    Math.max(100, Math.round(10000 / Math.max(cropWidth, cropHeight))),
+  );
 
   useEffect(() => {
     const url = URL.createObjectURL(file);
@@ -146,6 +152,30 @@ export default function MenuPhotoCropper({
         [edge]: Math.min(value, 80 - opposite),
       };
     });
+  }
+
+  function applyZoom(value: number) {
+    const nextZoom = Math.min(300, Math.max(100, value));
+
+    setCrop((current) => {
+      const currentWidth = 100 - current.left - current.right;
+      const currentHeight = 100 - current.top - current.bottom;
+      const scale = zoom / nextZoom;
+      const width = Math.min(100, Math.max(20, currentWidth * scale));
+      const height = Math.min(100, Math.max(20, currentHeight * scale));
+      const centerX = current.left + currentWidth / 2;
+      const centerY = current.top + currentHeight / 2;
+      const left = Math.min(100 - width, Math.max(0, centerX - width / 2));
+      const top = Math.min(100 - height, Math.max(0, centerY - height / 2));
+
+      return {
+        left,
+        right: 100 - width - left,
+        top,
+        bottom: 100 - height - top,
+      };
+    });
+
   }
 
   function beginCropDrag(
@@ -215,6 +245,7 @@ export default function MenuPhotoCropper({
       }
 
       setCrop(next);
+
     }
 
     function stopPointerDrag() {
@@ -243,8 +274,6 @@ export default function MenuPhotoCropper({
       setProcessing(false);
     }
   }
-
-  const hasCrop = Object.values(crop).some((value) => value > 0);
 
   return (
     <div className="menu-crop-backdrop" role="presentation">
@@ -310,6 +339,39 @@ export default function MenuPhotoCropper({
           Drag inside to move. Drag a gold corner to resize.
         </p>
 
+        <div className="menu-crop-zoom">
+          <div>
+            <b>Zoom</b>
+            <span>{zoom}%</span>
+          </div>
+          <button
+            type="button"
+            disabled={processing || zoom <= 100}
+            onClick={() => applyZoom(zoom - 10)}
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <input
+            type="range"
+            min="100"
+            max="300"
+            step="5"
+            value={zoom}
+            disabled={processing}
+            aria-label="Photo crop zoom"
+            onChange={(event) => applyZoom(Number(event.target.value))}
+          />
+          <button
+            type="button"
+            disabled={processing || zoom >= 300}
+            onClick={() => applyZoom(zoom + 10)}
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+        </div>
+
         <div className="menu-crop-controls">
           {(['top', 'bottom', 'left', 'right'] as const).map((edge) => (
             <label key={edge}>
@@ -345,7 +407,7 @@ export default function MenuPhotoCropper({
             disabled={processing}
             onClick={() => void confirmCrop()}
           >
-            {processing ? 'Cropping…' : hasCrop ? 'Crop & scan' : 'Scan photo'}
+            {processing ? 'Saving…' : 'Done'}
           </button>
         </div>
       </section>
