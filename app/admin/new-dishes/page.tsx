@@ -376,6 +376,8 @@ export default function NewDishesPage() {
 
   const [message, setMessage] =
     useState('');
+  const [rowErrors, setRowErrors] =
+    useState<Record<string, string>>({});
   const [messageType, setMessageType] =
     useState<'success' | 'error'>(
       'success',
@@ -537,84 +539,64 @@ export default function NewDishesPage() {
         ).map(
           (
             suggestion: Suggestion,
-          ): EditableSuggestion => ({
-            ...suggestion,
-            dishName:
-              suggestion
-                .canonicalName ||
-              suggestion.name,
-            category:
-              availableCategories.includes(
-                suggestion.suggestedCategory ||
-                  '',
-              )
-                ? (
-                    suggestion.suggestedCategory ||
-                    'Other'
-                  )
-                : availableCategories.includes(
-                    suggestion.categoryHint,
-                  )
-                  ? suggestion.categoryHint
-                  : 'Other',
-
-            subcategory:
-              suggestion.suggestedSubcategory ||
-              '',
-            rate: '',
-
-            saveAs:
-              suggestion
-                .recommendation ===
-                'ALIAS' &&
-              catalogRows.some(
-                (dish) =>
-                  dish.name
-                    .toLowerCase() ===
-                  String(
-                    suggestion
-                      .matchedDishName ||
-                      '',
-                  )
-                    .toLowerCase(),
-              )
-                ? 'alias'
-                : 'new',
-
-            aliasCategory:
-              catalogRows.find(
-                (dish) =>
-                  dish.name
-                    .toLowerCase() ===
-                  String(
-                    suggestion
-                      .matchedDishName ||
-                      '',
-                  )
-                    .toLowerCase(),
-              )?.category ||
-              '',
-
-            aliasTarget:
+          ): EditableSuggestion => {
+            const aliasMatch =
               suggestion
                 .recommendation ===
                 'ALIAS'
-                ? (
-                    catalogRows.find(
-                      (dish) =>
-                        dish.name
-                          .toLowerCase() ===
-                        String(
-                          suggestion
-                            .matchedDishName ||
-                            '',
-                        )
-                          .toLowerCase(),
-                    )?.name ||
-                    ''
+                ? catalogRows.find(
+                    (dish) =>
+                      dish.name
+                        .toLowerCase() ===
+                      String(
+                        suggestion
+                          .matchedDishName ||
+                          '',
+                      ).toLowerCase(),
                   )
-                : '',
-          }),
+                : undefined;
+
+            return {
+              ...suggestion,
+              dishName:
+                aliasMatch
+                  ? suggestion.name
+                  : suggestion
+                      .canonicalName ||
+                    suggestion.name,
+              category:
+                availableCategories.includes(
+                  suggestion.suggestedCategory ||
+                    '',
+                )
+                  ? (
+                      suggestion.suggestedCategory ||
+                      'Other'
+                    )
+                  : availableCategories.includes(
+                      suggestion.categoryHint,
+                    )
+                    ? suggestion.categoryHint
+                    : 'Other',
+
+              subcategory:
+                suggestion.suggestedSubcategory ||
+                '',
+              rate: '',
+
+              saveAs:
+                aliasMatch
+                  ? 'alias'
+                  : 'new',
+
+              aliasCategory:
+                aliasMatch?.category ||
+                '',
+
+              aliasTarget:
+                aliasMatch?.name || '',
+            };
+          },
         ),
       );
       setVerifications({});
@@ -775,14 +757,20 @@ export default function NewDishesPage() {
                       .toLowerCase(),
                 );
 
+              const saveAsAlias =
+                analysis.recommendation ===
+                  'ALIAS' &&
+                Boolean(matched);
+
               return {
                 ...row,
                 ...analysis,
 
                 dishName:
-                  analysis
-                    .canonicalName ||
-                  row.dishName,
+                  saveAsAlias
+                    ? analysis.name
+                    : analysis.canonicalName ||
+                      row.dishName,
 
                 category:
                   suggestedCategory,
@@ -960,6 +948,21 @@ export default function NewDishesPage() {
     row: EditableSuggestion,
     buildRecipe = false,
   ) {
+    const showRowError = (error: string) => {
+      setMessageType('error');
+      setMessage(error);
+      setRowErrors((current) => ({
+        ...current,
+        [row.id]: error,
+      }));
+    };
+
+    setRowErrors((current) => {
+      const next = { ...current };
+      delete next[row.id];
+      return next;
+    });
+
     const verification =
       verifications[row.id];
 
@@ -985,8 +988,7 @@ export default function NewDishesPage() {
       );
 
     if (!row.dishName.trim()) {
-      setMessageType('error');
-      setMessage(
+      showRowError(
         'Enter a dish name.',
       );
       return;
@@ -996,8 +998,7 @@ export default function NewDishesPage() {
       row.saveAs === 'new' &&
       !row.category
     ) {
-      setMessageType('error');
-      setMessage(
+      showRowError(
         'Choose a category.',
       );
       return;
@@ -1010,21 +1011,8 @@ export default function NewDishesPage() {
         !aliasTarget
       )
     ) {
-      setMessageType('error');
-      setMessage(
+      showRowError(
         'Choose the existing Dish Master item for this alias.',
-      );
-      return;
-    }
-
-    if (
-      row.saveAs === 'new' &&
-      !buildRecipe &&
-      !(manualRate > 0)
-    ) {
-      setMessageType('error');
-      setMessage(
-        'Enter a positive dish rate or use Approve + Auto Build.',
       );
       return;
     }
@@ -1308,14 +1296,14 @@ export default function NewDishesPage() {
         );
 
         setMessage(
-          `${row.dishName.trim()} added to Dish Master at ₹${finalRate.toFixed(2)}/plate.`,
+          finalRate > 0
+            ? `${row.dishName.trim()} added to Dish Master at ₹${finalRate.toFixed(2)}/plate.`
+            : `${row.dishName.trim()} added to Dish Master. Rate can be added later.`,
         );
       }
 
     } catch (error) {
-      setMessageType('error');
-
-      setMessage(
+      showRowError(
         error instanceof Error
           ? error.message
           : 'Could not process this dish',
@@ -1426,6 +1414,7 @@ export default function NewDishesPage() {
       row.id,
       {
         saveAs: 'alias',
+        dishName: row.name,
         aliasCategory:
           match.dish.category,
         aliasTarget:
@@ -2524,6 +2513,9 @@ export default function NewDishesPage() {
                       aria-pressed={row.saveAs === 'new'}
                       onClick={() => updateRow(row.id, {
                         saveAs: 'new',
+                        dishName:
+                          row.canonicalName ||
+                          row.dishName,
                         aliasCategory: '',
                         aliasTarget: '',
                       })}
@@ -2536,6 +2528,7 @@ export default function NewDishesPage() {
                       aria-pressed={row.saveAs === 'alias'}
                       onClick={() => updateRow(row.id, {
                         saveAs: 'alias',
+                        dishName: row.name,
                       })}
                     >
                       Alias of Available Dish
@@ -2662,7 +2655,7 @@ export default function NewDishesPage() {
                   </div>
                   <div className="field">
                     <label>
-                      Rate per serving
+                      Rate per serving (optional)
                     </label>
                     <input
                       className="input"
@@ -2683,6 +2676,15 @@ export default function NewDishesPage() {
                   </>
                   )}
                 </div>
+
+                {rowErrors[row.id] ? (
+                  <div
+                    className="admin-message error"
+                    role="alert"
+                  >
+                    {rowErrors[row.id]}
+                  </div>
+                ) : null}
 
                 <div className="new-dish-actions">
                   <span className={
