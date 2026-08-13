@@ -49,7 +49,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-IN" data-theme="dark">
+    <html lang="en-IN" data-theme="dark" data-scroll-behavior="smooth">
       <body>
         {children}
         <ProductAnalyticsTracker />

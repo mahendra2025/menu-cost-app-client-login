@@ -13558,3 +13558,282 @@ small {
     width: 100%;
   }
 }
+
+/* ========================================================================== */
+/* Compact desktop density                                                    */
+/* Keeps the data-heavy workflow readable while showing more work at once.    */
+/* ========================================================================== */
+
+@media (min-width: 861px) {
+  .app-frame.page-shell {
+    padding: 10px 16px 28px;
+  }
+
+  .app-frame {
+    --radius: 16px;
+    --radius-sm: 12px;
+    padding-bottom: 28px;
+  }
+
+  .app-frame .topbar {
+    top: 8px;
+    max-width: 1500px;
+    min-height: 52px;
+    margin-bottom: 12px;
+    padding: 6px 8px 6px 6px;
+    border-radius: 14px;
+  }
+
+  .app-frame .brand-chip {
+    gap: 9px;
+  }
+
+  .app-frame .brand-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    font-size: 12px;
+  }
+
+  .app-frame .brand-copy b {
+    font-size: 13px;
+  }
+
+  .app-frame .brand-copy small {
+    max-width: 220px;
+    font-size: 9px;
+  }
+
+  .app-frame .topbar-actions {
+    gap: 7px;
+  }
+
+  .app-frame .account-status {
+    min-height: 30px;
+    padding: 5px 9px;
+    font-size: 10px;
+  }
+
+  .app-frame .history-shortcut,
+  .app-frame .logout-button {
+    min-height: 34px;
+    padding: 7px 11px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+
+  .app-frame .app-layout {
+    grid-template-columns: 196px minmax(0, 1fr);
+    gap: 14px;
+    max-width: 1500px;
+  }
+
+  .app-frame .app-sidebar {
+    top: 72px;
+    gap: 11px;
+    min-height: calc(100vh - 86px);
+    padding: 12px 10px;
+    border-radius: 16px;
+  }
+
+  .app-frame .sidebar-heading {
+    gap: 3px;
+    padding: 2px 6px 8px;
+  }
+
+  .app-frame .sidebar-heading span {
+    font-size: 8px;
+  }
+
+  .app-frame .sidebar-heading b {
+    font-size: 12px;
+  }
+
+  .app-frame .sidebar-nav {
+    gap: 3px;
+  }
+
+  .app-frame .sidebar-nav a {
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 8px;
+    min-height: 44px;
+    padding: 6px 7px;
+    border-radius: 11px;
+  }
+
+  .app-frame .nav-mark {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+  }
+
+  .app-frame .nav-mark svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .app-frame .nav-copy b {
+    font-size: 11px;
+  }
+
+  .app-frame .nav-copy small {
+    margin-top: 1px;
+    font-size: 8px;
+  }
+
+  .app-frame .sidebar-support {
+    padding: 10px;
+    border-radius: 11px;
+  }
+
+  .app-frame .sidebar-support span {
+    font-size: 9px;
+  }
+
+  .app-frame .sidebar-support p {
+    margin-top: 3px;
+    font-size: 8px;
+    line-height: 1.4;
+  }
+
+  .app-frame .page-title {
+    gap: 16px;
+    margin: 0 auto 10px;
+    padding: 2px;
+  }
+
+  .app-frame .page-eyebrow {
+    font-size: 8px;
+  }
+
+  .app-frame .page-title h1 {
+    margin: 3px 0 2px;
+    font-size: clamp(27px, 2.6vw, 34px);
+  }
+
+  .app-frame .page-title p {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .app-frame .page-progress {
+    gap: 5px;
+    width: 108px;
+    padding-bottom: 2px;
+  }
+
+  .app-frame .page-progress > span {
+    font-size: 8px;
+  }
+
+  .app-frame .page-progress > div {
+    height: 4px;
+  }
+
+  .app-frame .content-grid,
+  .app-frame .form-grid {
+    gap: 12px;
+  }
+
+  .app-frame :where(.glass-card, .panel, .locked-card, .alert-card) {
+    border-radius: 16px;
+  }
+
+  .app-frame :where(.glass-card, .panel) {
+    padding: 16px;
+  }
+
+  .app-frame :where(.input, .textarea, .select) {
+    border-radius: 11px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .app-frame :where(.input-large, .select-large) {
+    min-height: 42px;
+  }
+
+  .app-frame .textarea-large {
+    min-height: 160px;
+  }
+
+  .app-frame .field {
+    gap: 5px;
+  }
+
+  .app-frame .field label {
+    font-size: 11px;
+  }
+
+  .app-frame :where(.primary-button, .secondary-button, .ghost-button, .danger-button) {
+    min-height: 34px;
+    padding: 8px 13px;
+    font-size: 11px;
+  }
+
+  .app-frame .section-kicker {
+    min-height: 26px;
+    margin-bottom: 7px;
+    padding: 5px 9px;
+    font-size: 9px;
+  }
+
+  .app-frame .stat-grid {
+    gap: 10px;
+  }
+
+  .app-frame .stat-card,
+  .app-frame .helper-card,
+  .app-frame .readiness-card {
+    padding: 13px 14px;
+    border-radius: 14px;
+  }
+
+  .app-frame .table-wrap {
+    border-radius: 14px;
+  }
+
+  .app-frame th,
+  .app-frame td {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+
+  .app-frame th {
+    font-size: 9px;
+  }
+
+  .app-frame td {
+    font-size: 11px;
+  }
+
+  .app-frame .cost-add-dish-form {
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: 13px;
+  }
+
+  .app-frame .menu-source-compare {
+    padding: 11px;
+  }
+
+  .app-frame .menu-source-detected-list {
+    margin-top: 8px !important;
+  }
+
+  .app-frame .menu-source-detected-item.menu-compare-editable {
+    margin-bottom: 6px;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1080px) {
+  .app-frame .app-layout {
+    grid-template-columns: 170px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .app-frame .sidebar-nav a {
+    grid-template-columns: 26px minmax(0, 1fr);
+  }
+}
