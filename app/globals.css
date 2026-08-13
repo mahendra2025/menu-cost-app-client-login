@@ -12632,3 +12632,186 @@ p b {
       repeat(2,minmax(0,1fr));
   }
 }
+
+/* ========================================================================== */
+/* V22 — Smart Compare Editor                                                 */
+/* ========================================================================== */
+
+/*
+ * Final UX:
+ *
+ * Original Menu | Detected Menu
+ *
+ * No secondary detection workflow.
+ */
+.menu-detection-preview
+> .menu-preview-actions
+.secondary-button,
+.menu-detection-preview
+> .menu-preview-actions
+.menu-preview-cancel {
+  display: none !important;
+}
+
+.menu-detection-preview
+> .menu-preview-actions {
+  grid-template-columns:
+    minmax(0,1fr)
+    auto !important;
+}
+
+
+/* Make the final action dominant */
+
+.menu-detection-preview
+> .menu-preview-actions
+.primary-button {
+  min-width: 170px;
+  min-height: 44px;
+  padding-inline: 18px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+
+/* Category + meal selectors */
+
+.menu-compare-dish-meta {
+  display: grid;
+  grid-template-columns:
+    minmax(120px, .8fr)
+    minmax(150px, 1fr);
+  gap: 6px;
+  align-items: center;
+  max-width: 420px;
+}
+
+.menu-compare-dish-meta
+> select {
+  width: 100%;
+  max-width: none;
+}
+
+.menu-compare-function-select {
+  min-height: 29px;
+  padding:
+    4px
+    25px
+    4px
+    8px;
+  border:
+    1px solid
+    rgba(255,255,255,.09);
+  border-radius: 8px;
+  outline: 0;
+  color: #b8c2cf;
+  background: #151a22;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.menu-compare-function-select:hover {
+  border-color:
+    rgba(74,156,255,.3);
+}
+
+.menu-compare-function-select:focus {
+  border-color:
+    rgba(74,156,255,.5);
+}
+
+.menu-compare-dish-meta
+> small {
+  grid-column: 1 / -1;
+}
+
+
+/* Stronger left/right identity */
+
+.menu-source-compare-panel-head {
+  min-height: 56px;
+}
+
+.menu-source-compare-panel:first-child
+.menu-source-compare-panel-head
+span {
+  color: #a4afbe;
+}
+
+.menu-source-compare-panel:last-child
+.menu-source-compare-panel-head
+span {
+  color: #7daeff;
+}
+
+.menu-source-compare-panel:last-child {
+  border-color:
+    rgba(74,156,255,.15);
+}
+
+
+/* Editable rows are clearly interactive */
+
+.menu-source-detected-item
+.menu-compare-editable {
+  position: relative;
+}
+
+.menu-source-detected-item
+.menu-compare-editable::before {
+  content: "";
+  position: absolute;
+  inset-block: 10px;
+  left: 0;
+  width: 2px;
+  border-radius: 999px;
+  background:
+    rgba(61,220,132,.65);
+}
+
+.menu-source-detected-item
+.menu-compare-editable.attention::before {
+  background:
+    #ffad42;
+}
+
+
+/* Add dish remains very visible */
+
+.menu-compare-add-toggle {
+  min-height: 38px;
+  padding-inline: 13px;
+}
+
+
+/* Mobile */
+
+@media (max-width: 760px) {
+  .menu-compare-dish-meta {
+    grid-template-columns: 1fr;
+    max-width: none;
+  }
+
+  .menu-compare-dish-meta
+  > small {
+    grid-column: 1;
+  }
+
+  .menu-compare-function-select {
+    min-height: 35px;
+  }
+
+  .menu-detection-preview
+  > .menu-preview-actions {
+    grid-template-columns:
+      1fr !important;
+  }
+
+  .menu-detection-preview
+  > .menu-preview-actions
+  .primary-button {
+    width: 100%;
+    min-height: 49px;
+  }
+}

@@ -1613,6 +1613,123 @@ export default function EventPage() {
     setError('');
   }
 
+  function quickMoveDetectionFunction(
+    item: MenuItem,
+    nextGroupKey: string,
+  ) {
+    if (
+      !detectionPreview ||
+      item.coverageStatus ===
+        'REJECTED' ||
+      detectionGroupKeyForItem(
+        item,
+      ) ===
+        nextGroupKey
+    ) {
+      return;
+    }
+
+    const target =
+      detectionPreview.menu.find(
+        (candidate) =>
+          detectionGroupKeyForItem(
+            candidate,
+          ) ===
+          nextGroupKey,
+      );
+
+    if (!target) {
+      return;
+    }
+
+    setDetectionPreview(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              menu:
+                current.menu.map(
+                  (menuItem) =>
+                    menuItem.id ===
+                    item.id
+                      ? {
+                          ...menuItem,
+
+                          serviceId:
+                            target.serviceId,
+
+                          dayLabel:
+                            target.dayLabel,
+
+                          mealLabel:
+                            target.mealLabel,
+
+                          servicePax:
+                            target.servicePax,
+
+                          detectionSource:
+                            'manual',
+
+                          detectionConfidence:
+                            100,
+
+                          detectionReason:
+                            'User corrected the detected dish meal/function',
+                        }
+                      : menuItem,
+                ),
+            }
+          : current,
+    );
+
+    setSelectedPreviewIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          item.id,
+        );
+
+        return next;
+      },
+    );
+
+    void trackProductEvent(
+      'menu_detection_review_action',
+      {
+        action:
+          'quick_function_change',
+
+        dish:
+          item.name,
+
+        from:
+          [
+            item.dayLabel,
+            item.mealLabel,
+          ]
+            .filter(Boolean)
+            .join(
+              ' • ',
+            ),
+
+        to:
+          [
+            target.dayLabel,
+            target.mealLabel,
+          ]
+            .filter(Boolean)
+            .join(
+              ' • ',
+            ),
+      },
+    );
+
+    setError('');
+  }
+
   function quickChangeDetectionCategory(
     item: MenuItem,
     nextCategory: Category,
@@ -5138,6 +5255,15 @@ export default function EventPage() {
         'REJECTED',
     );
 
+  const sourceCompareAttentionCount =
+    sourceCompareDetectedItems.filter(
+      (item) =>
+        detectionNeedsReview(
+          item,
+        ),
+    ).length +
+    sourceComparePossibleMissedCount;
+
   const normalizedDetectionSearch =
     dishNameKey(
       detectionSearch,
@@ -6470,7 +6596,9 @@ Gulab Jamun`}
                         </strong>
 
                         <small>
-                          Original menu is your reference. Edit the detected menu directly on the right before using it.
+                          {sourceCompareAttentionCount > 0
+                            ? `${sourceCompareAttentionCount} item${sourceCompareAttentionCount === 1 ? '' : 's'} need attention. Compare the original on the left and fix the detected menu on the right.`
+                            : 'Everything looks ready. Compare once, then use this menu.'}
                         </small>
                       </div>
 
@@ -6543,7 +6671,7 @@ Gulab Jamun`}
                             </span>
 
                             <strong>
-                              Menu source
+                              Original Menu
                             </strong>
                           </div>
 
@@ -6653,7 +6781,7 @@ Gulab Jamun`}
                             </span>
 
                             <strong>
-                              Final dish list
+                              Detected Menu
                             </strong>
                           </div>
 
@@ -6978,6 +7106,45 @@ Gulab Jamun`}
                                             ),
                                           )}
                                         </select>
+
+                                        {detectionFunctionOptions.length >
+                                        1 ? (
+                                          <select
+                                            className="menu-compare-function-select"
+                                            value={
+                                              detectionGroupKeyForItem(
+                                                item,
+                                              )
+                                            }
+                                            onChange={(event) =>
+                                              quickMoveDetectionFunction(
+                                                item,
+                                                event.target
+                                                  .value,
+                                              )
+                                            }
+                                            aria-label={`Function for ${item.name}`}
+                                          >
+                                            {detectionFunctionOptions.map(
+                                              (
+                                                option,
+                                              ) => (
+                                                <option
+                                                  key={
+                                                    option.key
+                                                  }
+                                                  value={
+                                                    option.key
+                                                  }
+                                                >
+                                                  {
+                                                    option.label
+                                                  }
+                                                </option>
+                                              ),
+                                            )}
+                                          </select>
+                                        ) : null}
 
                                         {(item.dayLabel ||
                                           item.mealLabel) ? (
@@ -9325,11 +9492,7 @@ Gulab Jamun`}
                     }
                     disabled={!selectedPreviewMenu.length || !detectionReviewGateReady}
                   >
-                    {!detectionReviewGateReady
-                      ? 'Finish Detection Review'
-                      : work.menu.length > 0
-                        ? 'Replace Current Menu'
-                        : 'Use Detected Menu'}
+                    Use This Menu
                   </button>
                   <button
                     className="menu-preview-cancel"
