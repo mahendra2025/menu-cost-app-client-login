@@ -9868,6 +9868,59 @@ main {
     ) !important;
 }
 
+.admin-theme .new-dish-match {
+  color: #f5f7fa;
+  border-color: #2b3440;
+  background: #151a22;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .14);
+}
+
+.admin-theme .new-dish-match:hover {
+  border-color: #3b4655;
+  background: #181f29;
+}
+
+.admin-theme .new-dish-match-score {
+  color: #8bc0ff;
+  border: 1px solid rgba(74, 156, 255, .2);
+  background: #101d2c;
+}
+
+.admin-theme .new-dish-match-score span {
+  color: #8492a6;
+}
+
+.admin-theme .new-dish-match-copy strong {
+  color: #f2f5f9;
+}
+
+.admin-theme .new-dish-match-copy span {
+  color: #8f9aaa;
+}
+
+.admin-theme .new-dish-match .ghost-button {
+  color: #c2cad5 !important;
+  border-color: #37414e !important;
+  background: #202630 !important;
+}
+
+.admin-theme .new-dish-match .ghost-button:hover {
+  color: #fff !important;
+  border-color: #4a5666 !important;
+  background: #29313c !important;
+}
+
+.admin-theme .new-dish-match .primary-button {
+  color: #fff !important;
+  border-color: rgba(74, 156, 255, .42) !important;
+  background: #257df1 !important;
+}
+
+.admin-theme .new-dish-match :is(.primary-button, .ghost-button):focus-visible {
+  outline: 2px solid #8bc0ff;
+  outline-offset: 2px;
+}
+
 .new-dish-verification {
   background:
     rgba(10,132,255,.055)
