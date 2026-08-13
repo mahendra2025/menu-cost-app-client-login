@@ -5011,6 +5011,23 @@ export default function EventPage() {
     );
   }
 
+  async function scoreExtractedMenu(
+    text: string,
+  ) {
+    const [
+      catalogDishes,
+      possibleNewDishes,
+    ] = await Promise.all([
+      parseMenuText(text),
+      findPendingDishCandidates(text),
+    ]);
+
+    return (
+      catalogDishes.length * 1000 +
+      possibleNewDishes.length * 100
+    );
+  }
+
   async function readPdf(
     file: File,
   ) {
@@ -5032,6 +5049,7 @@ export default function EventPage() {
         await extractPdfMenu(
           file,
           setUploadStatus,
+          scoreExtractedMenu,
         );
 
       saveExtractedMenu(
@@ -5075,31 +5093,7 @@ export default function EventPage() {
         await extractMenuPhoto(
           file,
           setUploadStatus,
-
-          async (
-            text,
-          ) => {
-            const [
-              catalogDishes,
-              possibleNewDishes,
-            ] =
-              await Promise.all([
-                parseMenuText(
-                  text,
-                ),
-
-                findPendingDishCandidates(
-                  text,
-                ),
-              ]);
-
-            return (
-              catalogDishes.length *
-                1000 +
-              possibleNewDishes.length *
-                100
-            );
-          },
+          scoreExtractedMenu,
         );
 
       saveExtractedMenu(

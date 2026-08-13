@@ -465,6 +465,8 @@ export async function extractPdfMenu(
   file: File,
   onStatus:
     StatusCallback,
+  catalogBoost?:
+    CatalogBoostCallback,
 ): Promise<MenuUploadExtraction> {
   if (
     file.size >
@@ -635,6 +637,11 @@ export async function extractPdfMenu(
             pageNumber,
           );
 
+      const baseViewport =
+        page.getViewport({
+          scale: 1,
+        });
+
       const content =
         await page
           .getTextContent();
@@ -659,6 +666,10 @@ export async function extractPdfMenu(
       let pageText =
         reconstructPdfMenuText(
           textItems,
+          {
+            pageWidth:
+              baseViewport.width,
+          },
         );
 
       if (
@@ -671,11 +682,6 @@ export async function extractPdfMenu(
           pageNumber;
 
         try {
-          const baseViewport =
-            page.getViewport({
-              scale: 1,
-            });
-
           const scale =
             Math.min(
               2.4,
@@ -725,28 +731,89 @@ export async function extractPdfMenu(
             const worker =
               await getWorker();
 
-            const result =
+            onStatus(
+              `Scanning PDF page ${pageNumber} with sparse-text recognition...`,
+            );
+
+            const sparseResult =
               await worker
                 .recognize(
                   canvas,
                 );
 
-            const ocrText =
-              result
-                .data
-                .text
-                .replace(
-                  /\u0000/g,
-                  '',
-                )
-                .trim();
+            const { PSM } =
+              await import(
+                'tesseract.js'
+              );
 
-            if (ocrText) {
-              pageText =
-                ocrText;
+            onStatus(
+              `Checking PDF page ${pageNumber} with automatic layout recognition...`,
+            );
 
-              ocrPageCount +=
-                1;
+            await worker.setParameters({
+              tessedit_pageseg_mode:
+                PSM.AUTO,
+            });
+
+            const automaticResult =
+              await worker.recognize(
+                canvas,
+              );
+
+            await worker.setParameters({
+              tessedit_pageseg_mode:
+                PSM.SPARSE_TEXT,
+            });
+
+            const ocrResults = [
+              sparseResult,
+              automaticResult,
+            ].map((result) => ({
+              text: result.data.text
+                .replace(/\u0000/g, '')
+                .trim(),
+              confidence:
+                result.data.confidence,
+            })).filter((result) => result.text);
+
+            const bestOcr = ocrResults.sort(
+              (left, right) =>
+                ocrResultScore(right.text, right.confidence) -
+                ocrResultScore(left.text, left.confidence),
+            )[0];
+
+            if (bestOcr) {
+              onStatus(
+                `Validating PDF page ${pageNumber} against the dish catalog...`,
+              );
+
+              const [nativeBoost, ocrBoost] =
+                await Promise.all([
+                  catalogBoost
+                    ? catalogBoost(pageText)
+                    : Promise.resolve(0),
+                  catalogBoost
+                    ? catalogBoost(bestOcr.text)
+                    : Promise.resolve(0),
+                ]);
+
+              const nativeScore =
+                nativeBoost +
+                ocrResultScore(
+                  pageText,
+                  pageText ? 45 : 0,
+                );
+              const ocrScore =
+                ocrBoost +
+                ocrResultScore(
+                  bestOcr.text,
+                  bestOcr.confidence,
+                );
+
+              if (ocrScore > nativeScore) {
+                pageText = bestOcr.text;
+                ocrPageCount += 1;
+              }
             }
           } finally {
             canvas.width =

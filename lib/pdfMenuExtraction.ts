@@ -24,6 +24,17 @@ type TextLine = {
   items: PositionedText[];
 };
 
+type TextSegment = {
+  text: string;
+  x: number;
+  endX: number;
+  y: number;
+};
+
+export type PdfMenuReconstructionOptions = {
+  pageWidth?: number;
+};
+
 function cleanFragment(value: string) {
   return String(value || '')
     .normalize('NFKC')
@@ -101,6 +112,149 @@ function fallbackText(
     .trim();
 }
 
+function lineSegments(
+  line: TextLine,
+): TextSegment[] {
+  const row = [...line.items].sort(
+    (left, right) =>
+      left.x - right.x ||
+      left.sourceIndex - right.sourceIndex,
+  );
+  const output: TextSegment[] = [];
+  let currentText = '';
+  let currentX = 0;
+  let currentEndX = 0;
+  let previous: PositionedText | undefined;
+
+  function commit() {
+    if (!currentText.trim()) return;
+    output.push({
+      text: currentText.trim(),
+      x: currentX,
+      endX: currentEndX,
+      y: line.y,
+    });
+  }
+
+  for (const item of row) {
+    if (!previous) {
+      currentText = item.text;
+      currentX = item.x;
+      currentEndX = item.endX;
+      previous = item;
+      continue;
+    }
+
+    const gap = item.x - previous.endX;
+    const columnGap = Math.max(
+      26,
+      Math.max(previous.height, item.height) * 2.4,
+    );
+
+    if (previous.hasEOL || gap > columnGap) {
+      commit();
+      currentText = item.text;
+      currentX = item.x;
+      currentEndX = item.endX;
+    } else {
+      currentText += `${needsSpace(previous, item, gap) ? ' ' : ''}${item.text}`;
+      currentEndX = Math.max(currentEndX, item.endX);
+    }
+
+    previous = item;
+  }
+
+  commit();
+  return output;
+}
+
+function reconstructColumnMajor(
+  segmentsByLine: TextSegment[][],
+  pageWidth: number,
+) {
+  const multiColumnRows = segmentsByLine.filter(
+    (segments) => segments.length >= 2,
+  );
+
+  if (multiColumnRows.length < 3) return '';
+
+  const starts = multiColumnRows
+    .flat()
+    .map((segment) => segment.x)
+    .sort((left, right) => left - right);
+  const tolerance = Math.max(24, pageWidth * 0.075);
+  const clusters: Array<{ x: number; count: number }> = [];
+
+  starts.forEach((x) => {
+    const cluster = clusters.find(
+      (candidate) => Math.abs(candidate.x - x) <= tolerance,
+    );
+
+    if (!cluster) {
+      clusters.push({ x, count: 1 });
+      return;
+    }
+
+    cluster.x =
+      (cluster.x * cluster.count + x) /
+      (cluster.count + 1);
+    cluster.count += 1;
+  });
+
+  const anchors = clusters
+    .filter((cluster) => cluster.count >= 3)
+    .sort((left, right) => left.x - right.x)
+    .reduce<Array<{ x: number; count: number }>>(
+      (kept, cluster) => {
+        const previous = kept.at(-1);
+        if (
+          previous &&
+          cluster.x - previous.x < pageWidth * 0.16
+        ) {
+          if (cluster.count > previous.count) {
+            kept[kept.length - 1] = cluster;
+          }
+          return kept;
+        }
+
+        kept.push(cluster);
+        return kept;
+      },
+      [],
+    )
+    .slice(0, 3);
+
+  if (anchors.length < 2) return '';
+
+  const columns = anchors.map(() => [] as TextSegment[]);
+
+  segmentsByLine.flat().forEach((segment) => {
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    anchors.forEach((anchor, index) => {
+      const distance = Math.abs(anchor.x - segment.x);
+      if (distance < closestDistance) {
+        closestIndex = index;
+        closestDistance = distance;
+      }
+    });
+
+    columns[closestIndex].push(segment);
+  });
+
+  if (columns.some((column) => column.length < 3)) return '';
+
+  return columns
+    .map((column) =>
+      column
+        .sort((left, right) => right.y - left.y || left.x - right.x)
+        .map((segment) => segment.text)
+        .join('\n'),
+    )
+    .join('\n\n');
+}
+
 /**
  * Reconstructs menu text from PDF coordinates instead of trusting the raw
  * content-stream order. Large horizontal gaps become line breaks so two
@@ -108,6 +262,7 @@ function fallbackText(
  */
 export function reconstructPdfMenuText(
   items: PdfMenuTextItem[],
+  options: PdfMenuReconstructionOptions = {},
 ) {
   const positioned = items.flatMap(
     (item, sourceIndex) => {
@@ -218,75 +373,23 @@ export function reconstructPdfMenuText(
     }
   }
 
-  return lines
-    .sort(
-      (left, right) =>
-        right.y - left.y,
-    )
-    .flatMap((line) => {
-      const row = [...line.items].sort(
-        (left, right) =>
-          left.x - right.x ||
-          left.sourceIndex -
-            right.sourceIndex,
-      );
-      const output: string[] = [];
-      let currentLine = '';
-      let previous:
-        | PositionedText
-        | undefined;
+  const sortedLines = lines.sort(
+    (left, right) => right.y - left.y,
+  );
+  const segmentsByLine = sortedLines.map(lineSegments);
+  const detectedPageWidth = Math.max(
+    Number(options.pageWidth) || 0,
+    ...positioned.map((item) => item.endX),
+  );
+  const columnMajorText = reconstructColumnMajor(
+    segmentsByLine,
+    detectedPageWidth,
+  );
 
-      for (const item of row) {
-        if (!previous) {
-          currentLine = item.text;
-          previous = item;
-          continue;
-        }
-
-        const gap =
-          item.x - previous.endX;
-        const columnGap = Math.max(
-          26,
-          Math.max(
-            previous.height,
-            item.height,
-          ) * 2.4,
-        );
-
-        if (
-          previous.hasEOL ||
-          gap > columnGap
-        ) {
-          if (currentLine.trim()) {
-            output.push(
-              currentLine.trim(),
-            );
-          }
-          currentLine = item.text;
-        } else {
-          currentLine += `${
-            needsSpace(
-              previous,
-              item,
-              gap,
-            )
-              ? ' '
-              : ''
-          }${item.text}`;
-        }
-
-        previous = item;
-      }
-
-      if (currentLine.trim()) {
-        output.push(
-          currentLine.trim(),
-        );
-      }
-
-      return output;
-    })
-    .join('\n')
+  return (columnMajorText || segmentsByLine
+    .flat()
+    .map((segment) => segment.text)
+    .join('\n'))
     .replace(/[ \t]+\n/g, '\n')
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
@@ -314,11 +417,18 @@ export function pdfPageNeedsOcr(
     normalized.match(
       /[\uFFFD\uE000-\uF8FF]/gu,
     )?.length || 0;
+  const singleCharacterLines = normalized
+    .split('\n')
+    .map((line) => line.replace(/[^\p{L}\p{N}]/gu, ''))
+    .filter((line) => line.length === 1)
+    .length;
 
   return (
     textItemCount < 3 ||
     letters < 35 ||
     lines < 2 ||
+    (textItemCount > 20 && lines < 4) ||
+    singleCharacterLines > Math.max(3, lines * 0.35) ||
     (visibleCharacters > 0 &&
       letters / visibleCharacters <
         0.35) ||
