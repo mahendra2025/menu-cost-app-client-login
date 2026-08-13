@@ -405,7 +405,66 @@ export default function HistoryPage() {
     <AppShell title="History" subtitle="Drafts, completed costings and reusable event records" hidePageTitle>
       <section className="hist-page">
         <style>{`
-          .hist-page{display:grid;gap:14px}.hist-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;padding:20px 2px 8px}.hist-kicker{color:#78b5ff;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.hist-hero h1{margin:7px 0 6px;font-size:clamp(32px,4vw,48px);line-height:1;letter-spacing:-.05em}.hist-hero p{max-width:700px;margin:0;color:#8793a3;font-size:11px;line-height:1.55}.hist-new{min-height:44px;padding:0 16px;border:0;border-radius:11px;color:white;background:#1478f2;font:inherit;font-size:10px;font-weight:900;cursor:pointer}.hist-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.hist-stat{padding:15px;border:1px solid #282f39;border-radius:15px;background:#10151c}.hist-stat small,.hist-stat strong,.hist-stat span{display:block}.hist-stat small{color:#6f7b8b;font-size:8px;font-weight:850;text-transform:uppercase}.hist-stat strong{margin:6px 0 3px;font-size:22px}.hist-stat span{color:#5f6b7a;font-size:7px}.hist-alert{display:flex;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid rgba(255,173,66,.23);border-radius:11px;color:#ffc16b;background:rgba(255,173,66,.07);font-size:9px}.hist-alert a{color:white;font-weight:900}.hist-toolbar{display:grid;grid-template-columns:1fr auto auto;gap:8px;padding:12px;border:1px solid #282f39;border-radius:15px;background:#10151c}.hist-input{min-height:40px;padding:0 11px;border:1px solid #303844;border-radius:10px;outline:0;color:#e9edf3;background:#151b23;font:inherit;font-size:9px;color-scheme:dark}.hist-tabs{display:flex;gap:4px;overflow:auto;padding:4px;border:1px solid #252c35;border-radius:11px;background:#0d1117}.hist-tabs button{min-height:34px;padding:0 10px;border:0;border-radius:8px;color:#758191;background:transparent;font:inherit;font-size:8px;font-weight:850;cursor:pointer;white-space:nowrap}.hist-tabs button.active{color:#eaf1f8;background:#242c36}.hist-list{display:grid;gap:8px}.hist-row{display:grid;grid-template-columns:minmax(220px,1.2fr) repeat(3,minmax(95px,.5fr)) auto;gap:12px;align-items:center;padding:13px;border:1px solid #272e38;border-radius:14px;background:#0e1319}.hist-main{min-width:0}.hist-title{display:flex;align-items:center;gap:7px}.hist-main b,.hist-main span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hist-main b{font-size:11px}.hist-main>span{margin-top:4px;color:#758191;font-size:8px}.hist-chip{padding:4px 6px;border-radius:999px;color:#8fc2ff;background:rgba(74,156,255,.1);font-size:6px;font-weight:900}.hist-chip.draft{color:#ffc16b;background:rgba(255,173,66,.1)}.hist-chip.archived{color:#a3adba;background:#202731}.hist-metric small,.hist-metric b{display:block}.hist-metric small{color:#606c7c;font-size:7px;text-transform:uppercase}.hist-metric b{margin-top:4px;color:#c7d0da;font-size:10px}.hist-actions{display:flex;gap:5px}.hist-action{min-height:33px;padding:0 9px;border:1px solid #303844;border-radius:8px;color:#aeb8c5;background:#151b23;font:inherit;font-size:7px;font-weight:850;cursor:pointer}.hist-action.primary{color:#8fc2ff;background:rgba(74,156,255,.08)}.hist-action.danger{color:#ff8d86;background:rgba(255,98,89,.06)}.hist-action:disabled{opacity:.5;cursor:wait}.hist-empty{display:grid;min-height:250px;place-items:center;align-content:center;gap:6px;border:1px dashed #303844;border-radius:15px;color:#697585;background:#0d1117;font-size:9px;text-align:center}.hist-empty b{color:#c8d1dc;font-size:12px}@media(max-width:1050px){.hist-row{grid-template-columns:1fr 1fr 1fr}.hist-main{grid-column:1/-1}.hist-actions{grid-column:1/-1;justify-content:flex-start}}@media(max-width:720px){.hist-hero{align-items:stretch;flex-direction:column}.hist-new{width:100%}.hist-stats{grid-template-columns:1fr 1fr}.hist-toolbar{grid-template-columns:1fr}.hist-row{grid-template-columns:1fr 1fr}.hist-actions{display:grid;grid-template-columns:1fr 1fr}.hist-action{width:100%}.hist-alert{flex-direction:column}}
+          .hist-page { display: grid; gap: 14px; }
+          .hist-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 18px 2px 8px; }
+          .hist-kicker { color: #78b5ff; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+          .hist-hero h1 { margin: 7px 0 6px; font-size: clamp(32px, 4vw, 46px); line-height: 1; letter-spacing: -.05em; }
+          .hist-hero p { max-width: 700px; margin: 0; color: #929dac; font-size: 13px; line-height: 1.55; }
+          .hist-new { min-height: 44px; padding: 0 16px; border: 0; border-radius: 11px; color: #fff; background: #1478f2; font: inherit; font-size: 12px; font-weight: 900; cursor: pointer; }
+          .hist-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+          .hist-stat { padding: 15px; border: 1px solid #282f39; border-radius: 15px; background: #10151c; }
+          .hist-stat small, .hist-stat strong, .hist-stat span { display: block; }
+          .hist-stat small { color: #8390a0; font-size: 9px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
+          .hist-stat strong { margin: 6px 0 3px; font-size: 22px; }
+          .hist-stat span { color: #7d8998; font-size: 10px; }
+          .hist-alert { display: flex; justify-content: space-between; gap: 12px; padding: 12px 13px; border: 1px solid rgba(255,173,66,.23); border-radius: 11px; color: #ffc16b; background: rgba(255,173,66,.07); font-size: 11px; line-height: 1.45; }
+          .hist-alert a { color: #fff; font-weight: 900; }
+          .hist-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto; gap: 8px; padding: 12px; border: 1px solid #282f39; border-radius: 15px; background: #10151c; }
+          .hist-input { min-height: 42px; padding: 0 12px; border: 1px solid #303844; border-radius: 10px; outline: 0; color: #e9edf3; background: #151b23; font: inherit; font-size: 13px; color-scheme: dark; }
+          .hist-input:focus { border-color: rgba(74,156,255,.58); box-shadow: 0 0 0 3px rgba(74,156,255,.1); }
+          .hist-tabs { display: flex; gap: 4px; overflow: auto; padding: 4px; border: 1px solid #252c35; border-radius: 11px; background: #0d1117; }
+          .hist-tabs button { min-height: 34px; padding: 0 10px; border: 0; border-radius: 8px; color: #919cab; background: transparent; font: inherit; font-size: 10px; font-weight: 850; cursor: pointer; white-space: nowrap; }
+          .hist-tabs button.active { color: #eaf1f8; background: #242c36; }
+          .hist-list { display: grid; gap: 8px; }
+          .hist-row { display: grid; grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(95px, .5fr)) auto; gap: 12px; align-items: center; padding: 14px; border: 1px solid #272e38; border-radius: 14px; background: #0e1319; }
+          .hist-main { min-width: 0; }
+          .hist-title { display: flex; align-items: center; gap: 7px; }
+          .hist-main b, .hist-main span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .hist-main b { font-size: 13px; }
+          .hist-main > span { margin-top: 4px; color: #8a96a5; font-size: 10px; }
+          .hist-chip { padding: 4px 7px; border-radius: 999px; color: #8fc2ff; background: rgba(74,156,255,.1); font-size: 8px; font-weight: 900; }
+          .hist-chip.draft { color: #ffc16b; background: rgba(255,173,66,.1); }
+          .hist-chip.archived { color: #a3adba; background: #202731; }
+          .hist-metric small, .hist-metric b { display: block; }
+          .hist-metric small { color: #7e8a9a; font-size: 8px; letter-spacing: .04em; text-transform: uppercase; }
+          .hist-metric b { margin-top: 4px; color: #d3dbe5; font-size: 12px; }
+          .hist-actions { display: flex; gap: 5px; }
+          .hist-action { min-height: 36px; padding: 0 10px; border: 1px solid #303844; border-radius: 8px; color: #bec7d2; background: #151b23; font: inherit; font-size: 10px; font-weight: 850; cursor: pointer; }
+          .hist-action.primary { color: #8fc2ff; background: rgba(74,156,255,.08); }
+          .hist-action.danger { color: #ff8d86; background: rgba(255,98,89,.06); }
+          .hist-action:disabled { opacity: .5; cursor: wait; }
+          .hist-empty { display: grid; min-height: 250px; place-items: center; align-content: center; gap: 6px; border: 1px dashed #303844; border-radius: 15px; color: #8793a2; background: #0d1117; font-size: 11px; text-align: center; }
+          .hist-empty b { color: #d3dbe5; font-size: 14px; }
+          @media (max-width: 1050px) {
+            .hist-row { grid-template-columns: 1fr 1fr 1fr; }
+            .hist-main { grid-column: 1 / -1; }
+            .hist-actions { grid-column: 1 / -1; justify-content: flex-start; }
+          }
+          @media (max-width: 720px) {
+            .hist-page { gap: 10px; }
+            .hist-hero { align-items: stretch; flex-direction: column; gap: 12px; padding-top: 10px; }
+            .hist-hero h1 { font-size: 28px; }
+            .hist-hero p { font-size: 12px; }
+            .hist-new { width: 100%; }
+            .hist-stats { grid-template-columns: 1fr 1fr; gap: 7px; }
+            .hist-stat { padding: 11px; border-radius: 12px; }
+            .hist-toolbar { grid-template-columns: 1fr; padding: 9px; border-radius: 12px; }
+            .hist-input { min-height: 44px; font-size: 16px; }
+            .hist-row { grid-template-columns: 1fr 1fr; padding: 11px; }
+            .hist-actions { display: grid; grid-template-columns: 1fr 1fr; }
+            .hist-action { width: 100%; min-height: 40px; font-size: 11px; }
+            .hist-alert { flex-direction: column; }
+          }
         `}</style>
 
         <div className="hist-hero">

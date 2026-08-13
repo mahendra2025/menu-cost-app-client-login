@@ -86,19 +86,32 @@ export default function AppShell({
   const isAdmin = session?.role === 'ADMIN';
   const isIngredientIndex = !isAdmin && pathname === '/app/ingredients';
   const isHistory = !isAdmin && pathname === '/app/history';
+  const isQuotation = !isAdmin && pathname === '/app/quotation';
   const directActiveIndex = nav.findIndex((item) => item.href === pathname);
   const profileIndex = nav.findIndex((item) => item.href === '/app/profile');
-  const activeIndex = directActiveIndex >= 0
-    ? directActiveIndex
-    : isIngredientIndex && profileIndex >= 0
-      ? profileIndex
-      : 0;
-  const activeItem = isHistory
-    ? { mobileLabel: 'History' }
-    : isIngredientIndex
-      ? { mobileLabel: 'Ingredients' }
-      : nav[activeIndex];
+  const finalCostingIndex = nav.findIndex((item) => item.href === '/app/final-costing');
+  const activeIndex =
+    directActiveIndex >= 0
+      ? directActiveIndex
+      : isQuotation && finalCostingIndex >= 0
+        ? finalCostingIndex
+        : isIngredientIndex && profileIndex >= 0
+          ? profileIndex
+          : 0;
+  const activeItem =
+    isHistory
+      ? { mobileLabel: 'History' }
+      : isQuotation
+        ? { mobileLabel: 'Quote' }
+        : isIngredientIndex
+          ? { mobileLabel: 'Ingredients' }
+          : nav[activeIndex];
   const progress = isAdmin ? 100 : ((activeIndex + 1) / clientNav.length) * 100;
+  const isNavItemActive = (href: string) => (
+    pathname === href ||
+    (isIngredientIndex && href === '/app/profile') ||
+    (isQuotation && href === '/app/final-costing')
+  );
 
   if (!ready) {
     return (
@@ -147,16 +160,16 @@ export default function AppShell({
       <div className="app-layout">
         <aside className="app-sidebar no-print">
           <div className="sidebar-heading">
-            <span>{isAdmin ? 'Admin workspace' : 'Costing workflow'}</span>
-            <b>{isAdmin ? 'Manage your catalog' : `Step ${activeIndex + 1} of ${clientNav.length}`}</b>
+            <span>{isAdmin ? 'Admin workspace' : isHistory ? 'Saved work' : 'Costing workflow'}</span>
+            <b>{isAdmin ? 'Manage your catalog' : isHistory ? 'Costing library' : `Step ${activeIndex + 1} of ${clientNav.length}`}</b>
           </div>
           <nav className="sidebar-nav" aria-label={isAdmin ? 'Admin navigation' : 'Costing workflow'}>
             {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={pathname === item.href || (isIngredientIndex && item.href === '/app/profile') ? 'active' : ''}
-                aria-current={pathname === item.href || (isIngredientIndex && item.href === '/app/profile') ? 'page' : undefined}
+                className={isNavItemActive(item.href) ? 'active' : ''}
+                aria-current={isNavItemActive(item.href) ? 'page' : undefined}
               >
                 <NavIconMark icon={item.icon} />
                 <span className="nav-copy">
@@ -189,7 +202,7 @@ export default function AppShell({
                 <p>{subtitle ?? 'Plan, price and present every event with confidence.'}</p>
               </div>
               <div className="page-progress" aria-label={isAdmin ? 'Admin workspace' : `Step ${activeIndex + 1} of ${clientNav.length}`}>
-                <span>{isAdmin ? 'Workspace' : `${activeIndex + 1}/${clientNav.length}`}</span>
+                <span>{isAdmin ? 'Workspace' : `Step ${activeIndex + 1} of ${clientNav.length}`}</span>
                 <div><i style={{ width: `${progress}%` }} /></div>
               </div>
             </section>
@@ -204,8 +217,8 @@ export default function AppShell({
           <Link
             key={item.href}
             href={item.href}
-            className={pathname === item.href || (isIngredientIndex && item.href === '/app/profile') ? 'active' : ''}
-            aria-current={pathname === item.href || (isIngredientIndex && item.href === '/app/profile') ? 'page' : undefined}
+            className={isNavItemActive(item.href) ? 'active' : ''}
+            aria-current={isNavItemActive(item.href) ? 'page' : undefined}
           >
             <NavIconMark icon={item.icon} />
             <small>{item.mobileLabel}</small>

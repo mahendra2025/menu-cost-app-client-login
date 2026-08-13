@@ -1,50 +1,58 @@
-# Compact Client Mobile UI — Design QA
+# Client App UI/UX — Design QA
 
-- Source visual truth: `/var/folders/sm/tg46382j29zbytbl8dktb0900000gn/T/TemporaryItems/NSIRD_screencaptureui_6QqP7a/Screenshot 2026-08-13 at 22.43.08.png`
-- Full implementation screenshot: `/Users/mahendra/Downloads/menu-cost-app-client-login/implementation-client-mobile-compact.png`
-- Detail implementation screenshot: `/Users/mahendra/Downloads/menu-cost-app-client-login/implementation-client-mobile-compact-detail.png`
-- Combined comparison: `/Users/mahendra/Downloads/menu-cost-app-client-login/mobile-client-app-comparison.png`
-- Browser viewport: 392 × 727 CSS px with a requested 393 × 852 mobile override; device pixel ratio 1.2.
-- Source pixels: 870 × 635. Implementation screenshots: 338 × 710.
-- Density normalization: all comparison columns were normalized to 380 px wide while preserving aspect ratio.
-- State: dark client shell on the Cost workflow with one populated dish. The local session is an administrator, so client styling was rendered temporarily for QA and the original role logic was restored afterward.
+- Source visual truth: `/Users/mahendra/Downloads/menu-cost-app-client-login/mobile-client-app-comparison.png` and the existing dark client design system.
+- Mobile implementation contact sheet: `/Users/mahendra/Downloads/menu-cost-app-client-login/client-ui-ux-all-pages.png`.
+- Desktop implementation contact sheet: `/Users/mahendra/Downloads/menu-cost-app-client-login/client-ui-ux-desktop-pages.png`.
+- Combined before/after comparison: `/Users/mahendra/Downloads/menu-cost-app-client-login/client-ui-ux-before-after.png`.
+- Mobile viewport: requested 393 × 852 CSS px; in-app capture output 310 × 672 px after browser-surface scaling.
+- Desktop viewport: requested 1280 × 900 CSS px; capture output 1271 × 894 px.
+- Density normalization: mobile screenshots were normalized to 250 px wide for the eight-page contact sheet. Baseline and implementation sheets were normalized to 700 px wide for the combined comparison.
+- State: dark client shell with locally saved menu/cost data. Because the local session belongs to an administrator, client navigation and theming were temporarily enabled for screenshots and the production role-selection logic was restored afterward.
 
 ## Full-view comparison evidence
 
-The client shell now carries the compact density of the source card across the phone experience. The header, page title, progress marker, summary cards, workflow panel, and fixed navigation fit into a narrow viewport without horizontal overflow. Four cost summaries and the beginning of the primary workflow panel are visible in the first viewport.
+The implementation contact sheet covers Event, Manpower, Extra Cost, Cost, Final Costing, History, Profile, and Quotation. All screens retain a consistent shell, hierarchy, card system, progress treatment, fixed mobile navigation, and dark palette. No screenshot shows horizontal overflow, clipped primary actions, or content colliding with the bottom navigation.
 
-## Focused region comparison evidence
+Desktop captures of Cost, History, and Quotation confirm that the sidebar, top bar, content width, tables/forms, empty states, and action hierarchy remain balanced after the shared changes.
 
-The Cost workflow detail confirms that toolbar controls, informational copy, dish metrics, and fixed navigation remain readable at compact density. The existing compact dish-card comparison remains available at `mobile-cost-card-comparison.png`.
+## Focused-region comparison evidence
+
+- History: larger labels, values, filters, tabs, actions, and empty-state copy replace the previous 6–10 px text. Mobile inputs retain 16 px text to prevent browser auto-zoom.
+- Quotation: field labels, form controls, messages, commercial totals, and actions are legible on mobile and desktop.
+- Cost: compact dish editing remains intact, with clearer focus, surface, and action states.
+- Workflow navigation: Quotation now maps to Step 5 of 6 and activates Final Costing instead of incorrectly presenting Step 1.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: The existing system typeface and weight hierarchy are retained. Display headings, labels, card values, and navigation labels use smaller phone-specific sizes without clipped text.
-- Spacing and layout rhythm: Client header, workspace padding, page-title spacing, card padding, grid gaps, form gaps, workflow panels, and bottom navigation are consistently reduced at widths up to 600 px.
-- Colors and visual tokens: Existing dark surfaces, blue active states, muted text, borders, and semantic colors remain unchanged.
-- Image quality and assets: No new raster imagery was required. Existing navigation SVG icons were retained and resized through the product's current icon system.
-- Copy and content: Existing page labels, descriptions, actions, metrics, and help content are preserved.
+- Fonts and typography: The product system font is preserved. Page hierarchy, supporting copy, form labels, metrics, and navigation labels now use readable sizes and consistent line heights.
+- Spacing and layout rhythm: Shared section headings, forms, cards, summaries, page actions, empty states, and mobile navigation use consistent gaps, padding, radii, and grouping.
+- Colors and visual tokens: Existing black/navy surfaces and blue, green, amber, and red semantic states are preserved. Border and muted-text contrast were strengthened.
+- Image quality and assets: No new raster imagery was required. Existing product navigation icons remain consistent and scale correctly.
+- Copy and content: Existing workflow instructions remain intact. Quotation and History empty states clearly explain the next action.
+
+## Accessibility and interaction checks
+
+- Inputs and primary mobile actions meet practical touch sizing; mobile text inputs remain 16 px.
+- Focus rings were strengthened across client inputs, textareas, and selects.
+- Reduced-motion preferences disable non-essential client animations and transitions.
+- History navigation was clicked and verified to open the Costing History page.
+- Quotation workflow context was verified as Step 5 of 6.
+- Browser console errors: none.
+- TypeScript and whitespace validation: passed.
 
 ## Findings
 
-No actionable P0, P1, or P2 visual issues remain in the tested Cost workflow. The 16 px font size on text inputs is intentionally retained to prevent automatic input zoom on mobile browsers.
-
-## Interaction and runtime checks
-
-- Client compact rules were confirmed in the loaded CSSOM at the 600 px breakpoint.
-- The Cost workflow rendered at phone width with no horizontal overflow.
-- Browser console errors: none.
-- TypeScript: passed.
-- Role-selection logic was restored after the visual QA capture.
+No actionable P0, P1, or P2 issues remain in the reviewed states.
 
 ## Comparison history
 
-- Initial state: client mobile controls used 50 px inputs, 48 px buttons, 58 px navigation items, 16 px card padding, and a 28–36 px page title.
-- Fix: introduced a client-scoped phone density system for shell, typography, cards, forms, statistics, workflow panels, free-usage banner, and navigation.
-- Post-fix evidence: `implementation-client-mobile-compact.png`, `implementation-client-mobile-compact-detail.png`, and `mobile-client-app-comparison.png`.
+- Initial P2: History and Quotation contained undersized labels and actions that were difficult to scan and tap. Fixed with readable typography, 42–44 px controls, clearer focus states, and mobile reflow.
+- Initial P2: Quotation lost workflow context and appeared as Step 1 with no active navigation item. Fixed by mapping Quotation to Final Costing/Step 5.
+- Initial P2: shared cards, overview totals, section headings, page actions, and empty states had inconsistent hierarchy between pages. Fixed through a client-scoped UX refinement layer.
+- Post-fix evidence: `client-ui-ux-all-pages.png`, `client-ui-ux-desktop-pages.png`, and `client-ui-ux-before-after.png`.
 
 ## Follow-up polish
 
-- Verify the same density with a real client account on Event, Manpower, Extra Cost, Final Costing, and Profile when client credentials are available. Shared selectors cover those screens, but this QA run used the Cost workflow as the representative rendered page.
+- P3: repeat the contact-sheet capture with a real client login when credentials are available so subscription-only and client-profile states can be reviewed with live account data.
 
 final result: passed

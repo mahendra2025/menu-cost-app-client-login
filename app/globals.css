@@ -14227,3 +14227,381 @@ small {
     font-size: 7px;
   }
 }
+
+/* Client workflow UX refinement layer. */
+.client-theme .app-workspace {
+  padding-bottom: 8px;
+}
+
+.client-theme .page-title h1 {
+  text-wrap: balance;
+}
+
+.client-theme .page-title p,
+.client-theme .glass-card > p,
+.client-theme .panel > p,
+.client-theme .muted {
+  color: #929dac;
+}
+
+.client-theme :where(.glass-card, .panel, .stat-card, .helper-card, .readiness-card) {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.client-theme :where(.glass-card, .panel) > h2,
+.client-theme :where(.glass-card, .panel) > h3 {
+  margin-bottom: 8px;
+  letter-spacing: -.025em;
+}
+
+.client-theme :where(
+  .event-section-heading,
+  .extra-cost-section-heading,
+  .final-costing-section-heading,
+  .dish-cost-heading,
+  .billing-heading,
+  .quotation-toolbar-heading,
+  .manpower-planner-heading
+) {
+  padding-bottom: 13px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.client-theme :where(
+  .event-section-heading,
+  .extra-cost-section-heading,
+  .final-costing-section-heading,
+  .dish-cost-heading,
+  .billing-heading,
+  .quotation-toolbar-heading,
+  .manpower-planner-heading
+) p {
+  color: #929dac;
+  line-height: 1.5;
+}
+
+.client-theme .field label {
+  color: #c1c9d4;
+  letter-spacing: .005em;
+}
+
+.client-theme :where(.input, .textarea, .select) {
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.client-theme :where(.input, .textarea, .select):hover {
+  border-color: #46505f;
+  background: #191f28;
+}
+
+.client-theme :where(.input, .textarea, .select):focus {
+  border-color: rgba(74,156,255,.72);
+  background: #171e28;
+  box-shadow: 0 0 0 3px rgba(74,156,255,.13);
+}
+
+.client-theme :where(.primary-button, .secondary-button, .ghost-button, .danger-button) {
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .12s ease;
+}
+
+.client-theme :where(.primary-button, .secondary-button, .ghost-button, .danger-button):active {
+  transform: translateY(1px);
+}
+
+.client-theme .primary-button {
+  background: linear-gradient(180deg, #268aff, #126fde);
+  box-shadow: 0 8px 20px rgba(20,120,242,.22);
+}
+
+.client-theme .primary-button:hover {
+  background: linear-gradient(180deg, #3492ff, #1478f2);
+}
+
+.client-theme .page-actions {
+  justify-content: flex-end;
+  padding: 11px;
+  border: 1px solid #252d38;
+  border-radius: 14px;
+  background: rgba(13,17,23,.82);
+  box-shadow: 0 10px 26px rgba(0,0,0,.16);
+}
+
+.client-theme .page-actions .primary-button {
+  margin-left: auto;
+}
+
+.client-theme :where(
+  .menu-overview,
+  .manpower-overview,
+  .extra-cost-overview,
+  .final-costing-overview,
+  .dish-cost-heading
+) {
+  border-color: #2a3a4e;
+  box-shadow: 0 12px 30px rgba(0,0,0,.2);
+}
+
+.client-theme :where(
+  .manpower-overview-total,
+  .extra-cost-overview-total,
+  .final-costing-overview-total,
+  .disposable-total-chip
+) {
+  border-color: rgba(74,156,255,.2);
+  background: rgba(74,156,255,.07);
+}
+
+.client-theme .stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.client-theme .stat-card small {
+  color: #8e99a8;
+  font-weight: 850;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.client-theme .stat-card strong {
+  color: #f7f9fc;
+  font-variant-numeric: tabular-nums;
+}
+
+.client-theme :where(.badge, .portion-chip, .manpower-function-status) {
+  border: 1px solid rgba(255,255,255,.07);
+}
+
+.client-theme :where(.menu-service-group, .manpower-function-card) > :where(summary, .menu-service-heading) {
+  min-width: 0;
+}
+
+.client-theme .manpower-function-card > summary {
+  border-radius: 12px;
+}
+
+.client-theme .manpower-function-card[open] > summary {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px 12px 0 0;
+}
+
+.client-theme .manpower-function-guidance,
+.client-theme .dish-portion-note,
+.client-theme .event-detection-note,
+.client-theme .menu-recosting-note {
+  line-height: 1.5;
+}
+
+.client-theme .disposable-cost-row:not(.disposable-cost-labels),
+.client-theme .manpower-role-card,
+.client-theme .dish-cost-card {
+  border-color: #29313c;
+  background: #0e1319;
+  box-shadow: 0 7px 18px rgba(0,0,0,.14);
+}
+
+.client-theme .disposable-row-total,
+.client-theme .manpower-role-card-total {
+  font-variant-numeric: tabular-nums;
+}
+
+.client-theme :where(.empty-state, .dish-cost-empty, .manpower-empty-roster, .manual-review-empty) {
+  border-color: #313a46;
+  background: #0d1218;
+}
+
+.client-theme :where(.empty-state, .dish-cost-empty, .manpower-empty-roster, .manual-review-empty) h3,
+.client-theme :where(.empty-state, .dish-cost-empty, .manpower-empty-roster, .manual-review-empty) b {
+  color: #e9eef5;
+}
+
+.client-theme .billing-details > div,
+.client-theme .quotation-review-metrics > div,
+.client-theme .final-cost-breakdown > div {
+  border-color: #29313c;
+  background: #0e1319;
+}
+
+.client-theme .readiness-card {
+  border-color: #29313c;
+  background: #0e1319;
+}
+
+.client-theme .locked-card {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.client-theme .locked-card h2,
+.client-theme .locked-card p {
+  margin: 0;
+}
+
+@media (min-width: 861px) {
+  .client-theme :where(.glass-card, .panel):hover {
+    border-color: #343e4b;
+    box-shadow: 0 14px 34px rgba(0,0,0,.22);
+  }
+}
+
+@media (max-width: 600px) {
+  .client-theme .page-eyebrow {
+    font-size: 9px;
+  }
+
+  .client-theme .page-title p {
+    font-size: 11px;
+    line-height: 1.38;
+  }
+
+  .client-theme .page-progress {
+    width: 70px;
+    flex-basis: 70px;
+  }
+
+  .client-theme .page-progress > span {
+    font-size: 8px;
+    white-space: nowrap;
+  }
+
+  .client-theme .glass-card,
+  .client-theme .panel,
+  .client-theme .locked-card,
+  .client-theme .alert-card {
+    padding: 12px;
+  }
+
+  .client-theme .field label {
+    font-size: 11px;
+  }
+
+  .client-theme :where(.input, .textarea, .select) {
+    min-height: 44px;
+  }
+
+  .client-theme :where(.primary-button, .secondary-button, .ghost-button, .danger-button) {
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  .client-theme .section-kicker {
+    min-height: 24px;
+    font-size: 9px;
+  }
+
+  .client-theme .stat-card small,
+  .client-theme .stat-card span {
+    font-size: 9px;
+  }
+
+  .client-theme .bottom-nav small {
+    font-size: 8px;
+  }
+
+  .client-theme .page-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .client-theme .page-actions > * {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .client-theme .page-actions .primary-button {
+    order: -1;
+    margin-left: 0;
+  }
+
+  .client-theme :where(
+    .event-section-heading,
+    .extra-cost-section-heading,
+    .final-costing-section-heading,
+    .dish-cost-heading,
+    .billing-heading,
+    .quotation-toolbar-heading,
+    .manpower-planner-heading
+  ) {
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  .client-theme :where(
+    .event-section-heading,
+    .extra-cost-section-heading,
+    .final-costing-section-heading,
+    .dish-cost-heading,
+    .billing-heading,
+    .quotation-toolbar-heading,
+    .manpower-planner-heading
+  ) p {
+    font-size: 11px;
+  }
+
+  .client-theme :where(
+    .menu-overview,
+    .manpower-overview,
+    .extra-cost-overview,
+    .final-costing-overview
+  ) {
+    padding: 13px;
+  }
+
+  .client-theme :where(
+    .manpower-overview-total,
+    .extra-cost-overview-total,
+    .final-costing-overview-total,
+    .disposable-total-chip
+  ) {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 11px;
+    border-radius: 11px;
+    text-align: left;
+  }
+
+  .client-theme .disposable-cost-row:not(.disposable-cost-labels) {
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid #29313c;
+    border-radius: 11px;
+  }
+
+  .client-theme .manpower-role-card {
+    padding: 10px;
+    border-radius: 11px;
+  }
+
+  .client-theme .billing-card .action-row,
+  .client-theme .glass-card > .action-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .client-theme .billing-card .action-row > *,
+  .client-theme .glass-card > .action-row > * {
+    width: 100%;
+  }
+
+  .client-theme .empty-state,
+  .client-theme .dish-cost-empty,
+  .client-theme .manpower-empty-roster {
+    min-height: 150px;
+    padding: 18px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .client-theme *,
+  .client-theme *::before,
+  .client-theme *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
