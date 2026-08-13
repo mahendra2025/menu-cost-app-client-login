@@ -921,6 +921,14 @@ export default function EventPage() {
     useState(true);
 
   const [
+    selectedSourceLineNumber,
+    setSelectedSourceLineNumber,
+  ] =
+    useState<number | null>(
+      null,
+    );
+
+  const [
     editingDetectionId,
     setEditingDetectionId,
   ] =
@@ -1611,6 +1619,152 @@ export default function EventPage() {
     );
 
     setError('');
+  }
+
+  function selectOriginalComparisonLine(
+    line: {
+      lineNumber: number;
+      raw: string;
+      body: string;
+      key: string;
+    },
+  ) {
+    if (!detectionPreview) {
+      return;
+    }
+
+    setSelectedSourceLineNumber(
+      line.lineNumber,
+    );
+
+    /*
+     * Exact name is preferred.
+     * Evidence matching also handles small OCR
+     * spelling differences / corrected names.
+     */
+    const matchingItem =
+      detectionPreview.menu.find(
+        (item) =>
+          item.coverageStatus !==
+            'REJECTED' &&
+          (
+            (
+              line.key &&
+              dishNameKey(
+                item.name,
+              ) === line.key
+            ) ||
+            getDishSourceEvidenceScore(
+              line.raw,
+              item.name,
+            ) >= 84
+          ),
+      );
+
+    if (matchingItem) {
+      setShowAddMissedDish(
+        false,
+      );
+
+      setActiveDetectionProblemId(
+        matchingItem.id,
+      );
+
+      window.setTimeout(
+        () => {
+          document
+            .getElementById(
+              `compare-detected-${matchingItem.id}`,
+            )
+            ?.scrollIntoView({
+              behavior:
+                'smooth',
+
+              block:
+                'center',
+            });
+        },
+        40,
+      );
+
+      return;
+    }
+
+    /*
+     * No detected match:
+     * prefill Add Dish on the right.
+     */
+    const candidate =
+      detectionPreview
+        .possibleMissed
+        .find(
+          (item) =>
+            dishNameKey(
+              item.name,
+            ) ===
+            line.key,
+        );
+
+    const categoryHint =
+      candidate?.categoryHint;
+
+    setNewDetectionDishName(
+      line.body ||
+      line.raw,
+    );
+
+    if (
+      categoryHint &&
+      CATEGORIES.includes(
+        categoryHint as
+          Category,
+      )
+    ) {
+      setNewDetectionDishCategory(
+        categoryHint as
+          Category,
+      );
+    } else {
+      setNewDetectionDishCategory(
+        'Other',
+      );
+    }
+
+    if (
+      !newDetectionDishGroupKey &&
+      detectionFunctionOptions.length
+    ) {
+      setNewDetectionDishGroupKey(
+        detectionFunctionOptions[
+          0
+        ].key,
+      );
+    }
+
+    setShowAddMissedDish(
+      true,
+    );
+
+    setActiveDetectionProblemId(
+      null,
+    );
+
+    window.setTimeout(
+      () => {
+        document
+          .querySelector(
+            '.menu-compare-add-form',
+          )
+          ?.scrollIntoView({
+            behavior:
+              'smooth',
+
+            block:
+              'center',
+          });
+      },
+      40,
+    );
   }
 
   function quickMoveDetectionFunction(
@@ -5255,6 +5409,34 @@ export default function EventPage() {
         'REJECTED',
     );
 
+  const selectedSourceLine =
+    selectedSourceLineNumber ===
+    null
+      ? undefined
+      : sourceComparisonLines.find(
+          (line) =>
+            line.lineNumber ===
+            selectedSourceLineNumber,
+        );
+
+  const selectedSourceDetectedItem =
+    selectedSourceLine
+      ? sourceCompareDetectedItems.find(
+          (item) =>
+            (
+              selectedSourceLine.key &&
+              dishNameKey(
+                item.name,
+              ) ===
+                selectedSourceLine.key
+            ) ||
+            getDishSourceEvidenceScore(
+              selectedSourceLine.raw,
+              item.name,
+            ) >= 84,
+        )
+      : undefined;
+
   const sourceCompareAttentionCount =
     sourceCompareDetectedItems.filter(
       (item) =>
@@ -6705,8 +6887,45 @@ Gulab Jamun`}
                                     .replaceAll(
                                       '_',
                                       '-',
-                                    )}`}
+                                    )} ${
+                                      selectedSourceLineNumber ===
+                                      line.lineNumber
+                                        ? 'is-selected-source'
+                                        : ''
+                                    }`}
                                   key={`source-${line.lineNumber}`}
+                                  role="button"
+                                  tabIndex={0}
+                                  aria-selected={
+                                    selectedSourceLineNumber ===
+                                    line.lineNumber
+                                  }
+                                  onClick={() =>
+                                    selectOriginalComparisonLine(
+                                      line,
+                                    )
+                                  }
+                                  onKeyDown={(event) => {
+                                    if (
+                                      event.target !==
+                                      event.currentTarget
+                                    ) {
+                                      return;
+                                    }
+
+                                    if (
+                                      event.key ===
+                                        'Enter' ||
+                                      event.key ===
+                                        ' '
+                                    ) {
+                                      event.preventDefault();
+
+                                      selectOriginalComparisonLine(
+                                        line,
+                                      );
+                                    }
+                                  }}
                                 >
                                   <span className="menu-source-line-number">
                                     {
@@ -6738,11 +6957,17 @@ Gulab Jamun`}
                                           <button
                                             type="button"
                                             className="source-add"
-                                            onClick={() =>
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+
+                                              setSelectedSourceLineNumber(
+                                                line.lineNumber,
+                                              );
+
                                               addPossibleMissedDish(
                                                 missedCandidate,
-                                              )
-                                            }
+                                              );
+                                            }}
                                           >
                                             + Add Dish
                                           </button>
@@ -6750,19 +6975,42 @@ Gulab Jamun`}
                                           <button
                                             type="button"
                                             className="source-ignore"
-                                            onClick={() =>
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+
                                               dismissPossibleMissedDish(
                                                 missedCandidate,
-                                              )
-                                            }
+                                              );
+
+                                              if (
+                                                selectedSourceLineNumber ===
+                                                line.lineNumber
+                                              ) {
+                                                setSelectedSourceLineNumber(
+                                                  null,
+                                                );
+                                              }
+                                            }}
                                           >
                                             Not a dish
                                           </button>
                                         </div>
                                       </>
                                     ) : (
-                                      <small>
-                                        Source / heading / note
+                                      <small
+                                        className={
+                                          selectedSourceLineNumber ===
+                                            line.lineNumber &&
+                                          !selectedSourceDetectedItem
+                                            ? 'source-not-detected'
+                                            : ''
+                                        }
+                                      >
+                                        {selectedSourceLineNumber ===
+                                          line.lineNumber &&
+                                        !selectedSourceDetectedItem
+                                          ? 'Not detected — add if this is a dish'
+                                          : 'Source / heading / note'}
                                       </small>
                                     )}
                                   </div>
@@ -6795,6 +7043,42 @@ Gulab Jamun`}
                         </div>
 
                         <div className="menu-source-detected-list">
+                          {selectedSourceLine ? (
+                            <div
+                              className={`menu-compare-source-selection ${
+                                selectedSourceDetectedItem
+                                  ? 'found'
+                                  : 'missing'
+                              }`}
+                            >
+                              <div>
+                                <span>
+                                  Selected from Original Menu
+                                </span>
+
+                                <strong>
+                                  {
+                                    selectedSourceLine.raw
+                                  }
+                                </strong>
+                              </div>
+
+                              <div>
+                                <b>
+                                  {selectedSourceDetectedItem
+                                    ? '✓ Found in Detected Menu'
+                                    : 'Not detected'}
+                                </b>
+
+                                <small>
+                                  {selectedSourceDetectedItem
+                                    ? selectedSourceDetectedItem.name
+                                    : 'If this is a dish, review the prefilled form below and add it.'}
+                                </small>
+                              </div>
+                            </div>
+                          ) : null}
+
                           <div className="menu-compare-add-dish">
                             <button
                               type="button"
@@ -6956,12 +7240,18 @@ Gulab Jamun`}
                           {sourceCompareDetectedItems.map(
                             (item) => (
                               <div
+                                id={`compare-detected-${item.id}`}
                                 className={`menu-source-detected-item menu-compare-editable ${
                                   detectionHasProblem(
                                     item,
                                   )
                                     ? 'attention'
                                     : 'ready'
+                                } ${
+                                  selectedSourceDetectedItem?.id ===
+                                  item.id
+                                    ? 'source-selected-match'
+                                    : ''
                                 }`}
                                 key={`compare-${item.id}`}
                               >

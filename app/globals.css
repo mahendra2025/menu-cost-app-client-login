@@ -12815,3 +12815,142 @@ span {
     min-height: 49px;
   }
 }
+
+/* ========================================================================== */
+/* Original → Detected selection linking                                      */
+/* ========================================================================== */
+
+.menu-source-line {
+  cursor: pointer;
+  transition:
+    border-color .15s ease,
+    background .15s ease,
+    box-shadow .15s ease;
+}
+
+.menu-source-line:hover {
+  border-color:
+    rgba(74,156,255,.2);
+  background:
+    rgba(74,156,255,.035);
+}
+
+.menu-source-line.is-selected-source {
+  border-color:
+    rgba(74,156,255,.55);
+  background:
+    rgba(74,156,255,.09);
+  box-shadow:
+    0 0 0 2px
+    rgba(74,156,255,.08);
+}
+
+.menu-source-line.is-selected-source
+.menu-source-line-number {
+  color: #dcecff;
+  background:
+    rgba(74,156,255,.18);
+}
+
+.source-not-detected {
+  color: #ffc36e !important;
+  font-weight: 850;
+}
+
+
+/* Selected original line result */
+
+.menu-compare-source-selection {
+  display: grid;
+  grid-template-columns:
+    minmax(0,1fr)
+    auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 11px;
+  border: 1px solid
+    rgba(255,255,255,.08);
+  border-radius: 11px;
+}
+
+.menu-compare-source-selection
+> div {
+  display: grid;
+  gap: 3px;
+}
+
+.menu-compare-source-selection
+span {
+  color: #758297;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.menu-compare-source-selection
+strong {
+  font-size: 10px;
+}
+
+.menu-compare-source-selection
+b {
+  font-size: 9px;
+}
+
+.menu-compare-source-selection
+small {
+  color: #7f8c9e;
+  font-size: 8px;
+}
+
+.menu-compare-source-selection.found {
+  border-color:
+    rgba(61,220,132,.24);
+  background:
+    rgba(61,220,132,.055);
+}
+
+.menu-compare-source-selection.found b {
+  color: #72e0a2;
+}
+
+.menu-compare-source-selection.missing {
+  border-color:
+    rgba(255,173,66,.28);
+  background:
+    rgba(255,173,66,.065);
+}
+
+.menu-compare-source-selection.missing b {
+  color: #ffc36e;
+}
+
+
+/* Highlight matching detected dish */
+
+.menu-source-detected-item
+.source-selected-match {
+  border-color:
+    rgba(74,156,255,.72) !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(74,156,255,.14),
+      rgba(74,156,255,.045)
+    ) !important;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(74,156,255,.09);
+}
+
+
+/* Mobile */
+
+@media (max-width: 760px) {
+  .menu-compare-source-selection {
+    grid-template-columns: 1fr;
+  }
+}
