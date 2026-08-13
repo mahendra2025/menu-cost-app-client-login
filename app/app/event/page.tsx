@@ -60,6 +60,13 @@ import {
   buildDetectionBenchmark,
 } from '../../../lib/detectionBenchmark';
 
+import {
+  buildAutoRecipeCostRefresh,
+  buildCatalogCostRefresh,
+  buildCategoryEstimateCostRefresh,
+  type DishCostRefresh,
+} from '../../../lib/correctedDishCosting';
+
 const SAMPLE_MENU = `Day 1 • Dinner • 300 Members
 Welcome Drink
 Orange Juice
@@ -865,6 +872,14 @@ export default function EventPage() {
       () => new Set(),
     );
 
+  const [
+    recostingDishIds,
+    setRecostingDishIds,
+  ] =
+    useState<Set<string>>(
+      () => new Set(),
+    );
+
   const [selectedPreviewIds, setSelectedPreviewIds] =
     useState<Set<string>>(
       () => new Set(),
@@ -988,6 +1003,414 @@ export default function EventPage() {
       item.serviceId ||
       `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`
     );
+  }
+
+  async function recostReviewedDish(
+    itemId: string,
+    name: string,
+    category: Category,
+    trigger:
+      | 'corrected'
+      | 'recovered'
+      | 'manual_add'
+      | 'restored',
+  ) {
+    const normalizedName =
+      dishNameKey(
+        name,
+      );
+
+    if (!normalizedName) {
+      return;
+    }
+
+    setRecostingDishIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          itemId,
+        );
+
+        return next;
+      },
+    );
+
+    const applyRefresh = (
+      refresh:
+        DishCostRefresh,
+    ) => {
+      setDetectionPreview(
+        (current) =>
+          current
+            ? {
+                ...current,
+
+                menu:
+                  current.menu.map(
+                    (item) => {
+                      if (
+                        item.id !==
+                        itemId ||
+                        dishNameKey(
+                          item.name,
+                        ) !==
+                          normalizedName
+                      ) {
+                        return item;
+                      }
+
+                      return {
+                        ...item,
+                        ...refresh.patch,
+                      };
+                    },
+                  ),
+              }
+            : current,
+      );
+
+      setManualRateIds(
+        (current) => {
+          const next =
+            new Set(current);
+
+          if (
+            refresh.usable
+          ) {
+            next.delete(
+              itemId,
+            );
+          } else {
+            next.add(
+              itemId,
+            );
+          }
+
+          return next;
+        },
+      );
+    };
+
+    try {
+      /*
+       * Fastest / safest path:
+       * Dish Master first.
+       */
+      const dishCatalog =
+        await import(
+          '../../../lib/dishCostMaster'
+        );
+
+      const masterDish =
+        dishCatalog
+          .findDishByName(
+            name,
+          ) ||
+        dishCatalog
+          .findFuzzyDishByName(
+            name,
+            category,
+          );
+
+      const masterRate =
+        Math.max(
+          0,
+          Number(
+            masterDish
+              ?.rate,
+          ) || 0,
+        );
+
+      if (
+        masterDish &&
+        masterRate > 0
+      ) {
+        const refresh =
+          buildCatalogCostRefresh(
+            masterRate,
+          );
+
+        applyRefresh(
+          refresh,
+        );
+
+        void trackProductEvent(
+          'menu_detection_recost',
+          {
+            trigger,
+            dish:
+              name,
+            category,
+            source:
+              refresh.source,
+            usable:
+              refresh.usable,
+            cost:
+              masterRate,
+          },
+        );
+
+        return;
+      }
+
+      /*
+       * No direct Dish Master rate:
+       * ask the permanent recipe-costing API.
+       */
+      let automaticRefresh:
+        DishCostRefresh | null =
+          null;
+
+      try {
+        const response =
+          await fetch(
+            '/api/client/auto-recipe-costs',
+            {
+              method:
+                'POST',
+
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+
+              body:
+                JSON.stringify({
+                  dishes: [
+                    {
+                      name,
+                      category,
+                    },
+                  ],
+                }),
+            },
+          );
+
+        if (
+          response.ok
+        ) {
+          const payload =
+            await response.json() as {
+              results?:
+                unknown[];
+            };
+
+          const result =
+            (
+              Array.isArray(
+                payload.results,
+              )
+                ? payload.results
+                : []
+            )
+              .find(
+                (value) => {
+                  if (
+                    !value ||
+                    typeof value !==
+                      'object' ||
+                    Array.isArray(
+                      value,
+                    )
+                  ) {
+                    return false;
+                  }
+
+                  const row =
+                    value as Record<
+                      string,
+                      unknown
+                    >;
+
+                  return (
+                    dishNameKey(
+                      String(
+                        row.requestedName ||
+                        '',
+                      ),
+                    ) ===
+                    normalizedName
+                  );
+                },
+              ) ||
+            payload
+              .results?.[0];
+
+          automaticRefresh =
+            buildAutoRecipeCostRefresh(
+              result,
+            );
+
+          if (
+            automaticRefresh
+              .usable
+          ) {
+            applyRefresh(
+              automaticRefresh,
+            );
+
+            void trackProductEvent(
+              'menu_detection_recost',
+              {
+                trigger,
+                dish:
+                  name,
+                category,
+                source:
+                  automaticRefresh
+                    .source,
+                usable:
+                  true,
+                cost:
+                  Number(
+                    automaticRefresh
+                      .patch
+                      .costPerPlate,
+                  ) || 0,
+              },
+            );
+
+            return;
+          }
+        }
+      } catch (
+        automaticCostError
+      ) {
+        console.warn(
+          'Corrected dish automatic costing unavailable:',
+          automaticCostError,
+        );
+      }
+
+      /*
+       * Transparent last automatic fallback:
+       * category estimate.
+       */
+      const categoryRate =
+        Math.max(
+          0,
+          Number(
+            dishCatalog
+              .CATEGORY_BASE_COST[
+              category as keyof typeof dishCatalog.CATEGORY_BASE_COST
+            ],
+          ) || 0,
+        );
+
+      if (
+        categoryRate > 0
+      ) {
+        const estimate =
+          buildCategoryEstimateCostRefresh(
+            categoryRate,
+          );
+
+        applyRefresh(
+          estimate,
+        );
+
+        void trackProductEvent(
+          'menu_detection_recost',
+          {
+            trigger,
+            dish:
+              name,
+            category,
+            source:
+              estimate.source,
+            usable:
+              true,
+            cost:
+              categoryRate,
+          },
+        );
+
+        return;
+      }
+
+      /*
+       * Automatic costing genuinely failed.
+       * Keep the manual-rate requirement.
+       */
+      const unresolved =
+        automaticRefresh ||
+        buildAutoRecipeCostRefresh(
+          null,
+        );
+
+      applyRefresh(
+        unresolved,
+      );
+
+      void trackProductEvent(
+        'menu_detection_recost',
+        {
+          trigger,
+          dish:
+            name,
+          category,
+          source:
+            'unresolved',
+          usable:
+            false,
+          cost:
+            0,
+        },
+      );
+
+    } catch (
+      recostError
+    ) {
+      console.warn(
+        'Corrected dish recost failed:',
+        recostError,
+      );
+
+      setManualRateIds(
+        (current) => {
+          const next =
+            new Set(current);
+
+          next.add(
+            itemId,
+          );
+
+          return next;
+        },
+      );
+
+      void trackProductEvent(
+        'menu_detection_recost',
+        {
+          trigger,
+          dish:
+            name,
+          category,
+          source:
+            'unresolved',
+          usable:
+            false,
+          cost:
+            0,
+        },
+      );
+
+    } finally {
+      setRecostingDishIds(
+        (current) => {
+          const next =
+            new Set(current);
+
+          next.delete(
+            itemId,
+          );
+
+          return next;
+        },
+      );
+    }
   }
 
   function beginDetectionEdit(
@@ -1228,6 +1651,25 @@ export default function EventPage() {
         'MAP',
     });
 
+    void trackProductEvent(
+      'menu_detection_review_action',
+      {
+        action:
+          'edit_detected',
+        dish:
+          name,
+        category:
+          editDetectionCategory,
+      },
+    );
+
+    void recostReviewedDish(
+      itemId,
+      name,
+      editDetectionCategory,
+      'corrected',
+    );
+
     cancelDetectionEdit();
 
     setError('');
@@ -1381,6 +1823,48 @@ export default function EventPage() {
         action:
           'REJECT',
       });
+    }
+
+    void trackProductEvent(
+      'menu_detection_review_action',
+      {
+        action:
+          restoring
+            ? 'restore'
+            : 'reject',
+        dish:
+          item.name,
+        category:
+          item.category,
+      },
+    );
+
+    if (
+      restoring &&
+      !(
+        Number(
+          item.costPerPlate,
+        ) > 0
+      )
+    ) {
+      const restoreCategory:
+        Category =
+          CATEGORIES.includes(
+            item.category as
+              Category,
+          )
+            ? (
+                item.category as
+                  Category
+              )
+            : 'Other';
+
+      void recostReviewedDish(
+        item.id,
+        item.name,
+        restoreCategory,
+        'restored',
+      );
     }
 
     setError('');
@@ -1596,6 +2080,24 @@ export default function EventPage() {
         'MAP',
     });
 
+    void trackProductEvent(
+      'menu_detection_review_action',
+      {
+        action:
+          'recover_possible_missed',
+        dish:
+          name,
+        category,
+      },
+    );
+
+    void recostReviewedDish(
+      newItem.id,
+      name,
+      category,
+      'recovered',
+    );
+
     setDetectionReviewFilter(
       'ALL',
     );
@@ -1647,6 +2149,19 @@ export default function EventPage() {
       action:
         'REJECT',
     });
+
+    void trackProductEvent(
+      'menu_detection_review_action',
+      {
+        action:
+          'dismiss_possible_missed',
+        dish:
+          candidate.name,
+        category:
+          candidate.categoryHint ||
+          'Other',
+      },
+    );
 
     setError('');
   }
@@ -1836,6 +2351,25 @@ export default function EventPage() {
       action:
         'MAP',
     });
+
+    void trackProductEvent(
+      'menu_detection_review_action',
+      {
+        action:
+          'manual_add_missed',
+        dish:
+          name,
+        category:
+          newDetectionDishCategory,
+      },
+    );
+
+    void recostReviewedDish(
+      newItem.id,
+      name,
+      newDetectionDishCategory,
+      'manual_add',
+    );
 
     setNewDetectionDishCategory(
       'Other',
@@ -4870,7 +5404,27 @@ Gulab Jamun`}
                     {detectionPreview.menu.some((item) => item.costSource === 'ai_recipe') ? (
                       <span><b>{detectionPreview.menu.filter((item) => item.costSource === 'ai_recipe').length}</b> AI recipe</span>
                     ) : null}
-                    {manualRateIds.size > 0 ? (
+                    {recostingDishIds.size > 0 ? (
+                  <div
+                    className="event-detection-note"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <b>
+                      Recalculating corrected dish cost
+                    </b>
+
+                    <p>
+                      {recostingDishIds.size}{' '}
+                      {recostingDishIds.size === 1
+                        ? 'dish is'
+                        : 'dishes are'}{' '}
+                      being checked against Dish Master, saved recipes and automatic recipe costing.
+                    </p>
+                  </div>
+                ) : null}
+
+                {manualRateIds.size > 0 ? (
                       <span className={selectedMissingManualRateCount > 0 ? 'needs-attention' : ''}>
                         <b>{manualRateIds.size}</b> manual rate
                       </span>
