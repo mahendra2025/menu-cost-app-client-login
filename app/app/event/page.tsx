@@ -906,6 +906,14 @@ export default function EventPage() {
     useState('');
 
   const [
+    activeDetectionProblemId,
+    setActiveDetectionProblemId,
+  ] =
+    useState<string | null>(
+      null,
+    );
+
+  const [
     editingDetectionId,
     setEditingDetectionId,
   ] =
@@ -965,6 +973,103 @@ export default function EventPage() {
 
       setWork(savedWork);
     }
+  }, []);
+
+  useEffect(() => {
+    function handleDetectionReviewShortcut(
+      event: KeyboardEvent,
+    ) {
+      const target =
+        event.target as
+          HTMLElement | null;
+
+      if (
+        target &&
+        (
+          [
+            'INPUT',
+            'TEXTAREA',
+            'SELECT',
+          ].includes(
+            target.tagName,
+          ) ||
+          target.isContentEditable
+        )
+      ) {
+        return;
+      }
+
+      /*
+       * N = Next problem
+       */
+      if (
+        event.key.toLowerCase() ===
+        'n'
+      ) {
+        const button =
+          document.querySelector<
+            HTMLButtonElement
+          >(
+            '[data-menu-next-problem]',
+          );
+
+        if (
+          button &&
+          !button.disabled
+        ) {
+          event.preventDefault();
+          button.click();
+        }
+
+        return;
+      }
+
+      /*
+       * / = Focus dish search
+       */
+      if (
+        event.key === '/'
+      ) {
+        const search =
+          document.querySelector<
+            HTMLInputElement
+          >(
+            '[data-menu-detection-search]',
+          );
+
+        if (search) {
+          event.preventDefault();
+          search.focus();
+        }
+
+        return;
+      }
+
+      /*
+       * Escape = clear lightweight
+       * review state.
+       */
+      if (
+        event.key ===
+        'Escape'
+      ) {
+        setDetectionSearch('');
+        setEditingDetectionId(
+          null,
+        );
+      }
+    }
+
+    window.addEventListener(
+      'keydown',
+      handleDetectionReviewShortcut,
+    );
+
+    return () =>
+      window.removeEventListener(
+        'keydown',
+        handleDetectionReviewShortcut,
+      );
   }, []);
 
   function persistWork(
@@ -1418,6 +1523,87 @@ export default function EventPage() {
         },
       );
     }
+  }
+
+  function confirmDetectedDish(
+    item: MenuItem,
+  ) {
+    if (
+      item.coverageStatus ===
+        'REJECTED' ||
+      !detectionNeedsReview(
+        item,
+      )
+    ) {
+      return;
+    }
+
+    setDetectionPreview(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              menu:
+                current.menu.map(
+                  (menuItem) =>
+                    menuItem.id ===
+                    item.id
+                      ? {
+                          ...menuItem,
+
+                          detectionSource:
+                            'manual',
+
+                          detectionConfidence:
+                            100,
+
+                          detectionReason:
+                            'User confirmed this detected dish is correct',
+                        }
+                      : menuItem,
+                ),
+            }
+          : current,
+    );
+
+    /*
+     * Remember the confirmed spelling
+     * and category for this tenant.
+     */
+    void saveTenantDishLearning({
+      aliasName:
+        item.name,
+
+      canonicalName:
+        item.name,
+
+      category:
+        item.category,
+
+      action:
+        'MAP',
+    });
+
+    void trackProductEvent(
+      'menu_detection_review_action',
+      {
+        action:
+          'confirm_detected',
+
+        dish:
+          item.name,
+
+        category:
+          item.category,
+      },
+    );
+
+    setActiveDetectionProblemId(
+      item.id,
+    );
+
+    setError('');
   }
 
   function quickChangeDetectionCategory(
@@ -4590,6 +4776,149 @@ export default function EventPage() {
       ).length,
   };
 
+  /*
+   * Detection Review Gate
+   *
+   * Cost approval remains a separate gate.
+   * This gate only ensures uncertain
+   * detections and possible missed lines
+   * were consciously reviewed.
+   */
+  const detectionUnconfirmedCount =
+    detectionReviewItems.filter(
+      (item) =>
+        item.coverageStatus !==
+          'REJECTED' &&
+        detectionNeedsReview(
+          item,
+        ),
+    ).length;
+
+  const detectionPossibleMissedCount =
+    detectionPreview
+      ?.possibleMissed
+      .length || 0;
+
+  const detectionReviewGatePending =
+    detectionUnconfirmedCount +
+    detectionPossibleMissedCount;
+
+  const detectionReviewGateTotal =
+    detectionReviewItems.filter(
+      (item) =>
+        item.coverageStatus !==
+        'REJECTED',
+    ).length +
+    detectionPossibleMissedCount;
+
+  const detectionReviewGateReviewed =
+    Math.max(
+      0,
+      detectionReviewGateTotal -
+      detectionReviewGatePending,
+    );
+
+  const detectionReviewGatePercent =
+    detectionReviewGateTotal > 0
+      ? Math.round(
+          detectionReviewGateReviewed /
+            detectionReviewGateTotal *
+            100,
+        )
+      : 100;
+
+  const detectionReviewGateReady =
+    detectionReviewGatePending ===
+      0 &&
+    recostingDishIds.size ===
+      0;
+
+  function jumpToNextDetectionProblem() {
+    const problems =
+      detectionReviewItems.filter(
+        detectionHasProblem,
+      );
+
+    /*
+     * If dishes are resolved but source
+     * coverage still has possible misses,
+     * jump there next.
+     */
+    if (!problems.length) {
+      if (
+        detectionPossibleMissedCount >
+        0
+      ) {
+        document
+          .querySelector(
+            '.menu-missed-recovery',
+          )
+          ?.scrollIntoView({
+            behavior:
+              'smooth',
+
+            block:
+              'center',
+          });
+      }
+
+      return;
+    }
+
+    const currentIndex =
+      problems.findIndex(
+        (item) =>
+          item.id ===
+          activeDetectionProblemId,
+      );
+
+    const nextIndex =
+      currentIndex >= 0
+        ? (
+            currentIndex + 1
+          ) %
+          problems.length
+        : 0;
+
+    const nextItem =
+      problems[
+        nextIndex
+      ];
+
+    setDetectionSearch('');
+
+    setDetectionReviewFilter(
+      'PROBLEMS',
+    );
+
+    setActiveDetectionProblemId(
+      nextItem.id,
+    );
+
+    window.setTimeout(
+      () => {
+        const element =
+          document.getElementById(
+            `detected-dish-${nextItem.id}`,
+          );
+
+        element?.scrollIntoView({
+          behavior:
+            'smooth',
+
+          block:
+            'center',
+        });
+
+        element?.focus({
+          preventScroll:
+            true,
+        });
+      },
+      60,
+    );
+  }
+
   const normalizedDetectionSearch =
     dishNameKey(
       detectionSearch,
@@ -7363,6 +7692,13 @@ Gulab Jamun`}
                           )
                         : 100;
 
+                    const groupContainsActiveProblem =
+                      group.items.some(
+                        (item) =>
+                          item.id ===
+                          activeDetectionProblemId,
+                      );
+
                     const selectedInGroup =
                       allGroupItems.filter(
                         (item) =>
@@ -7442,7 +7778,9 @@ Gulab Jamun`}
 
                             return (
                               <div
-                                className={`menu-preview-item ${isSelected ? 'is-selected' : ''} ${manualRateIds.has(item.id) ? 'needs-manual-rate' : ''} ${item.coverageStatus === 'REJECTED' ? 'is-rejected' : ''} ${detectionNeedsReview(item) ? 'needs-review' : ''} ${Number(item.costPerPlate) > 0 ? 'has-cost' : 'missing-cost'}`}
+                                id={`detected-dish-${item.id}`}
+                                tabIndex={-1}
+                                className={`menu-preview-item ${isSelected ? 'is-selected' : ''} ${manualRateIds.has(item.id) ? 'needs-manual-rate' : ''} ${item.coverageStatus === 'REJECTED' ? 'is-rejected' : ''} ${detectionNeedsReview(item) ? 'needs-review' : ''} ${Number(item.costPerPlate) > 0 ? 'has-cost' : 'missing-cost'} ${activeDetectionProblemId === item.id ? 'is-active-problem' : ''}`}
                                 key={item.id}
                               >
                                 <label className="menu-preview-selector" aria-label={`Select ${item.name}`}>
@@ -7482,6 +7820,24 @@ Gulab Jamun`}
                                     </b>
 
                                     <div className="menu-detection-item-actions">
+                                      {detectionNeedsReview(
+                                        item,
+                                      ) &&
+                                      item.coverageStatus !==
+                                        'REJECTED' ? (
+                                        <button
+                                          type="button"
+                                          className="confirm"
+                                          onClick={() =>
+                                            confirmDetectedDish(
+                                              item,
+                                            )
+                                          }
+                                        >
+                                          ✓ Looks correct
+                                        </button>
+                                      ) : null}
+
                                       <button
                                         type="button"
                                         onClick={() =>
@@ -7972,6 +8328,71 @@ Gulab Jamun`}
                   })}
                 </div>
 
+                <div
+                  className={`menu-detection-final-gate ${
+                    detectionReviewGateReady
+                      ? 'ready'
+                      : 'pending'
+                  }`}
+                >
+                  <div className="menu-detection-final-gate-copy">
+                    <span>
+                      Detection Review Gate
+                    </span>
+
+                    <strong>
+                      {detectionReviewGateReady
+                        ? '✓ Menu detection reviewed'
+                        : `${detectionReviewGatePending} review item${detectionReviewGatePending === 1 ? '' : 's'} left`}
+                    </strong>
+
+                    <small>
+                      {detectionReviewGateReady
+                        ? 'All uncertain detections and possible missed source lines have been reviewed.'
+                        : `${detectionUnconfirmedCount} uncertain dish${detectionUnconfirmedCount === 1 ? '' : 'es'} · ${detectionPossibleMissedCount} possible missed line${detectionPossibleMissedCount === 1 ? '' : 's'}`}
+                    </small>
+                  </div>
+
+                  <div className="menu-detection-final-progress">
+                    <div>
+                      <span
+                        style={{
+                          width:
+                            `${detectionReviewGatePercent}%`,
+                        }}
+                      />
+                    </div>
+
+                    <b>
+                      {
+                        detectionReviewGatePercent
+                      }
+                      %
+                    </b>
+                  </div>
+
+                  {!detectionReviewGateReady ? (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      data-menu-next-problem
+                      onClick={
+                        jumpToNextDetectionProblem
+                      }
+                    >
+                      Review Next Problem
+
+                      <kbd>
+                        N
+                      </kbd>
+                    </button>
+                  ) : (
+                    <div className="menu-detection-final-ready">
+                      Ready to save
+                    </div>
+                  )}
+                </div>
+
                 {previewDuplicateCount > 0 ? (
                   <div className="menu-preview-duplicate-note">
                     <b>{previewDuplicateCount} duplicate {previewDuplicateCount === 1 ? 'dish' : 'dishes'} found</b>
@@ -7997,7 +8418,7 @@ Gulab Jamun`}
                           'merge',
                         )
                       }
-                      disabled={!selectedPreviewMenu.length}
+                      disabled={!selectedPreviewMenu.length || !detectionReviewGateReady}
                     >
                       Merge with Current
                     </button>
@@ -8010,11 +8431,13 @@ Gulab Jamun`}
                         'replace',
                       )
                     }
-                    disabled={!selectedPreviewMenu.length}
+                    disabled={!selectedPreviewMenu.length || !detectionReviewGateReady}
                   >
-                    {work.menu.length > 0
-                      ? 'Replace Current Menu'
-                      : 'Use Detected Menu'}
+                    {!detectionReviewGateReady
+                      ? 'Finish Detection Review'
+                      : work.menu.length > 0
+                        ? 'Replace Current Menu'
+                        : 'Use Detected Menu'}
                   </button>
                   <button
                     className="menu-preview-cancel"

@@ -11447,3 +11447,293 @@ button:nth-child(2) {
     height: 32px;
   }
 }
+
+/* ========================================================================== */
+/* Detected Menu UX V18 — guided review                                       */
+/* ========================================================================== */
+
+.menu-detection-preview
+> .menu-detection-final-gate {
+  order: 11;
+}
+
+.menu-detection-preview
+> .menu-preview-duplicate-note {
+  order: 12;
+}
+
+.menu-detection-preview
+> .menu-preview-actions {
+  order: 13;
+}
+
+
+/* Next Problem */
+
+.menu-next-problem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.menu-next-problem kbd,
+.menu-detection-final-gate kbd {
+  display: inline-grid;
+  min-width: 21px;
+  height: 21px;
+  place-items: center;
+  padding: 0 5px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 6px;
+  color: #cbd5e1;
+  background: rgba(255,255,255,.07);
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+
+/* Active guided-review dish */
+
+.menu-preview-item.is-active-problem {
+  border-color: rgba(74,156,255,.7);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(74,156,255,.12),
+      rgba(74,156,255,.045)
+    );
+  box-shadow:
+    0 0 0 3px rgba(74,156,255,.09),
+    0 10px 26px rgba(0,0,0,.16);
+}
+
+.menu-preview-item.is-active-problem:focus {
+  outline: none;
+}
+
+
+/* Looks correct */
+
+.menu-detection-item-actions
+button.confirm {
+  color: #72e0a2;
+  border-color: rgba(61,220,132,.24);
+  background: rgba(61,220,132,.075);
+}
+
+.menu-detection-item-actions
+button.confirm:hover {
+  color: #a0efbf;
+  border-color: rgba(61,220,132,.4);
+  background: rgba(61,220,132,.13);
+}
+
+
+/* Auto-collapsed completed meal */
+
+.menu-preview-group:not([open]) {
+  opacity: .84;
+}
+
+.menu-preview-group:not([open])
+> summary {
+  border-bottom: 0;
+}
+
+.menu-preview-group:not([open])
+.menu-preview-group {
+  border-color: rgba(61,220,132,.11);
+}
+
+
+/* Final detection review gate */
+
+.menu-detection-final-gate {
+  display: grid;
+  grid-template-columns:
+    minmax(220px,1fr)
+    minmax(180px,.55fr)
+    auto;
+  gap: 16px;
+  align-items: center;
+  padding: 15px 16px;
+  border: 1px solid rgba(255,173,66,.27);
+  border-radius: 17px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,173,66,.08),
+      rgba(255,255,255,.025)
+    );
+}
+
+.menu-detection-final-gate.ready {
+  border-color: rgba(61,220,132,.25);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(61,220,132,.08),
+      rgba(255,255,255,.025)
+    );
+}
+
+.menu-detection-final-gate-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.menu-detection-final-gate-copy > span {
+  color: #ffbd67;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.menu-detection-final-gate.ready
+.menu-detection-final-gate-copy
+> span {
+  color: #72e0a2;
+}
+
+.menu-detection-final-gate-copy strong {
+  font-size: 13px;
+}
+
+.menu-detection-final-gate-copy small {
+  color: #8491a4;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.menu-detection-final-progress {
+  display: grid;
+  grid-template-columns:
+    minmax(90px,1fr)
+    auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.menu-detection-final-progress > div {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+}
+
+.menu-detection-final-progress
+> div > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      90deg,
+      #ffad42,
+      #ffc66f
+    );
+  transition: width .2s ease;
+}
+
+.menu-detection-final-gate.ready
+.menu-detection-final-progress
+> div > span {
+  background:
+    linear-gradient(
+      90deg,
+      #34c759,
+      #72e0a2
+    );
+}
+
+.menu-detection-final-progress b {
+  min-width: 38px;
+  font-size: 11px;
+  text-align: right;
+}
+
+.menu-detection-final-ready {
+  padding: 9px 12px;
+  border: 1px solid rgba(61,220,132,.24);
+  border-radius: 10px;
+  color: #72e0a2;
+  background: rgba(61,220,132,.08);
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+
+/* Keyboard shortcut hint in search */
+
+.menu-detection-search::after {
+  content: "/";
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 6px;
+  color: #718096;
+  background: rgba(255,255,255,.04);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+/*
+ * Hide shortcut hint when clear button
+ * is already occupying the end slot.
+ */
+.menu-detection-search:has(button)::after {
+  display: none;
+}
+
+
+/* Mobile */
+
+@media (max-width: 800px) {
+  .menu-detection-final-gate {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  .menu-detection-final-progress {
+    width: 100%;
+  }
+
+  .menu-detection-final-gate
+  .primary-button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .menu-detection-final-ready {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 700px) {
+  .menu-review-command-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-next-problem {
+    width: 100%;
+  }
+
+  .menu-detection-item-actions {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .menu-detection-item-actions
+  button.confirm {
+    flex: 1 1 100%;
+    min-height: 34px;
+  }
+}
