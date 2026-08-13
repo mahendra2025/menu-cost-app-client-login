@@ -918,7 +918,7 @@ export default function EventPage() {
     showDetectionSourceCompare,
     setShowDetectionSourceCompare,
   ] =
-    useState(false);
+    useState(true);
 
   const [
     editingDetectionId,
@@ -1018,32 +1018,6 @@ export default function EventPage() {
             HTMLButtonElement
           >(
             '[data-menu-next-problem]',
-          );
-
-        if (
-          button &&
-          !button.disabled
-        ) {
-          event.preventDefault();
-          button.click();
-        }
-
-        return;
-      }
-
-      /*
-       * C = Compare original source
-       * with detected dishes.
-       */
-      if (
-        event.key.toLowerCase() ===
-        'c'
-      ) {
-        const button =
-          document.querySelector<
-            HTMLButtonElement
-          >(
-            '[data-menu-source-compare]',
           );
 
         if (
@@ -6492,11 +6466,11 @@ Gulab Jamun`}
                         </span>
 
                         <strong>
-                          Original Menu ↔ Detected Dishes
+                          Compare & Edit Menu
                         </strong>
 
                         <small>
-                          Use this view to visually verify that dishes from the uploaded menu were captured correctly.
+                          Original menu is your reference. Edit the detected menu directly on the right before using it.
                         </small>
                       </div>
 
@@ -6584,45 +6558,89 @@ Gulab Jamun`}
 
                         <div className="menu-source-line-list">
                           {sourceComparisonLines.map(
-                            (line) => (
-                              <div
-                                className={`menu-source-line ${line.status.toLowerCase().replaceAll(
-                                  '_',
-                                  '-',
-                                )}`}
-                                key={`source-${line.lineNumber}`}
-                              >
-                                <span className="menu-source-line-number">
-                                  {
-                                    line.lineNumber
-                                  }
-                                </span>
+                            (line) => {
+                              const missedCandidate =
+                                detectionPreview
+                                  .possibleMissed
+                                  .find(
+                                    (candidate) =>
+                                      dishNameKey(
+                                        candidate.name,
+                                      ) ===
+                                      line.key,
+                                  );
 
-                                <div>
-                                  <strong>
+                              return (
+                                <div
+                                  className={`menu-source-line ${line.status
+                                    .toLowerCase()
+                                    .replaceAll(
+                                      '_',
+                                      '-',
+                                    )}`}
+                                  key={`source-${line.lineNumber}`}
+                                >
+                                  <span className="menu-source-line-number">
                                     {
-                                      line.raw
+                                      line.lineNumber
                                     }
-                                  </strong>
+                                  </span>
 
-                                  {line.status ===
-                                  'DETECTED' ? (
-                                    <small className="matched">
-                                      ✓ Exact dish match
-                                    </small>
-                                  ) : line.status ===
-                                    'POSSIBLE_MISSED' ? (
-                                    <small className="attention">
-                                      ⚠ Possible missed dish
-                                    </small>
-                                  ) : (
-                                    <small>
-                                      Source line / heading / note
-                                    </small>
-                                  )}
+                                  <div className="menu-source-line-copy">
+                                    <strong>
+                                      {
+                                        line.raw
+                                      }
+                                    </strong>
+
+                                    {line.status ===
+                                    'DETECTED' ? (
+                                      <small className="matched">
+                                        ✓ Detected
+                                      </small>
+                                    ) : line.status ===
+                                        'POSSIBLE_MISSED' &&
+                                      missedCandidate ? (
+                                      <>
+                                        <small className="attention">
+                                          ⚠ Possible missed dish
+                                        </small>
+
+                                        <div className="menu-source-missed-actions">
+                                          <button
+                                            type="button"
+                                            className="source-add"
+                                            onClick={() =>
+                                              addPossibleMissedDish(
+                                                missedCandidate,
+                                              )
+                                            }
+                                          >
+                                            + Add Dish
+                                          </button>
+
+                                          <button
+                                            type="button"
+                                            className="source-ignore"
+                                            onClick={() =>
+                                              dismissPossibleMissedDish(
+                                                missedCandidate,
+                                              )
+                                            }
+                                          >
+                                            Not a dish
+                                          </button>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <small>
+                                        Source / heading / note
+                                      </small>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ),
+                              );
+                            },
                           )}
                         </div>
                       </section>
@@ -6649,11 +6667,168 @@ Gulab Jamun`}
                         </div>
 
                         <div className="menu-source-detected-list">
+                          <div className="menu-compare-add-dish">
+                            <button
+                              type="button"
+                              className="menu-compare-add-toggle"
+                              onClick={() => {
+                                setShowAddMissedDish(
+                                  (current) =>
+                                    !current,
+                                );
+
+                                if (
+                                  !newDetectionDishGroupKey &&
+                                  detectionFunctionOptions.length
+                                ) {
+                                  setNewDetectionDishGroupKey(
+                                    detectionFunctionOptions[
+                                      0
+                                    ].key,
+                                  );
+                                }
+                              }}
+                            >
+                              + Add Dish
+                            </button>
+                          </div>
+
+                          {showAddMissedDish ? (
+                            <div className="menu-compare-add-form">
+                              <div className="menu-compare-field">
+                                <span>
+                                  Dish name
+                                </span>
+
+                                <input
+                                  className="input"
+                                  value={
+                                    newDetectionDishName
+                                  }
+                                  onChange={(event) =>
+                                    setNewDetectionDishName(
+                                      event.target
+                                        .value,
+                                    )
+                                  }
+                                  placeholder="Enter missed dish"
+                                  autoFocus
+                                />
+                              </div>
+
+                              <div className="menu-compare-field">
+                                <span>
+                                  Category
+                                </span>
+
+                                <select
+                                  className="select"
+                                  value={
+                                    newDetectionDishCategory
+                                  }
+                                  onChange={(event) =>
+                                    setNewDetectionDishCategory(
+                                      event.target
+                                        .value as Category,
+                                    )
+                                  }
+                                >
+                                  {CATEGORIES.map(
+                                    (
+                                      category,
+                                    ) => (
+                                      <option
+                                        key={
+                                          category
+                                        }
+                                        value={
+                                          category
+                                        }
+                                      >
+                                        {
+                                          category
+                                        }
+                                      </option>
+                                    ),
+                                  )}
+                                </select>
+                              </div>
+
+                              {detectionFunctionOptions.length >
+                              1 ? (
+                                <div className="menu-compare-field">
+                                  <span>
+                                    Function
+                                  </span>
+
+                                  <select
+                                    className="select"
+                                    value={
+                                      newDetectionDishGroupKey
+                                    }
+                                    onChange={(event) =>
+                                      setNewDetectionDishGroupKey(
+                                        event.target
+                                          .value,
+                                      )
+                                    }
+                                  >
+                                    {detectionFunctionOptions.map(
+                                      (
+                                        option,
+                                      ) => (
+                                        <option
+                                          key={
+                                            option.key
+                                          }
+                                          value={
+                                            option.key
+                                          }
+                                        >
+                                          {
+                                            option.label
+                                          }
+                                        </option>
+                                      ),
+                                    )}
+                                  </select>
+                                </div>
+                              ) : null}
+
+                              <div className="menu-compare-add-actions">
+                                <button
+                                  type="button"
+                                  className="primary-button"
+                                  onClick={
+                                    addMissedDetectedDish
+                                  }
+                                >
+                                  Add to Menu
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="ghost-button"
+                                  onClick={() => {
+                                    setShowAddMissedDish(
+                                      false,
+                                    );
+
+                                    setNewDetectionDishName(
+                                      '',
+                                    );
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
+
                           {sourceCompareDetectedItems.map(
                             (item) => (
-                              <button
-                                type="button"
-                                className={`menu-source-detected-item ${
+                              <div
+                                className={`menu-source-detected-item menu-compare-editable ${
                                   detectionHasProblem(
                                     item,
                                   )
@@ -6661,76 +6836,215 @@ Gulab Jamun`}
                                     : 'ready'
                                 }`}
                                 key={`compare-${item.id}`}
-                                onClick={() => {
-                                  setShowDetectionSourceCompare(
-                                    false,
-                                  );
-
-                                  setDetectionSearch(
-                                    item.name,
-                                  );
-
-                                  setDetectionReviewFilter(
-                                    'ALL',
-                                  );
-
-                                  setActiveDetectionProblemId(
-                                    item.id,
-                                  );
-
-                                  window.setTimeout(
-                                    () =>
-                                      document
-                                        .getElementById(
-                                          `detected-dish-${item.id}`,
-                                        )
-                                        ?.scrollIntoView({
-                                          behavior:
-                                            'smooth',
-
-                                          block:
-                                            'center',
-                                        }),
-                                    60,
-                                  );
-                                }}
                               >
-                                <div>
-                                  <strong>
-                                    {
-                                      item.name
-                                    }
-                                  </strong>
+                                {editingDetectionId ===
+                                item.id ? (
+                                  <div className="menu-compare-edit-form">
+                                    <div className="menu-compare-field">
+                                      <span>
+                                        Dish name
+                                      </span>
 
-                                  <small>
-                                    {
-                                      item.category
-                                    }
-
-                                    {item.dayLabel ||
-                                    item.mealLabel
-                                      ? ` · ${[
-                                          item.dayLabel,
-                                          item.mealLabel,
-                                        ]
-                                          .filter(
-                                            Boolean,
+                                      <input
+                                        className="input"
+                                        value={
+                                          editDetectionName
+                                        }
+                                        onChange={(event) =>
+                                          setEditDetectionName(
+                                            event.target
+                                              .value,
                                           )
-                                          .join(
-                                            ' • ',
-                                          )}`
-                                      : ''}
-                                  </small>
-                                </div>
+                                        }
+                                      />
+                                    </div>
 
-                                <span>
-                                  {detectionHasProblem(
-                                    item,
-                                  )
-                                    ? 'Review'
-                                    : '✓ Ready'}
-                                </span>
-                              </button>
+                                    <div className="menu-compare-field">
+                                      <span>
+                                        Category
+                                      </span>
+
+                                      <select
+                                        className="select"
+                                        value={
+                                          editDetectionCategory
+                                        }
+                                        onChange={(event) =>
+                                          setEditDetectionCategory(
+                                            event.target
+                                              .value as Category,
+                                          )
+                                        }
+                                      >
+                                        {CATEGORIES.map(
+                                          (
+                                            category,
+                                          ) => (
+                                            <option
+                                              key={
+                                                category
+                                              }
+                                              value={
+                                                category
+                                              }
+                                            >
+                                              {
+                                                category
+                                              }
+                                            </option>
+                                          ),
+                                        )}
+                                      </select>
+                                    </div>
+
+                                    <div className="menu-compare-edit-actions">
+                                      <button
+                                        type="button"
+                                        className="primary-button"
+                                        onClick={() =>
+                                          saveDetectionEdit(
+                                            item.id,
+                                          )
+                                        }
+                                      >
+                                        Save
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        className="ghost-button"
+                                        onClick={
+                                          cancelDetectionEdit
+                                        }
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="menu-compare-dish-main">
+                                      <div className="menu-compare-dish-title">
+                                        <strong>
+                                          {
+                                            item.name
+                                          }
+                                        </strong>
+
+                                        {recostingDishIds.has(
+                                          item.id,
+                                        ) ? (
+                                          <span className="menu-compare-recosting">
+                                            Re-costing…
+                                          </span>
+                                        ) : null}
+                                      </div>
+
+                                      <div className="menu-compare-dish-meta">
+                                        <select
+                                          value={
+                                            item.category
+                                          }
+                                          disabled={
+                                            recostingDishIds.has(
+                                              item.id,
+                                            )
+                                          }
+                                          onChange={(event) =>
+                                            quickChangeDetectionCategory(
+                                              item,
+                                              event.target
+                                                .value as Category,
+                                            )
+                                          }
+                                          aria-label={`Category for ${item.name}`}
+                                        >
+                                          {CATEGORIES.map(
+                                            (
+                                              category,
+                                            ) => (
+                                              <option
+                                                key={
+                                                  category
+                                                }
+                                                value={
+                                                  category
+                                                }
+                                              >
+                                                {
+                                                  category
+                                                }
+                                              </option>
+                                            ),
+                                          )}
+                                        </select>
+
+                                        {(item.dayLabel ||
+                                          item.mealLabel) ? (
+                                          <small>
+                                            {[
+                                              item.dayLabel,
+                                              item.mealLabel,
+                                            ]
+                                              .filter(
+                                                Boolean,
+                                              )
+                                              .join(
+                                                ' • ',
+                                              )}
+                                          </small>
+                                        ) : null}
+                                      </div>
+                                    </div>
+
+                                    <div className="menu-compare-dish-actions">
+                                      {detectionNeedsReview(
+                                        item,
+                                      ) ? (
+                                        <button
+                                          type="button"
+                                          className="compare-confirm"
+                                          onClick={() =>
+                                            confirmDetectedDish(
+                                              item,
+                                            )
+                                          }
+                                        >
+                                          ✓ Looks correct
+                                        </button>
+                                      ) : (
+                                        <span className="compare-ready">
+                                          ✓ Ready
+                                        </span>
+                                      )}
+
+                                      <button
+                                        type="button"
+                                        className="compare-edit"
+                                        onClick={() =>
+                                          beginDetectionEdit(
+                                            item,
+                                          )
+                                        }
+                                      >
+                                        Edit
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        className="compare-remove"
+                                        onClick={() =>
+                                          toggleDetectedDishRejection(
+                                            item,
+                                          )
+                                        }
+                                      >
+                                        Not a dish
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             ),
                           )}
                         </div>

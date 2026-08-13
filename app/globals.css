@@ -12257,3 +12257,378 @@ p b {
     grid-template-columns: 1fr;
   }
 }
+
+/* ========================================================================== */
+/* Simple Menu Detection — Compare + Edit only                                */
+/* ========================================================================== */
+
+/*
+ * Keep the powerful detection/review logic
+ * internally, but remove technical clutter
+ * from the customer-facing detection screen.
+ */
+.menu-detection-preview > * {
+  display: none !important;
+}
+
+.menu-detection-preview
+> .menu-source-compare {
+  display: grid !important;
+  order: 1 !important;
+}
+
+.menu-detection-preview
+> .menu-preview-actions {
+  display: grid !important;
+  order: 2 !important;
+}
+
+
+/* Comparison is now the main interface */
+
+.menu-source-compare {
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.menu-source-compare-head {
+  grid-template-columns:
+    minmax(0,1fr)
+    auto;
+}
+
+.menu-source-compare-head
+.menu-source-compare-close {
+  display: none !important;
+}
+
+.menu-source-compare-toggle {
+  display: none !important;
+}
+
+.menu-source-compare-footer
+.secondary-button {
+  display: none !important;
+}
+
+.menu-source-compare-head
+> div:first-child
+> span {
+  color: #7daeff;
+}
+
+.menu-source-compare-head
+> div:first-child
+> strong {
+  font-size: 17px;
+  letter-spacing: -.025em;
+}
+
+
+/* Original source */
+
+.menu-source-line {
+  min-height: 51px;
+}
+
+.menu-source-line-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.menu-source-missed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.menu-source-missed-actions button {
+  min-height: 28px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.menu-source-missed-actions
+.source-add {
+  color: #72e0a2;
+  border-color: rgba(61,220,132,.24);
+  background: rgba(61,220,132,.08);
+}
+
+.menu-source-missed-actions
+.source-ignore {
+  color: #a3adbb;
+  border-color: rgba(255,255,255,.08);
+  background: rgba(255,255,255,.035);
+}
+
+
+/* Add dish */
+
+.menu-compare-add-dish {
+  display: flex;
+  justify-content: flex-end;
+  padding: 2px;
+}
+
+.menu-compare-add-toggle {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(74,156,255,.25);
+  border-radius: 9px;
+  color: #8dbfff;
+  background: rgba(74,156,255,.075);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.menu-compare-add-form,
+.menu-compare-edit-form {
+  display: grid;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid rgba(74,156,255,.22);
+  border-radius: 11px;
+  background: rgba(74,156,255,.045);
+}
+
+.menu-compare-field {
+  display: grid;
+  gap: 4px;
+}
+
+.menu-compare-field > span {
+  color: #7f8c9f;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.menu-compare-add-actions,
+.menu-compare-edit-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.menu-compare-add-actions button,
+.menu-compare-edit-actions button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 9px;
+}
+
+
+/* Detected dish editor rows */
+
+.menu-source-detected-item.menu-compare-editable {
+  display: grid;
+  grid-template-columns:
+    minmax(0,1fr)
+    auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 70px;
+  padding: 10px 11px;
+  cursor: default;
+}
+
+.menu-source-detected-item.menu-compare-editable:hover {
+  border-color: rgba(74,156,255,.22);
+}
+
+.menu-compare-dish-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.menu-compare-dish-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.menu-compare-dish-title strong {
+  font-size: 12px;
+}
+
+.menu-compare-recosting {
+  padding: 3px 6px;
+  border-radius: 999px;
+  color: #8dbfff;
+  background: rgba(74,156,255,.09);
+  font-size: 7px;
+  font-weight: 850;
+}
+
+.menu-compare-dish-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.menu-compare-dish-meta select {
+  min-height: 29px;
+  max-width: 170px;
+  padding: 4px 25px 4px 8px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 8px;
+  outline: 0;
+  color: #b8c2cf;
+  background: #151a22;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.menu-compare-dish-meta small {
+  color: #748195;
+  font-size: 8px;
+}
+
+.menu-compare-dish-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.menu-compare-dish-actions button {
+  min-height: 30px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.menu-compare-dish-actions
+.compare-confirm {
+  color: #72e0a2;
+  border-color: rgba(61,220,132,.23);
+  background: rgba(61,220,132,.07);
+}
+
+.menu-compare-dish-actions
+.compare-edit {
+  color: #8dbfff;
+  border-color: rgba(74,156,255,.22);
+  background: rgba(74,156,255,.065);
+}
+
+.menu-compare-dish-actions
+.compare-remove {
+  color: #ff9b94;
+  border-color: rgba(255,91,82,.18);
+  background: rgba(255,91,82,.055);
+}
+
+.compare-ready {
+  padding: 5px 7px;
+  border-radius: 999px;
+  color: #72e0a2;
+  background: rgba(61,220,132,.065);
+  font-size: 8px;
+  font-weight: 900;
+}
+
+
+/* Simple final action */
+
+.menu-detection-preview
+> .menu-preview-actions {
+  position: sticky;
+  bottom: 12px;
+  z-index: 20;
+  grid-template-columns:
+    minmax(0,1fr)
+    auto
+    auto;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid rgba(74,156,255,.2);
+  border-radius: 15px;
+  background: rgba(12,16,22,.95);
+  backdrop-filter: blur(18px);
+}
+
+.menu-preview-actions
+.menu-preview-cancel {
+  opacity: .7;
+}
+
+
+/* Mobile */
+
+@media (max-width: 760px) {
+  .menu-source-compare {
+    padding: 10px;
+  }
+
+  .menu-source-compare-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-source-compare-panel:first-child {
+    max-height: 330px;
+  }
+
+  .menu-source-detected-item.menu-compare-editable {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .menu-compare-dish-actions {
+    justify-content: flex-start;
+  }
+
+  .menu-compare-dish-actions button {
+    min-height: 34px;
+  }
+
+  .menu-compare-dish-meta select {
+    width: 100%;
+    max-width: none;
+    min-height: 34px;
+  }
+
+  .menu-detection-preview
+  > .menu-preview-actions {
+    bottom:
+      calc(
+        72px +
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      );
+    grid-template-columns: 1fr;
+  }
+
+  .menu-preview-actions
+  .primary-button,
+  .menu-preview-actions
+  .ghost-button {
+    width: 100%;
+  }
+
+  .menu-compare-add-actions,
+  .menu-compare-edit-actions {
+    display: grid;
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+  }
+}
