@@ -5198,13 +5198,6 @@ export default function EventPage() {
     .map((line) => line.trim())
     .filter(Boolean).length;
 
-  const firstMenuEventReady =
-    Boolean(
-      work.event.eventName.trim() ||
-      work.event.clientName.trim() ||
-      Number(work.event.pax) > 0,
-    );
-
   const firstMenuTextReady =
     work.event.rawMenuText.trim().length > 0;
 
@@ -5222,7 +5215,6 @@ export default function EventPage() {
 
   const firstMenuCompletedSteps =
     [
-      firstMenuEventReady,
       firstMenuTextReady,
       firstMenuDetected,
       firstMenuSaved,
@@ -6157,15 +6149,15 @@ export default function EventPage() {
                 </h2>
 
                 <p>
-                  Follow these four steps.
+                  Follow these three steps.
                   Menu Costing will guide you from
-                  event details to a saved menu.
+                  function import to a saved menu.
                 </p>
               </div>
 
               <div className="first-menu-guide-progress">
                 <strong>
-                  {firstMenuCompletedSteps}/4
+                  {firstMenuCompletedSteps}/3
                 </strong>
 
                 <span>
@@ -6182,7 +6174,7 @@ export default function EventPage() {
                       5,
                       (
                         firstMenuCompletedSteps /
-                        4
+                        3
                       ) * 100,
                     )}%`,
                 }}
@@ -6193,41 +6185,9 @@ export default function EventPage() {
               <button
                 type="button"
                 className={
-                  firstMenuEventReady
-                    ? 'is-complete'
-                    : 'is-current'
-                }
-                onClick={() =>
-                  scrollToFirstMenuSection(
-                    'eventInformation',
-                  )
-                }
-              >
-                <span className="first-menu-step-number">
-                  {firstMenuEventReady
-                    ? '✓'
-                    : '1'}
-                </span>
-
-                <span>
-                  <b>
-                    Event details
-                  </b>
-
-                  <small>
-                    Client, event or guest count
-                  </small>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className={
                   firstMenuTextReady
                     ? 'is-complete'
-                    : firstMenuEventReady
-                      ? 'is-current'
-                      : ''
+                    : 'is-current'
                 }
                 onClick={() =>
                   scrollToFirstMenuSection(
@@ -6238,7 +6198,7 @@ export default function EventPage() {
                 <span className="first-menu-step-number">
                   {firstMenuTextReady
                     ? '✓'
-                    : '2'}
+                    : '1'}
                 </span>
 
                 <span>
@@ -6277,7 +6237,7 @@ export default function EventPage() {
                 <span className="first-menu-step-number">
                   {firstMenuDetected
                     ? '✓'
-                    : '3'}
+                    : '2'}
                 </span>
 
                 <span>
@@ -6311,7 +6271,7 @@ export default function EventPage() {
                 <span className="first-menu-step-number">
                   {firstMenuSaved
                     ? '✓'
-                    : '4'}
+                    : '3'}
                 </span>
 
                 <span>
@@ -6396,180 +6356,6 @@ export default function EventPage() {
         ) : null}
 
         <div
-          id="eventInformation"
-          className="glass-card event-details-card"
-          style={{ order: 2 }}
-        >
-          <div className="event-section-heading">
-            <div>
-              <span className="section-kicker">Event brief</span>
-              <h2>Event information</h2>
-            </div>
-          </div>
-
-          <div className="form-grid">
-            <div className="three-grid">
-              <div className="field">
-                <label htmlFor="clientName">
-                  Client Name
-                </label>
-
-                <input
-                  id="clientName"
-                  className="input input-large"
-                  value={
-                    work.event.clientName
-                  }
-                  onChange={(event) =>
-                    updateEvent(
-                      'clientName',
-                      event.target.value,
-                    )
-                  }
-                  placeholder="Client name"
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="eventName">
-                  Event Name
-                </label>
-
-                <input
-                  id="eventName"
-                  className="input input-large"
-                  value={
-                    work.event.eventName
-                  }
-                  onChange={(event) =>
-                    updateEvent(
-                      'eventName',
-                      event.target.value,
-                    )
-                  }
-                  placeholder="Wedding / Birthday / Corporate"
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="eventDate">
-                  Event Date
-                </label>
-
-                <input
-                  id="eventDate"
-                  className="input input-large"
-                  type="date"
-                  value={
-                    work.event.eventDate
-                  }
-                  onChange={(event) =>
-                    updateEvent(
-                      'eventDate',
-                      event.target.value,
-                    )
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="three-grid">
-              <div className="field">
-                <label htmlFor="functionType">
-                  Function Type
-                </label>
-
-                <input
-                  id="functionType"
-                  className="input input-large"
-                  value={
-                    work.event.functionType
-                  }
-                  onChange={(event) =>
-                    updateEvent(
-                      'functionType',
-                      event.target.value,
-                    )
-                  }
-                  placeholder="Lunch / Dinner / Breakfast"
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="pax">
-                  Default Pax / Guests
-                </label>
-
-                <input
-                  id="pax"
-                  className="input input-large"
-                  type="number"
-                  min="1"
-                  inputMode="numeric"
-                  value={
-                    work.event.pax || ''
-                  }
-                  onChange={(event) =>
-                    updateEvent(
-                      'pax',
-                      Math.max(
-                        0,
-                        Number(
-                          event.target.value,
-                        ) || 0,
-                      ),
-                    )
-                  }
-                  placeholder="300"
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="city">
-                  City
-                </label>
-
-                <input
-                  id="city"
-                  className="input input-large"
-                  value={
-                    work.event.city
-                  }
-                  onChange={(event) =>
-                    updateEvent(
-                      'city',
-                      event.target.value,
-                    )
-                  }
-                  placeholder="Silvassa"
-                />
-              </div>
-            </div>
-
-            <div className="field">
-              <label htmlFor="venue">
-                Venue
-              </label>
-
-              <input
-                id="venue"
-                className="input input-large"
-                value={
-                  work.event.venue
-                }
-                onChange={(event) =>
-                  updateEvent(
-                    'venue',
-                    event.target.value,
-                  )
-                }
-                placeholder="Venue / Address"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div
           id="menuInput"
           className="glass-card event-menu-card"
           style={{ order: 1 }}
@@ -6627,32 +6413,6 @@ export default function EventPage() {
               </div>
 
               <div className="menu-upload-options">
-                  <div className="menu-upload-option">
-                    <span className="menu-upload-icon" aria-hidden="true">PDF</span>
-                    <div>
-                      <b>Upload PDF</b>
-                      <p>Text or scanned PDF, including multi-column menus, up to 15 MB.</p>
-                    </div>
-                    <label
-                      className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
-                      htmlFor="menuPdf"
-                    >
-                      {uploading === 'pdf' ? 'Reading PDF...' : 'Choose PDF'}
-                    </label>
-                    <input
-                      id="menuPdf"
-                      className="visually-hidden-file"
-                      type="file"
-                      accept="application/pdf,.pdf"
-                      disabled={Boolean(uploading)}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = '';
-                        if (file) void readPdf(file);
-                      }}
-                    />
-                  </div>
-
                   <div className="menu-upload-option">
                     <span className="menu-upload-icon camera" aria-hidden="true">CAM</span>
                     <div>
@@ -6721,22 +6481,9 @@ export default function EventPage() {
                       <span aria-hidden="true">✓</span>
                       <div>
                         <b>Event details detected</b>
-                        <p>Empty fields in Event information were filled automatically.</p>
+                        <p>Details found in the uploaded menu were saved automatically.</p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        document
-                          .getElementById('clientName')
-                          ?.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center',
-                          })
-                      }
-                    >
-                      Review details
-                    </button>
                   </div>
                   <div className="event-detected-detail-list">
                     {(Object.entries(detectedEventDetails) as Array<
