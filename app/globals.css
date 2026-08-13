@@ -13544,6 +13544,99 @@ small {
 }
 
 @media (max-width: 680px) {
+  .dish-cost-card {
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .dish-cost-card-heading {
+    gap: 8px;
+  }
+
+  .dish-cost-card-heading .dish-cost-name {
+    min-width: 0;
+  }
+
+  .dish-cost-card-heading .dish-category-select {
+    width: min(118px, 40%);
+    min-height: 32px;
+    padding-block: 5px;
+    font-size: 11px;
+  }
+
+  .dish-cost-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 8px;
+  }
+
+  .dish-cost-card-grid > div {
+    gap: 2px;
+    min-width: 0;
+    padding: 5px 6px;
+    border-radius: 8px;
+  }
+
+  .dish-cost-card-grid small {
+    font-size: 7px;
+    line-height: 1.15;
+  }
+
+  .dish-cost-card-grid b {
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dish-cost-card > .field {
+    gap: 3px;
+    margin-top: 6px;
+  }
+
+  .dish-cost-card > .field label,
+  .dish-cost-card > .field > small {
+    font-size: 8px;
+    line-height: 1.2;
+  }
+
+  .dish-cost-card .cost-portion-control {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    width: 100%;
+  }
+
+  .dish-cost-card .cost-portion-control .select {
+    width: 100%;
+    min-height: 32px;
+    font-size: 11px;
+  }
+
+  .dish-cost-card .portion-chip {
+    min-height: 24px;
+    padding: 4px 7px;
+    font-size: 9px;
+  }
+
+  .dish-cost-card-rate .dish-rate-input {
+    min-height: 34px;
+  }
+
+  .dish-cost-card-rate .dish-rate-input input {
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .dish-cost-card-rate .dish-rate-input > span {
+    font-size: 11px;
+  }
+
+  .dish-remove-button-mobile {
+    min-height: 34px;
+    margin-top: 6px;
+    font-size: 10px;
+  }
+
   .dish-manual-rate-alert {
     align-items: stretch;
     flex-direction: column;
@@ -13852,5 +13945,285 @@ small {
 
   .app-frame .sidebar-nav a {
     grid-template-columns: 26px minmax(0, 1fr);
+  }
+}
+
+/* Compact phone density for the client workflow. */
+@media (max-width: 600px) {
+  html {
+    scroll-padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .client-theme.page-shell {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .client-theme .topbar {
+    min-height: 52px;
+    padding: max(6px, env(safe-area-inset-top, 0px)) 9px 6px;
+  }
+
+  .client-theme .brand-chip {
+    gap: 7px;
+  }
+
+  .client-theme .brand-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+
+  .client-theme .brand-copy b {
+    font-size: 12px;
+  }
+
+  .client-theme .brand-copy small {
+    max-width: 105px;
+    margin-top: 1px;
+    font-size: 8px;
+  }
+
+  .client-theme .topbar-actions {
+    gap: 5px;
+  }
+
+  .client-theme .history-shortcut {
+    min-height: 32px;
+    padding: 6px 8px;
+    border-radius: 9px;
+    font-size: 10px;
+  }
+
+  .client-theme .mobile-page-context {
+    display: none;
+  }
+
+  .client-theme .logout-button {
+    width: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    border-radius: 10px;
+  }
+
+  .client-theme .logout-icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .client-theme .app-workspace {
+    padding: 9px 8px 0;
+  }
+
+  .client-theme .page-title {
+    gap: 8px;
+    margin-bottom: 9px;
+    padding-top: 1px;
+  }
+
+  .client-theme .page-eyebrow {
+    font-size: 7px;
+    letter-spacing: .08em;
+  }
+
+  .client-theme .page-title h1 {
+    margin: 3px 0 2px;
+    font-size: clamp(22px, 7vw, 27px);
+    line-height: 1;
+  }
+
+  .client-theme .page-title p {
+    max-width: 245px;
+    font-size: 9px;
+    line-height: 1.3;
+  }
+
+  .client-theme .page-progress {
+    width: 46px;
+    flex-basis: 46px;
+    gap: 4px;
+    padding-top: 3px;
+  }
+
+  .client-theme .page-progress > span {
+    font-size: 8px;
+  }
+
+  .client-theme .page-progress > div {
+    height: 3px;
+  }
+
+  .client-theme .content-grid,
+  .client-theme .form-grid {
+    gap: 8px;
+  }
+
+  .client-theme .glass-card,
+  .client-theme .panel,
+  .client-theme .locked-card,
+  .client-theme .alert-card {
+    padding: 11px;
+    border-radius: 13px;
+  }
+
+  .client-theme .glass-card h2,
+  .client-theme .panel h2 {
+    font-size: 17px;
+  }
+
+  .client-theme .field {
+    gap: 4px;
+  }
+
+  .client-theme .field label {
+    font-size: 10px;
+  }
+
+  .client-theme .input,
+  .client-theme .textarea,
+  .client-theme .select {
+    min-height: 42px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    font-size: 16px;
+  }
+
+  .client-theme .textarea-large {
+    min-height: 132px;
+  }
+
+  .client-theme .primary-button,
+  .client-theme .secondary-button,
+  .client-theme .ghost-button,
+  .client-theme .danger-button {
+    min-height: 40px;
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+
+  .client-theme .section-kicker {
+    min-height: 22px;
+    margin-bottom: 5px;
+    padding: 4px 7px;
+    font-size: 8px;
+  }
+
+  .client-theme .action-row,
+  .client-theme .page-actions {
+    gap: 6px;
+  }
+
+  .client-theme .action-row.page-actions {
+    margin-top: 8px;
+  }
+
+  .client-theme .stat-grid {
+    gap: 6px;
+  }
+
+  .client-theme .stat-card,
+  .client-theme .helper-card,
+  .client-theme .readiness-card {
+    padding: 9px 10px;
+    border-radius: 11px;
+  }
+
+  .client-theme .stat-card small,
+  .client-theme .stat-card span {
+    font-size: 8px;
+  }
+
+  .client-theme .stat-card strong {
+    margin-top: 3px;
+    font-size: 18px;
+  }
+
+  .client-theme .menu-source-workspace,
+  .client-theme .menu-detection-preview,
+  .client-theme .menu-upload-option,
+  .client-theme .menu-service-group,
+  .client-theme .manpower-function-card,
+  .client-theme .disposable-cost-row,
+  .client-theme .final-costing-overview {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .client-theme .menu-text-field .textarea {
+    min-height: 125px;
+  }
+
+  .client-theme .menu-service-groups,
+  .client-theme .manpower-function-list,
+  .client-theme .disposable-cost-list {
+    gap: 8px;
+    margin-top: 9px;
+  }
+
+  .client-theme .manpower-function-card h3 {
+    font-size: 15px;
+  }
+
+  .client-theme .final-costing-overview {
+    gap: 10px;
+  }
+
+  .client-theme .final-costing-overview h2 {
+    font-size: 19px;
+  }
+
+  .client-theme .final-costing-overview-total {
+    min-width: 0;
+    padding: 10px;
+    border-radius: 11px;
+  }
+
+  .client-theme .final-costing-overview-total b {
+    font-size: 19px;
+  }
+
+  .client-theme .mc-free-meter {
+    align-items: center;
+    flex-direction: row;
+    gap: 7px;
+    margin-bottom: 8px;
+    padding: 8px 9px;
+    border-radius: 10px;
+  }
+
+  .client-theme .mc-free-meter-copy {
+    gap: 5px;
+  }
+
+  .client-theme .mc-free-meter-upgrade {
+    flex: 0 0 auto;
+    min-height: 30px;
+  }
+
+  .client-theme .bottom-nav {
+    padding: 4px max(4px, env(safe-area-inset-right, 0px)) max(4px, env(safe-area-inset-bottom, 0px)) max(4px, env(safe-area-inset-left, 0px));
+    border-radius: 14px 14px 0 0;
+  }
+
+  .client-theme .bottom-nav a {
+    gap: 2px;
+    min-height: 48px;
+    padding: 4px 1px;
+    border-radius: 10px;
+  }
+
+  .client-theme .bottom-nav .nav-mark {
+    width: 21px;
+    height: 21px;
+    border-radius: 7px;
+  }
+
+  .client-theme .bottom-nav .nav-mark svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .client-theme .bottom-nav small {
+    font-size: 7px;
   }
 }
