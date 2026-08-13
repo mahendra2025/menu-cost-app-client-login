@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation';
 
 import FreeLimitPaywall from '../../components/FreeLimitPaywall';
 
+import MenuPhotoCropper from './MenuPhotoCropper';
+
 import AppShell, {
   LockedCard,
 } from '../../components/AppShell';
@@ -847,6 +849,9 @@ export default function EventPage() {
 
   const [uploadStatus, setUploadStatus] =
     useState('');
+
+  const [photoToCrop, setPhotoToCrop] =
+    useState<File | null>(null);
 
   const [importFunctionName, setImportFunctionName] =
     useState('');
@@ -5067,6 +5072,12 @@ export default function EventPage() {
     }
   }
 
+  function chooseMenuPhoto(file: File) {
+    setError('');
+    setUploadStatus('');
+    setPhotoToCrop(file);
+  }
+
   function useSampleMenu() {
     if (!work) return;
     if (work.event.rawMenuText.trim() && !window.confirm('Replace the current menu text with the sample format?')) return;
@@ -6361,7 +6372,7 @@ export default function EventPage() {
                     onChange={(event) => {
                       const file = event.target.files?.[0];
                       event.target.value = '';
-                      if (file) void readMenuPhoto(file);
+                      if (file) chooseMenuPhoto(file);
                     }}
                   />
                   <input
@@ -6373,11 +6384,22 @@ export default function EventPage() {
                     onChange={(event) => {
                       const file = event.target.files?.[0];
                       event.target.value = '';
-                      if (file) void readMenuPhoto(file);
+                      if (file) chooseMenuPhoto(file);
                     }}
                   />
                 </div>
               </div>
+
+              {photoToCrop ? (
+                <MenuPhotoCropper
+                  file={photoToCrop}
+                  onCancel={() => setPhotoToCrop(null)}
+                  onConfirm={(photo) => {
+                    setPhotoToCrop(null);
+                    void readMenuPhoto(photo);
+                  }}
+                />
+              ) : null}
 
               {uploadStatus ? (
                 <div className="menu-upload-status" role="status" aria-live="polite">
