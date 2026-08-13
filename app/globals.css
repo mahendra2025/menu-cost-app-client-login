@@ -13303,3 +13303,68 @@ small {
     width: 100%;
   }
 }
+
+/* ========================================================================== */
+/* Detected Menu — remove redundant inner card                                */
+/* ========================================================================== */
+
+/* Remove duplicate inner heading:
+   DETECTED
+   Detected Menu
+   x active dishes
+*/
+.menu-source-compare-panel:last-child
+.menu-source-compare-panel-head {
+  display: none !important;
+}
+
+/* Remove inner card border/background */
+.menu-source-compare-panel:last-child {
+  width: 100% !important;
+  max-width: 100% !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  border: 0 !important;
+  border-radius: 0 !important;
+
+  background: transparent !important;
+
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+/* Remove unnecessary compare-column shell spacing */
+.menu-source-compare-columns {
+  display: block !important;
+  width: 100% !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Dish list goes directly under main Detected Menu heading */
+.menu-source-detected-list {
+  width: 100% !important;
+  max-width: 100% !important;
+
+  padding: 0 !important;
+  margin-top: 12px !important;
+
+  border: 0 !important;
+  background: transparent !important;
+
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+/* Keep Add Dish aligned cleanly */
+.menu-compare-add-dish {
+  padding: 0 0 8px !important;
+}
+
+/* Keep each actual dish as its own card */
+.menu-source-detected-item.menu-compare-editable {
+  margin-bottom: 8px;
+}
