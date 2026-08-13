@@ -12954,3 +12954,122 @@ small {
     grid-template-columns: 1fr;
   }
 }
+
+/* ========================================================================== */
+/* Compare Menu Layout Fix — always show Detected Menu                        */
+/* ========================================================================== */
+
+.menu-source-compare {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.menu-source-compare-columns {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+
+  /*
+   * IMPORTANT:
+   * Use the available content width,
+   * not browser viewport width.
+   *
+   * Wide container:
+   * Original | Detected
+   *
+   * Narrow container:
+   * Original
+   * Detected
+   */
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(
+        min(420px, 100%),
+        1fr
+      )
+    ) !important;
+}
+
+.menu-source-compare-panel {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.menu-source-line-list,
+.menu-source-detected-list {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.menu-source-line,
+.menu-source-detected-item {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.menu-source-line strong,
+.menu-source-detected-item strong,
+.menu-source-line-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+
+/*
+ * Keep both panels visually equal
+ * when they are side-by-side.
+ */
+@media (min-width: 1100px) {
+  .menu-source-compare-columns {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr) !important;
+  }
+}
+
+
+/*
+ * On smaller layouts the Detected Menu
+ * must appear underneath Original Menu,
+ * never outside the screen.
+ */
+@media (max-width: 1099px) {
+  .menu-source-compare-columns {
+    grid-template-columns:
+      minmax(0, 1fr) !important;
+  }
+
+  .menu-source-compare-panel:first-child {
+    max-height: none !important;
+  }
+
+  .menu-source-compare-panel:last-child {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
+
+
+/*
+ * Mobile: compact but both sections visible.
+ */
+@media (max-width: 760px) {
+  .menu-source-compare {
+    padding: 10px;
+  }
+
+  .menu-source-compare-columns {
+    gap: 12px;
+  }
+
+  .menu-source-line-list,
+  .menu-source-detected-list {
+    max-height: 430px;
+  }
+}
