@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
 import { calculate, getMenuServiceKey, getSession, loadWork, saveWork } from '../../../lib/store';
-import type { Session, WorkState } from '../../../lib/types';
+import type { MenuItem, Session, WorkState } from '../../../lib/types';
 import {
   CATEGORIES,
   type Category,
@@ -17,6 +17,33 @@ import {
 
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
+}
+
+function needsManualRate(
+  item: Pick<
+    MenuItem,
+    | 'costPerPlate'
+    | 'costSource'
+    | 'coverageStatus'
+    | 'detectionSource'
+  >,
+) {
+  if (
+    item.costSource === 'manual' &&
+    Number(item.costPerPlate) > 0
+  ) {
+    return false;
+  }
+
+  return (
+    !(Number(item.costPerPlate) > 0) ||
+    item.detectionSource === 'ai' ||
+    item.detectionSource === 'rules' ||
+    item.detectionSource === 'consensus' ||
+    item.costSource === 'category_estimate' ||
+    item.coverageStatus === 'NEW_DISH_PENDING' ||
+    item.coverageStatus === 'UNRESOLVED'
+  );
 }
 
 
@@ -106,6 +133,7 @@ export default function CostPage() {
   const [dishQuery, setDishQuery] = useState('');
   const [dishServiceFilter, setDishServiceFilter] = useState('ALL');
   const [dishCategoryFilter, setDishCategoryFilter] = useState('ALL');
+  const [showOnlyManualRates, setShowOnlyManualRates] = useState(false);
 
   const [
     showAddDish,
@@ -305,6 +333,11 @@ export default function CostPage() {
       selectedAddServiceKey,
     ) || '';
 
+  const missingRateCount = work.menu.filter(
+    needsManualRate,
+  ).length;
+  const manualRateFilterActive =
+    showOnlyManualRates && missingRateCount > 0;
   const normalizedDishQuery = dishQuery.trim().toLocaleLowerCase('en-IN');
   const filteredDishCosts = result.menuBreakdown.filter((item) => {
     const matchesSearch = !normalizedDishQuery ||
@@ -312,11 +345,9 @@ export default function CostPage() {
       item.category.toLocaleLowerCase('en-IN').includes(normalizedDishQuery);
     const matchesService = dishServiceFilter === 'ALL' || item.serviceKey === dishServiceFilter;
     const matchesCategory = dishCategoryFilter === 'ALL' || item.category === dishCategoryFilter;
-    return matchesSearch && matchesService && matchesCategory;
+    const matchesRateStatus = !manualRateFilterActive || needsManualRate(item);
+    return matchesSearch && matchesService && matchesCategory && matchesRateStatus;
   });
-  const missingRateCount = work.menu.filter(
-    (item) => !(Number(item.costPerPlate) > 0),
-  ).length;
   const hasWeddingServices =
     result.serviceSummaries.length > 1 ||
     result.serviceSummaries.some(
@@ -588,10 +619,51 @@ export default function CostPage() {
 
   function updateDishCost(id: string, value: number) {
     if (!work) return;
+    const rate = Math.max(0, value);
+
     persist({
       ...work,
       menu: work.menu.map((item) =>
-        item.id === id ? { ...item, costPerPlate: Math.max(0, value) } : item,
+        item.id === id
+          ? {
+              ...item,
+              costPerPlate: rate,
+              costSource: 'manual',
+              coverageStatus: rate > 0 ? 'COSTED' : 'UNRESOLVED',
+              costQualityStatus: rate > 0 ? 'READY' : undefined,
+              costConfidence: rate > 0 ? 100 : 0,
+              rateCoveragePercent: rate > 0 ? 100 : 0,
+              coverageReason:
+                rate > 0
+                  ? 'Manual rate added on Cost page'
+                  : 'Manual rate required',
+              costApprovalStatus: rate > 0 ? 'APPROVED' : 'PENDING',
+              costApprovedAt: rate > 0 ? new Date().toISOString() : undefined,
+              costApprovalReason:
+                rate > 0
+                  ? 'User manually entered this dish rate'
+                  : 'Manual rate required',
+            }
+          : item,
+      ),
+    });
+  }
+
+  function updateDishCategory(
+    id: string,
+    category: Category,
+  ) {
+    if (!work) return;
+
+    persist({
+      ...work,
+      menu: work.menu.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              category,
+            }
+          : item,
       ),
     });
   }
@@ -764,7 +836,7 @@ export default function CostPage() {
             <div className="dish-cost-summary" aria-label="Dish cost summary">
               <span><b>{work.menu.length}</b> dishes</span>
               <span className={missingRateCount > 0 ? 'needs-attention' : 'is-complete'}>
-                <b>{missingRateCount}</b> missing rates
+                <b>{missingRateCount}</b> manual rates needed
               </span>
               <span><b>{money(result.menuFoodTotal)}</b> food total</span>
             </div>
@@ -982,6 +1054,23 @@ export default function CostPage() {
             </div>
           ) : null}
 
+          {missingRateCount > 0 ? (
+            <div className="dish-manual-rate-alert" role="status">
+              <div>
+                <b>{missingRateCount} detected dish{missingRateCount === 1 ? '' : 'es'} need manual rates</b>
+                <span>These dishes were not found in Dish Master or do not have a trusted rate. Review any estimate and enter your rate.</span>
+              </div>
+              <button
+                className="ghost-button"
+                type="button"
+                aria-pressed={manualRateFilterActive}
+                onClick={() => setShowOnlyManualRates((current) => !current)}
+              >
+                {manualRateFilterActive ? 'Show all dishes' : 'Add manual rates'}
+              </button>
+            </div>
+          ) : null}
+
           {work.menu.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon" aria-hidden="true">🍽️</div>
@@ -1037,6 +1126,7 @@ export default function CostPage() {
                       setDishQuery('');
                       setDishServiceFilter('ALL');
                       setDishCategoryFilter('ALL');
+                      setShowOnlyManualRates(false);
                     }}
                   >
                     Clear filters
@@ -1061,7 +1151,7 @@ export default function CostPage() {
                       </thead>
                       <tbody>
                         {filteredDishCosts.map((item) => (
-                          <tr key={item.id} className={item.baseCostPerPlate > 0 ? '' : 'dish-rate-missing'}>
+                          <tr key={item.id} className={needsManualRate(item) ? 'dish-rate-missing' : ''}>
                             <td>
                               <div className="dish-cost-name">
                                 <b>{item.name}</b>
@@ -1078,7 +1168,26 @@ export default function CostPage() {
                                 </small>
                               </div>
                             </td>
-                            <td><span className="dish-category-chip">{item.category}</span></td>
+                            <td>
+                              <select
+                                className="select dish-category-select"
+                                value={item.category}
+                                aria-label={`Category for ${item.name}`}
+                                onChange={(event) =>
+                                  updateDishCategory(
+                                    item.id,
+                                    event.target.value as Category,
+                                  )
+                                }
+                              >
+                                {!CATEGORIES.some((category) => category === item.category) ? (
+                                  <option value={item.category}>{item.category}</option>
+                                ) : null}
+                                {CATEGORIES.map((category) => (
+                                  <option key={category} value={category}>{category}</option>
+                                ))}
+                              </select>
+                            </td>
                             <td>
                               <span className="dish-serving-quantity">
                                 {Number(item.portionQuantity) > 0
@@ -1088,6 +1197,9 @@ export default function CostPage() {
                             </td>
                             <td>{item.effectivePax.toLocaleString('en-IN')}</td>
                             <td>
+                              {needsManualRate(item) ? (
+                                <span className="dish-manual-rate-label">Add manual rate</span>
+                              ) : null}
                               <label className="dish-rate-input">
                                 <span aria-hidden="true">₹</span>
                                 <input
@@ -1096,8 +1208,11 @@ export default function CostPage() {
                                   step="0.01"
                                   inputMode="decimal"
                                   value={item.baseCostPerPlate || ''}
-                                  placeholder="Manual rate"
+                                  placeholder="Add rate"
                                   aria-label={`Base cost per plate for ${item.name}`}
+                                  onFocus={(event) => {
+                                    if (needsManualRate(item)) event.currentTarget.select();
+                                  }}
                                   onChange={(event) => updateDishCost(item.id, Number(event.target.value))}
                                 />
                               </label>
@@ -1167,7 +1282,7 @@ export default function CostPage() {
 
                   <div className="dish-cost-cards">
                     {filteredDishCosts.map((item) => (
-                      <article className={`dish-cost-card ${item.baseCostPerPlate > 0 ? '' : 'dish-rate-missing'}`} key={item.id}>
+                      <article className={`dish-cost-card ${needsManualRate(item) ? 'dish-rate-missing' : ''}`} key={item.id}>
                         <div className="dish-cost-card-heading">
                           <div className="dish-cost-name">
                             <b>{item.name}</b>
@@ -1176,7 +1291,24 @@ export default function CostPage() {
                                     ? ` • ${serviceDateByKey.get(item.serviceKey)}`
                                     : ''}</small>
                           </div>
-                          <span className="dish-category-chip">{item.category}</span>
+                          <select
+                            className="select dish-category-select"
+                            value={item.category}
+                            aria-label={`Category for ${item.name}`}
+                            onChange={(event) =>
+                              updateDishCategory(
+                                item.id,
+                                event.target.value as Category,
+                              )
+                            }
+                          >
+                            {!CATEGORIES.some((category) => category === item.category) ? (
+                              <option value={item.category}>{item.category}</option>
+                            ) : null}
+                            {CATEGORIES.map((category) => (
+                              <option key={category} value={category}>{category}</option>
+                            ))}
+                          </select>
                         </div>
                         <div className="dish-cost-card-grid">
                           <div><small>Members</small><b>{item.effectivePax.toLocaleString('en-IN')}</b></div>
@@ -1265,7 +1397,9 @@ export default function CostPage() {
                         </div>
 
                         <div className="field dish-cost-card-rate">
-                          <label htmlFor={`mobile-rate-${item.id}`}>Base cost / plate</label>
+                          <label htmlFor={`mobile-rate-${item.id}`}>
+                            {needsManualRate(item) ? 'Add manual rate / plate' : 'Base cost / plate'}
+                          </label>
                           <label className="dish-rate-input" htmlFor={`mobile-rate-${item.id}`}>
                             <span aria-hidden="true">₹</span>
                             <input
@@ -1275,7 +1409,10 @@ export default function CostPage() {
                               step="0.01"
                               inputMode="decimal"
                               value={item.baseCostPerPlate || ''}
-                              placeholder="Manual rate"
+                              placeholder="Add rate"
+                              onFocus={(event) => {
+                                if (needsManualRate(item)) event.currentTarget.select();
+                              }}
                               onChange={(event) => updateDishCost(item.id, Number(event.target.value))}
                             />
                           </label>

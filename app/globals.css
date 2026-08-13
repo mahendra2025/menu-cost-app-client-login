@@ -2061,6 +2061,22 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .dish-cost-summary .needs-attention { border-color: rgba(255,149,0,.28); background: rgba(255,149,0,.09); color: #9a5a0a; }
 .dish-cost-summary .needs-attention b { color: #9a5a0a; }
 .dish-cost-summary .is-complete { border-color: rgba(52,199,89,.25); background: rgba(52,199,89,.08); color: #187b35; }
+.dish-manual-rate-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 13px 14px;
+  border: 1px solid rgba(255,149,0,.3);
+  border-radius: 14px;
+  background: rgba(255,149,0,.08);
+  color: #8a5208;
+}
+.dish-manual-rate-alert div { display: grid; gap: 3px; }
+.dish-manual-rate-alert b { font-size: 12px; }
+.dish-manual-rate-alert span { font-size: 10px; line-height: 1.45; }
+.dish-manual-rate-alert .ghost-button { flex: 0 0 auto; min-height: 38px; background: #fff; }
 .dish-cost-toolbar {
   display: grid;
   grid-template-columns: minmax(220px,1.35fr) minmax(170px,.8fr) minmax(170px,.8fr) auto;
@@ -2129,6 +2145,18 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
   font-weight: 850;
   white-space: nowrap;
 }
+.dish-category-select {
+  width: 148px;
+  min-height: 38px;
+  padding: 7px 28px 7px 9px;
+  border-radius: 11px;
+  font-size: 10px;
+  font-weight: 850;
+}
+.dish-cost-card-heading .dish-category-select {
+  flex: 0 0 auto;
+  width: min(148px, 43%);
+}
 .portion-chip { background: rgba(107,114,128,.09); color: #4b5563; }
 .dish-rate-input {
   display: flex;
@@ -2146,6 +2174,15 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .dish-rate-input input { width: 100%; min-width: 0; height: 36px; padding: 0 8px 0 4px; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 12px; font-weight: 800; }
 .dish-rate-input input::placeholder { color: #b26a08; font-weight: 750; }
 .dish-rate-missing .dish-rate-input { border-color: rgba(255,149,0,.42); background: rgba(255,255,255,.98); }
+.dish-manual-rate-label {
+  display: block;
+  margin-bottom: 5px;
+  color: #9a5a0a;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
 .dish-total-cost { font-size: 13px; white-space: nowrap; }
 .dish-serving-quantity { color: var(--text); font-size: 11px; font-weight: 800; white-space: nowrap; }
 .dish-remove-button {
@@ -13469,24 +13506,6 @@ small {
     rgba(255,173,66,.38);
 }
 
-.dish-rate-missing
-.dish-rate-input::after {
-  content:
-    "Manual rate required";
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 3px;
-  color: #ffc36e;
-  font-size: 7px;
-  font-weight: 850;
-  white-space: nowrap;
-}
-
-.dish-rate-missing td {
-  padding-bottom: 22px;
-}
-
 @media (max-width: 1050px) {
   .cost-add-dish-grid {
     grid-template-columns:
@@ -13498,6 +13517,11 @@ small {
 }
 
 @media (max-width: 680px) {
+  .dish-manual-rate-alert {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .cost-add-dish-head {
     flex-direction: column;
   }
