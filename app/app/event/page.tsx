@@ -891,12 +891,19 @@ export default function EventPage() {
   ] =
     useState<
       | 'ALL'
+      | 'PROBLEMS'
       | 'UNCERTAIN'
       | 'CATALOG'
       | 'CONSENSUS'
       | 'AI'
       | 'RULES'
     >('ALL');
+
+  const [
+    detectionSearch,
+    setDetectionSearch,
+  ] =
+    useState('');
 
   const [
     editingDetectionId,
@@ -1411,6 +1418,174 @@ export default function EventPage() {
         },
       );
     }
+  }
+
+  function quickChangeDetectionCategory(
+    item: MenuItem,
+    nextCategory: Category,
+  ) {
+    if (
+      item.coverageStatus ===
+        'REJECTED' ||
+      item.category ===
+        nextCategory
+    ) {
+      return;
+    }
+
+    setDetectionPreview(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              menu:
+                current.menu.map(
+                  (menuItem) =>
+                    menuItem.id ===
+                    item.id
+                      ? {
+                          ...menuItem,
+
+                          category:
+                            nextCategory,
+
+                          /*
+                           * Category can change
+                           * which recipe/rate is valid.
+                           * Never reuse stale cost.
+                           */
+                          costPerPlate:
+                            0,
+
+                          costSource:
+                            undefined,
+
+                          coverageStatus:
+                            'NEW_DISH_PENDING',
+
+                          costQualityStatus:
+                            undefined,
+
+                          costConfidence:
+                            0,
+
+                          rateCoveragePercent:
+                            0,
+
+                          coverageReason:
+                            'Category corrected; fresh cost is being calculated',
+
+                          accuracyRisk:
+                            undefined,
+
+                          previousCostPerPlate:
+                            undefined,
+
+                          costChangeAmount:
+                            undefined,
+
+                          costChangePercent:
+                            undefined,
+
+                          costBaselineSource:
+                            undefined,
+
+                          accuracyReason:
+                            undefined,
+
+                          ingredientCostDrivers:
+                            [],
+
+                          costApprovalStatus:
+                            'PENDING',
+
+                          costApprovedAt:
+                            undefined,
+
+                          costApprovalReason:
+                            'Fresh cost required after category correction',
+
+                          detectionSource:
+                            'manual',
+
+                          detectionConfidence:
+                            100,
+
+                          detectionReason:
+                            'User corrected the detected dish category',
+                        }
+                      : menuItem,
+                ),
+            }
+          : current,
+    );
+
+    setSelectedPreviewIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          item.id,
+        );
+
+        return next;
+      },
+    );
+
+    setManualRateIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          item.id,
+        );
+
+        return next;
+      },
+    );
+
+    void saveTenantDishLearning({
+      aliasName:
+        item.name,
+
+      canonicalName:
+        item.name,
+
+      category:
+        nextCategory,
+
+      action:
+        'MAP',
+    });
+
+    void trackProductEvent(
+      'menu_detection_review_action',
+      {
+        action:
+          'quick_category_change',
+
+        dish:
+          item.name,
+
+        previousCategory:
+          item.category,
+
+        category:
+          nextCategory,
+      },
+    );
+
+    void recostReviewedDish(
+      item.id,
+      item.name,
+      nextCategory,
+      'corrected',
+    );
+
+    setError('');
   }
 
   function beginDetectionEdit(
@@ -4337,6 +4512,44 @@ export default function EventPage() {
     );
   }
 
+  function detectionHasProblem(
+    item: MenuItem,
+  ) {
+    if (
+      item.coverageStatus ===
+      'REJECTED'
+    ) {
+      return false;
+    }
+
+    return (
+      detectionNeedsReview(
+        item,
+      ) ||
+      manualRateIds.has(
+        item.id,
+      ) ||
+      item.coverageStatus ===
+        'REVIEW' ||
+      item.coverageStatus ===
+        'NEW_DISH_PENDING' ||
+      item.coverageStatus ===
+        'UNRESOLVED' ||
+      hasHardCostBlock(
+        item,
+      ) ||
+      (
+        requiresCostApproval(
+          item,
+        ) &&
+        item.costApprovalStatus !==
+          'APPROVED'
+      ) ||
+      item.accuracyRisk ===
+        'HIGH'
+    );
+  }
+
   const detectionSourceCounts = {
     catalog:
       detectionReviewItems.filter(
@@ -4366,20 +4579,67 @@ export default function EventPage() {
           'rules',
       ).length,
 
+    problems:
+      detectionReviewItems.filter(
+        detectionHasProblem,
+      ).length,
+
     uncertain:
       detectionReviewItems.filter(
         detectionNeedsReview,
       ).length,
   };
 
+  const normalizedDetectionSearch =
+    dishNameKey(
+      detectionSearch,
+    );
+
   const filteredDetectionMenu =
     detectionReviewItems.filter(
       (item) => {
+        /*
+         * Search across the fields a caterer
+         * naturally remembers.
+         */
+        if (
+          normalizedDetectionSearch
+        ) {
+          const searchText =
+            dishNameKey(
+              [
+                item.name,
+                item.category,
+                item.dayLabel,
+                item.mealLabel,
+              ]
+                .filter(Boolean)
+                .join(' '),
+            );
+
+          if (
+            !searchText.includes(
+              normalizedDetectionSearch,
+            )
+          ) {
+            return false;
+          }
+        }
+
         if (
           detectionReviewFilter ===
           'ALL'
         ) {
           return true;
+        }
+
+        if (
+          detectionReviewFilter ===
+          'PROBLEMS'
+        ) {
+          return detectionHasProblem(
+            item,
+          );
         }
 
         if (
@@ -5541,11 +5801,11 @@ Gulab Jamun`}
                       className="primary-button"
                       disabled={
                         detectionSourceCounts
-                          .uncertain === 0
+                          .problems === 0
                       }
                       onClick={() => {
                         setDetectionReviewFilter(
-                          'UNCERTAIN',
+                          'PROBLEMS',
                         );
 
                         window.setTimeout(
@@ -5565,10 +5825,10 @@ Gulab Jamun`}
                         );
                       }}
                     >
-                      Review Issues
+                      Review Problems
                       {detectionSourceCounts
-                        .uncertain > 0
-                        ? ` (${detectionSourceCounts.uncertain})`
+                        .problems > 0
+                        ? ` (${detectionSourceCounts.problems})`
                         : ''}
                     </button>
 
@@ -6094,7 +6354,104 @@ Gulab Jamun`}
                   </div>
                 ) : null}
 
+                <div className="menu-detection-searchbar">
+                  <label className="menu-detection-search">
+                    <span
+                      aria-hidden="true"
+                    >
+                      ⌕
+                    </span>
+
+                    <input
+                      type="search"
+                      value={
+                        detectionSearch
+                      }
+                      onChange={(event) =>
+                        setDetectionSearch(
+                          event.target
+                            .value,
+                        )
+                      }
+                      placeholder="Search dish, category or meal..."
+                      aria-label="Search detected dishes"
+                    />
+
+                    {detectionSearch ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDetectionSearch(
+                            '',
+                          )
+                        }
+                        aria-label="Clear dish search"
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </label>
+
+                  <button
+                    type="button"
+                    className={`menu-problems-toggle ${
+                      detectionReviewFilter ===
+                      'PROBLEMS'
+                        ? 'active'
+                        : detectionSourceCounts
+                              .problems > 0
+                          ? 'attention'
+                          : ''
+                    }`}
+                    onClick={() =>
+                      setDetectionReviewFilter(
+                        detectionReviewFilter ===
+                          'PROBLEMS'
+                          ? 'ALL'
+                          : 'PROBLEMS',
+                      )
+                    }
+                  >
+                    <span>
+                      Problems only
+                    </span>
+
+                    <b>
+                      {
+                        detectionSourceCounts
+                          .problems
+                      }
+                    </b>
+                  </button>
+                </div>
+
                 <div className="menu-detection-filterbar">
+                  <button
+                    type="button"
+                    className={
+                      detectionReviewFilter ===
+                      'PROBLEMS'
+                        ? 'active attention'
+                        : detectionSourceCounts
+                              .problems > 0
+                          ? 'attention'
+                          : ''
+                    }
+                    onClick={() =>
+                      setDetectionReviewFilter(
+                        'PROBLEMS',
+                      )
+                    }
+                  >
+                    Problems
+                    <b>
+                      {
+                        detectionSourceCounts
+                          .problems
+                      }
+                    </b>
+                  </button>
+
                   <button
                     type="button"
                     className={
@@ -6943,18 +7300,71 @@ Gulab Jamun`}
                   {!detectionPreviewGroups.length ? (
                     <div className="menu-detection-filter-empty">
                       <b>
-                        Nothing needs review here
+                        {detectionSearch
+                          ? 'No dishes match your search'
+                          : detectionReviewFilter ===
+                              'PROBLEMS'
+                            ? 'No problems left'
+                            : 'Nothing in this view'}
                       </b>
 
                       <span>
-                        Try another detection filter.
+                        {detectionSearch
+                          ? `No detected dish matches “${detectionSearch}”.`
+                          : detectionReviewFilter ===
+                              'PROBLEMS'
+                            ? 'Every detected dish in this menu is currently resolved.'
+                            : 'Try another review filter.'}
                       </span>
+
+                      {detectionSearch ? (
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() =>
+                            setDetectionSearch(
+                              '',
+                            )
+                          }
+                        >
+                          Clear Search
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
 
                   {detectionPreviewGroups.map((group) => {
+                    const allGroupItems =
+                      detectionReviewItems.filter(
+                        (item) =>
+                          detectionGroupKeyForItem(
+                            item,
+                          ) ===
+                          group.key,
+                      );
+
+                    const groupProblemCount =
+                      allGroupItems.filter(
+                        detectionHasProblem,
+                      ).length;
+
+                    const groupReviewedCount =
+                      allGroupItems.length -
+                      groupProblemCount;
+
+                    const groupReviewPercent =
+                      allGroupItems.length
+                        ? Math.round(
+                            (
+                              groupReviewedCount /
+                              allGroupItems.length
+                            ) *
+                              100,
+                          )
+                        : 100;
+
                     const selectedInGroup =
-                      group.items.filter(
+                      allGroupItems.filter(
                         (item) =>
                           selectedPreviewIds.has(
                             item.id,
@@ -6968,20 +7378,59 @@ Gulab Jamun`}
                         open
                       >
                         <summary>
-                          <div>
+                          <div className="menu-preview-group-copy">
                             <b>
                               {[group.dayLabel, group.mealLabel]
                                 .filter(Boolean)
                                 .join(' • ')}
                             </b>
+
                             <span>
                               {group.servicePax > 0
                                 ? `${group.servicePax} members • `
                                 : ''}
-                              {selectedInGroup}/{group.items.length} selected
+
+                              {selectedInGroup}/
+                              {allGroupItems.length}
+                              {' '}selected
+
+                              {groupProblemCount > 0
+                                ? ` • ${groupProblemCount} need attention`
+                                : ' • ready'}
                             </span>
                           </div>
-                          <span aria-hidden="true">⌄</span>
+
+                          <div
+                            className={`menu-preview-group-health ${
+                              groupProblemCount > 0
+                                ? 'attention'
+                                : 'complete'
+                            }`}
+                          >
+                            <b>
+                              {groupReviewPercent}%
+                            </b>
+
+                            <span>
+                              <i
+                                style={{
+                                  width:
+                                    `${groupReviewPercent}%`,
+                                }}
+                              />
+                            </span>
+
+                            <small>
+                              reviewed
+                            </small>
+                          </div>
+
+                          <span
+                            className="menu-preview-group-arrow"
+                            aria-hidden="true"
+                          >
+                            ⌄
+                          </span>
                         </summary>
 
                         <div className="menu-preview-items">
@@ -7149,10 +7598,73 @@ Gulab Jamun`}
                                     </div>
                                   ) : null}
 
-                                  <small>
-                                    {item.category}
-                                    {item.costSource === 'ai_recipe' ? ' • AI recipe estimate' : ''}
-                                  </small>
+                                  <div className="menu-detection-inline-meta">
+                                    <label className="menu-quick-category">
+                                      <span>
+                                        Category
+                                      </span>
+
+                                      <select
+                                        value={
+                                          item.category
+                                        }
+                                        disabled={
+                                          item.coverageStatus ===
+                                            'REJECTED' ||
+                                          recostingDishIds.has(
+                                            item.id,
+                                          )
+                                        }
+                                        onChange={(event) =>
+                                          quickChangeDetectionCategory(
+                                            item,
+                                            event.target
+                                              .value as Category,
+                                          )
+                                        }
+                                        aria-label={`Category for ${item.name}`}
+                                      >
+                                        {CATEGORIES.map(
+                                          (
+                                            category,
+                                          ) => (
+                                            <option
+                                              key={
+                                                category
+                                              }
+                                              value={
+                                                category
+                                              }
+                                            >
+                                              {
+                                                category
+                                              }
+                                            </option>
+                                          ),
+                                        )}
+                                      </select>
+                                    </label>
+
+                                    <small>
+                                      {recostingDishIds.has(
+                                        item.id,
+                                      )
+                                        ? 'Re-costing…'
+                                        : item.costSource ===
+                                            'ai_recipe'
+                                          ? 'AI recipe estimate'
+                                          : item.costSource ===
+                                              'catalog'
+                                            ? 'Dish Master cost'
+                                            : item.costSource ===
+                                                'catalog_recipe'
+                                              ? 'Recipe cost'
+                                              : item.costSource ===
+                                                  'category_estimate'
+                                                ? 'Category estimate'
+                                                : 'Cost review'}
+                                    </small>
+                                  </div>
 
                                   <div className="menu-detection-badges">
                                     <span
