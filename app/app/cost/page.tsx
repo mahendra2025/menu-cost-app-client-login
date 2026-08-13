@@ -270,7 +270,7 @@ export default function CostPage() {
     ) {
       return (
         formatMenuDate(
-          work.event.eventDate ||
+          work?.event.eventDate ||
           '',
         ) ||
         rawMenuDates[0] ||
