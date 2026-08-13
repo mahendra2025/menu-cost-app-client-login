@@ -13,6 +13,8 @@
   },
   "include": [
     "lib/menuDetectionCore.ts",
+    "lib/menuFunctionImport.ts",
+    "lib/types.ts",
     "lib/detectionBenchmark.ts",
     "lib/pdfMenuExtraction.ts",
     "tests/**/*.test.ts",

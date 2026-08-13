@@ -828,6 +828,15 @@ export default function CostPage() {
             </div>
             <div className="dish-cost-heading-actions">
               <button
+                className="ghost-button"
+                type="button"
+                onClick={() =>
+                  router.push('/app/event')
+                }
+              >
+                + Import Function
+              </button>
+              <button
                 className="primary-button"
                 type="button"
                 onClick={() =>

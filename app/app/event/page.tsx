@@ -31,6 +31,11 @@ import {
 } from '../../../lib/productAnalytics';
 
 import {
+  menuItemIdentity,
+  mergeFunctionMenu,
+} from '../../../lib/menuFunctionImport';
+
+import {
   getMenuCoverageStatus,
   menuCoverageStatusLabel,
   summarizeMenuCoverage,
@@ -321,25 +326,6 @@ function mergeDetectedEventDetails(
   }
 
   return nextEvent;
-}
-
-function menuItemIdentity(
-  item: MenuItem,
-): string {
-  const normalize = (value: string) =>
-    value
-      .toLowerCase()
-      .normalize('NFKD')
-      .replace(/\p{Diacritic}/gu, '')
-      .replace(/[^\p{L}\p{N}]+/gu, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-  const serviceKey =
-    item.serviceId ||
-    `${normalize(item.dayLabel || 'event')}::${normalize(item.mealLabel || 'event menu')}`;
-
-  return `${serviceKey}::${normalize(item.name)}::${normalize(item.category)}`;
 }
 
 function hasHardCostBlock(
@@ -862,6 +848,12 @@ export default function EventPage() {
   const [uploadStatus, setUploadStatus] =
     useState('');
 
+  const [importFunctionName, setImportFunctionName] =
+    useState('');
+
+  const [importFunctionPax, setImportFunctionPax] =
+    useState('');
+
   const [detectedEventDetails, setDetectedEventDetails] =
     useState<DetectedEventDetails>({});
 
@@ -987,6 +979,16 @@ export default function EventPage() {
       );
 
       setWork(savedWork);
+      setImportFunctionName(
+        savedWork.menu.length
+          ? ''
+          : savedWork.event.functionType,
+      );
+      setImportFunctionPax(
+        savedWork.event.pax > 0
+          ? String(savedWork.event.pax)
+          : '',
+      );
     }
   }, []);
 
@@ -3060,6 +3062,17 @@ export default function EventPage() {
       return;
     }
 
+    const functionName =
+      importFunctionName.trim();
+
+    if (!functionName) {
+      setError(
+        'Enter the function name first, for example Breakfast, Lunch, Sangeet or Reception Dinner.',
+      );
+
+      return;
+    }
+
     setDetecting(true);
 
     try {
@@ -4577,6 +4590,21 @@ export default function EventPage() {
             'REJECTED',
         );
 
+      const {
+        menu: mergedMenu,
+        newItems: newFunctionItems,
+      } = mergeFunctionMenu({
+        existingMenu:
+          work.menu,
+        detectedMenu:
+          directMenu,
+        functionName,
+        functionPax:
+          Number(importFunctionPax) || 0,
+        defaultPax:
+          Number(work.event.pax) || 0,
+      });
+
       const nextWork:
         WorkState = {
           ...work,
@@ -4588,7 +4616,7 @@ export default function EventPage() {
             ),
 
           menu:
-            directMenu,
+            mergedMenu,
         };
 
       /*
@@ -4697,8 +4725,13 @@ export default function EventPage() {
           dishCount:
             nextWork.menu.length,
 
+          importedDishCount:
+            newFunctionItems.length,
+
+          functionName,
+
           mode:
-            'direct_after_detection',
+            'merge_function',
         },
         {
           onceKey:
@@ -6545,9 +6578,52 @@ export default function EventPage() {
             <div className="menu-source-workspace">
               <div className="menu-source-workspace-heading">
                 <div>
-                  <span>Menu input</span>
-                  <h3>Upload a file or paste menu text</h3>
+                  <span>Function-by-function import</span>
+                  <h3>Add one function menu</h3>
                 </div>
+                {work.menu.length > 0 ? (
+                  <small>{work.menu.length} dishes already saved</small>
+                ) : null}
+              </div>
+
+              <div className="function-import-context">
+                <div className="field">
+                  <label htmlFor="importFunctionName">
+                    Function name
+                  </label>
+                  <input
+                    id="importFunctionName"
+                    className="input"
+                    value={importFunctionName}
+                    onChange={(event) => {
+                      setError('');
+                      setImportFunctionName(event.target.value);
+                    }}
+                    placeholder="Breakfast / Lunch / Sangeet / Reception Dinner"
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="importFunctionPax">
+                    Guests for this function
+                  </label>
+                  <input
+                    id="importFunctionPax"
+                    className="input"
+                    type="number"
+                    min="1"
+                    inputMode="numeric"
+                    value={importFunctionPax}
+                    onChange={(event) =>
+                      setImportFunctionPax(event.target.value)
+                    }
+                    placeholder={work.event.pax > 0 ? String(work.event.pax) : '300'}
+                  />
+                </div>
+
+                <p>
+                  Import only this function below. Previously saved functions stay in the event automatically.
+                </p>
               </div>
 
               <div className="menu-upload-options">
@@ -10201,7 +10277,7 @@ Gulab Jamun`}
                   ? 'Detecting Dishes...'
                   : detectionPreview
                     ? 'Refresh Detection Preview'
-                    : `Detect Menu${menuLines > 0 ? ` • ${menuLines} lines` : ''}`}
+                    : `Detect & Add Function${menuLines > 0 ? ` • ${menuLines} lines` : ''}`}
               </button>
             </div>
           </div>
