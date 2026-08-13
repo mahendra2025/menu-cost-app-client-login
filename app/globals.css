@@ -13368,3 +13368,159 @@ small {
 .menu-source-detected-item.menu-compare-editable {
   margin-bottom: 8px;
 }
+
+/* ========================================================================== */
+/* Cost Page — Add Dish + Wedding Date + Manual Rate                          */
+/* ========================================================================== */
+
+.dish-cost-heading {
+  gap: 12px;
+}
+
+.dish-cost-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.cost-add-dish-form {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid rgba(74,156,255,.18);
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(74,156,255,.07),
+      rgba(255,255,255,.018)
+    );
+}
+
+.cost-add-dish-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cost-add-dish-head h3 {
+  margin: 3px 0;
+}
+
+.cost-add-dish-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0,1fr)
+    );
+  gap: 10px;
+}
+
+.cost-add-dish-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.cost-add-date {
+  display: block;
+  margin-top: 4px;
+  color: #8dbfff;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.meal-summary-date {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.meal-summary-date.has-date {
+  color: #9dc7ff;
+  border: 1px solid rgba(74,156,255,.16);
+  background: rgba(74,156,255,.06);
+}
+
+.meal-summary-date.no-date {
+  color: #657184;
+}
+
+/*
+ * A zero-cost dish is not silently accepted.
+ * Cost page becomes the final manual-rate editor.
+ */
+.dish-rate-missing {
+  background:
+    rgba(255,173,66,.035);
+}
+
+.dish-rate-missing
+.dish-rate-input {
+  position: relative;
+  border-color:
+    rgba(255,173,66,.38);
+}
+
+.dish-rate-missing
+.dish-rate-input::after {
+  content:
+    "Manual rate required";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 3px;
+  color: #ffc36e;
+  font-size: 7px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.dish-rate-missing td {
+  padding-bottom: 22px;
+}
+
+@media (max-width: 1050px) {
+  .cost-add-dish-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0,1fr)
+      );
+  }
+}
+
+@media (max-width: 680px) {
+  .cost-add-dish-head {
+    flex-direction: column;
+  }
+
+  .cost-add-dish-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cost-add-dish-actions {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0,1fr)
+      );
+  }
+
+  .dish-cost-heading-actions {
+    justify-content: stretch;
+  }
+
+  .dish-cost-heading-actions
+  .primary-button {
+    width: 100%;
+  }
+}

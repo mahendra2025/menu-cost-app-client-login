@@ -7,12 +7,96 @@ import StatCard from '../../components/StatCard';
 import { calculate, getMenuServiceKey, getSession, loadWork, saveWork } from '../../../lib/store';
 import type { Session, WorkState } from '../../../lib/types';
 import {
+  CATEGORIES,
+  type Category,
+} from '../../../lib/menuCategories';
+import {
   getCostingAnalyticsKey,
   trackProductEvent,
 } from '../../../lib/productAnalytics';
 
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
+}
+
+
+function formatMenuDate(
+  value: string,
+) {
+  const text =
+    String(
+      value || '',
+    ).trim();
+
+  if (!text) {
+    return '';
+  }
+
+  const iso =
+    text.match(
+      /\b(\d{4})-(\d{2})-(\d{2})\b/,
+    );
+
+  if (iso) {
+    return (
+      `${iso[3]}/` +
+      `${iso[2]}/` +
+      `${iso[1]}`
+    );
+  }
+
+  const common =
+    text.match(
+      /\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b/,
+    );
+
+  if (!common) {
+    return '';
+  }
+
+  const day =
+    common[1].padStart(
+      2,
+      '0',
+    );
+
+  const month =
+    common[2].padStart(
+      2,
+      '0',
+    );
+
+  const year =
+    common[3].length === 2
+      ? `20${common[3]}`
+      : common[3];
+
+  return (
+    `${day}/${month}/${year}`
+  );
+}
+
+function extractMenuDates(
+  value: string,
+) {
+  const matches =
+    String(
+      value || '',
+    ).match(
+      /\b(?:\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}-\d{2}-\d{2})\b/g,
+    ) || [];
+
+  return Array.from(
+    new Set(
+      matches
+        .map(
+          formatMenuDate,
+        )
+        .filter(
+          Boolean,
+        ),
+    ),
+  );
 }
 
 export default function CostPage() {
@@ -22,6 +106,38 @@ export default function CostPage() {
   const [dishQuery, setDishQuery] = useState('');
   const [dishServiceFilter, setDishServiceFilter] = useState('ALL');
   const [dishCategoryFilter, setDishCategoryFilter] = useState('ALL');
+
+  const [
+    showAddDish,
+    setShowAddDish,
+  ] =
+    useState(false);
+
+  const [
+    newDishName,
+    setNewDishName,
+  ] =
+    useState('');
+
+  const [
+    newDishCategory,
+    setNewDishCategory,
+  ] =
+    useState<Category>(
+      'Other',
+    );
+
+  const [
+    newDishServiceKey,
+    setNewDishServiceKey,
+  ] =
+    useState('');
+
+  const [
+    newDishRate,
+    setNewDishRate,
+  ] =
+    useState('');
 
   useEffect(() => {
     const current = getSession();
@@ -84,6 +200,111 @@ export default function CostPage() {
       }),
     ).entries(),
   );
+  const rawMenuDates =
+    extractMenuDates(
+      work.event.rawMenuText ||
+      '',
+    );
+
+  const serviceDayKeys =
+    Array.from(
+      new Set(
+        result.serviceSummaries.map(
+          (service) =>
+            String(
+              service.dayLabel ||
+              'Event',
+            ).trim() ||
+            'Event',
+        ),
+      ),
+    );
+
+  function serviceDate(
+    service: {
+      serviceKey: string;
+      dayLabel?: string;
+      mealLabel?: string;
+    },
+  ) {
+    const explicit =
+      formatMenuDate(
+        service.dayLabel ||
+        '',
+      ) ||
+      formatMenuDate(
+        service.mealLabel ||
+        '',
+      );
+
+    if (explicit) {
+      return explicit;
+    }
+
+    const dayKey =
+      String(
+        service.dayLabel ||
+        'Event',
+      ).trim() ||
+      'Event';
+
+    const dayIndex =
+      serviceDayKeys.indexOf(
+        dayKey,
+      );
+
+    if (
+      dayIndex >= 0 &&
+      rawMenuDates[
+        dayIndex
+      ]
+    ) {
+      return rawMenuDates[
+        dayIndex
+      ];
+    }
+
+    if (
+      serviceDayKeys.length <=
+      1
+    ) {
+      return (
+        formatMenuDate(
+          work.event.eventDate ||
+          '',
+        ) ||
+        rawMenuDates[0] ||
+        ''
+      );
+    }
+
+    return '';
+  }
+
+  const serviceDateByKey =
+    new Map(
+      result.serviceSummaries.map(
+        (service) => [
+          service.serviceKey,
+          serviceDate(
+            service,
+          ),
+        ],
+      ),
+    );
+
+  const selectedAddServiceKey =
+    newDishServiceKey ||
+    result.serviceSummaries[
+      0
+    ]?.serviceKey ||
+    '';
+
+  const selectedAddServiceDate =
+    serviceDateByKey.get(
+      selectedAddServiceKey,
+    ) || '';
+
   const normalizedDishQuery = dishQuery.trim().toLocaleLowerCase('en-IN');
   const filteredDishCosts = result.menuBreakdown.filter((item) => {
     const matchesSearch = !normalizedDishQuery ||
@@ -106,6 +327,263 @@ export default function CostPage() {
     if (!session) return;
     setWork(next);
     saveWork(session.tenantId, next);
+  }
+
+  function addNewCostDish() {
+    if (!work) {
+      return;
+    }
+
+    const name =
+      newDishName
+        .replace(
+          /\s+/g,
+          ' ',
+        )
+        .trim();
+
+    if (!name) {
+      window.alert(
+        'Enter dish name.',
+      );
+
+      return;
+    }
+
+    const targetServiceKey =
+      selectedAddServiceKey ||
+      'default';
+
+    const targetService =
+      result.serviceSummaries.find(
+        (service) =>
+          service.serviceKey ===
+          targetServiceKey,
+      );
+
+    const targetTemplate =
+      work.menu.find(
+        (item) =>
+          getMenuServiceKey(
+            item,
+          ) ===
+          targetServiceKey,
+      );
+
+    const duplicate =
+      work.menu.some(
+        (item) =>
+          getMenuServiceKey(
+            item,
+          ) ===
+            targetServiceKey &&
+          item.name
+            .trim()
+            .toLocaleLowerCase(
+              'en-IN',
+            ) ===
+            name.toLocaleLowerCase(
+              'en-IN',
+            ),
+      );
+
+    if (duplicate) {
+      window.alert(
+        `${name} already exists in this meal.`,
+      );
+
+      return;
+    }
+
+    const rate =
+      Math.max(
+        0,
+        Number(
+          newDishRate,
+        ) || 0,
+      );
+
+    const id =
+      typeof crypto !==
+        'undefined' &&
+      typeof crypto.randomUUID ===
+        'function'
+        ? `dish_${crypto.randomUUID()}`
+        : `dish_${Date.now()}_${Math.random()
+            .toString(36)
+            .slice(2, 8)}`;
+
+    const newItem:
+      WorkState[
+        'menu'
+      ][number] = {
+        id,
+
+        name,
+
+        category:
+          newDishCategory,
+
+        costPerPlate:
+          rate,
+
+        portionQuantity:
+          1,
+
+        portionUnit:
+          'serving',
+
+        portionMode:
+          'AUTO',
+
+        serviceId:
+          targetTemplate
+            ?.serviceId,
+
+        dayLabel:
+          targetService
+            ?.dayLabel ||
+          targetTemplate
+            ?.dayLabel,
+
+        mealLabel:
+          targetService
+            ?.mealLabel ||
+          targetTemplate
+            ?.mealLabel ||
+          'Event Menu',
+
+        servicePax:
+          Number(
+            targetService?.pax,
+          ) ||
+          Number(
+            targetTemplate
+              ?.servicePax,
+          ) ||
+          Number(
+            work.event.pax,
+          ) ||
+          0,
+
+        costSource:
+          'manual',
+
+        coverageStatus:
+          rate > 0
+            ? 'COSTED'
+            : 'NEW_DISH_PENDING',
+
+        costQualityStatus:
+          rate > 0
+            ? 'READY'
+            : undefined,
+
+        costConfidence:
+          rate > 0
+            ? 100
+            : 0,
+
+        rateCoveragePercent:
+          rate > 0
+            ? 100
+            : 0,
+
+        coverageReason:
+          rate > 0
+            ? 'Manual dish and rate added on Cost page'
+            : 'Manual rate required',
+
+        costApprovalStatus:
+          rate > 0
+            ? 'APPROVED'
+            : 'PENDING',
+
+        costApprovedAt:
+          rate > 0
+            ? new Date()
+                .toISOString()
+            : undefined,
+
+        costApprovalReason:
+          rate > 0
+            ? 'User manually entered this dish rate'
+            : 'Manual rate required',
+
+        detectionSource:
+          'manual',
+
+        detectionConfidence:
+          100,
+
+        detectionReason:
+          'User manually added this dish on Cost page',
+      };
+
+    persist({
+      ...work,
+
+      menu: [
+        ...work.menu,
+        newItem,
+      ],
+    });
+
+    /*
+     * New manual dish should also be
+     * available for Admin learning later.
+     * Failure never blocks costing.
+     */
+    void fetch(
+      '/api/dish-suggestions',
+      {
+        method:
+          'POST',
+
+        headers: {
+          'Content-Type':
+            'application/json',
+        },
+
+        body:
+          JSON.stringify({
+            sourceFileName:
+              'Added from Cost page',
+
+            candidates: [
+              {
+                name,
+
+                categoryHint:
+                  newDishCategory,
+              },
+            ],
+          }),
+      },
+    ).catch(
+      (suggestionError) =>
+        console.warn(
+          'New manual dish suggestion skipped:',
+          suggestionError,
+        ),
+    );
+
+    setDishQuery('');
+    setDishServiceFilter(
+      'ALL',
+    );
+    setDishCategoryFilter(
+      'ALL',
+    );
+
+    setNewDishName('');
+    setNewDishCategory(
+      'Other',
+    );
+    setNewDishRate('');
+    setShowAddDish(
+      false,
+    );
   }
 
   function updateDishCost(id: string, value: number) {
@@ -185,7 +663,7 @@ export default function CostPage() {
             <p className="muted">Each meal uses its own member count. Repeated dishes are charged again in every meal where they appear.</p>
             <div className="table-wrap">
               <table className="meal-summary-table">
-                <thead><tr><th>Day</th><th>Meal</th><th>Members</th><th>Dishes</th><th>Food / Plate</th><th>Meal Food Total</th></tr></thead>
+                <thead><tr><th>Day</th><th>Date</th><th>Meal</th><th>Members</th><th>Dishes</th><th>Food / Plate</th><th>Meal Food Total</th></tr></thead>
                 <tbody>
                   {result.serviceSummaries.map((service) => (
                     <tr key={service.serviceKey}>
@@ -203,6 +681,23 @@ export default function CostPage() {
                           }}
                         />
                       </td>
+
+                      <td>
+                        <span
+                          className={`meal-summary-date ${
+                            serviceDateByKey.get(
+                              service.serviceKey,
+                            )
+                              ? 'has-date'
+                              : 'no-date'
+                          }`}
+                        >
+                          {serviceDateByKey.get(
+                            service.serviceKey,
+                          ) || '—'}
+                        </span>
+                      </td>
+
                       <td>
                         <input
                           className="meal-summary-input meal-summary-meal"
@@ -251,6 +746,21 @@ export default function CostPage() {
               <h2>Dish Cost Table</h2>
               <p className="muted">Review every dish and correct its base cost without leaving this page.</p>
             </div>
+            <div className="dish-cost-heading-actions">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() =>
+                  setShowAddDish(
+                    (current) =>
+                      !current,
+                  )
+                }
+              >
+                + Add Dish
+              </button>
+            </div>
+
             <div className="dish-cost-summary" aria-label="Dish cost summary">
               <span><b>{work.menu.length}</b> dishes</span>
               <span className={missingRateCount > 0 ? 'needs-attention' : 'is-complete'}>
@@ -259,6 +769,219 @@ export default function CostPage() {
               <span><b>{money(result.menuFoodTotal)}</b> food total</span>
             </div>
           </div>
+          {showAddDish ? (
+            <div className="cost-add-dish-form">
+              <div className="cost-add-dish-head">
+                <div>
+                  <span className="page-eyebrow">
+                    Manual dish
+                  </span>
+
+                  <h3>
+                    Add Dish to Costing
+                  </h3>
+
+                  <p className="muted">
+                    Add a missed or custom dish directly to the correct wedding meal.
+                  </p>
+                </div>
+
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() =>
+                    setShowAddDish(
+                      false,
+                    )
+                  }
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="cost-add-dish-grid">
+                <div className="field">
+                  <label>
+                    Dish Name
+                  </label>
+
+                  <input
+                    className="input"
+                    value={
+                      newDishName
+                    }
+                    onChange={(event) =>
+                      setNewDishName(
+                        event.target
+                          .value,
+                      )
+                    }
+                    placeholder="Example: Kaju Curry"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="field">
+                  <label>
+                    Category
+                  </label>
+
+                  <select
+                    className="select"
+                    value={
+                      newDishCategory
+                    }
+                    onChange={(event) =>
+                      setNewDishCategory(
+                        event.target
+                          .value as Category,
+                      )
+                    }
+                  >
+                    {CATEGORIES.map(
+                      (category) => (
+                        <option
+                          key={
+                            category
+                          }
+                          value={
+                            category
+                          }
+                        >
+                          {category}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label>
+                    Wedding Meal
+                  </label>
+
+                  <select
+                    className="select"
+                    value={
+                      selectedAddServiceKey
+                    }
+                    onChange={(event) =>
+                      setNewDishServiceKey(
+                        event.target
+                          .value,
+                      )
+                    }
+                  >
+                    {result
+                      .serviceSummaries
+                      .length ? (
+                      result.serviceSummaries.map(
+                        (service) => {
+                          const date =
+                            serviceDateByKey.get(
+                              service.serviceKey,
+                            );
+
+                          return (
+                            <option
+                              key={
+                                service.serviceKey
+                              }
+                              value={
+                                service.serviceKey
+                              }
+                            >
+                              {date
+                                ? `${date} • `
+                                : ''}
+                              {service.dayLabel
+                                ? `${service.dayLabel} • `
+                                : ''}
+                              {service.mealLabel ||
+                                'Event Menu'}
+                            </option>
+                          );
+                        },
+                      )
+                    ) : (
+                      <option value="">
+                        Event Menu
+                      </option>
+                    )}
+                  </select>
+
+                  {selectedAddServiceDate ? (
+                    <small className="cost-add-date">
+                      📅 {
+                        selectedAddServiceDate
+                      }
+                    </small>
+                  ) : null}
+                </div>
+
+                <div className="field">
+                  <label>
+                    Manual Rate ₹ / plate
+                  </label>
+
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={
+                      newDishRate
+                    }
+                    onChange={(event) =>
+                      setNewDishRate(
+                        event.target
+                          .value,
+                      )
+                    }
+                    placeholder="Enter rate or leave blank"
+                  />
+
+                  <small className="muted">
+                    If unknown, add the dish now and enter its rate later in the table.
+                  </small>
+                </div>
+              </div>
+
+              <div className="cost-add-dish-actions">
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={
+                    addNewCostDish
+                  }
+                >
+                  Add Dish
+                </button>
+
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => {
+                    setShowAddDish(
+                      false,
+                    );
+
+                    setNewDishName(
+                      '',
+                    );
+
+                    setNewDishRate(
+                      '',
+                    );
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           {work.menu.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon" aria-hidden="true">🍽️</div>
@@ -344,6 +1067,9 @@ export default function CostPage() {
                                 <b>{item.name}</b>
                                 <small>
                                   {item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}
+                                  {serviceDateByKey.get(item.serviceKey)
+                                    ? ` • ${serviceDateByKey.get(item.serviceKey)}`
+                                    : ''}
                                   {item.costSource === 'ai_recipe'
                                     ? ' • AI recipe estimate'
                                     : item.costSource === 'category_estimate'
@@ -370,7 +1096,7 @@ export default function CostPage() {
                                   step="0.01"
                                   inputMode="decimal"
                                   value={item.baseCostPerPlate || ''}
-                                  placeholder="Add rate"
+                                  placeholder="Manual rate"
                                   aria-label={`Base cost per plate for ${item.name}`}
                                   onChange={(event) => updateDishCost(item.id, Number(event.target.value))}
                                 />
@@ -445,7 +1171,10 @@ export default function CostPage() {
                         <div className="dish-cost-card-heading">
                           <div className="dish-cost-name">
                             <b>{item.name}</b>
-                            <small>{item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}</small>
+                            <small>{item.mealLabel ? `${item.dayLabel ? `${item.dayLabel} • ` : ''}${item.mealLabel}` : 'Event Menu'}
+                                  {serviceDateByKey.get(item.serviceKey)
+                                    ? ` • ${serviceDateByKey.get(item.serviceKey)}`
+                                    : ''}</small>
                           </div>
                           <span className="dish-category-chip">{item.category}</span>
                         </div>
@@ -546,7 +1275,7 @@ export default function CostPage() {
                               step="0.01"
                               inputMode="decimal"
                               value={item.baseCostPerPlate || ''}
-                              placeholder="Add rate"
+                              placeholder="Manual rate"
                               onChange={(event) => updateDishCost(item.id, Number(event.target.value))}
                             />
                           </label>
