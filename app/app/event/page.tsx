@@ -6770,17 +6770,17 @@ Gulab Jamun`}
                     <div className="menu-source-compare-head">
                       <div>
                         <span>
-                          Source Comparison
+                          Menu Detection
                         </span>
 
                         <strong>
-                          Compare & Edit Menu
+                          Detected Menu
                         </strong>
 
                         <small>
                           {sourceCompareAttentionCount > 0
-                            ? `${sourceCompareAttentionCount} item${sourceCompareAttentionCount === 1 ? '' : 's'} need attention. Compare the original on the left and fix the detected menu on the right.`
-                            : 'Everything looks ready. Compare once, then use this menu.'}
+                            ? `${sourceCompareAttentionCount} item${sourceCompareAttentionCount === 1 ? '' : 's'} need attention. Edit the detected dishes below.`
+                            : 'Review the detected dishes, make any correction, then use this menu.'}
                         </small>
                       </div>
 

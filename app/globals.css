@@ -13073,3 +13073,108 @@ small {
     max-height: 430px;
   }
 }
+
+/* ========================================================================== */
+/* Detected Menu Only — remove comparison block                               */
+/* ========================================================================== */
+
+/*
+ * Original Menu panel is no longer part
+ * of the customer-facing detection flow.
+ */
+.menu-source-compare-columns
+> .menu-source-compare-panel:first-child {
+  display: none !important;
+}
+
+
+/*
+ * Detected Menu takes full width.
+ */
+.menu-source-compare-columns {
+  display: block !important;
+  width: 100% !important;
+}
+
+.menu-source-compare-columns
+> .menu-source-compare-panel:last-child {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+
+/*
+ * Remove comparison-specific stats,
+ * source selection result and footer.
+ */
+.menu-source-compare-stats,
+.menu-compare-source-selection,
+.menu-source-compare-footer,
+.menu-source-compare-close {
+  display: none !important;
+}
+
+
+/*
+ * Turn the old comparison shell into
+ * a clean Detected Menu workspace.
+ */
+.menu-source-compare {
+  width: 100%;
+  max-width: 100%;
+  padding: 14px;
+}
+
+.menu-source-compare-head {
+  display: block !important;
+}
+
+.menu-source-compare-head
+> div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.menu-source-compare-head
+> div:first-child
+> strong {
+  font-size: 18px;
+}
+
+
+/*
+ * Detected list gets more usable space.
+ */
+.menu-source-detected-list {
+  width: 100%;
+  max-width: 100%;
+  max-height: none !important;
+  overflow: visible;
+}
+
+.menu-source-compare-panel:last-child
+.menu-source-compare-panel-head {
+  position: static;
+}
+
+
+/*
+ * Desktop detected rows.
+ */
+.menu-source-detected-item.menu-compare-editable {
+  width: 100%;
+}
+
+
+/* Mobile */
+
+@media (max-width: 760px) {
+  .menu-source-compare {
+    padding: 9px;
+  }
+
+  .menu-source-detected-list {
+    max-height: none !important;
+  }
+}
