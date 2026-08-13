@@ -7454,6 +7454,202 @@ Gulab Jamun`}
                                       </div>
                                     </div>
 
+                                    {manualRateIds.has(
+                                      item.id,
+                                    ) ? (
+                                      <div
+                                        className={`menu-compare-manual-rate ${
+                                          item.costSource ===
+                                          'manual'
+                                            ? 'has-manual-rate'
+                                            : 'needs-manual-rate'
+                                        }`}
+                                      >
+                                        <div className="menu-compare-manual-rate-copy">
+                                          <span>
+                                            {item.costSource ===
+                                            'manual'
+                                              ? 'Manual Rate'
+                                              : 'New / Unmatched Dish'}
+                                          </span>
+
+                                          <strong>
+                                            {item.costSource ===
+                                            'manual'
+                                              ? 'Your rate is being used'
+                                              : 'Enter manual ₹/plate if needed'}
+                                          </strong>
+
+                                          <small>
+                                            {item.costSource ===
+                                            'manual'
+                                              ? `Manual cost ₹${Number(
+                                                  item.costPerPlate,
+                                                ).toFixed(
+                                                  2,
+                                                )}/plate`
+                                              : Number(
+                                                    item.costPerPlate,
+                                                  ) > 0
+                                                ? `Automatic ${
+                                                    item.costSource ===
+                                                    'ai_recipe'
+                                                      ? 'AI recipe'
+                                                      : item.costSource ===
+                                                          'catalog_recipe'
+                                                        ? 'recipe'
+                                                        : item.costSource ===
+                                                            'category_estimate'
+                                                          ? 'category estimate'
+                                                          : 'estimated'
+                                                  } rate ₹${Number(
+                                                    item.costPerPlate,
+                                                  ).toFixed(
+                                                    2,
+                                                  )}/plate. Change it to use your own rate.`
+                                                : 'No usable automatic cost was found. Enter the dish cost per plate.'}
+                                          </small>
+                                        </div>
+
+                                        <label className="menu-compare-manual-rate-input">
+                                          <span>
+                                            ₹
+                                          </span>
+
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            inputMode="decimal"
+                                            value={
+                                              item.costPerPlate ||
+                                              ''
+                                            }
+                                            onFocus={(event) =>
+                                              event.currentTarget.select()
+                                            }
+                                            onChange={(event) => {
+                                              const rate =
+                                                Math.max(
+                                                  0,
+                                                  Number(
+                                                    event.target
+                                                      .value,
+                                                  ) || 0,
+                                                );
+
+                                              setDetectionPreview(
+                                                (current) =>
+                                                  current
+                                                    ? {
+                                                        ...current,
+
+                                                        menu:
+                                                          current.menu.map(
+                                                            (
+                                                              menuItem,
+                                                            ) =>
+                                                              menuItem.id ===
+                                                              item.id
+                                                                ? {
+                                                                    ...menuItem,
+
+                                                                    costPerPlate:
+                                                                      rate,
+
+                                                                    costSource:
+                                                                      rate >
+                                                                      0
+                                                                        ? 'manual'
+                                                                        : 'manual',
+
+                                                                    coverageStatus:
+                                                                      rate >
+                                                                      0
+                                                                        ? 'COSTED'
+                                                                        : 'NEW_DISH_PENDING',
+
+                                                                    costQualityStatus:
+                                                                      rate >
+                                                                      0
+                                                                        ? 'READY'
+                                                                        : undefined,
+
+                                                                    costConfidence:
+                                                                      rate >
+                                                                      0
+                                                                        ? 100
+                                                                        : 0,
+
+                                                                    rateCoveragePercent:
+                                                                      rate >
+                                                                      0
+                                                                        ? 100
+                                                                        : 0,
+
+                                                                    coverageReason:
+                                                                      rate >
+                                                                      0
+                                                                        ? 'Manual rate entered by user'
+                                                                        : 'Manual rate required',
+
+                                                                    ingredientCostDrivers:
+                                                                      [],
+
+                                                                    costApprovalStatus:
+                                                                      rate >
+                                                                      0
+                                                                        ? 'APPROVED'
+                                                                        : 'PENDING',
+
+                                                                    costApprovedAt:
+                                                                      rate >
+                                                                      0
+                                                                        ? new Date().toISOString()
+                                                                        : undefined,
+
+                                                                    costApprovalReason:
+                                                                      rate >
+                                                                      0
+                                                                        ? 'User manually entered and accepted this rate'
+                                                                        : 'Manual rate required',
+                                                                  }
+                                                                : menuItem,
+                                                          ),
+                                                      }
+                                                    : current,
+                                              );
+
+                                              setSelectedPreviewIds(
+                                                (
+                                                  current,
+                                                ) => {
+                                                  const next =
+                                                    new Set(
+                                                      current,
+                                                    );
+
+                                                  next.add(
+                                                    item.id,
+                                                  );
+
+                                                  return next;
+                                                },
+                                              );
+
+                                              setError('');
+                                            }}
+                                            aria-label={`Manual rate for ${item.name}`}
+                                            placeholder="Enter rate"
+                                          />
+
+                                          <small>
+                                            / plate
+                                          </small>
+                                        </label>
+                                      </div>
+                                    ) : null}
+
                                     <div className="menu-compare-dish-actions">
                                       {detectionNeedsReview(
                                         item,
