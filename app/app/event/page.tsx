@@ -914,6 +914,12 @@ export default function EventPage() {
     );
 
   const [
+    showDetectionSourceCompare,
+    setShowDetectionSourceCompare,
+  ] =
+    useState(false);
+
+  const [
     editingDetectionId,
     setEditingDetectionId,
   ] =
@@ -1011,6 +1017,32 @@ export default function EventPage() {
             HTMLButtonElement
           >(
             '[data-menu-next-problem]',
+          );
+
+        if (
+          button &&
+          !button.disabled
+        ) {
+          event.preventDefault();
+          button.click();
+        }
+
+        return;
+      }
+
+      /*
+       * C = Compare original source
+       * with detected dishes.
+       */
+      if (
+        event.key.toLowerCase() ===
+        'c'
+      ) {
+        const button =
+          document.querySelector<
+            HTMLButtonElement
+          >(
+            '[data-menu-source-compare]',
           );
 
         if (
@@ -4919,6 +4951,134 @@ export default function EventPage() {
     );
   }
 
+  /*
+   * V19 Source Compare
+   *
+   * This does NOT change detection.
+   * It only gives the caterer a visual
+   * comparison between original menu lines
+   * and the final detected dishes.
+   *
+   * A source line is marked "Detected"
+   * only when its cleaned line body exactly
+   * matches a detected dish name.
+   *
+   * Everything else remains neutral instead
+   * of incorrectly calling headings/notes
+   * missed dishes.
+   */
+  const detectedSourceNameKeys =
+    new Set(
+      detectionReviewItems
+        .filter(
+          (item) =>
+            item.coverageStatus !==
+            'REJECTED',
+        )
+        .map(
+          (item) =>
+            dishNameKey(
+              item.name,
+            ),
+        )
+        .filter(Boolean),
+    );
+
+  const possibleMissedSourceKeys =
+    new Set(
+      (
+        detectionPreview
+          ?.possibleMissed ||
+        []
+      )
+        .map(
+          (candidate) =>
+            dishNameKey(
+              candidate.name,
+            ),
+        )
+        .filter(Boolean),
+    );
+
+  const sourceComparisonLines =
+    work.event.rawMenuText
+      .split('\n')
+      .map(
+        (
+          rawLine,
+          index,
+        ) => {
+          const raw =
+            rawLine.trim();
+
+          const body =
+            raw
+              .replace(
+                /^\s*(?:[-*•●▪◦–—]+|\d+[.)-])\s*/u,
+                '',
+              )
+              .trim();
+
+          const key =
+            dishNameKey(
+              body,
+            );
+
+          const status:
+            | 'DETECTED'
+            | 'POSSIBLE_MISSED'
+            | 'SOURCE' =
+              key &&
+              detectedSourceNameKeys.has(
+                key,
+              )
+                ? 'DETECTED'
+                : key &&
+                    possibleMissedSourceKeys.has(
+                      key,
+                    )
+                  ? 'POSSIBLE_MISSED'
+                  : 'SOURCE';
+
+          return {
+            lineNumber:
+              index + 1,
+
+            raw,
+            body,
+            key,
+            status,
+          };
+        },
+      )
+      .filter(
+        (line) =>
+          Boolean(
+            line.raw,
+          ),
+      );
+
+  const sourceCompareExactDetectedCount =
+    sourceComparisonLines.filter(
+      (line) =>
+        line.status ===
+        'DETECTED',
+    ).length;
+
+  const sourceComparePossibleMissedCount =
+    sourceComparisonLines.filter(
+      (line) =>
+        line.status ===
+        'POSSIBLE_MISSED',
+    ).length;
+
+  const sourceCompareDetectedItems =
+    detectionReviewItems.filter(
+      (item) =>
+        item.coverageStatus !==
+        'REJECTED',
+    );
+
   const normalizedDetectionSearch =
     dishNameKey(
       detectionSearch,
@@ -6163,6 +6323,33 @@ Gulab Jamun`}
 
                     <button
                       type="button"
+                      className={`secondary-button menu-source-compare-toggle ${
+                        showDetectionSourceCompare
+                          ? 'active'
+                          : ''
+                      }`}
+                      data-menu-source-compare
+                      aria-pressed={
+                        showDetectionSourceCompare
+                      }
+                      onClick={() =>
+                        setShowDetectionSourceCompare(
+                          (current) =>
+                            !current,
+                        )
+                      }
+                    >
+                      {showDetectionSourceCompare
+                        ? 'Hide Compare'
+                        : 'Compare Source'}
+
+                      <kbd>
+                        C
+                      </kbd>
+                    </button>
+
+                    <button
+                      type="button"
                       className="ghost-button"
                       onClick={() =>
                         setDetectionReviewFilter(
@@ -6208,6 +6395,312 @@ Gulab Jamun`}
                     <p>
                       {manualRateIds.size} {manualRateIds.size === 1 ? 'dish needs' : 'dishes need'} a confirmed per-plate rate before saving. New and corrected dishes are also available for admin review.
                     </p>
+                  </div>
+                ) : null}
+
+                {showDetectionSourceCompare ? (
+                  <div className="menu-source-compare">
+                    <div className="menu-source-compare-head">
+                      <div>
+                        <span>
+                          Source Comparison
+                        </span>
+
+                        <strong>
+                          Original Menu ↔ Detected Dishes
+                        </strong>
+
+                        <small>
+                          Use this view to visually verify that dishes from the uploaded menu were captured correctly.
+                        </small>
+                      </div>
+
+                      <div className="menu-source-compare-stats">
+                        <div className="matched">
+                          <b>
+                            {
+                              sourceCompareExactDetectedCount
+                            }
+                          </b>
+
+                          <span>
+                            Exact source matches
+                          </span>
+                        </div>
+
+                        <div
+                          className={
+                            sourceComparePossibleMissedCount >
+                            0
+                              ? 'attention'
+                              : ''
+                          }
+                        >
+                          <b>
+                            {
+                              sourceComparePossibleMissedCount
+                            }
+                          </b>
+
+                          <span>
+                            Possible missed
+                          </span>
+                        </div>
+
+                        <div>
+                          <b>
+                            {
+                              sourceCompareDetectedItems
+                                .length
+                            }
+                          </b>
+
+                          <span>
+                            Detected dishes
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="menu-source-compare-close"
+                        onClick={() =>
+                          setShowDetectionSourceCompare(
+                            false,
+                          )
+                        }
+                        aria-label="Close source comparison"
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div className="menu-source-compare-columns">
+                      <section className="menu-source-compare-panel">
+                        <div className="menu-source-compare-panel-head">
+                          <div>
+                            <span>
+                              Original
+                            </span>
+
+                            <strong>
+                              Menu source
+                            </strong>
+                          </div>
+
+                          <small>
+                            {
+                              sourceComparisonLines
+                                .length
+                            }
+                            {' '}non-empty lines
+                          </small>
+                        </div>
+
+                        <div className="menu-source-line-list">
+                          {sourceComparisonLines.map(
+                            (line) => (
+                              <div
+                                className={`menu-source-line ${line.status.toLowerCase().replaceAll(
+                                  '_',
+                                  '-',
+                                )}`}
+                                key={`source-${line.lineNumber}`}
+                              >
+                                <span className="menu-source-line-number">
+                                  {
+                                    line.lineNumber
+                                  }
+                                </span>
+
+                                <div>
+                                  <strong>
+                                    {
+                                      line.raw
+                                    }
+                                  </strong>
+
+                                  {line.status ===
+                                  'DETECTED' ? (
+                                    <small className="matched">
+                                      ✓ Exact dish match
+                                    </small>
+                                  ) : line.status ===
+                                    'POSSIBLE_MISSED' ? (
+                                    <small className="attention">
+                                      ⚠ Possible missed dish
+                                    </small>
+                                  ) : (
+                                    <small>
+                                      Source line / heading / note
+                                    </small>
+                                  )}
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      </section>
+
+                      <section className="menu-source-compare-panel">
+                        <div className="menu-source-compare-panel-head">
+                          <div>
+                            <span>
+                              Detected
+                            </span>
+
+                            <strong>
+                              Final dish list
+                            </strong>
+                          </div>
+
+                          <small>
+                            {
+                              sourceCompareDetectedItems
+                                .length
+                            }
+                            {' '}active dishes
+                          </small>
+                        </div>
+
+                        <div className="menu-source-detected-list">
+                          {sourceCompareDetectedItems.map(
+                            (item) => (
+                              <button
+                                type="button"
+                                className={`menu-source-detected-item ${
+                                  detectionHasProblem(
+                                    item,
+                                  )
+                                    ? 'attention'
+                                    : 'ready'
+                                }`}
+                                key={`compare-${item.id}`}
+                                onClick={() => {
+                                  setShowDetectionSourceCompare(
+                                    false,
+                                  );
+
+                                  setDetectionSearch(
+                                    item.name,
+                                  );
+
+                                  setDetectionReviewFilter(
+                                    'ALL',
+                                  );
+
+                                  setActiveDetectionProblemId(
+                                    item.id,
+                                  );
+
+                                  window.setTimeout(
+                                    () =>
+                                      document
+                                        .getElementById(
+                                          `detected-dish-${item.id}`,
+                                        )
+                                        ?.scrollIntoView({
+                                          behavior:
+                                            'smooth',
+
+                                          block:
+                                            'center',
+                                        }),
+                                    60,
+                                  );
+                                }}
+                              >
+                                <div>
+                                  <strong>
+                                    {
+                                      item.name
+                                    }
+                                  </strong>
+
+                                  <small>
+                                    {
+                                      item.category
+                                    }
+
+                                    {item.dayLabel ||
+                                    item.mealLabel
+                                      ? ` · ${[
+                                          item.dayLabel,
+                                          item.mealLabel,
+                                        ]
+                                          .filter(
+                                            Boolean,
+                                          )
+                                          .join(
+                                            ' • ',
+                                          )}`
+                                      : ''}
+                                  </small>
+                                </div>
+
+                                <span>
+                                  {detectionHasProblem(
+                                    item,
+                                  )
+                                    ? 'Review'
+                                    : '✓ Ready'}
+                                </span>
+                              </button>
+                            ),
+                          )}
+                        </div>
+                      </section>
+                    </div>
+
+                    <div className="menu-source-compare-footer">
+                      <p>
+                        <b>
+                          How to read this:
+                        </b>
+                        {' '}
+                        Green means an exact cleaned source line matches a detected dish. Orange means the existing recovery engine already identified that line as a possible missed dish. Neutral lines may be headings, notes, event details, or complex menu lines and are not automatically treated as missing.
+                      </p>
+
+                      {detectionPreview
+                        .possibleMissed
+                        .length > 0 ? (
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() => {
+                            setShowDetectionSourceCompare(
+                              false,
+                            );
+
+                            window.setTimeout(
+                              () =>
+                                document
+                                  .querySelector(
+                                    '.menu-missed-recovery',
+                                  )
+                                  ?.scrollIntoView({
+                                    behavior:
+                                      'smooth',
+
+                                    block:
+                                      'center',
+                                  }),
+                              40,
+                            );
+                          }}
+                        >
+                          Review Possible Missed
+                          {' '}
+                          (
+                          {
+                            detectionPreview
+                              .possibleMissed
+                              .length
+                          }
+                          )
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
 
