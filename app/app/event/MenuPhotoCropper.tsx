@@ -10,6 +10,8 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from 'react';
 
+import { createPortal } from 'react-dom';
+
 type CropEdges = {
   left: number;
   right: number;
@@ -275,7 +277,7 @@ export default function MenuPhotoCropper({
     }
   }
 
-  return (
+  const cropDialog = (
     <div className="menu-crop-backdrop" role="presentation">
       <section
         className="menu-crop-dialog"
@@ -335,7 +337,6 @@ export default function MenuPhotoCropper({
         </div>
 
         <p className="menu-crop-hand-tip">
-          <span aria-hidden="true">↔</span>
           Drag inside to move. Drag a gold corner to resize.
         </p>
 
@@ -413,4 +414,8 @@ export default function MenuPhotoCropper({
       </section>
     </div>
   );
+
+  return typeof document === 'undefined'
+    ? null
+    : createPortal(cropDialog, document.body);
 }

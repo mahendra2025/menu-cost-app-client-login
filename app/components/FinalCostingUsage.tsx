@@ -28,7 +28,7 @@ export default function FinalCostingUsage({ tenantId, work }: { tenantId: string
       .catch(() => {});
   }, [work.costingId]);
 
-  async function complete() {
+  async function saveToHistory() {
     if (!ready || busy) return;
     setBusy(true); setMessage('');
     try {
@@ -50,11 +50,15 @@ export default function FinalCostingUsage({ tenantId, work }: { tenantId: string
         }),
       });
       const data = await response.json();
-      if (!response.ok) { setMessage(data.error || 'Could not complete costing.'); return; }
+      if (!response.ok) { setMessage(data.error || 'Could not save costing history.'); return; }
       setUsage(data);
-      setMessage(data.hasProAccess ? 'Costing completed and saved to history.' : `Costing completed. ${data.remaining} free costing${data.remaining === 1 ? '' : 's'} remaining.`);
+      setMessage(
+        data.hasProAccess
+          ? 'Saved to your account history database.'
+          : `Saved to your account history. ${data.remaining} free costing${data.remaining === 1 ? '' : 's'} remaining.`,
+      );
       window.dispatchEvent(new Event('menu-costing-usage-updated'));
-    } catch { setMessage('Server connection failed. Please try again.'); }
+    } catch { setMessage('Database connection failed. Please try again.'); }
     finally { setBusy(false); }
   }
 
@@ -71,17 +75,22 @@ export default function FinalCostingUsage({ tenantId, work }: { tenantId: string
   return (
     <div className={`mc-complete-card ${completed ? 'done' : ''}`}>
       <div>
-        <span className="section-kicker">{completed ? 'Costing saved' : 'Ready to complete'}</span>
-        <h2>{completed ? 'This costing is in your history.' : 'Complete this costing'}</h2>
-        <p>{completed ? 'Editing this same costing will not use another free costing.' : 'Completing creates a permanent history record. Free accounts can complete 5 costings.'}</p>
+        <span className="section-kicker">{completed ? 'Saved history' : 'Ready to save'}</span>
+        <h2>{completed ? 'This costing is saved in your account.' : 'Save this costing to history'}</h2>
+        <p>{completed ? 'Save again after editing to update the same database record. It will not use another free costing.' : 'Saving creates a permanent, user-specific database record. Free accounts can save 5 completed costings.'}</p>
         {usage && !usage.hasProAccess ? <b className="mc-complete-count">{usage.used} / {usage.limit} used · {usage.remaining} remaining</b> : null}
         {message ? <div className="mc-complete-message">{message}</div> : null}
       </div>
       <div className="mc-complete-actions">
-        {!completed ? <button className="primary-button" type="button" disabled={busy} onClick={() => void complete()}>{busy ? 'Saving…' : 'Complete Costing'}</button>
-          : usage?.canStartNew ? <button className="primary-button" type="button" onClick={startNew}>Start New Costing</button>
-          : <Link href="/app/profile?upgrade=1" className="primary-button">Upgrade to Pro · ₹999</Link>}
-        <Link href="/app/profile#costing-history" className="ghost-button">View History</Link>
+        <button className="primary-button" type="button" disabled={busy} onClick={() => void saveToHistory()}>
+          {busy ? 'Saving…' : completed ? 'Update Saved History' : 'Save to History'}
+        </button>
+        {completed && usage?.canStartNew ? (
+          <button className="ghost-button" type="button" onClick={startNew}>Start New Costing</button>
+        ) : completed && !usage?.canStartNew ? (
+          <Link href="/app/profile?upgrade=1" className="ghost-button">Upgrade to Pro · ₹999</Link>
+        ) : null}
+        <Link href="/app/history" className="ghost-button">View History</Link>
       </div>
       <style>{`.mc-complete-card{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;padding:22px;border:1px solid rgba(74,156,255,.2);border-radius:18px;background:#10151d}.mc-complete-card.done{border-color:rgba(61,220,132,.2)}.mc-complete-card h2{margin:5px 0 6px;font-size:21px}.mc-complete-card p{margin:0;color:#8d98a7;font-size:10px;line-height:1.55}.mc-complete-count{display:block;margin-top:11px;color:#8fc2ff;font-size:9px}.mc-complete-message{margin-top:9px;color:#8fc2ff;font-size:9px}.mc-complete-actions{display:grid;min-width:190px;gap:7px}.mc-complete-actions>*{width:100%;text-align:center}@media(max-width:760px){.mc-complete-card{grid-template-columns:1fr}.mc-complete-actions{min-width:0}}`}</style>
     </div>

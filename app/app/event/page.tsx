@@ -6382,24 +6382,42 @@ export default function EventPage() {
 
               <div className="menu-upload-options">
                 <div className="menu-upload-option">
-                  <span className="menu-upload-icon camera" aria-hidden="true">CAM</span>
-                  <div>
-                    <b>Take a photo</b>
-                    <p>Use a clear, straight menu photo.</p>
+                  <div className="menu-upload-heading">
+                    <span className="menu-upload-icon camera" aria-hidden="true">PHOTO</span>
+                    <div>
+                      <span className="page-eyebrow">Fastest option</span>
+                      <b>Upload menu photo</b>
+                      <p>Take a clear photo or choose one from your phone. You can crop and zoom before scanning.</p>
+                    </div>
                   </div>
+
+                  <ol className="menu-photo-steps" aria-label="Photo menu import steps">
+                    <li><span>1</span><b>Choose</b></li>
+                    <li><span>2</span><b>Crop</b></li>
+                    <li><span>3</span><b>Detect</b></li>
+                  </ol>
+
                   <div className="menu-photo-actions">
                     <label
-                      className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                      className={`primary-button menu-photo-primary ${uploading ? 'is-disabled' : ''}`}
                       htmlFor="menuCamera"
                     >
-                      {uploading === 'camera' ? 'Scanning photo...' : 'Open Camera'}
+                      <b>{uploading === 'camera' ? 'Scanning photo…' : 'Take Photo'}</b>
+                      <small>Open rear camera</small>
                     </label>
                     <label
-                      className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                      className={`ghost-button menu-photo-secondary ${uploading ? 'is-disabled' : ''}`}
                       htmlFor="menuPhoto"
                     >
-                      Upload Photo
+                      <b>Choose Photo</b>
+                      <small>From your gallery</small>
                     </label>
+                  </div>
+
+                  <div className="menu-photo-help">
+                    <b>For best detection</b>
+                    <span>Keep the menu flat, fill the frame, and avoid shadows or glare.</span>
+                    <small>JPG, PNG or WebP · Maximum 20 MB</small>
                   </div>
                   <input
                     id="menuCamera"
@@ -6444,7 +6462,7 @@ export default function EventPage() {
                 <div className="menu-upload-status" role="status" aria-live="polite">
                   <span className={uploading ? 'upload-spinner' : 'upload-check'} aria-hidden="true" />
                   <div>
-                    <b>{uploading ? 'Processing menu' : 'Menu imported successfully'}</b>
+                    <b>{uploading ? 'Reading your menu photo' : detecting ? 'Detecting dishes' : 'Menu imported successfully'}</b>
                     <p>{uploadStatus}</p>
                     {work.event.uploadFileName && !uploading ? (
                       <small>{work.event.uploadFileName}</small>
