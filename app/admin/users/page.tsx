@@ -2079,7 +2079,7 @@ export default function AdminUsersPage() {
             <div className="mc-admin-create-tip">
               <Icon name="shield" />
               <span>
-                Public customers can still use the normal signup flow. This form is for admin-created accounts and support cases.
+                Create client accounts here, then provide the login details directly to the customer.
               </span>
             </div>
           </aside>

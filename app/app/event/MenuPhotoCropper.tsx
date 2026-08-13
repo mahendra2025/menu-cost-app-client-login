@@ -2,7 +2,12 @@
 
 import {
   useEffect,
+  useRef,
   useState,
+} from 'react';
+
+import type {
+  PointerEvent as ReactPointerEvent,
 } from 'react';
 
 type CropEdges = {
@@ -117,6 +122,7 @@ export default function MenuPhotoCropper({
   const [crop, setCrop] = useState<CropEdges>(EMPTY_CROP);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+  const cropStageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const url = URL.createObjectURL(file);
@@ -140,6 +146,86 @@ export default function MenuPhotoCropper({
         [edge]: Math.min(value, 80 - opposite),
       };
     });
+  }
+
+  function beginCropDrag(
+    mode:
+      | 'move'
+      | 'top-left'
+      | 'top-right'
+      | 'bottom-left'
+      | 'bottom-right',
+    event: ReactPointerEvent<HTMLElement>,
+  ) {
+    const stage = cropStageRef.current;
+
+    if (!stage || processing) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const bounds = stage.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startCrop = crop;
+
+    function clamp(value: number, minimum: number, maximum: number) {
+      return Math.min(maximum, Math.max(minimum, value));
+    }
+
+    function handlePointerMove(pointerEvent: PointerEvent) {
+      pointerEvent.preventDefault();
+
+      const deltaX = (pointerEvent.clientX - startX) / bounds.width * 100;
+      const deltaY = (pointerEvent.clientY - startY) / bounds.height * 100;
+      const width = 100 - startCrop.left - startCrop.right;
+      const height = 100 - startCrop.top - startCrop.bottom;
+
+      if (mode === 'move') {
+        const left = clamp(startCrop.left + deltaX, 0, 100 - width);
+        const top = clamp(startCrop.top + deltaY, 0, 100 - height);
+
+        setCrop({
+          left,
+          right: 100 - width - left,
+          top,
+          bottom: 100 - height - top,
+        });
+
+        return;
+      }
+
+      const next = { ...startCrop };
+
+      if (mode.includes('left')) {
+        next.left = clamp(startCrop.left + deltaX, 0, 80 - startCrop.right);
+      }
+
+      if (mode.includes('right')) {
+        next.right = clamp(startCrop.right - deltaX, 0, 80 - startCrop.left);
+      }
+
+      if (mode.includes('top')) {
+        next.top = clamp(startCrop.top + deltaY, 0, 80 - startCrop.bottom);
+      }
+
+      if (mode.includes('bottom')) {
+        next.bottom = clamp(startCrop.bottom - deltaY, 0, 80 - startCrop.top);
+      }
+
+      setCrop(next);
+    }
+
+    function stopPointerDrag() {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', stopPointerDrag);
+      window.removeEventListener('pointercancel', stopPointerDrag);
+    }
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: false });
+    window.addEventListener('pointerup', stopPointerDrag, { once: true });
+    window.addEventListener('pointercancel', stopPointerDrag, { once: true });
   }
 
   async function confirmCrop() {
@@ -172,7 +258,7 @@ export default function MenuPhotoCropper({
           <div>
             <span className="page-eyebrow">Photo editor</span>
             <h2 id="menuCropTitle">Crop menu photo</h2>
-            <p>Trim away the table, hands, and empty space so only the menu remains.</p>
+            <p>Drag the crop box or its corners by hand so only the menu remains.</p>
           </div>
           <button
             className="menu-crop-close"
@@ -186,7 +272,7 @@ export default function MenuPhotoCropper({
         </div>
 
         <div className="menu-crop-preview">
-          <div className="menu-crop-stage">
+          <div className="menu-crop-stage" ref={cropStageRef}>
             {previewUrl ? <img src={previewUrl} alt="Menu photo crop preview" /> : null}
             <span className="menu-crop-mask top" style={{ height: `${crop.top}%` }} />
             <span className="menu-crop-mask right" style={{ width: `${crop.right}%`, top: `${crop.top}%`, bottom: `${crop.bottom}%` }} />
@@ -197,9 +283,32 @@ export default function MenuPhotoCropper({
               style={{
                 inset: `${crop.top}% ${crop.right}% ${crop.bottom}% ${crop.left}%`,
               }}
+              onPointerDown={(event) => beginCropDrag('move', event)}
+              role="presentation"
             />
+            {([
+              ['top-left', crop.left, crop.top],
+              ['top-right', 100 - crop.right, crop.top],
+              ['bottom-left', crop.left, 100 - crop.bottom],
+              ['bottom-right', 100 - crop.right, 100 - crop.bottom],
+            ] as const).map(([corner, left, top]) => (
+              <button
+                className={`menu-crop-handle ${corner}`}
+                type="button"
+                key={corner}
+                disabled={processing}
+                aria-label={`Drag ${corner.replace('-', ' ')} crop corner`}
+                style={{ left: `${left}%`, top: `${top}%` }}
+                onPointerDown={(event) => beginCropDrag(corner, event)}
+              />
+            ))}
           </div>
         </div>
+
+        <p className="menu-crop-hand-tip">
+          <span aria-hidden="true">↔</span>
+          Drag inside to move. Drag a gold corner to resize.
+        </p>
 
         <div className="menu-crop-controls">
           {(['top', 'bottom', 'left', 'right'] as const).map((edge) => (

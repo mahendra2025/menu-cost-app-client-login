@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { SESSION_KEY } from '../../lib/store';
 
 export default function LoginPage() {
@@ -131,15 +130,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="login-help">
-            New to Menu Costing?{' '}
-            <Link
-              href="/signup"
-              style={{ color: '#007aff', fontWeight: 800 }}
-            >
-              Create a free account
-            </Link>
-          </p>
         </section>
       </div>
     </main>

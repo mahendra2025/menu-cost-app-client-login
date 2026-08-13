@@ -1843,10 +1843,10 @@ export default function HomePage() {
             </Link>
 
             <Link
-              href="/signup"
+              href="/login"
               className="mc-button mc-button-primary"
             >
-              Start Free
+              Client Login
               <Arrow />
             </Link>
           </div>
@@ -1874,10 +1874,10 @@ export default function HomePage() {
 
             <div className="mc-hero-actions">
               <Link
-                href="/signup"
+                href="/login"
                 className="mc-button mc-button-primary"
               >
-                Calculate My First Menu
+                Open Client Login
                 <Arrow />
               </Link>
 
@@ -2351,10 +2351,10 @@ export default function HomePage() {
               }}
             >
               <Link
-                href="/signup"
+                href="/login"
                 className="mc-button mc-button-primary"
               >
-                Try It With My Menu
+                Open Client Login
                 <Arrow />
               </Link>
             </div>
@@ -2481,10 +2481,10 @@ export default function HomePage() {
             </div>
 
             <Link
-              href="/signup"
+              href="/login"
               className="mc-button mc-button-primary"
             >
-              Create Free Account
+              Client Login
               <Arrow />
             </Link>
 
@@ -2545,19 +2545,13 @@ export default function HomePage() {
 
             <div className="mc-final-actions">
               <Link
-                href="/signup"
+                href="/login"
                 className="mc-button mc-button-primary"
               >
-                Start Free
+                Client Login
                 <Arrow />
               </Link>
 
-              <Link
-                href="/login"
-                className="mc-button mc-button-secondary"
-              >
-                I Already Have an Account
-              </Link>
             </div>
           </div>
         </div>
@@ -2590,9 +2584,6 @@ export default function HomePage() {
               Sign in
             </Link>
 
-            <Link href="/signup">
-              Start free
-            </Link>
           </div>
         </div>
       </footer>
@@ -2606,10 +2597,10 @@ export default function HomePage() {
         </span>
 
         <Link
-          href="/signup"
+          href="/login"
           className="mc-button mc-button-primary"
         >
-          Start Free
+          Client Login
         </Link>
       </div>
       </main>
