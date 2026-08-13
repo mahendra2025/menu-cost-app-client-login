@@ -56,6 +56,10 @@ import {
   type TenantDishAliasRule,
 } from '../../../lib/menuDetectionCore';
 
+import {
+  buildDetectionBenchmark,
+} from '../../../lib/detectionBenchmark';
+
 const SAMPLE_MENU = `Day 1 • Dinner • 300 Members
 Welcome Drink
 Orange Juice
@@ -3897,6 +3901,18 @@ export default function EventPage() {
       ),
     );
 
+  /*
+   * V10/V11 real-menu accuracy benchmark.
+   *
+   * This starts as a baseline and becomes
+   * more meaningful as the user corrects,
+   * rejects, or recovers dishes.
+   */
+  const detectionBenchmark =
+    buildDetectionBenchmark(
+      detectionReviewItems,
+    );
+
   const selectedMissingManualRateCount =
     selectedPreviewMenu.filter(
       (item) =>
@@ -4870,6 +4886,171 @@ Gulab Jamun`}
                     </p>
                   </div>
                 ) : null}
+
+                <div className="menu-detection-benchmark">
+                  <div className="menu-detection-benchmark-head">
+                    <div>
+                      <span>
+                        Detection Accuracy Benchmark
+                      </span>
+
+                      <strong>
+                        {detectionBenchmark.grade ===
+                        'EXCELLENT'
+                          ? '✓ Excellent detection'
+                          : detectionBenchmark.grade ===
+                              'GOOD'
+                            ? '◷ Good — keep improving'
+                            : '⚠ Needs improvement'}
+                      </strong>
+
+                      <small>
+                        {detectionBenchmark.hasReviewSignals
+                          ? 'Calculated from the corrections you made on this real menu.'
+                          : 'Baseline only. Correct, reject, or recover dishes to turn this into a real accuracy measurement.'}
+                      </small>
+                    </div>
+
+                    <div
+                      className={`menu-detection-benchmark-score ${
+                        detectionBenchmark.grade ===
+                        'EXCELLENT'
+                          ? 'excellent'
+                          : detectionBenchmark.grade ===
+                              'GOOD'
+                            ? 'good'
+                            : 'attention'
+                      }`}
+                    >
+                      <b>
+                        {detectionBenchmark.score.toFixed(
+                          1,
+                        )}
+                      </b>
+
+                      <span>
+                        score
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="menu-detection-benchmark-grid">
+                    <div>
+                      <span>
+                        Recall
+                      </span>
+
+                      <b>
+                        {detectionBenchmark.recallPercent.toFixed(
+                          1,
+                        )}
+                        %
+                      </b>
+
+                      <small>
+                        real dishes captured
+                      </small>
+                    </div>
+
+                    <div>
+                      <span>
+                        Precision
+                      </span>
+
+                      <b>
+                        {detectionBenchmark.precisionPercent.toFixed(
+                          1,
+                        )}
+                        %
+                      </b>
+
+                      <small>
+                        detected items that are real
+                      </small>
+                    </div>
+
+                    <div>
+                      <span>
+                        Exact Capture
+                      </span>
+
+                      <b>
+                        {detectionBenchmark.exactCapturePercent.toFixed(
+                          1,
+                        )}
+                        %
+                      </b>
+
+                      <small>
+                        no correction needed
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="menu-detection-benchmark-detail">
+                    <span>
+                      <b>
+                        {
+                          detectionBenchmark
+                            .initialDetected
+                        }
+                      </b>
+                      {' '}initially detected
+                    </span>
+
+                    <span>
+                      <b>
+                        {
+                          detectionBenchmark
+                            .corrected
+                        }
+                      </b>
+                      {' '}corrected
+                    </span>
+
+                    <span>
+                      <b>
+                        {
+                          detectionBenchmark
+                            .falsePositives
+                        }
+                      </b>
+                      {' '}false positives
+                    </span>
+
+                    <span>
+                      <b>
+                        {
+                          detectionBenchmark
+                            .totalMissedRecovered
+                        }
+                      </b>
+                      {' '}missed & recovered
+                    </span>
+
+                    <span>
+                      <b>
+                        {
+                          detectionBenchmark
+                            .groundTruth
+                        }
+                      </b>
+                      {' '}reviewed real dishes
+                    </span>
+                  </div>
+
+                  <div className="menu-detection-benchmark-target">
+                    Target:
+                    {' '}
+                    <b>
+                      Recall ≥95%
+                    </b>
+                    {' · '}
+                    <b>
+                      Precision ≥97%
+                    </b>
+                  </div>
+                </div>
 
                 {detectionPreview
                   .possibleMissed

@@ -13,6 +13,7 @@
   },
   "include": [
     "lib/menuDetectionCore.ts",
-    "tests/menuDetectionCore.test.ts"
+    "lib/detectionBenchmark.ts",
+    "tests/**/*.test.ts"
   ]
 }
