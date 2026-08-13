@@ -6413,52 +6413,52 @@ export default function EventPage() {
               </div>
 
               <div className="menu-upload-options">
-                  <div className="menu-upload-option">
-                    <span className="menu-upload-icon camera" aria-hidden="true">CAM</span>
-                    <div>
-                      <b>Take a photo</b>
-                      <p>Use a clear, straight menu photo.</p>
-                    </div>
-                    <div className="menu-photo-actions">
-                      <label
-                        className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
-                        htmlFor="menuCamera"
-                      >
-                        {uploading === 'camera' ? 'Scanning photo...' : 'Open Camera'}
-                      </label>
-                      <label
-                        className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
-                        htmlFor="menuPhoto"
-                      >
-                        Upload Photo
-                      </label>
-                    </div>
-                    <input
-                      id="menuCamera"
-                      className="visually-hidden-file"
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      disabled={Boolean(uploading)}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = '';
-                        if (file) void readMenuPhoto(file);
-                      }}
-                    />
-                    <input
-                      id="menuPhoto"
-                      className="visually-hidden-file"
-                      type="file"
-                      accept="image/*"
-                      disabled={Boolean(uploading)}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = '';
-                        if (file) void readMenuPhoto(file);
-                      }}
-                    />
+                <div className="menu-upload-option">
+                  <span className="menu-upload-icon camera" aria-hidden="true">CAM</span>
+                  <div>
+                    <b>Take a photo</b>
+                    <p>Use a clear, straight menu photo.</p>
                   </div>
+                  <div className="menu-photo-actions">
+                    <label
+                      className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                      htmlFor="menuCamera"
+                    >
+                      {uploading === 'camera' ? 'Scanning photo...' : 'Open Camera'}
+                    </label>
+                    <label
+                      className={`ghost-button ${uploading ? 'is-disabled' : ''}`}
+                      htmlFor="menuPhoto"
+                    >
+                      Upload Photo
+                    </label>
+                  </div>
+                  <input
+                    id="menuCamera"
+                    className="visually-hidden-file"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    disabled={Boolean(uploading)}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = '';
+                      if (file) void readMenuPhoto(file);
+                    }}
+                  />
+                  <input
+                    id="menuPhoto"
+                    className="visually-hidden-file"
+                    type="file"
+                    accept="image/*"
+                    disabled={Boolean(uploading)}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = '';
+                      if (file) void readMenuPhoto(file);
+                    }}
+                  />
+                </div>
               </div>
 
               {uploadStatus ? (
