@@ -4751,6 +4751,49 @@ export default function EventPage() {
         ),
     ).length;
 
+  const detectionActionCount =
+    detectionReviewItems.filter(
+      (item) =>
+        item.coverageStatus !==
+          'REJECTED' &&
+        (
+          detectionNeedsReview(
+            item,
+          ) ||
+          manualRateIds.has(
+            item.id,
+          ) ||
+          item.coverageStatus ===
+            'REVIEW' ||
+          item.coverageStatus ===
+            'NEW_DISH_PENDING' ||
+          item.coverageStatus ===
+            'UNRESOLVED'
+        ),
+    ).length;
+
+  const detectionReadyCount =
+    detectionReviewItems.filter(
+      (item) =>
+        item.coverageStatus !==
+          'REJECTED' &&
+        item.coverageStatus ===
+          'COSTED' &&
+        !detectionNeedsReview(
+          item,
+        ) &&
+        Number(
+          item.costPerPlate,
+        ) > 0,
+    ).length;
+
+  const detectionRejectedCount =
+    detectionReviewItems.filter(
+      (item) =>
+        item.coverageStatus ===
+        'REJECTED',
+    ).length;
+
   return (
     <AppShell
       title="Create Event"
@@ -5384,7 +5427,7 @@ Gulab Jamun`}
                         ? 'AI-assisted detection'
                         : 'Local detection fallback'}
                     </span>
-                    <h3>Review before saving</h3>
+                    <h3>Review detected menu</h3>
                     <p>
                       {detectionPreview.source === 'ai'
                         ? 'AI organized the menu, matched saved recipes, and calculated available dish costs.'
@@ -5404,33 +5447,171 @@ Gulab Jamun`}
                     {detectionPreview.menu.some((item) => item.costSource === 'ai_recipe') ? (
                       <span><b>{detectionPreview.menu.filter((item) => item.costSource === 'ai_recipe').length}</b> AI recipe</span>
                     ) : null}
-                    {recostingDishIds.size > 0 ? (
-                  <div
-                    className="event-detection-note"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    <b>
-                      Recalculating corrected dish cost
-                    </b>
-
-                    <p>
-                      {recostingDishIds.size}{' '}
-                      {recostingDishIds.size === 1
-                        ? 'dish is'
-                        : 'dishes are'}{' '}
-                      being checked against Dish Master, saved recipes and automatic recipe costing.
-                    </p>
-                  </div>
-                ) : null}
-
-                {manualRateIds.size > 0 ? (
+                    {manualRateIds.size > 0 ? (
                       <span className={selectedMissingManualRateCount > 0 ? 'needs-attention' : ''}>
                         <b>{manualRateIds.size}</b> manual rate
                       </span>
                     ) : null}
                   </div>
                 </div>
+
+                <div className="menu-review-command">
+                  <div className="menu-review-command-copy">
+                    <span>
+                      Review queue
+                    </span>
+
+                    <strong>
+                      {detectionActionCount > 0
+                        ? `${detectionActionCount} dish${detectionActionCount === 1 ? '' : 'es'} need attention`
+                        : 'Detected menu looks ready'}
+                    </strong>
+
+                    <small>
+                      Review uncertain dishes first. Fix wrong names, mark false detections as Not a dish, and recover anything that was missed.
+                    </small>
+                  </div>
+
+                  <div className="menu-review-command-stats">
+                    <div
+                      className={
+                        detectionActionCount > 0
+                          ? 'attention'
+                          : 'ready'
+                      }
+                    >
+                      <b>
+                        {detectionActionCount}
+                      </b>
+
+                      <span>
+                        Need attention
+                      </span>
+                    </div>
+
+                    <div className="ready">
+                      <b>
+                        {detectionReadyCount}
+                      </b>
+
+                      <span>
+                        Ready
+                      </span>
+                    </div>
+
+                    <div
+                      className={
+                        detectionPreview
+                          .possibleMissed
+                          .length
+                          ? 'attention'
+                          : ''
+                      }
+                    >
+                      <b>
+                        {
+                          detectionPreview
+                            .possibleMissed
+                            .length
+                        }
+                      </b>
+
+                      <span>
+                        Possible missed
+                      </span>
+                    </div>
+
+                    <div>
+                      <b>
+                        {
+                          selectedPreviewMenu
+                            .length
+                        }
+                      </b>
+
+                      <span>
+                        Selected
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="menu-review-command-actions">
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={
+                        detectionSourceCounts
+                          .uncertain === 0
+                      }
+                      onClick={() => {
+                        setDetectionReviewFilter(
+                          'UNCERTAIN',
+                        );
+
+                        window.setTimeout(
+                          () =>
+                            document
+                              .querySelector(
+                                '.menu-preview-groups',
+                              )
+                              ?.scrollIntoView({
+                                behavior:
+                                  'smooth',
+
+                                block:
+                                  'start',
+                              }),
+                          40,
+                        );
+                      }}
+                    >
+                      Review Issues
+                      {detectionSourceCounts
+                        .uncertain > 0
+                        ? ` (${detectionSourceCounts.uncertain})`
+                        : ''}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() =>
+                        setDetectionReviewFilter(
+                          'ALL',
+                        )
+                      }
+                    >
+                      Show All Dishes
+                    </button>
+                  </div>
+                </div>
+
+                {recostingDishIds.size > 0 ? (
+                  <div
+                    className="event-detection-note menu-recosting-note"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <span
+                      className="menu-recosting-spinner"
+                      aria-hidden="true"
+                    />
+
+                    <div>
+                      <b>
+                        Recalculating corrected dish cost
+                      </b>
+
+                      <p>
+                        {recostingDishIds.size}{' '}
+                        {recostingDishIds.size === 1
+                          ? 'dish is'
+                          : 'dishes are'}{' '}
+                        being checked against Dish Master and recipe costing.
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
 
                 {manualRateIds.size > 0 ? (
                   <div className="event-detection-note" role="status">
@@ -5440,6 +5621,26 @@ Gulab Jamun`}
                     </p>
                   </div>
                 ) : null}
+
+                <div className="menu-review-diagnostics-heading">
+                  <div>
+                    <span>
+                      Advanced diagnostics
+                    </span>
+
+                    <strong>
+                      Detection & costing health
+                    </strong>
+
+                    <small>
+                      These technical checks are useful after the menu itself has been reviewed.
+                    </small>
+                  </div>
+
+                  <span aria-hidden="true">
+                    ↳
+                  </span>
+                </div>
 
                 <div className="menu-detection-benchmark">
                   <div className="menu-detection-benchmark-head">
@@ -6792,7 +6993,7 @@ Gulab Jamun`}
 
                             return (
                               <div
-                                className={`menu-preview-item ${isSelected ? 'is-selected' : ''} ${manualRateIds.has(item.id) ? 'needs-manual-rate' : ''} ${item.coverageStatus === 'REJECTED' ? 'is-rejected' : ''}`}
+                                className={`menu-preview-item ${isSelected ? 'is-selected' : ''} ${manualRateIds.has(item.id) ? 'needs-manual-rate' : ''} ${item.coverageStatus === 'REJECTED' ? 'is-rejected' : ''} ${detectionNeedsReview(item) ? 'needs-review' : ''} ${Number(item.costPerPlate) > 0 ? 'has-cost' : 'missing-cost'}`}
                                 key={item.id}
                               >
                                 <label className="menu-preview-selector" aria-label={`Select ${item.name}`}>
@@ -6844,7 +7045,7 @@ Gulab Jamun`}
                                           'REJECTED'
                                         }
                                       >
-                                        Edit
+                                        Fix
                                       </button>
 
                                       <button
@@ -6864,7 +7065,7 @@ Gulab Jamun`}
                                         {item.coverageStatus ===
                                         'REJECTED'
                                           ? 'Restore'
-                                          : 'Reject'}
+                                          : 'Not a dish'}
                                       </button>
                                     </div>
                                   </div>
@@ -7011,11 +7212,17 @@ Gulab Jamun`}
                                   </div>
 
                                   {item.detectionReason ? (
-                                    <small className="menu-detection-reason">
-                                      {
-                                        item.detectionReason
-                                      }
-                                    </small>
+                                    <details className="menu-detection-reason-details">
+                                      <summary>
+                                        Why was this detected?
+                                      </summary>
+
+                                      <small className="menu-detection-reason">
+                                        {
+                                          item.detectionReason
+                                        }
+                                      </small>
+                                    </details>
                                   ) : null}
 
                                   {item.ingredientCostDrivers?.length ? (
@@ -7240,7 +7447,9 @@ Gulab Jamun`}
                                     />
                                   </label>
                                 ) : (
-                                  <strong>₹{Number(item.costPerPlate).toFixed(2)}</strong>
+                                  <strong className="menu-preview-cost">
+                                    ₹{Number(item.costPerPlate).toFixed(2)}
+                                  </strong>
                                 )}
                               </div>
                             );
