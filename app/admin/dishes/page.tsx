@@ -8,25 +8,7 @@ import {
   type ChangeEvent,
 } from 'react';
 
-import dynamic from 'next/dynamic';
-
 import AppShell from '../../components/AppShell';
-
-import type {
-  RecipeStudioDishRequest,
-} from './RecipeStudioPanel';
-
-const RecipeStudioPanel = dynamic(
-  () => import('./RecipeStudioPanel'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="admin-lazy-loading">
-        Opening Recipe Studio…
-      </div>
-    ),
-  },
-);
 
 import {
   CATEGORIES,
@@ -221,19 +203,6 @@ function validateRows(rows: EditableDish[]) {
 }
 
 export default function AdminDishesPage() {
-  const [workspaceView, setWorkspaceView] =
-    useState<'catalog' | 'recipes'>(
-      'catalog',
-    );
-  const [
-    recipeStudioOpened,
-    setRecipeStudioOpened,
-  ] = useState(false);
-  const [
-    requestedRecipeDish,
-    setRequestedRecipeDish,
-  ] = useState<RecipeStudioDishRequest | null>(null);
-  const [catalogRevision, setCatalogRevision] = useState(0);
   const [ready, setReady] = useState(false);
   const [rows, setRows] = useState<EditableDish[]>([]);
   const [categories, setCategories] = useState<string[]>([...CATEGORIES]);
@@ -342,74 +311,6 @@ export default function AdminDishesPage() {
     ])).sort((left, right) => left.localeCompare(right));
   }, [availableCategories, categoryFilter, rows, subcategories]);
 
-  useEffect(() => {
-    const syncViewFromHash = () => {
-      if (
-        window.location.hash.startsWith(
-          '#recipes',
-        )
-      ) {
-        const linkedRecipe =
-          new URLSearchParams(
-            window.location.search,
-          )
-            .get('recipe')
-            ?.trim();
-
-        const target = linkedRecipe
-          ? `/admin/recipes?recipe=${encodeURIComponent(linkedRecipe)}`
-          : '/admin/recipes';
-
-        window.location.replace(
-          target,
-        );
-        return;
-      }
-
-      setWorkspaceView(
-        'catalog',
-      );
-    };
-
-    syncViewFromHash();
-
-    window.addEventListener(
-      'hashchange',
-      syncViewFromHash,
-    );
-
-    return () =>
-      window.removeEventListener(
-        'hashchange',
-        syncViewFromHash,
-      );
-  }, []);
-
-  function openWorkspace(
-    view: 'catalog' | 'recipes',
-  ) {
-    if (view === 'recipes') {
-      window.location.assign(
-        '/admin/recipes',
-      );
-      return;
-    }
-
-    setWorkspaceView(
-      'catalog',
-    );
-
-    if (recipeStudioOpened) {
-      void refreshRecipeMetadata();
-    }
-
-    window.history.replaceState(
-      null,
-      '',
-      window.location.pathname,
-    );
-  }
-
   function openRecipeForDish(
     dish: EditableDish,
   ) {
@@ -421,79 +322,6 @@ export default function AdminDishesPage() {
     window.location.assign(
       `/admin/recipes?recipe=${encodeURIComponent(name)}`,
     );
-  }
-
-  async function refreshDishCatalogFromRecipes() {
-    if (dirty) {
-      setMessageType('error');
-      setMessage('Recipe changes were saved. Save your pending Dish Catalog changes before refreshing recipe rates.');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/admin/dishes', { cache: 'no-store' });
-      if (!response.ok) throw new Error();
-      const data = await response.json();
-      const dishItems = parseDishItems(data.items);
-
-      const {
-        recipeModule,
-        servingCatalog,
-        nameCatalog,
-      } =
-        await loadRecipeMetadata();
-
-      const refreshedRows =
-        dishItems.map(
-          (item) =>
-            toEditableDish(
-              item,
-
-              recipeModule
-                .findDishServing(
-                  item.name,
-                  item.category,
-                  servingCatalog,
-                ),
-
-              recipeModule
-                .hasDishRecipe(
-                  item.name,
-                  nameCatalog,
-                ),
-            ),
-        );
-      const refreshedCategories = Array.isArray(data.categories)
-        ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
-        : [...CATEGORIES];
-      const refreshedSubcategories =
-        data.subcategories &&
-        typeof data.subcategories === 'object' &&
-        !Array.isArray(data.subcategories)
-          ? Object.fromEntries(
-            Object.entries(data.subcategories as Record<string, unknown>).map(([category, values]) => [
-              category,
-              Array.isArray(values)
-                ? values.map((value) => String(value).trim()).filter(Boolean)
-                : [],
-            ]),
-          )
-          : {};
-
-      setRows(refreshedRows);
-      setCategories(Array.from(new Set([
-        ...refreshedCategories,
-        ...refreshedRows.map((item) => item.category),
-        'Other',
-      ])));
-      setSubcategories(refreshedSubcategories);
-      saveDishCostItems(refreshedRows.map(toDishCostItem));
-      setMessageType('success');
-      setMessage('Recipe changes synced to the Dish Catalog.');
-    } catch {
-      setMessageType('error');
-      setMessage('Recipe saved, but the Dish Catalog could not refresh. Reload the page to try again.');
-    }
   }
 
   useEffect(() => {
@@ -1006,7 +834,6 @@ export default function AdminDishesPage() {
         0,
       );
       setDirty(false);
-      setCatalogRevision((current) => current + 1);
       setMessageType('success');
       setMessage('Dishes and linked recipes saved together. Client menus now use the latest names, categories and rates.');
     } catch {
@@ -1213,105 +1040,82 @@ async function handleCsvImport(
   }
 
   useEffect(() => {
-    const handleWorkspaceShortcut = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      const isEditing = Boolean(
-        target?.closest('input, textarea, select, [contenteditable="true"]'),
-      );
-      const key = event.key.toLowerCase();
+    const handleWorkspaceShortcut = (
+      event: KeyboardEvent,
+    ) => {
+      const target =
+        event.target as HTMLElement | null;
 
-      if ((event.metaKey || event.ctrlKey) && key === 's' && workspaceView === 'catalog') {
+      const isEditing = Boolean(
+        target?.closest(
+          'input, textarea, select, [contenteditable="true"]',
+        ),
+      );
+
+      const key =
+        event.key.toLowerCase();
+
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        key === 's'
+      ) {
         event.preventDefault();
-        if (dirty && !saving) void saveAll();
+
+        if (
+          dirty &&
+          !saving
+        ) {
+          void saveAll();
+        }
+
         return;
       }
-      if (event.altKey && event.key === '1') {
+
+      if (
+        event.altKey &&
+        event.key === '2'
+      ) {
         event.preventDefault();
-        openWorkspace('catalog');
+
+        window.location.assign(
+          '/admin/recipes',
+        );
+
         return;
       }
-      if (event.altKey && event.key === '2') {
+
+      if (
+        !isEditing &&
+        event.key === '/'
+      ) {
         event.preventDefault();
-        openWorkspace('recipes');
-        return;
-      }
-      if (!isEditing && event.key === '/') {
-        event.preventDefault();
-        openWorkspace('catalog');
-        window.requestAnimationFrame(() =>
-          document.getElementById('dish-search')?.focus(),
+
+        window.requestAnimationFrame(
+          () =>
+            document
+              .getElementById(
+                'dish-search',
+              )
+              ?.focus(),
         );
       }
     };
 
-    window.addEventListener('keydown', handleWorkspaceShortcut);
-    return () => window.removeEventListener('keydown', handleWorkspaceShortcut);
-  }, [dirty, saving, workspaceView]);
+    window.addEventListener(
+      'keydown',
+      handleWorkspaceShortcut,
+    );
+
+    return () =>
+      window.removeEventListener(
+        'keydown',
+        handleWorkspaceShortcut,
+      );
+  }, [dirty, saving]);
 
   return (
-    <AppShell title="Dishes & Recipes" subtitle="Manage the complete dish catalog, rates, serving sizes and batch recipes in one workspace">
-      <div
-        className="catalog-workspace-tabs no-print"
-        role="tablist"
-        aria-label="Dishes and recipes workspace"
-        onKeyDown={(event) => {
-          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-          event.preventDefault();
-          openWorkspace(workspaceView === 'catalog' ? 'recipes' : 'catalog');
-          window.requestAnimationFrame(() => {
-            document.querySelector<HTMLButtonElement>(
-              '.catalog-workspace-tabs button[aria-selected="true"]',
-            )?.focus();
-          });
-        }}
-      >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={
-            workspaceView === 'catalog'
-          }
-          className={
-            workspaceView === 'catalog'
-              ? 'is-active'
-              : ''
-          }
-          onClick={() =>
-            openWorkspace('catalog')
-          }
-        >
-          <span aria-hidden="true">D</span>
-          <div>
-            <b>Dish Catalog</b>
-            <small>Names, categories, rates and aliases</small>
-          </div>
-          <em>{rows.length}</em>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={
-            workspaceView === 'recipes'
-          }
-          className={
-            workspaceView === 'recipes'
-              ? 'is-active'
-              : ''
-          }
-          onClick={() =>
-            openWorkspace('recipes')
-          }
-        >
-          <span aria-hidden="true">R</span>
-          <div>
-            <b>Recipe Studio</b>
-            <small>Ingredients, yield and batch costing</small>
-          </div>
-          <em>{recipeLinkedCount} linked</em>
-        </button>
-      </div>
-
-      <div id="dish-catalog-panel" role="tabpanel" hidden={workspaceView !== 'catalog'}>
+    <AppShell title="Dishes" subtitle="Manage dish names, categories, rates, serving sizes and aliases">
+      <div id="dish-catalog-panel">
         <section className="content-grid">
         <div className={`dish-master-overview ${rowErrors.size ? 'needs-attention' : ''}`}>
           <div className="dish-master-overview-copy">
@@ -1361,7 +1165,7 @@ async function handleCsvImport(
             <div>
               <span className="section-kicker">Category manager</span>
               <h2>Edit categories &amp; subcategories</h2>
-              <p>Uses the same category structure as Recipe Studio. Renaming automatically updates every assigned dish.</p>
+              <p>Manage the category structure used across your dish catalog.</p>
             </div>
             <span className="dish-category-summary-count">{availableCategories.length} categories</span>
           </summary>
@@ -1663,15 +1467,6 @@ async function handleCsvImport(
         </section>
       </div>
 
-      <div id="recipe-studio-panel" role="tabpanel" hidden={workspaceView !== 'recipes'}>
-        {recipeStudioOpened ? (
-          <RecipeStudioPanel
-            requestedDish={requestedRecipeDish}
-            catalogRevision={catalogRevision}
-            onCatalogChanged={() => void refreshDishCatalogFromRecipes()}
-          />
-        ) : null}
-      </div>
     </AppShell>
   );
 }
