@@ -150,12 +150,89 @@ export async function GET(
       ).values(),
     );
 
+    const storedSubcategories =
+      categoryCatalog?.subcategories &&
+      typeof categoryCatalog.subcategories === 'object' &&
+      !Array.isArray(categoryCatalog.subcategories)
+        ? categoryCatalog.subcategories as Record<string, unknown>
+        : {};
+
+    const subcategories =
+      Object.fromEntries(
+        categories.map((category) => {
+          const storedValue =
+            Object.entries(
+              storedSubcategories,
+            ).find(
+              ([key]) =>
+                key.toLowerCase() ===
+                category.toLowerCase(),
+            )?.[1];
+
+          const stored =
+            Array.isArray(storedValue)
+              ? storedValue
+                  .map(String)
+                  .map((value) =>
+                    value
+                      .trim()
+                      .replace(/\s+/g, ' '),
+                  )
+                  .filter(Boolean)
+              : [];
+
+          const assigned =
+            catalogItems
+              .filter(
+                (item) =>
+                  item.category ===
+                  category,
+              )
+              .map(
+                (item) =>
+                  String(
+                    item.subcategory ||
+                    '',
+                  )
+                    .trim()
+                    .replace(/\s+/g, ' '),
+              )
+              .filter(Boolean);
+
+          return [
+            category,
+            Array.from(
+              new Map(
+                [
+                  ...stored,
+                  ...assigned,
+                ].map(
+                  (value) => [
+                    value.toLowerCase(),
+                    value,
+                  ],
+                ),
+              ).values(),
+            ).sort(
+              (left, right) =>
+                left.localeCompare(
+                  right,
+                ),
+            ),
+          ];
+        }),
+      );
+
     return NextResponse.json({
       suggestions,
       categories,
+      subcategories,
+
       items: catalogItems.map((item) => ({
         name: item.name,
         category: item.category,
+        subcategory:
+          item.subcategory || '',
         rate: item.rate,
         aliases: item.aliases ?? [],
       })),

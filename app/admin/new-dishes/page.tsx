@@ -52,6 +52,7 @@ type EditableSuggestion =
 type CatalogDish = {
   name: string;
   category: string;
+  subcategory: string;
   rate: number;
   aliases: string[];
 };
@@ -74,6 +75,7 @@ type DishVerification = {
 
 type ReviewFilter =
   | 'ALL'
+  | 'READY'
   | 'HIGH_PRIORITY'
   | 'LIKELY_DUPLICATE'
   | 'VERIFIED'
@@ -330,6 +332,14 @@ export default function NewDishesPage() {
     useState<string[]>([
       ...CATEGORIES,
     ]);
+
+  const [
+    subcategories,
+    setSubcategories,
+  ] = useState<
+    Record<string, string[]>
+  >({});
+
   const [catalogDishes, setCatalogDishes] =
     useState<CatalogDish[]>([]);
   const [loading, setLoading] =
@@ -445,6 +455,54 @@ export default function NewDishesPage() {
       setCategories(
         availableCategories,
       );
+
+      const sourceSubcategories =
+        queueData.subcategories &&
+        typeof queueData.subcategories ===
+          'object' &&
+        !Array.isArray(
+          queueData.subcategories,
+        )
+          ? queueData.subcategories as
+              Record<
+                string,
+                unknown
+              >
+          : {};
+
+      const availableSubcategories =
+        Object.fromEntries(
+          availableCategories.map(
+            (category) => [
+              category,
+
+              Array.isArray(
+                sourceSubcategories[
+                  category
+                ],
+              )
+                ? (
+                    sourceSubcategories[
+                      category
+                    ] as unknown[]
+                  )
+                    .map(String)
+                    .map(
+                      (item) =>
+                        item.trim(),
+                    )
+                    .filter(
+                      Boolean,
+                    )
+                : [],
+            ],
+          ),
+        );
+
+      setSubcategories(
+        availableSubcategories,
+      );
+
       const catalogRows:
           CatalogDish[] =
           Array.isArray(
@@ -468,6 +526,12 @@ export default function NewDishesPage() {
                     category:
                       String(
                         item.category ||
+                        '',
+                      ).trim(),
+
+                    subcategory:
+                      String(
+                        item.subcategory ||
                         '',
                       ).trim(),
 
@@ -1181,6 +1245,10 @@ export default function NewDishesPage() {
                   .trim() ||
                 'Other',
 
+              subcategory:
+                row.subcategory
+                  .trim(),
+
               rate:
                 finalRate,
 
@@ -1384,6 +1452,84 @@ export default function NewDishesPage() {
     );
   }
 
+  function subcategoriesFor(
+    category: string,
+  ) {
+    return Array.from(
+      new Set([
+        ...(
+          subcategories[
+            category
+          ] || []
+        ),
+
+        ...catalogDishes
+          .filter(
+            (dish) =>
+              dish.category ===
+              category,
+          )
+          .map(
+            (dish) =>
+              dish.subcategory,
+          )
+          .filter(Boolean),
+      ]),
+    ).sort(
+      (left, right) =>
+        left.localeCompare(
+          right,
+        ),
+    );
+  }
+
+  function isReadyForApproval(
+    row: EditableSuggestion,
+  ) {
+    if (
+      !row.dishName.trim()
+    ) {
+      return false;
+    }
+
+    const confidence =
+      Math.max(
+        0,
+        Number(
+          row.aiConfidence,
+        ) || 0,
+      );
+
+    if (
+      row.saveAs ===
+      'alias'
+    ) {
+      return Boolean(
+        row.aliasCategory &&
+        row.aliasTarget &&
+        (
+          isLikelyDuplicate(
+            row,
+          ) ||
+          confidence >= 75
+        ),
+      );
+    }
+
+    return Boolean(
+      row.category &&
+      row.analyzedAt &&
+      confidence >= 80 &&
+      row.recommendation &&
+      row.recommendation !==
+        'REVIEW' &&
+      row.recommendation !==
+        'REJECT' &&
+      row.riskLevel !==
+        'HIGH'
+    );
+  }
+
   function applyCatalogMatch(
     row: EditableSuggestion,
     match: CatalogMatch,
@@ -1414,6 +1560,14 @@ export default function NewDishesPage() {
       () => ({
         total:
           rows.length,
+
+        ready:
+          rows.filter(
+            (row) =>
+              isReadyForApproval(
+                row,
+              ),
+          ).length,
 
         highPriority:
           rows.filter(
@@ -1508,6 +1662,16 @@ export default function NewDishesPage() {
                   row.id
                 ]?.confirmed,
               );
+
+            if (
+              reviewFilter ===
+                'READY' &&
+              !isReadyForApproval(
+                row,
+              )
+            ) {
+              return false;
+            }
 
             if (
               reviewFilter ===
@@ -1690,17 +1854,27 @@ export default function NewDishesPage() {
               className="primary-button"
               type="button"
               onClick={() =>
-                void analyzeSuggestions()
+                void analyzeSuggestions(
+                  visibleRows
+                    .slice(
+                      0,
+                      30,
+                    )
+                    .map(
+                      (row) =>
+                        row.id,
+                    ),
+                )
               }
               disabled={
                 loading ||
                 analyzingAll ||
-                !rows.length
+                !visibleRows.length
               }
             >
               {analyzingAll
                 ? 'AI analyzing…'
-                : `AI Analyze ${Math.min(rows.length, 30)}`
+                : `Analyze visible ${Math.min(visibleRows.length, 30)}`
               }
             </button>
 
@@ -1813,24 +1987,26 @@ export default function NewDishesPage() {
             type="button"
             className={
               reviewFilter ===
-              'VERIFIED'
+              'READY'
                 ? 'is-active'
                 : ''
             }
             onClick={() =>
               setReviewFilter(
-                'VERIFIED',
+                'READY',
               )
             }
           >
             <span>
-              Verified
+              Ready
             </span>
+
             <strong>
-              {queueStats.verified}
+              {queueStats.ready}
             </strong>
+
             <small>
-              Confirmed dishes
+              Ready to approve
             </small>
           </button>
         </div>
@@ -1918,6 +2094,10 @@ export default function NewDishesPage() {
                   All review states
                 </option>
 
+                <option value="READY">
+                  Ready to approve
+                </option>
+
                 <option value="HIGH_PRIORITY">
                   High priority
                 </option>
@@ -1996,7 +2176,13 @@ export default function NewDishesPage() {
           <div className="new-dish-list">
             {visibleRows.map((row) => (
               <article
-                className="new-dish-card"
+                className={`new-dish-card ${
+                  isReadyForApproval(
+                    row,
+                  )
+                    ? 'is-ready'
+                    : ''
+                }`}
                 key={row.id}
               >
                 <div className="new-dish-source">
@@ -2052,15 +2238,17 @@ export default function NewDishesPage() {
                       : '＋ Likely new dish'}
                   </span>
 
-                  {verifications[
-                    row.id
-                  ]?.confirmed ? (
+                  {isReadyForApproval(
+                    row,
+                  ) ? (
                     <span className="new-dish-signal verified">
-                      ✓ Verified
+                      ✓ Ready to approve
                     </span>
                   ) : (
                     <span className="new-dish-signal pending">
-                      Verification pending
+                      {row.analyzedAt
+                        ? 'Needs review'
+                        : 'AI analysis pending'}
                     </span>
                   )}
 
@@ -2401,7 +2589,15 @@ export default function NewDishesPage() {
                   )}
                 </div>
 
-                <div className="new-dish-verification">
+                <details className="new-dish-verification">
+                  <summary className="new-dish-verification-summary">
+                    <span>
+                      Optional verification
+                    </span>
+                    <small>
+                      Use Google only when AI or catalog matching is unclear
+                    </small>
+                  </summary>
                   <div className="new-dish-verification-heading">
                     <div>
                       <b>Google dish verification</b>
@@ -2491,7 +2687,7 @@ export default function NewDishesPage() {
                       </div>
                     </div>
                   ) : null}
-                </div>
+                </details>
 
                 <div className="new-dish-save-choice">
                   <span>Add to Available Dishes as</span>
@@ -2603,13 +2799,31 @@ export default function NewDishesPage() {
                     <select
                       className="select"
                       value={row.category}
-                      onChange={(event) =>
-                        updateRow(row.id, {
-                          category:
-                            event.target
-                              .value,
-                        })
-                      }
+                      onChange={(event) => {
+                        const nextCategory =
+                          event.target
+                            .value;
+
+                        const choices =
+                          subcategoriesFor(
+                            nextCategory,
+                          );
+
+                        updateRow(
+                          row.id,
+                          {
+                            category:
+                              nextCategory,
+
+                            subcategory:
+                              choices.includes(
+                                row.subcategory,
+                              )
+                                ? row.subcategory
+                                : '',
+                          },
+                        );
+                      }}
                     >
                       {categories.map(
                         (category) => (
@@ -2627,20 +2841,45 @@ export default function NewDishesPage() {
                     <label>
                       Subcategory
                     </label>
-                    <input
-                      className="input"
+
+                    <select
+                      className="select"
                       value={
                         row.subcategory
                       }
                       onChange={(event) =>
-                        updateRow(row.id, {
-                          subcategory:
-                            event.target
-                              .value,
-                        })
+                        updateRow(
+                          row.id,
+                          {
+                            subcategory:
+                              event
+                                .target
+                                .value,
+                          },
+                        )
                       }
-                      placeholder="Optional"
-                    />
+                    >
+                      <option value="">
+                        No subcategory
+                      </option>
+
+                      {subcategoriesFor(
+                        row.category,
+                      ).map(
+                        (subcategory) => (
+                          <option
+                            key={
+                              subcategory
+                            }
+                            value={
+                              subcategory
+                            }
+                          >
+                            {subcategory}
+                          </option>
+                        ),
+                      )}
+                    </select>
                   </div>
                   <div className="field">
                     <label>
