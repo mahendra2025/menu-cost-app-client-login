@@ -16,6 +16,9 @@ type RecipeCatalog = {
   rates: RawRow[];
   deletedDishIds: string[];
   catalogVersion: number;
+  categories: string[];
+  subcategories:
+    Record<string, string[]>;
 };
 
 const RECIPE_CACHE_KEY = 'admin_recipe_catalog_v1';
@@ -361,6 +364,59 @@ export default function RecipesPage() {
                   ?.catalogVersion,
               ) || 1,
             ),
+
+          categories:
+            Array.isArray(
+              data.categories,
+            )
+              ? data.categories
+                  .map(String)
+                  .map(
+                    (item: string) =>
+                      item.trim(),
+                  )
+                  .filter(Boolean)
+              : [],
+
+          subcategories:
+            data.subcategories &&
+            typeof data.subcategories ===
+              'object' &&
+            !Array.isArray(
+              data.subcategories,
+            )
+              ? Object.fromEntries(
+                  Object.entries(
+                    data.subcategories as
+                      Record<
+                        string,
+                        unknown
+                      >,
+                  ).map(
+                    ([
+                      category,
+                      values,
+                    ]) => [
+                      category,
+                      Array.isArray(
+                        values,
+                      )
+                        ? values
+                            .map(String)
+                            .map(
+                              (
+                                item,
+                              ) =>
+                                item.trim(),
+                            )
+                            .filter(
+                              Boolean,
+                            )
+                        : [],
+                    ],
+                  ),
+                )
+              : {},
         };
 
       setCatalog(
@@ -438,8 +494,14 @@ export default function RecipesPage() {
     useMemo(
       () =>
         Array.from(
-          new Set(
-            (
+          new Set([
+            ...(
+              catalog
+                ?.categories ||
+              []
+            ),
+
+            ...(
               catalog
                 ?.dishes ||
               []
@@ -453,7 +515,9 @@ export default function RecipesPage() {
               .filter(
                 Boolean,
               ),
-          ),
+
+            'Other',
+          ]),
         ).sort(
           (a, b) =>
             a.localeCompare(
@@ -883,6 +947,44 @@ export default function RecipesPage() {
     totalCost /
     guests;
 
+  const selectedCategory =
+    text(
+      selectedDish?.category,
+    ) ||
+    'Other';
+
+  const selectedSubcategory =
+    text(
+      selectedDish
+        ?.subcategory,
+    );
+
+  const selectedSubcategories =
+    Array.from(
+      new Set([
+        ...(
+          catalog
+            ?.subcategories?.[
+              selectedCategory
+            ] ||
+          []
+        ),
+
+        ...(
+          selectedSubcategory
+            ? [
+                selectedSubcategory,
+              ]
+            : []
+        ),
+      ]),
+    ).sort(
+      (a, b) =>
+        a.localeCompare(
+          b,
+        ),
+    );
+
   return (
     <AppShell
       title="Recipes"
@@ -1112,7 +1214,7 @@ export default function RecipesPage() {
 
           .recipe-fast-grid {
             display:grid;
-            grid-template-columns:2fr 1fr 1fr;
+            grid-template-columns:2fr 1fr 1fr 1fr;
             gap:8px;
           }
 
@@ -1498,23 +1600,99 @@ export default function RecipesPage() {
                         Category
                       </label>
 
-                      <input
+                      <select
                         className="recipe-fast-input"
-                        value={text(
-                          selectedDish.category,
-                        )}
-                        onChange={(event) =>
+                        value={
+                          selectedCategory
+                        }
+                        onChange={(event) => {
+                          const nextCategory =
+                            event
+                              .target
+                              .value;
+
+                          const allowedSubcategories =
+                            catalog
+                              ?.subcategories?.[
+                                nextCategory
+                              ] ||
+                            [];
+
                           updateDish(
                             selectedIndex,
                             {
                               category:
+                                nextCategory,
+
+                              subcategory:
+                                allowedSubcategories
+                                  .includes(
+                                    selectedSubcategory,
+                                  )
+                                  ? selectedSubcategory
+                                  : '',
+                            },
+                          );
+                        }}
+                      >
+                        {categories.map(
+                          (item) => (
+                            <option
+                              key={
+                                item
+                              }
+                              value={
+                                item
+                              }
+                            >
+                              {item}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                    </div>
+
+                    <div className="recipe-fast-field">
+                      <label>
+                        Subcategory
+                      </label>
+
+                      <select
+                        className="recipe-fast-input"
+                        value={
+                          selectedSubcategory
+                        }
+                        onChange={(event) =>
+                          updateDish(
+                            selectedIndex,
+                            {
+                              subcategory:
                                 event
                                   .target
                                   .value,
                             },
                           )
                         }
-                      />
+                      >
+                        <option value="">
+                          No subcategory
+                        </option>
+
+                        {selectedSubcategories.map(
+                          (item) => (
+                            <option
+                              key={
+                                item
+                              }
+                              value={
+                                item
+                              }
+                            >
+                              {item}
+                            </option>
+                          ),
+                        )}
+                      </select>
                     </div>
 
                     <div className="recipe-fast-field">

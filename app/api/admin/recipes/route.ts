@@ -463,18 +463,124 @@ export async function GET(request: Request) {
       });
     }
 
-    const catalog = await prisma.recipeCatalog.findUnique({
-      where: { id: CATALOG_ID },
-      select: {
-        dishes: true,
-        rates: true,
-        deletedDishIds: true,
-        catalogVersion: true,
-        updatedAt: true,
-      },
-    });
+    const [
+      catalog,
+      categoryCatalog,
+    ] = await Promise.all([
+      prisma.recipeCatalog.findUnique({
+        where: {
+          id: CATALOG_ID,
+        },
+        select: {
+          dishes: true,
+          rates: true,
+          deletedDishIds: true,
+          catalogVersion: true,
+          updatedAt: true,
+        },
+      }),
 
-    return NextResponse.json({ catalog });
+      prisma.dishCategoryCatalog.findUnique({
+        where: {
+          id: CATEGORY_CATALOG_ID,
+        },
+        select: {
+          categories: true,
+          subcategories: true,
+        },
+      }),
+    ]);
+
+    const categories =
+      Array.from(
+        new Map(
+          [
+            ...(
+              Array.isArray(
+                categoryCatalog?.categories,
+              )
+                ? categoryCatalog.categories
+                    .map(String)
+                : [...CATEGORIES]
+            ),
+            'Other',
+          ]
+            .map(
+              (category) =>
+                cleanText(
+                  category,
+                  60,
+                ),
+            )
+            .filter(Boolean)
+            .map(
+              (category) => [
+                category.toLowerCase(),
+                category,
+              ],
+            ),
+        ).values(),
+      );
+
+    const storedSubcategories =
+      categoryCatalog?.subcategories &&
+      typeof categoryCatalog.subcategories ===
+        'object' &&
+      !Array.isArray(
+        categoryCatalog.subcategories,
+      )
+        ? categoryCatalog.subcategories as
+            Record<
+              string,
+              unknown
+            >
+        : {};
+
+    const subcategories =
+      Object.fromEntries(
+        categories.map(
+          (category) => [
+            category,
+            Array.from(
+              new Map(
+                (
+                  Array.isArray(
+                    storedSubcategories[
+                      category
+                    ],
+                  )
+                    ? (
+                        storedSubcategories[
+                          category
+                        ] as unknown[]
+                      )
+                    : []
+                )
+                  .map(
+                    (value) =>
+                      cleanText(
+                        value,
+                        60,
+                      ),
+                  )
+                  .filter(Boolean)
+                  .map(
+                    (value) => [
+                      value.toLowerCase(),
+                      value,
+                    ],
+                  ),
+              ).values(),
+            ),
+          ],
+        ),
+      );
+
+    return NextResponse.json({
+      catalog,
+      categories,
+      subcategories,
+    });
   } catch {
     return NextResponse.json({ error: 'Failed to load recipes' }, { status: 500 });
   }
