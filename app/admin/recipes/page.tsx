@@ -355,7 +355,7 @@ export default function RecipesPage() {
       );
 
       try {
-        sessionStorage.setItem(
+        localStorage.setItem(
           RECIPE_CACHE_KEY,
           JSON.stringify(nextCatalog),
         );
@@ -380,7 +380,7 @@ export default function RecipesPage() {
   useEffect(() => {
     try {
       const raw =
-        sessionStorage.getItem(
+        localStorage.getItem(
           RECIPE_CACHE_KEY,
         );
 
@@ -407,7 +407,7 @@ export default function RecipesPage() {
         }
       }
     } catch {
-      sessionStorage.removeItem(
+      localStorage.removeItem(
         RECIPE_CACHE_KEY,
       );
     }
@@ -731,7 +731,7 @@ export default function RecipesPage() {
       }
 
       try {
-        sessionStorage.setItem(
+        localStorage.setItem(
           RECIPE_CACHE_KEY,
           JSON.stringify(catalog),
         );
