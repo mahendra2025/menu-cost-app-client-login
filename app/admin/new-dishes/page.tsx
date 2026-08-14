@@ -5862,4 +5862,4 @@ export default function NewDishesPage() {
       </section>
     </AppShell>
   );
-}\n
+}
