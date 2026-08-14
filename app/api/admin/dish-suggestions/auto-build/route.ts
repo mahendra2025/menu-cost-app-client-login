@@ -26,6 +26,17 @@ import {
   structuredAiProvider,
 } from '../../../../../lib/structuredAi';
 
+function clean(
+  value: unknown,
+  max = 120,
+) {
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+}
+
 async function requireAdmin() {
   const cookieStore =
     await cookies();
@@ -771,4 +782,4 @@ export async function POST(
       },
     );
   }
-}
+}\n

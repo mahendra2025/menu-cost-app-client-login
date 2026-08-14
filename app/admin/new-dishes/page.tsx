@@ -149,6 +149,92 @@ type AutoBuildResult = {
   };
 };
 
+type RecipeIngredientMaster = {
+  id: string;
+  name: string;
+  category: string;
+  rate: number;
+  unit: string;
+};
+
+type RecipeDraftIngredient = {
+  rowId: string;
+  rateKey: string;
+  name: string;
+  quantity: string;
+  unit: string;
+  rate: number;
+  rateUnit: string;
+};
+
+type RecipeDraft = {
+  suggestionId: string;
+  name: string;
+  category: string;
+  subcategory: string;
+  baseGuests: number;
+  ingredients:
+    RecipeDraftIngredient[];
+};
+
+type QuickRecipeResult = {
+  ok?: boolean;
+  updatedAt?: string;
+
+  cost?: {
+    rawCostPerPlate:
+      number;
+    wastagePercent:
+      number;
+    wastagePerPlate:
+      number;
+    costPerPlate:
+      number;
+    rawTotal:
+      number;
+    wastageTotal:
+      number;
+    totalCost:
+      number;
+  };
+
+  quality?: {
+    status:
+      | 'READY'
+      | 'REVIEW'
+      | 'BLOCKED';
+
+    score: number;
+    ingredientCount:
+      number;
+    trustedRateCount:
+      number;
+    rateCoveragePercent:
+      number;
+    estimatedRates:
+      number;
+    missingRates:
+      number;
+    warningCount:
+      number;
+    errorCount:
+      number;
+
+    issues: Array<{
+      severity:
+        | 'warning'
+        | 'error';
+
+      code: string;
+      message: string;
+      ingredient?: string;
+    }>;
+  };
+
+  error?: string;
+};
+
+
 function normalizeReviewText(
   value: string,
 ) {
@@ -323,6 +409,241 @@ function formatReviewDate(
   );
 }
 
+
+function quickRecipeMoney(
+  value: number,
+) {
+  return `₹${Math.max(
+    0,
+    Number(value) || 0,
+  ).toLocaleString(
+    'en-IN',
+    {
+      maximumFractionDigits: 2,
+    },
+  )}`;
+}
+
+function convertRecipeQuantity(
+  quantity: number,
+  unit: string,
+  rateUnit: string,
+) {
+  if (
+    unit === rateUnit
+  ) {
+    return quantity;
+  }
+
+  if (
+    unit === 'gram' &&
+    rateUnit === 'kg'
+  ) {
+    return quantity / 1000;
+  }
+
+  if (
+    unit === 'kg' &&
+    rateUnit === 'gram'
+  ) {
+    return quantity * 1000;
+  }
+
+  if (
+    unit === 'ml' &&
+    rateUnit === 'ltr'
+  ) {
+    return quantity / 1000;
+  }
+
+  if (
+    unit === 'ltr' &&
+    rateUnit === 'ml'
+  ) {
+    return quantity * 1000;
+  }
+
+  return quantity;
+}
+
+function quickIngredientCost(
+  ingredient:
+    RecipeDraftIngredient,
+) {
+  return (
+    convertRecipeQuantity(
+      Math.max(
+        0,
+        Number(
+          ingredient.quantity,
+        ) || 0,
+      ),
+
+      ingredient.unit,
+
+      ingredient.rateUnit ||
+        ingredient.unit,
+    ) *
+    Math.max(
+      0,
+      Number(
+        ingredient.rate,
+      ) || 0,
+    )
+  );
+}
+
+function quickRecipeSummary(
+  draft: RecipeDraft | null,
+) {
+  if (!draft) {
+    return {
+      rawTotal: 0,
+      wastageTotal: 0,
+      finalTotal: 0,
+      rawPerPlate: 0,
+      finalPerPlate: 0,
+    };
+  }
+
+  const guests =
+    Math.max(
+      1,
+      Number(
+        draft.baseGuests,
+      ) || 100,
+    );
+
+  const ingredientTotal =
+    draft.ingredients.reduce(
+      (
+        total,
+        ingredient,
+      ) =>
+        total +
+        quickIngredientCost(
+          ingredient,
+        ),
+      0,
+    );
+
+  const rawPerPlate =
+    Math.round(
+      (
+        ingredientTotal /
+        guests
+      ) *
+        100,
+    ) / 100;
+
+  const finalPerPlate =
+    Math.round(
+      rawPerPlate *
+        1.08 *
+        100,
+    ) / 100;
+
+  const wastagePerPlate =
+    Math.max(
+      0,
+      finalPerPlate -
+        rawPerPlate,
+    );
+
+  return {
+    rawTotal:
+      Math.round(
+        rawPerPlate *
+          guests *
+          100,
+      ) / 100,
+
+    wastageTotal:
+      Math.round(
+        wastagePerPlate *
+          guests *
+          100,
+      ) / 100,
+
+    finalTotal:
+      Math.round(
+        finalPerPlate *
+          guests *
+          100,
+      ) / 100,
+
+    rawPerPlate,
+
+    finalPerPlate,
+  };
+}
+
+function quickRecipePrecheck(
+  draft: RecipeDraft | null,
+) {
+  if (!draft) {
+    return {
+      ready: false,
+      message:
+        'Start a recipe.',
+    };
+  }
+
+  if (
+    draft.baseGuests !==
+    100
+  ) {
+    return {
+      ready: false,
+      message:
+        'Recipe batch must be 100 pax.',
+    };
+  }
+
+  if (
+    draft.ingredients
+      .length < 4
+  ) {
+    return {
+      ready: false,
+      message:
+        'Add at least 4 costing ingredients.',
+    };
+  }
+
+  const incomplete =
+    draft.ingredients
+      .find(
+        (ingredient) =>
+          !ingredient.name ||
+          !ingredient.rateKey ||
+          !(
+            Number(
+              ingredient.quantity,
+            ) > 0
+          ) ||
+          !(
+            Number(
+              ingredient.rate,
+            ) > 0
+          ),
+      );
+
+  if (incomplete) {
+    return {
+      ready: false,
+      message:
+        'Complete ingredient, quantity and Ingredient Master rate.',
+    };
+  }
+
+  return {
+    ready: true,
+    message:
+      'Ready for server Quality Gate.',
+  };
+}
+
 export default function NewDishesPage() {
   const [rows, setRows] =
     useState<EditableSuggestion[]>(
@@ -368,6 +689,39 @@ export default function NewDishesPage() {
     activeReviewId,
     setActiveReviewId,
   ] = useState('');
+
+  const [
+    recipeDraft,
+    setRecipeDraft,
+  ] =
+    useState<RecipeDraft | null>(
+      null,
+    );
+
+  const [
+    recipeMasterRates,
+    setRecipeMasterRates,
+  ] = useState<
+    RecipeIngredientMaster[]
+  >([]);
+
+  const [
+    recipeRatesLoading,
+    setRecipeRatesLoading,
+  ] = useState(false);
+
+  const [
+    recipeSaving,
+    setRecipeSaving,
+  ] = useState(false);
+
+  const [
+    recipeResult,
+    setRecipeResult,
+  ] =
+    useState<QuickRecipeResult | null>(
+      null,
+    );
 
   const [
     analyzingId,
@@ -661,6 +1015,14 @@ export default function NewDishesPage() {
       setSelectedIds(
         new Set(),
       );
+
+      setRecipeDraft(
+        null,
+      );
+
+      setRecipeResult(
+        null,
+      );
     } catch (error) {
       setMessageType('error');
       setMessage(
@@ -727,6 +1089,684 @@ export default function NewDishesPage() {
         delete next[id];
         return next;
       });
+    }
+  }
+
+  async function loadRecipeMasterRates() {
+    if (
+      recipeMasterRates
+        .length ||
+      recipeRatesLoading
+    ) {
+      return;
+    }
+
+    setRecipeRatesLoading(
+      true,
+    );
+
+    try {
+      const response =
+        await fetch(
+          '/api/admin/recipes/quick-create',
+          {
+            cache:
+              'no-store',
+          },
+        );
+
+      const data =
+        await response.json() as {
+          rates?: unknown[];
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          'Could not load Ingredient Master.',
+        );
+      }
+
+      const rates =
+        (
+          Array.isArray(
+            data.rates,
+          )
+            ? data.rates
+            : []
+        )
+          .flatMap(
+            (value) => {
+              if (
+                !value ||
+                typeof value !==
+                  'object' ||
+                Array.isArray(
+                  value,
+                )
+              ) {
+                return [];
+              }
+
+              const row =
+                value as
+                  Record<
+                    string,
+                    unknown
+                  >;
+
+              const id =
+                String(
+                  row.id ||
+                    '',
+                ).trim();
+
+              const name =
+                String(
+                  row.name ||
+                    '',
+                ).trim();
+
+              const rate =
+                Math.max(
+                  0,
+                  Number(
+                    row.rate,
+                  ) || 0,
+                );
+
+              const unit =
+                String(
+                  row.unit ||
+                    'kg',
+                ).trim() ||
+                'kg';
+
+              if (
+                !id ||
+                !name
+              ) {
+                return [];
+              }
+
+              return [
+                {
+                  id,
+                  name,
+
+                  category:
+                    String(
+                      row.category ||
+                        'Other',
+                    ).trim() ||
+                    'Other',
+
+                  rate,
+                  unit,
+                },
+              ];
+            },
+          )
+          .sort(
+            (
+              left,
+              right,
+            ) =>
+              left.name
+                .localeCompare(
+                  right.name,
+                ),
+          );
+
+      setRecipeMasterRates(
+        rates,
+      );
+    } catch (loadError) {
+      setMessageType(
+        'error',
+      );
+
+      setMessage(
+        loadError instanceof
+          Error
+          ? loadError.message
+          : 'Could not load Ingredient Master.',
+      );
+    } finally {
+      setRecipeRatesLoading(
+        false,
+      );
+    }
+  }
+
+  function openRecipeEditor(
+    row: EditableSuggestion,
+  ) {
+    if (
+      row.saveAs !==
+      'new'
+    ) {
+      setMessageType(
+        'error',
+      );
+
+      setMessage(
+        'Aliases use the existing dish recipe. Choose New Dish to create a new recipe.',
+      );
+
+      return;
+    }
+
+    if (
+      recipeDraft
+        ?.suggestionId ===
+      row.id
+    ) {
+      setRecipeDraft(
+        null,
+      );
+
+      setRecipeResult(
+        null,
+      );
+
+      return;
+    }
+
+    setRecipeResult(
+      null,
+    );
+
+    setRecipeDraft({
+      suggestionId:
+        row.id,
+
+      name:
+        row.dishName
+          .trim() ||
+        row.name,
+
+      category:
+        row.category ||
+        'Other',
+
+      subcategory:
+        row.subcategory ||
+        '',
+
+      baseGuests:
+        100,
+
+      ingredients: [],
+    });
+
+    void loadRecipeMasterRates();
+  }
+
+  function addQuickRecipeIngredient() {
+    if (!recipeDraft) {
+      return;
+    }
+
+    setRecipeDraft(
+      {
+        ...recipeDraft,
+
+        ingredients: [
+          ...recipeDraft
+            .ingredients,
+
+          {
+            rowId:
+              `recipe-${Date.now()}-${Math.random()}`,
+
+            rateKey:
+              '',
+
+            name:
+              '',
+
+            quantity:
+              '1',
+
+            unit:
+              'kg',
+
+            rate:
+              0,
+
+            rateUnit:
+              'kg',
+          },
+        ],
+      },
+    );
+  }
+
+  function updateQuickRecipeIngredient(
+    rowId: string,
+    patch:
+      Partial<
+        RecipeDraftIngredient
+      >,
+  ) {
+    setRecipeDraft(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              ingredients:
+                current
+                  .ingredients
+                  .map(
+                    (
+                      ingredient,
+                    ) =>
+                      ingredient
+                        .rowId ===
+                      rowId
+                        ? {
+                            ...ingredient,
+                            ...patch,
+                          }
+                        : ingredient,
+                  ),
+            }
+          : current,
+    );
+  }
+
+  function selectQuickRecipeIngredient(
+    rowId: string,
+    rateKey: string,
+  ) {
+    const master =
+      recipeMasterRates
+        .find(
+          (rate) =>
+            rate.id ===
+            rateKey,
+        );
+
+    if (!master) {
+      updateQuickRecipeIngredient(
+        rowId,
+        {
+          rateKey: '',
+          name: '',
+          rate: 0,
+        },
+      );
+
+      return;
+    }
+
+    updateQuickRecipeIngredient(
+      rowId,
+      {
+        rateKey:
+          master.id,
+
+        name:
+          master.name,
+
+        rate:
+          master.rate,
+
+        rateUnit:
+          master.unit,
+
+        unit:
+          master.unit,
+      },
+    );
+  }
+
+  function removeQuickRecipeIngredient(
+    rowId: string,
+  ) {
+    setRecipeDraft(
+      (current) =>
+        current
+          ? {
+              ...current,
+
+              ingredients:
+                current
+                  .ingredients
+                  .filter(
+                    (
+                      ingredient,
+                    ) =>
+                      ingredient
+                        .rowId !==
+                      rowId,
+                  ),
+            }
+          : current,
+    );
+  }
+
+  async function saveQuickRecipe(
+    row: EditableSuggestion,
+    publishDish: boolean,
+  ) {
+    if (
+      !recipeDraft ||
+      recipeDraft
+        .suggestionId !==
+        row.id
+    ) {
+      return;
+    }
+
+    const precheck =
+      quickRecipePrecheck(
+        recipeDraft,
+      );
+
+    if (!precheck.ready) {
+      setMessageType(
+        'error',
+      );
+
+      setMessage(
+        precheck.message,
+      );
+
+      return;
+    }
+
+    setRecipeSaving(
+      true,
+    );
+
+    setRecipeResult(
+      null,
+    );
+
+    setMessage('');
+
+    try {
+      const response =
+        await fetch(
+          '/api/admin/recipes/quick-create',
+          {
+            method:
+              'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+
+            body:
+              JSON.stringify({
+                name:
+                  row.dishName
+                    .trim() ||
+                  recipeDraft
+                    .name,
+
+                category:
+                  row.category ||
+                  recipeDraft
+                    .category,
+
+                subcategory:
+                  row.subcategory ||
+                  recipeDraft
+                    .subcategory,
+
+                baseGuests:
+                  100,
+
+                ingredients:
+                  recipeDraft
+                    .ingredients,
+
+                publishDish,
+              }),
+          },
+        );
+
+      const data =
+        await response
+          .json() as
+            QuickRecipeResult;
+
+      setRecipeResult(
+        data,
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          data.quality
+            ?.issues?.[0]
+            ?.message ||
+          'Recipe did not pass Quality Gate.',
+        );
+      }
+
+      const finalRate =
+        Math.max(
+          0,
+          Number(
+            data.cost
+              ?.costPerPlate,
+          ) || 0,
+        );
+
+      try {
+        localStorage.removeItem(
+          'admin_recipe_catalog_v1',
+        );
+
+        if (
+          data.updatedAt
+        ) {
+          localStorage.setItem(
+            'admin_recipe_dish_sync_v1',
+            String(
+              data.updatedAt,
+            ),
+          );
+        }
+      } catch {
+        // Cache is optional.
+      }
+
+      if (!publishDish) {
+        updateRow(
+          row.id,
+          {
+            rate:
+              finalRate > 0
+                ? String(
+                    finalRate,
+                  )
+                : row.rate,
+          },
+        );
+
+        setMessageType(
+          'success',
+        );
+
+        setMessage(
+          `${row.dishName.trim()} recipe saved · READY ${data.quality?.score ?? 100}/100 · ₹${finalRate.toFixed(2)}/plate.`,
+        );
+
+        return;
+      }
+
+      const publishResponse =
+        await fetch(
+          '/api/admin/dish-suggestions',
+          {
+            method:
+              'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+
+            body:
+              JSON.stringify({
+                id:
+                  row.id,
+
+                name:
+                  row.dishName
+                    .trim(),
+
+                category:
+                  row.category,
+
+                subcategory:
+                  row.subcategory,
+
+                rate:
+                  finalRate,
+
+                mode:
+                  'new',
+
+                aliasOf:
+                  '',
+              }),
+          },
+        );
+
+      const publishData =
+        await publishResponse
+          .json()
+          .catch(
+            () => ({}),
+          ) as {
+            error?: string;
+          };
+
+      if (
+        !publishResponse.ok
+      ) {
+        throw new Error(
+          publishData.error ||
+          'Recipe and Dish Master were saved, but the New Dishes queue could not be cleared.',
+        );
+      }
+
+      const nextDish:
+        CatalogDish = {
+        name:
+          row.dishName
+            .trim(),
+
+        category:
+          row.category ||
+          'Other',
+
+        subcategory:
+          row.subcategory ||
+          '',
+
+        rate:
+          finalRate,
+
+        aliases: [],
+      };
+
+      setCatalogDishes(
+        (current) => {
+          const exists =
+            current.some(
+              (dish) =>
+                dish.name
+                  .toLowerCase() ===
+                nextDish.name
+                  .toLowerCase(),
+            );
+
+          if (!exists) {
+            return [
+              ...current,
+              nextDish,
+            ];
+          }
+
+          return current.map(
+            (dish) =>
+              dish.name
+                .toLowerCase() ===
+              nextDish.name
+                .toLowerCase()
+                ? {
+                    ...dish,
+                    ...nextDish,
+                  }
+                : dish,
+          );
+        },
+      );
+
+      setRows(
+        (current) =>
+          current.filter(
+            (item) =>
+              item.id !==
+              row.id,
+          ),
+      );
+
+      setSelectedIds(
+        (current) => {
+          const next =
+            new Set(
+              current,
+            );
+
+          next.delete(
+            row.id,
+          );
+
+          return next;
+        },
+      );
+
+      setRecipeDraft(
+        null,
+      );
+
+      setActiveReviewId(
+        '',
+      );
+
+      setMessageType(
+        'success',
+      );
+
+      setMessage(
+        `${row.dishName.trim()} added · Recipe READY ${data.quality?.score ?? 100}/100 · Dish Master ₹${finalRate.toFixed(2)}/plate.`,
+      );
+    } catch (saveError) {
+      setMessageType(
+        'error',
+      );
+
+      setMessage(
+        saveError instanceof
+          Error
+          ? saveError.message
+          : 'Could not save recipe.',
+      );
+    } finally {
+      setRecipeSaving(
+        false,
+      );
     }
   }
 
@@ -3390,6 +4430,449 @@ export default function NewDishesPage() {
                   </>
                   )}
                 </div>
+
+                {row.saveAs === 'new' ? (
+                  <div className="new-dish-recipe-launch">
+                    <div>
+                      <span className="section-kicker">
+                        Recipe
+                      </span>
+
+                      <strong>
+                        Build exact ingredient cost
+                      </strong>
+
+                      <small>
+                        100 pax · Ingredient Master · 8% wastage · Quality Gate
+                      </small>
+                    </div>
+
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() =>
+                        openRecipeEditor(
+                          row,
+                        )
+                      }
+                      disabled={
+                        recipeSaving
+                      }
+                    >
+                      {recipeDraft
+                        ?.suggestionId ===
+                      row.id
+                        ? 'Close Recipe'
+                        : '+ New Recipe'}
+                    </button>
+                  </div>
+                ) : null}
+
+                {recipeDraft
+                  ?.suggestionId ===
+                row.id ? (
+                  <div className="new-dish-recipe-editor">
+                    <div className="new-dish-recipe-head">
+                      <div>
+                        <span className="section-kicker">
+                          New Recipe
+                        </span>
+
+                        <h3>
+                          {row.dishName}
+                        </h3>
+
+                        <p>
+                          {row.category}
+                          {row.subcategory
+                            ? ` → ${row.subcategory}`
+                            : ''}
+                          {' · '}
+                          100 pax standard
+                        </p>
+                      </div>
+
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() =>
+                          window.location.assign(
+                            '/admin/ingredients',
+                          )
+                        }
+                      >
+                        Ingredient Master
+                      </button>
+                    </div>
+
+                    {recipeRatesLoading ? (
+                      <div className="new-dish-recipe-loading">
+                        Loading Ingredient Master…
+                      </div>
+                    ) : null}
+
+                    <div className="new-dish-recipe-table-head">
+                      <span>
+                        Ingredient
+                      </span>
+
+                      <span>
+                        Qty
+                      </span>
+
+                      <span>
+                        Unit
+                      </span>
+
+                      <span>
+                        Rate
+                      </span>
+
+                      <span>
+                        Cost
+                      </span>
+
+                      <span />
+                    </div>
+
+                    <div className="new-dish-recipe-ingredients">
+                      {recipeDraft
+                        .ingredients
+                        .map(
+                          (
+                            ingredient,
+                          ) => (
+                            <div
+                              className="new-dish-recipe-ingredient"
+                              key={
+                                ingredient.rowId
+                              }
+                            >
+                              <select
+                                className="select"
+                                value={
+                                  ingredient.rateKey
+                                }
+                                onChange={(event) =>
+                                  selectQuickRecipeIngredient(
+                                    ingredient.rowId,
+                                    event
+                                      .target
+                                      .value,
+                                  )
+                                }
+                              >
+                                <option value="">
+                                  Select ingredient
+                                </option>
+
+                                {recipeMasterRates.map(
+                                  (
+                                    master,
+                                  ) => (
+                                    <option
+                                      key={
+                                        master.id
+                                      }
+                                      value={
+                                        master.id
+                                      }
+                                    >
+                                      {master.name}
+                                    </option>
+                                  ),
+                                )}
+                              </select>
+
+                              <input
+                                className="input"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={
+                                  ingredient.quantity
+                                }
+                                onChange={(event) =>
+                                  updateQuickRecipeIngredient(
+                                    ingredient.rowId,
+                                    {
+                                      quantity:
+                                        event
+                                          .target
+                                          .value,
+                                    },
+                                  )
+                                }
+                              />
+
+                              <select
+                                className="select"
+                                value={
+                                  ingredient.unit
+                                }
+                                onChange={(event) =>
+                                  updateQuickRecipeIngredient(
+                                    ingredient.rowId,
+                                    {
+                                      unit:
+                                        event
+                                          .target
+                                          .value,
+                                    },
+                                  )
+                                }
+                              >
+                                <option value="kg">
+                                  kg
+                                </option>
+                                <option value="gram">
+                                  gram
+                                </option>
+                                <option value="ltr">
+                                  ltr
+                                </option>
+                                <option value="ml">
+                                  ml
+                                </option>
+                                <option value="piece">
+                                  piece
+                                </option>
+                                <option value="packet">
+                                  packet
+                                </option>
+                              </select>
+
+                              <div className="new-dish-recipe-readonly">
+                                {ingredient.rate > 0
+                                  ? `${quickRecipeMoney(ingredient.rate)}/${ingredient.rateUnit}`
+                                  : '—'}
+                              </div>
+
+                              <div className="new-dish-recipe-readonly">
+                                {quickRecipeMoney(
+                                  quickIngredientCost(
+                                    ingredient,
+                                  ),
+                                )}
+                              </div>
+
+                              <button
+                                className="new-dish-recipe-remove"
+                                type="button"
+                                aria-label="Remove ingredient"
+                                onClick={() =>
+                                  removeQuickRecipeIngredient(
+                                    ingredient.rowId,
+                                  )
+                                }
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ),
+                        )}
+                    </div>
+
+                    {!recipeDraft
+                      .ingredients
+                      .length ? (
+                      <div className="new-dish-recipe-empty">
+                        Add at least 4 costing ingredients.
+                      </div>
+                    ) : null}
+
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={
+                        addQuickRecipeIngredient
+                      }
+                      disabled={
+                        recipeRatesLoading ||
+                        recipeSaving
+                      }
+                    >
+                      + Ingredient
+                    </button>
+
+                    <div className="new-dish-recipe-cost-grid">
+                      <div>
+                        <span>
+                          Raw Cost
+                        </span>
+
+                        <strong>
+                          {quickRecipeMoney(
+                            quickRecipeSummary(
+                              recipeDraft,
+                            ).rawTotal,
+                          )}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>
+                          Wastage 8%
+                        </span>
+
+                        <strong>
+                          {quickRecipeMoney(
+                            quickRecipeSummary(
+                              recipeDraft,
+                            ).wastageTotal,
+                          )}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>
+                          Final 100 Pax
+                        </span>
+
+                        <strong>
+                          {quickRecipeMoney(
+                            quickRecipeSummary(
+                              recipeDraft,
+                            ).finalTotal,
+                          )}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>
+                          ₹ / Plate
+                        </span>
+
+                        <strong>
+                          {quickRecipeMoney(
+                            quickRecipeSummary(
+                              recipeDraft,
+                            ).finalPerPlate,
+                          )}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`new-dish-recipe-precheck ${
+                        quickRecipePrecheck(
+                          recipeDraft,
+                        ).ready
+                          ? 'ready'
+                          : 'blocked'
+                      }`}
+                    >
+                      <strong>
+                        {quickRecipePrecheck(
+                          recipeDraft,
+                        ).ready
+                          ? '✓ Ready for Quality Gate'
+                          : '○ Recipe incomplete'}
+                      </strong>
+
+                      <span>
+                        {quickRecipePrecheck(
+                          recipeDraft,
+                        ).message}
+                      </span>
+                    </div>
+
+                    {recipeResult
+                      ?.quality ? (
+                      <div
+                        className={`new-dish-recipe-quality ${
+                          recipeResult
+                            .quality
+                            .status
+                            .toLowerCase()
+                        }`}
+                      >
+                        <strong>
+                          {recipeResult
+                            .quality
+                            .status}
+                          {' · '}
+                          {recipeResult
+                            .quality
+                            .score}
+                          /100
+                        </strong>
+
+                        <span>
+                          Rate coverage{' '}
+                          {recipeResult
+                            .quality
+                            .rateCoveragePercent}
+                          %
+                        </span>
+
+                        {recipeResult
+                          .quality
+                          .issues
+                          .slice(
+                            0,
+                            3,
+                          )
+                          .map(
+                            (
+                              issue,
+                              index,
+                            ) => (
+                              <small
+                                key={`${issue.code}-${index}`}
+                              >
+                                {issue.message}
+                              </small>
+                            ),
+                          )}
+                      </div>
+                    ) : null}
+
+                    <div className="new-dish-recipe-actions">
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        disabled={
+                          recipeSaving ||
+                          !quickRecipePrecheck(
+                            recipeDraft,
+                          ).ready
+                        }
+                        onClick={() =>
+                          void saveQuickRecipe(
+                            row,
+                            false,
+                          )
+                        }
+                      >
+                        {recipeSaving
+                          ? 'Saving…'
+                          : 'Save Recipe'}
+                      </button>
+
+                      <button
+                        className="primary-button"
+                        type="button"
+                        disabled={
+                          recipeSaving ||
+                          !quickRecipePrecheck(
+                            recipeDraft,
+                          ).ready
+                        }
+                        onClick={() =>
+                          void saveQuickRecipe(
+                            row,
+                            true,
+                          )
+                        }
+                      >
+                        {recipeSaving
+                          ? 'Saving…'
+                          : 'Save Recipe + Add Dish'}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
 
                 {rowErrors[row.id] ? (
                   <div
