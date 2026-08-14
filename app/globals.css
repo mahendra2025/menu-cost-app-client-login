@@ -15377,3 +15377,61 @@ small {
     width: 100%;
   }
 }
+
+
+.new-dish-serving-target {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 18px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.new-dish-serving-target > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.new-dish-serving-target strong {
+  font-size: 15px;
+}
+
+.new-dish-serving-target small {
+  opacity: 0.7;
+}
+
+.new-dish-serving-target-value {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.new-dish-serving-target-value span {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.new-dish-serving-target-value strong {
+  font-size: 20px;
+}
+
+.new-dish-serving-target-note {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 520px) {
+  .new-dish-serving-target {
+    grid-template-columns: 1fr;
+  }
+
+  .new-dish-serving-target-value {
+    text-align: left;
+  }
+
+  .new-dish-serving-target-note {
+    grid-column: auto;
+  }
+}

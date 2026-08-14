@@ -12,6 +12,9 @@ import AppShell from '../../components/AppShell';
 import {
   CATEGORIES,
 } from '../../../lib/dishCostMaster';
+import {
+  recipeServingStandard,
+} from '../../../lib/recipeServingStandards';
 
 type Suggestion = {
   id: string;
@@ -5109,6 +5112,56 @@ export default function NewDishesPage() {
                         </button>
                       </div>
                     </div>
+
+                    {(() => {
+                      const servingTarget =
+                        recipeServingStandard(
+                          row.category,
+                          row.dishName,
+                        );
+
+                      if (!servingTarget) {
+                        return null;
+                      }
+
+                      return (
+                        <div className="new-dish-serving-target">
+                          <div>
+                            <span className="section-kicker">
+                              Serving Target
+                            </span>
+
+                            <strong>
+                              {servingTarget.label}
+                            </strong>
+
+                            <small>
+                              {servingTarget.perGuestQuantity}
+                              {' '}
+                              {servingTarget.perGuestUnit}
+                              {' / guest'}
+                            </small>
+                          </div>
+
+                          <div className="new-dish-serving-target-value">
+                            <span>
+                              100 pax target
+                            </span>
+
+                            <strong>
+                              {servingTarget.batch100Quantity}
+                              {' '}
+                              {servingTarget.batch100Unit}
+                            </strong>
+                          </div>
+
+                          <small className="new-dish-serving-target-note">
+                            AI uses this target for production sizing.
+                            Ingredient costing and 8% wastage remain separate.
+                          </small>
+                        </div>
+                      );
+                    })()}
 
                     {recipeGenerating ? (
                       <div className="new-dish-recipe-loading">
