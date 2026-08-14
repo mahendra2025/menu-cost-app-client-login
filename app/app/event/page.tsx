@@ -9,7 +9,6 @@ import { useRouter } from 'next/navigation';
 
 import FreeLimitPaywall from '../../components/FreeLimitPaywall';
 
-import MenuPhotoCropper from './MenuPhotoCropper';
 
 import AppShell, {
   LockedCard,
@@ -845,16 +844,10 @@ export default function EventPage() {
   const [freeLimitBlocked, setFreeLimitBlocked] = useState(false);
 
   const [uploading, setUploading] =
-    useState<'pdf' | 'camera' | null>(null);
+    useState<'pdf' | null>(null);
 
   const [uploadStatus, setUploadStatus] =
     useState('');
-
-  const [photoToCrop, setPhotoToCrop] =
-    useState<File | null>(null);
-
-  const [detectCroppedPhoto, setDetectCroppedPhoto] =
-    useState(false);
 
   const [importFunctionName, setImportFunctionName] =
     useState('');
@@ -1000,25 +993,7 @@ export default function EventPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (
-      !detectCroppedPhoto ||
-      uploading !== null ||
-      detecting ||
-      !work?.event.rawMenuText.trim()
-    ) {
-      return;
-    }
 
-    setDetectCroppedPhoto(false);
-    void detectAndNext();
-  }, [
-    detectCroppedPhoto,
-    detecting,
-    importFunctionName,
-    uploading,
-    work?.event.rawMenuText,
-  ]);
 
   useEffect(() => {
     function handleDetectionReviewShortcut(
@@ -5062,61 +5037,6 @@ export default function EventPage() {
     }
   }
 
-  async function readMenuPhoto(
-    file: File,
-  ) {
-    setError('');
-    setUploadStatus(
-      'Loading photo reader...',
-    );
-    setUploading('camera');
-
-    try {
-      const {
-        extractMenuPhoto,
-      } =
-        await import(
-          '../../../lib/menuUploadProcessor'
-        );
-
-      const result =
-        await extractMenuPhoto(
-          file,
-          setUploadStatus,
-          scoreExtractedMenu,
-        );
-
-      saveExtractedMenu(
-        file.name,
-        result.text,
-        result.sourceLabel,
-      );
-
-      setUploadStatus(
-        'Cropped photo read successfully. Detecting dishes now…',
-      );
-      setDetectCroppedPhoto(true);
-
-    } catch (uploadError) {
-      setUploadStatus('');
-
-      setError(
-        uploadError instanceof Error
-          ? uploadError.message
-          : 'The menu photo could not be read. Please try a clearer photo.',
-      );
-
-    } finally {
-      setUploading(null);
-    }
-  }
-
-  function chooseMenuPhoto(file: File) {
-    setError('');
-    setUploadStatus('');
-    setPhotoToCrop(file);
-  }
-
   function useSampleMenu() {
     if (!work) return;
     if (work.event.rawMenuText.trim() && !window.confirm('Replace the current menu text with the sample format?')) return;
@@ -6379,84 +6299,6 @@ export default function EventPage() {
                   Import only this function below. Previously saved functions stay in the event automatically.
                 </p>
               </div>
-
-              <div className="menu-upload-options" hidden>
-                <div className="menu-upload-option">
-                  <div className="menu-upload-heading">
-                    <span className="menu-upload-icon camera" aria-hidden="true">PHOTO</span>
-                    <div>
-                      <span className="page-eyebrow">Fastest option</span>
-                      <b>Upload menu photo</b>
-                      <p>Take a clear photo or choose one from your phone. You can crop and zoom before scanning.</p>
-                    </div>
-                  </div>
-
-                  <ol className="menu-photo-steps" aria-label="Photo menu import steps">
-                    <li><span>1</span><b>Choose</b></li>
-                    <li><span>2</span><b>Crop</b></li>
-                    <li><span>3</span><b>Detect</b></li>
-                  </ol>
-
-                  <div className="menu-photo-actions">
-                    <label
-                      className={`primary-button menu-photo-primary ${uploading ? 'is-disabled' : ''}`}
-                      htmlFor="menuCamera"
-                    >
-                      <b>{uploading === 'camera' ? 'Scanning photo…' : 'Take Photo'}</b>
-                      <small>Open rear camera</small>
-                    </label>
-                    <label
-                      className={`ghost-button menu-photo-secondary ${uploading ? 'is-disabled' : ''}`}
-                      htmlFor="menuPhoto"
-                    >
-                      <b>Choose Photo</b>
-                      <small>From your gallery</small>
-                    </label>
-                  </div>
-
-                  <div className="menu-photo-help">
-                    <b>For best detection</b>
-                    <span>Keep the menu flat, fill the frame, and avoid shadows or glare.</span>
-                    <small>JPG, PNG or WebP · Maximum 20 MB</small>
-                  </div>
-                  <input
-                    id="menuCamera"
-                    className="visually-hidden-file"
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    disabled={Boolean(uploading)}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      event.target.value = '';
-                      if (file) chooseMenuPhoto(file);
-                    }}
-                  />
-                  <input
-                    id="menuPhoto"
-                    className="visually-hidden-file"
-                    type="file"
-                    accept="image/*"
-                    disabled={Boolean(uploading)}
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      event.target.value = '';
-                      if (file) chooseMenuPhoto(file);
-                    }}
-                  />
-                </div>
-              </div>
-
-              {photoToCrop ? (
-                <MenuPhotoCropper
-                  file={photoToCrop}
-                  onCancel={() => setPhotoToCrop(null)}
-                  onConfirm={(photo) => {
-                    setPhotoToCrop(null);
-                    void readMenuPhoto(photo);
-                  }}
-                />
-              ) : null}
 
               {uploadStatus ? (
                 <div className="menu-upload-status" role="status" aria-live="polite">
