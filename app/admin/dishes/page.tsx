@@ -344,31 +344,40 @@ export default function AdminDishesPage() {
 
   useEffect(() => {
     const syncViewFromHash = () => {
-      const view =
+      if (
         window.location.hash.startsWith(
           '#recipes',
         )
-          ? 'recipes'
-          : 'catalog';
-      setWorkspaceView(view);
-      if (view === 'recipes') {
-        setRecipeStudioOpened(true);
+      ) {
+        const linkedRecipe =
+          new URLSearchParams(
+            window.location.search,
+          )
+            .get('recipe')
+            ?.trim();
+
+        const target = linkedRecipe
+          ? `/admin/recipes?recipe=${encodeURIComponent(linkedRecipe)}`
+          : '/admin/recipes';
+
+        window.location.replace(
+          target,
+        );
+        return;
       }
-      const linkedRecipe = new URLSearchParams(window.location.search).get('recipe')?.trim();
-      if (view === 'recipes' && linkedRecipe) {
-        setRequestedRecipeDish({
-          requestId: `recipe_link_${Date.now()}`,
-          name: linkedRecipe,
-          category: 'Other',
-          subcategory: '',
-        });
-      }
+
+      setWorkspaceView(
+        'catalog',
+      );
     };
+
     syncViewFromHash();
+
     window.addEventListener(
       'hashchange',
       syncViewFromHash,
     );
+
     return () =>
       window.removeEventListener(
         'hashchange',
@@ -379,34 +388,39 @@ export default function AdminDishesPage() {
   function openWorkspace(
     view: 'catalog' | 'recipes',
   ) {
-    setWorkspaceView(view);
     if (view === 'recipes') {
-      setRecipeStudioOpened(true);
+      window.location.assign(
+        '/admin/recipes',
+      );
+      return;
+    }
 
-      void refreshRecipeMetadata();
+    setWorkspaceView(
+      'catalog',
+    );
 
-    } else if (recipeStudioOpened) {
+    if (recipeStudioOpened) {
       void refreshRecipeMetadata();
     }
+
     window.history.replaceState(
       null,
       '',
-      view === 'recipes'
-        ? '#recipes'
-        : window.location.pathname,
+      window.location.pathname,
     );
   }
 
   function openRecipeForDish(
     dish: EditableDish,
   ) {
-    setRequestedRecipeDish({
-      requestId: uid('recipe_request'),
-      name: dish.name.trim(),
-      category: dish.category.trim() || 'Other',
-      subcategory: String(dish.subcategory || '').trim(),
-    });
-    openWorkspace('recipes');
+    const name =
+      dish.name.trim();
+
+    if (!name) return;
+
+    window.location.assign(
+      `/admin/recipes?recipe=${encodeURIComponent(name)}`,
+    );
   }
 
   async function refreshDishCatalogFromRecipes() {

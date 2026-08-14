@@ -34,6 +34,52 @@ function numberValue(
     : fallback;
 }
 
+function requestedRecipeIndex(
+  dishes: RawRow[],
+) {
+  if (
+    typeof window ===
+    'undefined'
+  ) {
+    return dishes.length
+      ? 0
+      : null;
+  }
+
+  const requested =
+    new URLSearchParams(
+      window.location.search,
+    )
+      .get('recipe')
+      ?.trim()
+      .toLowerCase();
+
+  if (!requested) {
+    return dishes.length
+      ? 0
+      : null;
+  }
+
+  const index =
+    dishes.findIndex(
+      (dish) =>
+        String(
+          dish.dishName ||
+          dish.name ||
+          '',
+        )
+          .trim()
+          .toLowerCase() ===
+        requested,
+    );
+
+  return index >= 0
+    ? index
+    : dishes.length
+      ? 0
+      : null;
+}
+
 function recipeName(dish: RawRow) {
   return text(
     dish.dishName ||
@@ -303,10 +349,9 @@ export default function RecipesPage() {
       );
 
       setSelectedIndex(
-        nextCatalog
-          .dishes.length
-          ? 0
-          : null,
+        requestedRecipeIndex(
+          nextCatalog.dishes,
+        ),
       );
 
       try {
@@ -350,9 +395,9 @@ export default function RecipesPage() {
           setCatalog(cached);
 
           setSelectedIndex(
-            cached.dishes.length
-              ? 0
-              : null,
+            requestedRecipeIndex(
+              cached.dishes,
+            ),
           );
 
           setLoading(false);
