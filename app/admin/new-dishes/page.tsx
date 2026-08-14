@@ -365,6 +365,11 @@ export default function NewDishesPage() {
   ] = useState(false);
 
   const [
+    activeReviewId,
+    setActiveReviewId,
+  ] = useState('');
+
+  const [
     analyzingId,
     setAnalyzingId,
   ] =
@@ -671,6 +676,36 @@ export default function NewDishesPage() {
   useEffect(() => {
     void loadQueue();
   }, []);
+
+  useEffect(() => {
+    if (!activeReviewId) {
+      document.body.style.overflow = '';
+      return;
+    }
+
+    document.body.style.overflow = 'hidden';
+
+    const closeOnEscape = (
+      event: KeyboardEvent,
+    ) => {
+      if (event.key === 'Escape') {
+        setActiveReviewId('');
+      }
+    };
+
+    window.addEventListener(
+      'keydown',
+      closeOnEscape,
+    );
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener(
+        'keydown',
+        closeOnEscape,
+      );
+    };
+  }, [activeReviewId]);
 
   function updateRow(
     id: string,
@@ -1350,6 +1385,13 @@ export default function NewDishesPage() {
         },
       );
 
+      setActiveReviewId(
+        (current) =>
+          current === row.id
+            ? ''
+            : current,
+      );
+
       if (autoBuildResult) {
         setMessageType(
           'success',
@@ -1435,6 +1477,13 @@ export default function NewDishesPage() {
 
           return next;
         },
+      );
+
+      setActiveReviewId(
+        (current) =>
+          current === row.id
+            ? ''
+            : current,
       );
 
       setMessageType('success');
@@ -1888,6 +1937,7 @@ export default function NewDishesPage() {
 
   useEffect(() => {
     setVisibleLimit(40);
+    setActiveReviewId('');
   }, [
     deferredQuery,
     categoryFilter,
@@ -2520,6 +2570,17 @@ export default function NewDishesPage() {
             </div>
           ) : null}
 
+          {activeReviewId ? (
+            <button
+              className="new-dish-modal-backdrop"
+              type="button"
+              aria-label="Close dish review"
+              onClick={() =>
+                setActiveReviewId('')
+              }
+            />
+          ) : null}
+
           <div className="new-dish-list">
             {visibleRows.map((row) => (
               <article
@@ -2534,6 +2595,11 @@ export default function NewDishesPage() {
                     row.id,
                   )
                     ? 'is-selected'
+                    : ''
+                } ${
+                  activeReviewId ===
+                  row.id
+                    ? 'is-popup'
                     : ''
                 }`}
                 key={row.id}
@@ -2595,7 +2661,7 @@ export default function NewDishesPage() {
                       {row.name}
                     </strong>
                   </div>
-                  <div>
+                  <div className="new-dish-source-actions">
                     <b>
                       Seen{' '}
                       {row.occurrences}{' '}
@@ -2603,10 +2669,29 @@ export default function NewDishesPage() {
                         ? 'time'
                         : 'times'}
                     </b>
+
                     <small>
                       {row.sourceFileName ||
                         'Pasted menu'}
                     </small>
+
+                    <button
+                      className="new-dish-review-button"
+                      type="button"
+                      onClick={() =>
+                        setActiveReviewId(
+                          activeReviewId ===
+                            row.id
+                            ? ''
+                            : row.id,
+                        )
+                      }
+                    >
+                      {activeReviewId ===
+                      row.id
+                        ? '✕ Close'
+                        : 'Review'}
+                    </button>
                   </div>
                 </div>
 
