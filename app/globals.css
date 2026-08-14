@@ -14823,3 +14823,8 @@ small {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Permanently hide photo-upload card from Event page */
+.menu-upload-options {
+  display: none !important;
+}
