@@ -192,6 +192,21 @@ export default function AdminDishesPage() {
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [
+    recipeSyncStatus,
+    setRecipeSyncStatus,
+  ] = useState<
+    'checking' |
+    'syncing' |
+    'synced' |
+    'error'
+  >('checking');
+  const [
+    recipeSyncMessage,
+    setRecipeSyncMessage,
+  ] = useState(
+    'Checking recipe sync…',
+  );
   const [page, setPage] = useState(1);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
@@ -303,7 +318,7 @@ export default function AdminDishesPage() {
                 RECIPE_DISH_SYNC_KEY,
               ) || '';
           } catch {
-            // Sync marker is optional.
+            // Marker is optional.
           }
 
           if (
@@ -311,57 +326,110 @@ export default function AdminDishesPage() {
             recipeUpdatedAt !==
               lastSyncedVersion
           ) {
+            setRecipeSyncStatus(
+              'syncing',
+            );
+            setRecipeSyncMessage(
+              'Syncing Recipes → Dishes…',
+            );
+
             try {
               const syncResponse =
                 await fetch(
                   '/api/admin/recipes',
                   {
-                    method:
-                      'POST',
+                    method: 'POST',
+                  },
+                );
+
+              const syncData =
+                await syncResponse.json();
+
+              if (!syncResponse.ok) {
+                throw new Error(
+                  syncData.error ||
+                  'Recipe sync failed',
+                );
+              }
+
+              try {
+                localStorage.setItem(
+                  RECIPE_DISH_SYNC_KEY,
+                  String(
+                    syncData.updatedAt ||
+                    recipeUpdatedAt,
+                  ),
+                );
+              } catch {
+                // Marker is optional.
+              }
+
+              const refreshedResponse =
+                await fetch(
+                  '/api/admin/dishes',
+                  {
+                    cache:
+                      'no-store',
                   },
                 );
 
               if (
-                syncResponse.ok
+                refreshedResponse.ok
               ) {
-                const syncData =
-                  await syncResponse.json();
-
-                try {
-                  localStorage.setItem(
-                    RECIPE_DISH_SYNC_KEY,
-                    String(
-                      syncData.updatedAt ||
-                      recipeUpdatedAt,
-                    ),
-                  );
-                } catch {
-                  // Sync marker is optional.
-                }
-
-                const refreshedResponse =
-                  await fetch(
-                    '/api/admin/dishes',
-                    {
-                      cache:
-                        'no-store',
-                    },
-                  );
-
-                if (
-                  refreshedResponse.ok
-                ) {
-                  data =
-                    await refreshedResponse.json();
-                }
+                data =
+                  await refreshedResponse.json();
               }
-            } catch {
+
+              const syncedCount =
+                Math.max(
+                  0,
+                  Number(
+                    syncData.syncedDishes,
+                  ) || 0,
+                );
+
+              setRecipeSyncStatus(
+                'synced',
+              );
+
+              setRecipeSyncMessage(
+                `✓ ${syncedCount} recipes synced to Dishes`,
+              );
+            } catch (
+              syncError
+            ) {
               console.warn(
                 'Recipe → Dish Master background sync failed.',
+                syncError,
+              );
+
+              setRecipeSyncStatus(
+                'error',
+              );
+
+              setRecipeSyncMessage(
+                'Recipe sync failed — retry available',
               );
             }
+          } else {
+            setRecipeSyncStatus(
+              'synced',
+            );
+
+            setRecipeSyncMessage(
+              '✓ Recipes and Dishes are synced',
+            );
           }
+        } else {
+          setRecipeSyncStatus(
+            'error',
+          );
+
+          setRecipeSyncMessage(
+            'Could not check recipe sync',
+          );
         }
+
         const dishItems = parseDishItems(data.items);
         const loadedCategories = Array.isArray(data.categories)
           ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
@@ -397,6 +465,220 @@ export default function AdminDishesPage() {
 
     void loadRows();
   }, []);
+
+  async function syncRecipesNow() {
+    if (dirty) {
+      setMessageType('error');
+      setMessage(
+        'Save your Dish Master changes before syncing Recipes.',
+      );
+      return;
+    }
+
+    setRecipeSyncStatus(
+      'syncing',
+    );
+    setRecipeSyncMessage(
+      'Syncing all Recipes → Dishes…',
+    );
+
+    try {
+      const syncResponse =
+        await fetch(
+          '/api/admin/recipes',
+          {
+            method: 'POST',
+          },
+        );
+
+      const syncData =
+        await syncResponse.json();
+
+      if (!syncResponse.ok) {
+        throw new Error(
+          syncData.error ||
+          'Recipe sync failed',
+        );
+      }
+
+      const refreshedResponse =
+        await fetch(
+          '/api/admin/dishes',
+          {
+            cache: 'no-store',
+          },
+        );
+
+      if (!refreshedResponse.ok) {
+        throw new Error(
+          'Could not refresh Dish Master',
+        );
+      }
+
+      const data =
+        await refreshedResponse.json();
+
+      const dishItems =
+        parseDishItems(
+          data.items,
+        );
+
+      const loadedCategories =
+        Array.isArray(
+          data.categories,
+        )
+          ? data.categories
+              .map(
+                (
+                  category:
+                    unknown,
+                ) =>
+                  String(
+                    category,
+                  ).trim(),
+              )
+              .filter(Boolean)
+          : [...CATEGORIES];
+
+      const loadedSubcategories =
+        data.subcategories &&
+        typeof data.subcategories ===
+          'object' &&
+        !Array.isArray(
+          data.subcategories,
+        )
+          ? Object.fromEntries(
+              Object.entries(
+                data.subcategories as
+                  Record<
+                    string,
+                    unknown
+                  >,
+              ).map(
+                ([
+                  category,
+                  values,
+                ]) => [
+                  category,
+                  Array.isArray(
+                    values,
+                  )
+                    ? values
+                        .map(
+                          (
+                            value,
+                          ) =>
+                            String(
+                              value,
+                            ).trim(),
+                        )
+                        .filter(
+                          Boolean,
+                        )
+                    : [],
+                ],
+              ),
+            )
+          : {};
+
+      const cleaned =
+        dishItems.map(
+          (item) =>
+            toEditableDish(
+              item,
+            ),
+        );
+
+      setRows(cleaned);
+
+      setCategories(
+        Array.from(
+          new Set([
+            ...loadedCategories,
+            ...cleaned.map(
+              (item) =>
+                item.category,
+            ),
+            'Other',
+          ]),
+        ),
+      );
+
+      setSubcategories(
+        loadedSubcategories,
+      );
+
+      saveDishCostItems(
+        cleaned.map(
+          toDishCostItem,
+        ),
+      );
+
+      if (
+        syncData.updatedAt
+      ) {
+        try {
+          localStorage.setItem(
+            RECIPE_DISH_SYNC_KEY,
+            String(
+              syncData.updatedAt,
+            ),
+          );
+        } catch {
+          // Marker is optional.
+        }
+      }
+
+      const syncedCount =
+        Math.max(
+          0,
+          Number(
+            syncData.syncedDishes,
+          ) || 0,
+        );
+
+      setRecipeSyncStatus(
+        'synced',
+      );
+
+      setRecipeSyncMessage(
+        `✓ ${syncedCount} recipes synced to Dishes`,
+      );
+
+      setMessageType(
+        'success',
+      );
+
+      setMessage(
+        `Recipe sync complete. ${syncedCount} recipes are available in Dish Master.`,
+      );
+    } catch (
+      syncError
+    ) {
+      console.error(
+        'Manual recipe sync failed:',
+        syncError,
+      );
+
+      setRecipeSyncStatus(
+        'error',
+      );
+
+      setRecipeSyncMessage(
+        'Recipe sync failed — click Sync Now to retry',
+      );
+
+      setMessageType(
+        'error',
+      );
+
+      setMessage(
+        syncError instanceof Error
+          ? syncError.message
+          : 'Recipe sync failed.',
+      );
+    }
+  }
 
   const filteredRows = useMemo(() => {
     const search =
@@ -1037,8 +1319,42 @@ async function handleCsvImport(
             <button className="secondary-button" onClick={saveAll} disabled={saving || !dirty}>
               {saving ? 'Saving…' : dirty ? 'Save All Changes' : 'All Changes Saved'}
             </button>
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() =>
+                void syncRecipesNow()
+              }
+              disabled={
+                recipeSyncStatus ===
+                  'syncing' ||
+                dirty
+              }
+            >
+              {recipeSyncStatus ===
+              'syncing'
+                ? 'Syncing…'
+                : '↻ Sync Recipes'}
+            </button>
+
             <button className="ghost-button dish-reset-button" type="button" onClick={resetAll}>Reset defaults</button>
           </div>
+
+          <div
+            className={`admin-message ${
+              recipeSyncStatus ===
+              'error'
+                ? 'error'
+                : 'success'
+            }`}
+            style={{
+              marginTop: 10,
+              marginBottom: 0,
+            }}
+          >
+            {recipeSyncMessage}
+          </div>
+
           {dirty ? <div className="dish-unsaved"><span />You have unsaved catalog changes</div> : null}
           {message ? <div className={`admin-message ${messageType}`} style={{ marginTop: 12, marginBottom: 0 }}>{message}</div> : null}
         </div>

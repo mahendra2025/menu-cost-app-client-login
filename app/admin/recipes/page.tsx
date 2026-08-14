@@ -247,6 +247,23 @@ export default function RecipesPage() {
     useState(false);
 
   const [
+    syncStatus,
+    setSyncStatus,
+  ] = useState<
+    'idle' |
+    'syncing' |
+    'synced' |
+    'error'
+  >('idle');
+
+  const [
+    syncMessage,
+    setSyncMessage,
+  ] = useState(
+    'Auto sync to Dish Master is enabled.',
+  );
+
+  const [
     message,
     setMessage,
   ] =
@@ -699,6 +716,12 @@ export default function RecipesPage() {
     }
 
     setSaving(true);
+    setSyncStatus(
+      'syncing',
+    );
+    setSyncMessage(
+      'Saving and syncing to Dish Master…',
+    );
     setMessage('');
     setError('');
 
@@ -785,6 +808,18 @@ export default function RecipesPage() {
             ) / activeGuests
           : 0;
 
+      setSyncStatus(
+        'synced',
+      );
+
+      setSyncMessage(
+        `✓ ${syncedDishes} recipe${
+          syncedDishes === 1
+            ? ''
+            : 's'
+        } synced to Dish Master`,
+      );
+
       setMessage(
         syncedDishes > 0
           ? `Saved · Synced to Dish Master: ${syncedDishes} recipe${
@@ -801,6 +836,14 @@ export default function RecipesPage() {
     } catch (
       saveError
     ) {
+      setSyncStatus(
+        'error',
+      );
+
+      setSyncMessage(
+        'Sync failed — save again to retry.',
+      );
+
       setError(
         saveError instanceof
           Error
@@ -908,6 +951,34 @@ export default function RecipesPage() {
           .recipe-fast-button:disabled {
             opacity:.55;
             cursor:wait;
+          }
+
+          .recipe-fast-sync {
+            padding:9px 11px;
+            border:1px solid #303944;
+            border-radius:10px;
+            background:#111820;
+            color:#8794a3;
+            font-size:10px;
+            font-weight:800;
+          }
+
+          .recipe-fast-sync.synced {
+            border-color:rgba(52,199,89,.25);
+            background:rgba(52,199,89,.07);
+            color:#8ee6a5;
+          }
+
+          .recipe-fast-sync.syncing {
+            border-color:rgba(64,156,255,.25);
+            background:rgba(64,156,255,.07);
+            color:#8cc5ff;
+          }
+
+          .recipe-fast-sync.error {
+            border-color:rgba(255,90,90,.25);
+            background:rgba(255,90,90,.07);
+            color:#ff9b94;
           }
 
           .recipe-fast-message {
@@ -1211,10 +1282,18 @@ export default function RecipesPage() {
               }
             >
               {saving
-                ? 'Saving…'
-                : 'Save Recipes'}
+                ? 'Saving & Syncing…'
+                : 'Save & Sync'}
             </button>
           </div>
+        </div>
+
+        <div
+          className={`recipe-fast-sync ${
+            syncStatus
+          }`}
+        >
+          {syncMessage}
         </div>
 
         {message ? (
