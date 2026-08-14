@@ -783,6 +783,171 @@ function findQuickRecipeMasterMatch(
   return best.master;
 }
 
+function searchQuickRecipeMasters(
+  query: string,
+  currentUnit: string,
+  masters: RecipeIngredientMaster[],
+) {
+  const needle =
+    normalizeReviewText(
+      query,
+    );
+
+  if (!needle) {
+    return [];
+  }
+
+  const needleTokens =
+    needle
+      .split(' ')
+      .filter(Boolean);
+
+  const unique =
+    new Map<
+      string,
+      {
+        master:
+          RecipeIngredientMaster;
+        score: number;
+      }
+    >();
+
+  masters.forEach(
+    (master) => {
+      const normalized =
+        normalizeReviewText(
+          master.name,
+        );
+
+      if (!normalized) {
+        return;
+      }
+
+      let score = 0;
+
+      if (
+        normalized ===
+        needle
+      ) {
+        score = 100;
+      } else if (
+        normalized
+          .startsWith(
+            needle,
+          )
+      ) {
+        score = 88;
+      } else if (
+        normalized.includes(
+          needle,
+        )
+      ) {
+        score = 78;
+      } else {
+        const masterTokens =
+          normalized
+            .split(' ')
+            .filter(Boolean);
+
+        const tokenHits =
+          needleTokens.filter(
+            (token) =>
+              masterTokens.some(
+                (masterToken) =>
+                  masterToken
+                    .startsWith(
+                      token,
+                    ),
+              ),
+          ).length;
+
+        if (
+          needleTokens.length &&
+          tokenHits ===
+            needleTokens.length
+        ) {
+          score = 70;
+        }
+
+        const safeScore =
+          quickIngredientMatchScore(
+            query,
+            master.name,
+          );
+
+        if (
+          safeScore >=
+          0.94
+        ) {
+          score =
+            Math.max(
+              score,
+              Math.round(
+                safeScore *
+                95,
+              ),
+            );
+        }
+      }
+
+      if (!score) {
+        return;
+      }
+
+      if (
+        currentUnit &&
+        quickRecipeUnitsCompatible(
+          currentUnit,
+          master.unit,
+        )
+      ) {
+        score += 4;
+      }
+
+      const key =
+        `${normalized}|${master.unit}`;
+
+      const previous =
+        unique.get(key);
+
+      if (
+        !previous ||
+        score >
+          previous.score
+      ) {
+        unique.set(
+          key,
+          {
+            master,
+            score,
+          },
+        );
+      }
+    },
+  );
+
+  return [
+    ...unique.values(),
+  ]
+    .sort(
+      (left, right) =>
+        right.score -
+          left.score ||
+        left.master.name
+          .localeCompare(
+            right.master.name,
+          ),
+    )
+    .slice(
+      0,
+      12,
+    )
+    .map(
+      (item) =>
+        item.master,
+    );
+}
+
 function quickIngredientCost(
   ingredient:
     RecipeDraftIngredient,
@@ -1044,6 +1209,18 @@ export default function NewDishesPage() {
     useState<QuickRecipeResult | null>(
       null,
     );
+
+  const [
+    activeRecipeIngredientId,
+    setActiveRecipeIngredientId,
+  ] = useState('');
+
+  const [
+    recipeIngredientSearch,
+    setRecipeIngredientSearch,
+  ] = useState<
+    Record<string, string>
+  >({});
 
   const [
     bulkIngredientOpen,
@@ -1620,6 +1797,14 @@ export default function NewDishesPage() {
         '',
       );
 
+      setRecipeIngredientSearch(
+        {},
+      );
+
+      setActiveRecipeIngredientId(
+        '',
+      );
+
       return;
     }
 
@@ -1632,6 +1817,14 @@ export default function NewDishesPage() {
     );
 
     setBulkIngredientText(
+      '',
+    );
+
+    setRecipeIngredientSearch(
+      {},
+    );
+
+    setActiveRecipeIngredientId(
       '',
     );
 
@@ -2318,11 +2511,40 @@ export default function NewDishesPage() {
           master.unit,
       },
     );
+
+    setRecipeIngredientSearch(
+      (current) => ({
+        ...current,
+        [rowId]:
+          master.name,
+      }),
+    );
   }
 
   function removeQuickRecipeIngredient(
     rowId: string,
   ) {
+    setRecipeIngredientSearch(
+      (current) => {
+        const next = {
+          ...current,
+        };
+
+        delete next[
+          rowId
+        ];
+
+        return next;
+      },
+    );
+
+    setActiveRecipeIngredientId(
+      (current) =>
+        current === rowId
+          ? ''
+          : current,
+    );
+
     setRecipeDraft(
       (current) =>
         current
@@ -5522,41 +5744,153 @@ export default function NewDishesPage() {
                                 ingredient.rowId
                               }
                             >
-                              <select
-                                className="select"
-                                value={
-                                  ingredient.rateKey
-                                }
-                                onChange={(event) =>
-                                  selectQuickRecipeIngredient(
-                                    ingredient.rowId,
-                                    event
-                                      .target
-                                      .value,
-                                  )
-                                }
-                              >
-                                <option value="">
-                                  Select ingredient
-                                </option>
+                              <div className="new-dish-ingredient-picker">
+                                <input
+                                  className="input new-dish-ingredient-search"
+                                  type="text"
+                                  autoComplete="off"
+                                  value={
+                                    recipeIngredientSearch[
+                                      ingredient.rowId
+                                    ] ??
+                                    ingredient.name
+                                  }
+                                  placeholder="Search ingredient…"
+                                  onFocus={() =>
+                                    setActiveRecipeIngredientId(
+                                      ingredient.rowId,
+                                    )
+                                  }
+                                  onBlur={() =>
+                                    window.setTimeout(
+                                      () =>
+                                        setActiveRecipeIngredientId(
+                                          (current) =>
+                                            current ===
+                                            ingredient.rowId
+                                              ? ''
+                                              : current,
+                                        ),
+                                      120,
+                                    )
+                                  }
+                                  onChange={(event) => {
+                                    const value =
+                                      event.target.value;
 
-                                {recipeMasterRates.map(
-                                  (
-                                    master,
-                                  ) => (
-                                    <option
-                                      key={
-                                        master.id
-                                      }
-                                      value={
-                                        master.id
-                                      }
-                                    >
-                                      {master.name}
-                                    </option>
-                                  ),
-                                )}
-                              </select>
+                                    setRecipeIngredientSearch(
+                                      (current) => ({
+                                        ...current,
+                                        [ingredient.rowId]:
+                                          value,
+                                      }),
+                                    );
+
+                                    setActiveRecipeIngredientId(
+                                      ingredient.rowId,
+                                    );
+
+                                    if (
+                                      normalizeReviewText(
+                                        value,
+                                      ) !==
+                                      normalizeReviewText(
+                                        ingredient.name,
+                                      )
+                                    ) {
+                                      updateQuickRecipeIngredient(
+                                        ingredient.rowId,
+                                        {
+                                          rateKey:
+                                            '',
+                                          name:
+                                            value,
+                                          rate:
+                                            0,
+                                        },
+                                      );
+                                    }
+                                  }}
+                                />
+
+                                {activeRecipeIngredientId ===
+                                  ingredient.rowId &&
+                                (
+                                  recipeIngredientSearch[
+                                    ingredient.rowId
+                                  ] ??
+                                  ingredient.name
+                                )
+                                  .trim() ? (
+                                  (() => {
+                                    const matches =
+                                      searchQuickRecipeMasters(
+                                        recipeIngredientSearch[
+                                          ingredient.rowId
+                                        ] ??
+                                          ingredient.name,
+                                        ingredient.unit,
+                                        recipeMasterRates,
+                                      );
+
+                                    return (
+                                      <div className="new-dish-ingredient-results">
+                                        {matches.length ? (
+                                          matches.map(
+                                            (master) => (
+                                              <button
+                                                key={
+                                                  master.id
+                                                }
+                                                type="button"
+                                                className="new-dish-ingredient-result"
+                                                onMouseDown={(event) =>
+                                                  event.preventDefault()
+                                                }
+                                                onClick={() => {
+                                                  selectQuickRecipeIngredient(
+                                                    ingredient.rowId,
+                                                    master.id,
+                                                  );
+
+                                                  setRecipeIngredientSearch(
+                                                    (current) => ({
+                                                      ...current,
+
+                                                      [ingredient.rowId]:
+                                                        master.name,
+                                                    }),
+                                                  );
+
+                                                  setActiveRecipeIngredientId(
+                                                    '',
+                                                  );
+                                                }}
+                                              >
+                                                <span>
+                                                  {master.name}
+                                                </span>
+
+                                                <small>
+                                                  {quickRecipeMoney(
+                                                    master.rate,
+                                                  )}
+                                                  /
+                                                  {master.unit}
+                                                </small>
+                                              </button>
+                                            ),
+                                          )
+                                        ) : (
+                                          <div className="new-dish-ingredient-no-result">
+                                            No Ingredient Master match
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()
+                                ) : null}
+                              </div>
 
                               <input
                                 className="input"
