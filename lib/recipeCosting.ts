@@ -395,6 +395,293 @@ export type RecipeQualityResult = {
   issues: RecipeQualityIssue[];
 };
 
+
+type RecipeQuantityAnchorRule = {
+  code: string;
+  label: string;
+  dishTerms: string[];
+  ingredientTerms: string[];
+  measure: 'massKg';
+  errorBelow100: number;
+  warningBelow100: number;
+};
+
+const RECIPE_QUANTITY_ANCHOR_RULES:
+  RecipeQuantityAnchorRule[] = [
+    {
+      code: 'PANEER',
+      label: 'Paneer',
+      dishTerms: [
+        'paneer',
+      ],
+      ingredientTerms: [
+        'paneer',
+      ],
+      measure: 'massKg',
+      errorBelow100: 2,
+      warningBelow100: 4,
+    },
+    {
+      code: 'RICE',
+      label: 'Rice',
+      dishTerms: [
+        'rice',
+        'pulao',
+        'pulav',
+        'biryani',
+      ],
+      ingredientTerms: [
+        'rice',
+        'basmati',
+        'basmati rice',
+      ],
+      measure: 'massKg',
+      errorBelow100: 2,
+      warningBelow100: 3.5,
+    },
+    {
+      code: 'DAL',
+      label: 'Dal',
+      dishTerms: [
+        'dal',
+        'dahl',
+      ],
+      ingredientTerms: [
+        'dal',
+        'toor',
+        'toor dal',
+        'moong',
+        'moong dal',
+        'urad',
+        'urad dal',
+        'masoor',
+        'masoor dal',
+        'lentil',
+      ],
+      measure: 'massKg',
+      errorBelow100: 1.5,
+      warningBelow100: 2.5,
+    },
+    {
+      code: 'RAJMA',
+      label: 'Rajma',
+      dishTerms: [
+        'rajma',
+      ],
+      ingredientTerms: [
+        'rajma',
+        'kidney bean',
+        'kidney beans',
+      ],
+      measure: 'massKg',
+      errorBelow100: 1.5,
+      warningBelow100: 2.5,
+    },
+    {
+      code: 'CHANA',
+      label: 'Chana / Chickpea',
+      dishTerms: [
+        'chole',
+        'chhola',
+        'chana masala',
+      ],
+      ingredientTerms: [
+        'chana',
+        'chickpea',
+        'chickpeas',
+        'chole',
+      ],
+      measure: 'massKg',
+      errorBelow100: 1.5,
+      warningBelow100: 2.5,
+    },
+  ];
+
+function recipeQualityContains(
+  value: string,
+  terms: string[],
+) {
+  const haystack =
+    ` ${normalizeRecipeName(value)} `;
+
+  return terms.some(
+    (term) => {
+      const needle =
+        normalizeRecipeName(
+          term,
+        );
+
+      return Boolean(
+        needle &&
+        haystack.includes(
+          ` ${needle} `,
+        ),
+      );
+    },
+  );
+}
+
+function recipeQuantityAsKg(
+  quantity: number,
+  unit: string,
+) {
+  if (unit === 'kg') {
+    return quantity;
+  }
+
+  if (unit === 'gram') {
+    return quantity / 1000;
+  }
+
+  return null;
+}
+
+function assessCoreIngredientQuantities(
+  recipe: CostableRecipe,
+) {
+  const issues:
+    RecipeQualityIssue[] = [];
+
+  let scorePenalty = 0;
+
+  const batchScale =
+    Math.max(
+      1,
+      Number(
+        recipe.baseGuests,
+      ) || 100,
+    ) / 100;
+
+  RECIPE_QUANTITY_ANCHOR_RULES
+    .filter(
+      (rule) =>
+        recipeQualityContains(
+          recipe.name,
+          rule.dishTerms,
+        ),
+    )
+    .forEach(
+      (rule) => {
+        const matching =
+          recipe.ingredients.filter(
+            (ingredient) =>
+              recipeQualityContains(
+                ingredient.name,
+                rule.ingredientTerms,
+              ),
+          );
+
+        if (!matching.length) {
+          scorePenalty += 24;
+
+          issues.push({
+            severity: 'error',
+
+            code:
+              `${rule.code}_CORE_INGREDIENT_MISSING`,
+
+            message:
+              `${rule.label} is a core ingredient for ${recipe.name}, but it is missing from the recipe.`,
+          });
+
+          return;
+        }
+
+        const quantities =
+          matching.flatMap(
+            (ingredient) => {
+              const converted =
+                recipeQuantityAsKg(
+                  Math.max(
+                    0,
+                    Number(
+                      ingredient.quantity,
+                    ) || 0,
+                  ),
+                  ingredient.unit,
+                );
+
+              return converted === null
+                ? []
+                : [
+                    converted,
+                  ];
+            },
+          );
+
+        if (!quantities.length) {
+          scorePenalty += 20;
+
+          issues.push({
+            severity: 'error',
+
+            code:
+              `${rule.code}_CORE_UNIT_MISMATCH`,
+
+            message:
+              `${rule.label} uses an unsuitable unit for quantity validation in ${recipe.name}.`,
+          });
+
+          return;
+        }
+
+        const total =
+          quantities.reduce(
+            (
+              sum,
+              quantity,
+            ) =>
+              sum +
+              quantity,
+            0,
+          );
+
+        const errorBelow =
+          rule.errorBelow100 *
+          batchScale;
+
+        const warningBelow =
+          rule.warningBelow100 *
+          batchScale;
+
+        if (total < errorBelow) {
+          scorePenalty += 20;
+
+          issues.push({
+            severity: 'error',
+
+            code:
+              `${rule.code}_CRITICALLY_LOW_QUANTITY`,
+
+            message:
+              `${rule.label} quantity ${total.toFixed(2)} kg looks critically low for ${recipe.baseGuests} guests.`,
+          });
+
+          return;
+        }
+
+        if (total < warningBelow) {
+          scorePenalty += 8;
+
+          issues.push({
+            severity: 'warning',
+
+            code:
+              `${rule.code}_LOW_QUANTITY`,
+
+            message:
+              `${rule.label} quantity ${total.toFixed(2)} kg looks low for ${recipe.baseGuests} guests and should be reviewed.`,
+          });
+        }
+      },
+    );
+
+  return {
+    scorePenalty,
+    issues,
+  };
+}
+
 export function assessRecipeQuality(
   recipe:
     | CostableRecipe
@@ -624,6 +911,20 @@ export function assessRecipeQuality(
         });
       }
     },
+  );
+
+  const coreQuantityQuality =
+    assessCoreIngredientQuantities(
+      recipe,
+    );
+
+  score -=
+    coreQuantityQuality
+      .scorePenalty;
+
+  issues.push(
+    ...coreQuantityQuality
+      .issues,
   );
 
   if (missingRates > 0) {
