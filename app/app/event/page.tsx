@@ -6380,7 +6380,7 @@ export default function EventPage() {
                 </p>
               </div>
 
-              <div className="menu-upload-options">
+              <div className="menu-upload-options" hidden>
                 <div className="menu-upload-option">
                   <div className="menu-upload-heading">
                     <span className="menu-upload-icon camera" aria-hidden="true">PHOTO</span>
