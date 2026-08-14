@@ -1046,6 +1046,16 @@ export default function NewDishesPage() {
     );
 
   const [
+    bulkIngredientOpen,
+    setBulkIngredientOpen,
+  ] = useState(false);
+
+  const [
+    bulkIngredientText,
+    setBulkIngredientText,
+  ] = useState('');
+
+  const [
     analyzingId,
     setAnalyzingId,
   ] =
@@ -1602,11 +1612,27 @@ export default function NewDishesPage() {
         null,
       );
 
+      setBulkIngredientOpen(
+        false,
+      );
+
+      setBulkIngredientText(
+        '',
+      );
+
       return;
     }
 
     setRecipeResult(
       null,
+    );
+
+    setBulkIngredientOpen(
+      false,
+    );
+
+    setBulkIngredientText(
+      '',
     );
 
     setRecipeDraft({
@@ -1884,6 +1910,292 @@ export default function NewDishesPage() {
     } finally {
       setRecipeGenerating(
         false,
+      );
+    }
+  }
+
+  function normalizeBulkRecipeUnit(
+    value: string,
+  ) {
+    const normalized =
+      String(value || '')
+        .trim()
+        .toLowerCase();
+
+    const aliases:
+      Record<string, string> = {
+        kg: 'kg',
+        kgs: 'kg',
+        kilogram: 'kg',
+        kilograms: 'kg',
+
+        g: 'gram',
+        gm: 'gram',
+        gms: 'gram',
+        gram: 'gram',
+        grams: 'gram',
+
+        l: 'ltr',
+        lt: 'ltr',
+        ltr: 'ltr',
+        litre: 'ltr',
+        liter: 'ltr',
+        litres: 'ltr',
+        liters: 'ltr',
+
+        ml: 'ml',
+
+        pc: 'piece',
+        pcs: 'piece',
+        piece: 'piece',
+        pieces: 'piece',
+
+        pkt: 'packet',
+        pkts: 'packet',
+        packet: 'packet',
+        packets: 'packet',
+      };
+
+    return aliases[normalized] || '';
+  }
+
+  async function addBulkRecipeIngredients() {
+    if (!recipeDraft) {
+      return;
+    }
+
+    const lines =
+      bulkIngredientText
+        .split(/\r?\n/)
+        .map(
+          (line) =>
+            line.trim(),
+        )
+        .filter(Boolean);
+
+    if (!lines.length) {
+      setMessageType('error');
+      setMessage(
+        'Paste ingredients first. Example: Poha | 6 | kg',
+      );
+      return;
+    }
+
+    const masters =
+      recipeMasterRates.length
+        ? recipeMasterRates
+        : await loadRecipeMasterRates();
+
+    if (!masters.length) {
+      setMessageType('error');
+      setMessage(
+        'Ingredient Master has no usable rates.',
+      );
+      return;
+    }
+
+    const added:
+      RecipeDraftIngredient[] = [];
+
+    const unmatched:
+      string[] = [];
+
+    const existingKeys =
+      new Set(
+        recipeDraft.ingredients
+          .map(
+            (ingredient) =>
+              ingredient.rateKey,
+          )
+          .filter(Boolean),
+      );
+
+    lines.forEach(
+      (
+        line,
+        index,
+      ) => {
+        const parts =
+          line
+            .split(
+              /\s*(?:\||\t|,)\s*/,
+            )
+            .map(
+              (part) =>
+                part.trim(),
+            )
+            .filter(Boolean);
+
+        if (parts.length < 2) {
+          unmatched.push(line);
+          return;
+        }
+
+        const ingredientName =
+          parts[0];
+
+        const quantity =
+          Math.max(
+            0,
+            Number(
+              parts[1]
+                .replace(
+                  /[^0-9.]/g,
+                  '',
+                ),
+            ) || 0,
+          );
+
+        if (
+          !ingredientName ||
+          !(quantity > 0)
+        ) {
+          unmatched.push(line);
+          return;
+        }
+
+        const requestedUnit =
+          normalizeBulkRecipeUnit(
+            parts[2] || '',
+          );
+
+        const normalizedName =
+          normalizeReviewText(
+            ingredientName,
+          );
+
+        const exactMatches =
+          masters.filter(
+            (master) =>
+              normalizeReviewText(
+                master.name,
+              ) ===
+              normalizedName,
+          );
+
+        let master =
+          requestedUnit
+            ? exactMatches.find(
+                (candidate) =>
+                  quickRecipeUnitsCompatible(
+                    requestedUnit,
+                    candidate.unit,
+                  ),
+              )
+            : exactMatches[0];
+
+        if (
+          !master &&
+          requestedUnit
+        ) {
+          master =
+            findQuickRecipeMasterMatch(
+              ingredientName,
+              requestedUnit,
+              masters,
+            ) || undefined;
+        }
+
+        if (!master) {
+          unmatched.push(line);
+          return;
+        }
+
+        const ingredientUnit =
+          requestedUnit ||
+          master.unit;
+
+        if (
+          !quickRecipeUnitsCompatible(
+            ingredientUnit,
+            master.unit,
+          )
+        ) {
+          unmatched.push(line);
+          return;
+        }
+
+        if (
+          existingKeys.has(
+            master.id,
+          )
+        ) {
+          unmatched.push(
+            `${line}  ← already added`,
+          );
+          return;
+        }
+
+        existingKeys.add(
+          master.id,
+        );
+
+        added.push({
+          rowId:
+            `bulk-${Date.now()}-${index}`,
+
+          rateKey:
+            master.id,
+
+          name:
+            master.name,
+
+          quantity:
+            String(quantity),
+
+          unit:
+            ingredientUnit,
+
+          rate:
+            master.rate,
+
+          rateUnit:
+            master.unit,
+        });
+      },
+    );
+
+    if (added.length) {
+      setRecipeDraft(
+        (current) =>
+          current
+            ? {
+                ...current,
+
+                ingredients: [
+                  ...current.ingredients,
+                  ...added,
+                ],
+              }
+            : current,
+      );
+    }
+
+    setBulkIngredientText(
+      unmatched.join('\n'),
+    );
+
+    setRecipeResult(
+      null,
+    );
+
+    if (added.length) {
+      setMessageType(
+        unmatched.length
+          ? 'error'
+          : 'success',
+      );
+
+      setMessage(
+        unmatched.length
+          ? `${added.length} ingredients added · ${unmatched.length} line${unmatched.length === 1 ? '' : 's'} need review.`
+          : `${added.length} ingredients added from bulk paste.`,
+      );
+    } else {
+      setMessageType('error');
+
+      setMessage(
+        'No bulk ingredients matched Ingredient Master. Check ingredient name, quantity and unit.',
       );
     }
   }
@@ -5343,19 +5655,101 @@ export default function NewDishesPage() {
                       </div>
                     ) : null}
 
-                    <button
-                      className="ghost-button"
-                      type="button"
-                      onClick={
-                        addQuickRecipeIngredient
-                      }
-                      disabled={
-                        recipeRatesLoading ||
-                        recipeSaving
-                      }
-                    >
-                      + Ingredient
-                    </button>
+                    <div className="new-dish-recipe-add-actions">
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={
+                          addQuickRecipeIngredient
+                        }
+                        disabled={
+                          recipeRatesLoading ||
+                          recipeSaving
+                        }
+                      >
+                        + Ingredient
+                      </button>
+
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() =>
+                          setBulkIngredientOpen(
+                            (current) =>
+                              !current,
+                          )
+                        }
+                        disabled={
+                          recipeRatesLoading ||
+                          recipeSaving
+                        }
+                      >
+                        {bulkIngredientOpen
+                          ? 'Close Bulk'
+                          : '+ Bulk Ingredients'}
+                      </button>
+                    </div>
+
+                    {bulkIngredientOpen ? (
+                      <div className="new-dish-bulk-ingredients">
+                        <div className="new-dish-bulk-ingredients-head">
+                          <div>
+                            <span className="section-kicker">
+                              Bulk Ingredients
+                            </span>
+
+                            <strong>
+                              Paste many ingredients
+                            </strong>
+                          </div>
+
+                          <small>
+                            Ingredient | Qty | Unit
+                          </small>
+                        </div>
+
+                        <textarea
+                          className="textarea new-dish-bulk-ingredients-input"
+                          rows={7}
+                          value={
+                            bulkIngredientText
+                          }
+                          onChange={(event) =>
+                            setBulkIngredientText(
+                              event.target.value,
+                            )
+                          }
+                          placeholder={`Poha | 6 | kg
+Potato | 4 | kg
+Onion | 2 | kg
+Oil | 1.5 | ltr
+Peanut | 1 | kg
+Lemon | 25 | piece`}
+                        />
+
+                        <div className="new-dish-bulk-ingredients-footer">
+                          <small>
+                            Supports | comma or tab. Names are matched safely with Ingredient Master. Unmatched lines stay here for correction.
+                          </small>
+
+                          <button
+                            className="primary-button"
+                            type="button"
+                            onClick={() =>
+                              void addBulkRecipeIngredients()
+                            }
+                            disabled={
+                              recipeRatesLoading ||
+                              recipeSaving ||
+                              !bulkIngredientText
+                                .trim()
+                            }
+                          >
+                            Add Matched Ingredients
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
 
                     <div className="new-dish-recipe-cost-grid">
                       <div>

@@ -15618,3 +15618,82 @@ small {
     padding: 10px;
   }
 }
+
+.new-dish-recipe-add-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.new-dish-bulk-ingredients {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 14px;
+  background: #0d0d0f;
+}
+
+.new-dish-bulk-ingredients-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.new-dish-bulk-ingredients-head > div {
+  display: grid;
+  gap: 3px;
+}
+
+.new-dish-bulk-ingredients-head strong {
+  color: #f5f5f7;
+  font-size: 13px;
+}
+
+.new-dish-bulk-ingredients-head small,
+.new-dish-bulk-ingredients-footer small {
+  color: #8e8e93;
+  font-size: 9px;
+}
+
+.new-dish-bulk-ingredients-input {
+  min-height: 160px;
+  resize: vertical;
+  color: #f5f5f7 !important;
+  border-color: rgba(255,255,255,.12) !important;
+  background: #111113 !important;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  line-height: 1.55;
+}
+
+.new-dish-bulk-ingredients-input::placeholder {
+  color: #636366;
+}
+
+.new-dish-bulk-ingredients-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (max-width: 620px) {
+  .new-dish-recipe-add-actions,
+  .new-dish-bulk-ingredients-footer,
+  .new-dish-bulk-ingredients-head {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .new-dish-recipe-add-actions button,
+  .new-dish-bulk-ingredients-footer button {
+    width: 100%;
+  }
+}
