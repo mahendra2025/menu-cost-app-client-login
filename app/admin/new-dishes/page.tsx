@@ -517,6 +517,269 @@ function quickRecipeUnitsCompatible(
   );
 }
 
+function quickIngredientNameTokens(
+  value: string,
+) {
+  const tokenAliases:
+    Record<string, string> = {
+      chili: 'chilli',
+      chilies: 'chilli',
+      chillies: 'chilli',
+      chillis: 'chilli',
+      tomatoes: 'tomato',
+      potatoes: 'potato',
+      onions: 'onion',
+      cashews: 'cashew',
+      almonds: 'almond',
+      raisins: 'raisin',
+      peas: 'pea',
+    };
+
+  const ignore =
+    new Set([
+      'fresh',
+      'finely',
+      'chopped',
+      'sliced',
+      'grated',
+      'peeled',
+      'cleaned',
+    ]);
+
+  return normalizeReviewText(
+    value,
+  )
+    .split(' ')
+    .filter(Boolean)
+    .map(
+      (token) =>
+        tokenAliases[token] ||
+        token,
+    )
+    .filter(
+      (token) =>
+        !ignore.has(token),
+    );
+}
+
+function quickIngredientMatchScore(
+  leftName: string,
+  rightName: string,
+) {
+  const leftRaw =
+    normalizeReviewText(
+      leftName,
+    );
+
+  const rightRaw =
+    normalizeReviewText(
+      rightName,
+    );
+
+  if (
+    !leftRaw ||
+    !rightRaw
+  ) {
+    return 0;
+  }
+
+  if (
+    leftRaw === rightRaw
+  ) {
+    return 1;
+  }
+
+  const left =
+    quickIngredientNameTokens(
+      leftName,
+    );
+
+  const right =
+    quickIngredientNameTokens(
+      rightName,
+    );
+
+  if (
+    !left.length ||
+    !right.length
+  ) {
+    return 0;
+  }
+
+  const protectedForms =
+    new Set([
+      'powder',
+      'paste',
+      'puree',
+      'juice',
+      'oil',
+      'sauce',
+      'syrup',
+    ]);
+
+  const leftForms =
+    new Set(
+      left.filter(
+        (token) =>
+          protectedForms.has(
+            token,
+          ),
+      ),
+    );
+
+  const rightForms =
+    new Set(
+      right.filter(
+        (token) =>
+          protectedForms.has(
+            token,
+          ),
+      ),
+    );
+
+  const formKey = (
+    values: Set<string>,
+  ) =>
+    [...values]
+      .sort()
+      .join('|');
+
+  if (
+    formKey(leftForms) !==
+    formKey(rightForms)
+  ) {
+    return 0;
+  }
+
+  const leftSet =
+    new Set(left);
+
+  const rightSet =
+    new Set(right);
+
+  if (
+    leftSet.size ===
+      rightSet.size &&
+    [...leftSet].every(
+      (token) =>
+        rightSet.has(token),
+    )
+  ) {
+    return 0.99;
+  }
+
+  const intersection =
+    [...leftSet].filter(
+      (token) =>
+        rightSet.has(token),
+    ).length;
+
+  if (!intersection) {
+    return 0;
+  }
+
+  const union =
+    new Set([
+      ...leftSet,
+      ...rightSet,
+    ]).size;
+
+  const jaccard =
+    intersection /
+    Math.max(
+      union,
+      1,
+    );
+
+  const coverage =
+    intersection /
+    Math.max(
+      Math.min(
+        leftSet.size,
+        rightSet.size,
+      ),
+      1,
+    );
+
+  const sizeGap =
+    Math.abs(
+      leftSet.size -
+      rightSet.size,
+    );
+
+  if (
+    coverage === 1 &&
+    sizeGap <= 1
+  ) {
+    return 0.94;
+  }
+
+  return Math.min(
+    0.93,
+    jaccard * 0.6 +
+      coverage * 0.4,
+  );
+}
+
+function findQuickRecipeMasterMatch(
+  ingredientName: string,
+  ingredientUnit: string,
+  masters: RecipeIngredientMaster[],
+) {
+  const ranked =
+    masters
+      .filter(
+        (master) =>
+          quickRecipeUnitsCompatible(
+            ingredientUnit,
+            master.unit,
+          ),
+      )
+      .map(
+        (master) => ({
+          master,
+
+          score:
+            quickIngredientMatchScore(
+              ingredientName,
+              master.name,
+            ),
+        }),
+      )
+      .filter(
+        (candidate) =>
+          candidate.score >=
+          0.94,
+      )
+      .sort(
+        (left, right) =>
+          right.score -
+          left.score,
+      );
+
+  if (!ranked.length) {
+    return null;
+  }
+
+  const best =
+    ranked[0];
+
+  const second =
+    ranked[1];
+
+  if (
+    second &&
+    best.score < 1 &&
+    best.score -
+      second.score <
+      0.04
+  ) {
+    return null;
+  }
+
+  return best.master;
+}
+
 function quickIngredientCost(
   ingredient:
     RecipeDraftIngredient,
@@ -1504,6 +1767,11 @@ export default function NewDishesPage() {
                     ingredient.unit,
                     rate.unit,
                   ),
+              ) ||
+              findQuickRecipeMasterMatch(
+                ingredient.name,
+                ingredient.unit,
+                masters,
               );
 
             return {
@@ -1543,6 +1811,10 @@ export default function NewDishesPage() {
           (ingredient) =>
             !ingredient.rateKey,
         ).length;
+
+      const autoMatched =
+        nextIngredients.length -
+        unmatched;
 
       setRecipeDraft(
         (current) =>
@@ -1592,8 +1864,8 @@ export default function NewDishesPage() {
 
       setMessage(
         unmatched
-          ? `AI generated ${nextIngredients.length} ingredients. ${unmatched} ingredient${unmatched === 1 ? '' : 's'} need an Ingredient Master match before saving.`
-          : `AI generated ${nextIngredients.length} ingredients for 100 pax. Review quantities, cost and Quality Gate before saving.`,
+          ? `AI generated ${nextIngredients.length} ingredients · ${autoMatched} auto-matched · ${unmatched} need manual Ingredient Master matching.`
+          : `AI generated ${nextIngredients.length} ingredients · all ${autoMatched} matched to Ingredient Master. Review quantities, cost and Quality Gate before saving.`,
       );
     } catch (generateError) {
       setMessageType(
@@ -5590,4 +5862,4 @@ export default function NewDishesPage() {
       </section>
     </AppShell>
   );
-}
+}\n
