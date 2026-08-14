@@ -1140,6 +1140,26 @@ export default function NewDishesPage() {
           );
         }
 
+        if (
+          !buildData.quality ||
+          buildData.quality.status !==
+            'READY'
+        ) {
+          const firstIssue =
+            buildData.quality
+              ?.issues?.[0]
+              ?.message ||
+            'Recipe needs manual review.';
+
+          throw new Error(
+            `Recipe quality ${
+              buildData.quality
+                ?.status ||
+              'BLOCKED'
+            }: ${firstIssue} Suggestion was kept for review.`,
+          );
+        }
+
         finalRate =
           Math.max(
             Number(

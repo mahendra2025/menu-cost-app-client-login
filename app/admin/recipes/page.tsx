@@ -9,6 +9,12 @@ import {
 
 import AppShell from '../../components/AppShell';
 
+import {
+  applyRecipeWastage,
+  assessRecipeQuality,
+  readCostableRecipe,
+} from '../../../lib/recipeCosting';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -867,9 +873,12 @@ export default function RecipesPage() {
 
       const activeRate =
         activeDish
-          ? recipeTotal(
-              activeDish,
-            ) / activeGuests
+          ? applyRecipeWastage(
+              recipeTotal(
+                activeDish,
+              ) /
+                activeGuests,
+            )
           : 0;
 
       setSyncStatus(
@@ -943,9 +952,70 @@ export default function RecipesPage() {
       ),
     );
 
-  const perPerson =
+  const rawPerPerson =
     totalCost /
     guests;
+
+  const finalPerPerson =
+    applyRecipeWastage(
+      rawPerPerson,
+    );
+
+  const wastagePerPerson =
+    Math.max(
+      0,
+      finalPerPerson -
+        Math.round(
+          rawPerPerson *
+            100,
+        ) /
+          100,
+    );
+
+  const finalTotalCost =
+    finalPerPerson *
+    guests;
+
+  const missingRateCount =
+    ingredients.filter(
+      (ingredient) =>
+        !(
+          ingredientRate(
+            ingredient,
+          ) > 0
+        ),
+    ).length;
+
+  const estimatedRateCount =
+    ingredients.filter(
+      (ingredient) =>
+        text(
+          ingredient.rateSource,
+        ) ===
+        'category_estimate',
+    ).length;
+
+  const qualityRecipe =
+    selectedDish
+      ? readCostableRecipe(
+          selectedDish,
+        )
+      : null;
+
+  const recipeQuality =
+    assessRecipeQuality(
+      qualityRecipe,
+      {
+        missingRates:
+          missingRateCount,
+
+        estimatedRates:
+          estimatedRateCount,
+
+        costPerPlate:
+          finalPerPerson,
+      },
+    );
 
   const selectedCategory =
     text(
@@ -1232,7 +1302,7 @@ export default function RecipesPage() {
 
           .recipe-fast-costs {
             display:grid;
-            grid-template-columns:repeat(3,1fr);
+            grid-template-columns:repeat(4,1fr);
             gap:7px;
             margin:12px 0;
           }
@@ -1258,6 +1328,103 @@ export default function RecipesPage() {
           .recipe-fast-cost b {
             margin-top:4px;
             font-size:14px;
+          }
+
+          .recipe-fast-quality {
+            display:grid;
+            gap:9px;
+            margin:0 0 14px;
+            padding:12px;
+            border:1px solid #303944;
+            border-radius:12px;
+            background:#111820;
+          }
+
+          .recipe-fast-quality.ready {
+            border-color:rgba(52,199,89,.32);
+            background:rgba(52,199,89,.06);
+          }
+
+          .recipe-fast-quality.review {
+            border-color:rgba(255,159,10,.34);
+            background:rgba(255,159,10,.06);
+          }
+
+          .recipe-fast-quality.blocked {
+            border-color:rgba(255,69,58,.34);
+            background:rgba(255,69,58,.06);
+          }
+
+          .recipe-fast-quality-head {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:10px;
+          }
+
+          .recipe-fast-quality-head strong {
+            font-size:12px;
+          }
+
+          .recipe-fast-quality-badge {
+            padding:5px 8px;
+            border:1px solid #3b4653;
+            border-radius:999px;
+            font-size:9px;
+            font-weight:900;
+          }
+
+          .recipe-fast-quality.ready
+          .recipe-fast-quality-badge {
+            color:#8ee6a5;
+          }
+
+          .recipe-fast-quality.review
+          .recipe-fast-quality-badge {
+            color:#ffc267;
+          }
+
+          .recipe-fast-quality.blocked
+          .recipe-fast-quality-badge {
+            color:#ff9b94;
+          }
+
+          .recipe-fast-quality-metrics {
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:6px;
+          }
+
+          .recipe-fast-quality-metrics div {
+            padding:8px;
+            border:1px solid #29323d;
+            border-radius:9px;
+            background:rgba(0,0,0,.12);
+          }
+
+          .recipe-fast-quality-metrics span,
+          .recipe-fast-quality-metrics b {
+            display:block;
+          }
+
+          .recipe-fast-quality-metrics span {
+            color:#788593;
+            font-size:8px;
+            text-transform:uppercase;
+          }
+
+          .recipe-fast-quality-metrics b {
+            margin-top:3px;
+            font-size:11px;
+          }
+
+          .recipe-fast-quality-issues {
+            display:grid;
+            gap:4px;
+            margin:0;
+            padding-left:18px;
+            color:#aab4c0;
+            font-size:10px;
           }
 
           .recipe-fast-heading {
@@ -1729,7 +1896,7 @@ export default function RecipesPage() {
                   <div className="recipe-fast-costs">
                     <div className="recipe-fast-cost">
                       <span>
-                        Batch Cost
+                        Raw Batch Cost
                       </span>
 
                       <b>
@@ -1741,25 +1908,113 @@ export default function RecipesPage() {
 
                     <div className="recipe-fast-cost">
                       <span>
-                        Cost / Person
+                        Wastage 8%
                       </span>
 
                       <b>
                         {money(
-                          perPerson,
+                          wastagePerPerson *
+                            guests,
                         )}
                       </b>
                     </div>
 
                     <div className="recipe-fast-cost">
                       <span>
-                        Ingredients
+                        Final Batch Cost
                       </span>
 
                       <b>
-                        {ingredients.length}
+                        {money(
+                          finalTotalCost,
+                        )}
                       </b>
                     </div>
+
+                    <div className="recipe-fast-cost">
+                      <span>
+                        Final / Person
+                      </span>
+
+                      <b>
+                        {money(
+                          finalPerPerson,
+                        )}
+                      </b>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`recipe-fast-quality ${
+                      recipeQuality.status
+                        .toLowerCase()
+                    }`}
+                  >
+                    <div className="recipe-fast-quality-head">
+                      <strong>
+                        Recipe Quality Gate
+                      </strong>
+
+                      <span className="recipe-fast-quality-badge">
+                        {recipeQuality.status}
+                        {' · '}
+                        {recipeQuality.score}/100
+                      </span>
+                    </div>
+
+                    <div className="recipe-fast-quality-metrics">
+                      <div>
+                        <span>
+                          Rate coverage
+                        </span>
+
+                        <b>
+                          {recipeQuality.rateCoveragePercent}%
+                        </b>
+                      </div>
+
+                      <div>
+                        <span>
+                          Missing rates
+                        </span>
+
+                        <b>
+                          {recipeQuality.missingRates}
+                        </b>
+                      </div>
+
+                      <div>
+                        <span>
+                          Warnings
+                        </span>
+
+                        <b>
+                          {recipeQuality.warningCount}
+                        </b>
+                      </div>
+                    </div>
+
+                    {recipeQuality.issues.length ? (
+                      <ul className="recipe-fast-quality-issues">
+                        {recipeQuality.issues
+                          .slice(
+                            0,
+                            5,
+                          )
+                          .map(
+                            (
+                              issue,
+                              index,
+                            ) => (
+                              <li
+                                key={`${issue.code}-${index}`}
+                              >
+                                {issue.message}
+                              </li>
+                            ),
+                          )}
+                      </ul>
+                    ) : null}
                   </div>
 
                   <div className="recipe-fast-heading">

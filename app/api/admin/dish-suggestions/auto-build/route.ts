@@ -16,6 +16,7 @@ import {
   buildRecipeMap,
   calculateRecipeCost,
   fillRecipeIngredientRates,
+  recipeCostSummary,
   normalizeRecipeName,
   readCostableRecipe,
   type CostableRecipe,
@@ -24,94 +25,6 @@ import {
   requestStructuredAi,
   structuredAiProvider,
 } from '../../../../../lib/structuredAi';
-
-const WASTAGE_RATE = 0.08;
-
-function clean(
-  value: unknown,
-  max = 120,
-) {
-  return String(value || '')
-    .normalize('NFKC')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, max);
-}
-
-function withWastage(
-  rawCostPerPlate: number,
-) {
-  return Math.round(
-    rawCostPerPlate *
-      (1 + WASTAGE_RATE) *
-      100,
-  ) / 100;
-}
-
-function costingSummary(
-  rawCostPerPlate: number,
-  baseGuests: number,
-) {
-  const guests =
-    Math.max(
-      1,
-      baseGuests,
-    );
-
-  const rawTotal =
-    rawCostPerPlate *
-    guests;
-
-  const wastageTotal =
-    rawTotal *
-    WASTAGE_RATE;
-
-  const totalCost =
-    rawTotal +
-    wastageTotal;
-
-  return {
-    rawCostPerPlate:
-      Math.round(
-        rawCostPerPlate *
-          100,
-      ) / 100,
-
-    wastagePercent: 8,
-
-    wastagePerPlate:
-      Math.round(
-        rawCostPerPlate *
-          WASTAGE_RATE *
-          100,
-      ) / 100,
-
-    costPerPlate:
-      Math.round(
-        totalCost /
-          guests *
-          100,
-      ) / 100,
-
-    rawTotal:
-      Math.round(
-        rawTotal *
-          100,
-      ) / 100,
-
-    wastageTotal:
-      Math.round(
-        wastageTotal *
-          100,
-      ) / 100,
-
-    totalCost:
-      Math.round(
-        totalCost *
-          100,
-      ) / 100,
-  };
-}
 
 async function requireAdmin() {
   const cookieStore =
@@ -557,7 +470,7 @@ export async function POST(
       );
 
     const tenantCost =
-      costingSummary(
+      recipeCostSummary(
         tenantRaw.costPerPlate,
         tenantPriced
           .recipe
@@ -603,7 +516,7 @@ export async function POST(
       );
 
     const standardCost =
-      costingSummary(
+      recipeCostSummary(
         standardRaw.costPerPlate,
         standardPriced
           .recipe

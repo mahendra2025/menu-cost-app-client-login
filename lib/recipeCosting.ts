@@ -20,6 +20,93 @@ export type CostableRecipe = {
   ingredients: CostableRecipeIngredient[];
 };
 
+export const RECIPE_WASTAGE_RATE = 0.08;
+export const RECIPE_WASTAGE_PERCENT = 8;
+
+function roundRecipeMoney(
+  value: number,
+) {
+  return Math.round(
+    Math.max(
+      0,
+      Number(value) || 0,
+    ) * 100,
+  ) / 100;
+}
+
+export function applyRecipeWastage(
+  rawCostPerPlate: number,
+) {
+  const raw =
+    roundRecipeMoney(
+      rawCostPerPlate,
+    );
+
+  return roundRecipeMoney(
+    raw *
+      (
+        1 +
+        RECIPE_WASTAGE_RATE
+      ),
+  );
+}
+
+export function recipeCostSummary(
+  rawCostPerPlate: number,
+  baseGuests: number,
+) {
+  const guests =
+    Math.max(
+      1,
+      Number(baseGuests) || 1,
+    );
+
+  const raw =
+    roundRecipeMoney(
+      rawCostPerPlate,
+    );
+
+  const finalPerPlate =
+    applyRecipeWastage(
+      raw,
+    );
+
+  const wastagePerPlate =
+    roundRecipeMoney(
+      finalPerPlate - raw,
+    );
+
+  return {
+    rawCostPerPlate:
+      raw,
+
+    wastagePercent:
+      RECIPE_WASTAGE_PERCENT,
+
+    wastagePerPlate,
+
+    costPerPlate:
+      finalPerPlate,
+
+    rawTotal:
+      roundRecipeMoney(
+        raw * guests,
+      ),
+
+    wastageTotal:
+      roundRecipeMoney(
+        wastagePerPlate *
+          guests,
+      ),
+
+    totalCost:
+      roundRecipeMoney(
+        finalPerPlate *
+          guests,
+      ),
+  };
+}
+
 export function normalizeRecipeName(value: unknown) {
   return String(value || '')
     .normalize('NFKC')

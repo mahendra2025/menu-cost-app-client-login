@@ -16,6 +16,9 @@ import {
   type IngredientUnit,
 } from '../../../../lib/ingredientCatalog';
 import { prisma } from '../../../../lib/prisma';
+import {
+  applyRecipeWastage,
+} from '../../../../lib/recipeCosting';
 
 const CATALOG_ID = 'global';
 const CATEGORY_CATALOG_ID = 'global';
@@ -277,12 +280,19 @@ function normalizeRecipeDishes(
       const rateUnit = liveRate?.unit || cleanText(item.rateUnit, 30) || unit;
       return total + convertQuantity(quantity, unit, rateUnit) * rate;
     }, 0);
-    const catalogRate = Math.max(
-      0,
+    const catalogRate =
       totalCost > 0
-        ? totalCost / baseGuests
-        : Number(row.catalogRate ?? row.dishRate) || 0,
-    );
+        ? applyRecipeWastage(
+            totalCost /
+              baseGuests,
+          )
+        : Math.max(
+            0,
+            Number(
+              row.catalogRate ??
+              row.dishRate,
+            ) || 0,
+          );
     const aliases = Array.isArray(row.aliases)
       ? Array.from(new Map(
         row.aliases
