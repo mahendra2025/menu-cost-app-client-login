@@ -22,10 +22,6 @@ import {
   type CsvDishRow,
 } from '../../../lib/csvDishImport';
 
-import type {
-  RecipeServing,
-} from '../../../lib/recipeServings';
-
 import { getSession, uid } from '../../../lib/store';
 
 type EditableDish = DishCostItem & {
@@ -34,8 +30,6 @@ type EditableDish = DishCostItem & {
   aliasesText: string;
   hindiAliasesText: string;
   gujaratiAliasesText: string;
-  recipeServing?: RecipeServing;
-  recipeLinked: boolean;
 };
 type DishRowErrors = {
   name?: string;
@@ -63,54 +57,32 @@ function allRowAliases(item: EditableDish) {
   ];
 }
 
-function isPlaceholderServing(item: DishCostItem) {
-  return Number(item.servingQuantity ?? 1) === 1 &&
-    String(item.servingUnit ?? 'serving').trim().toLowerCase() === 'serving';
-}
-
 function toEditableDish(
   item: DishCostItem,
-  recipeServing?: RecipeServing,
-  recipeLinked = false,
 ): EditableDish {
   const aliases = item.aliases ?? [];
-  const useRecipeServing = Boolean(
-    recipeServing &&
-    isPlaceholderServing(item),
-  );
 
   return {
     ...item,
     id: uid('dish_master'),
     originalName: item.name,
-    servingQuantity: useRecipeServing ? recipeServing?.quantity : item.servingQuantity,
-    servingUnit: useRecipeServing ? recipeServing?.unit : item.servingUnit,
-    recipeServing,
-    recipeLinked,
-    aliasesText: aliases.filter((alias) => !HINDI_SCRIPT.test(alias) && !GUJARATI_SCRIPT.test(alias)).join(', '),
-    hindiAliasesText: aliases.filter((alias) => HINDI_SCRIPT.test(alias)).join(', '),
-    gujaratiAliasesText: aliases.filter((alias) => GUJARATI_SCRIPT.test(alias)).join(', '),
-  };
-}
-
-async function loadRecipeMetadata() {
-  const recipeModule =
-    await import(
-      '../../../lib/recipeServings'
-    );
-
-  const servingCatalog =
-    recipeModule
-      .createRecipeServingCatalog();
-
-  const nameCatalog =
-    recipeModule
-      .createRecipeNameCatalog();
-
-  return {
-    recipeModule,
-    servingCatalog,
-    nameCatalog,
+    aliasesText: aliases
+      .filter(
+        (alias) =>
+          !HINDI_SCRIPT.test(alias) &&
+          !GUJARATI_SCRIPT.test(alias),
+      )
+      .join(', '),
+    hindiAliasesText: aliases
+      .filter((alias) =>
+        HINDI_SCRIPT.test(alias),
+      )
+      .join(', '),
+    gujaratiAliasesText: aliases
+      .filter((alias) =>
+        GUJARATI_SCRIPT.test(alias),
+      )
+      .join(', '),
   };
 }
 
@@ -211,7 +183,8 @@ export default function AdminDishesPage() {
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [subcategoryFilter, setSubcategoryFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ERROR' | 'RECIPE' | 'NO_RECIPE'>('ALL');
+  const [statusFilter, setStatusFilter] =
+    useState<'ALL' | 'ERROR'>('ALL');
   const [sort, setSort] = useState<DishSort>('NAME_ASC');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
@@ -225,46 +198,6 @@ export default function AdminDishesPage() {
 
   const deferredCategoryQuery =
     useDeferredValue(categoryQuery);
-
-  async function refreshRecipeMetadata() {
-    try {
-      const {
-        recipeModule,
-        servingCatalog,
-        nameCatalog,
-      } =
-        await loadRecipeMetadata();
-
-      setRows(
-        (current) =>
-          current.map(
-            (row) => ({
-              ...row,
-
-              recipeServing:
-                recipeModule
-                  .findDishServing(
-                    row.name,
-                    row.category,
-                    servingCatalog,
-                  ),
-
-              recipeLinked:
-                recipeModule
-                  .hasDishRecipe(
-                    row.name,
-                    nameCatalog,
-                  ),
-            }),
-          ),
-      );
-    } catch (error) {
-      console.warn(
-        'Recipe metadata could not be loaded:',
-        error,
-      );
-    }
-  }
 
   const rowErrors =
     useMemo(
@@ -311,19 +244,6 @@ export default function AdminDishesPage() {
     ])).sort((left, right) => left.localeCompare(right));
   }, [availableCategories, categoryFilter, rows, subcategories]);
 
-  function openRecipeForDish(
-    dish: EditableDish,
-  ) {
-    const name =
-      dish.name.trim();
-
-    if (!name) return;
-
-    window.location.assign(
-      `/admin/recipes?recipe=${encodeURIComponent(name)}`,
-    );
-  }
-
   useEffect(() => {
     const session = getSession();
     if (session?.role !== 'ADMIN') return;
@@ -358,45 +278,6 @@ export default function AdminDishesPage() {
           ),
         );
 
-        /*
-         * Recipe metadata is useful but not
-         * required for the first catalog paint.
-         *
-         * Let the Dish Master become interactive
-         * first, then load the large recipe
-         * catalog during browser idle time.
-         */
-        const idleWindow =
-          window as Window & {
-            requestIdleCallback?: (
-              callback: () => void,
-              options?: {
-                timeout: number;
-              },
-            ) => number;
-          };
-
-        if (
-          idleWindow
-            .requestIdleCallback
-        ) {
-          idleWindow
-            .requestIdleCallback(
-              () => {
-                void refreshRecipeMetadata();
-              },
-              {
-                timeout: 1800,
-              },
-            );
-        } else {
-          window.setTimeout(
-            () => {
-              void refreshRecipeMetadata();
-            },
-            500,
-          );
-        }
       } catch {
         setMessageType('error');
         setMessage('Could not load the dish catalog. Refresh the page to try again.');
@@ -416,10 +297,12 @@ export default function AdminDishesPage() {
     const matches = rows.filter((row) => {
       const matchesCategory = categoryFilter === 'ALL' || row.category === categoryFilter;
       const matchesSubcategory = subcategoryFilter === 'ALL' || row.subcategory === subcategoryFilter;
-      const matchesStatus = statusFilter === 'ALL' ||
-        (statusFilter === 'ERROR' && rowErrors.has(row.id)) ||
-        (statusFilter === 'RECIPE' && row.recipeLinked) ||
-        (statusFilter === 'NO_RECIPE' && !row.recipeLinked);
+      const matchesStatus =
+        statusFilter === 'ALL' ||
+        (
+          statusFilter === 'ERROR' &&
+          rowErrors.has(row.id)
+        );
       const matchesSearch = !search || row.name.toLowerCase().includes(search) ||
         row.category.toLowerCase().includes(search) ||
         String(row.subcategory || '').toLowerCase().includes(search) ||
@@ -442,10 +325,6 @@ export default function AdminDishesPage() {
     rowErrors,
     sort,
   ]);
-  const recipeLinkedCount = useMemo(
-    () => rows.filter((row) => row.recipeLinked).length,
-    [rows],
-  );
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / DISHES_PER_PAGE));
   const visibleStart = filteredRows.length ? ((page - 1) * DISHES_PER_PAGE) + 1 : 0;
   const visibleEnd = Math.min(page * DISHES_PER_PAGE, filteredRows.length);
@@ -510,7 +389,6 @@ export default function AdminDishesPage() {
         aliasesText: '',
         hindiAliasesText: '',
         gujaratiAliasesText: '',
-        recipeLinked: false,
       },
       ...current,
     ]);
@@ -723,19 +601,6 @@ export default function AdminDishesPage() {
     });
   }
 
-  function useRecipeServing(row: EditableDish) {
-    if (!row.recipeServing) return;
-    updateRow(row.id, {
-      servingQuantity: row.recipeServing.quantity,
-      servingUnit: row.recipeServing.unit,
-      rate: proportionalRate(
-        Number(row.rate) || 0,
-        Number(row.servingQuantity) || 0,
-        row.recipeServing.quantity,
-      ),
-    });
-  }
-
   async function saveAll() {
     if (rowErrors.size > 0) {
       setQuery('');
@@ -771,71 +636,22 @@ export default function AdminDishesPage() {
         }),
       });
       if (!response.ok) throw new Error();
-      const saveResult =
-        await response.json();
+      await response.json();
 
       saveDishCostItems(
         cleaned,
       );
 
-      const recipesSynced =
-        Number(
-          saveResult
-            .syncedRecipes,
-        ) > 0;
-
-      const previousMetadata =
-        new Map(
-          rows.map(
-            (row) => [
-              normalizeToken(
-                row.name,
-              ),
-              {
-                recipeServing:
-                  row.recipeServing,
-
-                recipeLinked:
-                  row.recipeLinked,
-              },
-            ],
-          ),
-        );
-
       setRows(
         cleaned.map(
-          (item) => {
-            const previous =
-              previousMetadata.get(
-                normalizeToken(
-                  item.name,
-                ),
-              );
-
-            return toEditableDish(
-              item,
-              previous
-                ?.recipeServing,
-              recipesSynced
-                ? true
-                : Boolean(
-                    previous
-                      ?.recipeLinked,
-                  ),
-            );
-          },
+          (item) =>
+            toEditableDish(item),
         ),
       );
 
-      window.setTimeout(
-        () => {
-          void refreshRecipeMetadata();
-        },
-        0,
-      );
       setDirty(false);
       setMessageType('success');
-      setMessage('Dishes and linked recipes saved together. Client menus now use the latest names, categories and rates.');
+      setMessage('Dish Master saved. Client menus now use the latest names, categories and rates.');
     } catch {
       setMessageType('error');
       setMessage('Could not save dish master. Please try again.');
@@ -923,13 +739,6 @@ async function handleCsvImport(
           ),
         );
 
-        window.setTimeout(
-          () => {
-            void refreshRecipeMetadata();
-          },
-          0,
-        );
-
         setCategories((current) =>
           Array.from(
             new Set([
@@ -996,35 +805,14 @@ async function handleCsvImport(
     const data =
       await reload.json();
 
-    const {
-      recipeModule,
-      servingCatalog,
-      nameCatalog,
-    } =
-      await loadRecipeMetadata();
-
     const defaults =
       parseDishItems(
         data.items,
       ).map(
         (item) =>
-          toEditableDish(
-            item,
-
-            recipeModule
-              .findDishServing(
-                item.name,
-                item.category,
-                servingCatalog,
-              ),
-
-            recipeModule
-              .hasDishRecipe(
-                item.name,
-                nameCatalog,
-              ),
-          ),
+          toEditableDish(item),
       );
+
     saveDishCostItems(defaults.map(toDishCostItem));
     setRows(defaults);
     setCategories(Array.isArray(data.categories) ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean) : [...CATEGORIES]);
@@ -1067,19 +855,6 @@ async function handleCsvImport(
         ) {
           void saveAll();
         }
-
-        return;
-      }
-
-      if (
-        event.altKey &&
-        event.key === '2'
-      ) {
-        event.preventDefault();
-
-        window.location.assign(
-          '/admin/recipes',
-        );
 
         return;
       }
@@ -1128,7 +903,6 @@ async function handleCsvImport(
             <span><b>{rows.length}</b> <small>Dishes</small></span>
             <span><b>{availableCategories.length}</b> <small>Categories</small></span>
             <span><b>{subcategoryCount}</b> <small>Subcategories</small></span>
-            <span><b>{recipeLinkedCount}</b> <small>Recipe linked</small></span>
             <span className={rowErrors.size ? 'needs-attention' : 'is-complete'}>
               <b>{rowErrors.size}</b> <small>{rowErrors.size === 1 ? 'Issue' : 'Issues'}</small>
             </span>
@@ -1287,8 +1061,6 @@ async function handleCsvImport(
             {([
               ['ALL', 'All dishes', rows.length],
               ['ERROR', 'Needs attention', rowErrors.size],
-              ['RECIPE', 'Recipe linked', recipeLinkedCount],
-              ['NO_RECIPE', 'No recipe', rows.length - recipeLinkedCount],
             ] as const).map(([value, label, count]) => (
               <button
                 type="button"
@@ -1308,7 +1080,7 @@ async function handleCsvImport(
         {ready ? (
           <div className="glass-card dish-master-list-card">
             <div className="dish-list-heading">
-              <div><span className="section-kicker">Catalog editor</span><h2>Dish list</h2><p className="muted">Click a dish to open its recipe. Prices are per serving.</p></div>
+              <div><span className="section-kicker">Catalog editor</span><h2>Dish list</h2><p className="muted">Manage dish details and prices per serving.</p></div>
               <div className="dish-list-actions">
                 <span className="badge">{visibleStart}–{visibleEnd} of {filteredRows.length}</span>
                 <button className="secondary-button" onClick={saveAll} disabled={saving || !dirty}>
@@ -1327,12 +1099,6 @@ async function handleCsvImport(
                   <div
                     className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`}
                     key={row.id}
-                    title={row.name.trim() ? `Open ${row.name.trim()} recipe` : undefined}
-                    onClick={(event) => {
-                      if (!row.name.trim()) return;
-                      if ((event.target as HTMLElement).closest('button, input, select, textarea, summary, a, label')) return;
-                      openRecipeForDish(row);
-                    }}
                   >
                   <div className="admin-dish-row-heading">
                     <span className="dish-row-number">{visibleStart + index}</span>
@@ -1341,19 +1107,17 @@ async function handleCsvImport(
                       <small>{row.category || 'Uncategorised'}{row.subcategory ? ` / ${row.subcategory}` : ''} · ₹{Number(row.rate || 0).toLocaleString('en-IN')} per {row.servingUnit || 'serving'}</small>
                     </div>
                     <div className="dish-row-heading-actions">
-                      <span className={`dish-row-status ${rowErrors.has(row.id) ? 'error' : row.recipeLinked ? 'linked' : ''}`}>
-                        {rowErrors.has(row.id) ? 'Needs attention' : row.recipeLinked ? 'Recipe linked' : 'No recipe'}
+                      <span
+                        className={`dish-row-status ${
+                          rowErrors.has(row.id)
+                            ? 'error'
+                            : ''
+                        }`}
+                      >
+                        {rowErrors.has(row.id)
+                          ? 'Needs attention'
+                          : 'Ready'}
                       </span>
-                      {row.name.trim() ? (
-                        <button
-                          className="dish-recipe-open"
-                          type="button"
-                          onClick={() => openRecipeForDish(row)}
-                        >
-                          {row.recipeLinked ? 'Open recipe' : 'Build recipe'}
-                          <span aria-hidden="true">→</span>
-                        </button>
-                      ) : null}
                       <button
                         className="dish-row-edit"
                         type="button"
@@ -1406,14 +1170,6 @@ async function handleCsvImport(
                       <input className="input input-large" value={row.servingUnit ?? 'serving'} onChange={(e) => updateRow(row.id, { servingUnit: e.target.value })} placeholder="serving" />
                       {rowErrors.get(row.id)?.servingUnit ? <span className="field-error">{rowErrors.get(row.id)?.servingUnit}</span> : null}
                     </div>
-                    {row.recipeServing ? (
-                      <div className="dish-recipe-serving">
-                        <span>Suggested: <strong>{row.recipeServing.quantity} {row.recipeServing.unit}</strong></span>
-                        <button className="ghost-button" type="button" onClick={() => useRecipeServing(row)}>Use suggested</button>
-                      </div>
-                    ) : (
-                      <div className="dish-recipe-serving dish-recipe-serving-missing">No matching recipe serving</div>
-                    )}
                   </div>
                   <details className="admin-alias-section" open={Boolean(rowErrors.get(row.id)?.aliases) || undefined}>
                     <summary>
