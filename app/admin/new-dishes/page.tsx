@@ -348,6 +348,23 @@ export default function NewDishesPage() {
     useState('');
 
   const [
+    selectedIds,
+    setSelectedIds,
+  ] = useState<Set<string>>(
+    new Set(),
+  );
+
+  const [
+    bulkWorking,
+    setBulkWorking,
+  ] = useState(false);
+
+  const [
+    bulkBuildRecipes,
+    setBulkBuildRecipes,
+  ] = useState(false);
+
+  const [
     analyzingId,
     setAnalyzingId,
   ] =
@@ -636,6 +653,9 @@ export default function NewDishesPage() {
         ),
       );
       setVerifications({});
+      setSelectedIds(
+        new Set(),
+      );
     } catch (error) {
       setMessageType('error');
       setMessage(
@@ -983,7 +1003,7 @@ export default function NewDishesPage() {
   async function approve(
     row: EditableSuggestion,
     buildRecipe = false,
-  ) {
+  ): Promise<boolean> {
     const showRowError = (error: string) => {
       setMessageType('error');
       setMessage(error);
@@ -1027,7 +1047,7 @@ export default function NewDishesPage() {
       showRowError(
         'Enter a dish name.',
       );
-      return;
+      return false;
     }
 
     if (
@@ -1037,7 +1057,7 @@ export default function NewDishesPage() {
       showRowError(
         'Choose a category.',
       );
-      return;
+      return false;
     }
 
     if (
@@ -1050,7 +1070,7 @@ export default function NewDishesPage() {
       showRowError(
         'Choose the existing Dish Master item for this alias.',
       );
-      return;
+      return false;
     }
 
     setWorkingId(row.id);
@@ -1295,6 +1315,21 @@ export default function NewDishesPage() {
           ),
       );
 
+      setSelectedIds(
+        (current) => {
+          const next =
+            new Set(
+              current,
+            );
+
+          next.delete(
+            row.id,
+          );
+
+          return next;
+        },
+      );
+
       if (autoBuildResult) {
         setMessageType(
           'success',
@@ -1325,12 +1360,15 @@ export default function NewDishesPage() {
         );
       }
 
+      return true;
+
     } catch (error) {
       showRowError(
         error instanceof Error
           ? error.message
           : 'Could not process this dish',
       );
+      return false;
     } finally {
       setWorkingId('');
     }
@@ -1363,6 +1401,22 @@ export default function NewDishesPage() {
             item.id !== row.id,
         ),
       );
+
+      setSelectedIds(
+        (current) => {
+          const next =
+            new Set(
+              current,
+            );
+
+          next.delete(
+            row.id,
+          );
+
+          return next;
+        },
+      );
+
       setMessageType('success');
       setMessage(
         `${row.name} was removed from the review queue.`,
@@ -1826,6 +1880,198 @@ export default function NewDishesPage() {
     [filteredRows, visibleLimit],
   );
 
+  const readyRows =
+    rows.filter(
+      (row) =>
+        isReadyForApproval(
+          row,
+        ),
+    );
+
+  const selectedReadyRows =
+    readyRows.filter(
+      (row) =>
+        selectedIds.has(
+          row.id,
+        ),
+    );
+
+  const selectedNewCount =
+    selectedReadyRows.filter(
+      (row) =>
+        row.saveAs ===
+        'new',
+    ).length;
+
+  const selectedAliasCount =
+    selectedReadyRows.filter(
+      (row) =>
+        row.saveAs ===
+        'alias',
+    ).length;
+
+  function toggleSelected(
+    id: string,
+  ) {
+    setSelectedIds(
+      (current) => {
+        const next =
+          new Set(
+            current,
+          );
+
+        if (
+          next.has(id)
+        ) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+
+        return next;
+      },
+    );
+  }
+
+  function selectAllReady() {
+    setSelectedIds(
+      new Set(
+        readyRows.map(
+          (row) =>
+            row.id,
+        ),
+      ),
+    );
+  }
+
+  function clearSelection() {
+    setSelectedIds(
+      new Set(),
+    );
+  }
+
+  async function approveSelected() {
+    const targets =
+      rows.filter(
+        (row) =>
+          selectedIds.has(
+            row.id,
+          ) &&
+          isReadyForApproval(
+            row,
+          ),
+      );
+
+    if (!targets.length) {
+      setMessageType(
+        'error',
+      );
+
+      setMessage(
+        'Select at least one Ready dish.',
+      );
+
+      return;
+    }
+
+    const newDishCount =
+      targets.filter(
+        (row) =>
+          row.saveAs ===
+          'new',
+      ).length;
+
+    const aliasCount =
+      targets.filter(
+        (row) =>
+          row.saveAs ===
+          'alias',
+      ).length;
+
+    const recipeText =
+      bulkBuildRecipes &&
+      newDishCount > 0
+        ? ` Auto Build will run for ${newDishCount} new dish${
+            newDishCount === 1
+              ? ''
+              : 'es'
+          }.`
+        : '';
+
+    const confirmed =
+      window.confirm(
+        `Approve ${targets.length} ready dish${
+          targets.length === 1
+            ? ''
+            : 'es'
+        }? ${newDishCount} new · ${aliasCount} alias${
+          aliasCount === 1
+            ? ''
+            : 'es'
+        }.${recipeText}`,
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setBulkWorking(
+      true,
+    );
+
+    setMessageType(
+      'success',
+    );
+
+    setMessage(
+      `Approving ${targets.length} dishes…`,
+    );
+
+    let approved = 0;
+    let failed = 0;
+
+    try {
+      for (
+        const row
+        of targets
+      ) {
+        const ok =
+          await approve(
+            row,
+            bulkBuildRecipes &&
+              row.saveAs ===
+                'new',
+          );
+
+        if (ok) {
+          approved += 1;
+        } else {
+          failed += 1;
+        }
+      }
+
+      setMessageType(
+        failed
+          ? 'error'
+          : 'success',
+      );
+
+      setMessage(
+        failed
+          ? `${approved} approved · ${failed} need manual review.`
+          : `${approved} dish${
+              approved === 1
+                ? ''
+                : 'es'
+            } approved successfully.`,
+      );
+    } finally {
+      setBulkWorking(
+        false,
+      );
+    }
+  }
+
   return (
     <AppShell
       title="New Dish Intelligence"
@@ -2149,6 +2395,87 @@ export default function NewDishesPage() {
             </div>
           </div>
 
+          <div className="new-dish-bulk-bar">
+            <div className="new-dish-bulk-summary">
+              <strong>
+                {readyRows.length} Ready
+              </strong>
+
+              <span>
+                {selectedReadyRows.length
+                  ? `${selectedReadyRows.length} selected · ${selectedNewCount} new · ${selectedAliasCount} aliases`
+                  : 'Select Ready dishes for bulk approval'}
+              </span>
+            </div>
+
+            <label className="new-dish-bulk-toggle">
+              <input
+                type="checkbox"
+                checked={
+                  bulkBuildRecipes
+                }
+                onChange={(event) =>
+                  setBulkBuildRecipes(
+                    event.target
+                      .checked,
+                  )
+                }
+                disabled={
+                  bulkWorking
+                }
+              />
+
+              <span>
+                Auto Build recipes
+              </span>
+            </label>
+
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={
+                selectAllReady
+              }
+              disabled={
+                bulkWorking ||
+                !readyRows.length
+              }
+            >
+              Select all Ready
+            </button>
+
+            {selectedReadyRows.length ? (
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={
+                  clearSelection
+                }
+                disabled={
+                  bulkWorking
+                }
+              >
+                Clear
+              </button>
+            ) : null}
+
+            <button
+              className="primary-button"
+              type="button"
+              onClick={() =>
+                void approveSelected()
+              }
+              disabled={
+                bulkWorking ||
+                !selectedReadyRows.length
+              }
+            >
+              {bulkWorking
+                ? 'Approving…'
+                : `Approve ${selectedReadyRows.length || ''} Selected`}
+            </button>
+          </div>
+
           {loading ? (
             <div className="admin-empty">
               <strong>
@@ -2182,10 +2509,64 @@ export default function NewDishesPage() {
                   )
                     ? 'is-ready'
                     : ''
+                } ${
+                  selectedIds.has(
+                    row.id,
+                  )
+                    ? 'is-selected'
+                    : ''
                 }`}
                 key={row.id}
               >
                 <div className="new-dish-source">
+                  <label
+                    className={`new-dish-select ${
+                      isReadyForApproval(
+                        row,
+                      )
+                        ? ''
+                        : 'is-disabled'
+                    }`}
+                    title={
+                      isReadyForApproval(
+                        row,
+                      )
+                        ? 'Select for bulk approval'
+                        : 'Complete review before selecting'
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        isReadyForApproval(
+                          row,
+                        ) &&
+                        selectedIds.has(
+                          row.id,
+                        )
+                      }
+                      disabled={
+                        !isReadyForApproval(
+                          row,
+                        ) ||
+                        bulkWorking
+                      }
+                      onChange={() =>
+                        toggleSelected(
+                          row.id,
+                        )
+                      }
+                    />
+
+                    <span>
+                      {isReadyForApproval(
+                        row,
+                      )
+                        ? 'Select'
+                        : 'Review'}
+                    </span>
+                  </label>
+
                   <div>
                     <span>
                       Detected text
@@ -2960,7 +3341,7 @@ export default function NewDishesPage() {
                       className="secondary-button"
                       type="button"
                       onClick={() => void approve(row, true)}
-                      disabled={Boolean(workingId)}
+                      disabled={Boolean(workingId) || bulkWorking}
                     >
                       {workingId === row.id
                         ? 'Saving…'

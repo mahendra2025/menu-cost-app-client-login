@@ -202,6 +202,94 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 20px;
 }
 .new-dish-toolbar .input { width: min(320px, 100%); }
+.new-dish-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin: -4px 0 18px;
+  padding: 12px;
+  border: 1px solid rgba(0,122,255,.14);
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(0,122,255,.055),
+      rgba(255,255,255,.78)
+    );
+}
+
+.new-dish-bulk-summary {
+  display: grid;
+  gap: 2px;
+  min-width: 190px;
+  margin-right: auto;
+}
+
+.new-dish-bulk-summary strong {
+  font-size: 13px;
+}
+
+.new-dish-bulk-summary span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.new-dish-bulk-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255,255,255,.78);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.new-dish-bulk-toggle input,
+.new-dish-select input {
+  accent-color: var(--blue);
+}
+
+.new-dish-card.is-selected {
+  border-color: rgba(0,122,255,.48);
+  box-shadow:
+    inset 4px 0 0 var(--blue),
+    0 14px 32px rgba(0,122,255,.10);
+}
+
+.new-dish-select {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-width: 44px;
+  color: #075985;
+  font-size: 8px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.new-dish-select input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.new-dish-select.is-disabled {
+  color: var(--muted);
+  opacity: .48;
+  cursor: default;
+}
+
+.new-dish-select.is-disabled input {
+  cursor: not-allowed;
+}
+
 .new-dish-list { display: grid; gap: 16px; }
 .new-dish-load-more {
   display: flex;
@@ -1131,6 +1219,19 @@ a { color: inherit; text-decoration: none; }
 }
 
 @media (max-width: 600px) {
+  .new-dish-bulk-bar {
+    align-items: stretch;
+  }
+
+  .new-dish-bulk-summary {
+    width: 100%;
+  }
+
+  .new-dish-bulk-bar > button,
+  .new-dish-bulk-toggle {
+    flex: 1 1 140px;
+  }
+
   .new-dish-smart-summary {
     grid-template-columns:
       repeat(2, minmax(0, 1fr));
