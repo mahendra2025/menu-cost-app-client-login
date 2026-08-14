@@ -15356,3 +15356,24 @@ small {
     width: 100%;
   }
 }
+
+
+.new-dish-recipe-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 520px) {
+  .new-dish-recipe-head-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .new-dish-recipe-head-actions button {
+    width: 100%;
+  }
+}

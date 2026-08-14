@@ -138,6 +138,25 @@ type AutoBuildResult = {
     }>;
   };
 
+  ok?: boolean;
+  previewOnly?: boolean;
+  error?: string;
+
+  recipe?: {
+    name: string;
+    aliases?: string[];
+    baseGuests: number;
+
+    ingredients: Array<{
+      name: string;
+      quantity: number;
+      unit: string;
+      rate?: number;
+      rateUnit?: string;
+      rateSource?: string;
+    }>;
+  };
+
   cost: {
     rawCostPerPlate: number;
     wastagePercent: number;
@@ -466,6 +485,38 @@ function convertRecipeQuantity(
   return quantity;
 }
 
+function quickRecipeUnitsCompatible(
+  left: string,
+  right: string,
+) {
+  if (left === right) {
+    return true;
+  }
+
+  const mass =
+    new Set([
+      'kg',
+      'gram',
+    ]);
+
+  const volume =
+    new Set([
+      'ltr',
+      'ml',
+    ]);
+
+  return Boolean(
+    (
+      mass.has(left) &&
+      mass.has(right)
+    ) ||
+    (
+      volume.has(left) &&
+      volume.has(right)
+    ),
+  );
+}
+
 function quickIngredientCost(
   ingredient:
     RecipeDraftIngredient,
@@ -708,6 +759,11 @@ export default function NewDishesPage() {
   const [
     recipeRatesLoading,
     setRecipeRatesLoading,
+  ] = useState(false);
+
+  const [
+    recipeGenerating,
+    setRecipeGenerating,
   ] = useState(false);
 
   const [
@@ -1095,10 +1151,15 @@ export default function NewDishesPage() {
   async function loadRecipeMasterRates() {
     if (
       recipeMasterRates
-        .length ||
+        .length
+    ) {
+      return recipeMasterRates;
+    }
+
+    if (
       recipeRatesLoading
     ) {
-      return;
+      return recipeMasterRates;
     }
 
     setRecipeRatesLoading(
@@ -1222,6 +1283,8 @@ export default function NewDishesPage() {
       setRecipeMasterRates(
         rates,
       );
+
+      return rates;
     } catch (loadError) {
       setMessageType(
         'error',
@@ -1233,6 +1296,8 @@ export default function NewDishesPage() {
           ? loadError.message
           : 'Could not load Ingredient Master.',
       );
+
+      return [];
     } finally {
       setRecipeRatesLoading(
         false,
@@ -1302,6 +1367,250 @@ export default function NewDishesPage() {
     });
 
     void loadRecipeMasterRates();
+  }
+
+  async function generateQuickRecipe(
+    row: EditableSuggestion,
+  ) {
+    if (
+      !recipeDraft ||
+      recipeDraft
+        .suggestionId !==
+        row.id
+    ) {
+      return;
+    }
+
+    if (
+      recipeDraft
+        .ingredients
+        .length
+    ) {
+      const replace =
+        window.confirm(
+          'Replace the current recipe ingredients with an AI-generated 100 pax recipe?',
+        );
+
+      if (!replace) {
+        return;
+      }
+    }
+
+    setRecipeGenerating(
+      true,
+    );
+
+    setRecipeResult(
+      null,
+    );
+
+    setMessage('');
+
+    try {
+      const masters =
+        recipeMasterRates
+          .length
+          ? recipeMasterRates
+          : await loadRecipeMasterRates();
+
+      if (!masters.length) {
+        throw new Error(
+          'Ingredient Master has no usable rates.',
+        );
+      }
+
+      const response =
+        await fetch(
+          '/api/admin/dish-suggestions/auto-build',
+          {
+            method:
+              'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+
+            body:
+              JSON.stringify({
+                tenantId:
+                  row.tenantId,
+
+                name:
+                  row.dishName
+                    .trim() ||
+                  row.name,
+
+                category:
+                  row.category ||
+                  'Other',
+
+                subcategory:
+                  row.subcategory ||
+                  '',
+
+                previewOnly:
+                  true,
+
+                forceAi:
+                  true,
+              }),
+          },
+        );
+
+      const data =
+        await response
+          .json() as
+            AutoBuildResult;
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          'AI could not generate the recipe.',
+        );
+      }
+
+      const generated =
+        data.recipe
+          ?.ingredients ||
+        [];
+
+      if (!generated.length) {
+        throw new Error(
+          'AI returned no usable ingredients.',
+        );
+      }
+
+      const nextIngredients:
+        RecipeDraftIngredient[] =
+        generated.map(
+          (
+            ingredient,
+            index,
+          ) => {
+            const normalizedName =
+              normalizeReviewText(
+                ingredient.name,
+              );
+
+            const master =
+              masters.find(
+                (rate) =>
+                  normalizeReviewText(
+                    rate.name,
+                  ) ===
+                    normalizedName &&
+                  quickRecipeUnitsCompatible(
+                    ingredient.unit,
+                    rate.unit,
+                  ),
+              );
+
+            return {
+              rowId:
+                `ai-${Date.now()}-${index}`,
+
+              rateKey:
+                master?.id ||
+                '',
+
+              name:
+                master?.name ||
+                ingredient.name,
+
+              quantity:
+                String(
+                  ingredient.quantity,
+                ),
+
+              unit:
+                ingredient.unit,
+
+              rate:
+                master?.rate ||
+                0,
+
+              rateUnit:
+                master?.unit ||
+                ingredient.rateUnit ||
+                ingredient.unit,
+            };
+          },
+        );
+
+      const unmatched =
+        nextIngredients.filter(
+          (ingredient) =>
+            !ingredient.rateKey,
+        ).length;
+
+      setRecipeDraft(
+        (current) =>
+          current &&
+          current.suggestionId ===
+            row.id
+            ? {
+                ...current,
+
+                name:
+                  row.dishName
+                    .trim() ||
+                  current.name,
+
+                category:
+                  row.category ||
+                  current.category,
+
+                subcategory:
+                  row.subcategory ||
+                  current.subcategory,
+
+                baseGuests:
+                  100,
+
+                ingredients:
+                  nextIngredients,
+              }
+            : current,
+      );
+
+      setRecipeResult({
+        ok: true,
+
+        cost:
+          data.cost,
+
+        quality:
+          data.quality,
+      });
+
+      setMessageType(
+        unmatched
+          ? 'error'
+          : 'success',
+      );
+
+      setMessage(
+        unmatched
+          ? `AI generated ${nextIngredients.length} ingredients. ${unmatched} ingredient${unmatched === 1 ? '' : 's'} need an Ingredient Master match before saving.`
+          : `AI generated ${nextIngredients.length} ingredients for 100 pax. Review quantities, cost and Quality Gate before saving.`,
+      );
+    } catch (generateError) {
+      setMessageType(
+        'error',
+      );
+
+      setMessage(
+        generateError instanceof
+          Error
+          ? generateError.message
+          : 'AI recipe generation failed.',
+      );
+    } finally {
+      setRecipeGenerating(
+        false,
+      );
+    }
   }
 
   function addQuickRecipeIngredient() {
@@ -4492,20 +4801,48 @@ export default function NewDishesPage() {
                         </p>
                       </div>
 
-                      <button
-                        className="ghost-button"
-                        type="button"
-                        onClick={() =>
-                          window.location.assign(
-                            '/admin/ingredients',
-                          )
-                        }
-                      >
-                        Ingredient Master
-                      </button>
+                      <div className="new-dish-recipe-head-actions">
+                        <button
+                          className="primary-button"
+                          type="button"
+                          onClick={() =>
+                            void generateQuickRecipe(
+                              row,
+                            )
+                          }
+                          disabled={
+                            recipeGenerating ||
+                            recipeRatesLoading ||
+                            recipeSaving
+                          }
+                        >
+                          {recipeGenerating
+                            ? '✨ Generating…'
+                            : '✨ AI Generate Recipe'}
+                        </button>
+
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          onClick={() =>
+                            window.location.assign(
+                              '/admin/ingredients',
+                            )
+                          }
+                          disabled={
+                            recipeGenerating
+                          }
+                        >
+                          Ingredient Master
+                        </button>
+                      </div>
                     </div>
 
-                    {recipeRatesLoading ? (
+                    {recipeGenerating ? (
+                      <div className="new-dish-recipe-loading">
+                        ✨ AI is creating a practical 100 pax catering recipe…
+                      </div>
+                    ) : recipeRatesLoading ? (
                       <div className="new-dish-recipe-loading">
                         Loading Ingredient Master…
                       </div>

@@ -217,6 +217,16 @@ export async function POST(
           unknown
         >;
 
+    const previewOnly =
+      Boolean(
+        body.previewOnly,
+      );
+
+    const forceAi =
+      Boolean(
+        body.forceAi,
+      );
+
     const tenantId =
       clean(
         body.tenantId,
@@ -372,9 +382,11 @@ export async function POST(
 
     let recipe:
       CostableRecipe | null =
-        catalogMap.get(
-          normalizedName,
-        ) || null;
+        forceAi
+          ? null
+          : catalogMap.get(
+              normalizedName,
+            ) || null;
 
     let source =
       recipe
@@ -382,6 +394,7 @@ export async function POST(
         : '';
 
     if (
+      !forceAi &&
       !recipe &&
       saved
     ) {
@@ -533,6 +546,67 @@ export async function POST(
           .recipe
           .baseGuests,
       );
+
+    const standardQuality =
+      assessRecipeQuality(
+        standardPriced.recipe,
+        {
+          missingRates:
+            standardRaw
+              .missingRates,
+
+          estimatedRates:
+            standardPriced
+              .estimatedRates,
+
+          costPerPlate:
+            standardCost
+              .costPerPlate,
+        },
+      );
+
+    if (previewOnly) {
+      return NextResponse.json({
+        ok: true,
+        previewOnly: true,
+        name,
+        tenantId,
+        source,
+
+        baseGuests:
+          standardPriced
+            .recipe
+            .baseGuests,
+
+        ingredientCount:
+          standardPriced
+            .recipe
+            .ingredients
+            .length,
+
+        estimatedIngredientRates:
+          standardPriced
+            .estimatedRates,
+
+        missingRates:
+          standardRaw
+            .missingRates,
+
+        recipe:
+          standardPriced
+            .recipe,
+
+        cost:
+          standardCost,
+
+        quality:
+          standardQuality,
+
+        standardCostPerPlate:
+          standardCost
+            .costPerPlate,
+      });
+    }
 
     const existingGlobalRecipes =
       Array.isArray(
