@@ -21,7 +21,8 @@ const clientNav = [
 const adminNav = [
   { href: '/admin/users', label: 'Clients', mobileLabel: 'Clients', description: 'Accounts and access', icon: 'clients' as NavIcon },
   { href: '/admin/new-dishes', label: 'New dishes', mobileLabel: 'New', description: 'Review uploaded dishes', icon: 'dishes' as NavIcon },
-  { href: '/admin/dishes', label: 'Dishes & recipes', mobileLabel: 'Dishes', description: 'Catalog, rates and recipes', icon: 'dishes' as NavIcon },
+  { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish catalog and rates', icon: 'dishes' as NavIcon },
+  { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients and recipe costing', icon: 'dishes' as NavIcon },
   { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Categories and rates', icon: 'ingredients' as NavIcon },
   { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Workspace settings', icon: 'profile' as NavIcon },
 ];
