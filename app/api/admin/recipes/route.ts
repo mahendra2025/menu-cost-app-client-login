@@ -435,10 +435,33 @@ async function syncRecipesToDishCatalog(
   return recipeDishes.length;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
+
+    const mode =
+      new URL(request.url)
+        .searchParams
+        .get('mode');
+
+    if (mode === 'version') {
+      const version =
+        await prisma.recipeCatalog.findUnique({
+          where: {
+            id: CATALOG_ID,
+          },
+          select: {
+            updatedAt: true,
+          },
+        });
+
+      return NextResponse.json({
+        updatedAt:
+          version?.updatedAt ??
+          null,
+      });
+    }
 
     const catalog = await prisma.recipeCatalog.findUnique({
       where: { id: CATALOG_ID },
@@ -454,6 +477,90 @@ export async function GET() {
     return NextResponse.json({ catalog });
   } catch {
     return NextResponse.json({ error: 'Failed to load recipes' }, { status: 500 });
+  }
+}
+
+export async function POST() {
+  try {
+    const authError =
+      await requireAdmin();
+
+    if (authError) {
+      return authError;
+    }
+
+    const stored =
+      await prisma.recipeCatalog.findUnique({
+        where: {
+          id: CATALOG_ID,
+        },
+
+        select: {
+          dishes: true,
+          rates: true,
+          deletedDishIds: true,
+          catalogVersion: true,
+          updatedAt: true,
+        },
+      });
+
+    if (!stored) {
+      return NextResponse.json({
+        ok: true,
+        syncedDishes: 0,
+        updatedAt: null,
+      });
+    }
+
+    const catalog =
+      readCatalogPayload({
+        dishes:
+          stored.dishes,
+        rates:
+          stored.rates,
+        deletedDishIds:
+          stored.deletedDishIds,
+        catalogVersion:
+          stored.catalogVersion,
+      });
+
+    if (!catalog) {
+      return NextResponse.json(
+        {
+          error:
+            'Invalid stored recipe catalog',
+        },
+        {
+          status: 500,
+        },
+      );
+    }
+
+    const syncedDishes =
+      await prisma.$transaction(
+        async (tx) =>
+          syncRecipesToDishCatalog(
+            tx,
+            catalog,
+          ),
+      );
+
+    return NextResponse.json({
+      ok: true,
+      syncedDishes,
+      updatedAt:
+        stored.updatedAt,
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        error:
+          'Failed to sync recipes to Dish Master',
+      },
+      {
+        status: 500,
+      },
+    );
   }
 }
 

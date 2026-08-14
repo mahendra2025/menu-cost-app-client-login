@@ -19,6 +19,8 @@ type RecipeCatalog = {
 };
 
 const RECIPE_CACHE_KEY = 'admin_recipe_catalog_v1';
+const RECIPE_DISH_SYNC_KEY =
+  'admin_recipe_dish_sync_v1';
 
 function text(value: unknown) {
   return String(value ?? '').trim();
@@ -735,6 +737,17 @@ export default function RecipesPage() {
           RECIPE_CACHE_KEY,
           JSON.stringify(catalog),
         );
+
+        if (
+          data.updatedAt
+        ) {
+          localStorage.setItem(
+            RECIPE_DISH_SYNC_KEY,
+            String(
+              data.updatedAt,
+            ),
+          );
+        }
       } catch {
         // Cache is optional.
       }

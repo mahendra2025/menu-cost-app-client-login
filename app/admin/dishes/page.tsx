@@ -41,6 +41,8 @@ type DishRowErrors = {
 };
 
 const DISHES_PER_PAGE = 24;
+const RECIPE_DISH_SYNC_KEY =
+  'admin_recipe_dish_sync_v1';
 const HINDI_SCRIPT = /[\u0900-\u097F]/u;
 const GUJARATI_SCRIPT = /[\u0A80-\u0AFF]/u;
 type DishSort = 'NAME_ASC' | 'NAME_DESC' | 'RATE_HIGH' | 'RATE_LOW';
@@ -250,9 +252,116 @@ export default function AdminDishesPage() {
 
     async function loadRows() {
       try {
-        const response = await fetch('/api/admin/dishes', { cache: 'no-store' });
-        if (!response.ok) throw new Error('Could not load dishes');
-        const data = await response.json();
+        const [
+          response,
+          recipeVersionResponse,
+        ] = await Promise.all([
+          fetch(
+            '/api/admin/dishes',
+            {
+              cache:
+                'no-store',
+            },
+          ),
+
+          fetch(
+            '/api/admin/recipes?mode=version',
+            {
+              cache:
+                'no-store',
+            },
+          ),
+        ]);
+
+        if (!response.ok) {
+          throw new Error(
+            'Could not load dishes',
+          );
+        }
+
+        let data =
+          await response.json();
+
+        if (
+          recipeVersionResponse.ok
+        ) {
+          const versionData =
+            await recipeVersionResponse.json();
+
+          const recipeUpdatedAt =
+            String(
+              versionData.updatedAt ||
+              '',
+            );
+
+          let lastSyncedVersion =
+            '';
+
+          try {
+            lastSyncedVersion =
+              localStorage.getItem(
+                RECIPE_DISH_SYNC_KEY,
+              ) || '';
+          } catch {
+            // Sync marker is optional.
+          }
+
+          if (
+            recipeUpdatedAt &&
+            recipeUpdatedAt !==
+              lastSyncedVersion
+          ) {
+            try {
+              const syncResponse =
+                await fetch(
+                  '/api/admin/recipes',
+                  {
+                    method:
+                      'POST',
+                  },
+                );
+
+              if (
+                syncResponse.ok
+              ) {
+                const syncData =
+                  await syncResponse.json();
+
+                try {
+                  localStorage.setItem(
+                    RECIPE_DISH_SYNC_KEY,
+                    String(
+                      syncData.updatedAt ||
+                      recipeUpdatedAt,
+                    ),
+                  );
+                } catch {
+                  // Sync marker is optional.
+                }
+
+                const refreshedResponse =
+                  await fetch(
+                    '/api/admin/dishes',
+                    {
+                      cache:
+                        'no-store',
+                    },
+                  );
+
+                if (
+                  refreshedResponse.ok
+                ) {
+                  data =
+                    await refreshedResponse.json();
+                }
+              }
+            } catch {
+              console.warn(
+                'Recipe → Dish Master background sync failed.',
+              );
+            }
+          }
+        }
         const dishItems = parseDishItems(data.items);
         const loadedCategories = Array.isArray(data.categories)
           ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
