@@ -25,6 +25,10 @@ import {
   requestStructuredAi,
   structuredAiProvider,
 } from '../../../../../lib/structuredAi';
+import {
+  recipeServingStandard,
+  servingStandardInstruction,
+} from '../../../../../lib/recipeServingStandards';
 
 function clean(
   value: unknown,
@@ -77,6 +81,17 @@ async function generateRecipe(
   if (!structuredAiProvider()) {
     return null;
   }
+
+  const servingStandard =
+    recipeServingStandard(
+      category,
+      name,
+    );
+
+  const servingInstruction =
+    servingStandardInstruction(
+      servingStandard,
+    );
 
   const schema:
     Record<string, unknown> = {
@@ -175,6 +190,11 @@ async function generateRecipe(
         'Use 6 to 12 ingredients when appropriate.',
         'Do not include optional garnish unless it materially affects cost.',
         'Use kg, gram, ltr, ml, piece, or packet only.',
+        servingInstruction
+          ? servingInstruction
+          : 'Use realistic Indian catering production quantities for the dish and category.',
+        'Size cost-driving ingredients consistently with the final serving target.',
+        'Do not invent water or another zero-cost ingredient only to satisfy a serving-volume target.',
         'Do not apply wastage inside ingredient quantities; the costing system applies exactly 8% wastage separately.',
       ].join('\n'),
 
@@ -184,6 +204,8 @@ async function generateRecipe(
             name,
             category,
           },
+
+          servingStandard,
 
           availableIngredients,
         }),
@@ -573,6 +595,12 @@ export async function POST(
         tenantId,
         source,
 
+        servingStandard:
+          recipeServingStandard(
+            category,
+            name,
+          ),
+
         baseGuests:
           standardPriced
             .recipe
@@ -811,6 +839,12 @@ export async function POST(
       name,
       tenantId,
       source,
+
+      servingStandard:
+        recipeServingStandard(
+          category,
+          name,
+        ),
 
       baseGuests:
         tenantPriced
