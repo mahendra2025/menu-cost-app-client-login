@@ -971,13 +971,74 @@ export default function AdminIngredientsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rates, categories }),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Could not save ingredients.');
-      setMessageType('success');
-      setMessage('Ingredient Master saved to PostgreSQL. Recipes now use these categories and market rates.');
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          'Could not save ingredients.',
+        );
+      }
+
+      const syncResponse =
+        await fetch(
+          '/api/admin/recipes',
+          {
+            method: 'POST',
+          },
+        );
+
+      const syncData =
+        await syncResponse.json();
+
+      if (!syncResponse.ok) {
+        throw new Error(
+          syncData.error ||
+          'Ingredients saved, but Dish Master sync failed.',
+        );
+      }
+
+      try {
+        localStorage.removeItem(
+          'admin_recipe_catalog_v1',
+        );
+
+        if (
+          syncData.updatedAt
+        ) {
+          localStorage.setItem(
+            'admin_recipe_dish_sync_v1',
+            String(
+              syncData.updatedAt,
+            ),
+          );
+        }
+      } catch {
+        // Browser cache is optional.
+      }
+
       await loadIngredients();
-      setMessageType('success');
-      setMessage('Ingredient Master saved to PostgreSQL. Recipes now use these categories and market rates.');
+
+      const syncedDishes =
+        Math.max(
+          0,
+          Number(
+            syncData.syncedDishes,
+          ) || 0,
+        );
+
+      setMessageType(
+        'success',
+      );
+
+      setMessage(
+        `Ingredient Master saved · Recipes recalculated · ${syncedDishes} dish${
+          syncedDishes === 1
+            ? ''
+            : 'es'
+        } synced to Dish Master.`,
+      );
     } catch (error) {
       setMessageType('error');
       setMessage(error instanceof Error ? error.message : 'Could not save ingredients.');
