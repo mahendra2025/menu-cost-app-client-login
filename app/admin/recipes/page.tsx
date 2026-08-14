@@ -18,6 +18,8 @@ type RecipeCatalog = {
   catalogVersion: number;
 };
 
+const RECIPE_CACHE_KEY = 'admin_recipe_catalog_v1';
+
 function text(value: unknown) {
   return String(value ?? '').trim();
 }
@@ -233,8 +235,8 @@ export default function RecipesPage() {
       null,
     );
 
-  async function loadRecipes() {
-    setLoading(true);
+  async function loadRecipes(background = false) {
+    if (!background) setLoading(true);
     setError('');
 
     try {
@@ -306,6 +308,16 @@ export default function RecipesPage() {
           ? 0
           : null,
       );
+
+      try {
+        sessionStorage.setItem(
+          RECIPE_CACHE_KEY,
+          JSON.stringify(nextCatalog),
+        );
+      } catch {
+        // Cache is optional.
+      }
+
     } catch (
       loadError
     ) {
@@ -321,6 +333,40 @@ export default function RecipesPage() {
   }
 
   useEffect(() => {
+    try {
+      const raw =
+        sessionStorage.getItem(
+          RECIPE_CACHE_KEY,
+        );
+
+      if (raw) {
+        const cached =
+          JSON.parse(raw) as RecipeCatalog;
+
+        if (
+          Array.isArray(cached.dishes) &&
+          Array.isArray(cached.rates)
+        ) {
+          setCatalog(cached);
+
+          setSelectedIndex(
+            cached.dishes.length
+              ? 0
+              : null,
+          );
+
+          setLoading(false);
+
+          void loadRecipes(true);
+          return;
+        }
+      }
+    } catch {
+      sessionStorage.removeItem(
+        RECIPE_CACHE_KEY,
+      );
+    }
+
     void loadRecipes();
   }, []);
 
@@ -637,6 +683,15 @@ export default function RecipesPage() {
           data.error ||
           'Could not save recipes.',
         );
+      }
+
+      try {
+        sessionStorage.setItem(
+          RECIPE_CACHE_KEY,
+          JSON.stringify(catalog),
+        );
+      } catch {
+        // Cache is optional.
       }
 
       setMessage(
