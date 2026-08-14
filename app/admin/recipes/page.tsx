@@ -739,12 +739,51 @@ export default function RecipesPage() {
         // Cache is optional.
       }
 
+      const syncedDishes =
+        Math.max(
+          0,
+          Number(
+            data.syncedDishes,
+          ) || 0,
+        );
+
+      const activeDish =
+        selectedIndex === null
+          ? null
+          : catalog.dishes[
+              selectedIndex
+            ] || null;
+
+      const activeGuests =
+        activeDish
+          ? Math.max(
+              1,
+              numberValue(
+                activeDish.baseGuests,
+                100,
+              ),
+            )
+          : 100;
+
+      const activeRate =
+        activeDish
+          ? recipeTotal(
+              activeDish,
+            ) / activeGuests
+          : 0;
+
       setMessage(
-        `Saved successfully${
-          data.syncedDishes
-            ? ` · ${data.syncedDishes} dishes synced`
-            : ''
-        }.`,
+        syncedDishes > 0
+          ? `Saved · Synced to Dish Master: ${syncedDishes} recipe${
+              syncedDishes === 1
+                ? ''
+                : 's'
+            }${
+              activeDish
+                ? ` · ${recipeName(activeDish)} ${money(activeRate)}/plate`
+                : ''
+            }.`
+          : 'Saved successfully.',
       );
     } catch (
       saveError

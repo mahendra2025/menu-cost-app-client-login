@@ -7,30 +7,11 @@ import {
   useState,
 } from 'react';
 
-import dynamic from 'next/dynamic';
-
 import AppShell from '../../components/AppShell';
 
 import {
   CATEGORIES,
 } from '../../../lib/dishCostMaster';
-
-import type {
-  RecipeStudioDishRequest,
-} from '../dishes/RecipeStudioPanel';
-
-const RecipeStudioPanel = dynamic(
-  () =>
-    import('../dishes/RecipeStudioPanel'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="admin-lazy-loading">
-        Opening Recipe Studio…
-      </div>
-    ),
-  },
-);
 
 type Suggestion = {
   id: string;
@@ -408,10 +389,6 @@ export default function NewDishesPage() {
 
   const [verifications, setVerifications] =
     useState<Record<string, DishVerification>>({});
-  const [recipeStudioOpened, setRecipeStudioOpened] =
-    useState(false);
-  const [requestedRecipeDish, setRequestedRecipeDish] =
-    useState<RecipeStudioDishRequest | null>(null);
 
   const [
     lastAutoBuild,
@@ -1162,23 +1139,6 @@ export default function NewDishesPage() {
           autoBuildResult,
         );
 
-        setRequestedRecipeDish({
-          requestId:
-            `approved_${row.id}_${Date.now()}`,
-
-          name:
-            row.dishName
-              .trim(),
-
-          category:
-            row.category
-              .trim() ||
-            'Other',
-
-          subcategory:
-            row.subcategory
-              .trim(),
-        });
       }
 
       /*
@@ -1755,16 +1715,13 @@ export default function NewDishesPage() {
             <button
               className="secondary-button"
               type="button"
-              onClick={() => {
-                setRecipeStudioOpened(true);
-                window.requestAnimationFrame(() => {
-                  document
-                    .getElementById('new-dish-recipe-studio')
-                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                });
-              }}
+              onClick={() =>
+                window.location.assign(
+                  '/admin/recipes',
+                )
+              }
             >
-              Open Recipe Studio
+              Open Recipes
             </button>
           </div>
         </div>
@@ -3050,8 +3007,10 @@ export default function NewDishesPage() {
                 className="secondary-button"
                 type="button"
                 onClick={() =>
-                  setRecipeStudioOpened(
-                    true,
+                  window.location.assign(
+                    `/admin/recipes?recipe=${encodeURIComponent(
+                      lastAutoBuild.name,
+                    )}`,
                   )
                 }
               >
@@ -3061,28 +3020,27 @@ export default function NewDishesPage() {
           </div>
         ) : null}
 
-        <div id="new-dish-recipe-studio">
-          {recipeStudioOpened ? (
-            <RecipeStudioPanel requestedDish={requestedRecipeDish} />
-          ) : (
-            <div className="glass-card new-dish-recipe-prompt">
-              <div>
-                <span className="section-kicker">Recipes</span>
-                <h2>Add recipes without leaving this page</h2>
-                <p>
-                  Approve a new dish with “Approve + Auto Build”, or open
-                  Recipe Studio to work on any existing recipe.
-                </p>
-              </div>
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => setRecipeStudioOpened(true)}
-              >
-                Open Recipe Studio
-              </button>
-            </div>
-          )}
+        <div className="glass-card new-dish-recipe-prompt">
+          <div>
+            <span className="section-kicker">Recipes</span>
+            <h2>Recipe workspace</h2>
+            <p>
+              Recipe ingredients and costing are managed in the
+              separate Recipes workspace.
+            </p>
+          </div>
+
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() =>
+              window.location.assign(
+                '/admin/recipes',
+              )
+            }
+          >
+            Open Recipes
+          </button>
         </div>
       </section>
     </AppShell>
