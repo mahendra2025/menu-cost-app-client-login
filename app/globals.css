@@ -15435,3 +15435,186 @@ small {
     grid-column: auto;
   }
 }
+
+/* New Recipe — full black Apple-style override */
+.new-dish-recipe-editor {
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, .10);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(20, 20, 22, .98),
+      rgba(8, 8, 10, .99)
+    );
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, .42);
+}
+
+.new-dish-recipe-editor h3,
+.new-dish-recipe-editor strong {
+  color: #f5f5f7;
+}
+
+.new-dish-recipe-editor p,
+.new-dish-recipe-editor small,
+.new-dish-recipe-editor .section-kicker {
+  color: #8e8e93;
+}
+
+.new-dish-recipe-editor :where(
+  .input,
+  .select
+) {
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, .12);
+  background: #111113;
+  box-shadow: none;
+}
+
+.new-dish-recipe-editor .input::placeholder {
+  color: #636366;
+}
+
+.new-dish-recipe-editor .select {
+  color-scheme: dark;
+}
+
+.new-dish-recipe-editor .select option {
+  color: #f5f5f7;
+  background: #111113;
+}
+
+.new-dish-recipe-ingredient {
+  border-color: rgba(255, 255, 255, .08);
+  background: #0d0d0f;
+}
+
+.new-dish-recipe-readonly {
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, .09);
+  background: #151517;
+}
+
+.new-dish-recipe-table-head {
+  color: #8e8e93;
+}
+
+.new-dish-recipe-cost-grid > div {
+  border-color: rgba(255, 255, 255, .08);
+  background: #101012;
+}
+
+.new-dish-recipe-cost-grid span {
+  color: #8e8e93;
+}
+
+.new-dish-recipe-cost-grid strong {
+  color: #ffffff;
+}
+
+.new-dish-recipe-cost-grid > div:last-child {
+  border-color: rgba(10, 132, 255, .26);
+  background: rgba(10, 132, 255, .10);
+}
+
+.new-dish-recipe-loading,
+.new-dish-recipe-empty {
+  color: #8e8e93;
+  border-color: rgba(255, 255, 255, .12);
+  background: #0d0d0f;
+}
+
+.new-dish-recipe-precheck.ready,
+.new-dish-recipe-quality.ready {
+  color: #4cd964;
+  border-color: rgba(48, 209, 88, .28);
+  background: rgba(48, 209, 88, .08);
+}
+
+.new-dish-recipe-precheck.blocked,
+.new-dish-recipe-quality.blocked {
+  color: #ff6961;
+  border-color: rgba(255, 69, 58, .30);
+  background: rgba(255, 69, 58, .08);
+}
+
+.new-dish-recipe-quality.review {
+  color: #ffd60a;
+  border-color: rgba(255, 214, 10, .26);
+  background: rgba(255, 214, 10, .07);
+}
+
+.new-dish-recipe-remove {
+  color: #ff6961;
+  border-color: rgba(255, 69, 58, .24);
+  background: rgba(255, 69, 58, .08);
+}
+
+.new-dish-recipe-remove:hover {
+  background: rgba(255, 69, 58, .14);
+}
+
+.new-dish-serving-target {
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, .09);
+  background: #101012;
+}
+
+.new-dish-serving-target strong {
+  color: #ffffff;
+}
+
+.new-dish-serving-target-value {
+  padding: 9px 12px;
+  border: 1px solid rgba(10, 132, 255, .18);
+  border-radius: 12px;
+  background: rgba(10, 132, 255, .07);
+}
+
+.new-dish-serving-target-value span {
+  color: #8e8e93;
+}
+
+.new-dish-recipe-launch {
+  color: #f5f5f7;
+  border-color: rgba(10, 132, 255, .22);
+  background: rgba(10, 132, 255, .07);
+}
+
+.new-dish-recipe-launch strong {
+  color: #ffffff;
+}
+
+.new-dish-recipe-editor .primary-button {
+  border-color: #0a84ff;
+  background: #0a84ff;
+  color: #ffffff;
+}
+
+.new-dish-recipe-editor .secondary-button,
+.new-dish-recipe-editor .ghost-button {
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, .12);
+  background: #171719;
+}
+
+.new-dish-recipe-editor .secondary-button:hover,
+.new-dish-recipe-editor .ghost-button:hover {
+  background: #202023;
+}
+
+.new-dish-recipe-editor * {
+  scrollbar-color:
+    #3a3a3c
+    #111113;
+}
+
+@media (max-width: 760px) {
+  .new-dish-recipe-editor {
+    padding: 12px;
+  }
+
+  .new-dish-recipe-ingredient {
+    padding: 10px;
+  }
+}
