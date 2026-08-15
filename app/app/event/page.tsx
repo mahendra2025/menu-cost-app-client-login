@@ -751,44 +751,11 @@ async function applyTenantDishLearning(
 }
 
 async function requestAiMenuExtraction(
-  menuText: string,
-) {
-  const response = await fetch(
-    '/api/client/ai-menu',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type':
-          'application/json',
-      },
-      body: JSON.stringify({
-        menuText,
-      }),
-    },
+  _menuText: string,
+): Promise<AiMenuExtraction> {
+  throw new Error(
+    'AI menu detection is disabled',
   );
-
-  if (!response.ok) {
-    throw new Error(
-      'AI menu detection is unavailable',
-    );
-  }
-
-  const data = (await response.json()) as {
-    extraction?: AiMenuExtraction;
-  };
-
-  if (
-    !data.extraction ||
-    !Array.isArray(
-      data.extraction.services,
-    )
-  ) {
-    throw new Error(
-      'AI returned an invalid menu',
-    );
-  }
-
-  return data.extraction;
 }
 
 function normalizeAiEventDetails(
@@ -3084,8 +3051,15 @@ export default function EventPage() {
        * This ensures newly added Admin dishes can be detected even
        * when this browser still has an older local catalog.
        */
+      const dishCatalogModulePromise =
+        import('../../../lib/dishCostMaster');
+
+      const tenantDishAliasesPromise =
+        requestTenantDishAliases();
+
       const { syncDishCostItemsFromServer } =
-        await import('../../../lib/dishCostMaster');
+        await dishCatalogModulePromise;
+
       await syncDishCostItemsFromServer();
 
       /*
@@ -3097,7 +3071,7 @@ export default function EventPage() {
        * detector sees it.
        */
       const tenantDishAliases =
-        await requestTenantDishAliases();
+        await tenantDishAliasesPromise;
 
       /*
        * V20:

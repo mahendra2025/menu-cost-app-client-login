@@ -1731,6 +1731,39 @@ function detectDishesFromLine(
     createDishCandidates(menuLine);
 
   /*
+   * Fast path:
+   * Most menu lines contain one known dish.
+   * Resolve an exact name/alias before running
+   * the expensive full-text and fuzzy scans.
+   */
+  for (const candidate of candidates) {
+    const exactDish =
+      catalog.findDishByName(
+        candidate,
+      );
+
+    if (!exactDish) {
+      continue;
+    }
+
+    const candidateKey =
+      normalizeText(candidate);
+
+    const exactKeys = [
+      exactDish.name,
+      ...(exactDish.aliases ?? []),
+    ].map(normalizeText);
+
+    if (
+      exactKeys.includes(
+        candidateKey,
+      )
+    ) {
+      return [exactDish];
+    }
+  }
+
+  /*
    * Only accept a candidate when every meaningful word belongs to a
    * catalog dish (apart from menu-style connectors such as "and").
    * This prevents ordinary OCR text containing a dish word from reaching
