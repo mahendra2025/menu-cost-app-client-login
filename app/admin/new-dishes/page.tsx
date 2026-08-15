@@ -1550,11 +1550,8 @@ export default function NewDishesPage() {
 
   useEffect(() => {
     if (!activeReviewId) {
-      document.body.style.overflow = '';
       return;
     }
-
-    document.body.style.overflow = 'hidden';
 
     const closeOnEscape = (
       event: KeyboardEvent,
@@ -1570,7 +1567,6 @@ export default function NewDishesPage() {
     );
 
     return () => {
-      document.body.style.overflow = '';
       window.removeEventListener(
         'keydown',
         closeOnEscape,
@@ -4761,6 +4757,7 @@ export default function NewDishesPage() {
                     : ''
                 }`}
                 key={row.id}
+                id={`new-dish-review-${row.id}`}
                 role={
                   activeReviewId === row.id
                     ? 'dialog'
@@ -4918,14 +4915,32 @@ export default function NewDishesPage() {
                     <button
                       className="new-dish-review-button"
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        const opening =
+                          activeReviewId !==
+                          row.id;
+
                         setActiveReviewId(
-                          activeReviewId ===
-                            row.id
-                            ? ''
-                            : row.id,
-                        )
-                      }
+                          opening
+                            ? row.id
+                            : '',
+                        );
+
+                        if (opening) {
+                          window.requestAnimationFrame(
+                            () => {
+                              document
+                                .getElementById(
+                                  `new-dish-review-${row.id}`,
+                                )
+                                ?.scrollIntoView({
+                                  behavior: 'smooth',
+                                  block: 'start',
+                                });
+                            },
+                          );
+                        }
+                      }}
                     >
                       {activeReviewId ===
                       row.id

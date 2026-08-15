@@ -16238,3 +16238,94 @@ small {
     min-height: 36px;
   }
 }
+
+/* Stable inline New Dish Review */
+
+.new-dish-modal-backdrop {
+  display: none !important;
+}
+
+.new-dish-card.is-popup {
+  position: relative !important;
+
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+
+  z-index: 2 !important;
+
+  width: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+
+  margin: 0 !important;
+  padding: 22px !important;
+
+  overflow: visible !important;
+
+  transform: none !important;
+
+  opacity: 1 !important;
+  visibility: visible !important;
+
+  border: 1px solid
+    rgba(74, 156, 255, .45) !important;
+
+  border-radius: 22px !important;
+
+  box-shadow:
+    0 18px 55px
+    rgba(0, 0, 0, .22) !important;
+}
+
+/* Full Review content */
+.new-dish-card.is-popup
+.new-dish-ai-panel,
+.new-dish-card.is-popup
+.new-dish-match-panel,
+.new-dish-card.is-popup
+.new-dish-verification,
+.new-dish-card.is-popup
+.new-dish-save-choice,
+.new-dish-card.is-popup
+.new-dish-fields,
+.new-dish-card.is-popup
+.new-dish-actions,
+.new-dish-card.is-popup
+.new-dish-recipe-launch {
+  display: block;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Preserve layouts that need grid/flex */
+.new-dish-card.is-popup
+.new-dish-fields {
+  display: grid !important;
+}
+
+.new-dish-card.is-popup
+.new-dish-actions {
+  display: flex !important;
+}
+
+.new-dish-card.is-popup
+.new-dish-save-choice {
+  display: grid !important;
+}
+
+.new-dish-card.is-popup {
+  scroll-margin-top: 90px;
+}
+
+@media (max-width: 600px) {
+  .new-dish-card.is-popup {
+    width: 100% !important;
+    max-height: none !important;
+
+    padding: 16px !important;
+
+    border-radius: 18px !important;
+  }
+}
