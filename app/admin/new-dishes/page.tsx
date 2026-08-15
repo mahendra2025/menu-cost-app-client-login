@@ -11,7 +11,7 @@ import AppShell from '../../components/AppShell';
 
 import {
   CATEGORIES,
-} from '../../../lib/dishCostMaster';
+} from '../../../lib/menuCategories';
 import {
   recipeServingStandard,
 } from '../../../lib/recipeServingStandards';
@@ -1280,7 +1280,7 @@ export default function NewDishesPage() {
       'PRIORITY',
     );
   const [visibleLimit, setVisibleLimit] =
-    useState(40);
+    useState(20);
 
   const [verifications, setVerifications] =
     useState<Record<string, DishVerification>>({});
@@ -4094,7 +4094,7 @@ export default function NewDishesPage() {
     ]);
 
   useEffect(() => {
-    setVisibleLimit(40);
+    setVisibleLimit(20);
     setActiveReviewId('');
   }, [
     deferredQuery,
@@ -5116,8 +5116,8 @@ export default function NewDishesPage() {
                         {isLikelyDuplicate(
                           row,
                         )
-                          ? 'Existing dish match found'
-                          : 'Checking against Dish Master'}
+                          ? 'Existing dish / alias match found'
+                          : 'Checking present dishes and aliases'}
                       </strong>
                     </div>
 
@@ -5214,7 +5214,7 @@ export default function NewDishesPage() {
                                 )
                               }
                             >
-                              Use as Alias
+                              Use Present Match
                             </button>
                           </div>
                         ),
@@ -5227,7 +5227,7 @@ export default function NewDishesPage() {
                       </strong>
 
                       <span>
-                        This candidate appears different from your current Dish Master and is more likely to be a genuine new dish.
+                        No automatic match found. Create it as a New Dish, or choose Present Alias Match and select an existing dish manually.
                       </span>
                     </div>
                   )}
@@ -5334,7 +5334,7 @@ export default function NewDishesPage() {
                 </details>
 
                 <div className="new-dish-save-choice">
-                  <span>Add to Available Dishes as</span>
+                  <span>Add dish as</span>
                   <div role="group" aria-label={`How to add ${row.dishName}`}>
                     <button
                       type="button"
@@ -5355,12 +5355,25 @@ export default function NewDishesPage() {
                       type="button"
                       className={row.saveAs === 'alias' ? 'active' : ''}
                       aria-pressed={row.saveAs === 'alias'}
-                      onClick={() => updateRow(row.id, {
-                        saveAs: 'alias',
-                        dishName: row.name,
-                      })}
+                      onClick={() => {
+                        const match =
+                          bestMatchFor(row);
+
+                        if (match) {
+                          applyCatalogMatch(
+                            row,
+                            match,
+                          );
+                          return;
+                        }
+
+                        updateRow(row.id, {
+                          saveAs: 'alias',
+                          dishName: row.name,
+                        });
+                      }}
                     >
-                      Alias of Available Dish
+                      Present Alias Match
                     </button>
                   </div>
                 </div>
@@ -6280,7 +6293,7 @@ Lemon | 25 | piece`}
                       : ''
                   }>
                     {row.saveAs === 'alias' && (!row.aliasCategory || !row.aliasTarget)
-                      ? 'Required: Choose the existing catalog dish.'
+                      ? 'Required: Choose the present dish / alias match.'
                       : <>
                           Suggested category:{' '}
                           <b>{row.categoryHint}</b>
