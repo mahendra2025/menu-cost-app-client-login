@@ -4875,6 +4875,27 @@ export default function NewDishesPage() {
                               )}%`
                             : ''}
                         </button>
+
+                        <button
+                          type="button"
+                          className="new-dish-inline-remove"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Remove "${row.name}" from New Dishes?`,
+                              )
+                            ) {
+                              void reject(row);
+                            }
+                          }}
+                          disabled={
+                            Boolean(
+                              workingId,
+                            )
+                          }
+                        >
+                          🗑 Remove
+                        </button>
                       ) : null}
                     </div>
                   </div>
