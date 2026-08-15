@@ -4837,6 +4837,7 @@ export default function NewDishesPage() {
                       </strong>
 
                       {activeReviewId === row.id ? (
+                        <>
                         <button
                           type="button"
                           className="new-dish-inline-alias"
@@ -4896,6 +4897,7 @@ export default function NewDishesPage() {
                         >
                           🗑 Remove
                         </button>
+                        </>
                       ) : null}
                     </div>
                   </div>
