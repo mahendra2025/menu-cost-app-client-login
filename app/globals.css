@@ -15768,3 +15768,305 @@ small {
   font-size: 10px;
   text-align: center;
 }
+
+
+/* NEW DISH REVIEW CARD V2 */
+
+/*
+ * Review popup hierarchy:
+ * 1. Source
+ * 2. Status
+ * 3. New vs Alias decision
+ * 4. Editable fields
+ * 5. Existing matches
+ * 6. Secondary intelligence
+ * 7. Recipe
+ * 8. Save actions
+ */
+
+.new-dish-card.is-popup
+.new-dish-source {
+  order: 0;
+}
+
+.new-dish-card.is-popup
+.new-dish-signal-bar {
+  order: 1;
+}
+
+.new-dish-card.is-popup
+.new-dish-save-choice {
+  order: 2;
+}
+
+.new-dish-card.is-popup
+.new-dish-fields {
+  order: 3;
+}
+
+.new-dish-card.is-popup
+.new-dish-match-panel {
+  order: 4;
+}
+
+.new-dish-card.is-popup
+.new-dish-ai-panel {
+  order: 5;
+}
+
+.new-dish-card.is-popup
+.new-dish-verification {
+  order: 6;
+}
+
+.new-dish-card.is-popup
+.new-dish-recipe-launch {
+  order: 7;
+}
+
+.new-dish-card.is-popup
+.new-dish-recipe-editor {
+  order: 8;
+}
+
+.new-dish-card.is-popup
+> .admin-message {
+  order: 9;
+}
+
+.new-dish-card.is-popup
+.new-dish-actions {
+  order: 10;
+}
+
+
+/* Main decision card */
+.new-dish-card.is-popup
+.new-dish-save-choice {
+  position: sticky;
+  top: -1px;
+  z-index: 8;
+
+  display: grid;
+  grid-template-columns:
+    minmax(130px, .34fr)
+    minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+
+  margin: 0 -6px;
+  padding: 14px;
+
+  border: 1px solid
+    rgba(0, 122, 255, .20);
+  border-radius: 18px;
+
+  background:
+    rgba(255, 255, 255, .96);
+
+  box-shadow:
+    0 10px 30px
+    rgba(15, 23, 42, .08);
+
+  backdrop-filter:
+    blur(18px);
+}
+
+.new-dish-card.is-popup
+.new-dish-save-choice
+> span {
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.new-dish-card.is-popup
+.new-dish-save-choice
+> div {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.new-dish-card.is-popup
+.new-dish-save-choice button {
+  min-height: 52px;
+  padding: 10px 14px;
+
+  border: 1px solid
+    rgba(148, 163, 184, .28);
+  border-radius: 14px;
+
+  background:
+    rgba(248, 250, 252, .92);
+
+  font-weight: 800;
+
+  transition:
+    transform .16s ease,
+    border-color .16s ease,
+    background .16s ease,
+    box-shadow .16s ease;
+}
+
+.new-dish-card.is-popup
+.new-dish-save-choice button:hover {
+  transform:
+    translateY(-1px);
+}
+
+.new-dish-card.is-popup
+.new-dish-save-choice button.active {
+  border-color:
+    rgba(0, 122, 255, .46);
+
+  background:
+    rgba(0, 122, 255, .10);
+
+  color: #075985;
+
+  box-shadow:
+    inset 0 0 0 1px
+    rgba(0, 122, 255, .12);
+}
+
+.new-dish-decision-help {
+  grid-column: 1 / -1;
+
+  color:
+    rgba(71, 85, 105, .92);
+
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+
+/* Make editable fields feel like the primary task */
+.new-dish-card.is-popup
+.new-dish-fields {
+  padding: 16px;
+
+  border: 1px solid
+    rgba(148, 163, 184, .18);
+  border-radius: 18px;
+
+  background:
+    rgba(248, 250, 252, .68);
+}
+
+
+/* Existing match is important, but comes after decision */
+.new-dish-card.is-popup
+.new-dish-match-panel {
+  border-radius: 18px;
+}
+
+
+/* AI is supporting evidence, not the main decision */
+.new-dish-card.is-popup
+.new-dish-ai-panel {
+  opacity: .94;
+}
+
+
+/* Sticky action footer */
+.new-dish-card.is-popup
+.new-dish-actions {
+  position: sticky;
+  bottom: -22px;
+  z-index: 9;
+
+  margin:
+    4px -22px -22px;
+  padding:
+    14px 22px 16px;
+
+  border-top: 1px solid
+    rgba(148, 163, 184, .22);
+
+  background:
+    rgba(255, 255, 255, .97);
+
+  box-shadow:
+    0 -12px 35px
+    rgba(15, 23, 42, .10);
+
+  backdrop-filter:
+    blur(20px);
+}
+
+
+/* Make Review more obvious in compact queue */
+.new-dish-review-button {
+  min-height: 34px;
+  padding: 6px 13px;
+
+  font-size: 10px;
+  font-weight: 850;
+}
+
+
+/* Mobile = bottom sheet with persistent decision/actions */
+@media (max-width: 600px) {
+  .new-dish-card.is-popup
+  .new-dish-save-choice {
+    grid-template-columns: 1fr;
+    top: -1px;
+
+    margin:
+      0 -2px;
+    padding: 12px;
+  }
+
+  .new-dish-card.is-popup
+  .new-dish-save-choice
+  > div {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .new-dish-card.is-popup
+  .new-dish-save-choice button {
+    min-height: 48px;
+    padding: 9px 8px;
+    font-size: 11px;
+  }
+
+  .new-dish-card.is-popup
+  .new-dish-actions {
+    bottom:
+      calc(
+        -17px -
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      );
+
+    margin:
+      4px -14px
+      calc(
+        -17px -
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      );
+
+    padding:
+      12px 14px
+      calc(
+        12px +
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      );
+  }
+
+  .new-dish-card.is-popup
+  .new-dish-actions
+  button {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+}

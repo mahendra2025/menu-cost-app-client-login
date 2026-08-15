@@ -4761,6 +4761,21 @@ export default function NewDishesPage() {
                     : ''
                 }`}
                 key={row.id}
+                role={
+                  activeReviewId === row.id
+                    ? 'dialog'
+                    : undefined
+                }
+                aria-modal={
+                  activeReviewId === row.id
+                    ? true
+                    : undefined
+                }
+                aria-label={
+                  activeReviewId === row.id
+                    ? `Review ${row.dishName || row.name}`
+                    : undefined
+                }
               >
                 <div className="new-dish-source">
                   <label
@@ -4847,8 +4862,8 @@ export default function NewDishesPage() {
                     >
                       {activeReviewId ===
                       row.id
-                        ? '✕ Close'
-                        : 'Review'}
+                        ? '✓ Done'
+                        : 'Open Review'}
                     </button>
                   </div>
                 </div>
@@ -5376,6 +5391,14 @@ export default function NewDishesPage() {
                       Present Alias Match
                     </button>
                   </div>
+
+                  <small className="new-dish-decision-help">
+                    {row.saveAs === 'alias'
+                      ? row.aliasTarget
+                        ? `Will save "${row.dishName}" as an alias of ${row.aliasTarget}.`
+                        : 'Choose the existing Dish Master item this name belongs to.'
+                      : 'Creates a separate Dish Master item with its own category, rate and recipe.'}
+                  </small>
                 </div>
 
                 <div className="new-dish-fields">
