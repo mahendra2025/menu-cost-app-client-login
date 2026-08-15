@@ -4826,13 +4826,57 @@ export default function NewDishesPage() {
                     </span>
                   </label>
 
-                  <div>
+                  <div className="new-dish-detected-block">
                     <span>
                       Detected text
                     </span>
-                    <strong>
-                      {row.name}
-                    </strong>
+
+                    <div className="new-dish-detected-line">
+                      <strong>
+                        {row.name}
+                      </strong>
+
+                      {activeReviewId === row.id ? (
+                        <button
+                          type="button"
+                          className="new-dish-inline-alias"
+                          onClick={() => {
+                            const match =
+                              bestMatchFor(row);
+
+                            if (match) {
+                              applyCatalogMatch(
+                                row,
+                                match,
+                              );
+                              return;
+                            }
+
+                            updateRow(
+                              row.id,
+                              {
+                                saveAs: 'alias',
+                                dishName:
+                                  row.name,
+                              },
+                            );
+                          }}
+                          disabled={
+                            Boolean(
+                              workingId,
+                            )
+                          }
+                        >
+                          🔗 Alias Match
+                          {bestMatchFor(row)
+                            ? ` ${Math.round(
+                                (bestMatchFor(row)?.score ?? 0) *
+                                  100,
+                              )}%`
+                            : ''}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                   <div className="new-dish-source-actions">
                     <b>

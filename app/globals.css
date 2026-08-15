@@ -16152,3 +16152,55 @@ small {
     border-radius: 24px 24px 0 0 !important;
   }
 }
+
+.new-dish-detected-block {
+  min-width: 0;
+}
+
+.new-dish-detected-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.new-dish-detected-line strong {
+  min-width: 0;
+}
+
+.new-dish-inline-alias {
+  min-height: 32px;
+  padding: 5px 10px;
+
+  border: 1px solid
+    rgba(0, 122, 255, .28);
+  border-radius: 999px;
+
+  background:
+    rgba(0, 122, 255, .08);
+
+  color: #075985;
+
+  font-size: 10px;
+  font-weight: 850;
+
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.new-dish-inline-alias:hover {
+  background:
+    rgba(0, 122, 255, .14);
+  border-color:
+    rgba(0, 122, 255, .45);
+}
+
+@media (max-width: 600px) {
+  .new-dish-detected-line {
+    align-items: flex-start;
+  }
+
+  .new-dish-inline-alias {
+    min-height: 36px;
+  }
+}
