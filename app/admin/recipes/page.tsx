@@ -823,6 +823,73 @@ export default function RecipesPage() {
     );
   }
 
+  function changeServingQuantity(
+    nextValue: number,
+  ) {
+    if (
+      selectedIndex === null ||
+      !selectedDish
+    ) {
+      return;
+    }
+
+    const currentServing =
+      Math.max(
+        0.01,
+        numberValue(
+          selectedDish.servingSize,
+          1,
+        ),
+      );
+
+    const nextServing =
+      Math.max(
+        0.01,
+        nextValue || 0.01,
+      );
+
+    const ratio =
+      nextServing /
+      currentServing;
+
+    const scaledIngredients =
+      recipeIngredients(
+        selectedDish,
+      ).map(
+        (ingredient) => {
+          const currentQuantity =
+            ingredientQuantity(
+              ingredient,
+            );
+
+          const nextQuantity =
+            Math.round(
+              currentQuantity *
+                ratio *
+                1000000,
+            ) / 1000000;
+
+          return {
+            ...ingredient,
+            quantity:
+              nextQuantity,
+            qty:
+              nextQuantity,
+          };
+        },
+      );
+
+    updateDish(
+      selectedIndex,
+      {
+        servingSize:
+          nextServing,
+        ingredients:
+          scaledIngredients,
+      },
+    );
+  }
+
   function addIngredient() {
     if (
       selectedIndex ===
@@ -2142,17 +2209,10 @@ export default function RecipesPage() {
                           ),
                         )}
                         onChange={(event) =>
-                          updateDish(
-                            selectedIndex,
-                            {
-                              servingSize:
-                                Math.max(
-                                  0.01,
-                                  Number(
-                                    event.target.value,
-                                  ) || 0.01,
-                                ),
-                            },
+                          changeServingQuantity(
+                            Number(
+                              event.target.value,
+                            ),
                           )
                         }
                       />
