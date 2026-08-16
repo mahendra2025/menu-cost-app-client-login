@@ -86,9 +86,7 @@ function requestedRecipeIndex(
 
   return index >= 0
     ? index
-    : dishes.length
-      ? 0
-      : null;
+    : null;
 }
 
 function recipeName(dish: RawRow) {
@@ -1526,6 +1524,19 @@ export default function RecipesPage() {
           </div>
 
           <div className="recipe-fast-actions">
+            {typeof window !== 'undefined' &&
+            new URLSearchParams(window.location.search).get('from') === 'dishes' ? (
+              <button
+                className="recipe-fast-button"
+                type="button"
+                onClick={() =>
+                  window.location.assign('/admin/dishes')
+                }
+              >
+                ← Back to Dishes
+              </button>
+            ) : null}
+
             <button
               className="recipe-fast-button"
               type="button"

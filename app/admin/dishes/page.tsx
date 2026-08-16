@@ -1546,6 +1546,21 @@ async function handleCsvImport(
                       <button
                         className="dish-row-edit"
                         type="button"
+                        disabled={!row.name.trim()}
+                        onClick={() =>
+                          window.location.assign(
+                            `/admin/recipes?recipe=${encodeURIComponent(
+                              row.name.trim(),
+                            )}&from=dishes`,
+                          )
+                        }
+                      >
+                        Recipe
+                      </button>
+
+                      <button
+                        className="dish-row-edit"
+                        type="button"
                         aria-expanded={expandedRowId === row.id}
                         aria-controls={`dish-editor-${row.id}`}
                         onClick={() => setExpandedRowId((current) => current === row.id ? null : row.id)}
