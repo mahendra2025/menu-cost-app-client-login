@@ -778,6 +778,84 @@ export default function RecipesPage() {
     );
   }
 
+  async function deleteSelectedRecipe() {
+    if (
+      !catalog ||
+      selectedIndex === null ||
+      !selectedDish
+    ) {
+      return;
+    }
+
+    const name =
+      recipeName(selectedDish);
+
+    const confirmed =
+      window.confirm(
+        `Delete ${name}? This will delete both the Recipe and linked Dish.`,
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSaving(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const response =
+        await fetch(
+          `/api/admin/dishes/item?name=${encodeURIComponent(
+            name,
+          )}`,
+          {
+            method: 'DELETE',
+          },
+        );
+
+      const data =
+        await response
+          .json()
+          .catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not delete recipe and dish.',
+        );
+      }
+
+      try {
+        localStorage.removeItem(
+          RECIPE_CACHE_KEY,
+        );
+      } catch {
+        // Cache is optional.
+      }
+
+      await loadRecipes();
+
+      setMessage(
+        `${name} recipe and linked dish deleted.`,
+      );
+
+      setSyncStatus('synced');
+
+      setSyncMessage(
+        '✓ Recipe and Dish removed together',
+      );
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Could not delete recipe and dish.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function saveRecipes() {
     if (!catalog) {
       return;
@@ -2033,15 +2111,38 @@ export default function RecipesPage() {
                       Ingredients
                     </h2>
 
-                    <button
-                      className="recipe-fast-button"
-                      type="button"
-                      onClick={
-                        addIngredient
-                      }
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '7px',
+                        flexWrap: 'wrap',
+                      }}
                     >
-                      + Ingredient
-                    </button>
+                      <button
+                        className="recipe-fast-button"
+                        type="button"
+                        onClick={
+                          addIngredient
+                        }
+                      >
+                        + Ingredient
+                      </button>
+
+                      <button
+                        className="recipe-fast-remove"
+                        type="button"
+                        style={{
+                          width: 'auto',
+                          padding: '0 12px',
+                        }}
+                        disabled={saving}
+                        onClick={() =>
+                          void deleteSelectedRecipe()
+                        }
+                      >
+                        Delete Recipe + Dish
+                      </button>
+                    </div>
                   </div>
 
                   {ingredients.map(
