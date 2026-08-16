@@ -41,6 +41,26 @@ let memoryRecipeCatalogLoadedAt =
 const RECIPE_MEMORY_FRESH_MS =
   20 * 1000;
 
+const RECIPES_PER_PAGE = 30;
+
+function recipePageForIndex(
+  index: number | null,
+) {
+  if (
+    index === null ||
+    index < 0
+  ) {
+    return 1;
+  }
+
+  return (
+    Math.floor(
+      index /
+        RECIPES_PER_PAGE,
+    ) + 1
+  );
+}
+
 function text(value: unknown) {
   return String(value ?? '').trim();
 }
@@ -316,6 +336,11 @@ export default function RecipesPage() {
     useState<number | null>(
       null,
     );
+
+  const [
+    recipePage,
+    setRecipePage,
+  ] = useState(1);
 
   const [
     bulkIngredients,
@@ -646,6 +671,44 @@ export default function RecipesPage() {
       category,
       deferredQuery,
     ]);
+
+  const recipePageCount =
+    Math.max(
+      1,
+      Math.ceil(
+        visibleRecipes.length /
+          RECIPES_PER_PAGE,
+      ),
+    );
+
+  const paginatedRecipes =
+    visibleRecipes.slice(
+      (recipePage - 1) *
+        RECIPES_PER_PAGE,
+      recipePage *
+        RECIPES_PER_PAGE,
+    );
+
+  useEffect(() => {
+    setRecipePage(1);
+  }, [
+    category,
+    deferredQuery,
+  ]);
+
+  useEffect(() => {
+    if (
+      recipePage >
+      recipePageCount
+    ) {
+      setRecipePage(
+        recipePageCount,
+      );
+    }
+  }, [
+    recipePage,
+    recipePageCount,
+  ]);
 
   const selectedDish =
     selectedIndex ===
@@ -1031,6 +1094,12 @@ export default function RecipesPage() {
     );
     setSelectedIndex(
       index,
+    );
+
+    setRecipePage(
+      recipePageForIndex(
+        index,
+      ),
     );
   }
 
@@ -2026,8 +2095,8 @@ export default function RecipesPage() {
         ) : (
           <div className="recipe-fast-workspace">
             <aside className="recipe-fast-list">
-              {visibleRecipes.length ? (
-                visibleRecipes.map(
+              {paginatedRecipes.length ? (
+                paginatedRecipes.map(
                   ({
                     dish,
                     index,
@@ -2071,6 +2140,77 @@ export default function RecipesPage() {
                   No matching recipes
                 </div>
               )}
+              {visibleRecipes.length >
+              RECIPES_PER_PAGE ? (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns:
+                      '1fr auto 1fr',
+                    gap: '6px',
+                    alignItems: 'center',
+                    padding: '9px',
+                    borderTop:
+                      '1px solid #222a33',
+                    background:
+                      '#0d1218',
+                  }}
+                >
+                  <button
+                    className="recipe-fast-button"
+                    type="button"
+                    disabled={
+                      recipePage <= 1
+                    }
+                    onClick={() =>
+                      setRecipePage(
+                        (current) =>
+                          Math.max(
+                            1,
+                            current - 1,
+                          ),
+                      )
+                    }
+                  >
+                    ← Prev
+                  </button>
+
+                  <span
+                    style={{
+                      color: '#8995a4',
+                      fontSize: '10px',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {recipePage}
+                    {' / '}
+                    {recipePageCount}
+                    <br />
+                    {visibleRecipes.length}
+                    {' recipes'}
+                  </span>
+
+                  <button
+                    className="recipe-fast-button"
+                    type="button"
+                    disabled={
+                      recipePage >=
+                      recipePageCount
+                    }
+                    onClick={() =>
+                      setRecipePage(
+                        (current) =>
+                          Math.min(
+                            recipePageCount,
+                            current + 1,
+                          ),
+                      )
+                    }
+                  >
+                    Next →
+                  </button>
+                </div>
+              ) : null}
             </aside>
 
             <main className="recipe-fast-editor">
