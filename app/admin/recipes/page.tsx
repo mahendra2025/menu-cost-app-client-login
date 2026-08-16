@@ -2524,6 +2524,59 @@ Cream,0.8,kg,220`}
                               Ingredient
                             </label>
 
+                            <select
+                              className="recipe-fast-input"
+                              value=""
+                              onChange={(event) => {
+                                const selected =
+                                  catalog?.rates.find(
+                                    (item) =>
+                                      text(item.id) ===
+                                      event.target.value,
+                                  );
+
+                                if (!selected) return;
+
+                                updateIngredient(
+                                  selectedIndex,
+                                  ingredientIndex,
+                                  {
+                                    name: text(selected.name),
+                                    ingredientName: text(selected.name),
+                                    rateKey: text(selected.id),
+                                    marketRate: numberValue(selected.rate),
+                                    rate: numberValue(selected.rate),
+                                    unit: text(selected.unit) || 'kg',
+                                    rateUnit: text(selected.unit) || 'kg',
+                                  },
+                                );
+                              }}
+                            >
+                              <option value="">
+                                Select from Ingredient Master
+                              </option>
+
+                              {(catalog?.rates || [])
+                                .slice()
+                                .sort((a, b) =>
+                                  text(a.name).localeCompare(
+                                    text(b.name),
+                                  ),
+                                )
+                                .map((item) => (
+                                  <option
+                                    key={text(item.id)}
+                                    value={text(item.id)}
+                                  >
+                                    {text(item.name)}
+                                    {' · ₹'}
+                                    {numberValue(item.rate)}
+                                    {'/'}
+                                    {text(item.unit)}
+                                  </option>
+                                ))}
+                            </select>
+
                             <input
                               className="recipe-fast-input"
                               value={text(
