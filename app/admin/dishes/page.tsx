@@ -968,17 +968,102 @@ export default function AdminDishesPage() {
     setMessage(`${subcategory} deleted${assignedCount ? ` and cleared from ${assignedCount} dish${assignedCount === 1 ? '' : 'es'}` : ''}.`);
   }
 
-  function removeRow(id: string) {
-    const selectedDish = rows.find((row) => row.id === id);
-    if (
-      selectedDish &&
-      !window.confirm(`Delete ${selectedDish.name || 'this new dish'} from the catalog?`)
-    ) return;
+  async function removeRow(id: string) {
+    const selectedDish =
+      rows.find((row) => row.id === id);
+
+    if (!selectedDish) return;
+
+    const confirmed =
+      window.confirm(
+        `Delete ${selectedDish.name || 'this dish'}? Its linked recipe will also be deleted.`,
+      );
+
+    if (!confirmed) return;
+
+    const persistedName =
+      (
+        selectedDish.originalName ||
+        selectedDish.name
+      ).trim();
+
+    // New unsaved dish: only remove locally.
+    if (!persistedName) {
+      setExpandedRowId(
+        (current) =>
+          current === id
+            ? null
+            : current,
+      );
+
+      setRows(
+        (current) =>
+          current.filter(
+            (row) =>
+              row.id !== id,
+          ),
+      );
+
+      return;
+    }
 
     setMessage('');
-    setDirty(true);
-    setExpandedRowId((current) => current === id ? null : current);
-    setRows((current) => current.filter((row) => row.id !== id));
+    setSaving(true);
+
+    try {
+      const response =
+        await fetch(
+          `/api/admin/dishes/item?name=${encodeURIComponent(
+            persistedName,
+          )}`,
+          {
+            method: 'DELETE',
+          },
+        );
+
+      const data =
+        await response
+          .json()
+          .catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not delete dish.',
+        );
+      }
+
+      setExpandedRowId(
+        (current) =>
+          current === id
+            ? null
+            : current,
+      );
+
+      setRows(
+        (current) =>
+          current.filter(
+            (row) =>
+              row.id !== id,
+          ),
+      );
+
+      setMessageType('success');
+
+      setMessage(
+        `${selectedDish.name || persistedName} and its linked recipe deleted.`,
+      );
+    } catch (error) {
+      setMessageType('error');
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not delete dish.',
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   function updateServingQuantity(row: EditableDish, nextQuantity: number) {
@@ -1636,7 +1721,7 @@ async function handleCsvImport(
                       </div>
                     </div>
                   </details>
-                  <button className="admin-dish-delete" type="button" onClick={() => removeRow(row.id)} aria-label={`Delete ${row.name || 'new dish'}`}>Delete dish</button>
+                  <button className="admin-dish-delete" type="button" onClick={() => void removeRow(row.id)} aria-label={`Delete ${row.name || 'new dish'}`}>Delete dish + recipe</button>
                   </div>
                   ) : null}
                   </div>
