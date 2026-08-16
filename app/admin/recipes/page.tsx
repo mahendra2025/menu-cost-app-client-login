@@ -1980,6 +1980,88 @@ export default function RecipesPage() {
                         }
                       />
                     </div>
+
+                    <div className="recipe-fast-field">
+                      <label>
+                        Serving Quantity
+                      </label>
+
+                      <input
+                        className="recipe-fast-input"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={Math.max(
+                          0.01,
+                          numberValue(
+                            selectedDish.servingSize,
+                            1,
+                          ),
+                        )}
+                        onChange={(event) =>
+                          updateDish(
+                            selectedIndex,
+                            {
+                              servingSize:
+                                Math.max(
+                                  0.01,
+                                  Number(
+                                    event.target.value,
+                                  ) || 0.01,
+                                ),
+                            },
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div className="recipe-fast-field">
+                      <label>
+                        Serving Unit
+                      </label>
+
+                      <select
+                        className="recipe-fast-input"
+                        value={
+                          text(
+                            selectedDish.servingUnit,
+                          ) || 'serving'
+                        }
+                        onChange={(event) =>
+                          updateDish(
+                            selectedIndex,
+                            {
+                              servingUnit:
+                                event.target.value,
+                            },
+                          )
+                        }
+                      >
+                        <option value="gram">
+                          gram
+                        </option>
+
+                        <option value="ml">
+                          ml
+                        </option>
+
+                        <option value="piece">
+                          piece
+                        </option>
+
+                        <option value="serving">
+                          serving
+                        </option>
+
+                        <option value="kg">
+                          kg
+                        </option>
+
+                        <option value="ltr">
+                          ltr
+                        </option>
+                      </select>
+                    </div>
                   </div>
 
                   <div className="recipe-fast-costs">
