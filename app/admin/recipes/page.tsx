@@ -1106,9 +1106,8 @@ export default function RecipesPage() {
     const lines =
       bulkRecipes
         .split(/\r?\n/)
-        .map(
-          (line) =>
-            line.trim(),
+        .map((line) =>
+          line.trim(),
         )
         .filter(Boolean);
 
@@ -1119,18 +1118,34 @@ export default function RecipesPage() {
       return;
     }
 
-    const existingNames =
-      new Set(
-        catalog.dishes.map(
-          (dish) =>
+    // Clone current recipes so existing data
+    // is never directly mutated.
+    const nextDishes =
+      catalog.dishes.map(
+        (dish) => ({
+          ...dish,
+          ingredients:
+            recipeIngredients(
+              dish,
+            ).map(
+              (ingredient) => ({
+                ...ingredient,
+              }),
+            ),
+        }),
+      );
+
+    const recipeIndexByName =
+      new Map<string, number>(
+        nextDishes.map(
+          (dish, index) => [
             recipeName(dish)
               .trim()
               .toLowerCase(),
+            index,
+          ],
         ),
       );
-
-    const added:
-      RawRow[] = [];
 
     const nextCategories =
       new Set(
@@ -1159,17 +1174,26 @@ export default function RecipesPage() {
       RawRow | null =
       null;
 
-    let skippedRecipes = 0;
-    let skippedIngredients = 0;
+    let activeRecipeIndex:
+      number | null =
+      null;
+
+    let firstTouchedIndex:
+      number | null =
+      null;
+
+    let addedRecipes = 0;
+    let updatedRecipes = 0;
+    let invalidRecipes = 0;
+    let invalidLines = 0;
     let ingredientCount = 0;
 
     for (const line of lines) {
       const parts =
         line
           .split(/\s*\|\s*/)
-          .map(
-            (part) =>
-              part.trim(),
+          .map((part) =>
+            part.trim(),
           );
 
       const type =
@@ -1180,9 +1204,9 @@ export default function RecipesPage() {
           .trim()
           .toUpperCase();
 
-      // ==================================
+      // =================================
       // R = RECIPE
-      // ==================================
+      // =================================
       if (
         type === 'R' ||
         type === 'RECIPE'
@@ -1228,23 +1252,19 @@ export default function RecipesPage() {
             )
             .trim();
 
+        if (
+          !normalizedName ||
+          !servingUnit
+        ) {
+          activeRecipe = null;
+          activeRecipeIndex = null;
+          invalidRecipes += 1;
+          continue;
+        }
+
         const nameKey =
           normalizedName
             .toLowerCase();
-
-        if (
-          !normalizedName ||
-          !servingUnit ||
-          existingNames.has(
-            nameKey,
-          )
-        ) {
-          activeRecipe =
-            null;
-
-          skippedRecipes += 1;
-          continue;
-        }
 
         const safeServingSize =
           Number.isFinite(
@@ -1264,42 +1284,123 @@ export default function RecipesPage() {
               )
             : 100;
 
-        const recipe:
-          RawRow = {
-            dishName:
-              normalizedName,
+        const existingIndex =
+          recipeIndexByName.get(
+            nameKey,
+          );
 
-            name:
-              normalizedName,
+        // =================================
+        // EXISTING RECIPE → UPDATE
+        // =================================
+        if (
+          existingIndex !==
+          undefined
+        ) {
+          const oldRecipe =
+            nextDishes[
+              existingIndex
+            ];
 
-            category:
-              recipeCategory,
+          const updatedRecipe:
+            RawRow = {
+              ...oldRecipe,
 
-            subcategory,
+              dishName:
+                normalizedName,
 
-            baseGuests:
-              safeBaseGuests,
+              name:
+                normalizedName,
 
-            servingSize:
-              safeServingSize,
+              category:
+                recipeCategory,
 
-            servingUnit,
+              subcategory,
 
-            dishRate: 0,
+              baseGuests:
+                safeBaseGuests,
 
-            ingredients: [],
-        };
+              servingSize:
+                safeServingSize,
 
-        added.push(
-          recipe,
-        );
+              servingUnit,
 
-        activeRecipe =
-          recipe;
+              // New pasted ingredient list
+              // replaces old ingredients.
+              ingredients: [],
+          };
 
-        existingNames.add(
-          nameKey,
-        );
+          nextDishes[
+            existingIndex
+          ] =
+            updatedRecipe;
+
+          activeRecipe =
+            updatedRecipe;
+
+          activeRecipeIndex =
+            existingIndex;
+
+          updatedRecipes += 1;
+        } else {
+          // =================================
+          // NEW RECIPE → CREATE
+          // =================================
+          const recipe:
+            RawRow = {
+              dishName:
+                normalizedName,
+
+              name:
+                normalizedName,
+
+              category:
+                recipeCategory,
+
+              subcategory,
+
+              baseGuests:
+                safeBaseGuests,
+
+              servingSize:
+                safeServingSize,
+
+              servingUnit,
+
+              dishRate: 0,
+
+              ingredients: [],
+          };
+
+          const newIndex =
+            nextDishes.length;
+
+          nextDishes.push(
+            recipe,
+          );
+
+          recipeIndexByName.set(
+            nameKey,
+            newIndex,
+          );
+
+          activeRecipe =
+            recipe;
+
+          activeRecipeIndex =
+            newIndex;
+
+          addedRecipes += 1;
+        }
+
+        if (
+          firstTouchedIndex ===
+            null &&
+          activeRecipeIndex !==
+            null
+        ) {
+          firstTouchedIndex =
+            activeRecipeIndex;
+        }
 
         nextCategories.add(
           recipeCategory,
@@ -1332,16 +1433,16 @@ export default function RecipesPage() {
         continue;
       }
 
-      // ==================================
+      // =================================
       // I = INGREDIENT
-      // ==================================
+      // =================================
       if (
         type === 'I' ||
         type === 'ING' ||
         type === 'INGREDIENT'
       ) {
         if (!activeRecipe) {
-          skippedIngredients += 1;
+          invalidLines += 1;
           continue;
         }
 
@@ -1366,10 +1467,18 @@ export default function RecipesPage() {
             rawUnit
           ];
 
+        const rawRate =
+          (
+            parts[4] ||
+            ''
+          ).trim();
+
         const enteredRate =
-          Number(
-            parts[4],
-          );
+          rawRate
+            ? Number(
+                rawRate,
+              )
+            : Number.NaN;
 
         const enteredRateUnit =
           unitAliases[
@@ -1389,7 +1498,7 @@ export default function RecipesPage() {
           ) ||
           quantity < 0
         ) {
-          skippedIngredients += 1;
+          invalidLines += 1;
           continue;
         }
 
@@ -1465,16 +1574,10 @@ export default function RecipesPage() {
             rateKey;
         }
 
-        const currentIngredients =
-          Array.isArray(
-            activeRecipe.ingredients,
-          )
-            ? activeRecipe
-                .ingredients as RawRow[]
-            : [];
-
         activeRecipe.ingredients = [
-          ...currentIngredients,
+          ...recipeIngredients(
+            activeRecipe,
+          ),
           ingredient,
         ];
 
@@ -1482,27 +1585,26 @@ export default function RecipesPage() {
         continue;
       }
 
-      skippedIngredients += 1;
+      invalidLines += 1;
     }
 
-    if (!added.length) {
+    if (
+      addedRecipes === 0 &&
+      updatedRecipes === 0
+    ) {
       setError(
-        'No valid recipes found. Recipe lines must start with R | and ingredients with I |.',
+        'No valid recipes found. Use R | for recipe and I | for ingredient.',
       );
+
       return;
     }
-
-    const firstAddedIndex =
-      catalog.dishes.length;
 
     const nextCatalog:
       RecipeCatalog = {
         ...catalog,
 
-        dishes: [
-          ...catalog.dishes,
-          ...added,
-        ],
+        dishes:
+          nextDishes,
 
         categories:
           Array.from(
@@ -1532,34 +1634,43 @@ export default function RecipesPage() {
       'ALL',
     );
 
-    setSelectedIndex(
-      firstAddedIndex,
-    );
+    if (
+      firstTouchedIndex !==
+      null
+    ) {
+      setSelectedIndex(
+        firstTouchedIndex,
+      );
 
-    setRecipePage(
-      recipePageForIndex(
-        firstAddedIndex,
-      ),
-    );
+      setRecipePage(
+        recipePageForIndex(
+          firstTouchedIndex,
+        ),
+      );
+    }
 
     setError('');
 
     setMessage(
-      `${added.length} recipe${
-        added.length === 1
+      `${addedRecipes} new recipe${
+        addedRecipes === 1
           ? ''
           : 's'
-      } + ${ingredientCount} ingredient${
+      } · ${updatedRecipes} existing recipe${
+        updatedRecipes === 1
+          ? ''
+          : 's'
+      } updated · ${ingredientCount} ingredient${
         ingredientCount === 1
           ? ''
           : 's'
-      } added${
-        skippedRecipes
-          ? ` · ${skippedRecipes} duplicate/invalid recipe skipped`
+      } imported${
+        invalidRecipes
+          ? ` · ${invalidRecipes} invalid recipe skipped`
           : ''
       }${
-        skippedIngredients
-          ? ` · ${skippedIngredients} invalid ingredient/line skipped`
+        invalidLines
+          ? ` · ${invalidLines} invalid line skipped`
           : ''
       }. Click Save & Sync.`,
     );
