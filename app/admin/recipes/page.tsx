@@ -1074,10 +1074,20 @@ export default function RecipesPage() {
 
     const unitAliases:
       Record<string, string> = {
+        kg: 'kg',
+        kgs: 'kg',
+        kilogram: 'kg',
+
         g: 'gram',
         gm: 'gram',
         gram: 'gram',
         grams: 'gram',
+
+        l: 'ltr',
+        lt: 'ltr',
+        ltr: 'ltr',
+        litre: 'ltr',
+        liter: 'ltr',
 
         ml: 'ml',
 
@@ -1086,17 +1096,11 @@ export default function RecipesPage() {
         piece: 'piece',
         pieces: 'piece',
 
+        pkt: 'packet',
+        packet: 'packet',
+
         serving: 'serving',
         servings: 'serving',
-
-        kg: 'kg',
-        kgs: 'kg',
-
-        l: 'ltr',
-        lt: 'ltr',
-        ltr: 'ltr',
-        litre: 'ltr',
-        liter: 'ltr',
       };
 
     const lines =
@@ -1120,6 +1124,7 @@ export default function RecipesPage() {
         catalog.dishes.map(
           (dish) =>
             recipeName(dish)
+              .trim()
               .toLowerCase(),
         ),
       );
@@ -1133,160 +1138,356 @@ export default function RecipesPage() {
       );
 
     const nextSubcategories:
-      Record<
-        string,
-        string[]
-      > = {
+      Record<string, string[]> = {
         ...catalog.subcategories,
       };
 
-    let skipped = 0;
+    const masterRateByName =
+      new Map(
+        catalog.rates.map(
+          (rate) => [
+            text(
+              rate.name ||
+              rate.ingredientName,
+            ).toLowerCase(),
+            rate,
+          ],
+        ),
+      );
+
+    let activeRecipe:
+      RawRow | null =
+      null;
+
+    let skippedRecipes = 0;
+    let skippedIngredients = 0;
+    let ingredientCount = 0;
 
     for (const line of lines) {
       const parts =
         line
-          .split(
-            /\s*(?:\t|\||,)\s*/,
-          )
+          .split(/\s*\|\s*/)
           .map(
             (part) =>
               part.trim(),
           );
 
-      const name =
-        parts[0] || '';
-
-      const recipeCategory =
-        parts[1] ||
-        'Other';
-
-      const subcategory =
-        parts[2] || '';
-
-      const servingSize =
-        Number(
-          parts[3],
-        );
-
-      const rawServingUnit =
+      const type =
         (
-          parts[4] ||
-          'serving'
+          parts[0] ||
+          ''
         )
           .trim()
-          .toLowerCase();
+          .toUpperCase();
 
-      const servingUnit =
-        unitAliases[
-          rawServingUnit
-        ];
+      // ==================================
+      // R = RECIPE
+      // ==================================
+      if (
+        type === 'R' ||
+        type === 'RECIPE'
+      ) {
+        const name =
+          parts[1] || '';
 
-      const baseGuests =
-        Number(
-          parts[5],
+        const recipeCategory =
+          parts[2] ||
+          'Other';
+
+        const subcategory =
+          parts[3] || '';
+
+        const servingSize =
+          Number(
+            parts[4],
+          );
+
+        const rawServingUnit =
+          (
+            parts[5] ||
+            'serving'
+          )
+            .trim()
+            .toLowerCase();
+
+        const servingUnit =
+          unitAliases[
+            rawServingUnit
+          ];
+
+        const baseGuests =
+          Number(
+            parts[6],
+          );
+
+        const normalizedName =
+          name
+            .replace(
+              /\s+/g,
+              ' ',
+            )
+            .trim();
+
+        const nameKey =
+          normalizedName
+            .toLowerCase();
+
+        if (
+          !normalizedName ||
+          !servingUnit ||
+          existingNames.has(
+            nameKey,
+          )
+        ) {
+          activeRecipe =
+            null;
+
+          skippedRecipes += 1;
+          continue;
+        }
+
+        const safeServingSize =
+          Number.isFinite(
+            servingSize,
+          ) &&
+          servingSize > 0
+            ? servingSize
+            : 1;
+
+        const safeBaseGuests =
+          Number.isFinite(
+            baseGuests,
+          ) &&
+          baseGuests > 0
+            ? Math.round(
+                baseGuests,
+              )
+            : 100;
+
+        const recipe:
+          RawRow = {
+            dishName:
+              normalizedName,
+
+            name:
+              normalizedName,
+
+            category:
+              recipeCategory,
+
+            subcategory,
+
+            baseGuests:
+              safeBaseGuests,
+
+            servingSize:
+              safeServingSize,
+
+            servingUnit,
+
+            dishRate: 0,
+
+            ingredients: [],
+        };
+
+        added.push(
+          recipe,
         );
 
-      const normalizedName =
-        name
-          .replace(
-            /\s+/g,
-            ' ',
-          )
-          .trim();
+        activeRecipe =
+          recipe;
 
-      const nameKey =
-        normalizedName
-          .toLowerCase();
-
-      if (
-        !normalizedName ||
-        existingNames.has(
+        existingNames.add(
           nameKey,
-        ) ||
-        !servingUnit
-      ) {
-        skipped += 1;
+        );
+
+        nextCategories.add(
+          recipeCategory,
+        );
+
+        if (subcategory) {
+          const existing =
+            nextSubcategories[
+              recipeCategory
+            ] || [];
+
+          if (
+            !existing.some(
+              (item) =>
+                item
+                  .toLowerCase() ===
+                subcategory
+                  .toLowerCase(),
+            )
+          ) {
+            nextSubcategories[
+              recipeCategory
+            ] = [
+              ...existing,
+              subcategory,
+            ];
+          }
+        }
+
         continue;
       }
 
-      const safeServingSize =
-        Number.isFinite(
-          servingSize,
-        ) &&
-        servingSize > 0
-          ? servingSize
-          : 1;
+      // ==================================
+      // I = INGREDIENT
+      // ==================================
+      if (
+        type === 'I' ||
+        type === 'ING' ||
+        type === 'INGREDIENT'
+      ) {
+        if (!activeRecipe) {
+          skippedIngredients += 1;
+          continue;
+        }
 
-      const safeBaseGuests =
-        Number.isFinite(
-          baseGuests,
-        ) &&
-        baseGuests > 0
-          ? Math.round(
-              baseGuests,
+        const ingredientName =
+          parts[1] || '';
+
+        const quantity =
+          Number(
+            parts[2],
+          );
+
+        const rawUnit =
+          (
+            parts[3] ||
+            'kg'
+          )
+            .trim()
+            .toLowerCase();
+
+        const unit =
+          unitAliases[
+            rawUnit
+          ];
+
+        const enteredRate =
+          Number(
+            parts[4],
+          );
+
+        const enteredRateUnit =
+          unitAliases[
+            (
+              parts[5] ||
+              ''
             )
-          : 100;
-
-      added.push({
-        dishName:
-          normalizedName,
-        name:
-          normalizedName,
-
-        category:
-          recipeCategory,
-
-        subcategory,
-
-        baseGuests:
-          safeBaseGuests,
-
-        servingSize:
-          safeServingSize,
-
-        servingUnit,
-
-        dishRate: 0,
-
-        ingredients: [],
-      });
-
-      existingNames.add(
-        nameKey,
-      );
-
-      nextCategories.add(
-        recipeCategory,
-      );
-
-      if (subcategory) {
-        const current =
-          nextSubcategories[
-            recipeCategory
-          ] || [];
+              .trim()
+              .toLowerCase()
+          ];
 
         if (
-          !current.some(
-            (item) =>
-              item
-                .toLowerCase() ===
-              subcategory
-                .toLowerCase(),
-          )
+          !ingredientName ||
+          !unit ||
+          !Number.isFinite(
+            quantity,
+          ) ||
+          quantity < 0
         ) {
-          nextSubcategories[
-            recipeCategory
-          ] = [
-            ...current,
-            subcategory,
-          ];
+          skippedIngredients += 1;
+          continue;
         }
+
+        const masterRate =
+          masterRateByName.get(
+            ingredientName
+              .trim()
+              .toLowerCase(),
+          );
+
+        const masterValue =
+          Math.max(
+            0,
+            numberValue(
+              masterRate?.rate ??
+              masterRate?.marketRate,
+            ),
+          );
+
+        const finalRate =
+          Number.isFinite(
+            enteredRate,
+          ) &&
+          enteredRate >= 0
+            ? enteredRate
+            : masterValue;
+
+        const masterRateUnit =
+          unitAliases[
+            text(
+              masterRate?.unit ||
+              masterRate?.rateUnit,
+            ).toLowerCase()
+          ];
+
+        const rateUnit =
+          enteredRateUnit ||
+          masterRateUnit ||
+          unit;
+
+        const rateKey =
+          text(
+            masterRate?.id ||
+            masterRate?.rateKey,
+          );
+
+        const ingredient:
+          RawRow = {
+            name:
+              ingredientName.trim(),
+
+            ingredientName:
+              ingredientName.trim(),
+
+            quantity,
+
+            qty:
+              quantity,
+
+            unit,
+
+            marketRate:
+              finalRate,
+
+            rate:
+              finalRate,
+
+            rateUnit,
+        };
+
+        if (rateKey) {
+          ingredient.rateKey =
+            rateKey;
+        }
+
+        const currentIngredients =
+          Array.isArray(
+            activeRecipe.ingredients,
+          )
+            ? activeRecipe
+                .ingredients as RawRow[]
+            : [];
+
+        activeRecipe.ingredients = [
+          ...currentIngredients,
+          ingredient,
+        ];
+
+        ingredientCount += 1;
+        continue;
       }
+
+      skippedIngredients += 1;
     }
 
     if (!added.length) {
       setError(
-        'No new valid recipes found. Duplicate recipe names are skipped.',
+        'No valid recipes found. Recipe lines must start with R | and ingredients with I |.',
       );
       return;
     }
@@ -1294,21 +1495,22 @@ export default function RecipesPage() {
     const firstAddedIndex =
       catalog.dishes.length;
 
-    const nextCatalog = {
-      ...catalog,
+    const nextCatalog:
+      RecipeCatalog = {
+        ...catalog,
 
-      dishes: [
-        ...catalog.dishes,
-        ...added,
-      ],
+        dishes: [
+          ...catalog.dishes,
+          ...added,
+        ],
 
-      categories:
-        Array.from(
-          nextCategories,
-        ),
+        categories:
+          Array.from(
+            nextCategories,
+          ),
 
-      subcategories:
-        nextSubcategories,
+        subcategories:
+          nextSubcategories,
     };
 
     setCatalog(
@@ -1347,11 +1549,19 @@ export default function RecipesPage() {
         added.length === 1
           ? ''
           : 's'
+      } + ${ingredientCount} ingredient${
+        ingredientCount === 1
+          ? ''
+          : 's'
       } added${
-        skipped
-          ? ` · ${skipped} duplicate/invalid skipped`
+        skippedRecipes
+          ? ` · ${skippedRecipes} duplicate/invalid recipe skipped`
           : ''
-      }. Click Save & Sync to publish.`,
+      }${
+        skippedIngredients
+          ? ` · ${skippedIngredients} invalid ingredient/line skipped`
+          : ''
+      }. Click Save & Sync.`,
     );
   }
 
@@ -2384,17 +2594,22 @@ export default function RecipesPage() {
                   event.target.value,
                 )
               }
-              placeholder={`Dish Name | Category | Subcategory | Serving Qty | Serving Unit | Base Guests
+              placeholder={`R | Mix Veg | Sabji | Dry | 100 | gram | 100
+I | Potato | 5 | kg | 28 | kg
+I | Cauliflower | 4 | kg | 60 | kg
+I | Green Peas | 3 | kg | 120 | kg
+I | Oil | 1.5 | ltr | 150 | ltr
 
-Mix Veg | Sabji | Dry | 100 | gram | 100
-Matar Paneer | Paneer | Gravy | 120 | gram | 100
-Veg Pulao | Rice | Pulao | 150 | gram | 100
-Gulab Jamun | Sweet | Indian Sweet | 1 | piece | 100`}
+R | Matar Paneer | Paneer | Gravy | 120 | gram | 100
+I | Paneer | 8 | kg | 280 | kg
+I | Green Peas | 4 | kg | 120 | kg
+I | Onion | 3 | kg | 30 | kg
+I | Tomato | 4 | kg | 35 | kg`}
             />
 
             <div className="recipe-fast-bulk-footer">
               <small>
-                Format: Dish Name | Category | Subcategory | Serving Qty | Serving Unit | Base Guests
+                R = Recipe · I = Ingredient · I | Name | Qty | Unit | Rate | Rate Unit
               </small>
 
               <button
