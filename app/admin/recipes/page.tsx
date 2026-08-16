@@ -347,6 +347,16 @@ export default function RecipesPage() {
     setBulkIngredients,
   ] = useState('');
 
+  const [
+    bulkRecipes,
+    setBulkRecipes,
+  ] = useState('');
+
+  const [
+    showBulkRecipes,
+    setShowBulkRecipes,
+  ] = useState(false);
+
   async function loadRecipes(background = false) {
     if (!background) setLoading(true);
     setError('');
@@ -1057,6 +1067,294 @@ export default function RecipesPage() {
     );
   }
 
+  function addBulkRecipes() {
+    if (!catalog) {
+      return;
+    }
+
+    const unitAliases:
+      Record<string, string> = {
+        g: 'gram',
+        gm: 'gram',
+        gram: 'gram',
+        grams: 'gram',
+
+        ml: 'ml',
+
+        pc: 'piece',
+        pcs: 'piece',
+        piece: 'piece',
+        pieces: 'piece',
+
+        serving: 'serving',
+        servings: 'serving',
+
+        kg: 'kg',
+        kgs: 'kg',
+
+        l: 'ltr',
+        lt: 'ltr',
+        ltr: 'ltr',
+        litre: 'ltr',
+        liter: 'ltr',
+      };
+
+    const lines =
+      bulkRecipes
+        .split(/\r?\n/)
+        .map(
+          (line) =>
+            line.trim(),
+        )
+        .filter(Boolean);
+
+    if (!lines.length) {
+      setError(
+        'Paste at least one recipe.',
+      );
+      return;
+    }
+
+    const existingNames =
+      new Set(
+        catalog.dishes.map(
+          (dish) =>
+            recipeName(dish)
+              .toLowerCase(),
+        ),
+      );
+
+    const added:
+      RawRow[] = [];
+
+    const nextCategories =
+      new Set(
+        catalog.categories,
+      );
+
+    const nextSubcategories:
+      Record<
+        string,
+        string[]
+      > = {
+        ...catalog.subcategories,
+      };
+
+    let skipped = 0;
+
+    for (const line of lines) {
+      const parts =
+        line
+          .split(
+            /\s*(?:\t|\||,)\s*/,
+          )
+          .map(
+            (part) =>
+              part.trim(),
+          );
+
+      const name =
+        parts[0] || '';
+
+      const recipeCategory =
+        parts[1] ||
+        'Other';
+
+      const subcategory =
+        parts[2] || '';
+
+      const servingSize =
+        Number(
+          parts[3],
+        );
+
+      const rawServingUnit =
+        (
+          parts[4] ||
+          'serving'
+        )
+          .trim()
+          .toLowerCase();
+
+      const servingUnit =
+        unitAliases[
+          rawServingUnit
+        ];
+
+      const baseGuests =
+        Number(
+          parts[5],
+        );
+
+      const normalizedName =
+        name
+          .replace(
+            /\s+/g,
+            ' ',
+          )
+          .trim();
+
+      const nameKey =
+        normalizedName
+          .toLowerCase();
+
+      if (
+        !normalizedName ||
+        existingNames.has(
+          nameKey,
+        ) ||
+        !servingUnit
+      ) {
+        skipped += 1;
+        continue;
+      }
+
+      const safeServingSize =
+        Number.isFinite(
+          servingSize,
+        ) &&
+        servingSize > 0
+          ? servingSize
+          : 1;
+
+      const safeBaseGuests =
+        Number.isFinite(
+          baseGuests,
+        ) &&
+        baseGuests > 0
+          ? Math.round(
+              baseGuests,
+            )
+          : 100;
+
+      added.push({
+        dishName:
+          normalizedName,
+        name:
+          normalizedName,
+
+        category:
+          recipeCategory,
+
+        subcategory,
+
+        baseGuests:
+          safeBaseGuests,
+
+        servingSize:
+          safeServingSize,
+
+        servingUnit,
+
+        dishRate: 0,
+
+        ingredients: [],
+      });
+
+      existingNames.add(
+        nameKey,
+      );
+
+      nextCategories.add(
+        recipeCategory,
+      );
+
+      if (subcategory) {
+        const current =
+          nextSubcategories[
+            recipeCategory
+          ] || [];
+
+        if (
+          !current.some(
+            (item) =>
+              item
+                .toLowerCase() ===
+              subcategory
+                .toLowerCase(),
+          )
+        ) {
+          nextSubcategories[
+            recipeCategory
+          ] = [
+            ...current,
+            subcategory,
+          ];
+        }
+      }
+    }
+
+    if (!added.length) {
+      setError(
+        'No new valid recipes found. Duplicate recipe names are skipped.',
+      );
+      return;
+    }
+
+    const firstAddedIndex =
+      catalog.dishes.length;
+
+    const nextCatalog = {
+      ...catalog,
+
+      dishes: [
+        ...catalog.dishes,
+        ...added,
+      ],
+
+      categories:
+        Array.from(
+          nextCategories,
+        ),
+
+      subcategories:
+        nextSubcategories,
+    };
+
+    setCatalog(
+      nextCatalog,
+    );
+
+    memoryRecipeCatalog =
+      nextCatalog;
+
+    setBulkRecipes('');
+
+    setShowBulkRecipes(
+      false,
+    );
+
+    setQuery('');
+
+    setCategory(
+      'ALL',
+    );
+
+    setSelectedIndex(
+      firstAddedIndex,
+    );
+
+    setRecipePage(
+      recipePageForIndex(
+        firstAddedIndex,
+      ),
+    );
+
+    setError('');
+
+    setMessage(
+      `${added.length} recipe${
+        added.length === 1
+          ? ''
+          : 's'
+      } added${
+        skipped
+          ? ` · ${skipped} duplicate/invalid skipped`
+          : ''
+      }. Click Save & Sync to publish.`,
+    );
+  }
+
   function addRecipe() {
     if (!catalog) {
       return;
@@ -1526,6 +1824,71 @@ export default function RecipesPage() {
             cursor:wait;
           }
 
+          .recipe-fast-actions {
+            flex-wrap:wrap;
+          }
+
+          .recipe-fast-bulk-recipes {
+            display:grid;
+            gap:10px;
+            padding:14px;
+            border:1px solid #303944;
+            border-radius:14px;
+            background:#10161e;
+          }
+
+          .recipe-fast-bulk-head {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+          }
+
+          .recipe-fast-bulk-head div {
+            display:grid;
+            gap:3px;
+          }
+
+          .recipe-fast-bulk-head strong {
+            font-size:14px;
+          }
+
+          .recipe-fast-bulk-head span {
+            color:#8995a4;
+            font-size:10px;
+          }
+
+          .recipe-fast-bulk-textarea {
+            width:100%;
+            min-height:170px;
+            resize:vertical;
+            padding:12px;
+            border:1px solid #303844;
+            border-radius:10px;
+            outline:0;
+            background:#0b1016;
+            color:#e7edf4;
+            font:inherit;
+            font-size:11px;
+            line-height:1.6;
+          }
+
+          .recipe-fast-bulk-textarea:focus {
+            border-color:#428de8;
+          }
+
+          .recipe-fast-bulk-footer {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+          }
+
+          .recipe-fast-bulk-footer small {
+            color:#7f8b99;
+            font-size:9px;
+          }
+
           .recipe-fast-sync {
             padding:9px 11px;
             border:1px solid #303944;
@@ -1943,6 +2306,22 @@ export default function RecipesPage() {
             <button
               className="recipe-fast-button"
               type="button"
+              onClick={() =>
+                setShowBulkRecipes(
+                  (current) =>
+                    !current,
+                )
+              }
+              disabled={
+                !catalog
+              }
+            >
+              + Bulk Recipes
+            </button>
+
+            <button
+              className="recipe-fast-button"
+              type="button"
               onClick={
                 addRecipe
               }
@@ -1970,6 +2349,69 @@ export default function RecipesPage() {
             </button>
           </div>
         </div>
+
+        {showBulkRecipes ? (
+          <div className="recipe-fast-bulk-recipes">
+            <div className="recipe-fast-bulk-head">
+              <div>
+                <strong>
+                  Bulk Recipe Adder
+                </strong>
+
+                <span>
+                  Add many recipe headers in one paste.
+                </span>
+              </div>
+
+              <button
+                className="recipe-fast-button"
+                type="button"
+                onClick={() =>
+                  setShowBulkRecipes(
+                    false,
+                  )
+                }
+              >
+                Close
+              </button>
+            </div>
+
+            <textarea
+              className="recipe-fast-bulk-textarea"
+              value={bulkRecipes}
+              onChange={(event) =>
+                setBulkRecipes(
+                  event.target.value,
+                )
+              }
+              placeholder={`Dish Name | Category | Subcategory | Serving Qty | Serving Unit | Base Guests
+
+Mix Veg | Sabji | Dry | 100 | gram | 100
+Matar Paneer | Paneer | Gravy | 120 | gram | 100
+Veg Pulao | Rice | Pulao | 150 | gram | 100
+Gulab Jamun | Sweet | Indian Sweet | 1 | piece | 100`}
+            />
+
+            <div className="recipe-fast-bulk-footer">
+              <small>
+                Format: Dish Name | Category | Subcategory | Serving Qty | Serving Unit | Base Guests
+              </small>
+
+              <button
+                className="recipe-fast-button primary"
+                type="button"
+                disabled={
+                  !bulkRecipes.trim()
+                }
+                onClick={
+                  addBulkRecipes
+                }
+              >
+                Add Recipes
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div
           className={`recipe-fast-sync ${
