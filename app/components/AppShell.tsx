@@ -11,8 +11,6 @@ type NavIcon = 'event' | 'team' | 'extras' | 'cost' | 'final' | 'profile' | 'cli
 
 const clientNav = [
   { href: '/app/event', label: 'Event', mobileLabel: 'Event', description: 'Event and menu', icon: 'event' as NavIcon },
-  { href: '/app/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Plan the team', icon: 'team' as NavIcon },
-  { href: '/app/extra-cost', label: 'Extra Cost', mobileLabel: 'Extras', description: 'Transport and supplies', icon: 'extras' as NavIcon },
   { href: '/app/cost', label: 'Cost', mobileLabel: 'Cost', description: 'Calculate price', icon: 'cost' as NavIcon },
   { href: '/app/final-costing', label: 'Final Costing', mobileLabel: 'Final', description: 'Price and profit', icon: 'final' as NavIcon },
   { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Business settings', icon: 'profile' as NavIcon },
@@ -20,7 +18,6 @@ const clientNav = [
 
 const adminNav = [
   { href: '/admin/users', label: 'Clients', mobileLabel: 'Clients', description: 'Accounts and access', icon: 'clients' as NavIcon },
-  { href: '/admin/new-dishes', label: 'New dishes', mobileLabel: 'New', description: 'Review uploaded dishes', icon: 'dishes' as NavIcon },
   { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish catalog and rates', icon: 'dishes' as NavIcon },
   { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients and recipe costing', icon: 'dishes' as NavIcon },
   { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Categories and rates', icon: 'ingredients' as NavIcon },

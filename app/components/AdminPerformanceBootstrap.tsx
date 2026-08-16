@@ -23,7 +23,7 @@ type FastWindow =
   };
 
 const PREFIX =
-  'admin_fast_cache_v4:';
+  'admin_fast_cache_v5:';
 
 const REFRESH_AFTER =
   20 * 1000;
@@ -48,11 +48,9 @@ const inFlight =
 
 const ADMIN_ROUTES = [
   '/admin/users',
-  '/admin/new-dishes',
   '/admin/dishes',
   '/admin/recipes',
   '/admin/ingredients',
-  '/admin/analytics',
 ];
 
 const CRITICAL_APIS = [
@@ -674,10 +672,7 @@ export default function AdminPerformanceBootstrap() {
         : pathname ===
             '/admin/users'
           ? '/api/admin/users'
-          : pathname ===
-              '/admin/new-dishes'
-            ? '/api/admin/dish-suggestions'
-            : null;
+          : null;
 
     if (!secondaryApi) {
       return;

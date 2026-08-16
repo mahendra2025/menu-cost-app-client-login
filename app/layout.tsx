@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import PwaRegister from './components/PwaRegister';
-import ProductAnalyticsTracker from './components/ProductAnalyticsTracker';
 import AdminPerformanceBootstrap from './components/AdminPerformanceBootstrap';
 import './globals.css';
 
@@ -54,7 +53,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         {children}
         <AdminPerformanceBootstrap />
-        <ProductAnalyticsTracker />
         <PwaRegister />
       </body>
     </html>
