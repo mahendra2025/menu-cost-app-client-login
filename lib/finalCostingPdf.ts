@@ -5,6 +5,7 @@ import autoTable from 'jspdf-autotable';
 import type { RowInput } from 'jspdf-autotable';
 import { calculate } from './store';
 import { buildIngredientRequirementRows } from './pdfIngredientRequirements';
+import { inferIngredientCategory } from './ingredientCatalog';
 import type { WorkState } from './types';
 
 type PdfWithTable = jsPDF & {
@@ -151,6 +152,106 @@ function ingredientQuantity(value: number) {
   });
 }
 
+const PURCHASE_CATEGORY_ORDER = [
+  'Grocery',
+  'Dairy',
+  'Vegetables',
+  'Fruits',
+  'Spices',
+  'Oils & Fats',
+  'Beverages',
+  'Bakery & Packaged',
+  'Other',
+] as const;
+
+type PurchaseCategory =
+  (typeof PURCHASE_CATEGORY_ORDER)[number];
+
+function purchaseCategory(
+  ingredientName: string,
+): PurchaseCategory {
+  const value =
+    ingredientName
+      .trim()
+      .toLowerCase();
+
+  // Fresh vegetables first so items such as
+  // green chilli go to Vegetables, not Spices.
+  const vegetableWords = [
+    'onion',
+    'tomato',
+    'potato',
+    'carrot',
+    'cabbage',
+    'capsicum',
+    'spinach',
+    'palak',
+    'mint',
+    'pudina',
+    'garlic',
+    'ginger',
+    'green chilli',
+    'green chili',
+    'coriander leaves',
+    'dhania leaves',
+    'cauliflower',
+    'broccoli',
+    'gourd',
+    'lauki',
+    'beetroot',
+    'pumpkin',
+    'bhindi',
+    'mushroom',
+  ];
+
+  if (
+    vegetableWords.some(
+      (word) => value.includes(word),
+    )
+  ) {
+    return 'Vegetables';
+  }
+
+  const category =
+    inferIngredientCategory(
+      ingredientName,
+    );
+
+  switch (category) {
+    case 'Dairy':
+      return 'Dairy';
+
+    case 'Vegetables & Herbs':
+      return 'Vegetables';
+
+    case 'Fruits':
+      return 'Fruits';
+
+    case 'Spices & Seasonings':
+      return 'Spices';
+
+    case 'Oils & Fats':
+      return 'Oils & Fats';
+
+    case 'Beverages':
+      return 'Beverages';
+
+    case 'Bakery & Packaged':
+      return 'Bakery & Packaged';
+
+    case 'Grains & Flour':
+    case 'Pulses & Legumes':
+    case 'Sweeteners':
+    case 'Sauces & Condiments':
+      return 'Grocery';
+
+    default:
+      // Cashew, almond, besan, atta and other
+      // dry-store ingredients fall into Grocery.
+      return 'Grocery';
+  }
+}
+
 export function downloadFinalCostingPdf(
   work: WorkState,
   recipes: unknown[] = [],
@@ -257,24 +358,71 @@ export function downloadFinalCostingPdf(
   });
 
   const ingredientRows: RowInput[] =
-    Array.from(
-      ingredientSummary.values(),
-    )
-      .sort((left, right) =>
-        left.name.localeCompare(
-          right.name,
-        ),
-      )
-      .map((ingredient) => [
-        ingredient.name,
-        ingredientQuantity(
-          ingredient.quantity,
-        ),
-        ingredient.unit,
-        Array.from(
-          ingredient.usedIn,
-        ).join(', '),
-      ]);
+    PURCHASE_CATEGORY_ORDER.flatMap(
+      (category) => {
+        const items =
+          Array.from(
+            ingredientSummary.values(),
+          )
+            .filter(
+              (ingredient) =>
+                purchaseCategory(
+                  ingredient.name,
+                ) === category,
+            )
+            .sort(
+              (left, right) =>
+                left.name.localeCompare(
+                  right.name,
+                ),
+            );
+
+        if (!items.length) {
+          return [];
+        }
+
+        const categoryRow: RowInput = [
+          {
+            content: category,
+            colSpan: 4,
+            styles: {
+              fillColor: [
+                230,
+                238,
+                248,
+              ],
+              textColor: [
+                20,
+                31,
+                48,
+              ],
+              fontStyle: 'bold',
+              fontSize: 9,
+              cellPadding: 2.4,
+            },
+          },
+        ];
+
+        const rows: RowInput[] =
+          items.map(
+            (ingredient) => [
+              ingredient.name,
+              ingredientQuantity(
+                ingredient.quantity,
+              ),
+              ingredient.unit,
+              Array.from(
+                ingredient.usedIn,
+              ).join(', '),
+            ],
+          );
+
+        return [
+          categoryRow,
+          ...rows,
+        ];
+      },
+    );
 
   const menuCostingRows: RowInput[] = [];
   const activeManpowerRows = work.manpower.filter(
@@ -515,7 +663,7 @@ export function downloadFinalCostingPdf(
 
   addSectionTitle(
     doc,
-    'Ingredient Requirement',
+    'Ingredient Purchase List - Category Wise',
     cursorY,
   );
 
@@ -523,7 +671,7 @@ export function downloadFinalCostingPdf(
   doc.setFontSize(7.5);
   doc.setTextColor(100, 110, 126);
   doc.text(
-    'Calculated from recipe quantities, members and selected portion percentage.',
+    'Combined ingredient quantities for the full menu, grouped for purchasing.',
     14,
     cursorY + 5,
   );
