@@ -1120,7 +1120,8 @@ export default function RecipesPage() {
 
     // Clone current recipes so existing data
     // is never directly mutated.
-    const nextDishes =
+    const nextDishes:
+      RawRow[] =
       catalog.dishes.map(
         (dish) => ({
           ...dish,
