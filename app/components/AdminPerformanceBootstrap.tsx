@@ -23,7 +23,7 @@ type FastWindow =
   };
 
 const PREFIX =
-  'admin_fast_cache_v2:';
+  'admin_fast_cache_v4:';
 
 const REFRESH_AFTER =
   20 * 1000;

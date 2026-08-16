@@ -27,7 +27,7 @@ type RecipeCatalog = {
     Record<string, string[]>;
 };
 
-const RECIPE_CACHE_KEY = 'admin_recipe_catalog_v1';
+const RECIPE_CACHE_KEY = 'admin_recipe_catalog_v2';
 const RECIPE_DISH_SYNC_KEY =
   'admin_recipe_dish_sync_v1';
 

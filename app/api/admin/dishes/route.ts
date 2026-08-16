@@ -11,7 +11,6 @@ import {
   mergeDishCatalog,
   readDeletedDishCategories,
 } from '../../../../lib/dishCostMaster';
-import defaultRecipesData from '../../../../lib/defaultRecipes.json';
 
 const CATEGORY_CATALOG_ID = 'global';
 
@@ -310,17 +309,17 @@ export async function GET(request: Request) {
         servingUnit: item.servingUnit,
         aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
       })))
-      : DISH_COST_ITEMS;
+      : [];
     const catalogItems = filterDishCatalogByStoredCategories(
       mergedItems,
       categoryCatalog?.categories,
       readDeletedDishCategories(categoryCatalog?.subcategories),
     );
 
-    const recipeHierarchy = [
-      ...readRecipeHierarchy(defaultRecipesData),
-      ...readRecipeHierarchy(recipeCatalog?.dishes),
-    ];
+    const recipeHierarchy =
+      readRecipeHierarchy(
+        recipeCatalog?.dishes,
+      );
     const recipeByName = new Map(
       recipeHierarchy.map((item) => [item.name.toLowerCase(), item]),
     );
