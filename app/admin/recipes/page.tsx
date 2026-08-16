@@ -307,6 +307,11 @@ export default function RecipesPage() {
       null,
     );
 
+  const [
+    bulkIngredients,
+    setBulkIngredients,
+  ] = useState('');
+
   async function loadRecipes(background = false) {
     if (!background) setLoading(true);
     setError('');
@@ -677,6 +682,144 @@ export default function RecipesPage() {
                 : ingredient,
           ),
       },
+    );
+  }
+
+  function addBulkIngredients() {
+    if (
+      selectedIndex === null ||
+      !selectedDish
+    ) {
+      return;
+    }
+
+    const unitAliases:
+      Record<string, string> = {
+        kg: 'kg',
+        kgs: 'kg',
+        kilogram: 'kg',
+        g: 'gram',
+        gm: 'gram',
+        gram: 'gram',
+        l: 'ltr',
+        lt: 'ltr',
+        ltr: 'ltr',
+        litre: 'ltr',
+        ml: 'ml',
+        pc: 'piece',
+        pcs: 'piece',
+        piece: 'piece',
+        pkt: 'packet',
+        packet: 'packet',
+      };
+
+    const lines =
+      bulkIngredients
+        .split(/\r?\n/)
+        .map((line) =>
+          line.trim(),
+        )
+        .filter(Boolean);
+
+    const added:
+      RawRow[] = [];
+
+    let skipped = 0;
+
+    lines.forEach((line) => {
+      const parts =
+        line
+          .split(
+            /\s*(?:\t|\||,)\s*/,
+          )
+          .map((part) =>
+            part.trim(),
+          );
+
+      const name =
+        parts[0] || '';
+
+      const quantity =
+        Number(parts[1]);
+
+      const rawUnit =
+        (
+          parts[2] ||
+          'kg'
+        ).toLowerCase();
+
+      const unit =
+        unitAliases[
+          rawUnit
+        ];
+
+      const rate =
+        Number(parts[3]);
+
+      if (
+        !name ||
+        !Number.isFinite(
+          quantity,
+        ) ||
+        quantity < 0 ||
+        !unit
+      ) {
+        skipped += 1;
+        return;
+      }
+
+      const safeRate =
+        Number.isFinite(rate) &&
+        rate >= 0
+          ? rate
+          : 0;
+
+      added.push({
+        name,
+        quantity,
+        qty: quantity,
+        unit,
+        marketRate:
+          safeRate,
+        rate:
+          safeRate,
+        rateUnit:
+          unit,
+      });
+    });
+
+    if (!added.length) {
+      setError(
+        'No valid ingredients found. Use: Name, Qty, Unit, Rate',
+      );
+      return;
+    }
+
+    updateDish(
+      selectedIndex,
+      {
+        ingredients: [
+          ...recipeIngredients(
+            selectedDish,
+          ),
+          ...added,
+        ],
+      },
+    );
+
+    setBulkIngredients('');
+    setError('');
+
+    setMessage(
+      `${added.length} ingredient${
+        added.length === 1
+          ? ''
+          : 's'
+      } added${
+        skipped
+          ? ` · ${skipped} skipped`
+          : ''
+      }.`,
     );
   }
 
@@ -2223,6 +2366,75 @@ export default function RecipesPage() {
                         }
                       >
                         Delete Recipe + Dish
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gap: '8px',
+                      marginBottom: '12px',
+                      padding: '12px',
+                      border: '1px solid #29323d',
+                      borderRadius: '12px',
+                      background: '#111820',
+                    }}
+                  >
+                    <div>
+                      <strong
+                        style={{
+                          fontSize: '12px',
+                        }}
+                      >
+                        Paste Bulk Ingredients
+                      </strong>
+
+                      <div
+                        style={{
+                          marginTop: '4px',
+                          color: '#7f8b99',
+                          fontSize: '10px',
+                        }}
+                      >
+                        One per line:
+                        Name, Qty, Unit, Rate
+                      </div>
+                    </div>
+
+                    <textarea
+                      className="recipe-fast-input"
+                      value={bulkIngredients}
+                      rows={6}
+                      style={{
+                        minHeight: '130px',
+                        paddingTop: '10px',
+                        paddingBottom: '10px',
+                        resize: 'vertical',
+                      }}
+                      placeholder={`Paneer,8,kg,280
+Onion,2,kg,30
+Tomato,3,kg,35
+Cream,0.8,kg,220`}
+                      onChange={(event) =>
+                        setBulkIngredients(
+                          event.target.value,
+                        )
+                      }
+                    />
+
+                    <div>
+                      <button
+                        className="recipe-fast-button primary"
+                        type="button"
+                        disabled={
+                          !bulkIngredients.trim()
+                        }
+                        onClick={
+                          addBulkIngredients
+                        }
+                      >
+                        + Add Bulk Ingredients
                       </button>
                     </div>
                   </div>
