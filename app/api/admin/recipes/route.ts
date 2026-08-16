@@ -9,6 +9,7 @@ import {
 } from '../../../../lib/dishCostMaster';
 import {
   INGREDIENT_UNITS,
+  canonicalIngredientName,
   inferIngredientCategory,
   normalizeIngredientId,
   normalizeIngredientRate,
@@ -133,13 +134,14 @@ function readCatalogPayload(value: unknown) {
         const ingredient =
           ingredientValue as Record<string, unknown>;
 
-        const name = String(
-          ingredient.name ||
-          ingredient.ingredientName ||
-          '',
-        )
-          .trim()
-          .replace(/\s+/g, ' ');
+        const name =
+          canonicalIngredientName(
+            String(
+              ingredient.name ||
+              ingredient.ingredientName ||
+              '',
+            ),
+          );
 
         const unit = normalizeRecipeIngredientUnit(
           ingredient.rateUnit ||
