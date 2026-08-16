@@ -55,14 +55,10 @@ const ADMIN_ROUTES = [
   '/admin/analytics',
 ];
 
-const ADMIN_APIS = [
-  '/api/admin/users',
-  '/api/admin/dish-suggestions',
+const CRITICAL_APIS = [
   '/api/admin/dishes',
   '/api/admin/recipes',
   '/api/admin/recipes?mode=version',
-  '/api/admin/ingredients',
-  '/api/admin/analytics',
 ];
 
 function storageKey(
@@ -175,6 +171,138 @@ function clearAdminCache() {
   } catch {
     // Cache cleanup is optional.
   }
+}
+
+function cacheKeyMatches(
+  key: string,
+  prefix: string,
+) {
+  return (
+    key === prefix ||
+    key.startsWith(
+      `${prefix}?`,
+    )
+  );
+}
+
+function clearMatchingCache(
+  prefixes: string[],
+) {
+  for (const key of [...memory.keys()]) {
+    if (
+      prefixes.some(
+        (prefix) =>
+          cacheKeyMatches(
+            key,
+            prefix,
+          ),
+      )
+    ) {
+      memory.delete(key);
+    }
+  }
+
+  try {
+    for (
+      let index =
+        sessionStorage.length - 1;
+      index >= 0;
+      index -= 1
+    ) {
+      const storedKey =
+        sessionStorage.key(index);
+
+      if (
+        !storedKey?.startsWith(
+          PREFIX,
+        )
+      ) {
+        continue;
+      }
+
+      const requestKey =
+        storedKey.slice(
+          PREFIX.length,
+        );
+
+      if (
+        prefixes.some(
+          (prefix) =>
+            cacheKeyMatches(
+              requestKey,
+              prefix,
+            ),
+        )
+      ) {
+        sessionStorage.removeItem(
+          storedKey,
+        );
+      }
+    }
+  } catch {
+    // Memory invalidation is enough.
+  }
+}
+
+function mutationImpact(
+  pathname: string,
+) {
+  if (
+    pathname.startsWith(
+      '/api/admin/recipes',
+    )
+  ) {
+    return [
+      '/api/admin/recipes',
+      '/api/admin/dishes',
+    ];
+  }
+
+  if (
+    pathname.startsWith(
+      '/api/admin/dishes',
+    )
+  ) {
+    return [
+      '/api/admin/dishes',
+      '/api/admin/recipes',
+    ];
+  }
+
+  if (
+    pathname.startsWith(
+      '/api/admin/ingredients',
+    )
+  ) {
+    return [
+      '/api/admin/ingredients',
+      '/api/admin/recipes',
+    ];
+  }
+
+  if (
+    pathname.startsWith(
+      '/api/admin/dish-suggestions',
+    )
+  ) {
+    return [
+      '/api/admin/dish-suggestions',
+      '/api/admin/dishes',
+      '/api/admin/recipes',
+    ];
+  }
+
+  if (
+    pathname.startsWith(
+      '/api/admin/users',
+    )
+  ) {
+    return [
+      '/api/admin/users',
+    ];
+  }
+
+  return [pathname];
 }
 
 function cachedResponse(
@@ -410,7 +538,11 @@ function installFastFetch() {
         if (
           response.ok
         ) {
-          clearAdminCache();
+          clearMatchingCache(
+            mutationImpact(
+              details.url.pathname,
+            ),
+          );
         }
 
         return response;
@@ -470,9 +602,39 @@ function installFastFetch() {
     true;
 }
 
+function primeCriticalAdminData() {
+  if (
+    typeof window ===
+    'undefined'
+  ) {
+    return;
+  }
+
+  if (
+    !window.location.pathname
+      .startsWith('/admin')
+  ) {
+    return;
+  }
+
+  CRITICAL_APIS.forEach(
+    (url) => {
+      void window
+        .fetch(
+          url,
+          {
+            cache: 'no-store',
+          },
+        )
+        .catch(() => {});
+    },
+  );
+}
+
 // Install before page useEffect
 // API requests begin.
 installFastFetch();
+primeCriticalAdminData();
 
 export default function AdminPerformanceBootstrap() {
   const router =
@@ -505,79 +667,38 @@ export default function AdminPerformanceBootstrap() {
       },
     );
 
-    let cancelled =
-      false;
+    const secondaryApi =
+      pathname ===
+        '/admin/ingredients'
+        ? '/api/admin/ingredients'
+        : pathname ===
+            '/admin/users'
+          ? '/api/admin/users'
+          : pathname ===
+              '/admin/new-dishes'
+            ? '/api/admin/dish-suggestions'
+            : null;
 
-    const warmData =
-      async () => {
-        if (cancelled) {
-          return;
-        }
-
-        await Promise.allSettled(
-          ADMIN_APIS.map(
-            (url) =>
-              fetch(
-                url,
-                {
-                  cache:
-                    'no-store',
-                },
-              ),
-          ),
-        );
-      };
-
-    const idleWindow =
-      window as Window & {
-        requestIdleCallback?: (
-          callback:
-            () => void,
-          options?: {
-            timeout: number;
-          },
-        ) => number;
-
-        cancelIdleCallback?: (
-          id: number,
-        ) => void;
-      };
-
-    if (
-      idleWindow
-        .requestIdleCallback
-    ) {
-      const id =
-        idleWindow
-          .requestIdleCallback(
-            () => {
-              void warmData();
-            },
-            {
-              timeout: 800,
-            },
-          );
-
-      return () => {
-        cancelled = true;
-
-        idleWindow
-          .cancelIdleCallback?.(
-            id,
-          );
-      };
+    if (!secondaryApi) {
+      return;
     }
 
     const timer =
       window.setTimeout(
         () => {
-          void warmData();
+          void fetch(
+            secondaryApi,
+            {
+              cache: 'no-store',
+            },
+          ).catch(
+            () => {},
+          );
         },
-        250,
+        150,
       );
 
     return () => {
-      cancelled = true;
       window.clearTimeout(
         timer,
       );

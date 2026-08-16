@@ -31,6 +31,16 @@ const RECIPE_CACHE_KEY = 'admin_recipe_catalog_v1';
 const RECIPE_DISH_SYNC_KEY =
   'admin_recipe_dish_sync_v1';
 
+let memoryRecipeCatalog:
+  RecipeCatalog | null =
+    null;
+
+let memoryRecipeCatalogLoadedAt =
+  0;
+
+const RECIPE_MEMORY_FRESH_MS =
+  20 * 1000;
+
 function text(value: unknown) {
   return String(value ?? '').trim();
 }
@@ -432,6 +442,12 @@ export default function RecipesPage() {
         nextCatalog,
       );
 
+      memoryRecipeCatalog =
+        nextCatalog;
+
+      memoryRecipeCatalogLoadedAt =
+        Date.now();
+
       setSelectedIndex(
         requestedRecipeIndex(
           nextCatalog.dishes,
@@ -462,6 +478,30 @@ export default function RecipesPage() {
   }
 
   useEffect(() => {
+    if (memoryRecipeCatalog) {
+      setCatalog(
+        memoryRecipeCatalog,
+      );
+
+      setSelectedIndex(
+        requestedRecipeIndex(
+          memoryRecipeCatalog.dishes,
+        ),
+      );
+
+      setLoading(false);
+
+      if (
+        Date.now() -
+          memoryRecipeCatalogLoadedAt >
+        RECIPE_MEMORY_FRESH_MS
+      ) {
+        void loadRecipes(true);
+      }
+
+      return;
+    }
+
     try {
       const raw =
         localStorage.getItem(
@@ -476,6 +516,12 @@ export default function RecipesPage() {
           Array.isArray(cached.dishes) &&
           Array.isArray(cached.rates)
         ) {
+          memoryRecipeCatalog =
+            cached;
+
+          memoryRecipeCatalogLoadedAt =
+            0;
+
           setCatalog(cached);
 
           setSelectedIndex(

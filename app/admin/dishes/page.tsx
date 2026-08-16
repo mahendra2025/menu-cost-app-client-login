@@ -297,6 +297,118 @@ export default function AdminDishesPage() {
         let data =
           await response.json();
 
+        function showDishData(
+          payload:
+            Record<string, unknown>,
+        ) {
+          const dishItems =
+            parseDishItems(
+              payload.items,
+            );
+
+          const loadedCategories =
+            Array.isArray(
+              payload.categories,
+            )
+              ? payload.categories
+                  .map(
+                    (
+                      category:
+                        unknown,
+                    ) =>
+                      String(
+                        category,
+                      ).trim(),
+                  )
+                  .filter(Boolean)
+              : [...CATEGORIES];
+
+          const loadedSubcategories =
+            payload.subcategories &&
+            typeof payload.subcategories ===
+              'object' &&
+            !Array.isArray(
+              payload.subcategories,
+            )
+              ? Object.fromEntries(
+                  Object.entries(
+                    payload.subcategories as
+                      Record<
+                        string,
+                        unknown
+                      >,
+                  ).map(
+                    ([
+                      category,
+                      values,
+                    ]) => [
+                      category,
+                      Array.isArray(
+                        values,
+                      )
+                        ? values
+                            .map(
+                              (
+                                value,
+                              ) =>
+                                String(
+                                  value,
+                                ).trim(),
+                            )
+                            .filter(
+                              Boolean,
+                            )
+                        : [],
+                    ],
+                  ),
+                )
+              : {};
+
+          const cleaned =
+            dishItems.map(
+              (item) =>
+                toEditableDish(
+                  item,
+                ),
+            );
+
+          setRows(cleaned);
+
+          setCategories(
+            Array.from(
+              new Set([
+                ...loadedCategories,
+                ...cleaned.map(
+                  (item) =>
+                    item.category,
+                ),
+                'Other',
+              ]),
+            ),
+          );
+
+          setSubcategories(
+            loadedSubcategories,
+          );
+
+          saveDishCostItems(
+            cleaned.map(
+              toDishCostItem,
+            ),
+          );
+
+          // Critical speed change:
+          // show Dishes immediately.
+          setReady(true);
+        }
+
+        showDishData(
+          data as Record<
+            string,
+            unknown
+          >,
+        );
+
         if (
           recipeVersionResponse.ok
         ) {
@@ -430,29 +542,11 @@ export default function AdminDishesPage() {
           );
         }
 
-        const dishItems = parseDishItems(data.items);
-        const loadedCategories = Array.isArray(data.categories)
-          ? data.categories.map((category: unknown) => String(category).trim()).filter(Boolean)
-          : [...CATEGORIES];
-        const loadedSubcategories = data.subcategories && typeof data.subcategories === 'object' && !Array.isArray(data.subcategories)
-          ? Object.fromEntries(Object.entries(data.subcategories as Record<string, unknown>).map(([category, values]) => [
-            category,
-            Array.isArray(values) ? values.map((value) => String(value).trim()).filter(Boolean) : [],
-          ]))
-          : {};
-        const cleaned =
-          dishItems.map(
-            (item) =>
-              toEditableDish(item),
-          );
-
-        setRows(cleaned);
-        setCategories(Array.from(new Set([...loadedCategories, ...cleaned.map((item) => item.category), 'Other'])));
-        setSubcategories(loadedSubcategories);
-        saveDishCostItems(
-          cleaned.map(
-            toDishCostItem,
-          ),
+        showDishData(
+          data as Record<
+            string,
+            unknown
+          >,
         );
 
       } catch {
