@@ -756,6 +756,14 @@ export async function DELETE(request: Request) {
     await prisma.$transaction(async (tx) => {
       await tx.dishMasterItem.deleteMany();
 
+      await tx.recipeCatalog.updateMany({
+        where: { id: 'global' },
+        data: {
+          dishes: [] as Prisma.InputJsonValue,
+          deletedDishIds: [] as Prisma.InputJsonValue,
+        },
+      });
+
       await tx.dishCategoryCatalog.upsert({
         where: { id: CATEGORY_CATALOG_ID },
         create: {
