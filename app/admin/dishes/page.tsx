@@ -101,12 +101,34 @@ function parseDishItems(items: unknown): DishCostItem[] {
       const rate = Math.max(Number(row.rate) || 0, 0);
       const servingQuantity = Math.max(Number(row.servingQuantity) || 1, 0.01);
       const servingUnit = String(row.servingUnit || 'serving').trim() || 'serving';
+
+      const pieceWeightGrams =
+        servingUnit.toLowerCase() === 'piece'
+          ? (
+              Math.max(
+                Number(
+                  row.pieceWeightGrams,
+                ) || 0,
+                0,
+              ) || undefined
+            )
+          : undefined;
+
       const aliases = Array.isArray(row.aliases)
         ? row.aliases.map((alias) => String(alias).trim()).filter(Boolean)
         : [];
 
       if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
-      return { name, category, subcategory, rate, servingQuantity, servingUnit, aliases };
+      return {
+        name,
+        category,
+        subcategory,
+        rate,
+        servingQuantity,
+        servingUnit,
+        pieceWeightGrams,
+        aliases,
+      };
     })
     .filter((item): item is DishCostItem => item !== null);
 }
@@ -119,6 +141,23 @@ function toDishCostItem(item: EditableDish): DishCostItem {
     rate: Math.max(Number(item.rate) || 0, 0),
     servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
     servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
+
+    pieceWeightGrams:
+      String(
+        item.servingUnit || 'serving',
+      )
+        .trim()
+        .toLowerCase() === 'piece'
+        ? (
+            Math.max(
+              Number(
+                item.pieceWeightGrams,
+              ) || 0,
+              0,
+            ) || undefined
+          )
+        : undefined,
+
     aliases: allRowAliases(item),
   };
 }
@@ -1279,6 +1318,22 @@ async function handleCsvImport(
               String(
                 dish.servingUnit || 'serving',
               ).trim() || 'serving',
+
+            pieceWeightGrams:
+              String(
+                dish.servingUnit || 'serving',
+              )
+                .trim()
+                .toLowerCase() === 'piece'
+                ? (
+                    Math.max(
+                      Number(
+                        dish.pieceWeightGrams,
+                      ) || 0,
+                      0,
+                    ) || undefined
+                  )
+                : undefined,
 
             aliases: Array.isArray(dish.aliases)
               ? dish.aliases

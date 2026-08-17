@@ -7,6 +7,10 @@ export type CsvDishRow = {
   rate?: string | number;
   servingQuantity?: string | number;
   servingUnit?: string;
+
+  // grams for one piece, e.g. Gulab Jamun = 35
+  pieceWeightGrams?: string | number;
+
   aliases?: string;
 };
 
@@ -46,6 +50,22 @@ export function convertCsvDishRow(
     servingUnit:
       String(row.servingUnit || 'serving').trim() ||
       'serving',
+
+    pieceWeightGrams:
+      String(
+        row.servingUnit || 'serving',
+      )
+        .trim()
+        .toLowerCase() === 'piece'
+        ? (
+            Math.max(
+              Number(
+                row.pieceWeightGrams,
+              ) || 0,
+              0,
+            ) || undefined
+          )
+        : undefined,
 
     aliases,
   };

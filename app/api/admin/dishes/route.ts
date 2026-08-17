@@ -36,6 +36,19 @@ function normalizeItems(items: unknown) {
       const rate = Math.max(Number(row.rate) || 0, 0);
       const servingQuantity = Math.max(Number(row.servingQuantity) || 1, 0.01);
       const servingUnit = String(row.servingUnit || 'serving').trim() || 'serving';
+
+      const pieceWeightGrams =
+        servingUnit.toLowerCase() === 'piece'
+          ? (
+              Math.max(
+                Number(
+                  row.pieceWeightGrams,
+                ) || 0,
+                0,
+              ) || undefined
+            )
+          : undefined;
+
       const aliases = Array.isArray(row.aliases)
         ? row.aliases.map((alias) => String(alias).trim()).filter(Boolean)
         : [];
@@ -49,6 +62,7 @@ function normalizeItems(items: unknown) {
         rate,
         servingQuantity,
         servingUnit,
+        pieceWeightGrams,
         aliases,
         originalName,
       };
@@ -151,8 +165,23 @@ function readRecipeHierarchy(value: unknown) {
       const name = String(row.dishName || row.name || '').trim();
       const category = String(row.category || '').trim();
       const subcategory = String(row.subcategory || '').trim();
+
+      const pieceWeightGrams =
+        Math.max(
+          Number(
+            row.pieceWeightGrams,
+          ) || 0,
+          0,
+        ) || undefined;
+
       if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
-      return { name, category, subcategory };
+
+      return {
+        name,
+        category,
+        subcategory,
+        pieceWeightGrams,
+      };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 }
@@ -226,6 +255,13 @@ function syncRecipeCatalogWithDishes(
       catalogRate: item.rate,
       servingSize: item.servingQuantity,
       servingUnit: item.servingUnit,
+
+      pieceWeightGrams:
+        item.servingUnit
+          .toLowerCase() ===
+          'piece'
+          ? item.pieceWeightGrams
+          : undefined,
     }];
   });
 
@@ -246,6 +282,14 @@ function syncRecipeCatalogWithDishes(
       catalogRate: item.rate,
       servingSize: item.servingQuantity,
       servingUnit: item.servingUnit,
+
+      pieceWeightGrams:
+        item.servingUnit
+          .toLowerCase() ===
+          'piece'
+          ? item.pieceWeightGrams
+          : undefined,
+
       ingredients: [],
     });
   });
@@ -326,7 +370,14 @@ export async function GET(request: Request) {
       const recipe = recipeByName.get(item.name.trim().toLowerCase());
       return {
         ...item,
-        subcategory: item.subcategory || recipe?.subcategory || '',
+
+        subcategory:
+          item.subcategory ||
+          recipe?.subcategory ||
+          '',
+
+        pieceWeightGrams:
+          recipe?.pieceWeightGrams,
       };
     });
     const categories = normalizeCategories(
