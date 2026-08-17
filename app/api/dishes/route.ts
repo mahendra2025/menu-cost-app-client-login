@@ -344,6 +344,68 @@ export async function GET() {
     }
 
     /*
+     * Piece weight belongs to Recipe Master.
+     *
+     * Join recipe metadata by dish name so the user-side
+     * catalog automatically receives Weight / Piece without
+     * duplicating that value in another database column.
+     */
+    const recipePieceWeightByName =
+      new Map<string, number>();
+
+    if (
+      Array.isArray(
+        recipeCatalog?.dishes,
+      )
+    ) {
+      recipeCatalog.dishes.forEach(
+        (value) => {
+          if (
+            !value ||
+            typeof value !==
+              'object' ||
+            Array.isArray(value)
+          ) {
+            return;
+          }
+
+          const row =
+            value as Record<
+              string,
+              unknown
+            >;
+
+          const name =
+            String(
+              row.dishName ||
+              row.name ||
+              '',
+            ).trim();
+
+          const weight =
+            Math.max(
+              0,
+              Number(
+                row.pieceWeightGrams,
+              ) || 0,
+            );
+
+          if (
+            name &&
+            weight > 0
+          ) {
+            recipePieceWeightByName.set(
+              normalizeName(
+                name,
+              ),
+              weight,
+            );
+          }
+        },
+      );
+    }
+
+    /*
      * PostgreSQL Dish Master is authoritative.
      *
      * IMPORTANT:
@@ -379,6 +441,13 @@ export async function GET() {
 
           servingUnit:
             item.servingUnit,
+
+          pieceWeightGrams:
+            recipePieceWeightByName.get(
+              normalizeName(
+                item.name,
+              ),
+            ),
 
           aliases:
             Array.isArray(

@@ -1245,6 +1245,19 @@ export default function RecipesPage() {
             parts[6],
           );
 
+        /*
+         * Optional 8th R field:
+         *
+         * R | Gulab Jamun | Sweet | Milk Sweet |
+         * 1 | piece | 100 | 35
+         *
+         * 35 = grams per piece.
+         */
+        const pieceWeightGrams =
+          Number(
+            parts[7],
+          );
+
         const normalizedName =
           name
             .replace(
@@ -1285,6 +1298,15 @@ export default function RecipesPage() {
               )
             : 100;
 
+        const safePieceWeightGrams =
+          servingUnit === 'piece' &&
+          Number.isFinite(
+            pieceWeightGrams,
+          ) &&
+          pieceWeightGrams > 0
+            ? pieceWeightGrams
+            : 0;
+
         const existingIndex =
           recipeIndexByName.get(
             nameKey,
@@ -1324,6 +1346,9 @@ export default function RecipesPage() {
                 safeServingSize,
 
               servingUnit,
+
+              pieceWeightGrams:
+                safePieceWeightGrams,
 
               // New pasted ingredient list
               // replaces old ingredients.
@@ -1366,6 +1391,9 @@ export default function RecipesPage() {
                 safeServingSize,
 
               servingUnit,
+
+              pieceWeightGrams:
+                safePieceWeightGrams,
 
               dishRate: 0,
 
@@ -1695,6 +1723,9 @@ export default function RecipesPage() {
       servingSize: 1,
       servingUnit:
         'serving',
+
+      pieceWeightGrams: 0,
+
       dishRate: 0,
       ingredients: [],
     };
@@ -3185,15 +3216,26 @@ I | Tomato | 4 | kg | 35 | kg`}
                             selectedDish.servingUnit,
                           ) || 'serving'
                         }
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const nextUnit =
+                            event.target.value;
+
                           updateDish(
                             selectedIndex,
                             {
                               servingUnit:
-                                event.target.value,
+                                nextUnit,
+
+                              ...(nextUnit ===
+                              'piece'
+                                ? {}
+                                : {
+                                    pieceWeightGrams:
+                                      0,
+                                  }),
                             },
-                          )
-                        }
+                          );
+                        }}
                       >
                         <option value="gram">
                           gram
@@ -3220,6 +3262,84 @@ I | Tomato | 4 | kg | 35 | kg`}
                         </option>
                       </select>
                     </div>
+
+                    {text(
+                      selectedDish.servingUnit,
+                    ) === 'piece' ? (
+                      <div className="recipe-fast-field">
+                        <label>
+                          Weight / Piece (g)
+                        </label>
+
+                        <input
+                          className="recipe-fast-input"
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          value={Math.max(
+                            0,
+                            numberValue(
+                              selectedDish
+                                .pieceWeightGrams,
+                              0,
+                            ),
+                          )}
+                          placeholder="35"
+                          onChange={(event) =>
+                            updateDish(
+                              selectedIndex,
+                              {
+                                pieceWeightGrams:
+                                  Math.max(
+                                    0,
+                                    Number(
+                                      event
+                                        .target
+                                        .value,
+                                    ) || 0,
+                                  ),
+                              },
+                            )
+                          }
+                        />
+
+                        <small
+                          style={{
+                            color:
+                              '#7f8b99',
+                            fontSize:
+                              '9px',
+                          }}
+                        >
+                          Total serving ≈{' '}
+                          {(
+                            Math.max(
+                              0.01,
+                              numberValue(
+                                selectedDish
+                                  .servingSize,
+                                1,
+                              ),
+                            ) *
+                            Math.max(
+                              0,
+                              numberValue(
+                                selectedDish
+                                  .pieceWeightGrams,
+                                0,
+                              ),
+                            )
+                          ).toLocaleString(
+                            'en-IN',
+                            {
+                              maximumFractionDigits:
+                                1,
+                            },
+                          )}{' '}
+                          g
+                        </small>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="recipe-fast-costs">

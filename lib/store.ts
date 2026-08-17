@@ -2012,6 +2012,11 @@ export async function parseMenuText(
         portionUnit:
           matchedDish.servingUnit ??
           'serving',
+
+        pieceWeightGrams:
+          matchedDish
+            .pieceWeightGrams,
+
         serviceId: menuLine.serviceId,
         dayLabel: menuLine.dayLabel,
         mealLabel: menuLine.mealLabel,

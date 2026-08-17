@@ -3350,6 +3350,11 @@ export default function EventPage() {
                     matchedDish
                       ?.servingUnit ??
                     'serving',
+
+                  pieceWeightGrams:
+                    matchedDish
+                      ?.pieceWeightGrams,
+
                   serviceId,
                   dayLabel:
                     dayLabel || undefined,

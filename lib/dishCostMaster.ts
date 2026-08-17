@@ -20,6 +20,13 @@ export type DishCostItem = {
   rate: number;
   servingQuantity?: number;
   servingUnit?: string;
+
+  /*
+   * Physical weight of one piece.
+   * Example: Gulab Jamun = 35 g / piece.
+   */
+  pieceWeightGrams?: number;
+
   aliases?: string[];
 };
 
@@ -1732,6 +1739,13 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
     rate: Math.max(Number(item.rate) || 0, 0),
     servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
     servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
+
+    pieceWeightGrams:
+      Math.max(
+        0,
+        Number(item.pieceWeightGrams) || 0,
+      ) || undefined,
+
     aliases: cleanAliases,
   };
 }
