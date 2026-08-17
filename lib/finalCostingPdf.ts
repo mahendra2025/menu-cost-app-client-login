@@ -529,12 +529,52 @@ export function downloadFinalCostingPdf(
   const activeManpowerRows = work.manpower.filter(
     (row) => Number(row.quantity) > 0,
   );
+
+  const menuNameById =
+    new Map(
+      work.menu.map(
+        (dish) => [
+          dish.id,
+          dish.name,
+        ],
+      ),
+    );
+
+  function manpowerDishNames(
+    row: (typeof work.manpower)[number],
+  ) {
+    const ids =
+      Array.isArray(
+        row.assignedDishIds,
+      )
+        ? row.assignedDishIds
+        : [];
+
+    const names =
+      ids
+        .map(
+          (id) =>
+            menuNameById.get(id),
+        )
+        .filter(
+          (
+            name,
+          ): name is string =>
+            Boolean(name),
+        );
+
+    return names.length
+      ? names.join(', ')
+      : '-';
+  }
+
   const manpowerTableRows: RowInput[] = activeManpowerRows.length
     ? activeManpowerRows.map((row) => [
         [row.dayLabel, row.mealLabel]
           .filter(Boolean)
           .join(' - ') || 'General Event',
         row.role || 'Staff',
+        manpowerDishNames(row),
         Math.max(
           0,
           Number(row.quantity) || 0,
@@ -561,11 +601,13 @@ export function downloadFinalCostingPdf(
         'No manpower entered',
         '-',
         '-',
+        '-',
         pdfMoney(0),
       ]];
 
   if (activeManpowerRows.length) {
     manpowerTableRows.push([
+      '',
       '',
       '',
       '',
@@ -1005,6 +1047,7 @@ export function downloadFinalCostingPdf(
     head: [[
       'Function',
       'Staff Role',
+      'Assigned Dishes',
       'People',
       'Rate / Person',
       'Total',
@@ -1030,21 +1073,24 @@ export function downloadFinalCostingPdf(
     },
     columnStyles: {
       0: {
-        cellWidth: 44,
+        cellWidth: 32,
       },
       1: {
-        cellWidth: 52,
+        cellWidth: 30,
       },
       2: {
-        cellWidth: 20,
-        halign: 'right',
+        cellWidth: 50,
       },
       3: {
-        cellWidth: 32,
+        cellWidth: 16,
         halign: 'right',
       },
       4: {
-        cellWidth: 34,
+        cellWidth: 25,
+        halign: 'right',
+      },
+      5: {
+        cellWidth: 29,
         halign: 'right',
         fontStyle: 'bold',
       },

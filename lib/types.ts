@@ -181,6 +181,13 @@ export type ManpowerRow = {
   role: string;
   quantity: number;
   rate: number;
+
+  /*
+   * Optional dish-wise responsibility.
+   * Example: Cook -> Paneer, Dal, Rice.
+   */
+  assignedDishIds?: string[];
+
   serviceId?: string;
   dayLabel?: string;
   mealLabel?: string;
