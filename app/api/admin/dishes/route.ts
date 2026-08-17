@@ -4,7 +4,6 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../lib/prisma';
 import { getAdminCookieName, isValidAdminSessionToken } from '../../../../lib/adminAuth';
 import {
-  CATEGORIES,
   DISH_DELETED_CATEGORIES_KEY,
   DISH_COST_ITEMS,
   filterDishCatalogByStoredCategories,
@@ -91,8 +90,8 @@ function normalizeRateUpdates(items: unknown) {
 }
 
 function normalizeCategories(value: unknown, itemCategories: string[] = []) {
-  const source = Array.isArray(value) ? value : CATEGORIES;
-  const categories = [...source, ...itemCategories, 'Other']
+  const source = Array.isArray(value) ? value : [];
+  const categories = [...source, ...itemCategories]
     .map((category) => String(category || '').trim().replace(/\s+/g, ' '))
     .filter((category) => category && category.length <= 60);
   const unique = new Map<string, string>();
@@ -754,10 +753,23 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ ok: true, deleted });
     }
 
-    await prisma.$transaction([
-      prisma.dishMasterItem.deleteMany(),
-      prisma.dishCategoryCatalog.deleteMany(),
-    ]);
+    await prisma.$transaction(async (tx) => {
+      await tx.dishMasterItem.deleteMany();
+
+      await tx.dishCategoryCatalog.upsert({
+        where: { id: CATEGORY_CATALOG_ID },
+        create: {
+          id: CATEGORY_CATALOG_ID,
+          categories: [],
+          subcategories: {},
+        },
+        update: {
+          categories: [],
+          subcategories: {},
+        },
+      });
+    });
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: 'Failed to reset dishes' }, { status: 500 });
