@@ -2448,7 +2448,7 @@ export default function RecipesPage() {
           }
 
           .recipe-fast-quality {
-            display:grid;
+            display:none;
             gap:9px;
             margin:0 0 14px;
             padding:12px;
