@@ -23,7 +23,7 @@ type FastWindow =
   };
 
 const PREFIX =
-  'admin_fast_cache_v5:';
+  'admin_fast_cache_v6:';
 
 const REFRESH_AFTER =
   20 * 1000;
@@ -515,6 +515,25 @@ function installFastFetch() {
           );
 
       if (!isAdminApi) {
+        return nativeFetch(
+          input,
+          init,
+        );
+      }
+
+      const requestCacheMode =
+        init?.cache ??
+        (
+          input instanceof Request
+            ? input.cache
+            : undefined
+        );
+
+      // Explicit no-store must always hit the real server.
+      if (
+        details.method === 'GET' &&
+        requestCacheMode === 'no-store'
+      ) {
         return nativeFetch(
           input,
           init,
