@@ -1794,12 +1794,15 @@ function detectDishesFromLine(
         preferredCategory,
       );
 
-    if (
-      fuzzyMatch &&
-      (!preferredCategory ||
-        fuzzyMatch.category ===
-          preferredCategory)
-    ) {
+    if (fuzzyMatch) {
+      /*
+       * findFuzzyDishByName already uses strict edit-distance
+       * thresholds and returns null for ambiguous matches.
+       *
+       * Category is used as a ranking signal, not a hard blocker.
+       * This lets OCR/spelling variants resolve to the existing
+       * Dish Master item.
+       */
       return [fuzzyMatch];
     }
   }
