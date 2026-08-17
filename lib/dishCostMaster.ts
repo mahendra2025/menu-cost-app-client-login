@@ -1748,7 +1748,7 @@ export function getDishCostItems(): DishCostItem[] {
     }
     const parsed = JSON.parse(raw) as Array<Partial<DishCostItem>>;
     const cleaned = parsed.map((item) => sanitizeDishItem(item)).filter((item): item is DishCostItem => item !== null);
-    runtimeDishCostItems = cleaned.length ? cleaned : DISH_COST_ITEMS;
+    runtimeDishCostItems = cleaned;
     return runtimeDishCostItems;
   } catch {
     runtimeDishCostItems = DISH_COST_ITEMS;
@@ -1759,7 +1759,7 @@ export function getDishCostItems(): DishCostItem[] {
 export function saveDishCostItems(items: DishCostItem[]) {
   if (typeof window === 'undefined') return;
   const cleaned = items.map((item) => sanitizeDishItem(item)).filter((item): item is DishCostItem => item !== null);
-  runtimeDishCostItems = cleaned.length ? cleaned : DISH_COST_ITEMS;
+  runtimeDishCostItems = cleaned;
   invalidateDishSearchIndex();
   window.localStorage.setItem(DISH_MASTER_STORAGE_KEY, JSON.stringify(cleaned));
 }
@@ -1895,15 +1895,19 @@ export async function syncDishCostItemsFromServer() {
     const cleaned = (items as Array<Partial<DishCostItem>>)
       .map((item) => sanitizeDishItem(item))
       .filter((item): item is DishCostItem => item !== null);
-    if (cleaned.length) {
-      try {
-        saveDishCostItems(cleaned);
-      } catch {
-        // The fresh server catalog is still usable when browser storage is full.
-      }
-      return cleaned;
+    /*
+     * An empty server catalog is valid.
+     *
+     * Admin may intentionally delete every Dish Master row.
+     * Persist [] instead of restoring DISH_COST_ITEMS.
+     */
+    try {
+      saveDishCostItems(cleaned);
+    } catch {
+      // Runtime catalog is still updated even if browser storage is full.
     }
-    return DISH_COST_ITEMS;
+
+    return cleaned;
   } catch {
     return getDishCostItems();
   }

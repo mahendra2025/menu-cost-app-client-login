@@ -14,9 +14,7 @@ import {
 import { prisma } from '../../../lib/prisma';
 
 import {
-  DISH_COST_ITEMS,
   filterDishCatalogByStoredCategories,
-  mergeDishCatalog,
   readDeletedDishCategories,
 } from '../../../lib/dishCostMaster';
 
@@ -345,53 +343,60 @@ export async function GET() {
         );
     }
 
+    /*
+     * PostgreSQL Dish Master is authoritative.
+     *
+     * IMPORTANT:
+     * Do not merge the built-in DISH_COST_ITEMS here.
+     *
+     * If Admin deletes one dish, that dish must disappear from
+     * user-side detection.
+     *
+     * If Admin deletes every dish, this must stay [].
+     */
     const mergedItems =
-      items.length
-        ? mergeDishCatalog(
-            items.map(
-              (item) => ({
-                name:
-                  item.name,
+      items.map(
+        (item) => ({
+          name:
+            item.name,
 
-                category:
-                  item.category,
+          category:
+            item.category,
 
-                subcategory:
-                  item.subcategory,
+          subcategory:
+            item.subcategory,
 
-                rate:
-                  personalDishRates.get(
-                    normalizeName(
-                      item.name,
-                    ),
-                  ) ??
-                  item.rate,
+          rate:
+            personalDishRates.get(
+              normalizeName(
+                item.name,
+              ),
+            ) ??
+            item.rate,
 
-                servingQuantity:
-                  item.servingQuantity,
+          servingQuantity:
+            item.servingQuantity,
 
-                servingUnit:
-                  item.servingUnit,
+          servingUnit:
+            item.servingUnit,
 
-                aliases:
-                  Array.isArray(
-                    item.aliases,
+          aliases:
+            Array.isArray(
+              item.aliases,
+            )
+              ? item.aliases
+                  .map(
+                    (alias) =>
+                      String(
+                        alias,
+                      ).trim(),
                   )
-                    ? item.aliases
-                        .map(
-                          (alias) =>
-                            String(
-                              alias,
-                            ).trim(),
-                        )
-                        .filter(
-                          Boolean,
-                        )
-                    : [],
-              }),
-            ),
-          )
-        : DISH_COST_ITEMS;
+                  .filter(
+                    Boolean,
+                  )
+              : [],
+        }),
+      );
 
     const catalogItems =
       filterDishCatalogByStoredCategories(
@@ -415,9 +420,19 @@ export async function GET() {
       error,
     );
 
-    return NextResponse.json({
-      items:
-        DISH_COST_ITEMS,
-    });
+    /*
+     * Never resurrect built-in dishes when the database
+     * cannot be read.
+     */
+    return NextResponse.json(
+      {
+        items: [],
+        error:
+          'Dish catalog unavailable.',
+      },
+      {
+        status: 500,
+      },
+    );
   }
 }
