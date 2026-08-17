@@ -2147,9 +2147,47 @@ export function buildMenuCostBreakdown(
         ? automaticPortionFactor
         : customPortion / 100;
 
-    const adjustedCostPerPlate =
+    /*
+     * Serving quantity adjustment.
+     *
+     * New/edited dishes can remember their original serving
+     * quantity as portionBaseQuantity.
+     *
+     * Example:
+     * 1 Gulab Jamun = ₹12
+     * quantity changed to 2
+     * servingFactor = 2 / 1 = 2
+     * servingCostPerPlate = ₹24
+     *
+     * Legacy dishes without a base quantity deliberately use
+     * factor 1 so existing saved costings do not suddenly change.
+     */
+    const currentServingQuantity =
+      Math.max(
+        0,
+        Number(item.portionQuantity) || 0,
+      );
+
+    const storedBaseServingQuantity =
+      Math.max(
+        0,
+        Number(item.portionBaseQuantity) || 0,
+      );
+
+    const servingFactor =
+      storedBaseServingQuantity > 0
+        ? currentServingQuantity /
+          storedBaseServingQuantity
+        : 1;
+
+    const servingCostPerPlate =
       baseCostPerPlate *
+      servingFactor;
+
+    const adjustedCostPerPlate =
+      servingCostPerPlate *
       portionFactor;
+
     const effectivePax = Math.max(
       0,
       Number(item.servicePax) || Number(fallbackPax) || 0,

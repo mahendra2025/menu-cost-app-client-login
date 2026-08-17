@@ -42,6 +42,22 @@ export type MenuItem = {
   costPerPlate: number;
   portionQuantity?: number;
   portionUnit?: string;
+
+  /*
+   * Base serving used for proportional costing.
+   * Example:
+   * base = 1 piece @ ₹12
+   * selected = 2 pieces
+   * final serving cost = ₹24
+   */
+  portionBaseQuantity?: number;
+
+  /*
+   * Optional physical weight for piece-based food.
+   * Example Gulab Jamun = 35 g / piece.
+   */
+  pieceWeightGrams?: number;
+
   portionManuallyEdited?: boolean;
   portionMode?: 'AUTO' | 'CUSTOM';
   portionPercent?: number;

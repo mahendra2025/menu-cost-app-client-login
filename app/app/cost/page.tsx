@@ -173,6 +173,24 @@ export default function CostPage() {
   ] =
     useState('');
 
+  const [
+    newDishServingQuantity,
+    setNewDishServingQuantity,
+  ] =
+    useState('1');
+
+  const [
+    newDishServingUnit,
+    setNewDishServingUnit,
+  ] =
+    useState('serving');
+
+  const [
+    newDishPieceWeight,
+    setNewDishPieceWeight,
+  ] =
+    useState('');
+
   useEffect(() => {
     const current = getSession();
     setSession(current);
@@ -467,10 +485,34 @@ export default function CostPage() {
           rate,
 
         portionQuantity:
-          1,
+          Math.max(
+            0.01,
+            Number(newDishServingQuantity) || 1,
+          ),
+
+        /*
+         * The quantity entered while creating the dish becomes
+         * its costing baseline.
+         *
+         * Example:
+         * 1 piece at ₹12 -> base quantity = 1.
+         */
+        portionBaseQuantity:
+          Math.max(
+            0.01,
+            Number(newDishServingQuantity) || 1,
+          ),
 
         portionUnit:
-          'serving',
+          newDishServingUnit || 'serving',
+
+        pieceWeightGrams:
+          newDishServingUnit === 'piece'
+            ? Math.max(
+                0,
+                Number(newDishPieceWeight) || 0,
+              ) || undefined
+            : undefined,
 
         portionMode:
           'AUTO',
@@ -620,6 +662,9 @@ export default function CostPage() {
       'Other',
     );
     setNewDishRate('');
+    setNewDishServingQuantity('1');
+    setNewDishServingUnit('serving');
+    setNewDishPieceWeight('');
     setShowAddDish(
       false,
     );
@@ -654,6 +699,80 @@ export default function CostPage() {
             }
           : item,
       ),
+    });
+  }
+
+  function updateDishServing(
+    id: string,
+    patch: {
+      portionQuantity?: number;
+      portionUnit?: string;
+      pieceWeightGrams?: number;
+    },
+  ) {
+    if (!work) return;
+
+    persist({
+      ...work,
+
+      menu: work.menu.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+
+        /*
+         * The first time quantity is edited, remember the
+         * original quantity. Future quantity changes then
+         * scale cost from this baseline.
+         */
+        const baseQuantity =
+          Number(item.portionBaseQuantity) > 0
+            ? Number(item.portionBaseQuantity)
+            : Math.max(
+                0.01,
+                Number(item.portionQuantity) || 1,
+              );
+
+        const nextUnit =
+          patch.portionUnit ??
+          item.portionUnit ??
+          'serving';
+
+        return {
+          ...item,
+
+          ...patch,
+
+          portionBaseQuantity:
+            baseQuantity,
+
+          portionQuantity:
+            patch.portionQuantity !== undefined
+              ? Math.max(
+                  0.01,
+                  Number(patch.portionQuantity) || 0.01,
+                )
+              : item.portionQuantity,
+
+          portionUnit:
+            nextUnit,
+
+          pieceWeightGrams:
+            nextUnit === 'piece'
+              ? (
+                  patch.pieceWeightGrams !== undefined
+                    ? Math.max(
+                        0,
+                        Number(patch.pieceWeightGrams) || 0,
+                      )
+                    : item.pieceWeightGrams
+                )
+              : undefined,
+
+          portionManuallyEdited:
+            true,
+        };
+      }),
     });
   }
 
@@ -946,6 +1065,102 @@ export default function CostPage() {
 
                 <div className="field">
                   <label>
+                    Serving Quantity
+                  </label>
+
+                  <input
+                    className="input"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={newDishServingQuantity}
+                    onChange={(event) =>
+                      setNewDishServingQuantity(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="1"
+                  />
+
+                  <small className="muted">
+                    Example: Gulab Jamun = 1 piece, Dal = 100 ml.
+                  </small>
+                </div>
+
+                <div className="field">
+                  <label>
+                    Serving Unit
+                  </label>
+
+                  <select
+                    className="select"
+                    value={newDishServingUnit}
+                    onChange={(event) => {
+                      const unit =
+                        event.target.value;
+
+                      setNewDishServingUnit(
+                        unit,
+                      );
+
+                      if (unit !== 'piece') {
+                        setNewDishPieceWeight('');
+                      }
+                    }}
+                  >
+                    <option value="serving">
+                      Serving
+                    </option>
+
+                    <option value="piece">
+                      Piece
+                    </option>
+
+                    <option value="g">
+                      Gram (g)
+                    </option>
+
+                    <option value="ml">
+                      Millilitre (ml)
+                    </option>
+                  </select>
+                </div>
+
+                {newDishServingUnit === 'piece' ? (
+                  <div className="field">
+                    <label>
+                      Weight / Piece
+                    </label>
+
+                    <input
+                      className="input"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      inputMode="decimal"
+                      value={newDishPieceWeight}
+                      onChange={(event) =>
+                        setNewDishPieceWeight(
+                          event.target.value,
+                        )
+                      }
+                      placeholder="Example: 35"
+                    />
+
+                    <small className="muted">
+                      {Number(newDishPieceWeight) > 0
+                        ? `Approx. ${(
+                            (Number(newDishServingQuantity) || 0) *
+                            Number(newDishPieceWeight)
+                          ).toFixed(0)} g total serving`
+                        : 'Example: Gulab Jamun ≈ 35 g / piece'}
+                    </small>
+                  </div>
+                ) : null}
+
+                <div className="field">
+                  <label>
                     Wedding Meal
                   </label>
 
@@ -1010,7 +1225,7 @@ export default function CostPage() {
 
                 <div className="field">
                   <label>
-                    Manual Rate ₹ / plate
+                    Base Rate ₹ / serving
                   </label>
 
                   <input
@@ -1032,7 +1247,7 @@ export default function CostPage() {
                   />
 
                   <small className="muted">
-                    If unknown, add the dish now and enter its rate later in the table.
+                    Enter the cost for the serving above. Example: 1 Gulab Jamun = ₹12. If quantity later becomes 2 pieces, costing becomes ₹24 before portion allocation.
                   </small>
                 </div>
               </div>
@@ -1206,11 +1421,148 @@ export default function CostPage() {
                               </select>
                             </td>
                             <td>
-                              <span className="dish-serving-quantity">
-                                {Number(item.portionQuantity) > 0
-                                  ? `${item.portionQuantity} ${item.portionUnit || 'serving'}`
-                                  : 'Not set'}
-                              </span>
+                              <div
+                                className="dish-serving-quantity"
+                                style={{
+                                  display: 'grid',
+                                  gap: 6,
+                                  minWidth: 150,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: 'grid',
+                                    gridTemplateColumns:
+                                      '72px minmax(76px, 1fr)',
+                                    gap: 6,
+                                  }}
+                                >
+                                  <input
+                                    className="input"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    inputMode="decimal"
+                                    aria-label={`Serving quantity for ${item.name}`}
+                                    value={
+                                      item.portionQuantity ??
+                                      1
+                                    }
+                                    onChange={(event) =>
+                                      updateDishServing(
+                                        item.id,
+                                        {
+                                          portionQuantity:
+                                            Math.max(
+                                              0.01,
+                                              Number(
+                                                event.target.value,
+                                              ) || 0.01,
+                                            ),
+                                        },
+                                      )
+                                    }
+                                  />
+
+                                  <select
+                                    className="select"
+                                    aria-label={`Serving unit for ${item.name}`}
+                                    value={
+                                      item.portionUnit ||
+                                      'serving'
+                                    }
+                                    onChange={(event) =>
+                                      updateDishServing(
+                                        item.id,
+                                        {
+                                          portionUnit:
+                                            event.target.value,
+                                        },
+                                      )
+                                    }
+                                  >
+                                    <option value="serving">
+                                      serving
+                                    </option>
+
+                                    <option value="piece">
+                                      piece
+                                    </option>
+
+                                    <option value="g">
+                                      g
+                                    </option>
+
+                                    <option value="ml">
+                                      ml
+                                    </option>
+                                  </select>
+                                </div>
+
+                                {(item.portionUnit || '').toLowerCase() ===
+                                'piece' ? (
+                                  <>
+                                    <label
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 5,
+                                        fontSize: 10,
+                                      }}
+                                    >
+                                      <input
+                                        className="input"
+                                        style={{
+                                          width: 76,
+                                        }}
+                                        type="number"
+                                        min="0"
+                                        step="0.1"
+                                        inputMode="decimal"
+                                        value={
+                                          item.pieceWeightGrams ??
+                                          ''
+                                        }
+                                        onChange={(event) =>
+                                          updateDishServing(
+                                            item.id,
+                                            {
+                                              pieceWeightGrams:
+                                                Math.max(
+                                                  0,
+                                                  Number(
+                                                    event.target.value,
+                                                  ) || 0,
+                                                ),
+                                            },
+                                          )
+                                        }
+                                        placeholder="35"
+                                        aria-label={`Weight per piece for ${item.name}`}
+                                      />
+
+                                      <span>g / pc</span>
+                                    </label>
+
+                                    {Number(
+                                      item.pieceWeightGrams,
+                                    ) > 0 ? (
+                                      <small className="muted">
+                                        ≈{' '}
+                                        {(
+                                          Number(
+                                            item.portionQuantity,
+                                          ) *
+                                          Number(
+                                            item.pieceWeightGrams,
+                                          )
+                                        ).toFixed(0)}{' '}
+                                        g total
+                                      </small>
+                                    ) : null}
+                                  </>
+                                ) : null}
+                              </div>
                             </td>
                             <td>{item.effectivePax.toLocaleString('en-IN')}</td>
                             <td>
@@ -1335,6 +1687,15 @@ export default function CostPage() {
                               {Number(item.portionQuantity) > 0
                                 ? `${item.portionQuantity} ${item.portionUnit || 'serving'}`
                                 : 'Not set'}
+
+                              {(item.portionUnit || '').toLowerCase() ===
+                                'piece' &&
+                              Number(item.pieceWeightGrams) > 0
+                                ? ` • ≈${(
+                                    Number(item.portionQuantity) *
+                                    Number(item.pieceWeightGrams)
+                                  ).toFixed(0)} g`
+                                : ''}
                             </b>
                           </div>
                           <div><small>Portion</small><b>{Math.round(item.portionPercent * 100) / 100}%</b></div>
