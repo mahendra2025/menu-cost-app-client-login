@@ -152,6 +152,107 @@ function ingredientQuantity(value: number) {
   });
 }
 
+/*
+ * Catering display order used in the
+ * Menu & Final Costing Report.
+ *
+ * The report stays meal-wise first,
+ * then groups dishes category-wise
+ * inside every meal.
+ */
+const MENU_CATEGORY_ORDER = [
+  'Welcome Drink',
+  'Mocktail',
+  'Beverage',
+  'Fruit',
+
+  'Starter',
+  'Soup',
+  'Chaat',
+
+  'Chinese',
+  'Italian',
+  'South Indian',
+  'Sandwich',
+  'Pizza',
+  'Pasta',
+  'Continental',
+  'Mexican',
+  'Thai',
+  'Lebanese',
+  'Sizzler',
+  'Street Food',
+  'Tandoor',
+  'Live Counter',
+
+  'Sweet',
+  'Ice Cream',
+
+  'Farsan',
+  'Snacks',
+
+  'Paneer',
+  'Sabji',
+  'Punjabi',
+  'North Indian',
+  'Rajasthani',
+  'Gujarati',
+  'Kathiyawadi',
+  'Mughlai',
+  'Awadhi',
+  'Kashmiri',
+  'Bengali',
+  'Maharashtrian',
+  'Sindhi',
+  'Bihari',
+  'Odia',
+  'Hyderabadi',
+  'Andhra',
+  'Kerala',
+  'Goan',
+  'Main Course',
+
+  'Jain',
+  'Satvik',
+  'Vegan',
+  'Kids',
+
+  'Bread',
+  'Dal / Kadhi',
+  'Rice',
+
+  'Salad',
+  'Raita',
+  'Papad',
+  'Pickle',
+  'Condiments',
+
+  'Bakery',
+  'Dry Fruit',
+  'Paan',
+  'Mukhwas',
+
+  'Fusion',
+  'Other',
+] as const;
+
+function menuCategoryRank(
+  category: string,
+) {
+  const index =
+    MENU_CATEGORY_ORDER.findIndex(
+      (value) =>
+        value.toLowerCase() ===
+        String(category || '')
+          .trim()
+          .toLowerCase(),
+    );
+
+  return index >= 0
+    ? index
+    : MENU_CATEGORY_ORDER.length;
+}
+
 const PURCHASE_CATEGORY_ORDER = [
   'Grocery',
   'Dairy',
@@ -473,40 +574,185 @@ export function downloadFinalCostingPdf(
     ]);
   }
 
+  /*
+   * Preserve original meal/function order,
+   * but sort categories inside each meal.
+   */
+  const mealOrder =
+    new Map<string, number>();
+
+  result.menuBreakdown.forEach(
+    (item) => {
+      const mealKey =
+        item.serviceId ||
+        `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`;
+
+      if (!mealOrder.has(mealKey)) {
+        mealOrder.set(
+          mealKey,
+          mealOrder.size,
+        );
+      }
+    },
+  );
+
+  const orderedMenuBreakdown =
+    result.menuBreakdown
+      .map(
+        (item, originalIndex) => ({
+          item,
+          originalIndex,
+        }),
+      )
+      .sort((left, right) => {
+        const leftMealKey =
+          left.item.serviceId ||
+          `${left.item.dayLabel || 'Event'}::${left.item.mealLabel || 'Event Menu'}`;
+
+        const rightMealKey =
+          right.item.serviceId ||
+          `${right.item.dayLabel || 'Event'}::${right.item.mealLabel || 'Event Menu'}`;
+
+        const mealDifference =
+          (mealOrder.get(leftMealKey) ?? 9999) -
+          (mealOrder.get(rightMealKey) ?? 9999);
+
+        if (mealDifference !== 0) {
+          return mealDifference;
+        }
+
+        const categoryDifference =
+          menuCategoryRank(
+            left.item.category,
+          ) -
+          menuCategoryRank(
+            right.item.category,
+          );
+
+        if (categoryDifference !== 0) {
+          return categoryDifference;
+        }
+
+        return (
+          left.originalIndex -
+          right.originalIndex
+        );
+      })
+      .map(
+        ({ item }) => item,
+      );
+
   let previousMealKey = '';
+  let previousCategory = '';
 
-  result.menuBreakdown.forEach((item) => {
-    const mealKey = item.serviceId ||
-      `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`;
+  orderedMenuBreakdown.forEach(
+    (item) => {
+      const mealKey =
+        item.serviceId ||
+        `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`;
 
-    if (previousMealKey && mealKey !== previousMealKey) {
-      menuCostingRows.push([{
-        content: '',
-        colSpan: 8,
-        styles: {
-          fillColor: [255, 255, 255],
-          lineColor: [255, 255, 255],
-          lineWidth: 0,
-          minCellHeight: 4,
-          cellPadding: 2,
-        },
-      }]);
-    }
+      const category =
+        String(
+          item.category ||
+          'Other',
+        ).trim() || 'Other';
 
-    menuCostingRows.push([
-      [item.dayLabel, item.mealLabel].filter(Boolean).join(' - ') || 'Event Menu',
-      item.name,
-      item.category,
-      Number(item.portionQuantity) > 0
-        ? `${item.portionQuantity} ${item.portionUnit || 'serving'}`
-        : 'Not set',
-      item.effectivePax.toLocaleString('en-IN'),
-      pdfMoney(item.baseCostPerPlate),
-      pdfMoney(item.adjustedCostPerPlate),
-      pdfMoney(item.itemTotalCost),
-    ]);
-    previousMealKey = mealKey;
-  });
+      /*
+       * New meal/function.
+       */
+      if (
+        previousMealKey &&
+        mealKey !== previousMealKey
+      ) {
+        menuCostingRows.push([
+          {
+            content: '',
+            colSpan: 8,
+            styles: {
+              fillColor:
+                [255, 255, 255],
+              lineColor:
+                [255, 255, 255],
+              lineWidth: 0,
+              minCellHeight: 5,
+              cellPadding: 2,
+            },
+          },
+        ]);
+
+        previousCategory = '';
+      }
+
+      /*
+       * Category heading inside the meal.
+       */
+      if (
+        category !==
+        previousCategory
+      ) {
+        menuCostingRows.push([
+          {
+            content:
+              category,
+            colSpan: 8,
+            styles: {
+              fillColor:
+                [230, 238, 248],
+              textColor:
+                [20, 31, 48],
+              fontStyle:
+                'bold',
+              fontSize: 8,
+              cellPadding: 2.2,
+            },
+          },
+        ]);
+
+        previousCategory =
+          category;
+      }
+
+      menuCostingRows.push([
+        [
+          item.dayLabel,
+          item.mealLabel,
+        ]
+          .filter(Boolean)
+          .join(' - ') ||
+          'Event Menu',
+
+        item.name,
+
+        item.category,
+
+        Number(
+          item.portionQuantity,
+        ) > 0
+          ? `${item.portionQuantity} ${item.portionUnit || 'serving'}`
+          : 'Not set',
+
+        item.effectivePax
+          .toLocaleString(
+            'en-IN',
+          ),
+
+        pdfMoney(
+          item.baseCostPerPlate,
+        ),
+
+        pdfMoney(
+          item.adjustedCostPerPlate,
+        ),
+
+        pdfMoney(
+          item.itemTotalCost,
+        ),
+      ]);
+
+      previousMealKey =
+        mealKey;
+    },
+  );
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
