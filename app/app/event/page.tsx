@@ -118,6 +118,16 @@ type MenuDetectionPreview = {
     | 'rules';
 };
 
+type ManualDishOption = {
+  name: string;
+  category: string;
+  subcategory?: string;
+  rate: number;
+  servingQuantity?: number;
+  servingUnit?: string;
+  pieceWeightGrams?: number;
+};
+
 type AiMenuExtraction = {
   eventDetails?: Partial<
     Record<
@@ -936,6 +946,43 @@ export default function EventPage() {
   ] =
     useState('');
 
+  /*
+   * Event-page manual menu selector.
+   */
+  const [
+    showManualDishSelector,
+    setShowManualDishSelector,
+  ] = useState(false);
+
+  const [
+    manualDishLoading,
+    setManualDishLoading,
+  ] = useState(false);
+
+  const [
+    manualDishCatalog,
+    setManualDishCatalog,
+  ] = useState<ManualDishOption[]>(
+    [],
+  );
+
+  const [
+    manualDishSearch,
+    setManualDishSearch,
+  ] = useState('');
+
+  const [
+    manualDishCategory,
+    setManualDishCategory,
+  ] = useState('ALL');
+
+  const [
+    selectedManualDishKeys,
+    setSelectedManualDishKeys,
+  ] = useState<Set<string>>(
+    () => new Set(),
+  );
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -1069,6 +1116,424 @@ export default function EventPage() {
     saveWork(
       session.tenantId,
       nextWork,
+    );
+  }
+
+  async function openManualDishSelector() {
+    const functionName =
+      importFunctionName.trim();
+
+    if (!functionName) {
+      setError(
+        'Enter the function name first, for example Breakfast, Lunch or Reception Dinner.',
+      );
+      return;
+    }
+
+    setError('');
+    setShowManualDishSelector(true);
+
+    if (manualDishCatalog.length) {
+      return;
+    }
+
+    setManualDishLoading(true);
+
+    try {
+      const response =
+        await fetch(
+          '/api/dishes',
+          {
+            cache: 'no-store',
+          },
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not load Dish Master.',
+        );
+      }
+
+      const items =
+        Array.isArray(data.items)
+          ? data.items
+          : [];
+
+      const cleaned =
+        items.flatMap(
+          (value: unknown) => {
+            if (
+              !value ||
+              typeof value !==
+                'object' ||
+              Array.isArray(value)
+            ) {
+              return [];
+            }
+
+            const row =
+              value as Record<
+                string,
+                unknown
+              >;
+
+            const name =
+              String(
+                row.name || '',
+              ).trim();
+
+            const category =
+              String(
+                row.category ||
+                  'Other',
+              ).trim() ||
+              'Other';
+
+            if (!name) {
+              return [];
+            }
+
+            return [
+              {
+                name,
+                category,
+
+                subcategory:
+                  String(
+                    row.subcategory ||
+                      '',
+                  ).trim(),
+
+                rate:
+                  Math.max(
+                    0,
+                    Number(
+                      row.rate,
+                    ) || 0,
+                  ),
+
+                servingQuantity:
+                  Math.max(
+                    0.01,
+                    Number(
+                      row.servingQuantity,
+                    ) || 1,
+                  ),
+
+                servingUnit:
+                  String(
+                    row.servingUnit ||
+                      'serving',
+                  ).trim() ||
+                  'serving',
+
+                pieceWeightGrams:
+                  Math.max(
+                    0,
+                    Number(
+                      row.pieceWeightGrams,
+                    ) || 0,
+                  ) || undefined,
+              },
+            ];
+          },
+        );
+
+      setManualDishCatalog(
+        cleaned,
+      );
+
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : 'Could not load Dish Master.',
+      );
+
+    } finally {
+      setManualDishLoading(false);
+    }
+  }
+
+  function toggleManualDish(
+    dish: ManualDishOption,
+  ) {
+    const key =
+      dishNameKey(
+        dish.name,
+      );
+
+    setSelectedManualDishKeys(
+      (current) => {
+        const next =
+          new Set(current);
+
+        if (next.has(key)) {
+          next.delete(key);
+        } else {
+          next.add(key);
+        }
+
+        return next;
+      },
+    );
+  }
+
+  async function addManualMenuAndContinue() {
+    if (!work || !session) {
+      return;
+    }
+
+    const functionName =
+      importFunctionName.trim();
+
+    if (!functionName) {
+      setError(
+        'Enter the function name first.',
+      );
+      return;
+    }
+
+    const selected =
+      manualDishCatalog.filter(
+        (dish) =>
+          selectedManualDishKeys.has(
+            dishNameKey(
+              dish.name,
+            ),
+          ),
+      );
+
+    if (!selected.length) {
+      setError(
+        'Select at least one dish.',
+      );
+      return;
+    }
+
+    /*
+     * Respect free-costing allowance.
+     */
+    try {
+      const usageResponse =
+        await fetch(
+          `/api/client/free-usage?costingId=${encodeURIComponent(
+            work.costingId,
+          )}`,
+          {
+            cache: 'no-store',
+          },
+        );
+
+      if (!usageResponse.ok) {
+        throw new Error(
+          'Could not verify costing allowance.',
+        );
+      }
+
+      const usage =
+        await usageResponse.json();
+
+      if (
+        !usage.canUseCurrentCosting
+      ) {
+        setFreeLimitBlocked(true);
+
+        setError(
+          'Your 5 free costings are used. Upgrade to Pro to start a new costing.',
+        );
+
+        return;
+      }
+    } catch {
+      setError(
+        'Could not verify your costing allowance. Please try again.',
+      );
+      return;
+    }
+
+    const manualMenu:
+      MenuItem[] =
+      selected.map(
+        (dish) => {
+          const servingQuantity =
+            Math.max(
+              0.01,
+              Number(
+                dish.servingQuantity,
+              ) || 1,
+            );
+
+          const rate =
+            Math.max(
+              0,
+              Number(
+                dish.rate,
+              ) || 0,
+            );
+
+          return {
+            id:
+              uid('dish'),
+
+            name:
+              dish.name,
+
+            category:
+              dish.category,
+
+            costPerPlate:
+              rate,
+
+            portionQuantity:
+              servingQuantity,
+
+            portionBaseQuantity:
+              servingQuantity,
+
+            portionUnit:
+              dish.servingUnit ||
+              'serving',
+
+            pieceWeightGrams:
+              dish.pieceWeightGrams,
+
+            detectionSource:
+              'manual',
+
+            detectionConfidence:
+              100,
+
+            detectionReason:
+              'User selected this dish manually from Dish Master',
+
+            costSource:
+              rate > 0
+                ? 'catalog'
+                : 'manual',
+
+            coverageStatus:
+              rate > 0
+                ? 'COSTED'
+                : 'UNRESOLVED',
+
+            costQualityStatus:
+              rate > 0
+                ? 'READY'
+                : undefined,
+
+            costConfidence:
+              rate > 0
+                ? 100
+                : 0,
+
+            rateCoveragePercent:
+              rate > 0
+                ? 100
+                : 0,
+
+            coverageReason:
+              rate > 0
+                ? 'Dish Master cost available'
+                : 'Manual rate required',
+
+            costApprovalStatus:
+              rate > 0
+                ? 'NOT_REQUIRED'
+                : 'PENDING',
+
+            costApprovalReason:
+              rate > 0
+                ? 'Dish Master rate'
+                : 'Manual rate required',
+          };
+        },
+      );
+
+    const {
+      menu: mergedMenu,
+      newItems,
+    } = mergeFunctionMenu({
+      existingMenu:
+        work.menu,
+
+      detectedMenu:
+        manualMenu,
+
+      functionName,
+
+      functionPax:
+        Number(
+          importFunctionPax,
+        ) || 0,
+
+      defaultPax:
+        Number(
+          work.event.pax,
+        ) || 0,
+    });
+
+    const nextWork:
+      WorkState = {
+        ...work,
+
+        menu:
+          mergedMenu,
+      };
+
+    persistWork(
+      nextWork,
+    );
+
+    flushWorkSave(
+      session.tenantId,
+    );
+
+    await flushDraftToServer(
+      session.tenantId,
+      nextWork,
+    );
+
+    void trackProductEvent(
+      'menu_saved',
+      {
+        costingKey:
+          getCostingAnalyticsKey(
+            nextWork,
+          ),
+
+        dishCount:
+          nextWork.menu.length,
+
+        importedDishCount:
+          newItems.length,
+
+        functionName,
+
+        mode:
+          'manual_dish_selector',
+      },
+    );
+
+    setShowManualDishSelector(
+      false,
+    );
+
+    setSelectedManualDishKeys(
+      new Set(),
+    );
+
+    setManualDishSearch('');
+    setManualDishCategory(
+      'ALL',
+    );
+
+    window.location.assign(
+      '/app/cost',
     );
   }
 
@@ -5065,6 +5530,65 @@ export default function EventPage() {
     .map((line) => line.trim())
     .filter(Boolean).length;
 
+  const manualDishCategories =
+    Array.from(
+      new Set(
+        manualDishCatalog
+          .map(
+            (dish) =>
+              dish.category,
+          )
+          .filter(Boolean),
+      ),
+    ).sort(
+      (left, right) =>
+        left.localeCompare(
+          right,
+        ),
+    );
+
+  const normalizedManualDishSearch =
+    manualDishSearch
+      .trim()
+      .toLowerCase();
+
+  const filteredManualDishes =
+    manualDishCatalog
+      .filter((dish) => {
+        const matchesCategory =
+          manualDishCategory ===
+            'ALL' ||
+          dish.category ===
+            manualDishCategory;
+
+        const searchable =
+          [
+            dish.name,
+            dish.category,
+            dish.subcategory,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+        return (
+          matchesCategory &&
+          (
+            !normalizedManualDishSearch ||
+            searchable.includes(
+              normalizedManualDishSearch,
+            )
+          )
+        );
+      })
+      .slice(
+        0,
+        100,
+      );
+
+  const manualSelectedCount =
+    selectedManualDishKeys.size;
+
   const firstMenuTextReady =
     work.event.rawMenuText.trim().length > 0;
 
@@ -6358,6 +6882,379 @@ Gulab Jamun`}
                     <span>English • Roman Hindi • Hindi • Gujarati</span>
                   </div>
               </div>
+
+              <div
+                style={{
+                  display:
+                    'flex',
+                  gap: '8px',
+                  flexWrap:
+                    'wrap',
+                  alignItems:
+                    'center',
+                  marginTop:
+                    '10px',
+                }}
+              >
+                <button
+                  className="secondary-button"
+                  type="button"
+                  disabled={
+                    manualDishLoading
+                  }
+                  onClick={() =>
+                    void openManualDishSelector()
+                  }
+                >
+                  {manualDishLoading
+                    ? 'Loading Dishes…'
+                    : '☰ Select Dishes Manually'}
+                </button>
+
+                <small
+                  style={{
+                    color:
+                      '#8995a4',
+                  }}
+                >
+                  Or choose dishes directly from Dish Master
+                </small>
+              </div>
+
+              {showManualDishSelector ? (
+                <div
+                  style={{
+                    marginTop:
+                      '12px',
+                    padding:
+                      '14px',
+                    border:
+                      '1px solid #303944',
+                    borderRadius:
+                      '14px',
+                    background:
+                      '#10161e',
+                    display:
+                      'grid',
+                    gap:
+                      '12px',
+                  }}
+                >
+                  <div
+                    style={{
+                      display:
+                        'flex',
+                      justifyContent:
+                        'space-between',
+                      gap:
+                        '12px',
+                      alignItems:
+                        'center',
+                      flexWrap:
+                        'wrap',
+                    }}
+                  >
+                    <div>
+                      <strong>
+                        Manual Menu Selection
+                      </strong>
+
+                      <div
+                        style={{
+                          marginTop:
+                            '4px',
+                          color:
+                            '#8995a4',
+                          fontSize:
+                            '11px',
+                        }}
+                      >
+                        Select existing Dish Master items for{' '}
+                        <b>
+                          {importFunctionName ||
+                            'this function'}
+                        </b>
+                      </div>
+                    </div>
+
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={() =>
+                        setShowManualDishSelector(
+                          false,
+                        )
+                      }
+                    >
+                      Close
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      display:
+                        'grid',
+                      gridTemplateColumns:
+                        'minmax(220px, 1fr) minmax(180px, 260px)',
+                      gap:
+                        '8px',
+                    }}
+                  >
+                    <input
+                      className="input"
+                      value={
+                        manualDishSearch
+                      }
+                      onChange={(event) =>
+                        setManualDishSearch(
+                          event.target
+                            .value,
+                        )
+                      }
+                      placeholder="Search dish..."
+                      autoFocus
+                    />
+
+                    <select
+                      className="select"
+                      value={
+                        manualDishCategory
+                      }
+                      onChange={(event) =>
+                        setManualDishCategory(
+                          event.target
+                            .value,
+                        )
+                      }
+                    >
+                      <option value="ALL">
+                        All categories
+                      </option>
+
+                      {manualDishCategories.map(
+                        (category) => (
+                          <option
+                            value={
+                              category
+                            }
+                            key={
+                              category
+                            }
+                          >
+                            {
+                              category
+                            }
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+
+                  {manualDishLoading ? (
+                    <div
+                      style={{
+                        color:
+                          '#8995a4',
+                      }}
+                    >
+                      Loading Dish Master…
+                    </div>
+                  ) : filteredManualDishes.length ? (
+                    <div
+                      style={{
+                        display:
+                          'grid',
+                        gridTemplateColumns:
+                          'repeat(auto-fill, minmax(230px, 1fr))',
+                        gap:
+                          '7px',
+                        maxHeight:
+                          '420px',
+                        overflowY:
+                          'auto',
+                      }}
+                    >
+                      {filteredManualDishes.map(
+                        (dish) => {
+                          const key =
+                            dishNameKey(
+                              dish.name,
+                            );
+
+                          const selected =
+                            selectedManualDishKeys.has(
+                              key,
+                            );
+
+                          return (
+                            <button
+                              key={
+                                `${dish.category}-${dish.name}`
+                              }
+                              type="button"
+                              onClick={() =>
+                                toggleManualDish(
+                                  dish,
+                                )
+                              }
+                              style={{
+                                textAlign:
+                                  'left',
+                                padding:
+                                  '10px',
+                                border:
+                                  selected
+                                    ? '1px solid #428de8'
+                                    : '1px solid #29323d',
+                                borderRadius:
+                                  '10px',
+                                background:
+                                  selected
+                                    ? 'rgba(66,141,232,.12)'
+                                    : '#141a22',
+                                color:
+                                  '#e7edf4',
+                                cursor:
+                                  'pointer',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display:
+                                    'flex',
+                                  gap:
+                                    '8px',
+                                  alignItems:
+                                    'flex-start',
+                                }}
+                              >
+                                <span>
+                                  {selected
+                                    ? '✓'
+                                    : '○'}
+                                </span>
+
+                                <span>
+                                  <b>
+                                    {
+                                      dish.name
+                                    }
+                                  </b>
+
+                                  <small
+                                    style={{
+                                      display:
+                                        'block',
+                                      marginTop:
+                                        '3px',
+                                      color:
+                                        '#8995a4',
+                                    }}
+                                  >
+                                    {
+                                      dish.category
+                                    }
+                                    {dish.subcategory
+                                      ? ` • ${dish.subcategory}`
+                                      : ''}
+                                  </small>
+
+                                  <small
+                                    style={{
+                                      display:
+                                        'block',
+                                      marginTop:
+                                        '3px',
+                                      color:
+                                        '#8995a4',
+                                    }}
+                                  >
+                                    ₹
+                                    {Number(
+                                      dish.rate,
+                                    ).toFixed(
+                                      2,
+                                    )}
+                                    {' • '}
+                                    {
+                                      dish.servingQuantity ||
+                                      1
+                                    }{' '}
+                                    {
+                                      dish.servingUnit ||
+                                      'serving'
+                                    }
+                                    {dish.pieceWeightGrams
+                                      ? ` • ${dish.pieceWeightGrams}g/pc`
+                                      : ''}
+                                  </small>
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        },
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        color:
+                          '#8995a4',
+                      }}
+                    >
+                      No matching dishes found.
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      display:
+                        'flex',
+                      justifyContent:
+                        'space-between',
+                      alignItems:
+                        'center',
+                      gap:
+                        '10px',
+                      flexWrap:
+                        'wrap',
+                    }}
+                  >
+                    <span
+                      style={{
+                        color:
+                          '#8995a4',
+                        fontSize:
+                          '11px',
+                      }}
+                    >
+                      <b>
+                        {
+                          manualSelectedCount
+                        }
+                      </b>{' '}
+                      selected
+                      {filteredManualDishes.length ===
+                      100
+                        ? ' • first 100 matches shown'
+                        : ''}
+                    </span>
+
+                    <button
+                      className="primary-button"
+                      type="button"
+                      disabled={
+                        !manualSelectedCount
+                      }
+                      onClick={() =>
+                        void addManualMenuAndContinue()
+                      }
+                    >
+                      Add Selected & Continue to Cost
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             {error ? (
