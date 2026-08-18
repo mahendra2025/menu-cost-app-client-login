@@ -16965,3 +16965,102 @@ small {
     width: 100%;
   }
 }
+
+
+/* ==========================================================
+   Smart Service Staffing
+   ========================================================== */
+
+.manpower-service-style-panel {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1fr)
+    auto;
+  gap: 12px 18px;
+  margin: 12px 14px;
+  padding: 14px;
+  border: 1px solid
+    rgba(66, 141, 232, .16);
+  border-radius: 14px;
+  background:
+    rgba(66, 141, 232, .035);
+}
+
+.manpower-service-style-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.manpower-service-style-copy b {
+  font-size: 12px;
+}
+
+.manpower-service-style-copy small {
+  color: #7f8b98;
+  font-size: 9px;
+}
+
+.manpower-service-style-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.manpower-service-style-controls select {
+  min-width: 145px;
+  min-height: 38px;
+}
+
+.manpower-service-recommendations {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid
+    rgba(255,255,255,.06);
+}
+
+.manpower-service-recommendations span {
+  margin-right: 3px;
+  color: #8d9aa8;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.manpower-service-recommendations b {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background:
+    rgba(255,255,255,.045);
+  font-size: 9px;
+}
+
+.manpower-service-recommendations small {
+  color: #7f8b98;
+  font-size: 9px;
+}
+
+@media (max-width: 720px) {
+  .manpower-service-style-panel {
+    grid-template-columns: 1fr;
+    margin-inline: 10px;
+  }
+
+  .manpower-service-style-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .manpower-service-style-controls select,
+  .manpower-service-style-controls button {
+    width: 100%;
+  }
+
+  .manpower-service-recommendations {
+    grid-column: auto;
+  }
+}

@@ -35,6 +35,12 @@ export type EventDetails = {
   rawMenuText: string;
 };
 
+export type ServiceStyle =
+  | 'BUFFET'
+  | 'TABLE_SERVICE'
+  | 'PACKED_MEAL'
+  | 'LIVE_COUNTER';
+
 export type MenuItem = {
   id: string;
   name: string;
@@ -65,6 +71,12 @@ export type MenuItem = {
   dayLabel?: string;
   mealLabel?: string;
   servicePax?: number;
+
+  /*
+   * Service format for manpower planning.
+   * Defaults to BUFFET for older costings.
+   */
+  serviceStyle?: ServiceStyle;
 
   /*
    * Detection metadata is separate from

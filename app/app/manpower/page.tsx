@@ -26,6 +26,7 @@ import {
 import type {
   ManpowerRow,
   MenuItem,
+  ServiceStyle,
   Session,
   WorkState,
 } from '../../../lib/types';
@@ -36,6 +37,7 @@ type FunctionOption = {
   dayLabel: string;
   mealLabel: string;
   servicePax: number;
+  serviceStyle: ServiceStyle;
 };
 
 type ManpowerGroup = FunctionOption & {
@@ -423,6 +425,130 @@ function BilledManpowerTotal({
   );
 }
 
+
+type ServiceStaffRecommendation = {
+  role: string;
+  quantity: number;
+  rateRole: string;
+};
+
+function serviceStyleLabel(
+  style: ServiceStyle,
+) {
+  switch (style) {
+    case 'TABLE_SERVICE':
+      return 'Table Service';
+
+    case 'PACKED_MEAL':
+      return 'Packed Meal';
+
+    case 'LIVE_COUNTER':
+      return 'Live Counter';
+
+    default:
+      return 'Buffet';
+  }
+}
+
+function serviceStaffRecommendation(
+  style: ServiceStyle,
+  pax: number,
+): ServiceStaffRecommendation[] {
+  const members =
+    Math.max(
+      0,
+      Number(pax) || 0,
+    );
+
+  if (!members) {
+    return [];
+  }
+
+  const qty = (
+    divisor: number,
+  ) =>
+    Math.max(
+      1,
+      Math.ceil(
+        members / divisor,
+      ),
+    );
+
+  switch (style) {
+    case 'TABLE_SERVICE':
+      return [
+        {
+          role: 'Waiter',
+          quantity: qty(12),
+          rateRole: 'Waiter',
+        },
+        {
+          role: 'Captain',
+          quantity: qty(100),
+          rateRole: 'Captain',
+        },
+        {
+          role: 'Supervisor',
+          quantity: qty(250),
+          rateRole: 'Supervisor',
+        },
+      ];
+
+    case 'PACKED_MEAL':
+      return [
+        {
+          role: 'Packing Staff',
+          quantity: qty(75),
+          rateRole: 'Helper / Masi',
+        },
+        {
+          role: 'Supervisor',
+          quantity: qty(300),
+          rateRole: 'Supervisor',
+        },
+      ];
+
+    case 'LIVE_COUNTER':
+      return [
+        {
+          role: 'Waiter',
+          quantity: qty(30),
+          rateRole: 'Waiter',
+        },
+        {
+          role: 'Captain',
+          quantity: qty(150),
+          rateRole: 'Captain',
+        },
+        {
+          role: 'Counter Attendant',
+          quantity: qty(75),
+          rateRole: 'Counter Attendant',
+        },
+      ];
+
+    case 'BUFFET':
+    default:
+      return [
+        {
+          role: 'Waiter',
+          quantity: qty(25),
+          rateRole: 'Waiter',
+        },
+        {
+          role: 'Captain',
+          quantity: qty(150),
+          rateRole: 'Captain',
+        },
+        {
+          role: 'Counter Attendant',
+          quantity: qty(100),
+          rateRole: 'Counter Attendant',
+        },
+      ];
+  }
+}
+
 function getFunctions(
   menu: MenuItem[],
 ): FunctionOption[] {
@@ -469,6 +595,10 @@ function getFunctions(
               item.servicePax,
             ) || 0,
           ),
+
+        serviceStyle:
+          item.serviceStyle ??
+          'BUFFET',
       },
     );
   });
@@ -1288,10 +1418,10 @@ export default function ManpowerPage() {
   function persistRows(rows: ManpowerRow[]) {
     if (!session || !work) return;
 
-    const staff = rows.reduce(
-      (sum, row) => sum + rowTotal(row),
-      0,
-    );
+    const staff =
+      calculateManpowerCost(
+        rows,
+      );
     const nextWork: WorkState = {
       ...work,
       manpower: rows,
@@ -1303,6 +1433,201 @@ export default function ManpowerPage() {
 
     setWork(nextWork);
     saveWork(session.tenantId, nextWork);
+  }
+
+  function updateServiceStyle(
+    group: ManpowerGroup,
+    serviceStyle: ServiceStyle,
+  ) {
+    if (!work || !session) {
+      return;
+    }
+
+    const nextMenu =
+      work.menu.map(
+        (dish) =>
+          getMenuServiceKey(
+            dish,
+          ) ===
+          group.serviceKey
+            ? {
+                ...dish,
+                serviceStyle,
+              }
+            : dish,
+      );
+
+    const nextWork: WorkState = {
+      ...work,
+      menu: nextMenu,
+      updatedAt:
+        new Date().toISOString(),
+    };
+
+    setWork(nextWork);
+
+    saveWork(
+      session.tenantId,
+      nextWork,
+    );
+  }
+
+  function applyServiceStaffRecommendation(
+    group: ManpowerGroup,
+  ) {
+    if (!work) {
+      return;
+    }
+
+    const recommendations =
+      serviceStaffRecommendation(
+        group.serviceStyle,
+        group.servicePax,
+      );
+
+    if (!recommendations.length) {
+      window.alert(
+        'Set meal pax before auto filling service staff.',
+      );
+      return;
+    }
+
+    const controlledRoles =
+      new Set([
+        'Waiter',
+        'Captain',
+        'Supervisor',
+        'Counter Attendant',
+        'Packing Staff',
+      ]);
+
+    /*
+     * Auto Fill intentionally resets only
+     * service-team roles for this meal.
+     *
+     * Specialist cooks and kitchen helpers
+     * remain untouched.
+     */
+    let rows =
+      work.manpower.map(
+        (row) => {
+          const belongsToMeal =
+            Boolean(
+              row.serviceId ||
+              row.dayLabel ||
+              row.mealLabel,
+            ) &&
+            getMenuServiceKey(
+              row,
+            ) ===
+              group.serviceKey;
+
+          if (
+            belongsToMeal &&
+            controlledRoles.has(
+              row.role,
+            ) &&
+            !row.autoDishAssignment &&
+            !row.autoStationHelper
+          ) {
+            return {
+              ...row,
+              quantity: 0,
+            };
+          }
+
+          return row;
+        },
+      );
+
+    recommendations.forEach(
+      (recommendation) => {
+        const index =
+          rows.findIndex(
+            (row) =>
+              !row.autoDishAssignment &&
+              !row.autoStationHelper &&
+              row.role ===
+                recommendation.role &&
+              Boolean(
+                row.serviceId ||
+                row.dayLabel ||
+                row.mealLabel,
+              ) &&
+              getMenuServiceKey(
+                row,
+              ) ===
+                group.serviceKey,
+          );
+
+        const defaultRate =
+          specialistRate(
+            recommendation.rateRole,
+          );
+
+        if (index >= 0) {
+          rows[index] = {
+            ...rows[index],
+
+            quantity:
+              recommendation.quantity,
+
+            rate:
+              Number(
+                rows[index].rate,
+              ) > 0
+                ? rows[index].rate
+                : defaultRate,
+
+            rateMode:
+              rows[index]
+                .rateMode ??
+              'PER_MEAL',
+          };
+
+          return;
+        }
+
+        rows.push({
+          id:
+            uid(
+              'manpower_service',
+            ),
+
+          role:
+            recommendation.role,
+
+          quantity:
+            recommendation.quantity,
+
+          rate:
+            defaultRate,
+
+          rateMode:
+            'PER_MEAL',
+
+          serviceId:
+            group.serviceId,
+
+          dayLabel:
+            group.dayLabel,
+
+          mealLabel:
+            group.mealLabel,
+
+          servicePax:
+            group.servicePax,
+        });
+      },
+    );
+
+    setShowUnusedRoles(
+      true,
+    );
+
+    persistRows(
+      rows,
+    );
   }
 
   function updateRow(
@@ -1773,6 +2098,12 @@ export default function ManpowerPage() {
                         group.serviceKey,
                     );
 
+              const serviceStaffPlan =
+                serviceStaffRecommendation(
+                  group.serviceStyle,
+                  group.servicePax,
+                );
+
               return (
                 <details
                   className="manpower-function-card"
@@ -1820,6 +2151,98 @@ export default function ManpowerPage() {
                       <span className="manpower-function-cost">{money(groupCost)}</span>
                     </div>
                   </summary>
+
+                  {group.serviceKey !== 'general' ? (
+                    <div className="manpower-service-style-panel">
+                      <div className="manpower-service-style-copy">
+                        <span className="section-kicker">
+                          Service Team
+                        </span>
+
+                        <b>
+                          Smart service staffing
+                        </b>
+
+                        <small>
+                          Choose the service format, then auto-fill staff from pax.
+                        </small>
+                      </div>
+
+                      <div className="manpower-service-style-controls">
+                        <select
+                          className="input"
+                          value={
+                            group.serviceStyle
+                          }
+                          onChange={(event) =>
+                            updateServiceStyle(
+                              group,
+                              event.target
+                                .value as ServiceStyle,
+                            )
+                          }
+                        >
+                          <option value="BUFFET">
+                            Buffet
+                          </option>
+
+                          <option value="TABLE_SERVICE">
+                            Table Service
+                          </option>
+
+                          <option value="LIVE_COUNTER">
+                            Live Counter
+                          </option>
+
+                          <option value="PACKED_MEAL">
+                            Packed Meal
+                          </option>
+                        </select>
+
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() =>
+                            applyServiceStaffRecommendation(
+                              group,
+                            )
+                          }
+                        >
+                          ⚡ Auto Fill Service Staff
+                        </button>
+                      </div>
+
+                      <div className="manpower-service-recommendations">
+                        <span>
+                          {serviceStyleLabel(
+                            group.serviceStyle,
+                          )}
+                        </span>
+
+                        {serviceStaffPlan.length ? (
+                          serviceStaffPlan.map(
+                            (item) => (
+                              <b
+                                key={
+                                  item.role
+                                }
+                              >
+                                {item.role}
+                                {' × '}
+                                {
+                                  item.quantity
+                                }
+                              </b>
+                            ),
+                          )
+                        ) : (
+                          <small>
+                            Set pax to calculate staff.
+                          </small>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
 
                   {group.serviceKey !== 'general' ? (
                     <div className="manpower-meal-menu">
