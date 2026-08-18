@@ -16437,3 +16437,185 @@ small {
     min-width: 0;
   }
 }
+
+
+/* ==========================================================
+   Manpower Auto Assignment UX
+   ========================================================== */
+
+.manpower-auto-guide {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(66, 141, 232, .25);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(66, 141, 232, .10),
+      rgba(66, 141, 232, .03)
+    );
+}
+
+.manpower-auto-guide-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(66, 141, 232, .14);
+  font-size: 17px;
+}
+
+.manpower-auto-guide b,
+.manpower-auto-guide span {
+  display: block;
+}
+
+.manpower-auto-guide b {
+  font-size: 12px;
+}
+
+.manpower-auto-guide span {
+  margin-top: 3px;
+  color: #8f9cab;
+  font-size: 10px;
+}
+
+.manpower-auto-guide > small {
+  padding: 6px 9px;
+  border: 1px solid rgba(66, 141, 232, .28);
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.manpower-auto-role {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 145px;
+}
+
+.manpower-auto-role-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(66, 141, 232, .10);
+}
+
+.manpower-auto-role b,
+.manpower-auto-role small {
+  display: block;
+}
+
+.manpower-auto-role b {
+  font-size: 12px;
+}
+
+.manpower-auto-role small {
+  margin-top: 2px;
+  color: #7f8b98;
+  font-size: 9px;
+}
+
+.manpower-auto-dish {
+  display: grid;
+  gap: 7px;
+  min-width: 190px;
+}
+
+.manpower-auto-dish-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.manpower-auto-dish-top small {
+  color: #758291;
+  font-size: 8px;
+}
+
+.manpower-auto-badge,
+.manpower-auto-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  border: 1px solid rgba(52, 199, 89, .28);
+  border-radius: 999px;
+  background: rgba(52, 199, 89, .08);
+  color: #78d890;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .06em;
+}
+
+.manpower-auto-badge {
+  padding: 3px 6px;
+}
+
+.manpower-auto-status {
+  padding: 5px 8px;
+}
+
+.manpower-auto-dish-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.manpower-auto-dish-chip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  border: 1px solid rgba(66, 141, 232, .22);
+  border-radius: 10px;
+  background: rgba(66, 141, 232, .06);
+}
+
+.manpower-auto-dish-chip b {
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.manpower-auto-dish-chip small {
+  color: #8693a2;
+  font-size: 8px;
+}
+
+.manpower-table tr.is-active:has(.manpower-auto-badge) {
+  background: rgba(66, 141, 232, .025);
+}
+
+@media (max-width: 720px) {
+  .manpower-auto-guide {
+    grid-template-columns: auto 1fr;
+  }
+
+  .manpower-auto-guide > small {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .manpower-auto-dish {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .manpower-auto-dish-chip {
+    width: 100%;
+  }
+
+  .manpower-auto-role {
+    min-width: 0;
+  }
+}

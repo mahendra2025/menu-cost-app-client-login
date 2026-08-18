@@ -43,7 +43,7 @@ function rowTotal(row: ManpowerRow) {
 function canAssignDishes(
   role: string,
 ) {
-  return /cook|chef|helper|masi|counter|bartender/i.test(
+  return /cook|chef|helper|masi|counter|bartender|master|maker|halwai|tandoor/i.test(
     String(role || ''),
   );
 }
@@ -72,10 +72,57 @@ function DishAssignmentControl({
         : [],
     );
 
-  const selectedCount =
+  const assignedDishes =
     dishes.filter(
-      (dish) => selected.has(dish.id),
-    ).length;
+      (dish) =>
+        selected.has(dish.id),
+    );
+
+  const selectedCount =
+    assignedDishes.length;
+
+  /*
+   * Automatic specialist assignments should
+   * be immediately understandable.
+   * Do not hide the dish behind a dropdown.
+   */
+  if (row.autoDishAssignment) {
+    return (
+      <div className="manpower-auto-dish">
+        <div className="manpower-auto-dish-top">
+          <span className="manpower-auto-badge">
+            AUTO
+          </span>
+
+          <small>
+            1 dish → 1 specialist
+          </small>
+        </div>
+
+        {assignedDishes.length ? (
+          <div className="manpower-auto-dish-chips">
+            {assignedDishes.map(
+              (dish) => (
+                <span
+                  key={dish.id}
+                  className="manpower-auto-dish-chip"
+                >
+                  <b>{dish.name}</b>
+                  <small>
+                    {dish.category}
+                  </small>
+                </span>
+              ),
+            )}
+          </div>
+        ) : (
+          <span className="manpower-dish-not-applicable">
+            Dish unavailable
+          </span>
+        )}
+      </div>
+    );
+  }
 
   if (!dishes.length) {
     return (
@@ -547,7 +594,7 @@ export default function ManpowerPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
-  const [showUnusedRoles, setShowUnusedRoles] = useState(true);
+  const [showUnusedRoles, setShowUnusedRoles] = useState(false);
   const [expandedFunctionIds, setExpandedFunctionIds] = useState<string[]>([]);
   const [hasInitializedFunctions, setHasInitializedFunctions] = useState(false);
 
@@ -864,13 +911,36 @@ export default function ManpowerPage() {
             <div>
               <div className="section-kicker">Function-wise Planning</div>
               <h2>Manpower by Function</h2>
-              <p className="muted">Open a function, add people to the roles you need, and enter the per-person rate.</p>
+              <p className="muted">
+                Specialist cooks are assigned automatically from the menu.
+                Review people and rates, then add service staff as needed.
+              </p>
             </div>
             <div className="manpower-planner-controls">
               <button className="ghost-button" type="button" onClick={() => setShowUnusedRoles((current) => !current)}>
                 {showUnusedRoles ? 'Show active roles only' : 'Show all role templates'}
               </button>
             </div>
+          </div>
+
+          <div className="manpower-auto-guide">
+            <div className="manpower-auto-guide-icon">
+              ⚡
+            </div>
+
+            <div>
+              <b>
+                Automatic specialist assignment
+              </b>
+
+              <span>
+                Farsan · Starter · Juice · Chinese · Chaat · Italian · Indian Bread
+              </span>
+            </div>
+
+            <small>
+              1 dish = 1 specialist
+            </small>
           </div>
 
           <div className="manpower-groups">
@@ -886,7 +956,50 @@ export default function ManpowerPage() {
               );
               const activeRows = group.rows.filter((row) => Number(row.quantity) > 0);
               const groupMissingRates = activeRows.filter((row) => !(Number(row.rate) > 0)).length;
-              const visibleRows = showUnusedRoles ? group.rows : activeRows;
+              const autoAssignedRows =
+                activeRows.filter(
+                  (row) =>
+                    row.autoDishAssignment,
+                );
+
+              const visibleRows =
+                (
+                  showUnusedRoles
+                    ? group.rows
+                    : activeRows
+                )
+                  .slice()
+                  .sort(
+                    (a, b) => {
+                      const autoDifference =
+                        Number(
+                          Boolean(
+                            b.autoDishAssignment,
+                          ),
+                        ) -
+                        Number(
+                          Boolean(
+                            a.autoDishAssignment,
+                          ),
+                        );
+
+                      if (autoDifference) {
+                        return autoDifference;
+                      }
+
+                      const activeDifference =
+                        Number(b.quantity > 0) -
+                        Number(a.quantity > 0);
+
+                      if (activeDifference) {
+                        return activeDifference;
+                      }
+
+                      return a.role.localeCompare(
+                        b.role,
+                      );
+                    },
+                  );
 
               /*
                * A cook should only see dishes belonging
@@ -928,7 +1041,7 @@ export default function ManpowerPage() {
                       <h3>{group.mealLabel}</h3>
                       <small className="manpower-function-progress">
                         {activeRows.length
-                          ? `${activeRows.length} active role${activeRows.length === 1 ? '' : 's'} · ${groupPeople} staff`
+                          ? `${activeRows.length} active role${activeRows.length === 1 ? '' : 's'} · ${groupPeople} staff${autoAssignedRows.length ? ` · ${autoAssignedRows.length} auto specialist${autoAssignedRows.length === 1 ? '' : 's'}` : ''}`
                           : 'Not started · choose a role below'}
                       </small>
                     </div>
@@ -964,7 +1077,7 @@ export default function ManpowerPage() {
                           <thead>
                             <tr>
                               <th>Staff role</th>
-                              <th>Assigned dishes</th>
+                              <th>Dish responsibility</th>
                               <th>People</th>
                               <th>Rate / person</th>
                               <th>Role total</th>
@@ -975,12 +1088,38 @@ export default function ManpowerPage() {
                             {visibleRows.map((row) => (
                               <tr key={row.id} className={Number(row.quantity) > 0 ? 'is-active' : ''}>
                                 <td>
-                                  <input
-                                    className="input manpower-role-input"
-                                    value={row.role}
-                                    onChange={(event) => updateRow(row.id, { role: event.target.value })}
-                                    aria-label="Manpower role"
-                                  />
+                                  {row.autoDishAssignment ? (
+                                    <div className="manpower-auto-role">
+                                      <span className="manpower-auto-role-icon">
+                                        👨‍🍳
+                                      </span>
+
+                                      <div>
+                                        <b>
+                                          {row.role}
+                                        </b>
+
+                                        <small>
+                                          Auto specialist
+                                        </small>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <input
+                                      className="input manpower-role-input"
+                                      value={row.role}
+                                      onChange={(event) =>
+                                        updateRow(
+                                          row.id,
+                                          {
+                                            role:
+                                              event.target.value,
+                                          },
+                                        )
+                                      }
+                                      aria-label="Manpower role"
+                                    />
+                                  )}
                                 </td>
 
                                 <td>
@@ -1020,7 +1159,23 @@ export default function ManpowerPage() {
                                   </div>
                                 </td>
                                 <td><b className="manpower-row-total">{money(rowTotal(row))}</b></td>
-                                <td><button className="manpower-remove-button" type="button" onClick={() => removeRole(row)}>Remove</button></td>
+                                <td>
+                                  {row.autoDishAssignment ? (
+                                    <span className="manpower-auto-status">
+                                      Automatic
+                                    </span>
+                                  ) : (
+                                    <button
+                                      className="manpower-remove-button"
+                                      type="button"
+                                      onClick={() =>
+                                        removeRole(row)
+                                      }
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -1031,8 +1186,51 @@ export default function ManpowerPage() {
                         {visibleRows.map((row) => (
                           <article className={`manpower-role-card ${Number(row.quantity) > 0 ? 'is-active' : ''}`} key={row.id}>
                             <div className="manpower-role-card-heading">
-                              <input className="input manpower-role-input" value={row.role} onChange={(event) => updateRow(row.id, { role: event.target.value })} aria-label="Manpower role" />
-                              <button className="manpower-remove-button" type="button" onClick={() => removeRole(row)}>Remove</button>
+                              {row.autoDishAssignment ? (
+                                <div className="manpower-auto-role">
+                                  <span className="manpower-auto-role-icon">
+                                    👨‍🍳
+                                  </span>
+
+                                  <div>
+                                    <b>{row.role}</b>
+                                    <small>
+                                      Auto specialist
+                                    </small>
+                                  </div>
+                                </div>
+                              ) : (
+                                <input
+                                  className="input manpower-role-input"
+                                  value={row.role}
+                                  onChange={(event) =>
+                                    updateRow(
+                                      row.id,
+                                      {
+                                        role:
+                                          event.target.value,
+                                      },
+                                    )
+                                  }
+                                  aria-label="Manpower role"
+                                />
+                              )}
+
+                              {row.autoDishAssignment ? (
+                                <span className="manpower-auto-status">
+                                  AUTO
+                                </span>
+                              ) : (
+                                <button
+                                  className="manpower-remove-button"
+                                  type="button"
+                                  onClick={() =>
+                                    removeRole(row)
+                                  }
+                                >
+                                  Remove
+                                </button>
+                              )}
                             </div>
 
                             {canAssignDishes(row.role) ? (
