@@ -1232,13 +1232,22 @@ export default function ManpowerPage() {
                         Number(row.quantity) > 0,
                     ).length;
 
+                  const mealDishCount =
+                    work.menu.filter(
+                      (dish) =>
+                        getMenuServiceKey(
+                          dish,
+                        ) ===
+                        group.serviceKey,
+                    ).length;
+
                   return (
                     <button
                       key={group.serviceKey}
                       type="button"
                       className={`manpower-meal-tab ${
                         selectedFunctionId ===
-                        group.serviceId
+                        group.serviceKey
                           ? 'is-active'
                           : ''
                       }`}
@@ -1248,12 +1257,12 @@ export default function ManpowerPage() {
                         setExpandedFunctionIds(
                           (current) =>
                             current.includes(
-                              group.serviceId,
+                              group.serviceKey,
                             )
                               ? current
                               : [
                                   ...current,
-                                  group.serviceId,
+                                  group.serviceKey,
                                 ],
                         );
                       }}
@@ -1297,6 +1306,10 @@ export default function ManpowerPage() {
                           {group.servicePax > 0
                             ? `${group.servicePax} members`
                             : 'Pax not set'}
+
+                          {mealDishCount > 0
+                            ? ` · ${mealDishCount} dishes`
+                            : ''}
 
                           {activeStaff > 0
                             ? ` · ${activeStaff} staff`
@@ -1497,6 +1510,84 @@ export default function ManpowerPage() {
                       <span className="manpower-function-cost">{money(groupCost)}</span>
                     </div>
                   </summary>
+
+                  {group.serviceKey !== 'general' ? (
+                    <div className="manpower-meal-menu">
+                      <div className="manpower-meal-menu-head">
+                        <div>
+                          <span className="section-kicker">
+                            Menu
+                          </span>
+
+                          <b>
+                            {groupDishes.length}
+                            {' '}
+                            {groupDishes.length === 1
+                              ? 'dish'
+                              : 'dishes'}
+                          </b>
+                        </div>
+
+                        <small>
+                          Used for manpower assignment
+                        </small>
+                      </div>
+
+                      {groupDishes.length ? (
+                        <div className="manpower-meal-menu-categories">
+                          {Array.from(
+                            new Set(
+                              groupDishes.map(
+                                (dish) =>
+                                  dish.category ||
+                                  'Other',
+                              ),
+                            ),
+                          ).map(
+                            (category) => {
+                              const categoryDishes =
+                                groupDishes.filter(
+                                  (dish) =>
+                                    (
+                                      dish.category ||
+                                      'Other'
+                                    ) ===
+                                    category,
+                                );
+
+                              return (
+                                <div
+                                  key={category}
+                                  className="manpower-menu-category"
+                                >
+                                  <span className="manpower-menu-category-name">
+                                    {category}
+                                  </span>
+
+                                  <div className="manpower-menu-dish-list">
+                                    {categoryDishes.map(
+                                      (dish) => (
+                                        <span
+                                          key={dish.id}
+                                          className="manpower-menu-dish-chip"
+                                        >
+                                          {dish.name}
+                                        </span>
+                                      ),
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            },
+                          )}
+                        </div>
+                      ) : (
+                        <span className="muted">
+                          No dishes in this meal.
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
 
                   <div className={`manpower-function-guidance ${groupMissingRates ? 'needs-attention' : ''}`}>
                     {groupMissingRates
