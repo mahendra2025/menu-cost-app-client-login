@@ -16909,3 +16909,59 @@ small {
     font-size: 9px;
   }
 }
+
+
+/* ==========================================================
+   Manpower Rate Basis
+   ========================================================== */
+
+.manpower-rate-mode-control {
+  display: grid;
+  gap: 5px;
+  min-width: 105px;
+}
+
+.manpower-rate-mode-select,
+.manpower-shift-select {
+  min-height: 34px;
+  padding-block: 5px;
+  font-size: 10px;
+}
+
+.manpower-rate-basis-auto {
+  display: inline-flex;
+  width: fit-content;
+  padding: 5px 8px;
+  border: 1px solid rgba(66, 141, 232, .22);
+  border-radius: 999px;
+  background: rgba(66, 141, 232, .07);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.manpower-billed-total {
+  display: grid;
+  gap: 2px;
+  min-width: 82px;
+}
+
+.manpower-billed-total b {
+  font-size: 11px;
+}
+
+.manpower-billed-total small {
+  color: #7f8b98;
+  font-size: 8px;
+  line-height: 1.25;
+}
+
+@media (max-width: 720px) {
+  .manpower-rate-mode-control {
+    width: 100%;
+  }
+
+  .manpower-rate-mode-select,
+  .manpower-shift-select {
+    width: 100%;
+  }
+}

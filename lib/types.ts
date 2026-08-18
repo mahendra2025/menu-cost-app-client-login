@@ -176,11 +176,30 @@ export type DisposableCostItem = {
   unitCost: number;
 };
 
+export type ManpowerRateMode =
+  | 'PER_MEAL'
+  | 'PER_SHIFT'
+  | 'PER_DAY';
+
 export type ManpowerRow = {
   id: string;
   role: string;
   quantity: number;
   rate: number;
+
+  /*
+   * Billing basis:
+   * PER_MEAL  = charge every meal
+   * PER_SHIFT = same team can cover meals in one shift
+   * PER_DAY   = same team can cover all meals in the day
+   */
+  rateMode?: ManpowerRateMode;
+
+  /*
+   * Used only for PER_SHIFT.
+   * Example: Morning / Afternoon / Evening.
+   */
+  shiftLabel?: string;
 
   /*
    * Optional dish-wise responsibility.

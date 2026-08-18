@@ -17,6 +17,10 @@ import type {
   WorkState,
 } from './types';
 
+import {
+  calculateManpowerCost,
+} from './manpowerCost';
+
 const CLIENTS_KEY = 'menu_cost_clients_v1';
 
 type DishCatalogModule = typeof import('./dishCostMaster');
@@ -2302,14 +2306,36 @@ export function calculate(
   const menuCostPerPlate =
     totalCovers > 0 ? menuFoodTotal / totalCovers : 0;
 
+  const manpowerTotal =
+    calculateManpowerCost(
+      work.manpower,
+    );
+
   const extrasTotal =
-    Object.values(
-      work.extras,
-    ).reduce(
-      (sum, value) =>
-        sum +
-        (Number(value) || 0),
+    manpowerTotal +
+    Math.max(
       0,
+      Number(
+        work.extras.transport,
+      ) || 0,
+    ) +
+    Math.max(
+      0,
+      Number(
+        work.extras.gasFuel,
+      ) || 0,
+    ) +
+    Math.max(
+      0,
+      Number(
+        work.extras.disposable,
+      ) || 0,
+    ) +
+    Math.max(
+      0,
+      Number(
+        work.extras.other,
+      ) || 0,
     );
 
   const extraPerPlate =

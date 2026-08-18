@@ -12,6 +12,17 @@ import {
   saveWork,
   uid,
 } from '../../../lib/store';
+
+import {
+  calculateManpowerCost,
+  getManpowerRateMode,
+  inferManpowerShift,
+  manpowerBillableCost,
+  manpowerIncludedInSharedRate,
+  manpowerRateModeLabel,
+  manpowerRawCost,
+} from '../../../lib/manpowerCost';
+
 import type {
   ManpowerRow,
   MenuItem,
@@ -35,10 +46,11 @@ function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
 }
 
-function rowTotal(row: ManpowerRow) {
-  return (
-    Math.max(0, Number(row.quantity) || 0) *
-    Math.max(0, Number(row.rate) || 0)
+function rowTotal(
+  row: ManpowerRow,
+) {
+  return manpowerRawCost(
+    row,
   );
 }
 
@@ -261,6 +273,144 @@ function QuantityControl({
       >
         +
       </button>
+    </div>
+  );
+}
+
+
+function RateModeControl({
+  row,
+  onChange,
+}: {
+  row: ManpowerRow;
+  onChange: (
+    patch: Partial<ManpowerRow>,
+  ) => void;
+}) {
+  const mode =
+    getManpowerRateMode(row);
+
+  if (row.autoDishAssignment) {
+    return (
+      <span className="manpower-rate-basis-auto">
+        Per Meal
+      </span>
+    );
+  }
+
+  return (
+    <div className="manpower-rate-mode-control">
+      <select
+        className="input manpower-rate-mode-select"
+        value={mode}
+        onChange={(event) => {
+          const nextMode =
+            event.target.value as
+              | 'PER_MEAL'
+              | 'PER_SHIFT'
+              | 'PER_DAY';
+
+          onChange({
+            rateMode:
+              nextMode,
+
+            ...(nextMode ===
+            'PER_SHIFT'
+              ? {
+                  shiftLabel:
+                    row.shiftLabel ||
+                    inferManpowerShift(
+                      row,
+                    ),
+                }
+              : {}),
+          });
+        }}
+      >
+        <option value="PER_MEAL">
+          Per Meal
+        </option>
+
+        <option value="PER_SHIFT">
+          Per Shift
+        </option>
+
+        <option value="PER_DAY">
+          Per Day
+        </option>
+      </select>
+
+      {mode === 'PER_SHIFT' ? (
+        <select
+          className="input manpower-shift-select"
+          value={
+            row.shiftLabel ||
+            inferManpowerShift(
+              row,
+            )
+          }
+          onChange={(event) =>
+            onChange({
+              shiftLabel:
+                event.target.value,
+            })
+          }
+        >
+          <option value="Morning">
+            Morning
+          </option>
+
+          <option value="Afternoon">
+            Afternoon
+          </option>
+
+          <option value="Evening">
+            Evening
+          </option>
+
+          <option value="Night">
+            Night
+          </option>
+        </select>
+      ) : null}
+    </div>
+  );
+}
+
+function BilledManpowerTotal({
+  row,
+  rows,
+}: {
+  row: ManpowerRow;
+  rows: ManpowerRow[];
+}) {
+  const billed =
+    manpowerBillableCost(
+      row,
+      rows,
+    );
+
+  const included =
+    manpowerIncludedInSharedRate(
+      row,
+      rows,
+    );
+
+  return (
+    <div className="manpower-billed-total">
+      <b>
+        {money(billed)}
+      </b>
+
+      <small>
+        {included
+          ? `Included in ${manpowerRateModeLabel(
+              row,
+            )}`
+          : manpowerRateModeLabel(
+              row,
+            )}
+      </small>
     </div>
   );
 }
@@ -705,10 +855,10 @@ function initializeFunctionManpower(work: WorkState): WorkState {
     rows,
   );
 
-  const staff = rows.reduce(
-    (sum, row) => sum + rowTotal(row),
-    0,
-  );
+  const staff =
+    calculateManpowerCost(
+      rows,
+    );
 
   if (
     JSON.stringify(rows) === JSON.stringify(work.manpower) &&
@@ -911,14 +1061,15 @@ export default function ManpowerPage() {
             group.serviceKey === selectedFunctionId,
         ) ?? null;
 
-  const manpowerTotal = useMemo(
-    () =>
-      (work?.manpower ?? []).reduce(
-        (sum, row) => sum + rowTotal(row),
-        0,
-      ),
-    [work],
-  );
+  const manpowerTotal =
+    useMemo(
+      () =>
+        calculateManpowerCost(
+          work?.manpower ??
+            [],
+        ),
+      [work],
+    );
 
   useEffect(() => {
     if (hasInitializedFunctions || !manpowerGroups.length) return;
@@ -1396,10 +1547,16 @@ export default function ManpowerPage() {
                   sum + Math.max(0, Number(row.quantity) || 0),
                 0,
               );
-              const groupCost = group.rows.reduce(
-                (sum, row) => sum + rowTotal(row),
-                0,
-              );
+              const groupCost =
+                group.rows.reduce(
+                  (sum, row) =>
+                    sum +
+                    manpowerBillableCost(
+                      row,
+                      work.manpower,
+                    ),
+                  0,
+                );
               const activeRows = group.rows.filter((row) => Number(row.quantity) > 0);
               const groupMissingRates = activeRows.filter((row) => !(Number(row.rate) > 0)).length;
               const autoAssignedRows =
@@ -1607,6 +1764,7 @@ export default function ManpowerPage() {
                               <th>Dish responsibility</th>
                               <th>People</th>
                               <th>Rate / person</th>
+                              <th>Rate basis</th>
                               <th>Role total</th>
                               <th>Action</th>
                             </tr>
@@ -1685,7 +1843,24 @@ export default function ManpowerPage() {
                                     {Number(row.quantity) > 0 && !(Number(row.rate) > 0) ? <small>Rate required</small> : null}
                                   </div>
                                 </td>
-                                <td><b className="manpower-row-total">{money(rowTotal(row))}</b></td>
+                                <td>
+                                  <RateModeControl
+                                    row={row}
+                                    onChange={(patch) =>
+                                      updateRow(
+                                        row.id,
+                                        patch,
+                                      )
+                                    }
+                                  />
+                                </td>
+
+                                <td>
+                                  <BilledManpowerTotal
+                                    row={row}
+                                    rows={work.manpower}
+                                  />
+                                </td>
                                 <td>
                                   {row.autoDishAssignment ? (
                                     <span className="manpower-auto-status">
@@ -1794,8 +1969,34 @@ export default function ManpowerPage() {
                                 </label>
                                 {Number(row.quantity) > 0 && !(Number(row.rate) > 0) ? <small className="manpower-rate-error">Rate required</small> : null}
                               </div>
+
+                              <div className="field">
+                                <label>
+                                  Rate basis
+                                </label>
+
+                                <RateModeControl
+                                  row={row}
+                                  onChange={(patch) =>
+                                    updateRow(
+                                      row.id,
+                                      patch,
+                                    )
+                                  }
+                                />
+                              </div>
                             </div>
-                            <div className="manpower-role-card-total"><span>Role total</span><b>{money(rowTotal(row))}</b></div>
+
+                            <div className="manpower-role-card-total">
+                              <span>
+                                Billable total
+                              </span>
+
+                              <BilledManpowerTotal
+                                row={row}
+                                rows={work.manpower}
+                              />
+                            </div>
                           </article>
                         ))}
                       </div>

@@ -4,6 +4,11 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { RowInput } from 'jspdf-autotable';
 import { calculate } from './store';
+import {
+  calculateManpowerCost,
+  manpowerBillableCost,
+  manpowerRateModeLabel,
+} from './manpowerCost';
 import { buildIngredientRequirementRows } from './pdfIngredientRequirements';
 import { inferIngredientCategory } from './ingredientCatalog';
 import type { WorkState } from './types';
@@ -585,20 +590,22 @@ export function downloadFinalCostingPdf(
             Number(row.rate) || 0,
           ),
         ),
+
+        manpowerRateModeLabel(
+          row,
+        ),
+
         pdfMoney(
-          Math.max(
-            0,
-            Number(row.quantity) || 0,
-          ) *
-            Math.max(
-              0,
-              Number(row.rate) || 0,
-            ),
+          manpowerBillableCost(
+            row,
+            work.manpower,
+          ),
         ),
       ])
     : [[
         'General Event',
         'No manpower entered',
+        '-',
         '-',
         '-',
         '-',
@@ -611,8 +618,13 @@ export function downloadFinalCostingPdf(
       '',
       '',
       '',
+      '',
       'Total Manpower',
-      pdfMoney(work.extras.staff),
+      pdfMoney(
+        calculateManpowerCost(
+          work.manpower,
+        ),
+      ),
     ]);
   }
 
@@ -1050,6 +1062,7 @@ export function downloadFinalCostingPdf(
       'Assigned Dishes',
       'People',
       'Rate / Person',
+      'Rate Basis',
       'Total',
     ]],
     body: manpowerTableRows,
@@ -1117,7 +1130,14 @@ export function downloadFinalCostingPdf(
     theme: 'grid',
     head: [['Cost item', 'Amount']],
     body: [
-      ['Manpower', pdfMoney(work.extras.staff)],
+      [
+        'Manpower',
+        pdfMoney(
+          calculateManpowerCost(
+            work.manpower,
+          ),
+        ),
+      ],
       ['Transport', pdfMoney(work.extras.transport)],
       ['Gas / Fuel', pdfMoney(work.extras.gasFuel)],
       ['Disposable items', pdfMoney(work.extras.disposable)],

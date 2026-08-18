@@ -6,6 +6,7 @@ import AppShell, { LockedCard } from '../../components/AppShell';
 import StatCard from '../../components/StatCard';
 import { defaultDisposableItems, getSession, loadWork, saveWork, uid } from '../../../lib/store';
 import type { DisposableCostItem, Session, WorkState } from '../../../lib/types';
+import { calculateManpowerCost } from '../../../lib/manpowerCost';
 
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
@@ -38,6 +39,14 @@ export default function ExtraCostPage() {
     [work?.disposableItems],
   );
 
+  const manpowerTotal = useMemo(
+    () =>
+      calculateManpowerCost(
+        work?.manpower ?? [],
+      ),
+    [work?.manpower],
+  );
+
   if (!work || !session) {
     return <AppShell title="Extra Cost"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
   }
@@ -47,7 +56,7 @@ export default function ExtraCostPage() {
   }
 
   const extraTotal =
-    Math.max(0, Number(work.extras.staff) || 0) +
+    manpowerTotal +
     Math.max(0, Number(work.extras.transport) || 0) +
     Math.max(0, Number(work.extras.gasFuel) || 0) +
     disposableTotal +
@@ -140,7 +149,7 @@ export default function ExtraCostPage() {
         </div>
 
         <div className="stat-grid">
-          <StatCard label="Manpower" value={money(work.extras.staff)} note="From Manpower" />
+          <StatCard label="Manpower" value={money(manpowerTotal)} note="From Manpower" />
           <StatCard label="Transport" value={money(work.extras.transport)} />
           <StatCard label="Gas / Fuel" value={money(work.extras.gasFuel)} />
           <StatCard label="Disposables" value={money(disposableTotal)} note={`${work.disposableItems.length} items`} />
