@@ -595,6 +595,7 @@ export default function ManpowerPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
   const [showUnusedRoles, setShowUnusedRoles] = useState(false);
+  const [selectedFunctionId, setSelectedFunctionId] = useState('all');
   const [expandedFunctionIds, setExpandedFunctionIds] = useState<string[]>([]);
   const [hasInitializedFunctions, setHasInitializedFunctions] = useState(false);
 
@@ -666,6 +667,43 @@ export default function ManpowerPage() {
 
     return groups;
   }, [work]);
+
+  const visibleManpowerGroups = useMemo(
+    () =>
+      selectedFunctionId === 'all'
+        ? manpowerGroups
+        : manpowerGroups.filter(
+            (group) =>
+              group.serviceId === selectedFunctionId,
+          ),
+    [
+      manpowerGroups,
+      selectedFunctionId,
+    ],
+  );
+
+  useEffect(() => {
+    if (
+      selectedFunctionId !== 'all' &&
+      !manpowerGroups.some(
+        (group) =>
+          group.serviceId === selectedFunctionId,
+      )
+    ) {
+      setSelectedFunctionId('all');
+    }
+  }, [
+    manpowerGroups,
+    selectedFunctionId,
+  ]);
+
+  const selectedMealGroup =
+    selectedFunctionId === 'all'
+      ? null
+      : manpowerGroups.find(
+          (group) =>
+            group.serviceId === selectedFunctionId,
+        ) ?? null;
 
   const manpowerTotal = useMemo(
     () =>
@@ -923,6 +961,197 @@ export default function ManpowerPage() {
             </div>
           </div>
 
+          <div className="manpower-meal-selector">
+            <div className="manpower-meal-selector-head">
+              <div>
+                <span className="section-kicker">
+                  Event Meals
+                </span>
+
+                <h3>
+                  Select function to plan
+                </h3>
+              </div>
+
+              <span className="manpower-meal-selector-count">
+                {manpowerGroups.length} functions
+              </span>
+            </div>
+
+            <div className="manpower-meal-tabs">
+              <button
+                type="button"
+                className={`manpower-meal-tab ${
+                  selectedFunctionId === 'all'
+                    ? 'is-active'
+                    : ''
+                }`}
+                onClick={() => {
+                  setSelectedFunctionId('all');
+                }}
+              >
+                <span className="manpower-meal-tab-icon">
+                  ☰
+                </span>
+
+                <span>
+                  <b>All Meals</b>
+                  <small>
+                    Complete event
+                  </small>
+                </span>
+              </button>
+
+              {manpowerGroups
+                .filter(
+                  (group) =>
+                    group.serviceId !== 'general',
+                )
+                .map((group) => {
+                  const activeStaff =
+                    group.rows.reduce(
+                      (sum, row) =>
+                        sum +
+                        Math.max(
+                          0,
+                          Number(row.quantity) || 0,
+                        ),
+                      0,
+                    );
+
+                  const autoSpecialists =
+                    group.rows.filter(
+                      (row) =>
+                        row.autoDishAssignment &&
+                        Number(row.quantity) > 0,
+                    ).length;
+
+                  return (
+                    <button
+                      key={group.serviceId}
+                      type="button"
+                      className={`manpower-meal-tab ${
+                        selectedFunctionId ===
+                        group.serviceId
+                          ? 'is-active'
+                          : ''
+                      }`}
+                      onClick={() => {
+                        setSelectedFunctionId(
+                          group.serviceId,
+                        );
+
+                        setExpandedFunctionIds(
+                          (current) =>
+                            current.includes(
+                              group.serviceId,
+                            )
+                              ? current
+                              : [
+                                  ...current,
+                                  group.serviceId,
+                                ],
+                        );
+                      }}
+                    >
+                      <span className="manpower-meal-tab-icon">
+                        {group.mealLabel
+                          .toLowerCase()
+                          .includes('breakfast')
+                          ? '☕'
+                          : group.mealLabel
+                              .toLowerCase()
+                              .includes('lunch')
+                            ? '🍽'
+                            : group.mealLabel
+                                .toLowerCase()
+                                .includes('tea')
+                              ? '🫖'
+                              : group.mealLabel
+                                  .toLowerCase()
+                                  .includes('dinner')
+                                ? '🌙'
+                                : group.mealLabel
+                                    .toLowerCase()
+                                    .includes('reception')
+                                  ? '✨'
+                                  : '🍴'}
+                      </span>
+
+                      <span className="manpower-meal-tab-copy">
+                        {group.dayLabel ? (
+                          <small>
+                            {group.dayLabel}
+                          </small>
+                        ) : null}
+
+                        <b>
+                          {group.mealLabel}
+                        </b>
+
+                        <em>
+                          {group.servicePax > 0
+                            ? `${group.servicePax} members`
+                            : 'Pax not set'}
+
+                          {activeStaff > 0
+                            ? ` · ${activeStaff} staff`
+                            : ''}
+
+                          {autoSpecialists > 0
+                            ? ` · ${autoSpecialists} auto`
+                            : ''}
+                        </em>
+                      </span>
+                    </button>
+                  );
+                })}
+            </div>
+
+            {selectedMealGroup ? (
+              <div className="manpower-selected-meal">
+                <div>
+                  <span>
+                    Currently planning
+                  </span>
+
+                  <b>
+                    {[
+                      selectedMealGroup.dayLabel,
+                      selectedMealGroup.mealLabel,
+                    ]
+                      .filter(Boolean)
+                      .join(' • ')}
+                  </b>
+                </div>
+
+                {selectedMealGroup.servicePax > 0 ? (
+                  <strong>
+                    {selectedMealGroup.servicePax}
+                    {' '}members
+                  </strong>
+                ) : null}
+              </div>
+            ) : (
+              <div className="manpower-selected-meal is-all">
+                <div>
+                  <span>
+                    Currently viewing
+                  </span>
+
+                  <b>
+                    All Event Meals
+                  </b>
+                </div>
+
+                <strong>
+                  {manpowerGroups.length}
+                  {' '}functions
+                </strong>
+              </div>
+            )}
+          </div>
+
           <div className="manpower-auto-guide">
             <div className="manpower-auto-guide-icon">
               ⚡
@@ -944,7 +1173,7 @@ export default function ManpowerPage() {
           </div>
 
           <div className="manpower-groups">
-            {manpowerGroups.map((group) => {
+            {visibleManpowerGroups.map((group) => {
               const groupPeople = group.rows.reduce(
                 (sum, row) =>
                   sum + Math.max(0, Number(row.quantity) || 0),
