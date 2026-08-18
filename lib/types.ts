@@ -213,6 +213,18 @@ export type ManpowerRow = {
    */
   autoDishAssignment?: boolean;
 
+  /*
+   * Automatically generated helper for a
+   * specialist kitchen station.
+   */
+  autoStationHelper?: boolean;
+
+  /*
+   * Station name used for automatic helpers.
+   * Example: Chinese, Chaat, Bread / Tandoor.
+   */
+  stationLabel?: string;
+
   serviceId?: string;
   dayLabel?: string;
   mealLabel?: string;

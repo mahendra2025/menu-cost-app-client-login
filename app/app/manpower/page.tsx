@@ -100,7 +100,10 @@ function DishAssignmentControl({
    * be immediately understandable.
    * Do not hide the dish behind a dropdown.
    */
-  if (row.autoDishAssignment) {
+  if (
+    row.autoDishAssignment ||
+    row.autoStationHelper
+  ) {
     return (
       <div className="manpower-auto-dish">
         <div className="manpower-auto-dish-top">
@@ -109,7 +112,9 @@ function DishAssignmentControl({
           </span>
 
           <small>
-            1 dish → 1 specialist
+            {row.autoStationHelper
+              ? `${row.stationLabel || 'Station'} helper`
+              : '1 dish → 1 specialist'}
           </small>
         </div>
 
@@ -290,7 +295,10 @@ function RateModeControl({
   const mode =
     getManpowerRateMode(row);
 
-  if (row.autoDishAssignment) {
+  if (
+    row.autoDishAssignment ||
+    row.autoStationHelper
+  ) {
     return (
       <span className="manpower-rate-basis-auto">
         Per Meal
@@ -585,33 +593,44 @@ function autoAssignDishCooks(
   work: WorkState,
   rows: ManpowerRow[],
 ) {
-  const currentDishIds =
-    new Set(
-      work.menu.map(
-        (dish) => dish.id,
-      ),
-    );
-
   /*
-   * Remove automatic rows if their
-   * dish was later removed from menu.
+   * Preserve manual manpower only.
+   *
+   * Automatic specialist/helper rows are rebuilt
+   * from the CURRENT menu every time.
+   *
+   * This fixes stale assignments when:
+   * - a dish category changes
+   * - a dish moves to another meal
+   * - a dish is deleted
+   * - specialist rules change
    */
-  const nextRows =
+  const manualRows =
     rows.filter(
       (row) =>
-        !row.autoDishAssignment ||
-        (
-          Array.isArray(
-            row.assignedDishIds,
-          ) &&
-          row.assignedDishIds.some(
-            (dishId) =>
-              currentDishIds.has(
-                dishId,
-              ),
-          )
-        ),
+        !row.autoDishAssignment &&
+        !row.autoStationHelper,
     );
+
+  const nextRows =
+    [...manualRows];
+
+  type Station = {
+    serviceKey: string;
+    serviceId?: string;
+    dayLabel?: string;
+    mealLabel?: string;
+    servicePax: number;
+    stationLabel: string;
+    dishIds: string[];
+    specialistCount: number;
+  };
+
+  const stations =
+    new Map<
+      string,
+      Station
+    >();
 
   work.menu.forEach(
     (dish) => {
@@ -625,25 +644,8 @@ function autoAssignDishCooks(
       }
 
       /*
-       * Do not duplicate a dish that
-       * already has its automatic cook.
+       * ONE specialist per specialist dish.
        */
-      const alreadyAssigned =
-        nextRows.some(
-          (row) =>
-            row.autoDishAssignment &&
-            Array.isArray(
-              row.assignedDishIds,
-            ) &&
-            row.assignedDishIds.includes(
-              dish.id,
-            ),
-        );
-
-      if (alreadyAssigned) {
-        return;
-      }
-
       nextRows.push({
         id:
           `manpower_dish_${dish.id}`,
@@ -651,16 +653,15 @@ function autoAssignDishCooks(
         role:
           specialist.role,
 
-        /*
-         * Core rule:
-         * ONE DISH = ONE SPECIALIST.
-         */
         quantity: 1,
 
         rate:
           specialistRate(
             specialist.rateRole,
           ),
+
+        rateMode:
+          'PER_MEAL',
 
         assignedDishIds: [
           dish.id,
@@ -685,6 +686,150 @@ function autoAssignDishCooks(
               dish.servicePax,
             ) || 0,
           ),
+      });
+
+      /*
+       * Build one station bucket for helpers.
+       *
+       * Specialist role becomes station identity:
+       * Chinese Cook       -> Chinese
+       * Chaat Master       -> Chaat
+       * Bread/Tandoor Cook -> Bread / Tandoor
+       */
+      const stationLabel =
+        specialist.role
+          .replace(
+            /\s+(?:cook|master|maker)$/i,
+            '',
+          )
+          .trim() ||
+        specialist.role;
+
+      const serviceKey =
+        getMenuServiceKey(
+          dish,
+        );
+
+      const stationKey =
+        `${serviceKey}::${stationLabel
+          .toLowerCase()}`;
+
+      const current =
+        stations.get(
+          stationKey,
+        ) ?? {
+          serviceKey,
+
+          serviceId:
+            dish.serviceId,
+
+          dayLabel:
+            dish.dayLabel,
+
+          mealLabel:
+            dish.mealLabel,
+
+          servicePax:
+            Math.max(
+              0,
+              Number(
+                dish.servicePax,
+              ) || 0,
+            ),
+
+          stationLabel,
+
+          dishIds: [],
+
+          specialistCount:
+            0,
+        };
+
+      current.dishIds.push(
+        dish.id,
+      );
+
+      current.specialistCount +=
+        1;
+
+      stations.set(
+        stationKey,
+        current,
+      );
+    },
+  );
+
+  /*
+   * Smart helper rule:
+   *
+   * 1-2 specialist dishes = 1 helper
+   * 3-4 dishes            = 2 helpers
+   * 5-6 dishes            = 3 helpers
+   *
+   * Formula:
+   * ceil(specialists / 2)
+   */
+  stations.forEach(
+    (station) => {
+      const helperQuantity =
+        Math.max(
+          1,
+          Math.ceil(
+            station.specialistCount /
+              2,
+          ),
+        );
+
+      const safeStation =
+        station.stationLabel
+          .toLowerCase()
+          .replace(
+            /[^a-z0-9]+/g,
+            '_',
+          )
+          .replace(
+            /^_+|_+$/g,
+            '',
+          );
+
+      nextRows.push({
+        id:
+          `manpower_helper_${station.serviceKey}_${safeStation}`,
+
+        role:
+          `${station.stationLabel} Helper`,
+
+        quantity:
+          helperQuantity,
+
+        rate:
+          specialistRate(
+            'Helper / Masi',
+          ),
+
+        rateMode:
+          'PER_MEAL',
+
+        assignedDishIds:
+          station.dishIds,
+
+        autoStationHelper:
+          true,
+
+        stationLabel:
+          station.stationLabel,
+
+        serviceId:
+          station.serviceId,
+
+        dayLabel:
+          station.dayLabel,
+
+        mealLabel:
+          station.mealLabel,
+
+        servicePax:
+          station.servicePax,
       });
     },
   );
@@ -1379,7 +1524,10 @@ export default function ManpowerPage() {
                   const autoSpecialists =
                     group.rows.filter(
                       (row) =>
-                        row.autoDishAssignment &&
+                        (
+                          row.autoDishAssignment ||
+                          row.autoStationHelper
+                        ) &&
                         Number(row.quantity) > 0,
                     ).length;
 
@@ -1562,7 +1710,10 @@ export default function ManpowerPage() {
               const autoAssignedRows =
                 activeRows.filter(
                   (row) =>
-                    row.autoDishAssignment,
+                    (
+                      row.autoDishAssignment ||
+                      row.autoStationHelper
+                    ),
                 );
 
               const visibleRows =
@@ -1577,12 +1728,14 @@ export default function ManpowerPage() {
                       const autoDifference =
                         Number(
                           Boolean(
-                            b.autoDishAssignment,
+                            b.autoDishAssignment ||
+                            b.autoStationHelper,
                           ),
                         ) -
                         Number(
                           Boolean(
-                            a.autoDishAssignment,
+                            a.autoDishAssignment ||
+                            a.autoStationHelper,
                           ),
                         );
 
@@ -1773,7 +1926,10 @@ export default function ManpowerPage() {
                             {visibleRows.map((row) => (
                               <tr key={row.id} className={Number(row.quantity) > 0 ? 'is-active' : ''}>
                                 <td>
-                                  {row.autoDishAssignment ? (
+                                  {(
+                                    row.autoDishAssignment ||
+                                    row.autoStationHelper
+                                  ) ? (
                                     <div className="manpower-auto-role">
                                       <span className="manpower-auto-role-icon">
                                         👨‍🍳
@@ -1785,7 +1941,9 @@ export default function ManpowerPage() {
                                         </b>
 
                                         <small>
-                                          Auto specialist
+                                          {row.autoStationHelper
+                                            ? 'Auto station helper'
+                                            : 'Auto specialist'}
                                         </small>
                                       </div>
                                     </div>
@@ -1862,7 +2020,10 @@ export default function ManpowerPage() {
                                   />
                                 </td>
                                 <td>
-                                  {row.autoDishAssignment ? (
+                                  {(
+                                    row.autoDishAssignment ||
+                                    row.autoStationHelper
+                                  ) ? (
                                     <span className="manpower-auto-status">
                                       Automatic
                                     </span>
@@ -1888,7 +2049,10 @@ export default function ManpowerPage() {
                         {visibleRows.map((row) => (
                           <article className={`manpower-role-card ${Number(row.quantity) > 0 ? 'is-active' : ''}`} key={row.id}>
                             <div className="manpower-role-card-heading">
-                              {row.autoDishAssignment ? (
+                              {(
+                                row.autoDishAssignment ||
+                                row.autoStationHelper
+                              ) ? (
                                 <div className="manpower-auto-role">
                                   <span className="manpower-auto-role-icon">
                                     👨‍🍳
@@ -1897,7 +2061,9 @@ export default function ManpowerPage() {
                                   <div>
                                     <b>{row.role}</b>
                                     <small>
-                                      Auto specialist
+                                      {row.autoStationHelper
+                                        ? 'Auto station helper'
+                                        : 'Auto specialist'}
                                     </small>
                                   </div>
                                 </div>
@@ -1918,7 +2084,10 @@ export default function ManpowerPage() {
                                 />
                               )}
 
-                              {row.autoDishAssignment ? (
+                              {(
+                                row.autoDishAssignment ||
+                                row.autoStationHelper
+                              ) ? (
                                 <span className="manpower-auto-status">
                                   AUTO
                                 </span>
