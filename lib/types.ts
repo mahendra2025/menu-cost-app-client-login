@@ -188,6 +188,12 @@ export type ManpowerRow = {
    */
   assignedDishIds?: string[];
 
+  /*
+   * Automatically generated specialist cook
+   * for one specific menu dish.
+   */
+  autoDishAssignment?: boolean;
+
   serviceId?: string;
   dayLabel?: string;
   mealLabel?: string;

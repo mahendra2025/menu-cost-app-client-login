@@ -233,6 +233,228 @@ function getFunctions(menu: MenuItem[]): FunctionOption[] {
   return Array.from(functions.values());
 }
 
+function specialistForDish(
+  dish: MenuItem,
+): {
+  role: string;
+  rateRole: string;
+} | null {
+  const category =
+    String(
+      dish.category || '',
+    )
+      .trim()
+      .toLowerCase();
+
+  const name =
+    String(
+      dish.name || '',
+    )
+      .trim()
+      .toLowerCase();
+
+  if (
+    category === 'farsan'
+  ) {
+    return {
+      role: 'Farsan Cook',
+      rateRole: 'Cook',
+    };
+  }
+
+  if (
+    category === 'starter'
+  ) {
+    return {
+      role: 'Starter Cook',
+      rateRole: 'Cook',
+    };
+  }
+
+  /*
+   * Juice may be stored under
+   * Welcome Drink, Mocktail or Beverage.
+   */
+  if (
+    category === 'welcome drink' ||
+    category === 'mocktail' ||
+    category === 'beverage' ||
+    name.includes('juice')
+  ) {
+    return {
+      role: 'Juice Maker',
+      rateRole: 'Bartender',
+    };
+  }
+
+  if (
+    category === 'chinese'
+  ) {
+    return {
+      role: 'Chinese Cook',
+      rateRole: 'Cook',
+    };
+  }
+
+  if (
+    category === 'chaat'
+  ) {
+    return {
+      role: 'Chaat Master',
+      rateRole: 'Cook',
+    };
+  }
+
+  if (
+    category === 'italian' ||
+    category === 'pizza' ||
+    category === 'pasta'
+  ) {
+    return {
+      role: 'Italian Cook',
+      rateRole: 'Cook',
+    };
+  }
+
+  /*
+   * App category for Indian breads
+   * is currently "Bread".
+   */
+  if (
+    category === 'bread'
+  ) {
+    return {
+      role: 'Bread / Tandoor Cook',
+      rateRole: 'Cook',
+    };
+  }
+
+  return null;
+}
+
+function specialistRate(
+  rateRole: string,
+) {
+  return (
+    defaultManpower.find(
+      (row) =>
+        row.role ===
+        rateRole,
+    )?.rate || 0
+  );
+}
+
+function autoAssignDishCooks(
+  work: WorkState,
+  rows: ManpowerRow[],
+) {
+  const currentDishIds =
+    new Set(
+      work.menu.map(
+        (dish) => dish.id,
+      ),
+    );
+
+  /*
+   * Remove automatic rows if their
+   * dish was later removed from menu.
+   */
+  const nextRows =
+    rows.filter(
+      (row) =>
+        !row.autoDishAssignment ||
+        (
+          Array.isArray(
+            row.assignedDishIds,
+          ) &&
+          row.assignedDishIds.some(
+            (dishId) =>
+              currentDishIds.has(
+                dishId,
+              ),
+          )
+        ),
+    );
+
+  work.menu.forEach(
+    (dish) => {
+      const specialist =
+        specialistForDish(
+          dish,
+        );
+
+      if (!specialist) {
+        return;
+      }
+
+      /*
+       * Do not duplicate a dish that
+       * already has its automatic cook.
+       */
+      const alreadyAssigned =
+        nextRows.some(
+          (row) =>
+            row.autoDishAssignment &&
+            Array.isArray(
+              row.assignedDishIds,
+            ) &&
+            row.assignedDishIds.includes(
+              dish.id,
+            ),
+        );
+
+      if (alreadyAssigned) {
+        return;
+      }
+
+      nextRows.push({
+        id:
+          `manpower_dish_${dish.id}`,
+
+        role:
+          specialist.role,
+
+        /*
+         * Core rule:
+         * ONE DISH = ONE SPECIALIST.
+         */
+        quantity: 1,
+
+        rate:
+          specialistRate(
+            specialist.rateRole,
+          ),
+
+        assignedDishIds: [
+          dish.id,
+        ],
+
+        autoDishAssignment:
+          true,
+
+        serviceId:
+          dish.serviceId,
+
+        dayLabel:
+          dish.dayLabel,
+
+        mealLabel:
+          dish.mealLabel,
+
+        servicePax:
+          Math.max(
+            0,
+            Number(
+              dish.servicePax,
+            ) || 0,
+          ),
+      });
+    },
+  );
+
+  return nextRows;
+}
+
 function createFunctionDefaults(
   service: FunctionOption,
 ): ManpowerRow[] {
@@ -289,6 +511,15 @@ function initializeFunctionManpower(work: WorkState): WorkState {
       }
     });
   });
+
+  /*
+   * Automatically create one specialist
+   * manpower row for every specialist dish.
+   */
+  rows = autoAssignDishCooks(
+    work,
+    rows,
+  );
 
   const staff = rows.reduce(
     (sum, row) => sum + rowTotal(row),
