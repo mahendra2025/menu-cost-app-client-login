@@ -6,6 +6,7 @@ import AppShell, { LockedCard } from '../../components/AppShell';
 import {
   calculate,
   defaultManpower,
+  getMenuServiceKey,
   getSession,
   loadWork,
   saveWork,
@@ -19,6 +20,7 @@ import type {
 } from '../../../lib/types';
 
 type FunctionOption = {
+  serviceKey: string;
   serviceId: string;
   dayLabel: string;
   mealLabel: string;
@@ -263,21 +265,59 @@ function QuantityControl({
   );
 }
 
-function getFunctions(menu: MenuItem[]): FunctionOption[] {
-  const functions = new Map<string, FunctionOption>();
+function getFunctions(
+  menu: MenuItem[],
+): FunctionOption[] {
+  const functions =
+    new Map<
+      string,
+      FunctionOption
+    >();
 
   menu.forEach((item) => {
-    if (!item.serviceId || functions.has(item.serviceId)) return;
+    const serviceKey =
+      getMenuServiceKey(
+        item,
+      );
 
-    functions.set(item.serviceId, {
-      serviceId: item.serviceId,
-      dayLabel: item.dayLabel ?? '',
-      mealLabel: item.mealLabel ?? 'Event Function',
-      servicePax: Math.max(0, Number(item.servicePax) || 0),
-    });
+    if (
+      functions.has(
+        serviceKey,
+      )
+    ) {
+      return;
+    }
+
+    functions.set(
+      serviceKey,
+      {
+        serviceKey,
+
+        serviceId:
+          item.serviceId ??
+          'default',
+
+        dayLabel:
+          item.dayLabel ?? '',
+
+        mealLabel:
+          item.mealLabel ??
+          'Event Function',
+
+        servicePax:
+          Math.max(
+            0,
+            Number(
+              item.servicePax,
+            ) || 0,
+          ),
+      },
+    );
   });
 
-  return Array.from(functions.values());
+  return Array.from(
+    functions.values(),
+  );
 }
 
 function specialistForDish(
@@ -507,7 +547,7 @@ function createFunctionDefaults(
 ): ManpowerRow[] {
   return defaultManpower.map((template) => ({
     ...template,
-    id: `${template.id}_${service.serviceId}`,
+    id: `${template.id}_${service.serviceKey}`,
     serviceId: service.serviceId,
     dayLabel: service.dayLabel,
     mealLabel: service.mealLabel,
@@ -519,33 +559,130 @@ function initializeFunctionManpower(work: WorkState): WorkState {
   const functions = getFunctions(work.menu);
   if (!functions.length) return work;
 
-  const functionIds = new Set(
-    functions.map((service) => service.serviceId),
-  );
-  let rows = work.manpower.map((row) => {
-    if (!row.serviceId || functionIds.has(row.serviceId)) return row;
+  let rows =
+    work.manpower.map(
+      (row) => {
+        const hasMealIdentity =
+          Boolean(
+            row.serviceId ||
+            row.dayLabel ||
+            row.mealLabel,
+          );
 
-    const matchingFunction = functions.find(
-      (service) =>
-        service.dayLabel === (row.dayLabel ?? '') &&
-        service.mealLabel === (row.mealLabel ?? '') &&
-        service.servicePax === Math.max(0, Number(row.servicePax) || 0),
+        if (!hasMealIdentity) {
+          return row;
+        }
+
+        const currentKey =
+          getMenuServiceKey(
+            row,
+          );
+
+        const matchingFunction =
+          functions.find(
+            (service) =>
+              service.serviceKey ===
+              currentKey,
+          ) ??
+          functions.find(
+            (service) =>
+              service.dayLabel ===
+                (row.dayLabel ?? '') &&
+              service.mealLabel ===
+                (row.mealLabel ?? '') &&
+              (
+                !row.servicePax ||
+                service.servicePax ===
+                  Math.max(
+                    0,
+                    Number(
+                      row.servicePax,
+                    ) || 0,
+                  )
+              ),
+          ) ??
+          functions.find(
+            (service) =>
+              service.serviceId ===
+              row.serviceId,
+          );
+
+        if (!matchingFunction) {
+          return row;
+        }
+
+        /*
+         * Old function templates used:
+         * manpower_cook_service_1
+         *
+         * Re-key them using:
+         * service + day + meal
+         * so Day 1 Lunch and Day 2 Lunch
+         * can never collide.
+         */
+        const defaultTemplate =
+          defaultManpower.find(
+            (template) =>
+              row.role ===
+                template.role &&
+              (
+                row.id ===
+                  template.id ||
+                row.id.startsWith(
+                  `${template.id}_`,
+                )
+              ),
+          );
+
+        return {
+          ...row,
+
+          id:
+            defaultTemplate
+              ? `${defaultTemplate.id}_${matchingFunction.serviceKey}`
+              : row.id,
+
+          serviceId:
+            matchingFunction.serviceId,
+
+          dayLabel:
+            matchingFunction.dayLabel,
+
+          mealLabel:
+            matchingFunction.mealLabel,
+
+          servicePax:
+            matchingFunction.servicePax,
+        };
+      },
     );
 
-    return matchingFunction
-      ? {
-          ...row,
-          serviceId: matchingFunction.serviceId,
-        }
-      : row;
-  });
+  /*
+   * Migration safety:
+   * avoid duplicate template rows.
+   */
+  rows =
+    Array.from(
+      new Map(
+        rows.map(
+          (row) => [
+            row.id,
+            row,
+          ],
+        ),
+      ).values(),
+    );
 
   const defaultIds = new Set(
     defaultManpower.map((row) => row.id),
   );
   rows = rows.filter(
     (row) =>
-      row.serviceId ||
+      (
+        row.serviceId ||
+        row.dayLabel ||
+        row.mealLabel
+      ) ||
       row.quantity > 0 ||
       !defaultIds.has(row.id),
   );
@@ -625,36 +762,105 @@ export default function ManpowerPage() {
     const groups = functions.map((service) => ({
       ...service,
       rows: work.manpower.filter(
-        (row) => row.serviceId === service.serviceId,
+        (row) =>
+          Boolean(
+            row.serviceId ||
+            row.dayLabel ||
+            row.mealLabel,
+          ) &&
+          getMenuServiceKey(
+            row,
+          ) ===
+          service.serviceKey,
       ),
     }));
-    const knownIds = new Set(
-      functions.map((service) => service.serviceId),
-    );
-    const orphanedFunctionRows = work.manpower.filter(
-      (row) => row.serviceId && !knownIds.has(row.serviceId),
-    );
-    const orphanedIds = Array.from(
-      new Set(orphanedFunctionRows.map((row) => row.serviceId!)),
-    );
-
-    orphanedIds.forEach((serviceId) => {
-      const rows = orphanedFunctionRows.filter(
-        (row) => row.serviceId === serviceId,
+    const knownKeys =
+      new Set(
+        functions.map(
+          (service) =>
+            service.serviceKey,
+        ),
       );
-      const first = rows[0];
-      groups.push({
-        serviceId,
-        dayLabel: first?.dayLabel ?? '',
-        mealLabel: first?.mealLabel ?? 'Previous Function',
-        servicePax: Math.max(0, Number(first?.servicePax) || 0),
-        rows,
-      });
-    });
+
+    const orphanedFunctionRows =
+      work.manpower.filter(
+        (row) => {
+          const hasMealIdentity =
+            Boolean(
+              row.serviceId ||
+              row.dayLabel ||
+              row.mealLabel,
+            );
+
+          if (!hasMealIdentity) {
+            return false;
+          }
+
+          return !knownKeys.has(
+            getMenuServiceKey(
+              row,
+            ),
+          );
+        },
+      );
+
+    const orphanedKeys =
+      Array.from(
+        new Set(
+          orphanedFunctionRows.map(
+            (row) =>
+              getMenuServiceKey(
+                row,
+              ),
+          ),
+        ),
+      );
+
+    orphanedKeys.forEach(
+      (serviceKey) => {
+        const rows =
+          orphanedFunctionRows.filter(
+            (row) =>
+              getMenuServiceKey(
+                row,
+              ) ===
+              serviceKey,
+          );
+
+        const first =
+          rows[0];
+
+        groups.push({
+          serviceKey,
+
+          serviceId:
+            first?.serviceId ??
+            'default',
+
+          dayLabel:
+            first?.dayLabel ?? '',
+
+          mealLabel:
+            first?.mealLabel ??
+            'Previous Function',
+
+          servicePax:
+            Math.max(
+              0,
+              Number(
+                first?.servicePax,
+              ) || 0,
+            ),
+
+          rows,
+        });
+      },
+    );
 
     const generalRows = work.manpower.filter((row) => !row.serviceId);
     if (generalRows.length || !groups.length) {
       groups.unshift({
+        serviceKey: 'general',
         serviceId: 'general',
         dayLabel: '',
         mealLabel: 'General Event Staff',
@@ -674,7 +880,7 @@ export default function ManpowerPage() {
         ? manpowerGroups
         : manpowerGroups.filter(
             (group) =>
-              group.serviceId === selectedFunctionId,
+              group.serviceKey === selectedFunctionId,
           ),
     [
       manpowerGroups,
@@ -687,7 +893,7 @@ export default function ManpowerPage() {
       selectedFunctionId !== 'all' &&
       !manpowerGroups.some(
         (group) =>
-          group.serviceId === selectedFunctionId,
+          group.serviceKey === selectedFunctionId,
       )
     ) {
       setSelectedFunctionId('all');
@@ -702,7 +908,7 @@ export default function ManpowerPage() {
       ? null
       : manpowerGroups.find(
           (group) =>
-            group.serviceId === selectedFunctionId,
+            group.serviceKey === selectedFunctionId,
         ) ?? null;
 
   const manpowerTotal = useMemo(
@@ -721,12 +927,12 @@ export default function ManpowerPage() {
       .filter((group) => group.rows.some(
         (row) => Number(row.quantity) > 0 && !(Number(row.rate) > 0),
       ))
-      .map((group) => group.serviceId);
+      .map((group) => group.serviceKey);
 
     setExpandedFunctionIds(
       functionsNeedingAttention.length
         ? functionsNeedingAttention
-        : [manpowerGroups[0].serviceId],
+        : [manpowerGroups[0].serviceKey],
     );
     setHasInitializedFunctions(true);
   }, [hasInitializedFunctions, manpowerGroups]);
@@ -821,9 +1027,9 @@ export default function ManpowerPage() {
 
     setShowUnusedRoles(true);
     setExpandedFunctionIds((current) => (
-      current.includes(group.serviceId)
+      current.includes(group.serviceKey)
         ? current
-        : [...current, group.serviceId]
+        : [...current, group.serviceKey]
     ));
 
     persistRows([
@@ -833,7 +1039,7 @@ export default function ManpowerPage() {
         role: 'New Role',
         quantity: 0,
         rate: 0,
-        ...(group.serviceId !== 'general'
+        ...(group.serviceKey !== 'general'
           ? {
               serviceId: group.serviceId,
               dayLabel: group.dayLabel,
@@ -1005,7 +1211,7 @@ export default function ManpowerPage() {
               {manpowerGroups
                 .filter(
                   (group) =>
-                    group.serviceId !== 'general',
+                    group.serviceKey !== 'general',
                 )
                 .map((group) => {
                   const activeStaff =
@@ -1028,7 +1234,7 @@ export default function ManpowerPage() {
 
                   return (
                     <button
-                      key={group.serviceId}
+                      key={group.serviceKey}
                       type="button"
                       className={`manpower-meal-tab ${
                         selectedFunctionId ===
@@ -1037,9 +1243,7 @@ export default function ManpowerPage() {
                           : ''
                       }`}
                       onClick={() => {
-                        setSelectedFunctionId(
-                          group.serviceId,
-                        );
+                        setSelectedFunctionId(group.serviceKey);
 
                         setExpandedFunctionIds(
                           (current) =>
@@ -1235,28 +1439,31 @@ export default function ManpowerPage() {
                * to the same function.
                */
               const groupDishes =
-                group.serviceId === 'general'
+                group.serviceKey ===
+                'general'
                   ? work.menu
                   : work.menu.filter(
                       (dish) =>
-                        dish.serviceId ===
-                        group.serviceId,
+                        getMenuServiceKey(
+                          dish,
+                        ) ===
+                        group.serviceKey,
                     );
 
               return (
                 <details
                   className="manpower-function-card"
-                  key={group.serviceId}
-                  data-function-id={group.serviceId}
-                  open={expandedFunctionIds.includes(group.serviceId)}
+                  key={group.serviceKey}
+                  data-function-id={group.serviceKey}
+                  open={expandedFunctionIds.includes(group.serviceKey)}
                   onToggle={(event) => {
                     const isOpen = event.currentTarget.open;
                     setExpandedFunctionIds((current) => (
                       isOpen
-                        ? current.includes(group.serviceId)
+                        ? current.includes(group.serviceKey)
                           ? current
-                          : [...current, group.serviceId]
-                        : current.filter((serviceId) => serviceId !== group.serviceId)
+                          : [...current, group.serviceKey]
+                        : current.filter((serviceId) => serviceId !== group.serviceKey)
                     ));
                   }}
                 >
