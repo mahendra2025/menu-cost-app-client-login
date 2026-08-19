@@ -1675,6 +1675,65 @@ export default function ManpowerPage() {
     ]);
   }
 
+  function addDishManpower(
+    group: ManpowerGroup,
+    dish: MenuItem,
+  ) {
+    if (!work) return;
+
+    setShowUnusedRoles(true);
+
+    setExpandedFunctionIds(
+      (current) =>
+        current.includes(
+          group.serviceKey,
+        )
+          ? current
+          : [
+              ...current,
+              group.serviceKey,
+            ],
+    );
+
+    persistRows([
+      ...work.manpower,
+      {
+        id: uid(
+          'manpower_dish',
+        ),
+
+        role: 'Cook',
+
+        quantity: 1,
+
+        rate:
+          specialistRate(
+            'Cook',
+          ),
+
+        rateMode:
+          'PER_MEAL',
+
+        assignedDishIds: [
+          dish.id,
+        ],
+
+        serviceId:
+          group.serviceId,
+
+        dayLabel:
+          group.dayLabel,
+
+        mealLabel:
+          group.mealLabel,
+
+        servicePax:
+          group.servicePax,
+      },
+    ]);
+  }
+
+
   function removeRole(row: ManpowerRow) {
     if (!work) return;
     if (
@@ -2350,50 +2409,183 @@ export default function ManpowerPage() {
                                             <div className="manpower-dish-manpower-list">
                                               {dishRows.length ? (
                                                 dishRows.map(
-                                                  (row) => (
-                                                    <div
-                                                      key={
-                                                        row.id
-                                                      }
-                                                      className="manpower-dish-manpower-row"
-                                                    >
-                                                      <div>
-                                                        <b>
-                                                          {
-                                                            row.role
-                                                          }
-                                                        </b>
+                                                  (row) =>
+                                                    (
+                                                      row.autoDishAssignment ||
+                                                      row.autoStationHelper
+                                                    ) ? (
+                                                      <div
+                                                        key={row.id}
+                                                        className="manpower-dish-manpower-row"
+                                                      >
+                                                        <div>
+                                                          <b>
+                                                            {row.role}
+                                                          </b>
 
-                                                        <small>
-                                                          {
-                                                            row.quantity
-                                                          }
-                                                          {' '}
-                                                          person
-                                                          {Number(
-                                                            row.quantity,
-                                                          ) ===
-                                                          1
-                                                            ? ''
-                                                            : 's'}
-                                                        </small>
+                                                          <small>
+                                                            {row.quantity}
+                                                            {' '}
+                                                            person
+                                                            {Number(
+                                                              row.quantity,
+                                                            ) === 1
+                                                              ? ''
+                                                              : 's'}
+
+                                                            {' · Automatic'}
+                                                          </small>
+                                                        </div>
+
+                                                        <strong>
+                                                          {money(
+                                                            rowTotal(
+                                                              row,
+                                                            ),
+                                                          )}
+                                                        </strong>
                                                       </div>
+                                                    ) : (
+                                                      <div
+                                                        key={row.id}
+                                                        className="manpower-dish-inline-editor"
+                                                      >
+                                                        <div className="manpower-dish-field">
+                                                          <small>
+                                                            Role
+                                                          </small>
 
-                                                      <strong>
-                                                        {money(
-                                                          rowTotal(
-                                                            row,
-                                                          ),
-                                                        )}
-                                                      </strong>
-                                                    </div>
-                                                  ),
+                                                          <input
+                                                            className="input"
+                                                            value={
+                                                              row.role
+                                                            }
+                                                            onChange={(
+                                                              event,
+                                                            ) =>
+                                                              updateRow(
+                                                                row.id,
+                                                                {
+                                                                  role:
+                                                                    event
+                                                                      .target
+                                                                      .value,
+                                                                },
+                                                              )
+                                                            }
+                                                          />
+                                                        </div>
+
+                                                        <div className="manpower-dish-field">
+                                                          <small>
+                                                            People
+                                                          </small>
+
+                                                          <QuantityControl
+                                                            row={
+                                                              row
+                                                            }
+                                                            onChange={(
+                                                              quantity,
+                                                            ) =>
+                                                              updateRow(
+                                                                row.id,
+                                                                {
+                                                                  quantity,
+                                                                },
+                                                              )
+                                                            }
+                                                          />
+                                                        </div>
+
+                                                        <div className="manpower-dish-field">
+                                                          <small>
+                                                            Rate / person
+                                                          </small>
+
+                                                          <label className="manpower-rate-input">
+                                                            <span>
+                                                              ₹
+                                                            </span>
+
+                                                            <input
+                                                              type="number"
+                                                              min="0"
+                                                              step="1"
+                                                              value={
+                                                                row.rate ||
+                                                                ''
+                                                              }
+                                                              onChange={(
+                                                                event,
+                                                              ) =>
+                                                                updateRow(
+                                                                  row.id,
+                                                                  {
+                                                                    rate:
+                                                                      Math.max(
+                                                                        0,
+                                                                        Number(
+                                                                          event
+                                                                            .target
+                                                                            .value,
+                                                                        ) ||
+                                                                          0,
+                                                                      ),
+                                                                  },
+                                                                )
+                                                              }
+                                                              placeholder="Rate"
+                                                            />
+                                                          </label>
+                                                        </div>
+
+                                                        <div className="manpower-dish-inline-total">
+                                                          <small>
+                                                            Total
+                                                          </small>
+
+                                                          <strong>
+                                                            {money(
+                                                              rowTotal(
+                                                                row,
+                                                              ),
+                                                            )}
+                                                          </strong>
+                                                        </div>
+
+                                                        <button
+                                                          type="button"
+                                                          className="manpower-remove-button"
+                                                          onClick={() =>
+                                                            removeRole(
+                                                              row,
+                                                            )
+                                                          }
+                                                        >
+                                                          Remove
+                                                        </button>
+                                                      </div>
+                                                    ),
                                                 )
                                               ) : (
                                                 <small className="muted">
                                                   No manpower assigned to this dish yet.
                                                 </small>
                                               )}
+
+                                              <button
+                                                type="button"
+                                                className="secondary-button manpower-dish-add-button"
+                                                onClick={() =>
+                                                  addDishManpower(
+                                                    group,
+                                                    dish,
+                                                  )
+                                                }
+                                              >
+                                                + Add Manpower
+                                              </button>
                                             </div>
                                           </details>
                                         );
