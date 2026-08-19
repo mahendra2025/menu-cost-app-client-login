@@ -2302,14 +2302,102 @@ export default function ManpowerPage() {
 
                                   <div className="manpower-menu-dish-list">
                                     {categoryDishes.map(
-                                      (dish) => (
-                                        <span
-                                          key={dish.id}
-                                          className="manpower-menu-dish-chip"
-                                        >
-                                          {dish.name}
-                                        </span>
-                                      ),
+                                      (dish) => {
+                                        const dishRows =
+                                          group.rows.filter(
+                                            (row) =>
+                                              Array.isArray(
+                                                row.assignedDishIds,
+                                              ) &&
+                                              row.assignedDishIds.includes(
+                                                dish.id,
+                                              ) &&
+                                              Number(
+                                                row.quantity,
+                                              ) > 0,
+                                          );
+
+                                        const dishPeople =
+                                          dishRows.reduce(
+                                            (sum, row) =>
+                                              sum +
+                                              Math.max(
+                                                0,
+                                                Number(
+                                                  row.quantity,
+                                                ) || 0,
+                                              ),
+                                            0,
+                                          );
+
+                                        return (
+                                          <details
+                                            key={dish.id}
+                                            className="manpower-dish-manpower-card"
+                                          >
+                                            <summary className="manpower-menu-dish-chip">
+                                              <span>
+                                                {dish.name}
+                                              </span>
+
+                                              <small>
+                                                {dishPeople > 0
+                                                  ? `${dishPeople} staff`
+                                                  : 'Select'}
+                                              </small>
+                                            </summary>
+
+                                            <div className="manpower-dish-manpower-list">
+                                              {dishRows.length ? (
+                                                dishRows.map(
+                                                  (row) => (
+                                                    <div
+                                                      key={
+                                                        row.id
+                                                      }
+                                                      className="manpower-dish-manpower-row"
+                                                    >
+                                                      <div>
+                                                        <b>
+                                                          {
+                                                            row.role
+                                                          }
+                                                        </b>
+
+                                                        <small>
+                                                          {
+                                                            row.quantity
+                                                          }
+                                                          {' '}
+                                                          person
+                                                          {Number(
+                                                            row.quantity,
+                                                          ) ===
+                                                          1
+                                                            ? ''
+                                                            : 's'}
+                                                        </small>
+                                                      </div>
+
+                                                      <strong>
+                                                        {money(
+                                                          rowTotal(
+                                                            row,
+                                                          ),
+                                                        )}
+                                                      </strong>
+                                                    </div>
+                                                  ),
+                                                )
+                                              ) : (
+                                                <small className="muted">
+                                                  No manpower assigned to this dish yet.
+                                                </small>
+                                              )}
+                                            </div>
+                                          </details>
+                                        );
+                                      },
                                     )}
                                   </div>
                                 </div>
