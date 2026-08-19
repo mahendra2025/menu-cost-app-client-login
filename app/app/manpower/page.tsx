@@ -116,7 +116,7 @@ function DishAssignmentControl({
           <small>
             {row.autoStationHelper
               ? `${row.stationLabel || 'Station'} helper`
-              : '1 dish → 1 specialist'}
+              : '1 station → 1 chef'}
           </small>
         </div>
 
@@ -614,68 +614,49 @@ function specialistForDish(
   role: string;
   rateRole: string;
 } | null {
-  const category =
-    String(
-      dish.category || '',
-    )
-      .trim()
-      .toLowerCase();
+  const category = String(
+    dish.category || '',
+  ).trim().toLowerCase();
 
-  const name =
-    String(
-      dish.name || '',
-    )
-      .trim()
-      .toLowerCase();
+  const name = String(
+    dish.name || '',
+  ).trim().toLowerCase();
 
   if (
-    category === 'farsan'
+    category === 'welcome drink' ||
+    category === 'mocktail' ||
+    name.includes('juice')
   ) {
     return {
-      role: 'Farsan Cook',
+      role: 'Juice / Mocktail Maker',
+      rateRole: 'Bartender',
+    };
+  }
+
+  if (category === 'soup') {
+    return {
+      role: 'Soup Cook',
       rateRole: 'Cook',
     };
   }
 
-  if (
-    category === 'starter'
-  ) {
+  if (category === 'starter') {
     return {
       role: 'Starter Cook',
       rateRole: 'Cook',
     };
   }
 
-  /*
-   * Juice may be stored under
-   * Welcome Drink, Mocktail or Beverage.
-   */
-  if (
-    category === 'welcome drink' ||
-    category === 'mocktail' ||
-    category === 'beverage' ||
-    name.includes('juice')
-  ) {
+  if (category === 'chaat') {
     return {
-      role: 'Juice Maker',
-      rateRole: 'Bartender',
-    };
-  }
-
-  if (
-    category === 'chinese'
-  ) {
-    return {
-      role: 'Chinese Cook',
+      role: 'Chaat Master',
       rateRole: 'Cook',
     };
   }
 
-  if (
-    category === 'chaat'
-  ) {
+  if (category === 'chinese') {
     return {
-      role: 'Chaat Master',
+      role: 'Chinese Cook',
       rateRole: 'Cook',
     };
   }
@@ -691,15 +672,54 @@ function specialistForDish(
     };
   }
 
-  /*
-   * App category for Indian breads
-   * is currently "Bread".
-   */
+  if (category === 'bread') {
+    return {
+      role: 'Indian Bread / Tandoor Cook',
+      rateRole: 'Cook',
+    };
+  }
+
   if (
-    category === 'bread'
+    category === 'dal/kadhi' ||
+    category === 'dal' ||
+    category === 'kadhi'
   ) {
     return {
-      role: 'Bread / Tandoor Cook',
+      role: 'Dal / Kadhi Cook',
+      rateRole: 'Cook',
+    };
+  }
+
+  if (category === 'rice') {
+    return {
+      role: 'Rice Cook',
+      rateRole: 'Cook',
+    };
+  }
+
+  if (
+    category === 'sabji' ||
+    category === 'paneer'
+  ) {
+    return {
+      role: 'Sabji Cook',
+      rateRole: 'Cook',
+    };
+  }
+
+  if (
+    category === 'sweet' ||
+    category === 'dessert'
+  ) {
+    return {
+      role: 'Sweet / Halwai',
+      rateRole: 'Cook',
+    };
+  }
+
+  if (category === 'farsan') {
+    return {
+      role: 'Farsan Cook',
       rateRole: 'Cook',
     };
   }
@@ -723,27 +743,13 @@ function autoAssignDishCooks(
   work: WorkState,
   rows: ManpowerRow[],
 ) {
-  /*
-   * Preserve manual manpower only.
-   *
-   * Automatic specialist/helper rows are rebuilt
-   * from the CURRENT menu every time.
-   *
-   * This fixes stale assignments when:
-   * - a dish category changes
-   * - a dish moves to another meal
-   * - a dish is deleted
-   * - specialist rules change
-   */
-  const manualRows =
-    rows.filter(
-      (row) =>
-        !row.autoDishAssignment &&
-        !row.autoStationHelper,
-    );
+  const manualRows = rows.filter(
+    (row) =>
+      !row.autoDishAssignment &&
+      !row.autoStationHelper,
+  );
 
-  const nextRows =
-    [...manualRows];
+  const nextRows = [...manualRows];
 
   type Station = {
     serviceKey: string;
@@ -752,217 +758,156 @@ function autoAssignDishCooks(
     mealLabel?: string;
     servicePax: number;
     stationLabel: string;
+    role: string;
+    rateRole: string;
     dishIds: string[];
-    specialistCount: number;
   };
 
-  const stations =
-    new Map<
-      string,
-      Station
-    >();
+  const stations = new Map<string, Station>();
 
-  work.menu.forEach(
-    (dish) => {
-      const specialist =
-        specialistForDish(
-          dish,
+  work.menu.forEach((dish) => {
+    const specialist =
+      specialistForDish(dish);
+
+    if (!specialist) return;
+
+    const serviceKey =
+      getMenuServiceKey(dish);
+
+    const stationLabel =
+      specialist.role
+        .replace(
+          /\s+(?:cook|master|maker)$/i,
+          '',
+        )
+        .trim() || specialist.role;
+
+    const stationKey =
+      `${serviceKey}::${specialist.role.toLowerCase()}`;
+
+    const current =
+      stations.get(stationKey) ?? {
+        serviceKey,
+        serviceId: dish.serviceId,
+        dayLabel: dish.dayLabel,
+        mealLabel: dish.mealLabel,
+        servicePax: Math.max(
+          0,
+          Number(dish.servicePax) || 0,
+        ),
+        stationLabel,
+        role: specialist.role,
+        rateRole: specialist.rateRole,
+        dishIds: [],
+      };
+
+    current.dishIds.push(dish.id);
+
+    stations.set(
+      stationKey,
+      current,
+    );
+  });
+
+  stations.forEach((station) => {
+    const safeStation =
+      station.stationLabel
+        .toLowerCase()
+        .replace(
+          /[^a-z0-9]+/g,
+          '_',
+        )
+        .replace(
+          /^_+|_+$/g,
+          '',
         );
 
-      if (!specialist) {
-        return;
-      }
+    // 1 chef handles all dishes
+    // in the same station/category.
+    nextRows.push({
+      id:
+        `manpower_station_${station.serviceKey}_${safeStation}`,
 
-      /*
-       * ONE specialist per specialist dish.
-       */
-      nextRows.push({
-        id:
-          `manpower_dish_${dish.id}`,
+      role: station.role,
 
-        role:
-          specialist.role,
+      quantity: 1,
 
-        quantity: 1,
+      rate:
+        specialistRate(
+          station.rateRole,
+        ),
 
-        rate:
-          specialistRate(
-            specialist.rateRole,
-          ),
+      rateMode: 'PER_MEAL',
 
-        rateMode:
-          'PER_MEAL',
+      assignedDishIds:
+        station.dishIds,
 
-        assignedDishIds: [
-          dish.id,
-        ],
+      autoDishAssignment: true,
 
-        autoDishAssignment:
-          true,
+      stationLabel:
+        station.stationLabel,
 
-        serviceId:
-          dish.serviceId,
+      serviceId:
+        station.serviceId,
 
-        dayLabel:
-          dish.dayLabel,
+      dayLabel:
+        station.dayLabel,
 
-        mealLabel:
-          dish.mealLabel,
+      mealLabel:
+        station.mealLabel,
 
-        servicePax:
-          Math.max(
-            0,
-            Number(
-              dish.servicePax,
-            ) || 0,
-          ),
-      });
+      servicePax:
+        station.servicePax,
+    });
 
-      /*
-       * Build one station bucket for helpers.
-       *
-       * Specialist role becomes station identity:
-       * Chinese Cook       -> Chinese
-       * Chaat Master       -> Chaat
-       * Bread/Tandoor Cook -> Bread / Tandoor
-       */
-      const stationLabel =
-        specialist.role
-          .replace(
-            /\s+(?:cook|master|maker)$/i,
-            '',
-          )
-          .trim() ||
-        specialist.role;
-
-      const serviceKey =
-        getMenuServiceKey(
-          dish,
-        );
-
-      const stationKey =
-        `${serviceKey}::${stationLabel
-          .toLowerCase()}`;
-
-      const current =
-        stations.get(
-          stationKey,
-        ) ?? {
-          serviceKey,
-
-          serviceId:
-            dish.serviceId,
-
-          dayLabel:
-            dish.dayLabel,
-
-          mealLabel:
-            dish.mealLabel,
-
-          servicePax:
-            Math.max(
-              0,
-              Number(
-                dish.servicePax,
-              ) || 0,
-            ),
-
-          stationLabel,
-
-          dishIds: [],
-
-          specialistCount:
-            0,
-        };
-
-      current.dishIds.push(
-        dish.id,
+    // More dishes = more helpers,
+    // but chef remains 1.
+    const helperQuantity =
+      Math.max(
+        1,
+        Math.ceil(
+          station.dishIds.length / 2,
+        ),
       );
 
-      current.specialistCount +=
-        1;
+    nextRows.push({
+      id:
+        `manpower_helper_${station.serviceKey}_${safeStation}`,
 
-      stations.set(
-        stationKey,
-        current,
-      );
-    },
-  );
+      role:
+        `${station.stationLabel} Helper`,
 
-  /*
-   * Smart helper rule:
-   *
-   * 1-2 specialist dishes = 1 helper
-   * 3-4 dishes            = 2 helpers
-   * 5-6 dishes            = 3 helpers
-   *
-   * Formula:
-   * ceil(specialists / 2)
-   */
-  stations.forEach(
-    (station) => {
-      const helperQuantity =
-        Math.max(
-          1,
-          Math.ceil(
-            station.specialistCount /
-              2,
-          ),
-        );
+      quantity:
+        helperQuantity,
 
-      const safeStation =
-        station.stationLabel
-          .toLowerCase()
-          .replace(
-            /[^a-z0-9]+/g,
-            '_',
-          )
-          .replace(
-            /^_+|_+$/g,
-            '',
-          );
+      rate:
+        specialistRate(
+          'Helper / Masi',
+        ),
 
-      nextRows.push({
-        id:
-          `manpower_helper_${station.serviceKey}_${safeStation}`,
+      rateMode: 'PER_MEAL',
 
-        role:
-          `${station.stationLabel} Helper`,
+      assignedDishIds:
+        station.dishIds,
 
-        quantity:
-          helperQuantity,
+      autoStationHelper: true,
 
-        rate:
-          specialistRate(
-            'Helper / Masi',
-          ),
+      stationLabel:
+        station.stationLabel,
 
-        rateMode:
-          'PER_MEAL',
+      serviceId:
+        station.serviceId,
 
-        assignedDishIds:
-          station.dishIds,
+      dayLabel:
+        station.dayLabel,
 
-        autoStationHelper:
-          true,
+      mealLabel:
+        station.mealLabel,
 
-        stationLabel:
-          station.stationLabel,
-
-        serviceId:
-          station.serviceId,
-
-        dayLabel:
-          station.dayLabel,
-
-        mealLabel:
-          station.mealLabel,
-
-        servicePax:
-          station.servicePax,
-      });
-    },
-  );
+      servicePax:
+        station.servicePax,
+    });
+  });
 
   return nextRows;
 }
