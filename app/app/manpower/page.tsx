@@ -1277,6 +1277,8 @@ export default function ManpowerPage() {
               ) || 0,
             ),
 
+          serviceStyle: 'BUFFET',
+
           rows,
         });
       },
@@ -1290,6 +1292,7 @@ export default function ManpowerPage() {
         dayLabel: '',
         mealLabel: 'General Event Staff',
         servicePax: Math.max(0, Number(work.event.pax) || 0),
+        serviceStyle: 'BUFFET',
         rows: generalRows.length
           ? generalRows
           : defaultManpower.map((row) => ({ ...row })),
