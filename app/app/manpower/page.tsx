@@ -98,14 +98,11 @@ function DishAssignmentControl({
     assignedDishes.length;
 
   /*
-   * Automatic specialist assignments should
-   * be immediately understandable.
-   * Do not hide the dish behind a dropdown.
+   * Automatic chef station:
+   * detected dishes stay visible and extra dishes
+   * can be attached without increasing chef quantity.
    */
-  if (
-    row.autoDishAssignment ||
-    row.autoStationHelper
-  ) {
+  if (row.autoStationHelper) {
     return (
       <div className="manpower-auto-dish">
         <div className="manpower-auto-dish-top">
@@ -114,33 +111,99 @@ function DishAssignmentControl({
           </span>
 
           <small>
-            {row.autoStationHelper
-              ? `${row.stationLabel || 'Station'} helper`
-              : '1 station → 1 chef'}
+            {`${row.stationLabel || 'Station'} helper`}
           </small>
         </div>
 
         {assignedDishes.length ? (
           <div className="manpower-auto-dish-chips">
-            {assignedDishes.map(
-              (dish) => (
-                <span
-                  key={dish.id}
-                  className="manpower-auto-dish-chip"
-                >
-                  <b>{dish.name}</b>
-                  <small>
-                    {dish.category}
-                  </small>
-                </span>
-              ),
-            )}
+            {assignedDishes.map((dish) => (
+              <span
+                key={dish.id}
+                className="manpower-auto-dish-chip"
+              >
+                <b>{dish.name}</b>
+                <small>{dish.category}</small>
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (row.autoDishAssignment) {
+    const availableDishes =
+      dishes.filter(
+        (dish) =>
+          !selected.has(dish.id),
+      );
+
+    return (
+      <div className="manpower-auto-dish">
+        <div className="manpower-auto-dish-top">
+          <span className="manpower-auto-badge">
+            AUTO
+          </span>
+
+          <small>
+            1 station → 1 chef
+          </small>
+        </div>
+
+        {assignedDishes.length ? (
+          <div className="manpower-auto-dish-chips">
+            {assignedDishes.map((dish) => (
+              <span
+                key={dish.id}
+                className="manpower-auto-dish-chip"
+              >
+                <b>{dish.name}</b>
+                <small>{dish.category}</small>
+              </span>
+            ))}
           </div>
         ) : (
           <span className="manpower-dish-not-applicable">
             Dish unavailable
           </span>
         )}
+
+        <details className="manpower-dish-selector manpower-auto-dish-selector">
+          <summary>
+            + Add Dish
+          </summary>
+
+          <div className="manpower-dish-selector-panel">
+            {availableDishes.length ? (
+              <div className="manpower-dish-selector-list">
+                {availableDishes.map((dish) => (
+                  <label key={dish.id}>
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() =>
+                        onChange([
+                          ...Array.from(selected),
+                          dish.id,
+                        ])
+                      }
+                    />
+
+                    <span>
+                      <b>{dish.name}</b>
+                      <small>{dish.category}</small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <span className="manpower-dish-not-applicable">
+                All dishes assigned
+              </span>
+            )}
+          </div>
+        </details>
       </div>
     );
   }
@@ -743,6 +806,25 @@ function autoAssignDishCooks(
   work: WorkState,
   rows: ManpowerRow[],
 ) {
+  const previousAutoAssignments =
+    new Map<string, string[]>(
+      rows
+        .filter(
+          (row) =>
+            row.autoDishAssignment,
+        )
+        .map(
+          (row): [string, string[]] => [
+            row.id,
+            Array.isArray(
+              row.assignedDishIds,
+            )
+              ? row.assignedDishIds
+              : [],
+          ],
+        ),
+    );
+
   const manualRows = rows.filter(
     (row) =>
       !row.autoDishAssignment &&
@@ -822,14 +904,49 @@ function autoAssignDishCooks(
           '',
         );
 
-    // 1 chef handles all dishes
-    // in the same station/category.
+    // One chef handles all dishes in this station.
+    // Extra manually-added dishes are preserved.
+    const stationRowId =
+      `manpower_station_${station.serviceKey}_${safeStation}`;
+
+    const validServiceDishIds =
+      new Set(
+        work.menu
+          .filter(
+            (dish) =>
+              getMenuServiceKey(dish) ===
+              station.serviceKey,
+          )
+          .map(
+            (dish) => dish.id,
+          ),
+      );
+
+    const preservedDishIds =
+      previousAutoAssignments.get(
+        stationRowId,
+      ) ?? [];
+
+    const assignedDishIds =
+      Array.from(
+        new Set([
+          ...station.dishIds,
+
+          ...preservedDishIds.filter(
+            (dishId) =>
+              validServiceDishIds.has(
+                dishId,
+              ),
+          ),
+        ]),
+      );
+
     nextRows.push({
-      id:
-        `manpower_station_${station.serviceKey}_${safeStation}`,
+      id: stationRowId,
 
       role: station.role,
 
+      // Chef stays 1 even after adding dishes.
       quantity: 1,
 
       rate:
@@ -839,8 +956,7 @@ function autoAssignDishCooks(
 
       rateMode: 'PER_MEAL',
 
-      assignedDishIds:
-        station.dishIds,
+      assignedDishIds,
 
       autoDishAssignment: true,
 
@@ -1020,8 +1136,8 @@ function initializeFunctionManpower(work: WorkState): WorkState {
   });
 
   /*
-   * Automatically create one specialist
-   * manpower row for every specialist dish.
+   * Automatically create one chef station
+   * for each supported menu category.
    */
   rows = autoAssignDishCooks(
     work,
