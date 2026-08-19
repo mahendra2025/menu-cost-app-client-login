@@ -860,53 +860,6 @@ function autoAssignDishCooks(
         station.servicePax,
     });
 
-    // More dishes = more helpers,
-    // but chef remains 1.
-    const helperQuantity =
-      Math.max(
-        1,
-        Math.ceil(
-          station.dishIds.length / 2,
-        ),
-      );
-
-    nextRows.push({
-      id:
-        `manpower_helper_${station.serviceKey}_${safeStation}`,
-
-      role:
-        `${station.stationLabel} Helper`,
-
-      quantity:
-        helperQuantity,
-
-      rate:
-        specialistRate(
-          'Helper / Masi',
-        ),
-
-      rateMode: 'PER_MEAL',
-
-      assignedDishIds:
-        station.dishIds,
-
-      autoStationHelper: true,
-
-      stationLabel:
-        station.stationLabel,
-
-      serviceId:
-        station.serviceId,
-
-      dayLabel:
-        station.dayLabel,
-
-      mealLabel:
-        station.mealLabel,
-
-      servicePax:
-        station.servicePax,
-    });
   });
 
   return nextRows;
