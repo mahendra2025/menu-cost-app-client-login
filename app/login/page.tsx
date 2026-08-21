@@ -6,7 +6,7 @@ import { SESSION_KEY } from '../../lib/store';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [userId, setUserId] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: userId,
+          email,
           password,
         }),
       });
@@ -32,7 +32,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Wrong user ID or password');
+        setError(data.error || 'Wrong email or password.');
         return;
       }
 
@@ -90,21 +90,22 @@ export default function LoginPage() {
 
         <section className="login-card">
           <div className="login-heading">
-            <p className="eyebrow">Welcome back</p>
-            <h2>Sign in to Menu Costing</h2>
-            <p className="muted">Use the login details provided by your account administrator.</p>
+            <p className="eyebrow">Your workspace</p>
+            <h2>Sign in</h2>
+            <p className="muted">Enter your email and password to continue.</p>
           </div>
 
           <form className="form-grid" onSubmit={onSubmit}>
             <div className="field">
-              <label htmlFor="userId">Email or user ID</label>
+              <label htmlFor="email">Email</label>
               <input
-                id="userId"
-                name="userId"
+                id="email"
+                name="email"
+                type="email"
                 autoComplete="username"
                 className="input"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
                 required
               />
@@ -126,7 +127,7 @@ export default function LoginPage() {
             {error ? <div className="form-alert" role="alert">{error}</div> : null}
 
             <button className="primary-button full auth-submit" type="submit" disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign in securely'}
+              {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
 

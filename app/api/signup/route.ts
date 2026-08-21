@@ -17,6 +17,16 @@ import { prisma } from '../../../lib/prisma';
 
 export async function POST(request: Request) {
   try {
+    if (process.env.SINGLE_USER_EMAIL || process.env.SINGLE_USER_PASSWORD) {
+      return NextResponse.json(
+        {
+          error:
+            'Account creation is disabled for this app.',
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
 
     const businessName = String(
