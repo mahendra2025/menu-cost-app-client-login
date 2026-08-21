@@ -56,17 +56,21 @@ function clientLoginResponse(tenant: {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const email = String(body.email || '').trim().toLowerCase();
+    const email = String(body.userId || body.email || '').trim().toLowerCase();
     const password = String(body.password || '').trim();
 
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
+      return NextResponse.json({ error: 'User ID and password required' }, { status: 400 });
     }
 
-    const singleUserEmail = process.env.SINGLE_USER_EMAIL?.trim().toLowerCase();
+    const singleUserEmail = (
+      process.env.SINGLE_USER_ID || process.env.SINGLE_USER_EMAIL
+    )?.trim().toLowerCase();
     const singleUserPassword = process.env.SINGLE_USER_PASSWORD?.trim();
     const singleUserName = process.env.SINGLE_USER_BUSINESS_NAME?.trim() || 'My Catering Business';
-    const singleUserMode = Boolean(singleUserEmail || singleUserPassword);
+    const singleUserMode = Boolean(
+      process.env.SINGLE_USER_ID || singleUserEmail || singleUserPassword,
+    );
 
     if (singleUserMode) {
       if (!singleUserEmail || !singleUserPassword) {
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
         !credentialsMatch(email, singleUserEmail)
         || !credentialsMatch(password, singleUserPassword)
       ) {
-        return NextResponse.json({ error: 'Wrong email or password.' }, { status: 401 });
+        return NextResponse.json({ error: 'Wrong user ID or password.' }, { status: 401 });
       }
 
       const existingTenant = await prisma.tenant.findUnique({

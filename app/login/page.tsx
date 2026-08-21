@@ -6,7 +6,7 @@ import { SESSION_KEY } from '../../lib/store';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          userId,
           password,
         }),
       });
@@ -32,7 +32,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Wrong email or password.');
+        setError(data.error || 'Wrong user ID or password.');
         return;
       }
 
@@ -92,21 +92,21 @@ export default function LoginPage() {
           <div className="login-heading">
             <p className="eyebrow">Your workspace</p>
             <h2>Sign in</h2>
-            <p className="muted">Enter your email and password to continue.</p>
+            <p className="muted">Enter your user ID and password to continue.</p>
           </div>
 
           <form className="form-grid" onSubmit={onSubmit}>
             <div className="field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="userId">User ID</label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="userId"
+                name="userId"
+                type="text"
                 autoComplete="username"
                 className="input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                placeholder="Enter your user ID"
                 required
               />
             </div>

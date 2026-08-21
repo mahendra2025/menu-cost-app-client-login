@@ -21,12 +21,12 @@ This is a Next.js app for the Menu Cost workflow with client login backed by Pos
 Add these values to `.env.local` when only one person should use the app:
 
 ```txt
-SINGLE_USER_EMAIL=owner@example.com
+SINGLE_USER_ID=owner
 SINGLE_USER_PASSWORD=choose-a-strong-password
 SINGLE_USER_BUSINESS_NAME=My Catering Business
 ```
 
-Restart the app, open `/login`, and sign in with that email and password. The app creates the account automatically on the first successful login. While these settings are present, all other client and admin credentials are rejected and public signup is disabled.
+Restart the app, open `/login`, and sign in with that user ID and password. The app creates the account automatically on the first successful login. While these settings are present, all other client and admin credentials are rejected and public signup is disabled.
 
 ### Multi-user login
 

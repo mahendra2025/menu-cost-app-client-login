@@ -17,7 +17,11 @@ import { prisma } from '../../../lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    if (process.env.SINGLE_USER_EMAIL || process.env.SINGLE_USER_PASSWORD) {
+    if (
+      process.env.SINGLE_USER_ID
+      || process.env.SINGLE_USER_EMAIL
+      || process.env.SINGLE_USER_PASSWORD
+    ) {
       return NextResponse.json(
         {
           error:
