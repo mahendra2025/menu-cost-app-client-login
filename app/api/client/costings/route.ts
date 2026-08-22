@@ -1,7 +1,9 @@
 import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { requireClientTenantId } from '../../../../lib/billingAuth';
+import { syncCompletedCostingToCaterersOs } from '../../../../lib/caterersOsSync';
 import { prisma } from '../../../../lib/prisma';
+import type { WorkState } from '../../../../lib/types';
 
 const FREE_LIMIT = 5;
 const MAX_BYTES = 1_500_000;
@@ -191,7 +193,33 @@ export async function POST(request: Request) {
     }
 
     if (!finalResult) throw new Error('COMPLETE_FAILED');
-    return NextResponse.json({ ok: true, ...finalResult });
+
+    let caterersOsSync: Awaited<ReturnType<typeof syncCompletedCostingToCaterersOs>>;
+    try {
+      caterersOsSync = await syncCompletedCostingToCaterersOs({
+        work: body.snapshot as WorkState,
+        summary: {
+          menuCount: int(body.menuCount),
+          totalCovers: int(body.totalCovers),
+          totalCost: num(body.totalCost),
+          sellingPricePerPlate: num(body.sellingPricePerPlate),
+          totalSelling: num(body.totalSelling),
+          totalProfit: num(body.totalProfit),
+        },
+      });
+    } catch (error) {
+      console.error('CaterersOS sync preparation error:', error);
+      caterersOsSync = {
+        status: 'failed',
+        error: 'Could not prepare CaterersOS sync',
+      };
+    }
+
+    if (caterersOsSync.status === 'failed') {
+      console.error('CaterersOS sync failed:', caterersOsSync.error);
+    }
+
+    return NextResponse.json({ ok: true, ...finalResult, caterersOsSync });
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
 

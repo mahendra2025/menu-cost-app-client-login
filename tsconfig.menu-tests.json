@@ -18,6 +18,7 @@
     "lib/detectionBenchmark.ts",
     "lib/pdfMenuExtraction.ts",
     "tests/**/*.test.ts",
-    "lib/correctedDishCosting.ts"
+    "lib/correctedDishCosting.ts",
+    "lib/caterersOsSync.ts"
   ]
 }

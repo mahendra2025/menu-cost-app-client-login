@@ -52,11 +52,17 @@ export default function FinalCostingUsage({ tenantId, work }: { tenantId: string
       const data = await response.json();
       if (!response.ok) { setMessage(data.error || 'Could not save costing history.'); return; }
       setUsage(data);
-      setMessage(
+      const historyMessage =
         data.hasProAccess
           ? 'Saved to your account history database.'
-          : `Saved to your account history. ${data.remaining} free costing${data.remaining === 1 ? '' : 's'} remaining.`,
-      );
+          : `Saved to your account history. ${data.remaining} free costing${data.remaining === 1 ? '' : 's'} remaining.`;
+      const syncMessage =
+        data.caterersOsSync?.status === 'synced'
+          ? ` CaterersOS event ${data.caterersOsSync.created ? 'created' : 'updated'}.`
+          : data.caterersOsSync?.status === 'failed'
+            ? ` Saved here, but CaterersOS sync failed: ${data.caterersOsSync.error}.`
+            : '';
+      setMessage(`${historyMessage}${syncMessage}`);
       window.dispatchEvent(new Event('menu-costing-usage-updated'));
     } catch { setMessage('Database connection failed. Please try again.'); }
     finally { setBusy(false); }
