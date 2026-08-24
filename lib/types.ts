@@ -47,6 +47,16 @@ export type CustomerSelectedDish = {
   category: string;
 };
 
+export type CustomerFunctionPlan = {
+  id: string;
+  name: string;
+  date: string;
+  pax: number;
+  mealType: string;
+  selectedDishes: CustomerSelectedDish[];
+  serviceStyle: ServiceStyle | null;
+};
+
 export type CustomerPlan = {
   event: {
     eventType: string;
@@ -59,6 +69,7 @@ export type CustomerPlan = {
   };
   selectedDishes: CustomerSelectedDish[];
   serviceStyle: ServiceStyle | null;
+  functions: CustomerFunctionPlan[];
 };
 
 export type MenuItem = {
