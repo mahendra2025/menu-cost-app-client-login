@@ -10556,6 +10556,41 @@ main {
   }
 }
 
+/* Public planner inputs stay readable inside the app's dark root theme. */
+[data-theme="dark"] .customer-page {
+  color-scheme: light;
+}
+
+[data-theme="dark"] .customer-page .customer-form-grid input,
+[data-theme="dark"] .customer-page .customer-search input {
+  color: #172052;
+  -webkit-text-fill-color: #172052;
+  caret-color: #172052;
+  background: #ffffff;
+}
+
+[data-theme="dark"] .customer-page .customer-form-grid input::placeholder,
+[data-theme="dark"] .customer-page .customer-search input::placeholder {
+  color: #758099;
+  -webkit-text-fill-color: #758099;
+  opacity: 1;
+}
+
+[data-theme="dark"] .customer-page .guest-field input {
+  color: #172052;
+  -webkit-text-fill-color: #172052;
+  caret-color: #172052;
+  background: transparent;
+}
+
+[data-theme="dark"] .customer-page input:-webkit-autofill,
+[data-theme="dark"] .customer-page input:-webkit-autofill:hover,
+[data-theme="dark"] .customer-page input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #172052;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+}
+
 /* Menu Detection V5 correction tools */
 
 .menu-detection-correction-bar {
