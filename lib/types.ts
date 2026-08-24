@@ -41,6 +41,26 @@ export type ServiceStyle =
   | 'PACKED_MEAL'
   | 'LIVE_COUNTER';
 
+export type CustomerSelectedDish = {
+  id: string;
+  name: string;
+  category: string;
+};
+
+export type CustomerPlan = {
+  event: {
+    eventType: string;
+    eventName: string;
+    eventDate: string;
+    city: string;
+    venue: string;
+    pax: number;
+    mealType: string;
+  };
+  selectedDishes: CustomerSelectedDish[];
+  serviceStyle: ServiceStyle | null;
+};
+
 export type MenuItem = {
   id: string;
   name: string;
