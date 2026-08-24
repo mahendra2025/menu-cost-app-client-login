@@ -25,3 +25,17 @@ test('table service recommends one waiter per 10 guests, rounded up', () => {
   assert.equal(recommendedWaiters('TABLE_SERVICE', 11), 2);
   assert.equal(recommendedWaiters('TABLE_SERVICE', 100), 10);
 });
+
+test('every function recommends four Masi and two Helpers per 100 guests', () => {
+  for (const style of ['BUFFET', 'TABLE_SERVICE', 'LIVE_COUNTER', 'PACKED_MEAL'] as const) {
+    const recommendation = serviceStaffRecommendation(style, 100);
+    assert.equal(recommendation.find((item) => item.role === 'Masi')?.quantity, 4);
+    assert.equal(recommendation.find((item) => item.role === 'Helper')?.quantity, 2);
+  }
+});
+
+test('Masi and Helper recommendations round up proportionally', () => {
+  const recommendation = serviceStaffRecommendation('BUFFET', 150);
+  assert.equal(recommendation.find((item) => item.role === 'Masi')?.quantity, 6);
+  assert.equal(recommendation.find((item) => item.role === 'Helper')?.quantity, 3);
+});
