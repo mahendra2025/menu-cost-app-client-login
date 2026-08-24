@@ -2,35 +2,18 @@ import type { ServiceStyle } from './types';
 
 export type CustomerPricingConfig = {
   foodMarkupPercent: number;
-  serviceMarkupPercent: number;
-  contingencyPercent: number;
-  minimumPerPlateMargin: number;
+  service: Record<ServiceStyle, number>;
+  operationsPerGuest: Record<ServiceStyle, number>;
   transportBase: number;
-  gasFuelBase: number;
-  equipmentSetupBase: number;
-  crockeryPerGuest: Record<ServiceStyle, number>;
-  manpowerRates: Record<string, number>;
+  minimumMarginPerGuest: number;
 };
 
-export const customerPricingConfig: CustomerPricingConfig = {
+export const CUSTOMER_PRICING_CONFIG: CustomerPricingConfig = {
   foodMarkupPercent: 35,
-  serviceMarkupPercent: 20,
-  contingencyPercent: 5,
-  minimumPerPlateMargin: 8,
-  transportBase: 3500,
-  gasFuelBase: 2500,
-  equipmentSetupBase: 4000,
-  crockeryPerGuest: {
-    BUFFET: 28,
-    TABLE_SERVICE: 45,
-    LIVE_COUNTER: 34,
-    PACKED_MEAL: 22,
-  },
-  manpowerRates: {
-    Waiter: 750,
-    Captain: 1500,
-    Supervisor: 2000,
-    'Helper / Masi': 700,
-    'Counter Attendant': 900,
-  },
+  service: { BUFFET: 60, TABLE_SERVICE: 110, LIVE_COUNTER: 90, PACKED_MEAL: 30 },
+  operationsPerGuest: { BUFFET: 35, TABLE_SERVICE: 55, LIVE_COUNTER: 50, PACKED_MEAL: 20 },
+  transportBase: 2500,
+  minimumMarginPerGuest: 50,
 };
+
+export const customerPricingConfig = CUSTOMER_PRICING_CONFIG;

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       .map((id) => byId.get(id))
       .filter((dish): dish is NonNullable<typeof dish> => Boolean(dish))
       .map((dish) => ({
-        dishId: dish.id,
+        id: dish.id,
         name: dish.name,
         category: dish.category,
         internalFoodCost: dish.rate,
