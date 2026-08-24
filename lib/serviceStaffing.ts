@@ -34,23 +34,31 @@ export function serviceStaffRecommendation(
         { role: 'Waiter', quantity: qty(10), rateRole: 'Waiter' },
         { role: 'Captain', quantity: qty(100), rateRole: 'Captain' },
         { role: 'Supervisor', quantity: qty(250), rateRole: 'Supervisor' },
+        { role: 'Masi', quantity: qty(25), rateRole: 'Helper / Masi' },
+        { role: 'Helper', quantity: qty(50), rateRole: 'Helper / Masi' },
       ];
     case 'PACKED_MEAL':
       return [
         { role: 'Packing Staff', quantity: qty(75), rateRole: 'Helper / Masi' },
         { role: 'Supervisor', quantity: qty(300), rateRole: 'Supervisor' },
+        { role: 'Masi', quantity: qty(25), rateRole: 'Helper / Masi' },
+        { role: 'Helper', quantity: qty(50), rateRole: 'Helper / Masi' },
       ];
     case 'LIVE_COUNTER':
       return [
         { role: 'Waiter', quantity: qty(30), rateRole: 'Waiter' },
         { role: 'Captain', quantity: qty(150), rateRole: 'Captain' },
         { role: 'Counter Attendant', quantity: qty(75), rateRole: 'Counter Attendant' },
+        { role: 'Masi', quantity: qty(25), rateRole: 'Helper / Masi' },
+        { role: 'Helper', quantity: qty(50), rateRole: 'Helper / Masi' },
       ];
     default:
       return [
         { role: 'Waiter', quantity: qty(25), rateRole: 'Waiter' },
         { role: 'Captain', quantity: qty(150), rateRole: 'Captain' },
         { role: 'Counter Attendant', quantity: qty(100), rateRole: 'Counter Attendant' },
+        { role: 'Masi', quantity: qty(25), rateRole: 'Helper / Masi' },
+        { role: 'Helper', quantity: qty(50), rateRole: 'Helper / Masi' },
       ];
   }
 }

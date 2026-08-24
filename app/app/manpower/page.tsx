@@ -1402,6 +1402,8 @@ export default function ManpowerPage() {
         'Supervisor',
         'Counter Attendant',
         'Packing Staff',
+        'Masi',
+        'Helper',
       ]);
 
     /*
