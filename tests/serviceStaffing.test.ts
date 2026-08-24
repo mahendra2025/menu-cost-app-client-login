@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { specialistCookQuantity } from '../lib/serviceStaffing';
+import { serviceStaffRecommendation, specialistCookQuantity } from '../lib/serviceStaffing';
 
 test('specialist cooks are recommended at one per 100 guests', () => {
   assert.equal(specialistCookQuantity(0), 0);
@@ -8,4 +8,20 @@ test('specialist cooks are recommended at one per 100 guests', () => {
   assert.equal(specialistCookQuantity(100), 1);
   assert.equal(specialistCookQuantity(101), 2);
   assert.equal(specialistCookQuantity(250), 3);
+});
+
+function recommendedWaiters(style: 'BUFFET' | 'TABLE_SERVICE', pax: number) {
+  return serviceStaffRecommendation(style, pax).find((item) => item.role === 'Waiter')?.quantity;
+}
+
+test('buffet recommends one waiter per 25 guests, rounded up', () => {
+  assert.equal(recommendedWaiters('BUFFET', 25), 1);
+  assert.equal(recommendedWaiters('BUFFET', 26), 2);
+  assert.equal(recommendedWaiters('BUFFET', 100), 4);
+});
+
+test('table service recommends one waiter per 10 guests, rounded up', () => {
+  assert.equal(recommendedWaiters('TABLE_SERVICE', 10), 1);
+  assert.equal(recommendedWaiters('TABLE_SERVICE', 11), 2);
+  assert.equal(recommendedWaiters('TABLE_SERVICE', 100), 10);
 });

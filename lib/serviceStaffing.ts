@@ -31,7 +31,7 @@ export function serviceStaffRecommendation(
   switch (style) {
     case 'TABLE_SERVICE':
       return [
-        { role: 'Waiter', quantity: qty(12), rateRole: 'Waiter' },
+        { role: 'Waiter', quantity: qty(10), rateRole: 'Waiter' },
         { role: 'Captain', quantity: qty(100), rateRole: 'Captain' },
         { role: 'Supervisor', quantity: qty(250), rateRole: 'Supervisor' },
       ];
