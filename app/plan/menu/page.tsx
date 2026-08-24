@@ -12,6 +12,7 @@ export default function MenuPage() {
   const [dishes, setDishes] = useState<CustomerSelectedDish[]>([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -41,9 +42,9 @@ export default function MenuPage() {
   function next() { if (plan?.selectedDishes.length) { saveCustomerPlan(plan); router.push('/plan/service'); } }
 
   return <CustomerShell step={2}>
-    <section className="customer-flow-heading"><p className="customer-kicker">Build your menu</p><h1>What would you love to serve?</h1><p>Choose as many dishes as you like. You can change them anytime.</p></section>
+    <section className="customer-flow-heading menu-heading"><p className="customer-kicker">Choose your menu</p><h1>What would you love to serve?</h1><p><b>{plan?.event.eventType} {plan?.event.mealType}</b><span> · </span>{plan?.event.pax.toLocaleString('en-IN')} guests</p></section>
     <section className="menu-toolbar">
-      <label className="customer-search"><span aria-hidden="true">⌕</span><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search paneer, chaat, dessert…" aria-label="Search dishes" /></label>
+      <label className="customer-search"><span aria-hidden="true">⌕</span><input type="search" inputMode="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search dishes…" aria-label="Search dishes" /></label>
       <div className="selected-counter"><b>{plan?.selectedDishes.length || 0}</b><span>dishes selected</span></div>
     </section>
     <div className="category-tabs" role="tablist" aria-label="Dish categories">{categories.map((item) => <button type="button" role="tab" aria-selected={category === item} className={category === item ? 'active' : ''} onClick={() => setCategory(item)} key={item}>{item}</button>)}</div>
@@ -54,7 +55,7 @@ export default function MenuPage() {
       const selected = selectedIds.has(dish.id);
       return <button type="button" key={dish.id} className={`dish-choice ${selected ? 'selected' : ''}`} onClick={() => toggle(dish)} aria-pressed={selected}><span className="dish-initial">{dish.name.charAt(0)}</span><span><b>{dish.name}</b><small>{dish.category}</small></span><i>{selected ? '✓' : '+'}</i></button>;
     })}</section>
-    {plan?.selectedDishes.length ? <section className="selection-tray"><h2>Your menu <span>{plan.selectedDishes.length}</span></h2><div>{plan.selectedDishes.map((dish) => <button type="button" onClick={() => toggle(dish)} key={dish.id}>{dish.name} <span>×</span></button>)}</div></section> : null}
-    <div className="customer-sticky-action"><span><b>{plan?.selectedDishes.length || 0}</b> selected</span><button type="button" className="customer-primary" disabled={!plan?.selectedDishes.length} onClick={next}>Next: Choose Service <span>→</span></button></div>
+    {drawerOpen ? <div className="drawer-backdrop" role="presentation" onClick={() => setDrawerOpen(false)}><section className="menu-drawer" role="dialog" aria-modal="true" aria-label="Your selected menu" onClick={(event) => event.stopPropagation()}><div className="drawer-handle" /><header><div><p className="customer-kicker">Your Menu</p><h2>{plan?.selectedDishes.length || 0} dishes selected</h2></div><button type="button" aria-label="Close selected menu" onClick={() => setDrawerOpen(false)}>×</button></header><div className="drawer-list">{plan?.selectedDishes.length ? plan.selectedDishes.map((dish) => <div key={dish.id}><span><b>{dish.name}</b><small>{dish.category}</small></span><button type="button" aria-label={`Remove ${dish.name}`} onClick={() => toggle(dish)}>×</button></div>) : <p>Your menu is empty. Add dishes to continue.</p>}</div><button type="button" className="customer-primary wide" disabled={!plan?.selectedDishes.length} onClick={next}>Next: Choose Service <span>→</span></button></section></div> : null}
+    <div className="customer-sticky-action menu-sticky"><button type="button" className="selected-bar-button" onClick={() => setDrawerOpen(true)}><b>{plan?.selectedDishes.length || 0}</b> dishes selected</button><button type="button" className="customer-primary" disabled={!plan?.selectedDishes.length} onClick={next}>Continue <span>→</span></button></div>
   </CustomerShell>;
 }

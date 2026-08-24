@@ -42,17 +42,17 @@ export default function ResultPage() {
     <section className="result-grid">
       <div className="result-main">
         <article className="result-card"><div className="result-card-title"><div><p className="customer-kicker">Your selection</p><h2>Menu price breakdown</h2></div><span>{estimate?.menuItems.length || plan.selectedDishes.length} dishes</span></div>
-          <div className="price-list">{estimate?.menuItems.map((item) => <div key={item.dishId}><span><b>{item.name}</b><small>{item.category}</small></span><span><b>{money(item.customerPricePerPlate)}<small>/person</small></b><small>{plan.event.pax.toLocaleString('en-IN')} guests → {money(item.totalForGuests)}</small></span></div>)}</div>
-          {estimate ? <div className="price-summary"><div><span>Menu</span><b>{money(estimate.foodPricePerPlate)} / person</b></div><div><span>Service & event setup</span><b>{money(estimate.servicePricePerPlate)} / person</b></div><div className="total"><span>Estimated price</span><b>{money(estimate.finalPricePerPlate)} / person</b></div></div> : null}
+          <div className="price-list">{estimate?.menuItems.map((item) => <div key={item.id}><span><b>{item.name}</b><small>{item.category}</small></span><span><b>{money(item.customerPricePerPlate)}<small>/person</small></b><small>{plan.event.pax.toLocaleString('en-IN')} guests · {money(item.totalForGuests)}</small></span></div>)}</div>
+          {estimate ? <div className="price-summary"><p className="customer-kicker">Price breakdown</p><div><span>Menu</span><b>{money(estimate.menuPricePerPlate)} / person</b></div><div><span>Service</span><b>{money(estimate.servicePricePerPlate)} / person</b></div><div><span>Event services</span><b>{money(estimate.operationsPricePerPlate)} / person</b></div><div className="total"><span>Estimated rate</span><b>{money(estimate.finalPricePerPlate)} / person</b></div></div> : null}
         </article>
       </div>
       <aside className="result-side">
         <article className="result-card event-recap"><p className="customer-kicker">Event details</p><h2>At a glance</h2>
-          <dl><div><dt>Event</dt><dd>{plan.event.eventType}</dd></div><div><dt>Date</dt><dd>{date}</dd></div><div><dt>City / Venue</dt><dd>{plan.event.city}<small>{plan.event.venue}</small></dd></div><div><dt>Guests</dt><dd>{plan.event.pax.toLocaleString('en-IN')}</dd></div><div><dt>Meal</dt><dd>{plan.event.mealType}</dd></div><div><dt>Service</dt><dd>{serviceStyleLabel(plan.serviceStyle!)}</dd></div></dl>
+          <dl><div><dt>Event</dt><dd>{plan.event.eventType}</dd></div><div><dt>Date</dt><dd>{date}</dd></div><div><dt>Location</dt><dd>{plan.event.city}<small>{plan.event.venue}</small></dd></div><div><dt>Guests</dt><dd>{plan.event.pax.toLocaleString('en-IN')}</dd></div><div><dt>Meal</dt><dd>{plan.event.mealType}</dd></div><div><dt>Service</dt><dd>{serviceStyleLabel(plan.serviceStyle!)}</dd></div><div><dt>Dishes</dt><dd>{plan.selectedDishes.length}</dd></div></dl>
         </article>
         <div className="edit-actions"><Link href="/">Edit Event</Link><Link href="/plan/menu">Edit Menu</Link><Link href="/plan/service">Change Service</Link></div>
-        <button className="quote-button" disabled>Request Final Quote <span>Coming soon</span></button>
       </aside>
     </section>
+    {estimate ? <div className="mobile-estimate-bar"><span><b>{money(estimate.finalPricePerPlate)}</b>/person</span><span><b>{money(estimate.estimatedEventTotal)}</b> total</span></div> : null}
   </CustomerShell>;
 }

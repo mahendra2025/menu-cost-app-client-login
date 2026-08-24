@@ -8,10 +8,10 @@ import { serviceStyleLabel } from '../../../lib/serviceStaffing';
 import type { CustomerPlan, ServiceStyle } from '../../../lib/types';
 
 const services: Array<{ id: ServiceStyle; icon: string; title: string; copy: string; note: string }> = [
-  { id: 'BUFFET', icon: '♨', title: 'Buffet', copy: 'Guests serve themselves from a presented spread.', note: 'Flexible & popular' },
-  { id: 'TABLE_SERVICE', icon: '◇', title: 'Table Service', copy: 'A larger service team brings courses to each table.', note: 'Formal hosting' },
-  { id: 'LIVE_COUNTER', icon: '◉', title: 'Live Counter', copy: 'Dishes are prepared and finished in front of guests.', note: 'Interactive experience' },
-  { id: 'PACKED_MEAL', icon: '▣', title: 'Packed Meal', copy: 'Individual meals packed for easy, quick distribution.', note: 'Simple distribution' },
+  { id: 'BUFFET', icon: '🍽', title: 'Buffet', copy: 'Guests choose food from arranged buffet counters.', note: 'Most popular' },
+  { id: 'TABLE_SERVICE', icon: '◇', title: 'Table Service', copy: 'Food is served directly to guest tables.', note: 'Formal hosting' },
+  { id: 'LIVE_COUNTER', icon: '◉', title: 'Live Counter', copy: 'Selected dishes are prepared or served fresh at live stations.', note: 'Freshly served' },
+  { id: 'PACKED_MEAL', icon: '▣', title: 'Packed Meal', copy: 'Individual packed meals for easy distribution.', note: 'Simple distribution' },
 ];
 
 export default function ServicePage() {
