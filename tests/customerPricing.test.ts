@@ -12,7 +12,15 @@ test('customer estimate returns only public menu prices and an exact guest total
   assert.equal(estimate.estimatedEventTotal, estimate.finalPricePerPlate * 300);
   assert.equal(estimate.menuItems.length, 2);
   assert.equal(estimate.menuPricePerPlate, estimate.menuItems.reduce((sum, item) => sum + item.customerPricePerPlate, 0));
+  assert.equal(estimate.manpowerTotal, estimate.servicePricePerPlate * 300);
+  assert.equal(estimate.manpowerItems.find((item) => item.role === 'Waiter')?.quantity, 12);
+  assert.equal(estimate.manpowerItems.find((item) => item.role === 'Masi')?.quantity, 12);
+  assert.equal(estimate.manpowerItems.find((item) => item.role === 'Helper')?.quantity, 6);
+  assert.equal(estimate.manpowerItems.find((item) => item.role === 'Sabji Cook')?.quantity, 3);
+  assert.equal(estimate.manpowerItems.find((item) => item.role === 'Dal / Kadhi Cook')?.quantity, 3);
   assert.equal('internalFoodCost' in estimate.menuItems[0], false);
+  assert.equal('rate' in estimate.manpowerItems[0], false);
+  assert.equal('rateRole' in estimate.manpowerItems[0], false);
   assert.equal('profit' in estimate, false);
   assert.equal('margin' in estimate, false);
 });
@@ -28,4 +36,18 @@ test('table service produces a higher service estimate than buffet', () => {
   const table = calculateCustomerEstimate({ pax: 300, selectedDishes: dishes, serviceStyle: 'TABLE_SERVICE' });
   assert.ok(table.servicePricePerPlate > buffet.servicePricePerPlate);
   assert.ok(table.finalPricePerPlate > buffet.finalPricePerPlate);
+});
+
+test('dishes in the same specialist category share one kitchen team', () => {
+  const estimate = calculateCustomerEstimate({
+    pax: 150,
+    selectedDishes: [
+      ...dishes,
+      { id: 'paneer-two', name: 'Kadai Paneer', category: 'Paneer', internalFoodCost: 42 },
+    ],
+    serviceStyle: 'BUFFET',
+  });
+  const sabjiTeams = estimate.manpowerItems.filter((item) => item.role === 'Sabji Cook');
+  assert.equal(sabjiTeams.length, 1);
+  assert.equal(sabjiTeams[0].quantity, 2);
 });

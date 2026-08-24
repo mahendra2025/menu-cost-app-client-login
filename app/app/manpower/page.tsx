@@ -27,6 +27,7 @@ import {
   serviceStaffRecommendation,
   serviceStyleLabel,
   specialistCookQuantity,
+  specialistForDish,
 } from '../../../lib/serviceStaffing';
 
 import type {
@@ -153,7 +154,7 @@ function DishAssignmentControl({
           </span>
 
           <small>
-            1 station → 1 chef
+            1 cook per 100 guests
           </small>
         </div>
 
@@ -552,125 +553,6 @@ function getFunctions(
   return Array.from(
     functions.values(),
   );
-}
-
-function specialistForDish(
-  dish: MenuItem,
-): {
-  role: string;
-  rateRole: string;
-} | null {
-  const category = String(
-    dish.category || '',
-  ).trim().toLowerCase();
-
-  const name = String(
-    dish.name || '',
-  ).trim().toLowerCase();
-
-  if (
-    category === 'welcome drink' ||
-    category === 'mocktail' ||
-    name.includes('juice')
-  ) {
-    return {
-      role: 'Juice / Mocktail Maker',
-      rateRole: 'Bartender',
-    };
-  }
-
-  if (category === 'soup') {
-    return {
-      role: 'Soup Cook',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (category === 'starter') {
-    return {
-      role: 'Starter Cook',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (category === 'chaat') {
-    return {
-      role: 'Chaat Master',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (category === 'chinese') {
-    return {
-      role: 'Chinese Cook',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (
-    category === 'italian' ||
-    category === 'pizza' ||
-    category === 'pasta'
-  ) {
-    return {
-      role: 'Italian Cook',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (category === 'bread') {
-    return {
-      role: 'Indian Bread / Tandoor Cook',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (
-    category === 'dal/kadhi' ||
-    category === 'dal' ||
-    category === 'kadhi'
-  ) {
-    return {
-      role: 'Dal / Kadhi Cook',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (category === 'rice') {
-    return {
-      role: 'Rice Cook',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (
-    category === 'sabji' ||
-    category === 'paneer'
-  ) {
-    return {
-      role: 'Sabji Cook',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (
-    category === 'sweet' ||
-    category === 'dessert'
-  ) {
-    return {
-      role: 'Sweet / Halwai',
-      rateRole: 'Cook',
-    };
-  }
-
-  if (category === 'farsan') {
-    return {
-      role: 'Farsan Cook',
-      rateRole: 'Cook',
-    };
-  }
-
-  return null;
 }
 
 function specialistRate(
