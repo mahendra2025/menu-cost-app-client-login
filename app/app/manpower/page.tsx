@@ -26,6 +26,7 @@ import {
 import {
   serviceStaffRecommendation,
   serviceStyleLabel,
+  specialistCookQuantity,
 } from '../../../lib/serviceStaffing';
 
 import type {
@@ -786,7 +787,8 @@ function autoAssignDishCooks(
           '',
         );
 
-    // One chef handles all dishes in this station.
+    // Recommend one specialist cook per 100 guests for this station.
+    // All dishes in the same category station share that team.
     // Extra manually-added dishes are preserved.
     const stationRowId =
       `manpower_station_${station.serviceKey}_${safeStation}`;
@@ -828,8 +830,10 @@ function autoAssignDishCooks(
 
       role: station.role,
 
-      // Chef stays 1 even after adding dishes.
-      quantity: 1,
+      quantity:
+        specialistCookQuantity(
+          station.servicePax,
+        ),
 
       rate:
         specialistRate(

@@ -15,6 +15,11 @@ export function serviceStyleLabel(style: ServiceStyle) {
   }
 }
 
+export function specialistCookQuantity(pax: number) {
+  const members = Math.max(0, Number(pax) || 0);
+  return members > 0 ? Math.ceil(members / 100) : 0;
+}
+
 export function serviceStaffRecommendation(
   style: ServiceStyle,
   pax: number,
