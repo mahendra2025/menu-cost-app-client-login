@@ -1,11 +1,15 @@
 import { CUSTOMER_PRICING_CONFIG, type CustomerPricingConfig } from './customerPricingConfig';
+import { serviceStaffRecommendation, specialistStaffRecommendations } from './serviceStaffing';
 import type { ServiceStyle } from './types';
 
 export type CustomerPricingDish = { id: string; name: string; category: string; internalFoodCost: number };
+export type CustomerManpowerItem = { role: string; quantity: number; kind: 'service' | 'kitchen' };
 
 export type CustomerEstimate = {
   menuItems: Array<{ id: string; name: string; category: string; customerPricePerPlate: number; totalForGuests: number }>;
   menuPricePerPlate: number;
+  manpowerItems: CustomerManpowerItem[];
+  manpowerTotal: number;
   servicePricePerPlate: number;
   operationsPricePerPlate: number;
   finalPricePerPlate: number;
@@ -38,8 +42,22 @@ export function calculateCustomerEstimate({ pax, selectedDishes, serviceStyle, c
     menuItems[target].totalForGuests = menuItems[target].customerPricePerPlate * guests;
   }
   const menuPricePerPlate = menuItems.reduce((sum, item) => sum + item.customerPricePerPlate, 0);
-  const servicePricePerPlate = config.service[serviceStyle];
+  const serviceTeam = serviceStaffRecommendation(serviceStyle, guests);
+  const kitchenTeam = specialistStaffRecommendations(selectedDishes, guests);
+  const manpowerItems: CustomerManpowerItem[] = [
+    ...serviceTeam.map((item) => ({ role: item.role, quantity: item.quantity, kind: 'service' as const })),
+    ...kitchenTeam.map((item) => ({ role: item.role, quantity: item.quantity, kind: 'kitchen' as const })),
+  ];
+  const manpowerBaseTotal = [...serviceTeam, ...kitchenTeam].reduce(
+    (sum, item) => sum + item.quantity * Math.max(0, Number(config.manpowerRates[item.rateRole]) || 0),
+    0,
+  );
+  const servicePricePerPlate = Math.max(
+    config.service[serviceStyle],
+    roundCustomerRate(manpowerBaseTotal / guests),
+  );
+  const manpowerTotal = servicePricePerPlate * guests;
   const operationsPricePerPlate = roundCustomerRate(config.operationsPerGuest[serviceStyle] + config.transportBase / guests);
   const finalPricePerPlate = menuPricePerPlate + servicePricePerPlate + operationsPricePerPlate;
-  return { menuItems, menuPricePerPlate, servicePricePerPlate, operationsPricePerPlate, finalPricePerPlate, estimatedEventTotal: finalPricePerPlate * guests };
+  return { menuItems, menuPricePerPlate, manpowerItems, manpowerTotal, servicePricePerPlate, operationsPricePerPlate, finalPricePerPlate, estimatedEventTotal: finalPricePerPlate * guests };
 }

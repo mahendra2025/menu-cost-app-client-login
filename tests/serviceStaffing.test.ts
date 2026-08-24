@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { serviceStaffRecommendation, specialistCookQuantity } from '../lib/serviceStaffing';
+import { serviceStaffRecommendation, specialistCookQuantity, specialistStaffRecommendations } from '../lib/serviceStaffing';
 
 test('specialist cooks are recommended at one per 100 guests', () => {
   assert.equal(specialistCookQuantity(0), 0);
@@ -38,4 +38,16 @@ test('Masi and Helper recommendations round up proportionally', () => {
   const recommendation = serviceStaffRecommendation('BUFFET', 150);
   assert.equal(recommendation.find((item) => item.role === 'Masi')?.quantity, 6);
   assert.equal(recommendation.find((item) => item.role === 'Helper')?.quantity, 3);
+});
+
+test('dish categories create one scaled specialist team per station', () => {
+  const recommendation = specialistStaffRecommendations([
+    { name: 'Paneer Butter Masala', category: 'Paneer' },
+    { name: 'Kadai Paneer', category: 'Paneer' },
+    { name: 'Dal Tadka', category: 'Dal / Kadhi' },
+  ], 250);
+  assert.deepEqual(recommendation.map((item) => [item.role, item.quantity]), [
+    ['Sabji Cook', 3],
+    ['Dal / Kadhi Cook', 3],
+  ]);
 });
