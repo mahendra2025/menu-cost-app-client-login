@@ -3,6 +3,7 @@
 import type { CustomerFunctionPlan, CustomerPlan } from './types';
 
 export const CUSTOMER_PLAN_KEY = 'menu_cost_customer_plan_v1';
+let activeCustomerPlan: CustomerPlan | null = null;
 
 export function createCustomerFunction(index = 0): CustomerFunctionPlan {
   return {
@@ -36,7 +37,7 @@ function normalizeFunction(value: Partial<CustomerFunctionPlan>, index: number):
     date: String(value.date || ''),
     pax: Math.max(0, Number(value.pax) || 0),
     mealType: String(value.mealType || ''),
-    selectedDishes: Array.isArray(value.selectedDishes) ? value.selectedDishes : [],
+    selectedDishes: Array.isArray(value.selectedDishes) ? value.selectedDishes.map((dish) => ({ ...dish })) : [],
     serviceStyle: value.serviceStyle || null,
   };
 }
@@ -45,41 +46,40 @@ export function functionLabel(item: CustomerFunctionPlan, index: number) {
   return item.name.trim() || item.mealType || `Function ${index + 1}`;
 }
 
-export function loadCustomerPlan(): CustomerPlan {
-  if (typeof window === 'undefined') return emptyCustomerPlan;
+function normalizePlan(value: Partial<CustomerPlan>): CustomerPlan {
+  const event = { ...emptyCustomerPlan.event, ...(value.event || {}) };
+  const functions = Array.isArray(value.functions) && value.functions.length
+    ? value.functions.map(normalizeFunction)
+    : [normalizeFunction({}, 0)];
+  return {
+    event,
+    selectedDishes: functions[0].selectedDishes,
+    serviceStyle: functions[0].serviceStyle,
+    functions,
+  };
+}
+
+function removePersistedCustomerPlan() {
+  if (typeof window === 'undefined') return;
   try {
-    const saved = window.localStorage.getItem(CUSTOMER_PLAN_KEY);
-    if (!saved) return emptyCustomerPlan;
-    const parsed = JSON.parse(saved) as Partial<CustomerPlan>;
-    const event = { ...emptyCustomerPlan.event, ...(parsed.event || {}) };
-    const functions = Array.isArray(parsed.functions) && parsed.functions.length
-      ? parsed.functions.map(normalizeFunction)
-      : [normalizeFunction({
-          id: 'function_1',
-          date: event.eventDate,
-          pax: event.pax,
-          mealType: event.mealType,
-          selectedDishes: Array.isArray(parsed.selectedDishes) ? parsed.selectedDishes : [],
-          serviceStyle: parsed.serviceStyle || null,
-        }, 0)];
-    return {
-      event,
-      selectedDishes: functions[0].selectedDishes,
-      serviceStyle: functions[0].serviceStyle,
-      functions,
-    };
+    window.localStorage.removeItem(CUSTOMER_PLAN_KEY);
   } catch {
-    return emptyCustomerPlan;
+    // The in-memory flow still works when storage is unavailable.
   }
 }
 
+export function loadCustomerPlan(): CustomerPlan {
+  removePersistedCustomerPlan();
+  return normalizePlan(activeCustomerPlan || emptyCustomerPlan);
+}
+
 export function saveCustomerPlan(plan: CustomerPlan) {
-  if (typeof window === 'undefined') return;
   const first = plan.functions[0];
-  window.localStorage.setItem(CUSTOMER_PLAN_KEY, JSON.stringify({
+  activeCustomerPlan = normalizePlan({
     ...plan,
     event: { ...plan.event, eventDate: first?.date || '', pax: first?.pax || 0, mealType: first?.mealType || '' },
     selectedDishes: first?.selectedDishes || [],
     serviceStyle: first?.serviceStyle || null,
-  }));
+  });
+  removePersistedCustomerPlan();
 }
