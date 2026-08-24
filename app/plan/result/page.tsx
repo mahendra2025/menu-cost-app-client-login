@@ -1,58 +1,62 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CustomerShell from '../../components/customer/CustomerShell';
-import { loadCustomerPlan } from '../../../lib/customerPlan';
+import { functionLabel, loadCustomerPlan } from '../../../lib/customerPlan';
 import { serviceStyleLabel } from '../../../lib/serviceStaffing';
 import type { CustomerEstimate } from '../../../lib/customerPricing';
-import type { CustomerPlan } from '../../../lib/types';
+import type { CustomerFunctionPlan, CustomerPlan } from '../../../lib/types';
 
+type FunctionResult = { functionPlan: CustomerFunctionPlan; estimate: CustomerEstimate };
 const money = (value: number) => `₹${Math.round(value).toLocaleString('en-IN')}`;
+const displayDate = (value: string) => value ? new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(`${value}T12:00:00`)) : 'Date not set';
 
 export default function ResultPage() {
   const router = useRouter();
   const [plan, setPlan] = useState<CustomerPlan | null>(null);
-  const [estimate, setEstimate] = useState<CustomerEstimate | null>(null);
+  const [results, setResults] = useState<FunctionResult[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const saved = loadCustomerPlan();
-    if (!saved.event.pax) { router.replace('/'); return; }
-    if (!saved.selectedDishes.length) { router.replace('/plan/menu'); return; }
-    if (!saved.serviceStyle) { router.replace('/plan/service'); return; }
+    if (!saved.event.eventType) { router.replace('/'); return; }
+    if (saved.functions.some((item) => !item.selectedDishes.length)) { router.replace('/plan/menu'); return; }
+    if (saved.functions.some((item) => !item.serviceStyle)) { router.replace('/plan/service'); return; }
     setPlan(saved);
-    fetch('/api/public/customer-estimate', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pax: saved.event.pax, dishIds: saved.selectedDishes.map((dish) => dish.id), serviceStyle: saved.serviceStyle }),
-    }).then(async (response) => { const data = await response.json(); if (!response.ok) throw new Error(data.error); setEstimate(data); }).catch(() => setError('We could not calculate this estimate. Please review your menu and try again.'));
+    Promise.all(saved.functions.map(async (functionPlan) => {
+      const response = await fetch('/api/public/customer-estimate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pax: functionPlan.pax, dishIds: functionPlan.selectedDishes.map((dish) => dish.id), serviceStyle: functionPlan.serviceStyle }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      return { functionPlan, estimate: data as CustomerEstimate };
+    })).then(setResults).catch(() => setError('We could not calculate every function. Review your menus and try again.'));
   }, [router]);
 
+  const totals = useMemo(() => results.reduce((output, item) => ({ total: output.total + item.estimate.estimatedEventTotal, covers: output.covers + item.functionPlan.pax }), { total: 0, covers: 0 }), [results]);
   if (!plan) return <CustomerShell step={4}><div className="customer-empty">Opening your estimate…</div></CustomerShell>;
-  const title = plan.event.eventName || `${plan.event.eventType} ${plan.event.mealType}`;
-  const date = plan.event.eventDate ? new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${plan.event.eventDate}T12:00:00`)) : '—';
+  const title = plan.event.eventName || plan.event.eventType;
 
   return <CustomerShell step={4}>
-    <section className="estimate-hero">
-      <div><p className="customer-kicker">Your catering estimate</p><h1>{title}</h1><p>{plan.event.pax.toLocaleString('en-IN')} Guests · {plan.event.city} · {serviceStyleLabel(plan.serviceStyle!)}</p></div>
-      {estimate ? <div className="estimate-price"><small>Estimated price</small><strong>{money(estimate.finalPricePerPlate)}</strong><span>/ person</span><hr /><b>Event total {money(estimate.estimatedEventTotal)}</b></div> : <div className="estimate-price loading">Calculating…</div>}
+    <section className="estimate-hero multi-estimate-hero">
+      <div><p className="customer-kicker">Your complete catering estimate</p><h1>{title}</h1><p>{plan.functions.length} functions · {totals.covers.toLocaleString('en-IN')} total covers · {plan.event.city}</p></div>
+      {results.length === plan.functions.length ? <div className="estimate-price combined-estimate"><small>Combined event total</small><strong>{money(totals.total)}</strong><span>across all functions</span></div> : <div className="estimate-price loading">Calculating every function…</div>}
     </section>
     {error ? <div className="customer-alert">{error}</div> : null}
-    <section className="result-grid">
-      <div className="result-main">
-        <article className="result-card"><div className="result-card-title"><div><p className="customer-kicker">Your selection</p><h2>Menu price breakdown</h2></div><span>{estimate?.menuItems.length || plan.selectedDishes.length} dishes</span></div>
-          <div className="price-list">{estimate?.menuItems.map((item) => <div key={item.id}><span><b>{item.name}</b><small>{item.category}</small></span><span><b>{money(item.customerPricePerPlate)}<small>/person</small></b><small>{plan.event.pax.toLocaleString('en-IN')} guests · {money(item.totalForGuests)}</small></span></div>)}</div>
-          {estimate ? <div className="price-summary"><p className="customer-kicker">Price breakdown</p><div><span>Menu</span><b>{money(estimate.menuPricePerPlate)} / person</b></div><div><span>Service</span><b>{money(estimate.servicePricePerPlate)} / person</b></div><div><span>Event services</span><b>{money(estimate.operationsPricePerPlate)} / person</b></div><div className="total"><span>Estimated rate</span><b>{money(estimate.finalPricePerPlate)} / person</b></div></div> : null}
-        </article>
-      </div>
-      <aside className="result-side">
-        <article className="result-card event-recap"><p className="customer-kicker">Event details</p><h2>At a glance</h2>
-          <dl><div><dt>Event</dt><dd>{plan.event.eventType}</dd></div><div><dt>Date</dt><dd>{date}</dd></div><div><dt>Location</dt><dd>{plan.event.city}<small>{plan.event.venue}</small></dd></div><div><dt>Guests</dt><dd>{plan.event.pax.toLocaleString('en-IN')}</dd></div><div><dt>Meal</dt><dd>{plan.event.mealType}</dd></div><div><dt>Service</dt><dd>{serviceStyleLabel(plan.serviceStyle!)}</dd></div><div><dt>Dishes</dt><dd>{plan.selectedDishes.length}</dd></div></dl>
-        </article>
-        <div className="edit-actions"><Link href="/">Edit Event</Link><Link href="/plan/menu">Edit Menu</Link><Link href="/plan/service">Change Service</Link></div>
-      </aside>
+    <section className="multi-result-layout">
+      <div className="multi-result-main">{results.map(({ functionPlan, estimate }, index) => <article className="result-card function-result-card" key={functionPlan.id}>
+        <header className="function-result-head"><div><p className="customer-kicker">Function {index + 1}</p><h2>{functionLabel(functionPlan, index)}</h2><span>{displayDate(functionPlan.date)} · {functionPlan.mealType} · {serviceStyleLabel(functionPlan.serviceStyle!)}</span></div><div><strong>{money(estimate.finalPricePerPlate)}</strong><small>/ person</small><b>{money(estimate.estimatedEventTotal)} total</b></div></header>
+        <div className="function-facts"><span><b>{functionPlan.pax.toLocaleString('en-IN')}</b> guests</span><span><b>{functionPlan.selectedDishes.length}</b> dishes</span><span><b>{serviceStyleLabel(functionPlan.serviceStyle!)}</b> service</span></div>
+        <details className="function-menu-details" open={plan.functions.length === 1}><summary>View menu price breakdown <span>{estimate.menuItems.length} dishes</span></summary>
+          <div className="price-list">{estimate.menuItems.map((item) => <div key={item.id}><span><b>{item.name}</b><small>{item.category}</small></span><span><b>{money(item.customerPricePerPlate)}<small>/person</small></b><small>{functionPlan.pax.toLocaleString('en-IN')} guests · {money(item.totalForGuests)}</small></span></div>)}</div>
+        </details>
+        <div className="price-summary compact-summary"><div><span>Menu</span><b>{money(estimate.menuPricePerPlate)} / person</b></div><div><span>Service</span><b>{money(estimate.servicePricePerPlate)} / person</b></div><div><span>Event services</span><b>{money(estimate.operationsPricePerPlate)} / person</b></div><div className="total"><span>Function estimate</span><b>{money(estimate.estimatedEventTotal)}</b></div></div>
+      </article>)}</div>
+      <aside className="result-side multi-result-side"><article className="result-card event-recap"><p className="customer-kicker">Event summary</p><h2>All functions</h2><dl><div><dt>Event</dt><dd>{plan.event.eventType}</dd></div><div><dt>Location</dt><dd>{plan.event.city}<small>{plan.event.venue}</small></dd></div><div><dt>Functions</dt><dd>{plan.functions.length}</dd></div><div><dt>Total covers</dt><dd>{totals.covers.toLocaleString('en-IN')}</dd></div><div><dt>Combined estimate</dt><dd>{results.length ? money(totals.total) : 'Calculating…'}</dd></div></dl></article><div className="edit-actions"><Link href="/">Edit Event</Link><Link href="/plan/menu">Edit Menus</Link><Link href="/plan/service">Change Services</Link></div></aside>
     </section>
-    {estimate ? <div className="mobile-estimate-bar"><span><b>{money(estimate.finalPricePerPlate)}</b>/person</span><span><b>{money(estimate.estimatedEventTotal)}</b> total</span></div> : null}
+    {results.length === plan.functions.length ? <div className="mobile-estimate-bar combined-mobile-bar"><span><b>{plan.functions.length}</b> functions</span><span><b>{money(totals.total)}</b> combined</span></div> : null}
   </CustomerShell>;
 }
