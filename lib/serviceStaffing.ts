@@ -40,9 +40,9 @@ export function specialistForDish(dish: { name: string; category: string }): {
   if (category === 'chinese') return { role: 'Chinese Cook', rateRole: 'Cook' };
   if (category === 'italian' || category === 'pizza' || category === 'pasta') return { role: 'Italian Cook', rateRole: 'Cook' };
   if (category === 'bread') return { role: 'Indian Bread / Tandoor Cook', rateRole: 'Cook' };
-  if (category === 'dal/kadhi' || category === 'dal' || category === 'kadhi') return { role: 'Dal / Kadhi Cook', rateRole: 'Cook' };
+  if (category === 'dal/kadhi' || category === 'dal' || category === 'kadhi') return { role: 'Dal / Sabji Cook', rateRole: 'Cook' };
   if (category === 'rice') return { role: 'Rice Cook', rateRole: 'Cook' };
-  if (category === 'sabji' || category === 'paneer') return { role: 'Sabji Cook', rateRole: 'Cook' };
+  if (category === 'sabji' || category === 'paneer') return { role: 'Dal / Sabji Cook', rateRole: 'Cook' };
   if (category === 'sweet' || category === 'dessert') return { role: 'Sweet / Halwai', rateRole: 'Cook' };
   if (category === 'farsan') return { role: 'Farsan Cook', rateRole: 'Cook' };
   return null;

@@ -1850,12 +1850,12 @@ export default function ManpowerPage() {
               </b>
 
               <span>
-                Farsan · Starter · Juice · Chinese · Chaat · Italian · Indian Bread
+                Farsan · Starter · Juice · Chinese · Chaat · Italian · Indian Bread · Dal + Sabji
               </span>
             </div>
 
             <small>
-              1 dish = 1 specialist
+              1 Dal + 1 Sabji share a cook team
             </small>
           </div>
 

@@ -40,14 +40,24 @@ test('Masi and Helper recommendations round up proportionally', () => {
   assert.equal(recommendation.find((item) => item.role === 'Helper')?.quantity, 3);
 });
 
-test('dish categories create one scaled specialist team per station', () => {
+test('Dal and Sabji dishes share one scaled specialist cook team', () => {
   const recommendation = specialistStaffRecommendations([
     { name: 'Paneer Butter Masala', category: 'Paneer' },
     { name: 'Kadai Paneer', category: 'Paneer' },
     { name: 'Dal Tadka', category: 'Dal / Kadhi' },
   ], 250);
   assert.deepEqual(recommendation.map((item) => [item.role, item.quantity]), [
-    ['Sabji Cook', 3],
-    ['Dal / Kadhi Cook', 3],
+    ['Dal / Sabji Cook', 3],
+  ]);
+});
+
+test('one Dal and one Sabji assign only one cook for up to 100 guests', () => {
+  const recommendation = specialistStaffRecommendations([
+    { name: 'Dal Tadka', category: 'Dal / Kadhi' },
+    { name: 'Mix Veg', category: 'Sabji' },
+  ], 100);
+
+  assert.deepEqual(recommendation.map((item) => [item.role, item.quantity]), [
+    ['Dal / Sabji Cook', 1],
   ]);
 });
