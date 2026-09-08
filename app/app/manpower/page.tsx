@@ -145,6 +145,10 @@ export default function ManpowerPage() {
       extras: {
         ...savedWork.extras,
         staff: calculateManpowerCost(manpower),
+        transport: 0,
+        gasFuel: 0,
+        disposable: 0,
+        other: 0,
       },
       updatedAt: new Date().toISOString(),
     };
@@ -176,6 +180,10 @@ export default function ManpowerPage() {
       extras: {
         ...work.extras,
         staff: calculateManpowerCost(rows),
+        transport: 0,
+        gasFuel: 0,
+        disposable: 0,
+        other: 0,
       },
       updatedAt: new Date().toISOString(),
     };
@@ -196,7 +204,7 @@ export default function ManpowerPage() {
 
   if (!work) {
     return (
-      <AppShell title="Manpower" subtitle="Step 2 of 4: set manpower quantity and rate">
+      <AppShell title="Manpower" subtitle="Step 2 of 3: set manpower quantity and rate">
         <div className="loader-card">Loading manpower…</div>
       </AppShell>
     );
@@ -205,7 +213,7 @@ export default function ManpowerPage() {
   return (
     <AppShell
       title="Manpower"
-      subtitle="Step 2 of 4: enter quantity and rate for each manpower role"
+      subtitle="Step 2 of 3: enter quantity and rate for each manpower role"
     >
       <section className="content-grid manpower-page">
         <div className="manpower-overview manpower-overview-v2">
@@ -222,9 +230,9 @@ export default function ManpowerPage() {
             <button
               className="primary-button workflow-overview-button"
               type="button"
-              onClick={() => router.push('/app/extra-cost')}
+              onClick={() => router.push('/app/final-costing')}
             >
-              Next: Extra Cost
+              Next: Final Costing
             </button>
           </div>
         </div>
@@ -234,7 +242,7 @@ export default function ManpowerPage() {
             <div>
               <div className="section-kicker">Manpower Index</div>
               <h2>Role, Quantity & Rate</h2>
-              <p className="muted">The previous function-wise manpower planner has been removed.</p>
+              <p className="muted">Set only the manpower you need for this event.</p>
             </div>
           </div>
 
@@ -343,9 +351,9 @@ export default function ManpowerPage() {
             <button
               className="primary-button"
               type="button"
-              onClick={() => router.push('/app/extra-cost')}
+              onClick={() => router.push('/app/final-costing')}
             >
-              Next: Extra Cost
+              Next: Final Costing
             </button>
             <button
               className="ghost-button"
