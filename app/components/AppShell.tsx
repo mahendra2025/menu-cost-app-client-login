@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
 import { getSession, logout, refreshSessionFromClient } from '../../lib/store';
 import type { Session } from '../../lib/types';
-import FreeUsageMeter from './FreeUsageMeter';
 
 type NavIcon = 'profile' | 'clients' | 'dishes' | 'ingredients';
 
@@ -145,28 +144,24 @@ export default function AppShell({
         ) : null}
 
         <div className="app-workspace">
-          {!isAdmin ? <FreeUsageMeter /> : null}
-
           {session?.status === 'EXPIRED' && session.role === 'CLIENT' ? (
             <div className="alert-card no-print">
               <b>Plan expired.</b> Upload, cost and final costing are locked. Renew ₹999/month from admin to continue.
             </div>
           ) : null}
 
-          {!hidePageTitle ? (
+          {isAdmin && !hidePageTitle ? (
             <section className="page-title no-print">
               <div>
-                <span className="page-eyebrow">{isAdmin ? 'Menu Costing Admin' : 'Catering workspace'}</span>
+                <span className="page-eyebrow">Menu Costing Admin</span>
                 <h1>{title}</h1>
                 <p>{subtitle ?? 'Plan, price and present every event with confidence.'}</p>
               </div>
 
-              {isAdmin ? (
-                <div className="page-progress" aria-label="Admin workspace">
-                  <span>Workspace</span>
-                  <div><i style={{ width: '100%' }} /></div>
-                </div>
-              ) : null}
+              <div className="page-progress" aria-label="Admin workspace">
+                <span>Workspace</span>
+                <div><i style={{ width: '100%' }} /></div>
+              </div>
             </section>
           ) : null}
 
