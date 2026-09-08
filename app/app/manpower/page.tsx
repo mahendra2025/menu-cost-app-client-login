@@ -126,6 +126,7 @@ export default function ManpowerPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
 
   useEffect(() => {
     const current = getSession();
@@ -202,9 +203,53 @@ export default function ManpowerPage() {
     );
   }
 
+  async function downloadPdf() {
+    if (!work || pdfBusy) return;
+
+    setPdfBusy(true);
+
+    try {
+      const { downloadFinalCostingPdf } = await import(
+        '../../../lib/finalCostingPdf'
+      );
+
+      let recipes: unknown[] = [];
+
+      try {
+        const response = await fetch('/api/recipe-ingredients', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            dishNames: work.menu.map((item) => item.name),
+          }),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            recipes?: unknown[];
+          };
+
+          recipes = Array.isArray(data.recipes) ? data.recipes : [];
+        }
+      } catch (recipeError) {
+        console.warn(
+          'Ingredient list could not be loaded:',
+          recipeError,
+        );
+      }
+
+      downloadFinalCostingPdf(work, recipes);
+    } finally {
+      setPdfBusy(false);
+    }
+  }
+
   if (!work) {
     return (
-      <AppShell title="Manpower" subtitle="Step 2 of 3: set manpower quantity and rate">
+      <AppShell title="Manpower" subtitle="Step 2 of 2: set manpower quantity and rate">
         <div className="loader-card">Loading manpower…</div>
       </AppShell>
     );
@@ -213,7 +258,7 @@ export default function ManpowerPage() {
   return (
     <AppShell
       title="Manpower"
-      subtitle="Step 2 of 3: enter quantity and rate for each manpower role"
+      subtitle="Step 2 of 2: enter quantity and rate, then download the costing PDF"
     >
       <section className="content-grid manpower-page">
         <div className="manpower-overview manpower-overview-v2">
@@ -230,9 +275,10 @@ export default function ManpowerPage() {
             <button
               className="primary-button workflow-overview-button"
               type="button"
-              onClick={() => router.push('/app/final-costing')}
+              onClick={() => void downloadPdf()}
+              disabled={pdfBusy}
             >
-              Next: Final Costing
+              {pdfBusy ? 'Preparing PDF…' : 'Next: Download PDF'}
             </button>
           </div>
         </div>
@@ -351,9 +397,10 @@ export default function ManpowerPage() {
             <button
               className="primary-button"
               type="button"
-              onClick={() => router.push('/app/final-costing')}
+              onClick={() => void downloadPdf()}
+              disabled={pdfBusy}
             >
-              Next: Final Costing
+              {pdfBusy ? 'Preparing PDF…' : 'Next: Download PDF'}
             </button>
             <button
               className="ghost-button"
