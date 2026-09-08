@@ -6,4 +6,15 @@
 .category h2 { margin: 0 0 12px; color: var(--blue); font-size: 20px; font-weight: 700; }
 .category ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 32px; margin: 0; padding: 0; list-style: none; }
 .category li { color: var(--text); font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
-@media (max-width: 600px) { .category ul { grid-template-columns: 1fr; } .category { padding: 16px 0; } }
+.error { margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; color: #b42318; background: #fff7f6; font-size: 14px; }
+.footerActions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+.footerActions :global(.primary-button) { min-width: 160px; }
+.backButton { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; padding: 0 16px; border: 1px solid var(--border); border-radius: 10px; font-weight: 600; }
+.backButton:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+@media (max-width: 600px) {
+  .category ul { grid-template-columns: 1fr; }
+  .category { padding: 16px 0; }
+  .footerActions { position: sticky; bottom: 8px; z-index: 5; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface, #fff); box-shadow: 0 10px 30px rgb(15 23 42 / 12%); }
+  .footerActions > * { flex: 1; }
+  .footerActions :global(.primary-button) { min-width: 0; }
+}
