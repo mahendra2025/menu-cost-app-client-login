@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import PwaRegister from './components/PwaRegister';
 import AdminPerformanceBootstrap from './components/AdminPerformanceBootstrap';
 import './globals.css';
+import './hide-detection-summary.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://menu-costing.com'),
