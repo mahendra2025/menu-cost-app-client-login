@@ -28,7 +28,7 @@ export default function EventLayout({
   useEffect(() => {
     const session = getSession();
 
-    if (!session) {
+    if (!session || session.role !== 'CLIENT') {
       setReady(true);
       return;
     }
