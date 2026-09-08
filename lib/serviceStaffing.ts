@@ -40,6 +40,21 @@ export function specialistForDish(dish: { name: string; category: string }): {
   if (category === 'chinese') return { role: 'Chinese Cook', rateRole: 'Cook' };
   if (category === 'italian' || category === 'pizza' || category === 'pasta') return { role: 'Italian Cook', rateRole: 'Cook' };
   if (category === 'bread') return { role: 'Indian Bread / Tandoor Cook', rateRole: 'Cook' };
+
+  // Paan is a counter-attendant role rather than a specialist cook.
+  // Match the dish name carefully so "paneer" never becomes "pan".
+  if (
+    category === 'live counter' &&
+    /\b(?:paan|pan)\s*(?:counter|stall)?\b/i.test(name)
+  ) {
+    return { role: 'Paan Counter', rateRole: 'Counter Attendant' };
+  }
+
+  // Any other dish categorized as Live Counter gets its own cook/operator station.
+  if (category === 'live counter') {
+    return { role: 'Live Counter Cook', rateRole: 'Cook' };
+  }
+
   if (category === 'dal/kadhi' || category === 'dal' || category === 'kadhi') return { role: 'Dal / Sabji Cook', rateRole: 'Cook' };
   if (category === 'rice') return { role: 'Rice Cook', rateRole: 'Cook' };
   if (category === 'sabji' || category === 'paneer') return { role: 'Dal / Sabji Cook', rateRole: 'Cook' };
