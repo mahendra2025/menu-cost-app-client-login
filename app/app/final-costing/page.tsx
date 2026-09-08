@@ -16,6 +16,29 @@ function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
 }
 
+function removeLegacyExtraCosts(work: WorkState): WorkState {
+  if (
+    !work.extras.transport &&
+    !work.extras.gasFuel &&
+    !work.extras.disposable &&
+    !work.extras.other
+  ) {
+    return work;
+  }
+
+  return {
+    ...work,
+    extras: {
+      ...work.extras,
+      transport: 0,
+      gasFuel: 0,
+      disposable: 0,
+      other: 0,
+    },
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export default function FinalCostingPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
@@ -25,7 +48,16 @@ export default function FinalCostingPage() {
   useEffect(() => {
     const current = getSession();
     setSession(current);
-    if (current) setWork(loadWork(current.tenantId));
+
+    if (current) {
+      const savedWork = loadWork(current.tenantId);
+      const cleanWork = removeLegacyExtraCosts(savedWork);
+      setWork(cleanWork);
+
+      if (cleanWork !== savedWork) {
+        saveWork(current.tenantId, cleanWork);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -38,18 +70,11 @@ export default function FinalCostingPage() {
       return;
     }
 
-    const result =
-      calculate(work);
+    const result = calculate(work);
 
-    const missingRateCount =
-      work.menu.filter(
-        (item) =>
-          !(
-            Number(
-              item.costPerPlate,
-            ) > 0
-          ),
-      ).length;
+    const missingRateCount = work.menu.filter(
+      (item) => !(Number(item.costPerPlate) > 0),
+    ).length;
 
     const finalReady =
       work.menu.length > 0 &&
@@ -57,21 +82,16 @@ export default function FinalCostingPage() {
       missingRateCount === 0 &&
       work.sellingPricePerPlate > 0;
 
-    const costingKey =
-      getCostingAnalyticsKey(
-        work,
-      );
+    const costingKey = getCostingAnalyticsKey(work);
 
     void trackProductEvent(
       'final_costing_viewed',
       {
         costingKey,
-        totalCovers:
-          result.totalCovers,
+        totalCovers: result.totalCovers,
       },
       {
-        onceKey:
-          `final_viewed:${costingKey}`,
+        onceKey: `final_viewed:${costingKey}`,
       },
     );
 
@@ -80,37 +100,35 @@ export default function FinalCostingPage() {
         'final_costing_complete',
         {
           costingKey,
-          dishCount:
-            work.menu.length,
-          totalCovers:
-            result.totalCovers,
-          totalCost:
-            Math.round(
-              result.totalCost,
-            ),
-          totalSelling:
-            Math.round(
-              result.totalSelling,
-            ),
-          totalProfit:
-            Math.round(
-              result.totalProfit,
-            ),
+          dishCount: work.menu.length,
+          totalCovers: result.totalCovers,
+          totalCost: Math.round(result.totalCost),
+          totalSelling: Math.round(result.totalSelling),
+          totalProfit: Math.round(result.totalProfit),
         },
         {
-          onceKey:
-            `final_complete:${costingKey}`,
+          onceKey: `final_complete:${costingKey}`,
         },
       );
     }
   }, [work, session]);
 
   if (!work || !session) {
-    return <AppShell title="Final Costing"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
+    return (
+      <AppShell title="Final Costing">
+        <div className="content-grid">
+          <div className="glass-card">Loading...</div>
+        </div>
+      </AppShell>
+    );
   }
 
   if (session.status === 'EXPIRED') {
-    return <AppShell title="Final Costing"><LockedCard /></AppShell>;
+    return (
+      <AppShell title="Final Costing">
+        <LockedCard />
+      </AppShell>
+    );
   }
 
   const result = calculate(work);
@@ -129,10 +147,12 @@ export default function FinalCostingPage() {
 
   function updateSellingPrice(value: number) {
     if (!work || !session) return;
+
     const nextWork: WorkState = {
       ...work,
       sellingPricePerPlate: Math.max(0, value),
     };
+
     setWork(nextWork);
     saveWork(session.tenantId, nextWork);
   }
@@ -143,42 +163,30 @@ export default function FinalCostingPage() {
     setPdfBusy(true);
 
     try {
-      const { downloadFinalCostingPdf } =
-        await import(
-          '../../../lib/finalCostingPdf'
-        );
+      const { downloadFinalCostingPdf } = await import(
+        '../../../lib/finalCostingPdf'
+      );
 
       let recipes: unknown[] = [];
 
       try {
-        const response = await fetch(
-          '/api/recipe-ingredients',
-          {
-            method: 'POST',
-            cache: 'no-store',
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
-            body: JSON.stringify({
-              dishNames: work.menu.map(
-                (item) => item.name,
-              ),
-            }),
+        const response = await fetch('/api/recipe-ingredients', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        );
+          body: JSON.stringify({
+            dishNames: work.menu.map((item) => item.name),
+          }),
+        });
 
         if (response.ok) {
-          const data =
-            await response.json() as {
-              recipes?: unknown[];
-            };
+          const data = (await response.json()) as {
+            recipes?: unknown[];
+          };
 
-          recipes = Array.isArray(
-            data.recipes,
-          )
-            ? data.recipes
-            : [];
+          recipes = Array.isArray(data.recipes) ? data.recipes : [];
         }
       } catch (recipeError) {
         console.warn(
@@ -187,49 +195,49 @@ export default function FinalCostingPage() {
         );
       }
 
-      downloadFinalCostingPdf(
-        work,
-        recipes,
-      );
+      downloadFinalCostingPdf(work, recipes);
 
-      const costingKey =
-        getCostingAnalyticsKey(
-          work,
-        );
+      const costingKey = getCostingAnalyticsKey(work);
 
-      void trackProductEvent(
-        'pdf_exported',
-        {
-          costingKey,
-          dishCount:
-            work.menu.length,
-        },
-      );
+      void trackProductEvent('pdf_exported', {
+        costingKey,
+        dishCount: work.menu.length,
+      });
     } finally {
       setPdfBusy(false);
     }
   }
 
   const costRows = [
-    { label: 'Food cost', value: result.menuFoodTotal, route: '/app/cost' },
-    { label: 'Manpower cost', value: work.extras.staff, route: '/app/manpower' },
-    { label: 'Transport cost', value: work.extras.transport, route: '/app/extra-cost' },
-    { label: 'Gas / fuel cost', value: work.extras.gasFuel, route: '/app/extra-cost' },
-    { label: 'Disposable items', value: work.extras.disposable, route: '/app/extra-cost' },
-    { label: 'Other extra cost', value: work.extras.other, route: '/app/extra-cost' },
+    {
+      label: 'Food cost',
+      value: result.menuFoodTotal,
+      route: '/app/cost',
+    },
+    {
+      label: 'Manpower cost',
+      value: work.extras.staff,
+      route: '/app/manpower',
+    },
   ];
 
   return (
     <AppShell
       title="Final Costing"
-      subtitle="Step 4 of 4: review the final cost and download the PDF"
+      subtitle="Step 3 of 3: review the final cost and download the PDF"
     >
       <section className="content-grid">
         <div className={`final-costing-overview ${finalCostReady ? 'is-ready' : ''}`}>
           <div>
             <span className="page-eyebrow">Final price</span>
-            <h2>{finalCostReady ? 'Final costing is complete' : 'Complete your final selling price'}</h2>
-            <p>Review every event cost, set the selling price per cover and confirm the expected profit.</p>
+            <h2>
+              {finalCostReady
+                ? 'Final costing is complete'
+                : 'Complete your final selling price'}
+            </h2>
+            <p>
+              Review food and manpower cost, set the selling price per cover and confirm the expected profit.
+            </p>
           </div>
           <div className="final-costing-overview-total">
             <span>Total event cost</span>
@@ -247,10 +255,28 @@ export default function FinalCostingPage() {
         </div>
 
         <div className="stat-grid">
-          <StatCard label="Cost / Cover" value={money(result.finalCostPerPlate)} note={`Total ${money(result.totalCost)}`} />
-          <StatCard label="Selling / Cover" value={money(result.sellingPricePerPlate)} note={`Total ${money(result.totalSelling)}`} />
-          <StatCard label="Total Profit" value={money(result.totalProfit)} note={`${Math.round(profitMargin)}% margin`} />
-          <StatCard label="Meal Covers" value={result.totalCovers.toLocaleString('en-IN')} note={`${result.serviceSummaries.length} meal${result.serviceSummaries.length === 1 ? '' : 's'}`} />
+          <StatCard
+            label="Cost / Cover"
+            value={money(result.finalCostPerPlate)}
+            note={`Total ${money(result.totalCost)}`}
+          />
+          <StatCard
+            label="Selling / Cover"
+            value={money(result.sellingPricePerPlate)}
+            note={`Total ${money(result.totalSelling)}`}
+          />
+          <StatCard
+            label="Total Profit"
+            value={money(result.totalProfit)}
+            note={`${Math.round(profitMargin)}% margin`}
+          />
+          <StatCard
+            label="Meal Covers"
+            value={result.totalCovers.toLocaleString('en-IN')}
+            note={`${result.serviceSummaries.length} meal${
+              result.serviceSummaries.length === 1 ? '' : 's'
+            }`}
+          />
         </div>
 
         <div className="glass-card final-selling-card">
@@ -263,7 +289,9 @@ export default function FinalCostingPage() {
           </div>
           <div className="two-grid">
             <div className="field">
-              <label htmlFor="sellingPricePerPlate">Average selling price / cover</label>
+              <label htmlFor="sellingPricePerPlate">
+                Average selling price / cover
+              </label>
               <input
                 id="sellingPricePerPlate"
                 className="input input-large"
@@ -271,20 +299,42 @@ export default function FinalCostingPage() {
                 min="0"
                 inputMode="decimal"
                 value={work.sellingPricePerPlate || ''}
-                onChange={(event) => updateSellingPrice(Number(event.target.value))}
+                onChange={(event) =>
+                  updateSellingPrice(Number(event.target.value))
+                }
                 placeholder="Example: 350"
               />
             </div>
             <div className="field">
               <label>Total selling amount</label>
-              <input className="input input-large" readOnly value={money(result.totalSelling)} />
+              <input
+                className="input input-large"
+                readOnly
+                value={money(result.totalSelling)}
+              />
             </div>
           </div>
-          <div className={`final-profit-strip ${result.totalProfit >= 0 ? 'is-positive' : 'is-negative'}`}>
-            <div><span>Total cost</span><b>{money(result.totalCost)}</b></div>
-            <div><span>Total selling</span><b>{money(result.totalSelling)}</b></div>
-            <div><span>Expected profit</span><b>{money(result.totalProfit)}</b></div>
-            <div><span>Profit margin</span><b>{Math.round(profitMargin)}%</b></div>
+          <div
+            className={`final-profit-strip ${
+              result.totalProfit >= 0 ? 'is-positive' : 'is-negative'
+            }`}
+          >
+            <div>
+              <span>Total cost</span>
+              <b>{money(result.totalCost)}</b>
+            </div>
+            <div>
+              <span>Total selling</span>
+              <b>{money(result.totalSelling)}</b>
+            </div>
+            <div>
+              <span>Expected profit</span>
+              <b>{money(result.totalProfit)}</b>
+            </div>
+            <div>
+              <span>Profit margin</span>
+              <b>{Math.round(profitMargin)}%</b>
+            </div>
           </div>
         </div>
 
@@ -293,7 +343,7 @@ export default function FinalCostingPage() {
             <div>
               <span className="section-kicker">Cost breakdown</span>
               <h2>Where the event cost comes from</h2>
-              <p>Select Edit to return to the relevant costing step.</p>
+              <p>Final event cost now includes only food and manpower.</p>
             </div>
           </div>
           <div className="final-cost-breakdown">
@@ -301,7 +351,12 @@ export default function FinalCostingPage() {
               <div key={row.label}>
                 <span>{row.label}</span>
                 <b>{money(row.value)}</b>
-                <button type="button" onClick={() => router.push(row.route)}>Edit</button>
+                <button
+                  type="button"
+                  onClick={() => router.push(row.route)}
+                >
+                  Edit
+                </button>
               </div>
             ))}
             <div className="final-cost-breakdown-total">
@@ -319,10 +374,26 @@ export default function FinalCostingPage() {
               <h3>Complete the missing details</h3>
             </div>
             <div className="readiness-list">
-              <span className={work.menu.length > 0 ? 'is-complete' : ''}>Menu dishes</span>
-              <span className={result.totalCovers > 0 ? 'is-complete' : ''}>Member counts</span>
-              <span className={missingRateCount === 0 && work.menu.length > 0 ? 'is-complete' : ''}>Dish rates</span>
-              <span className={work.sellingPricePerPlate > 0 ? 'is-complete' : ''}>Selling price</span>
+              <span className={work.menu.length > 0 ? 'is-complete' : ''}>
+                Menu dishes
+              </span>
+              <span className={result.totalCovers > 0 ? 'is-complete' : ''}>
+                Member counts
+              </span>
+              <span
+                className={
+                  missingRateCount === 0 && work.menu.length > 0
+                    ? 'is-complete'
+                    : ''
+                }
+              >
+                Dish rates
+              </span>
+              <span
+                className={work.sellingPricePerPlate > 0 ? 'is-complete' : ''}
+              >
+                Selling price
+              </span>
             </div>
           </div>
         ) : (
@@ -336,25 +407,40 @@ export default function FinalCostingPage() {
         )}
 
         <div className="action-row page-actions">
-          <button className="secondary-button" type="button" onClick={downloadPdf} disabled={pdfBusy}>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={downloadPdf}
+            disabled={pdfBusy}
+          >
             {pdfBusy ? 'Preparing PDF…' : 'Download Menu & Costing PDF'}
           </button>
           <button
             className="primary-button"
             type="button"
             disabled={!finalCostReady}
-            onClick={() =>
-              router.push('/app/quotation')
-            }
+            onClick={() => router.push('/app/quotation')}
           >
             Create Client Quotation
           </button>
-          <button className="primary-button" type="button" onClick={() => router.push('/app/profile')}>Next: Profile</button>
-          <button className="ghost-button" type="button" onClick={() => router.push('/app/extra-cost')}>Back to Extra Cost</button>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => router.push('/app/profile')}
+          >
+            Next: Profile
+          </button>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => router.push('/app/manpower')}
+          >
+            Back to Manpower
+          </button>
         </div>
-              <FinalCostingUsage tenantId={session.tenantId} work={work} />
 
-</section>
+        <FinalCostingUsage tenantId={session.tenantId} work={work} />
+      </section>
     </AppShell>
   );
 }
