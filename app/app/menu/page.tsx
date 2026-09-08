@@ -134,13 +134,20 @@ function normalizeMultiFunctionSource(text: string) {
     .join('\n');
 }
 
-function placementKey(item: Pick<MenuItem, 'serviceId' | 'dayLabel' | 'mealLabel'>) {
-  const serviceId = item.serviceId?.trim();
+function visiblePlacementKey(
+  item: Pick<MenuItem, 'dayLabel' | 'mealLabel'>,
+) {
   const day = normalizePart(item.dayLabel);
   const meal = normalizePart(item.mealLabel);
+  return day || meal ? `${day || 'event'}::${meal || 'event menu'}` : '';
+}
+
+function placementKey(item: Pick<MenuItem, 'serviceId' | 'dayLabel' | 'mealLabel'>) {
+  const serviceId = item.serviceId?.trim();
+  const visible = visiblePlacementKey(item);
 
   if (serviceId) return `service:${serviceId}`;
-  if (day || meal) return `visible:${day || 'event'}::${meal || 'event menu'}`;
+  if (visible) return `visible:${visible}`;
   return 'event:default';
 }
 
@@ -166,13 +173,30 @@ async function repairDetectedStructure(
     if (!structuralMenu.length) return detectedMenu;
 
     const structuralByDish = new Map<string, MenuItem[]>();
+    const serviceByVisiblePlacement = new Map<string, string>();
+    const servicesByMealLabel = new Map<string, Set<string>>();
 
     for (const item of structuralMenu) {
       const key = normalizePart(item.name);
-      if (!key) continue;
-      const rows = structuralByDish.get(key) ?? [];
-      rows.push(item);
-      structuralByDish.set(key, rows);
+      if (key) {
+        const rows = structuralByDish.get(key) ?? [];
+        rows.push(item);
+        structuralByDish.set(key, rows);
+      }
+
+      const serviceId = item.serviceId?.trim();
+      const visible = visiblePlacementKey(item);
+      const meal = normalizePart(item.mealLabel);
+
+      if (serviceId && visible) {
+        serviceByVisiblePlacement.set(visible, serviceId);
+      }
+
+      if (serviceId && meal) {
+        const serviceIds = servicesByMealLabel.get(meal) ?? new Set<string>();
+        serviceIds.add(serviceId);
+        servicesByMealLabel.set(meal, serviceIds);
+      }
     }
 
     const expanded = detectedMenu.flatMap((item) => {
@@ -197,18 +221,41 @@ async function repairDetectedStructure(
       }));
     });
 
+    // AI-only / unknown dishes can still carry ai_service_* while catalog
+    // dishes carry service_*. If their visible day + meal matches a parsed
+    // service, put them onto the same structural service id.
+    const unified = expanded.map((item) => {
+      const visible = visiblePlacementKey(item);
+      const meal = normalizePart(item.mealLabel);
+      const directServiceId = visible
+        ? serviceByVisiblePlacement.get(visible)
+        : undefined;
+      const mealServices = meal ? servicesByMealLabel.get(meal) : undefined;
+      const uniqueMealServiceId =
+        !directServiceId && mealServices?.size === 1
+          ? [...mealServices][0]
+          : undefined;
+
+      return directServiceId || uniqueMealServiceId
+        ? {
+            ...item,
+            serviceId: directServiceId || uniqueMealServiceId,
+          }
+        : item;
+    });
+
     // Local catalog parsing can recover a known dish that AI missed entirely.
-    const existing = new Set(expanded.map(serviceDishKey));
+    const existing = new Set(unified.map(serviceDishKey));
     for (const structuralItem of structuralMenu) {
       const key = serviceDishKey(structuralItem);
       if (!existing.has(key)) {
-        expanded.push(structuralItem);
+        unified.push(structuralItem);
         existing.add(key);
       }
     }
 
     return Array.from(
-      new Map(expanded.map((item) => [serviceDishKey(item), item])).values(),
+      new Map(unified.map((item) => [serviceDishKey(item), item])).values(),
     );
   } catch (structureError) {
     console.warn('Menu function structure repair skipped:', structureError);
@@ -231,10 +278,15 @@ function buildMealGroups(
       0,
       Number(dish.servicePax) || defaultPax,
     );
+    const visible = `${normalizePart(dayLabel) || 'event'}::${normalizePart(mealLabel) || 'event menu'}`;
+    // Visible function identity is authoritative. serviceId is only a fallback
+    // when detection supplied no day/meal label at all.
     const key =
-      serviceId
-        ? `service:${serviceId}`
-        : `${normalizePart(dayLabel) || 'event'}::${normalizePart(mealLabel) || 'event menu'}`;
+      dayLabel || dish.mealLabel?.trim()
+        ? `visible:${visible}`
+        : serviceId
+          ? `service:${serviceId}`
+          : 'event:default';
 
     const group = groups.get(key) ?? {
       key,
@@ -246,6 +298,7 @@ function buildMealGroups(
     };
 
     group.servicePax = Math.max(group.servicePax, servicePax);
+    group.serviceId = group.serviceId || serviceId;
 
     const duplicate = group.dishes.some(
       (item) =>
