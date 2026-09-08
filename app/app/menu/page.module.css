@@ -2,8 +2,20 @@
 .actions { margin-bottom: 24px; }
 .actions a { color: var(--blue); font-size: 14px; font-weight: 600; text-underline-offset: 4px; }
 .actions a:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
-.category { padding: 20px 0; border-top: 1px solid var(--border); }
-.category h2 { margin: 0 0 12px; color: var(--blue); font-size: 20px; font-weight: 700; }
+.mealCard { margin-bottom: 22px; padding: 20px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface, transparent); }
+.mealHeader { display: grid; grid-template-columns: minmax(140px, 0.7fr) minmax(360px, 1.5fr); gap: 20px; align-items: end; padding-bottom: 18px; }
+.mealHeading { display: grid; gap: 5px; align-self: center; }
+.mealNumber { color: var(--blue); font-size: 13px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.mealHeading small { color: var(--muted); font-size: 13px; }
+.mealFields { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 12px; }
+.mealField { display: grid; gap: 7px; }
+.mealField span { color: var(--muted); font-size: 12px; font-weight: 700; }
+.mealField input { width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface, transparent); color: var(--text); font: inherit; }
+.mealField input:focus { outline: 2px solid var(--blue); outline-offset: 2px; }
+.categoryList { border-top: 1px solid var(--border); }
+.category { padding: 18px 0; border-bottom: 1px solid var(--border); }
+.category:last-child { border-bottom: 0; padding-bottom: 0; }
+.category h2 { margin: 0 0 12px; color: var(--blue); font-size: 18px; font-weight: 700; }
 .category ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 32px; margin: 0; padding: 0; list-style: none; }
 .category li { color: var(--text); font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
 .error { margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; color: #b42318; background: #fff7f6; font-size: 14px; }
@@ -11,7 +23,13 @@
 .footerActions :global(.primary-button) { min-width: 160px; }
 .backButton { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; padding: 0 16px; border: 1px solid var(--border); border-radius: 10px; font-weight: 600; }
 .backButton:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+@media (max-width: 720px) {
+  .mealHeader { grid-template-columns: 1fr; gap: 14px; }
+  .mealFields { grid-template-columns: minmax(0, 1fr) 120px; }
+}
 @media (max-width: 600px) {
+  .mealCard { padding: 16px; }
+  .mealFields { grid-template-columns: 1fr; }
   .category ul { grid-template-columns: 1fr; }
   .category { padding: 16px 0; }
   .footerActions { position: sticky; bottom: 8px; z-index: 5; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface, #fff); box-shadow: 0 10px 30px rgb(15 23 42 / 12%); }
