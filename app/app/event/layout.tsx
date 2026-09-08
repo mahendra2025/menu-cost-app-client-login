@@ -14,9 +14,6 @@ import {
   saveWork,
 } from '../../../lib/store';
 
-import FirstMenuSuccessGuide
-  from './FirstMenuSuccessGuide';
-
 export default function EventLayout({
   children,
 }: {
@@ -78,7 +75,11 @@ export default function EventLayout({
 
   return (
     <>
-      <FirstMenuSuccessGuide />
+      <style>{`
+        .first-menu-guide {
+          display: none !important;
+        }
+      `}</style>
       {children}
     </>
   );
