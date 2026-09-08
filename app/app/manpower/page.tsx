@@ -25,6 +25,15 @@ type RoleTemplate = {
   aliases: string[];
 };
 
+type MealPlan = {
+  key: string;
+  serviceId?: string;
+  dayLabel: string;
+  mealLabel: string;
+  pax: number;
+  dishIds: string[];
+};
+
 const MANPOWER_ROLES: RoleTemplate[] = [
   { id: 'simple_chef', role: 'Chef / Cook', rate: 2500, aliases: ['chef / cook', 'chef', 'cook'] },
   { id: 'simple_helper', role: 'Helper', rate: 700, aliases: ['helper', 'helper / masi', 'masi'] },
@@ -54,26 +63,125 @@ function normalizeRole(value: string) {
     .replace(/\s+/g, ' ');
 }
 
-function normalizeRows(rows: ManpowerRow[]): ManpowerRow[] {
-  return MANPOWER_ROLES.map((template) => {
-    const aliases = new Set(template.aliases.map(normalizeRole));
-    const matches = rows.filter((row) => aliases.has(normalizeRole(row.role)));
-    const quantity = matches.reduce(
-      (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
-      0,
-    );
-    const savedRate = matches
-      .map((row) => Math.max(0, Number(row.rate) || 0))
-      .find((rate) => rate > 0);
+function normalizePart(value: unknown) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
 
-    return {
-      id: template.id,
-      role: template.role,
-      quantity,
-      rate: savedRate ?? template.rate,
-      rateMode: 'PER_MEAL',
-    };
+function buildMealPlans(work: WorkState): MealPlan[] {
+  const meals = new Map<string, MealPlan>();
+  const fallbackMealLabel = work.event.functionType?.trim() || 'Event Menu';
+  const fallbackPax = Math.max(0, Number(work.event.pax) || 0);
+
+  work.menu.forEach((dish) => {
+    const serviceId = dish.serviceId?.trim() || undefined;
+    const dayLabel = dish.dayLabel?.trim() || '';
+    const mealLabel = dish.mealLabel?.trim() || fallbackMealLabel;
+    const pax = Math.max(0, Number(dish.servicePax) || fallbackPax);
+    const key = serviceId
+      ? `service:${serviceId}`
+      : `meal:${normalizePart(dayLabel)}::${normalizePart(mealLabel)}`;
+    const existing = meals.get(key);
+
+    if (existing) {
+      existing.pax = Math.max(existing.pax, pax);
+      if (!existing.dishIds.includes(dish.id)) {
+        existing.dishIds.push(dish.id);
+      }
+      return;
+    }
+
+    meals.set(key, {
+      key,
+      serviceId,
+      dayLabel,
+      mealLabel,
+      pax,
+      dishIds: [dish.id],
+    });
   });
+
+  if (meals.size === 0) {
+    meals.set('event:default', {
+      key: 'event:default',
+      dayLabel: '',
+      mealLabel: fallbackMealLabel,
+      pax: fallbackPax,
+      dishIds: [],
+    });
+  }
+
+  return Array.from(meals.values());
+}
+
+function rowBelongsToMeal(row: ManpowerRow, meal: MealPlan) {
+  const rowServiceId = row.serviceId?.trim();
+
+  if (rowServiceId && meal.serviceId) {
+    return rowServiceId === meal.serviceId;
+  }
+
+  return (
+    normalizePart(row.dayLabel) === normalizePart(meal.dayLabel) &&
+    normalizePart(row.mealLabel) === normalizePart(meal.mealLabel)
+  );
+}
+
+function isLegacyGlobalRow(row: ManpowerRow) {
+  return !(
+    row.serviceId?.trim() ||
+    row.dayLabel?.trim() ||
+    row.mealLabel?.trim()
+  );
+}
+
+function buildMealManpowerRows(
+  savedRows: ManpowerRow[],
+  meals: MealPlan[],
+): ManpowerRow[] {
+  return meals.flatMap((meal, mealIndex) =>
+    MANPOWER_ROLES.map((template) => {
+      const aliases = new Set(template.aliases.map(normalizeRole));
+      const roleMatches = savedRows.filter((row) =>
+        aliases.has(normalizeRole(row.role)),
+      );
+      const scopedMatches = roleMatches.filter((row) =>
+        rowBelongsToMeal(row, meal),
+      );
+      const legacyMatches = roleMatches.filter(isLegacyGlobalRow);
+      const quantitySource =
+        scopedMatches.length > 0
+          ? scopedMatches
+          : mealIndex === 0
+            ? legacyMatches
+            : [];
+      const quantity = quantitySource.reduce(
+        (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
+        0,
+      );
+      const savedRate = [
+        ...scopedMatches,
+        ...roleMatches,
+      ]
+        .map((row) => Math.max(0, Number(row.rate) || 0))
+        .find((rate) => rate > 0);
+
+      return {
+        id: `${meal.key}::${template.id}`,
+        role: template.role,
+        quantity,
+        rate: savedRate ?? template.rate,
+        rateMode: 'PER_MEAL',
+        serviceId: meal.serviceId,
+        dayLabel: meal.dayLabel || undefined,
+        mealLabel: meal.mealLabel,
+        servicePax: meal.pax,
+        assignedDishIds: meal.dishIds,
+      } satisfies ManpowerRow;
+    }),
+  );
 }
 
 function money(value: number) {
@@ -139,7 +247,8 @@ export default function ManpowerPage() {
     setSession(current);
 
     const savedWork = loadWork(current.tenantId);
-    const manpower = normalizeRows(savedWork.manpower);
+    const meals = buildMealPlans(savedWork);
+    const manpower = buildMealManpowerRows(savedWork.manpower, meals);
     const nextWork: WorkState = {
       ...savedWork,
       manpower,
@@ -158,6 +267,11 @@ export default function ManpowerPage() {
     saveWork(current.tenantId, nextWork);
   }, [router]);
 
+  const meals = useMemo(
+    () => (work ? buildMealPlans(work) : []),
+    [work],
+  );
+
   const manpowerTotal = useMemo(
     () => (work ? calculateManpowerCost(work.manpower) : 0),
     [work],
@@ -171,6 +285,10 @@ export default function ManpowerPage() {
       ) ?? 0,
     [work],
   );
+
+  function rowsForMeal(meal: MealPlan) {
+    return work?.manpower.filter((row) => rowBelongsToMeal(row, meal)) ?? [];
+  }
 
   function persistRows(rows: ManpowerRow[]) {
     if (!work || !session) return;
@@ -249,7 +367,7 @@ export default function ManpowerPage() {
 
   if (!work) {
     return (
-      <AppShell title="Manpower" subtitle="Step 2 of 2: set manpower quantity and rate">
+      <AppShell title="Manpower" subtitle="Step 2 of 2: set manpower for each meal">
         <div className="loader-card">Loading manpower…</div>
       </AppShell>
     );
@@ -258,20 +376,24 @@ export default function ManpowerPage() {
   return (
     <AppShell
       title="Manpower"
-      subtitle="Step 2 of 2: enter quantity and rate, then download the costing PDF"
+      subtitle="Step 2 of 2: set meal-wise manpower, then download the costing PDF"
     >
       <section className="content-grid manpower-page">
         <div className="manpower-overview manpower-overview-v2">
           <div className="manpower-overview-copy">
-            <span className="page-eyebrow">Simple manpower costing</span>
-            <h2>Manpower Rate & Quantity</h2>
-            <p>Set the number of people and per-person rate. Total manpower cost updates automatically.</p>
+            <span className="page-eyebrow">Meal-wise manpower costing</span>
+            <h2>Manpower by Meal</h2>
+            <p>
+              Set Chef, Helper, Waiter and specialist manpower separately for every meal. Each meal is costed independently.
+            </p>
           </div>
 
           <div className="manpower-overview-total">
             <span>Total manpower cost</span>
             <b>{money(manpowerTotal)}</b>
-            <small>{totalPeople} total people</small>
+            <small>
+              {meals.length} meal{meals.length === 1 ? '' : 's'} · {totalPeople} manpower assignments
+            </small>
             <button
               className="primary-button workflow-overview-button"
               type="button"
@@ -283,133 +405,151 @@ export default function ManpowerPage() {
           </div>
         </div>
 
-        <div className="glass-card manpower-planner-card">
-          <div className="section-head manpower-planner-heading">
-            <div>
-              <div className="section-kicker">Manpower Index</div>
-              <h2>Role, Quantity & Rate</h2>
-              <p className="muted">Set only the manpower you need for this event.</p>
-            </div>
-          </div>
+        {meals.map((meal, mealIndex) => {
+          const mealRows = rowsForMeal(meal);
+          const mealTotal = calculateManpowerCost(mealRows);
+          const mealPeople = mealRows.reduce(
+            (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
+            0,
+          );
+          const mealTitle = [meal.dayLabel, meal.mealLabel]
+            .filter(Boolean)
+            .join(' · ');
 
-          <div className="table-wrap manpower-table-wrap">
-            <table className="manpower-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Manpower</th>
-                  <th>Quantity</th>
-                  <th>Rate / person</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {work.manpower.map((row, index) => (
-                  <tr
+          return (
+            <div className="glass-card manpower-planner-card" key={meal.key}>
+              <div className="section-head manpower-planner-heading">
+                <div>
+                  <div className="section-kicker">
+                    Meal {mealIndex + 1} · {meal.pax.toLocaleString('en-IN')} guests
+                  </div>
+                  <h2>{mealTitle || `Meal ${mealIndex + 1}`}</h2>
+                  <p className="muted">
+                    Enter manpower only for this meal. Meal manpower total: {money(mealTotal)} · {mealPeople} people
+                  </p>
+                </div>
+              </div>
+
+              <div className="table-wrap manpower-table-wrap">
+                <table className="manpower-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Manpower</th>
+                      <th>Quantity</th>
+                      <th>Rate / person</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mealRows.map((row, index) => (
+                      <tr
+                        key={row.id}
+                        className={Number(row.quantity) > 0 ? 'is-active' : ''}
+                      >
+                        <td><b>{index + 1}</b></td>
+                        <td><b>{row.role}</b></td>
+                        <td>
+                          <QuantityControl
+                            row={row}
+                            onChange={(quantity) => updateRow(row.id, { quantity })}
+                          />
+                        </td>
+                        <td>
+                          <label className="manpower-rate-input">
+                            <span aria-hidden="true">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              inputMode="decimal"
+                              value={row.rate || ''}
+                              onChange={(event) =>
+                                updateRow(row.id, {
+                                  rate: Math.max(0, Number(event.target.value) || 0),
+                                })
+                              }
+                              aria-label={`Rate for ${row.role} in ${meal.mealLabel}`}
+                            />
+                          </label>
+                        </td>
+                        <td><strong>{money(manpowerRawCost(row))}</strong></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="manpower-role-cards">
+                {mealRows.map((row, index) => (
+                  <article
                     key={row.id}
-                    className={Number(row.quantity) > 0 ? 'is-active' : ''}
+                    className={`manpower-role-card ${Number(row.quantity) > 0 ? 'is-active' : ''}`}
                   >
-                    <td><b>{index + 1}</b></td>
-                    <td><b>{row.role}</b></td>
-                    <td>
-                      <QuantityControl
-                        row={row}
-                        onChange={(quantity) => updateRow(row.id, { quantity })}
-                      />
-                    </td>
-                    <td>
-                      <label className="manpower-rate-input">
-                        <span aria-hidden="true">₹</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          inputMode="decimal"
-                          value={row.rate || ''}
-                          onChange={(event) =>
-                            updateRow(row.id, {
-                              rate: Math.max(0, Number(event.target.value) || 0),
-                            })
-                          }
-                          aria-label={`Rate for ${row.role}`}
+                    <div className="manpower-role-card-heading">
+                      <div>
+                        <small>#{index + 1}</small>
+                        <b>{row.role}</b>
+                      </div>
+                    </div>
+
+                    <div className="manpower-role-card-fields">
+                      <div className="field">
+                        <label>Quantity</label>
+                        <QuantityControl
+                          row={row}
+                          onChange={(quantity) => updateRow(row.id, { quantity })}
                         />
-                      </label>
-                    </td>
-                    <td><strong>{money(manpowerRawCost(row))}</strong></td>
-                  </tr>
+                      </div>
+
+                      <div className="field">
+                        <label htmlFor={`rate-${row.id}`}>Rate / person</label>
+                        <label className="manpower-rate-input" htmlFor={`rate-${row.id}`}>
+                          <span aria-hidden="true">₹</span>
+                          <input
+                            id={`rate-${row.id}`}
+                            type="number"
+                            min="0"
+                            step="1"
+                            inputMode="decimal"
+                            value={row.rate || ''}
+                            onChange={(event) =>
+                              updateRow(row.id, {
+                                rate: Math.max(0, Number(event.target.value) || 0),
+                              })
+                            }
+                          />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="manpower-role-card-total">
+                      <span>Total</span>
+                      <strong>{money(manpowerRawCost(row))}</strong>
+                    </div>
+                  </article>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          );
+        })}
 
-          <div className="manpower-role-cards">
-            {work.manpower.map((row, index) => (
-              <article
-                key={row.id}
-                className={`manpower-role-card ${Number(row.quantity) > 0 ? 'is-active' : ''}`}
-              >
-                <div className="manpower-role-card-heading">
-                  <div>
-                    <small>#{index + 1}</small>
-                    <b>{row.role}</b>
-                  </div>
-                </div>
-
-                <div className="manpower-role-card-fields">
-                  <div className="field">
-                    <label>Quantity</label>
-                    <QuantityControl
-                      row={row}
-                      onChange={(quantity) => updateRow(row.id, { quantity })}
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor={`rate-${row.id}`}>Rate / person</label>
-                    <label className="manpower-rate-input" htmlFor={`rate-${row.id}`}>
-                      <span aria-hidden="true">₹</span>
-                      <input
-                        id={`rate-${row.id}`}
-                        type="number"
-                        min="0"
-                        step="1"
-                        inputMode="decimal"
-                        value={row.rate || ''}
-                        onChange={(event) =>
-                          updateRow(row.id, {
-                            rate: Math.max(0, Number(event.target.value) || 0),
-                          })
-                        }
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <div className="manpower-role-card-total">
-                  <span>Total</span>
-                  <strong>{money(manpowerRawCost(row))}</strong>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <div className="action-row page-actions">
-            <button
-              className="primary-button"
-              type="button"
-              onClick={() => void downloadPdf()}
-              disabled={pdfBusy}
-            >
-              {pdfBusy ? 'Preparing PDF…' : 'Next: Download PDF'}
-            </button>
-            <button
-              className="ghost-button"
-              type="button"
-              onClick={() => router.push('/app/menu')}
-            >
-              Back to Detected Menu
-            </button>
-          </div>
+        <div className="action-row page-actions">
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => void downloadPdf()}
+            disabled={pdfBusy}
+          >
+            {pdfBusy ? 'Preparing PDF…' : 'Next: Download PDF'}
+          </button>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => router.push('/app/menu')}
+          >
+            Back to Detected Menu
+          </button>
         </div>
       </section>
     </AppShell>
