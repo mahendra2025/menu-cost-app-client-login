@@ -1,0 +1,9 @@
+.menu { max-width: 960px; margin: 0 auto; padding: 8px 0 32px; }
+.actions { margin-bottom: 24px; }
+.actions a { color: var(--blue); font-size: 14px; font-weight: 600; text-underline-offset: 4px; }
+.actions a:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
+.category { padding: 20px 0; border-top: 1px solid var(--border); }
+.category h2 { margin: 0 0 12px; color: var(--blue); font-size: 20px; font-weight: 700; }
+.category ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 32px; margin: 0; padding: 0; list-style: none; }
+.category li { color: var(--text); font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .category ul { grid-template-columns: 1fr; } .category { padding: 16px 0; } }

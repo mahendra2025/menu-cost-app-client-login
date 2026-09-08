@@ -994,6 +994,16 @@ export default function EventPage() {
       );
 
       setWork(savedWork);
+      try {
+        const cached = JSON.parse(sessionStorage.getItem(`menu-detection:${currentSession.tenantId}`) || 'null');
+        if (cached?.rawMenuText === savedWork.event.rawMenuText && Array.isArray(cached?.preview?.menu)) {
+          setDetectionPreview(cached.preview);
+          setSelectedPreviewIds(new Set(cached.preview.menu.filter((item: MenuItem) => (Number(item.detectionConfidence) || 100) >= 45).map((item: MenuItem) => item.id)));
+        }
+      } catch {
+        // An unavailable or outdated preview can be detected again from the saved menu.
+      }
+
       setImportFunctionName(
         savedWork.menu.length
           ? ''
@@ -3462,9 +3472,10 @@ export default function EventPage() {
     setError('');
   }
 
-  async function detectAndNext() {
+  async function detectAndNext(uploadWork?: WorkState) {
+    const detectionWork = uploadWork ?? work;
     if (
-      !work ||
+      !detectionWork ||
       !session ||
       detecting
     ) {
@@ -3472,7 +3483,7 @@ export default function EventPage() {
     }
 
     const rawMenuText =
-      work.event.rawMenuText.trim();
+      detectionWork.event.rawMenuText.trim();
 
     setError('');
     setManualRateIds(new Set());
@@ -3498,7 +3509,7 @@ export default function EventPage() {
     }
 
     const functionName =
-      importFunctionName.trim();
+      importFunctionName.trim() || (uploadWork ? detectionWork.event.functionType || 'Event Menu' : '');
 
     if (!functionName) {
       setError(
@@ -3511,6 +3522,7 @@ export default function EventPage() {
     setDetecting(true);
 
     try {
+      if (uploadWork) sessionStorage.removeItem(`menu-detection:${session.tenantId}`);
       /*
        * Refresh the PostgreSQL-backed dish catalog before parsing.
        * This ensures newly added Admin dishes can be detected even
@@ -4439,6 +4451,7 @@ export default function EventPage() {
       );
 
       if (!detectedMenu.length) {
+        setUploadStatus('');
         setError(
           'No likely dishes were found. Check the extracted menu text and try again.',
         );
@@ -4833,7 +4846,7 @@ export default function EventPage() {
             possibleMissedDishes.length,
 
           source:
-            work.event.uploadFileName
+            detectionWork.event.uploadFileName
               ? 'upload'
               : 'text',
           detectionMode:
@@ -4883,6 +4896,16 @@ export default function EventPage() {
         ),
       );
 
+      if (uploadWork) {
+        sessionStorage.setItem(`menu-detection:${session.tenantId}`, JSON.stringify({
+          rawMenuText,
+          preview: { menu: detectedMenu, possibleMissed: possibleMissedDishes,
+            eventDetails: detectedDetails, source: detectionSource },
+        }));
+        router.push('/app/menu');
+        return;
+      }
+
       window.setTimeout(() => {
         document
           .getElementById(
@@ -4894,6 +4917,7 @@ export default function EventPage() {
           });
       }, 50);
     } catch (detectError) {
+      setUploadStatus('');
       console.error(
         'Menu detection error:',
         detectError,
@@ -5140,7 +5164,7 @@ export default function EventPage() {
     }
   }
 
-  function saveExtractedMenu(
+  async function saveExtractedMenu(
     fileName: string,
     extractedText: string,
     sourceLabel: string,
@@ -5196,8 +5220,10 @@ export default function EventPage() {
     setUploadStatus(
       detectedDetailCount > 0
         ? `${sourceLabel} read successfully. ${detectedDetailCount} event detail${detectedDetailCount === 1 ? '' : 's'} found and empty fields were filled.`
-        : `${sourceLabel} read successfully. Review the extracted text below, then continue.`,
+        : `${sourceLabel} read successfully. Detecting dishes…`,
     );
+    setUploadStatus('Detecting dishes and grouping them by category…');
+    await detectAndNext(nextWork);
   }
 
   async function scoreExtractedMenu(
@@ -5241,7 +5267,7 @@ export default function EventPage() {
           scoreExtractedMenu,
         );
 
-      saveExtractedMenu(
+      await saveExtractedMenu(
         file.name,
         result.text,
         result.sourceLabel,
@@ -5285,7 +5311,7 @@ export default function EventPage() {
           scoreExtractedMenu,
         );
 
-      saveExtractedMenu(
+      await saveExtractedMenu(
         file.name,
         result.text,
         result.sourceLabel,
@@ -6660,7 +6686,7 @@ export default function EventPage() {
                     <span className="menu-upload-icon" aria-hidden="true">PDF</span>
                     <div>
                       <b id="upload-menu-title">Upload menu</b>
-                      <p>Import a PDF or menu photo. We’ll extract the text so you can review it before detecting dishes.</p>
+                      <p>Import a PDF or menu photo. We’ll automatically detect dishes and show them by category on the next page.</p>
                     </div>
                   </div>
 
@@ -6694,7 +6720,7 @@ export default function EventPage() {
                 <div className="menu-upload-status" role="status" aria-live="polite">
                   <span className={uploading ? 'upload-spinner' : 'upload-check'} aria-hidden="true" />
                   <div>
-                    <b>{uploading === 'pdf' ? 'Reading your menu PDF' : uploading === 'photo' ? 'Reading your menu photo' : detecting ? 'Detecting dishes' : 'Menu imported successfully'}</b>
+                    <b>{detecting ? 'Detecting dishes' : uploading === 'pdf' ? 'Reading your menu PDF' : uploading === 'photo' ? 'Reading your menu photo' : 'Menu imported successfully'}</b>
                     <p>{uploadStatus}</p>
                     {work.event.uploadFileName && !uploading ? (
                       <small>{work.event.uploadFileName}</small>
@@ -10635,7 +10661,7 @@ Gulab Jamun`}
               <button
                 className="primary-button"
                 type="button"
-                onClick={detectAndNext}
+                onClick={() => void detectAndNext()}
                 disabled={detecting || Boolean(uploading) || !work.event.rawMenuText.trim()}
               >
                 {detecting
