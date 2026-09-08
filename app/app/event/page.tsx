@@ -1533,7 +1533,7 @@ export default function EventPage() {
     );
 
     window.location.assign(
-      '/app/cost',
+      '/app/manpower',
     );
   }
 
@@ -4883,235 +4883,16 @@ export default function EventPage() {
         ),
       );
 
-      /*
-       * Direct Menu Detection Flow
-       *
-       * Detection is now the menu-building step.
-       * Once dishes are detected, save them
-       * immediately and continue to Cost.
-       *
-       * The Cost page already provides editable
-       * ₹/plate inputs, so unknown/new dishes can
-       * be priced there instead of forcing a
-       * separate detection-review screen.
-       */
-
-      try {
-        const usageResponse =
-          await fetch(
-            `/api/client/free-usage?costingId=${encodeURIComponent(
-              work.costingId,
-            )}`,
-            {
-              cache: 'no-store',
-            },
-          );
-
-        if (!usageResponse.ok) {
-          setError(
-            'Could not verify your costing allowance. Please try again.',
-          );
-
-          return;
-        }
-
-        const usage =
-          await usageResponse.json();
-
-        if (
-          !usage.canUseCurrentCosting
-        ) {
-          setFreeLimitBlocked(
-            true,
-          );
-
-          setError(
-            'Your 5 free costings are used. Upgrade to Pro to start a new costing.',
-          );
-
-          return;
-        }
-      } catch {
-        setError(
-          'Could not verify your costing allowance. Please try again.',
-        );
-
-        return;
-      }
-
-      /*
-       * Every item reaching detectedMenu has
-       * already passed the detection/evidence
-       * pipeline.
-       *
-       * Low-confidence local noise was removed
-       * earlier, so all remaining detected dishes
-       * can safely be taken to costing.
-       */
-      const directMenu =
-        detectedMenu.filter(
-          (item) =>
-            item.coverageStatus !==
-            'REJECTED',
-        );
-
-      const {
-        menu: mergedMenu,
-        newItems: newFunctionItems,
-      } = mergeFunctionMenu({
-        existingMenu:
-          work.menu,
-        detectedMenu:
-          directMenu,
-        functionName,
-        functionPax:
-          Number(importFunctionPax) || 0,
-        defaultPax:
-          Number(work.event.pax) || 0,
-      });
-
-      const nextWork:
-        WorkState = {
-          ...work,
-
-          event:
-            mergeDetectedEventDetails(
-              work.event,
-              detectedDetails,
-            ),
-
-          menu:
-            mergedMenu,
-        };
-
-      /*
-       * Continue feeding genuinely new dishes
-       * to Admin > New Dishes.
-       *
-       * Admin-learning failure must not block
-       * the caterer from reaching Cost.
-       */
-      try {
-        const newDishCandidates =
-          directMenu
-            .filter(
-              (item) =>
-                pendingMenuIds.has(
-                  item.id,
-                ),
-            )
-            .map(
-              (item) => ({
-                name:
-                  item.name,
-
-                categoryHint:
-                  item.category ||
-                  'Other',
-              }),
-            );
-
-        if (
-          newDishCandidates.length
-        ) {
-          const suggestionResponse =
-            await fetch(
-              '/api/dish-suggestions',
-              {
-                method:
-                  'POST',
-
-                headers: {
-                  'Content-Type':
-                    'application/json',
-                },
-
-                body:
-                  JSON.stringify({
-                    sourceFileName:
-                      work.event
-                        .uploadFileName ||
-                      'Pasted menu',
-
-                    candidates:
-                      newDishCandidates,
-                  }),
-              },
-            );
-
-          if (
-            !suggestionResponse.ok
-          ) {
-            console.warn(
-              'New-dish admin queue could not be updated.',
-            );
-          }
-        }
-      } catch (
-        suggestionError
-      ) {
-        console.warn(
-          'New-dish admin queue skipped:',
-          suggestionError,
-        );
-      }
-
-      /*
-       * Save locally first so /app/cost can
-       * render immediately after navigation.
-       */
-      persistWork(
-        nextWork,
-      );
-
-      flushWorkSave(
-        session.tenantId,
-      );
-
-      /*
-       * Also save the same detected menu
-       * to the server draft.
-       */
-      await flushDraftToServer(
-        session.tenantId,
-        nextWork,
-      );
-
-      const costingKey =
-        getCostingAnalyticsKey(
-          nextWork,
-        );
-
-      void trackProductEvent(
-        'menu_saved',
-        {
-          costingKey,
-
-          dishCount:
-            nextWork.menu.length,
-
-          importedDishCount:
-            newFunctionItems.length,
-
-          functionName,
-
-          mode:
-            'merge_function',
-        },
-        {
-          onceKey:
-            `menu_saved:${costingKey}`,
-        },
-      );
-
-      /*
-       * No intermediate Detected Menu screen.
-       */
-      window.location.assign(
-        '/app/cost',
-      );
-
-      return;
+      window.setTimeout(() => {
+        document
+          .getElementById(
+            'menuDetectionPreview',
+          )
+          ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+      }, 50);
     } catch (detectError) {
       console.error(
         'Menu detection error:',
@@ -5239,26 +5020,25 @@ export default function EventPage() {
       return;
     }
 
-    let nextMenu = selectedMenu;
+    const functionName =
+      importFunctionName.trim() ||
+      work.event.functionType ||
+      'Event Menu';
 
-    if (mode === 'merge') {
-      const existingKeys =
-        new Set(
-          work.menu.map(
-            menuItemIdentity,
-          ),
-        );
-
-      nextMenu = [
-        ...work.menu,
-        ...selectedMenu.filter(
-          (item) =>
-            !existingKeys.has(
-              menuItemIdentity(item),
-            ),
-        ),
-      ];
-    }
+    const { menu: nextMenu } =
+      mergeFunctionMenu({
+        existingMenu:
+          mode === 'merge'
+            ? work.menu
+            : [],
+        detectedMenu:
+          selectedMenu,
+        functionName,
+        functionPax:
+          Number(importFunctionPax) || 0,
+        defaultPax:
+          Number(work.event.pax) || 0,
+      });
 
     const nextWork: WorkState = {
       ...work,
@@ -7357,7 +7137,7 @@ Gulab Jamun`}
                         void addManualMenuAndContinue()
                       }
                     >
-                      Add Selected & Continue to Cost
+                      Add Selected & Continue to Manpower
                     </button>
                   </div>
                 </div>
@@ -7391,23 +7171,39 @@ Gulab Jamun`}
                       {' '}AI recipe estimates are marked for review; unresolved dishes can continue with ₹0.
                     </p>
                   </div>
-                  <div className="menu-preview-metrics">
-                    <span><b>{selectedPreviewMenu.length}</b> selected</span>
-                    <span><b>{detectionPreviewGroups.length}</b> functions</span>
-                    <span>
-                      <b>
-                        {menuCoverageAudit.counts.COSTED}
-                      </b>{' '}
-                      costed
-                    </span>
-                    {detectionPreview.menu.some((item) => item.costSource === 'ai_recipe') ? (
-                      <span><b>{detectionPreview.menu.filter((item) => item.costSource === 'ai_recipe').length}</b> AI recipe</span>
-                    ) : null}
-                    {manualRateIds.size > 0 ? (
-                      <span className={selectedMissingManualRateCount > 0 ? 'needs-attention' : ''}>
-                        <b>{manualRateIds.size}</b> manual rate
+                  <div className="menu-preview-heading-actions">
+                    <button
+                      className="primary-button workflow-next-button"
+                      type="button"
+                      onClick={() =>
+                        applyDetectionPreview(
+                          work.menu.length > 0
+                            ? 'merge'
+                            : 'replace',
+                        )
+                      }
+                      disabled={!selectedPreviewMenu.length || !detectionReviewGateReady}
+                    >
+                      Next: Manpower
+                    </button>
+                    <div className="menu-preview-metrics">
+                      <span><b>{selectedPreviewMenu.length}</b> selected</span>
+                      <span><b>{detectionPreviewGroups.length}</b> functions</span>
+                      <span>
+                        <b>
+                          {menuCoverageAudit.counts.COSTED}
+                        </b>{' '}
+                        costed
                       </span>
-                    ) : null}
+                      {detectionPreview.menu.some((item) => item.costSource === 'ai_recipe') ? (
+                        <span><b>{detectionPreview.menu.filter((item) => item.costSource === 'ai_recipe').length}</b> AI recipe</span>
+                      ) : null}
+                      {manualRateIds.size > 0 ? (
+                        <span className={selectedMissingManualRateCount > 0 ? 'needs-attention' : ''}>
+                          <b>{manualRateIds.size}</b> manual rate
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
 

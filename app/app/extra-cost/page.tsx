@@ -133,7 +133,7 @@ export default function ExtraCostPage() {
   return (
     <AppShell
       title="Extra Cost"
-      subtitle="Step 3 of 6: add transport, gas/fuel and disposable supply costs"
+      subtitle="Step 3 of 4: add transport, gas/fuel and disposable supply costs"
     >
       <section className="content-grid">
         <div className="extra-cost-overview">
@@ -145,6 +145,13 @@ export default function ExtraCostPage() {
           <div className="extra-cost-overview-total">
             <span>Total extra cost</span>
             <b>{money(extraTotal)}</b>
+            <button
+              className="primary-button workflow-overview-button"
+              type="button"
+              onClick={() => router.push('/app/final-costing')}
+            >
+              Next: PDF
+            </button>
           </div>
         </div>
 
@@ -244,7 +251,7 @@ export default function ExtraCostPage() {
         </div>
 
         <div className="action-row page-actions">
-          <button className="primary-button" type="button" onClick={() => router.push('/app/cost')}>Next: Calculate Cost</button>
+          <button className="primary-button" type="button" onClick={() => router.push('/app/final-costing')}>Next: PDF</button>
           <button className="ghost-button" type="button" onClick={() => router.push('/app/manpower')}>Back to Manpower</button>
         </div>
       </section>

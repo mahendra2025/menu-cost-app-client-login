@@ -1587,7 +1587,7 @@ export default function ManpowerPage() {
   return (
     <AppShell
       title="Manpower"
-      subtitle="Step 2 of 6: plan every staff role function-wise"
+      subtitle="Step 2 of 4: plan every staff role function-wise"
     >
       <section className="content-grid manpower-page">
         <div className="manpower-overview manpower-overview-v2">
@@ -1606,6 +1606,13 @@ export default function ManpowerPage() {
             <span>Total manpower cost</span>
             <b>{money(manpowerTotal)}</b>
             <small>Included in final costing</small>
+            <button
+              className="primary-button workflow-overview-button"
+              type="button"
+              onClick={continueToExtraCost}
+            >
+              Next: Extra Cost
+            </button>
           </div>
           <div className="manpower-health" aria-label="Manpower planning status">
             <span><b>{peopleTotal}</b> staff assignments</span>

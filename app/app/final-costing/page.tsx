@@ -222,7 +222,7 @@ export default function FinalCostingPage() {
   return (
     <AppShell
       title="Final Costing"
-      subtitle="Step 5 of 6: set the selling price and review final profit"
+      subtitle="Step 4 of 4: review the final cost and download the PDF"
     >
       <section className="content-grid">
         <div className={`final-costing-overview ${finalCostReady ? 'is-ready' : ''}`}>
@@ -235,6 +235,14 @@ export default function FinalCostingPage() {
             <span>Total event cost</span>
             <b>{money(result.totalCost)}</b>
             <small>{result.totalCovers.toLocaleString('en-IN')} total covers</small>
+            <button
+              className="primary-button workflow-overview-button"
+              type="button"
+              onClick={downloadPdf}
+              disabled={pdfBusy}
+            >
+              {pdfBusy ? 'Preparing PDF…' : 'Download PDF'}
+            </button>
           </div>
         </div>
 
@@ -342,7 +350,7 @@ export default function FinalCostingPage() {
             Create Client Quotation
           </button>
           <button className="primary-button" type="button" onClick={() => router.push('/app/profile')}>Next: Profile</button>
-          <button className="ghost-button" type="button" onClick={() => router.push('/app/cost')}>Back to Cost</button>
+          <button className="ghost-button" type="button" onClick={() => router.push('/app/extra-cost')}>Back to Extra Cost</button>
         </div>
               <FinalCostingUsage tenantId={session.tenantId} work={work} />
 
