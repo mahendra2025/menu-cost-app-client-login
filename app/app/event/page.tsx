@@ -821,7 +821,7 @@ export default function EventPage() {
   const [freeLimitBlocked, setFreeLimitBlocked] = useState(false);
 
   const [uploading, setUploading] =
-    useState<'pdf' | null>(null);
+    useState<'pdf' | 'photo' | null>(null);
 
   const [uploadStatus, setUploadStatus] =
     useState('');
@@ -5481,6 +5481,77 @@ export default function EventPage() {
     }
   }
 
+  async function readPhoto(
+    file: File,
+  ) {
+    setError('');
+    setUploadStatus(
+      'Preparing menu photo...',
+    );
+    setUploading('photo');
+
+    try {
+      const {
+        extractMenuPhoto,
+      } =
+        await import(
+          '../../../lib/menuUploadProcessor'
+        );
+
+      const result =
+        await extractMenuPhoto(
+          file,
+          setUploadStatus,
+          scoreExtractedMenu,
+        );
+
+      saveExtractedMenu(
+        file.name,
+        result.text,
+        result.sourceLabel,
+      );
+    } catch (uploadError) {
+      setUploadStatus('');
+
+      setError(
+        uploadError instanceof Error
+          ? uploadError.message
+          : 'The photo could not be read. Please try another file.',
+      );
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  async function uploadMenuFile(
+    file: File,
+  ) {
+    const isPdf =
+      file.type ===
+        'application/pdf' ||
+      file.name
+        .toLowerCase()
+        .endsWith('.pdf');
+
+    if (isPdf) {
+      await readPdf(file);
+      return;
+    }
+
+    if (
+      file.type.startsWith(
+        'image/',
+      )
+    ) {
+      await readPhoto(file);
+      return;
+    }
+
+    setError(
+      'Choose a PDF, JPEG, PNG, or WebP menu file.',
+    );
+  }
+
   function useSampleMenu() {
     if (!work) return;
     if (work.event.rawMenuText.trim() && !window.confirm('Replace the current menu text with the sample format?')) return;
@@ -6803,11 +6874,47 @@ export default function EventPage() {
                 </p>
               </div>
 
+              <div className="menu-upload-options">
+                <section className="menu-upload-option" aria-labelledby="upload-menu-title">
+                  <div className="menu-upload-heading">
+                    <span className="menu-upload-icon" aria-hidden="true">PDF</span>
+                    <div>
+                      <b id="upload-menu-title">Upload menu</b>
+                      <p>Import a PDF or menu photo. We’ll extract the text so you can review it before detecting dishes.</p>
+                    </div>
+                  </div>
+
+                  <input
+                    id="menuFileUpload"
+                    className="visually-hidden-file"
+                    type="file"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    disabled={Boolean(uploading)}
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0];
+                      event.currentTarget.value = '';
+
+                      if (file) {
+                        void uploadMenuFile(file);
+                      }
+                    }}
+                  />
+                  <label
+                    className={`primary-button menu-upload-button${uploading ? ' is-loading' : ''}`}
+                    htmlFor="menuFileUpload"
+                    aria-disabled={Boolean(uploading)}
+                  >
+                    <b>{uploading ? 'Reading menu…' : 'Choose menu file'}</b>
+                    <small>PDF, JPEG, PNG or WebP</small>
+                  </label>
+                </section>
+              </div>
+
               {uploadStatus ? (
                 <div className="menu-upload-status" role="status" aria-live="polite">
                   <span className={uploading ? 'upload-spinner' : 'upload-check'} aria-hidden="true" />
                   <div>
-                    <b>{uploading ? 'Reading your menu photo' : detecting ? 'Detecting dishes' : 'Menu imported successfully'}</b>
+                    <b>{uploading === 'pdf' ? 'Reading your menu PDF' : uploading === 'photo' ? 'Reading your menu photo' : detecting ? 'Detecting dishes' : 'Menu imported successfully'}</b>
                     <p>{uploadStatus}</p>
                     {work.event.uploadFileName && !uploading ? (
                       <small>{work.event.uploadFileName}</small>

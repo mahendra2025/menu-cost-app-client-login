@@ -1766,6 +1766,21 @@ a { color: inherit; text-decoration: none; }
 .menu-photo-actions > label { display: grid; place-content: center; gap: 2px; width: 100%; min-height: 54px; padding: 8px 12px; text-align: center; cursor: pointer; }
 .menu-photo-actions > label b { margin: 0; font-size: 12px; }
 .menu-photo-actions > label small { color: inherit; font-size: 9px; font-weight: 650; opacity: .72; }
+.menu-upload-button {
+  display: grid;
+  place-content: center;
+  gap: 2px;
+  min-height: 54px;
+  text-align: center;
+  cursor: pointer;
+}
+.menu-upload-button b { font-size: 12px; }
+.menu-upload-button small { color: inherit; font-size: 9px; font-weight: 650; opacity: .72; }
+.menu-upload-button.is-loading { cursor: wait; opacity: .72; }
+.visually-hidden-file:focus-visible + .menu-upload-button {
+  outline: 3px solid rgba(74, 156, 255, .42);
+  outline-offset: 3px;
+}
 .menu-photo-help { display: grid; gap: 3px; padding: 11px 12px; border: 1px solid rgba(148, 163, 184, .16); border-radius: 11px; background: rgba(15, 23, 42, .04); }
 .menu-photo-help b { font-size: 10px; }
 .menu-photo-help span { color: var(--muted); font-size: 10px; line-height: 1.45; }
