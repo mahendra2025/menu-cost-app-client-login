@@ -28,6 +28,10 @@ function roundUpRupee(value: number) {
   return Math.ceil(Math.max(0, value));
 }
 
+/**
+ * Converts an event cost into one average selling rate per meal cover.
+ * Markup uses cost as the denominator; gross margin uses selling price.
+ */
 export function calculateSellingPrice({
   totalCost,
   totalCovers,
