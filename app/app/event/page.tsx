@@ -6631,9 +6631,12 @@ export default function EventPage() {
           <div className="form-grid">
             <div className="menu-source-workspace">
               <div className="menu-source-workspace-heading">
-                <div>
-                  <span>Function-by-function import</span>
-                  <h3>Add one function menu</h3>
+                <div className="event-import-step-title">
+                  <span aria-hidden="true">1</span>
+                  <div>
+                    <h3>Set up this function</h3>
+                    <p>Name the meal or celebration and confirm its guest count.</p>
+                  </div>
                 </div>
                 {work.menu.length > 0 ? (
                   <small>{work.menu.length} dishes already saved</small>
@@ -6653,8 +6656,9 @@ export default function EventPage() {
                       setError('');
                       setImportFunctionName(event.target.value);
                     }}
-                    placeholder="Breakfast / Lunch / Sangeet / Reception Dinner"
+                    placeholder="e.g. Sangeet dinner"
                   />
+                  <small>Use the name your team will recognise.</small>
                 </div>
 
                 <div className="field">
@@ -6673,20 +6677,30 @@ export default function EventPage() {
                     }
                     placeholder={work.event.pax > 0 ? String(work.event.pax) : '300'}
                   />
+                  <small>Used to calculate ingredient quantities.</small>
                 </div>
-
-                <p>
-                  Import only this function below. Previously saved functions stay in the event automatically.
-                </p>
               </div>
 
-              <div className="menu-upload-options">
+              <div className="event-import-step-heading">
+                <span aria-hidden="true">2</span>
+                <div>
+                  <h3>Add dishes for this function</h3>
+                  <p>Upload a menu or paste its text. You can review every detected dish before saving.</p>
+                </div>
+              </div>
+
+              <div className="event-menu-source-grid">
+                <div className="menu-upload-options">
                 <section className="menu-upload-option" aria-labelledby="upload-menu-title">
                   <div className="menu-upload-heading">
-                    <span className="menu-upload-icon" aria-hidden="true">PDF</span>
+                    <span className="menu-upload-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" />
+                      </svg>
+                    </span>
                     <div>
-                      <b id="upload-menu-title">Upload menu</b>
-                      <p>Import a PDF or menu photo. We’ll automatically detect dishes and show them by category on the next page.</p>
+                      <b id="upload-menu-title">Upload a menu</b>
+                      <p>Best for a PDF, printed menu or phone photo.</p>
                     </div>
                   </div>
 
@@ -6710,10 +6724,53 @@ export default function EventPage() {
                     htmlFor="menuFileUpload"
                     aria-disabled={Boolean(uploading)}
                   >
-                    <b>{uploading ? 'Reading menu…' : 'Choose menu file'}</b>
-                    <small>PDF, JPEG, PNG or WebP</small>
+                    <b>{uploading ? 'Reading menu…' : 'Choose PDF or photo'}</b>
+                    <small>PDF up to 15 MB · photos up to 20 MB</small>
                   </label>
                 </section>
+                </div>
+
+                <div className="field menu-text-field">
+                    <div className="event-menu-text-heading">
+                      <div>
+                        <span className="menu-paste-icon" aria-hidden="true">Aa</span>
+                        <div>
+                          <label htmlFor="rawMenuText">Paste menu text</label>
+                          <small>Best when you already have the menu in WhatsApp or a document.</small>
+                        </div>
+                      </div>
+                      <div>
+                        <button className="event-text-action" type="button" onClick={useSampleMenu}>Use sample</button>
+                        {work.event.rawMenuText ? <button className="event-text-action danger" type="button" onClick={clearMenuText}>Clear</button> : null}
+                      </div>
+                    </div>
+
+                    <textarea
+                      id="rawMenuText"
+                      className="textarea textarea-large"
+                      value={work.event.rawMenuText}
+                      onChange={(event) => {
+                        setError('');
+                        setDetectedEventDetails({});
+                        setDetectionPreview(null);
+                        setSelectedPreviewIds(new Set());
+                        updateEvent('rawMenuText', event.target.value);
+                      }}
+                      placeholder={`Paste one dish per line, for example:
+
+Welcome drinks
+Orange juice
+Jal jeera
+
+Starters
+Paneer tikka
+Hara bhara kebab`}
+                    />
+                    <div className="event-text-meta">
+                      <span>{menuLines ? `${menuLines} menu lines` : 'No menu text yet'}</span>
+                      <span>English, Roman Hindi, हिन्दी or ગુજરાતી</span>
+                    </div>
+                </div>
               </div>
 
               {uploadStatus ? (
@@ -6753,64 +6810,11 @@ export default function EventPage() {
                 </div>
               ) : null}
 
-              <div className="field menu-text-field">
-                  <div className="event-menu-text-heading">
-                    <label htmlFor="rawMenuText">Menu text</label>
-                    <div>
-                      <button className="event-text-action" type="button" onClick={useSampleMenu}>Use sample</button>
-                      {work.event.rawMenuText ? <button className="event-text-action danger" type="button" onClick={clearMenuText}>Clear</button> : null}
-                    </div>
-                  </div>
-
-                  <textarea
-                    id="rawMenuText"
-                    className="textarea textarea-large"
-                    value={work.event.rawMenuText}
-                    onChange={(event) => {
-                      setError('');
-                      setDetectedEventDetails({});
-                      setDetectionPreview(null);
-                      setSelectedPreviewIds(new Set());
-                      updateEvent('rawMenuText', event.target.value);
-                    }}
-                    placeholder={`Welcome Drink
-Orange Juice
-
-Starter
-Paneer Tikka
-Hara Bhara Kebab
-
-Main Course
-Paneer Butter Masala
-Special Maharaja Sabji
-Dal Fry
-Jeera Rice
-Butter Naan
-
-Sweet
-Gulab Jamun`}
-                  />
-                  <div className="event-text-meta">
-                    <span>{menuLines} non-empty lines • {work.event.rawMenuText.length.toLocaleString('en-IN')} characters</span>
-                    <span>English • Roman Hindi • Hindi • Gujarati</span>
-                  </div>
-              </div>
-
               <div
-                style={{
-                  display:
-                    'flex',
-                  gap: '8px',
-                  flexWrap:
-                    'wrap',
-                  alignItems:
-                    'center',
-                  marginTop:
-                    '10px',
-                }}
+                className="event-manual-menu-row"
               >
                 <button
-                  className="secondary-button"
+                  className="ghost-button"
                   type="button"
                   disabled={
                     manualDishLoading
@@ -6821,17 +6825,10 @@ Gulab Jamun`}
                 >
                   {manualDishLoading
                     ? 'Loading Dishes…'
-                    : '☰ Select Dishes Manually'}
+                    : 'Browse Dish Master'}
                 </button>
 
-                <small
-                  style={{
-                    color:
-                      '#8995a4',
-                  }}
-                >
-                  Or choose dishes directly from Dish Master
-                </small>
+                <small>Already costed these dishes? Add them directly without detection.</small>
               </div>
 
               {showManualDishSelector ? (
@@ -10658,6 +10655,17 @@ Gulab Jamun`}
             ) : null}
 
             <div className="action-row event-detect-action">
+              <div className="event-detect-copy">
+                <span aria-hidden="true">3</span>
+                <div>
+                  <b>Review detected dishes</b>
+                  <small>
+                    {work.event.rawMenuText.trim()
+                      ? `${menuLines} menu lines are ready to check.`
+                      : 'Upload a menu or paste text to continue.'}
+                  </small>
+                </div>
+              </div>
               <button
                 className="primary-button"
                 type="button"
@@ -10668,7 +10676,7 @@ Gulab Jamun`}
                   ? 'Detecting Dishes...'
                   : detectionPreview
                     ? 'Refresh Detection Preview'
-                    : `Detect & Add Function${menuLines > 0 ? ` • ${menuLines} lines` : ''}`}
+                    : 'Detect dishes'}
               </button>
             </div>
           </div>
