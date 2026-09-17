@@ -76,3 +76,37 @@ test(
     assert.equal(second.newItems.length, 0);
   },
 );
+
+test(
+  'preserves multiple detected functions and their guest counts from one upload',
+  () => {
+    const breakfast: MenuItem = {
+      ...dish('breakfast-poha', 'Poha', 'Breakfast'),
+      serviceId: 'detected_breakfast',
+      servicePax: 100,
+    };
+
+    const lunch: MenuItem = {
+      ...dish('lunch-paneer', 'Paneer Butter Masala', 'Lunch'),
+      serviceId: 'detected_lunch',
+      servicePax: 150,
+    };
+
+    const result =
+      mergeFunctionMenu({
+        existingMenu: [],
+        detectedMenu: [breakfast, lunch],
+        functionName: 'Event Menu',
+        functionPax: 0,
+        defaultPax: 300,
+      });
+
+    assert.equal(result.menu.length, 2);
+    assert.equal(result.newItems[0].mealLabel, 'Breakfast');
+    assert.equal(result.newItems[0].serviceId, 'detected_breakfast');
+    assert.equal(result.newItems[0].servicePax, 100);
+    assert.equal(result.newItems[1].mealLabel, 'Lunch');
+    assert.equal(result.newItems[1].serviceId, 'detected_lunch');
+    assert.equal(result.newItems[1].servicePax, 150);
+  },
+);
