@@ -28,16 +28,13 @@ function displayPercent(value: number) {
   return `${value.toFixed(1).replace(/\.0$/, '')}%`;
 }
 
-function removeUnusedExtraCosts(work: WorkState): WorkState {
-  if (!work.extras.disposable && !work.extras.other) {
-    return work;
-  }
+function removeUnusedOtherCost(work: WorkState): WorkState {
+  if (!work.extras.other) return work;
 
   return {
     ...work,
     extras: {
       ...work.extras,
-      disposable: 0,
       other: 0,
     },
     updatedAt: new Date().toISOString(),
@@ -62,9 +59,8 @@ export default function FinalCostingPage() {
     }
 
     setSession(current);
-
     const savedWork = loadWork(current.tenantId);
-    const cleanWork = removeUnusedExtraCosts(savedWork);
+    const cleanWork = removeUnusedOtherCost(savedWork);
     setWork(cleanWork);
 
     if (cleanWork !== savedWork) {
@@ -97,18 +93,14 @@ export default function FinalCostingPage() {
   if (!work || !session || !costing) {
     return (
       <AppShell title="Pricing">
-        <div className="content-grid">
-          <div className="glass-card">Loading pricing…</div>
-        </div>
+        <div className="content-grid"><div className="glass-card">Loading pricing…</div></div>
       </AppShell>
     );
   }
 
   if (session.status === 'EXPIRED') {
     return (
-      <AppShell title="Pricing">
-        <LockedCard />
-      </AppShell>
+      <AppShell title="Pricing"><LockedCard /></AppShell>
     );
   }
 
@@ -122,8 +114,6 @@ export default function FinalCostingPage() {
   const priceReady = costReady && pricing.sellingPricePerCover > 0;
 
   function selectMode(nextMode: SellingPriceMode) {
-    if (!work) return;
-
     setMode(nextMode);
     setMessage('');
 
@@ -137,7 +127,7 @@ export default function FinalCostingPage() {
   }
 
   function savePrice(): WorkState | null {
-    if (!work || !session || !priceReady) return null;
+    if (!session || !priceReady) return null;
 
     const nextWork: WorkState = {
       ...work,
@@ -148,7 +138,6 @@ export default function FinalCostingPage() {
     setWork(nextWork);
     saveWork(session.tenantId, nextWork);
     setMessage(`${money(pricing.sellingPricePerCover)} per cover saved.`);
-
     return nextWork;
   }
 
@@ -167,16 +156,11 @@ export default function FinalCostingPage() {
         <div className={`final-costing-overview ${priceReady ? 'is-ready' : ''}`}>
           <div>
             <span className="page-eyebrow">Selling price engine</span>
-            <h2>
-              {priceReady
-                ? 'Your selling price is ready'
-                : 'Finish cost details before pricing'}
-            </h2>
+            <h2>{priceReady ? 'Your selling price is ready' : 'Finish cost details before pricing'}</h2>
             <p>
-              Food, manpower, LPG and transport form the event cost before markup or gross margin is applied.
+              Food, manpower, LPG, transport and plastic/disposable cost form the real event cost before markup or gross margin.
             </p>
           </div>
-
           <div className="final-costing-overview-total">
             <span>Total event cost</span>
             <b>{money(pricing.totalCost)}</b>
@@ -195,26 +179,10 @@ export default function FinalCostingPage() {
         </div>
 
         <div className="stat-grid">
-          <StatCard
-            label="Cost / Cover"
-            value={money(pricing.costPerCover)}
-            note={`Total cost ${money(pricing.totalCost)}`}
-          />
-          <StatCard
-            label="Selling / Cover"
-            value={money(pricing.sellingPricePerCover)}
-            note={`Quotation ${money(pricing.totalSelling)}`}
-          />
-          <StatCard
-            label="Expected Profit"
-            value={money(pricing.profit)}
-            note={`${displayPercent(pricing.markupPercent)} markup`}
-          />
-          <StatCard
-            label="Gross Margin"
-            value={displayPercent(pricing.marginPercent)}
-            note="Profit ÷ selling price"
-          />
+          <StatCard label="Cost / Cover" value={money(pricing.costPerCover)} note={`Total cost ${money(pricing.totalCost)}`} />
+          <StatCard label="Selling / Cover" value={money(pricing.sellingPricePerCover)} note={`Quotation ${money(pricing.totalSelling)}`} />
+          <StatCard label="Expected Profit" value={money(pricing.profit)} note={`${displayPercent(pricing.markupPercent)} markup`} />
+          <StatCard label="Gross Margin" value={displayPercent(pricing.marginPercent)} note="Profit ÷ selling price" />
         </div>
 
         <div className="glass-card final-selling-card">
@@ -222,35 +190,18 @@ export default function FinalCostingPage() {
             <div>
               <span className="section-kicker">Pricing method</span>
               <h2>Choose how to set your selling price</h2>
-              <p>
-                Markup adds a percentage to cost. Gross margin targets profit as a percentage of the final selling price.
-              </p>
+              <p>Markup adds a percentage to cost. Gross margin targets profit as a percentage of final selling price.</p>
             </div>
           </div>
 
           <div className="action-row">
-            <button
-              type="button"
-              className={mode === 'MARKUP' ? 'primary-button' : 'secondary-button'}
-              aria-pressed={mode === 'MARKUP'}
-              onClick={() => selectMode('MARKUP')}
-            >
+            <button type="button" className={mode === 'MARKUP' ? 'primary-button' : 'secondary-button'} onClick={() => selectMode('MARKUP')}>
               Markup on Cost
             </button>
-            <button
-              type="button"
-              className={mode === 'MARGIN' ? 'primary-button' : 'secondary-button'}
-              aria-pressed={mode === 'MARGIN'}
-              onClick={() => selectMode('MARGIN')}
-            >
+            <button type="button" className={mode === 'MARGIN' ? 'primary-button' : 'secondary-button'} onClick={() => selectMode('MARGIN')}>
               Gross Margin
             </button>
-            <button
-              type="button"
-              className={mode === 'MANUAL' ? 'primary-button' : 'secondary-button'}
-              aria-pressed={mode === 'MANUAL'}
-              onClick={() => selectMode('MANUAL')}
-            >
+            <button type="button" className={mode === 'MANUAL' ? 'primary-button' : 'secondary-button'} onClick={() => selectMode('MANUAL')}>
               Manual Rate
             </button>
           </div>
@@ -262,11 +213,7 @@ export default function FinalCostingPage() {
                   <button
                     key={value}
                     type="button"
-                    className={
-                      pricingPercent === value
-                        ? 'primary-button'
-                        : 'ghost-button'
-                    }
+                    className={pricingPercent === value ? 'primary-button' : 'ghost-button'}
                     onClick={() => {
                       setPricingPercent(value);
                       setMessage('');
@@ -276,7 +223,6 @@ export default function FinalCostingPage() {
                   </button>
                 ))}
               </div>
-
               <div className="two-grid" style={{ marginTop: 16 }}>
                 <div className="field">
                   <label htmlFor="pricingPercent">
@@ -289,24 +235,17 @@ export default function FinalCostingPage() {
                     min="0"
                     max={mode === 'MARGIN' ? 95 : 500}
                     step="0.1"
-                    inputMode="decimal"
                     value={pricingPercent}
                     onChange={(event) => {
                       const value = Math.max(0, Number(event.target.value) || 0);
-                      setPricingPercent(
-                        mode === 'MARGIN' ? Math.min(95, value) : value,
-                      );
+                      setPricingPercent(mode === 'MARGIN' ? Math.min(95, value) : value);
                       setMessage('');
                     }}
                   />
                 </div>
                 <div className="field">
                   <label>Suggested selling price / cover</label>
-                  <input
-                    className="input input-large"
-                    readOnly
-                    value={money(pricing.sellingPricePerCover)}
-                  />
+                  <input className="input input-large" readOnly value={money(pricing.sellingPricePerCover)} />
                 </div>
               </div>
             </>
@@ -320,7 +259,6 @@ export default function FinalCostingPage() {
                   type="number"
                   min="0"
                   step="1"
-                  inputMode="decimal"
                   value={manualPrice || ''}
                   onChange={(event) => {
                     setManualPrice(Math.max(0, Number(event.target.value) || 0));
@@ -331,35 +269,16 @@ export default function FinalCostingPage() {
               </div>
               <div className="field">
                 <label>Total quotation</label>
-                <input
-                  className="input input-large"
-                  readOnly
-                  value={money(pricing.totalSelling)}
-                />
+                <input className="input input-large" readOnly value={money(pricing.totalSelling)} />
               </div>
             </div>
           )}
 
-          <div
-            className={`final-profit-strip ${pricing.profit >= 0 ? 'is-positive' : 'is-negative'}`}
-            style={{ marginTop: 18 }}
-          >
-            <div>
-              <span>Total cost</span>
-              <b>{money(pricing.totalCost)}</b>
-            </div>
-            <div>
-              <span>Total quotation</span>
-              <b>{money(pricing.totalSelling)}</b>
-            </div>
-            <div>
-              <span>Expected profit</span>
-              <b>{money(pricing.profit)}</b>
-            </div>
-            <div>
-              <span>Gross margin</span>
-              <b>{displayPercent(pricing.marginPercent)}</b>
-            </div>
+          <div className={`final-profit-strip ${pricing.profit >= 0 ? 'is-positive' : 'is-negative'}`} style={{ marginTop: 18 }}>
+            <div><span>Total cost</span><b>{money(pricing.totalCost)}</b></div>
+            <div><span>Total quotation</span><b>{money(pricing.totalSelling)}</b></div>
+            <div><span>Expected profit</span><b>{money(pricing.profit)}</b></div>
+            <div><span>Gross margin</span><b>{displayPercent(pricing.marginPercent)}</b></div>
           </div>
 
           <p className="muted" style={{ marginTop: 12 }}>
@@ -370,21 +289,15 @@ export default function FinalCostingPage() {
                 : 'Manual rate lets you enter the final selling amount per cover directly.'}
           </p>
 
-          {message ? (
-            <div className="admin-message" style={{ marginTop: 12 }}>
-              {message}
-            </div>
-          ) : null}
+          {message ? <div className="admin-message" style={{ marginTop: 12 }}>{message}</div> : null}
         </div>
 
         <div className="glass-card">
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Cost basis</span>
-              <h2>Food + manpower + gas + transport</h2>
-              <p>
-                These internal costs build the real event cost. The client quotation still uses the final selling rate.
-              </p>
+              <h2>Food + manpower + gas + transport + disposable</h2>
+              <p>These internal costs build the real event cost. The client quotation still uses the final selling rate.</p>
             </div>
           </div>
 
@@ -392,33 +305,27 @@ export default function FinalCostingPage() {
             <div>
               <span>Food / ingredient cost</span>
               <b>{money(costing.menuFoodTotal)}</b>
-              <button type="button" onClick={() => router.push('/app/grocery')}>
-                Review Grocery
-              </button>
+              <button type="button" onClick={() => router.push('/app/grocery')}>Review Grocery</button>
             </div>
             <div>
               <span>Manpower cost</span>
               <b>{money(work.extras.staff)}</b>
-              <button
-                type="button"
-                onClick={() => router.push('/app/manpower?afterGrocery=1')}
-              >
-                Edit
-              </button>
+              <button type="button" onClick={() => router.push('/app/manpower?afterGrocery=1')}>Edit</button>
             </div>
             <div>
               <span>LPG / gas</span>
               <b>{money(work.extras.gasFuel)}</b>
-              <button type="button" onClick={() => router.push('/app/operations')}>
-                Edit
-              </button>
+              <button type="button" onClick={() => router.push('/app/operations')}>Edit</button>
             </div>
             <div>
               <span>Transport</span>
               <b>{money(work.extras.transport)}</b>
-              <button type="button" onClick={() => router.push('/app/operations')}>
-                Edit
-              </button>
+              <button type="button" onClick={() => router.push('/app/operations')}>Edit</button>
+            </div>
+            <div>
+              <span>Plastic / disposable</span>
+              <b>{money(work.extras.disposable)}</b>
+              <button type="button" onClick={() => router.push('/app/disposable')}>Edit</button>
             </div>
             <div className="final-cost-breakdown-total">
               <span>Total event cost</span>
@@ -430,73 +337,34 @@ export default function FinalCostingPage() {
 
         {!costReady ? (
           <div className="readiness-card" role="status">
-            <div>
-              <span className="section-kicker">Pricing checklist</span>
-              <h3>Complete the missing cost details</h3>
-            </div>
+            <div><span className="section-kicker">Pricing checklist</span><h3>Complete the missing cost details</h3></div>
             <div className="readiness-list">
-              <span className={work.menu.length > 0 ? 'is-complete' : ''}>
-                Menu dishes
-              </span>
-              <span className={costing.totalCovers > 0 ? 'is-complete' : ''}>
-                Guest counts
-              </span>
-              <span
-                className={
-                  missingRateCount === 0 && work.menu.length > 0
-                    ? 'is-complete'
-                    : ''
-                }
-              >
-                Dish costs
-              </span>
+              <span className={work.menu.length > 0 ? 'is-complete' : ''}>Menu dishes</span>
+              <span className={costing.totalCovers > 0 ? 'is-complete' : ''}>Guest counts</span>
+              <span className={missingRateCount === 0 && work.menu.length > 0 ? 'is-complete' : ''}>Dish costs</span>
             </div>
           </div>
         ) : pricing.profit < 0 ? (
           <div className="readiness-card" role="status">
-            <div>
-              <span className="section-kicker">Price warning</span>
-              <h3>Selling price is below event cost</h3>
-            </div>
+            <div><span className="section-kicker">Price warning</span><h3>Selling price is below event cost</h3></div>
             <span className="badge">Loss {money(Math.abs(pricing.profit))}</span>
           </div>
         ) : (
           <div className="readiness-card is-ready" role="status">
-            <div>
-              <span className="section-kicker">Ready</span>
-              <h3>Pricing is ready for quotation</h3>
-            </div>
-            <span className="badge green">
-              {money(pricing.sellingPricePerCover)} / cover
-            </span>
+            <div><span className="section-kicker">Ready</span><h3>Pricing is ready for quotation</h3></div>
+            <span className="badge green">{money(pricing.sellingPricePerCover)} / cover</span>
           </div>
         )}
 
         <div className="action-row page-actions">
-          <button
-            className="primary-button"
-            type="button"
-            disabled={!priceReady}
-            onClick={createQuotation}
-          >
+          <button className="primary-button" type="button" disabled={!priceReady} onClick={createQuotation}>
             Use Price & Create Quotation
           </button>
-          <button
-            className="secondary-button"
-            type="button"
-            disabled={!priceReady}
-            onClick={() => {
-              savePrice();
-            }}
-          >
+          <button className="secondary-button" type="button" disabled={!priceReady} onClick={() => { savePrice(); }}>
             Save Selling Price
           </button>
-          <button
-            className="ghost-button"
-            type="button"
-            onClick={() => router.push('/app/operations')}
-          >
-            Back to Gas & Transport
+          <button className="ghost-button" type="button" onClick={() => router.push('/app/disposable')}>
+            Back to Plastic & Disposable
           </button>
         </div>
 
