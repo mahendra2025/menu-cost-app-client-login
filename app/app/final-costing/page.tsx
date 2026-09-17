@@ -1,19 +1,35 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import FinalCostingUsage from '../../components/FinalCostingUsage';
+
 import AppShell, { LockedCard } from '../../components/AppShell';
+import FinalCostingUsage from '../../components/FinalCostingUsage';
 import StatCard from '../../components/StatCard';
-import { calculate, getSession, loadWork, saveWork } from '../../../lib/store';
+import {
+  calculate,
+  getSession,
+  loadWork,
+  saveWork,
+} from '../../../lib/store';
+import {
+  calculateSellingPrice,
+  type SellingPriceMode,
+} from '../../../lib/sellingPrice';
 import type { Session, WorkState } from '../../../lib/types';
 import {
   getCostingAnalyticsKey,
   trackProductEvent,
 } from '../../../lib/productAnalytics';
 
+const PRICE_PRESETS = [10, 20, 30, 40];
+
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
+}
+
+function percent(value: number) {
+  return `${value.toFixed(1).replace(/\.0$/, '')}%`;
 }
 
 function removeLegacyExtraCosts(work: WorkState): WorkState {
@@ -43,44 +59,70 @@ export default function FinalCostingPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
+  const [mode, setMode] = useState<SellingPriceMode>('MARKUP');
+  const [pricingPercent, setPricingPercent] = useState(20);
+  const [manualPrice, setManualPrice] = useState(0);
+  const [savedMessage, setSavedMessage] = useState('');
   const [pdfBusy, setPdfBusy] = useState(false);
 
   useEffect(() => {
     const current = getSession();
     setSession(current);
 
-    if (current) {
-      const savedWork = loadWork(current.tenantId);
-      const cleanWork = removeLegacyExtraCosts(savedWork);
-      setWork(cleanWork);
-
-      if (cleanWork !== savedWork) {
-        saveWork(current.tenantId, cleanWork);
-      }
+    if (!current) {
+      router.replace('/login');
+      return;
     }
-  }, []);
+
+    const savedWork = loadWork(current.tenantId);
+    const cleanWork = removeLegacyExtraCosts(savedWork);
+    setWork(cleanWork);
+
+    if (cleanWork !== savedWork) {
+      saveWork(current.tenantId, cleanWork);
+    }
+
+    if (cleanWork.sellingPricePerPlate > 0) {
+      setMode('MANUAL');
+      setManualPrice(cleanWork.sellingPricePerPlate);
+    }
+  }, [router]);
+
+  const costing = useMemo(
+    () => (work ? calculate(work) : null),
+    [work],
+  );
+
+  const pricing = useMemo(() => {
+    if (!costing) {
+      return calculateSellingPrice({
+        totalCost: 0,
+        totalCovers: 0,
+        mode,
+        percent: pricingPercent,
+        manualPricePerCover: manualPrice,
+      });
+    }
+
+    return calculateSellingPrice({
+      totalCost: costing.totalCost,
+      totalCovers: costing.totalCovers,
+      mode,
+      percent: pricingPercent,
+      manualPricePerCover: manualPrice,
+    });
+  }, [costing, mode, pricingPercent, manualPrice]);
 
   useEffect(() => {
     if (
       !work ||
       !session ||
       session.status === 'EXPIRED' ||
-      work.menu.length === 0
+      work.menu.length === 0 ||
+      !costing
     ) {
       return;
     }
-
-    const result = calculate(work);
-
-    const missingRateCount = work.menu.filter(
-      (item) => !(Number(item.costPerPlate) > 0),
-    ).length;
-
-    const finalReady =
-      work.menu.length > 0 &&
-      result.totalCovers > 0 &&
-      missingRateCount === 0 &&
-      work.sellingPricePerPlate > 0;
 
     const costingKey = getCostingAnalyticsKey(work);
 
@@ -88,36 +130,17 @@ export default function FinalCostingPage() {
       'final_costing_viewed',
       {
         costingKey,
-        totalCovers: result.totalCovers,
+        totalCovers: costing.totalCovers,
       },
-      {
-        onceKey: `final_viewed:${costingKey}`,
-      },
+      { onceKey: `final_viewed:${costingKey}` },
     );
+  }, [work, session, costing]);
 
-    if (finalReady) {
-      void trackProductEvent(
-        'final_costing_complete',
-        {
-          costingKey,
-          dishCount: work.menu.length,
-          totalCovers: result.totalCovers,
-          totalCost: Math.round(result.totalCost),
-          totalSelling: Math.round(result.totalSelling),
-          totalProfit: Math.round(result.totalProfit),
-        },
-        {
-          onceKey: `final_complete:${costingKey}`,
-        },
-      );
-    }
-  }, [work, session]);
-
-  if (!work || !session) {
+  if (!work || !session || !costing) {
     return (
-      <AppShell title="Final Costing">
+      <AppShell title="Pricing">
         <div className="content-grid">
-          <div className="glass-card">Loading...</div>
+          <div className="glass-card">Loading pricing…</div>
         </div>
       </AppShell>
     );
@@ -125,40 +148,75 @@ export default function FinalCostingPage() {
 
   if (session.status === 'EXPIRED') {
     return (
-      <AppShell title="Final Costing">
+      <AppShell title="Pricing">
         <LockedCard />
       </AppShell>
     );
   }
 
-  const result = calculate(work);
   const missingRateCount = work.menu.filter(
     (item) => !(Number(item.costPerPlate) > 0),
   ).length;
-  const finalCostReady =
+  const costReady =
     work.menu.length > 0 &&
-    result.totalCovers > 0 &&
-    missingRateCount === 0 &&
-    work.sellingPricePerPlate > 0;
-  const profitMargin =
-    result.totalSelling > 0
-      ? (result.totalProfit / result.totalSelling) * 100
-      : 0;
+    costing.totalCovers > 0 &&
+    missingRateCount === 0;
+  const priceReady = costReady && pricing.sellingPricePerCover > 0;
 
-  function updateSellingPrice(value: number) {
-    if (!work || !session) return;
+  function selectMode(nextMode: SellingPriceMode) {
+    setMode(nextMode);
+    setSavedMessage('');
 
-    const nextWork: WorkState = {
+    if (nextMode === 'MANUAL' && !(manualPrice > 0)) {
+      setManualPrice(
+        work.sellingPricePerPlate > 0
+          ? work.sellingPricePerPlate
+          : Math.ceil(pricing.costPerCover),
+      );
+    }
+  }
+
+  function workWithPrice(): WorkState {
+    return {
       ...work,
-      sellingPricePerPlate: Math.max(0, value),
+      sellingPricePerPlate: pricing.sellingPricePerCover,
+      updatedAt: new Date().toISOString(),
     };
+  }
 
+  function savePrice() {
+    if (!priceReady) return null;
+
+    const nextWork = workWithPrice();
     setWork(nextWork);
     saveWork(session.tenantId, nextWork);
+    setSavedMessage(
+      `${money(pricing.sellingPricePerCover)} per cover saved.`,
+    );
+
+    const costingKey = getCostingAnalyticsKey(nextWork);
+    void trackProductEvent('final_costing_complete', {
+      costingKey,
+      totalCovers: pricing.totalCovers,
+      totalCost: Math.round(pricing.totalCost),
+      totalSelling: Math.round(pricing.totalSelling),
+      totalProfit: Math.round(pricing.profit),
+    });
+
+    return nextWork;
+  }
+
+  function createQuotation() {
+    const nextWork = savePrice();
+    if (!nextWork) return;
+    router.push('/app/quotation');
   }
 
   async function downloadPdf() {
-    if (!work || pdfBusy) return;
+    if (!priceReady || pdfBusy) return;
+
+    const nextWork = savePrice();
+    if (!nextWork) return;
 
     setPdfBusy(true);
 
@@ -177,79 +235,61 @@ export default function FinalCostingPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            dishNames: work.menu.map((item) => item.name),
+            dishNames: nextWork.menu.map((item) => item.name),
           }),
         });
 
         if (response.ok) {
-          const data = (await response.json()) as {
-            recipes?: unknown[];
-          };
-
+          const data = (await response.json()) as { recipes?: unknown[] };
           recipes = Array.isArray(data.recipes) ? data.recipes : [];
         }
       } catch (recipeError) {
-        console.warn(
-          'Ingredient list could not be loaded:',
-          recipeError,
-        );
+        console.warn('Ingredient list could not be loaded:', recipeError);
       }
 
-      downloadFinalCostingPdf(work, recipes);
-
-      const costingKey = getCostingAnalyticsKey(work);
+      downloadFinalCostingPdf(nextWork, recipes);
 
       void trackProductEvent('pdf_exported', {
-        costingKey,
-        dishCount: work.menu.length,
+        costingKey: getCostingAnalyticsKey(nextWork),
+        dishCount: nextWork.menu.length,
       });
     } finally {
       setPdfBusy(false);
     }
   }
 
-  const costRows = [
-    {
-      label: 'Food cost',
-      value: result.menuFoodTotal,
-      route: '/app/cost',
-    },
-    {
-      label: 'Manpower cost',
-      value: work.extras.staff,
-      route: '/app/manpower',
-    },
-  ];
-
   return (
     <AppShell
-      title="Final Costing"
-      subtitle="Step 3 of 3: review the final cost and download the PDF"
+      title="Pricing"
+      subtitle="Set markup or target margin, then create the client quotation"
     >
       <section className="content-grid">
-        <div className={`final-costing-overview ${finalCostReady ? 'is-ready' : ''}`}>
+        <div className={`final-costing-overview ${priceReady ? 'is-ready' : ''}`}>
           <div>
-            <span className="page-eyebrow">Final price</span>
+            <span className="page-eyebrow">Selling price engine</span>
             <h2>
-              {finalCostReady
-                ? 'Final costing is complete'
-                : 'Complete your final selling price'}
+              {priceReady
+                ? 'Your selling price is ready'
+                : 'Finish cost details before pricing'}
             </h2>
             <p>
-              Review food and manpower cost, set the selling price per cover and confirm the expected profit.
+              Food/ingredient cost and manpower form the event cost. Choose how much to add before sending the quotation.
             </p>
           </div>
+
           <div className="final-costing-overview-total">
             <span>Total event cost</span>
-            <b>{money(result.totalCost)}</b>
-            <small>{result.totalCovers.toLocaleString('en-IN')} total covers</small>
+            <b>{money(pricing.totalCost)}</b>
+            <small>
+              {pricing.totalCovers.toLocaleString('en-IN')} meal covers · {money(pricing.costPerCover)} cost / cover
+            </small>
             <button
               className="primary-button workflow-overview-button"
               type="button"
-              onClick={downloadPdf}
-              disabled={pdfBusy}
+              onClick={createQuotation}
+              disabled={!priceReady}
             >
-              {pdfBusy ? 'Preparing PDF…' : 'Download PDF'}
+              Use Price → Quotation
             </button>
           </div>
         </div>
@@ -257,128 +297,237 @@ export default function FinalCostingPage() {
         <div className="stat-grid">
           <StatCard
             label="Cost / Cover"
-            value={money(result.finalCostPerPlate)}
-            note={`Total ${money(result.totalCost)}`}
+            value={money(pricing.costPerCover)}
+            note={`Total cost ${money(pricing.totalCost)}`}
           />
           <StatCard
             label="Selling / Cover"
-            value={money(result.sellingPricePerPlate)}
-            note={`Total ${money(result.totalSelling)}`}
+            value={money(pricing.sellingPricePerCover)}
+            note={`Quotation ${money(pricing.totalSelling)}`}
           />
           <StatCard
-            label="Total Profit"
-            value={money(result.totalProfit)}
-            note={`${Math.round(profitMargin)}% margin`}
+            label="Expected Profit"
+            value={money(pricing.profit)}
+            note={`${percent(pricing.markupPercent)} markup`}
           />
           <StatCard
-            label="Meal Covers"
-            value={result.totalCovers.toLocaleString('en-IN')}
-            note={`${result.serviceSummaries.length} meal${
-              result.serviceSummaries.length === 1 ? '' : 's'
-            }`}
+            label="Gross Margin"
+            value={percent(pricing.marginPercent)}
+            note="Profit ÷ selling price"
           />
         </div>
 
         <div className="glass-card final-selling-card">
           <div className="final-costing-section-heading">
             <div>
-              <span className="section-kicker">Selling price</span>
-              <h2>Set the final rate</h2>
-              <p>Enter the average selling price for each meal cover.</p>
+              <span className="section-kicker">Pricing method</span>
+              <h2>How do you want to set the price?</h2>
+              <p>
+                Markup adds a percentage to cost. Gross margin targets profit as a percentage of the final selling price.
+              </p>
             </div>
           </div>
-          <div className="two-grid">
-            <div className="field">
-              <label htmlFor="sellingPricePerPlate">
-                Average selling price / cover
-              </label>
-              <input
-                id="sellingPricePerPlate"
-                className="input input-large"
-                type="number"
-                min="0"
-                inputMode="decimal"
-                value={work.sellingPricePerPlate || ''}
-                onChange={(event) =>
-                  updateSellingPrice(Number(event.target.value))
-                }
-                placeholder="Example: 350"
-              />
-            </div>
-            <div className="field">
-              <label>Total selling amount</label>
-              <input
-                className="input input-large"
-                readOnly
-                value={money(result.totalSelling)}
-              />
-            </div>
+
+          <div className="action-row">
+            <button
+              type="button"
+              className={mode === 'MARKUP' ? 'primary-button' : 'secondary-button'}
+              aria-pressed={mode === 'MARKUP'}
+              onClick={() => selectMode('MARKUP')}
+            >
+              Markup on Cost
+            </button>
+            <button
+              type="button"
+              className={mode === 'MARGIN' ? 'primary-button' : 'secondary-button'}
+              aria-pressed={mode === 'MARGIN'}
+              onClick={() => selectMode('MARGIN')}
+            >
+              Gross Margin
+            </button>
+            <button
+              type="button"
+              className={mode === 'MANUAL' ? 'primary-button' : 'secondary-button'}
+              aria-pressed={mode === 'MANUAL'}
+              onClick={() => selectMode('MANUAL')}
+            >
+              Manual Rate
+            </button>
           </div>
+
+          {mode !== 'MANUAL' ? (
+            <>
+              <div className="action-row" style={{ marginTop: 16 }}>
+                {PRICE_PRESETS.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={
+                      pricingPercent === value
+                        ? 'primary-button'
+                        : 'ghost-button'
+                    }
+                    onClick={() => {
+                      setPricingPercent(value);
+                      setSavedMessage('');
+                    }}
+                  >
+                    {value}%
+                  </button>
+                ))}
+              </div>
+
+              <div className="two-grid" style={{ marginTop: 16 }}>
+                <div className="field">
+                  <label htmlFor="pricingPercent">
+                    {mode === 'MARKUP' ? 'Markup on cost' : 'Target gross margin'}
+                  </label>
+                  <input
+                    id="pricingPercent"
+                    className="input input-large"
+                    type="number"
+                    min="0"
+                    max={mode === 'MARGIN' ? 95 : 500}
+                    step="0.1"
+                    inputMode="decimal"
+                    value={pricingPercent}
+                    onChange={(event) => {
+                      const value = Math.max(0, Number(event.target.value) || 0);
+                      setPricingPercent(
+                        mode === 'MARGIN' ? Math.min(95, value) : value,
+                      );
+                      setSavedMessage('');
+                    }}
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Suggested selling price / cover</label>
+                  <input
+                    className="input input-large"
+                    readOnly
+                    value={money(pricing.sellingPricePerCover)}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="two-grid" style={{ marginTop: 16 }}>
+              <div className="field">
+                <label htmlFor="manualSellingPrice">Selling price / cover</label>
+                <input
+                  id="manualSellingPrice"
+                  className="input input-large"
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputMode="decimal"
+                  value={manualPrice || ''}
+                  onChange={(event) => {
+                    setManualPrice(Math.max(0, Number(event.target.value) || 0));
+                    setSavedMessage('');
+                  }}
+                  placeholder="Example: 480"
+                />
+              </div>
+
+              <div className="field">
+                <label>Total quotation</label>
+                <input
+                  className="input input-large"
+                  readOnly
+                  value={money(pricing.totalSelling)}
+                />
+              </div>
+            </div>
+          )}
+
           <div
-            className={`final-profit-strip ${
-              result.totalProfit >= 0 ? 'is-positive' : 'is-negative'
-            }`}
+            className={`final-profit-strip ${pricing.profit >= 0 ? 'is-positive' : 'is-negative'}`}
+            style={{ marginTop: 18 }}
           >
             <div>
               <span>Total cost</span>
-              <b>{money(result.totalCost)}</b>
+              <b>{money(pricing.totalCost)}</b>
             </div>
             <div>
-              <span>Total selling</span>
-              <b>{money(result.totalSelling)}</b>
+              <span>Total quotation</span>
+              <b>{money(pricing.totalSelling)}</b>
             </div>
             <div>
               <span>Expected profit</span>
-              <b>{money(result.totalProfit)}</b>
+              <b>{money(pricing.profit)}</b>
             </div>
             <div>
-              <span>Profit margin</span>
-              <b>{Math.round(profitMargin)}%</b>
+              <span>Gross margin</span>
+              <b>{percent(pricing.marginPercent)}</b>
             </div>
           </div>
+
+          {mode === 'MARKUP' ? (
+            <p className="muted" style={{ marginTop: 12 }}>
+              Example: 20% markup means cost × 1.20. It is not the same as 20% gross margin.
+            </p>
+          ) : mode === 'MARGIN' ? (
+            <p className="muted" style={{ marginTop: 12 }}>
+              Example: 20% gross margin means profit is 20% of the final selling price.
+            </p>
+          ) : null}
+
+          {savedMessage ? (
+            <div className="admin-message" style={{ marginTop: 12 }}>
+              {savedMessage}
+            </div>
+          ) : null}
         </div>
 
         <div className="glass-card">
           <div className="final-costing-section-heading">
             <div>
-              <span className="section-kicker">Cost breakdown</span>
-              <h2>Where the event cost comes from</h2>
-              <p>Final event cost now includes only food and manpower.</p>
+              <span className="section-kicker">Cost basis</span>
+              <h2>What your selling price is built on</h2>
+              <p>Only food/ingredient cost and manpower are included in the current event cost.</p>
             </div>
           </div>
+
           <div className="final-cost-breakdown">
-            {costRows.map((row) => (
-              <div key={row.label}>
-                <span>{row.label}</span>
-                <b>{money(row.value)}</b>
-                <button
-                  type="button"
-                  onClick={() => router.push(row.route)}
-                >
-                  Edit
-                </button>
-              </div>
-            ))}
+            <div>
+              <span>Food / ingredient cost</span>
+              <b>{money(costing.menuFoodTotal)}</b>
+              <button type="button" onClick={() => router.push('/app/grocery')}>
+                Review Grocery
+              </button>
+            </div>
+            <div>
+              <span>Manpower cost</span>
+              <b>{money(work.extras.staff)}</b>
+              <button
+                type="button"
+                onClick={() => router.push('/app/manpower?afterGrocery=1')}
+              >
+                Edit
+              </button>
+            </div>
             <div className="final-cost-breakdown-total">
               <span>Total event cost</span>
-              <b>{money(result.totalCost)}</b>
-              <small>{money(result.finalCostPerPlate)} per cover</small>
+              <b>{money(pricing.totalCost)}</b>
+              <small>{money(pricing.costPerCover)} per cover</small>
             </div>
           </div>
         </div>
 
-        {!finalCostReady ? (
+        {!costReady ? (
           <div className="readiness-card" role="status">
             <div>
-              <span className="section-kicker">Final costing checklist</span>
-              <h3>Complete the missing details</h3>
+              <span className="section-kicker">Pricing checklist</span>
+              <h3>Complete the missing cost details</h3>
             </div>
             <div className="readiness-list">
               <span className={work.menu.length > 0 ? 'is-complete' : ''}>
                 Menu dishes
               </span>
-              <span className={result.totalCovers > 0 ? 'is-complete' : ''}>
-                Member counts
+              <span className={costing.totalCovers > 0 ? 'is-complete' : ''}>
+                Guest counts
               </span>
               <span
                 className={
@@ -387,53 +536,59 @@ export default function FinalCostingPage() {
                     : ''
                 }
               >
-                Dish rates
-              </span>
-              <span
-                className={work.sellingPricePerPlate > 0 ? 'is-complete' : ''}
-              >
-                Selling price
+                Dish costs
               </span>
             </div>
+          </div>
+        ) : pricing.profit < 0 ? (
+          <div className="readiness-card" role="status">
+            <div>
+              <span className="section-kicker">Price warning</span>
+              <h3>Selling price is below event cost</h3>
+            </div>
+            <span className="badge">Loss {money(Math.abs(pricing.profit))}</span>
           </div>
         ) : (
           <div className="readiness-card is-ready" role="status">
             <div>
-              <span className="section-kicker">Complete</span>
-              <h3>Final costing is ready</h3>
+              <span className="section-kicker">Ready</span>
+              <h3>Pricing is ready for quotation</h3>
             </div>
-            <span className="badge green">All details complete</span>
+            <span className="badge green">
+              {money(pricing.sellingPricePerCover)} / cover
+            </span>
           </div>
         )}
 
         <div className="action-row page-actions">
           <button
+            className="primary-button"
+            type="button"
+            disabled={!priceReady}
+            onClick={createQuotation}
+          >
+            Use Price & Create Quotation
+          </button>
+          <button
             className="secondary-button"
             type="button"
-            onClick={downloadPdf}
-            disabled={pdfBusy}
+            disabled={!priceReady}
+            onClick={() => savePrice()}
           >
-            {pdfBusy ? 'Preparing PDF…' : 'Download Menu & Costing PDF'}
+            Save Selling Price
           </button>
           <button
-            className="primary-button"
+            className="secondary-button"
             type="button"
-            disabled={!finalCostReady}
-            onClick={() => router.push('/app/quotation')}
+            disabled={!priceReady || pdfBusy}
+            onClick={() => void downloadPdf()}
           >
-            Create Client Quotation
-          </button>
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() => router.push('/app/profile')}
-          >
-            Next: Profile
+            {pdfBusy ? 'Preparing PDF…' : 'Download Costing PDF'}
           </button>
           <button
             className="ghost-button"
             type="button"
-            onClick={() => router.push('/app/manpower')}
+            onClick={() => router.push('/app/manpower?afterGrocery=1')}
           >
             Back to Manpower
           </button>
