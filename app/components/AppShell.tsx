@@ -67,7 +67,12 @@ export default function AppShell({
   }, [router]);
 
   const isAdmin = session?.role === 'ADMIN';
-  const isAdminNavItemActive = (href: string) => pathname === href;
+  const isDishWorkspace =
+    pathname === '/admin/dishes' ||
+    pathname.startsWith('/admin/dishes/');
+  const isAdminNavItemActive = (href: string) =>
+    pathname === href ||
+    (href === '/admin/dishes' && isDishWorkspace);
 
   if (!ready) {
     return (
@@ -179,6 +184,50 @@ export default function AppShell({
                 <div><i style={{ width: '100%' }} /></div>
               </div>
             </section>
+          ) : null}
+
+          {isAdmin && isDishWorkspace ? (
+            <nav
+              className="action-row no-print"
+              aria-label="Dish management"
+              style={{
+                justifyContent: 'flex-start',
+                gap: '10px',
+                marginBottom: '18px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Link
+                href="/admin/dishes"
+                className={
+                  pathname === '/admin/dishes'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/dishes'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Dish Master
+              </Link>
+              <Link
+                href="/admin/dishes/unknown"
+                className={
+                  pathname === '/admin/dishes/unknown'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/dishes/unknown'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Unknown Queue
+              </Link>
+            </nav>
           ) : null}
 
           {children}
