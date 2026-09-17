@@ -28,13 +28,8 @@ function displayPercent(value: number) {
   return `${value.toFixed(1).replace(/\.0$/, '')}%`;
 }
 
-function removeLegacyExtraCosts(work: WorkState): WorkState {
-  if (
-    !work.extras.transport &&
-    !work.extras.gasFuel &&
-    !work.extras.disposable &&
-    !work.extras.other
-  ) {
+function removeUnusedExtraCosts(work: WorkState): WorkState {
+  if (!work.extras.disposable && !work.extras.other) {
     return work;
   }
 
@@ -42,8 +37,6 @@ function removeLegacyExtraCosts(work: WorkState): WorkState {
     ...work,
     extras: {
       ...work.extras,
-      transport: 0,
-      gasFuel: 0,
       disposable: 0,
       other: 0,
     },
@@ -71,7 +64,7 @@ export default function FinalCostingPage() {
     setSession(current);
 
     const savedWork = loadWork(current.tenantId);
-    const cleanWork = removeLegacyExtraCosts(savedWork);
+    const cleanWork = removeUnusedExtraCosts(savedWork);
     setWork(cleanWork);
 
     if (cleanWork !== savedWork) {
@@ -144,9 +137,7 @@ export default function FinalCostingPage() {
   }
 
   function savePrice(): WorkState | null {
-    if (!work || !session || !priceReady) {
-      return null;
-    }
+    if (!work || !session || !priceReady) return null;
 
     const nextWork: WorkState = {
       ...work,
@@ -170,7 +161,7 @@ export default function FinalCostingPage() {
   return (
     <AppShell
       title="Pricing"
-      subtitle="Set markup or target margin, then create the client quotation"
+      subtitle="Set markup or target margin using the real event cost"
     >
       <section className="content-grid">
         <div className={`final-costing-overview ${priceReady ? 'is-ready' : ''}`}>
@@ -182,7 +173,7 @@ export default function FinalCostingPage() {
                 : 'Finish cost details before pricing'}
             </h2>
             <p>
-              Food/ingredient cost and manpower form the event cost. Choose how much to add before sending the quotation.
+              Food, manpower, LPG and transport form the event cost before markup or gross margin is applied.
             </p>
           </div>
 
@@ -390,8 +381,10 @@ export default function FinalCostingPage() {
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Cost basis</span>
-              <h2>Food + manpower</h2>
-              <p>The current event cost uses food/ingredient costing plus manpower.</p>
+              <h2>Food + manpower + gas + transport</h2>
+              <p>
+                These internal costs build the real event cost. The client quotation still uses the final selling rate.
+              </p>
             </div>
           </div>
 
@@ -410,6 +403,20 @@ export default function FinalCostingPage() {
                 type="button"
                 onClick={() => router.push('/app/manpower?afterGrocery=1')}
               >
+                Edit
+              </button>
+            </div>
+            <div>
+              <span>LPG / gas</span>
+              <b>{money(work.extras.gasFuel)}</b>
+              <button type="button" onClick={() => router.push('/app/operations')}>
+                Edit
+              </button>
+            </div>
+            <div>
+              <span>Transport</span>
+              <b>{money(work.extras.transport)}</b>
+              <button type="button" onClick={() => router.push('/app/operations')}>
                 Edit
               </button>
             </div>
@@ -487,9 +494,9 @@ export default function FinalCostingPage() {
           <button
             className="ghost-button"
             type="button"
-            onClick={() => router.push('/app/manpower?afterGrocery=1')}
+            onClick={() => router.push('/app/operations')}
           >
-            Back to Manpower
+            Back to Gas & Transport
           </button>
         </div>
 

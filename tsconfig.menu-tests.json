@@ -17,6 +17,7 @@
     "lib/types.ts",
     "lib/detectionBenchmark.ts",
     "lib/pdfMenuExtraction.ts",
+    "lib/operationsCost.ts",
     "tests/**/*.test.ts",
     "lib/correctedDishCosting.ts",
     "lib/caterersOsSync.ts"

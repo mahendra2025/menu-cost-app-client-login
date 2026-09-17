@@ -87,14 +87,14 @@ export default function ManpowerGroceryGate({
       <div className="manpower-next-pricing-bar">
         <div className="manpower-next-pricing-copy">
           <span>Next step</span>
-          <strong>Manpower complete → set selling price and margin</strong>
+          <strong>Manpower complete → add gas and transport cost</strong>
         </div>
         <button
           type="button"
           className="primary-button"
-          onClick={() => window.location.assign('/app/final-costing')}
+          onClick={() => window.location.assign('/app/operations')}
         >
-          Next: Pricing
+          Next: Gas & Transport
         </button>
       </div>
     </div>
