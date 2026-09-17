@@ -15,17 +15,19 @@ function normalizeServicePart(value: string) {
     .replace(/\s+/g, '-') || 'event';
 }
 
+function menuServiceIdentity(item: MenuItem) {
+  if (item.dayLabel || item.mealLabel) {
+    return `${normalizeIdentityPart(item.dayLabel || 'event')}::${normalizeIdentityPart(item.mealLabel || 'event menu')}`;
+  }
+
+  return normalizeIdentityPart(
+    item.serviceId || 'default',
+  );
+}
+
 export function menuItemIdentity(item: MenuItem) {
-  const visibleServiceKey =
-    `${normalizeIdentityPart(item.dayLabel || 'event')}::${normalizeIdentityPart(item.mealLabel || 'event menu')}`;
-
-  const serviceKey =
-    item.dayLabel || item.mealLabel
-      ? visibleServiceKey
-      : normalizeIdentityPart(item.serviceId || 'default');
-
   return [
-    serviceKey,
+    menuServiceIdentity(item),
     normalizeIdentityPart(item.name),
     normalizeIdentityPart(item.category),
   ].join('::');
@@ -47,10 +49,49 @@ export function mergeFunctionMenu({
   const cleanedFunctionName =
     functionName.trim();
 
+  const detectedServiceCount =
+    new Set(
+      detectedMenu.map(
+        menuServiceIdentity,
+      ),
+    ).size;
+
+  const preserveDetectedServices =
+    detectedServiceCount > 1;
+
   const importedMenu =
     detectedMenu.map((item) => {
       const dayLabel =
         item.dayLabel || '';
+
+      if (preserveDetectedServices) {
+        const mealLabel =
+          String(
+            item.mealLabel ||
+            cleanedFunctionName ||
+            'Event Menu',
+          ).trim() ||
+          'Event Menu';
+
+        return {
+          ...item,
+          serviceId:
+            String(
+              item.serviceId || '',
+            ).trim() ||
+            `function_${normalizeServicePart(dayLabel)}_${normalizeServicePart(mealLabel)}`,
+          dayLabel,
+          mealLabel,
+          servicePax:
+            Math.max(
+              0,
+              Number(item.servicePax) ||
+              functionPax ||
+              defaultPax ||
+              0,
+            ),
+        };
+      }
 
       return {
         ...item,
