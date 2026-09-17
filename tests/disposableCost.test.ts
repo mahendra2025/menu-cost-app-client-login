@@ -44,5 +44,6 @@ const safe = calculateDisposableCost([
 ]);
 
 assert.equal(safe.total, 0);
+assert.equal(calculateDisposableCost([]).total, 0);
 
 console.log('disposableCost tests passed');
