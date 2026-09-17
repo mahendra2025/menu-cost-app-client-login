@@ -37,98 +37,82 @@ function TransportFields({
   const total = calculateTransportCost(value);
 
   return (
-    <div className="operations-block">
-      <div className="operations-grid">
-        <div className="field">
-          <label>Vehicle</label>
-          <input
-            className="input"
-            value={value.vehicleLabel}
-            placeholder="Tempo"
-            onChange={(event) => onChange({ vehicleLabel: event.target.value })}
-          />
-        </div>
-
-        <div className="field">
-          <label>Rate / trip</label>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="1"
-            value={value.ratePerTrip || ''}
-            placeholder="1200"
-            onChange={(event) => onChange({ ratePerTrip: numberValue(event.target.value) })}
-          />
-        </div>
-
-        <div className="field">
-          <label>Vehicles</label>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="1"
-            value={value.vehicles || ''}
-            onChange={(event) => onChange({ vehicles: numberValue(event.target.value) })}
-          />
-        </div>
-
-        <div className="field">
-          <label>Trips / vehicle</label>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="0.5"
-            value={value.tripsPerVehicle || ''}
-            onChange={(event) => onChange({ tripsPerVehicle: numberValue(event.target.value) })}
-          />
-        </div>
-
-        <div className="field">
-          <label>Toll + parking</label>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="1"
-            value={value.tollParking || ''}
-            onChange={(event) => onChange({ tollParking: numberValue(event.target.value) })}
-          />
-        </div>
-
-        <div className="field">
-          <label>Loading / unloading</label>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="1"
-            value={value.loadingUnloading || ''}
-            onChange={(event) => onChange({ loadingUnloading: numberValue(event.target.value) })}
-          />
-        </div>
-
-        <div className="field">
-          <label>Other transport</label>
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="1"
-            value={value.other || ''}
-            onChange={(event) => onChange({ other: numberValue(event.target.value) })}
-          />
-        </div>
-
-        <div className="operations-total-box">
-          <span>Transport total</span>
-          <strong>{money(total)}</strong>
-          <small>
-            Rate × vehicles × trips + toll + loading + other
-          </small>
-        </div>
+    <div className="operations-grid operations-fields">
+      <div className="field">
+        <label>Vehicle</label>
+        <input
+          className="input"
+          value={value.vehicleLabel}
+          placeholder="Tempo"
+          onChange={(event) => onChange({ vehicleLabel: event.target.value })}
+        />
+      </div>
+      <div className="field">
+        <label>Rate / trip</label>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          value={value.ratePerTrip || ''}
+          placeholder="1200"
+          onChange={(event) => onChange({ ratePerTrip: numberValue(event.target.value) })}
+        />
+      </div>
+      <div className="field">
+        <label>Vehicles</label>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          value={value.vehicles || ''}
+          onChange={(event) => onChange({ vehicles: numberValue(event.target.value) })}
+        />
+      </div>
+      <div className="field">
+        <label>Trips / vehicle</label>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          step="0.5"
+          value={value.tripsPerVehicle || ''}
+          onChange={(event) => onChange({ tripsPerVehicle: numberValue(event.target.value) })}
+        />
+      </div>
+      <div className="field">
+        <label>Toll + parking</label>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          value={value.tollParking || ''}
+          onChange={(event) => onChange({ tollParking: numberValue(event.target.value) })}
+        />
+      </div>
+      <div className="field">
+        <label>Loading / unloading</label>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          value={value.loadingUnloading || ''}
+          onChange={(event) => onChange({ loadingUnloading: numberValue(event.target.value) })}
+        />
+      </div>
+      <div className="field">
+        <label>Other transport</label>
+        <input
+          className="input"
+          type="number"
+          min="0"
+          value={value.other || ''}
+          onChange={(event) => onChange({ other: numberValue(event.target.value) })}
+        />
+      </div>
+      <div className="operations-total-box">
+        <span>Transport total</span>
+        <strong>{money(total)}</strong>
+        <small>Rate × vehicles × trips + toll + loading + other</small>
       </div>
     </div>
   );
@@ -150,7 +134,7 @@ function GasFields({
       : 0;
 
   return (
-    <div className="operations-block">
+    <div>
       <div className="action-row operations-mode-row">
         <button
           type="button"
@@ -183,7 +167,6 @@ function GasFields({
               className="input input-large"
               type="number"
               min="0"
-              step="1"
               value={value.manualCost || ''}
               placeholder="800"
               onChange={(event) => onChange({ manualCost: numberValue(event.target.value) })}
@@ -214,13 +197,11 @@ function GasFields({
               className="input"
               type="number"
               min="0"
-              step="1"
               value={value.cylinderPrice || ''}
               placeholder="1900"
               onChange={(event) => onChange({ cylinderPrice: numberValue(event.target.value) })}
             />
           </div>
-
           {value.mode === 'KG' ? (
             <div className="field">
               <label>LPG used (kg)</label>
@@ -248,7 +229,6 @@ function GasFields({
               />
             </div>
           )}
-
           <div className="operations-total-box">
             <span>Gas total</span>
             <strong>{money(total)}</strong>
@@ -280,12 +260,9 @@ export default function OperationsCostPage() {
     }
 
     setSession(current);
-
     const saved = loadWork(current.tenantId) as WorkWithOperations;
-    const normalized = normalizeOperationsState(saved, saved.operations);
-
     setWork(saved);
-    setOperations(normalized);
+    setOperations(normalizeOperationsState(saved, saved.operations));
   }, [router]);
 
   const totals = useMemo(
@@ -304,10 +281,10 @@ export default function OperationsCostPage() {
         ...work.extras,
         gasFuel: nextTotals.gasTotal,
         transport: nextTotals.transportTotal,
-        disposable: 0,
+        // Disposable is a separate next step; never wipe an existing value here.
+        disposable: Math.max(0, Number(work.extras.disposable) || 0),
         other: 0,
       },
-      // A changed cost basis should not silently keep an old selling rate.
       sellingPricePerPlate: 0,
       updatedAt: new Date().toISOString(),
     };
@@ -331,46 +308,31 @@ export default function OperationsCostPage() {
       if (key === 'gas') {
         return {
           ...row,
-          gas: {
-            ...row.gas,
-            ...(patch as Partial<GasCostInput>),
-          },
+          gas: { ...row.gas, ...(patch as Partial<GasCostInput>) },
         } satisfies FunctionOperationsRow;
       }
 
       return {
         ...row,
-        transport: {
-          ...row.transport,
-          ...(patch as Partial<TransportCostInput>),
-        },
+        transport: { ...row.transport, ...(patch as Partial<TransportCostInput>) },
       } satisfies FunctionOperationsRow;
     });
 
     persist({ ...operations, functions });
   }
 
-  function setTransportMode(mode: OperationsCostState['transportMode']) {
-    if (!operations) return;
-    persist({ ...operations, transportMode: mode });
-  }
-
   function updateSharedTransport(patch: Partial<TransportCostInput>) {
     if (!operations) return;
-
     persist({
       ...operations,
-      sharedTransport: {
-        ...operations.sharedTransport,
-        ...patch,
-      },
+      sharedTransport: { ...operations.sharedTransport, ...patch },
     });
   }
 
-  function continueToPricing() {
+  function continueToDisposable() {
     if (!operations) return;
     persist(operations, 'Gas and transport costs saved.');
-    router.push('/app/final-costing');
+    router.push('/app/disposable');
   }
 
   if (!work || !session || !operations || !totals) {
@@ -392,25 +354,21 @@ export default function OperationsCostPage() {
   return (
     <AppShell
       title="Gas & Transport"
-      subtitle="Calculate LPG and vehicle cost before setting your selling price"
+      subtitle="Calculate LPG and vehicle cost before plastic and disposable cost"
     >
       <section className="content-grid operations-page">
         <div className="final-costing-overview is-ready">
           <div>
             <span className="page-eyebrow">Real event cost</span>
             <h2>Gas + transport by function</h2>
-            <p>
-              Gas is calculated for each function. Transport can be one shared event cost or separate for every function.
-            </p>
+            <p>Gas is function-wise. Transport can be shared for the event or entered separately for every function.</p>
           </div>
           <div className="final-costing-overview-total">
             <span>Operations cost</span>
             <b>{money(totals.total)}</b>
-            <small>
-              Gas {money(totals.gasTotal)} · Transport {money(totals.transportTotal)}
-            </small>
-            <button className="primary-button" type="button" onClick={continueToPricing}>
-              Next: Pricing
+            <small>Gas {money(totals.gasTotal)} · Transport {money(totals.transportTotal)}</small>
+            <button className="primary-button" type="button" onClick={continueToDisposable}>
+              Next: Plastic & Disposable
             </button>
           </div>
         </div>
@@ -420,36 +378,27 @@ export default function OperationsCostPage() {
             <div>
               <span className="section-kicker">Transport method</span>
               <h2>How should transport be counted?</h2>
-              <p>
-                Use shared transport when the same vehicle trip carries material for the full event. Use function-wise when meals need separate trips.
-              </p>
+              <p>Use shared transport for one common event trip, or function-wise for separate meal trips.</p>
             </div>
           </div>
-
           <div className="action-row">
             <button
               type="button"
               className={operations.transportMode === 'EVENT_SHARED' ? 'primary-button' : 'secondary-button'}
-              onClick={() => setTransportMode('EVENT_SHARED')}
+              onClick={() => persist({ ...operations, transportMode: 'EVENT_SHARED' })}
             >
               One Shared Event Transport
             </button>
             <button
               type="button"
               className={operations.transportMode === 'FUNCTION_WISE' ? 'primary-button' : 'secondary-button'}
-              onClick={() => setTransportMode('FUNCTION_WISE')}
+              onClick={() => persist({ ...operations, transportMode: 'FUNCTION_WISE' })}
             >
               Function-wise Transport
             </button>
           </div>
-
           {operations.transportMode === 'EVENT_SHARED' ? (
-            <div style={{ marginTop: 18 }}>
-              <TransportFields
-                value={operations.sharedTransport}
-                onChange={updateSharedTransport}
-              />
-            </div>
+            <TransportFields value={operations.sharedTransport} onChange={updateSharedTransport} />
           ) : null}
         </div>
 
@@ -459,20 +408,17 @@ export default function OperationsCostPage() {
             operations.transportMode === 'FUNCTION_WISE'
               ? calculateTransportCost(row.transport)
               : 0;
-          const functionTotal = gasTotal + transportTotal;
           const title = [row.dayLabel, row.mealLabel].filter(Boolean).join(' · ');
 
           return (
             <article className="glass-card operations-function-card" key={row.id}>
               <div className="final-costing-section-heading">
                 <div>
-                  <span className="section-kicker">
-                    Function {index + 1} · {row.pax.toLocaleString('en-IN')} guests
-                  </span>
+                  <span className="section-kicker">Function {index + 1} · {row.pax.toLocaleString('en-IN')} guests</span>
                   <h2>{title || `Function ${index + 1}`}</h2>
                   <p>
-                    Function operations cost: {money(functionTotal)}
-                    {row.pax > 0 ? ` · ${money(functionTotal / row.pax)} / guest` : ''}
+                    Gas {money(gasTotal)}
+                    {transportTotal > 0 ? ` · Transport ${money(transportTotal)}` : ''}
                   </p>
                 </div>
               </div>
@@ -480,11 +426,10 @@ export default function OperationsCostPage() {
               <div className="operations-section-title">
                 <div>
                   <strong>LPG / Gas</strong>
-                  <small>Use actual kg, cylinder fraction or a manual amount.</small>
+                  <small>Use actual kg, cylinder fraction or manual cost.</small>
                 </div>
                 <b>{money(gasTotal)}</b>
               </div>
-
               <GasFields
                 value={row.gas}
                 pax={row.pax}
@@ -493,7 +438,7 @@ export default function OperationsCostPage() {
 
               {operations.transportMode === 'FUNCTION_WISE' ? (
                 <>
-                  <div className="operations-section-title operations-transport-heading">
+                  <div className="operations-section-title">
                     <div>
                       <strong>Transport</strong>
                       <small>Count only trips required for this function.</small>
@@ -511,50 +456,26 @@ export default function OperationsCostPage() {
         })}
 
         <div className="glass-card operations-summary-card">
-          <div className="final-costing-section-heading">
-            <div>
-              <span className="section-kicker">Operations summary</span>
-              <h2>Cost added to final event costing</h2>
-            </div>
-          </div>
-
           <div className="final-profit-strip is-positive">
-            <div>
-              <span>Gas</span>
-              <b>{money(totals.gasTotal)}</b>
-            </div>
-            <div>
-              <span>Transport</span>
-              <b>{money(totals.transportTotal)}</b>
-            </div>
-            <div>
-              <span>Gas + Transport</span>
-              <b>{money(totals.total)}</b>
-            </div>
-            <div>
-              <span>Transport mode</span>
-              <b>{operations.transportMode === 'EVENT_SHARED' ? 'Shared' : 'Function-wise'}</b>
-            </div>
+            <div><span>Gas</span><b>{money(totals.gasTotal)}</b></div>
+            <div><span>Transport</span><b>{money(totals.transportTotal)}</b></div>
+            <div><span>Gas + Transport</span><b>{money(totals.total)}</b></div>
+            <div><span>Transport mode</span><b>{operations.transportMode === 'EVENT_SHARED' ? 'Shared' : 'Function-wise'}</b></div>
           </div>
-
           {message ? <div className="admin-message" style={{ marginTop: 14 }}>{message}</div> : null}
         </div>
 
         <div className="action-row page-actions">
-          <button className="primary-button" type="button" onClick={continueToPricing}>
-            Save & Continue to Pricing
+          <button className="primary-button" type="button" onClick={continueToDisposable}>
+            Save & Continue to Plastic
           </button>
-          <button
-            className="ghost-button"
-            type="button"
-            onClick={() => router.push('/app/manpower?afterGrocery=1')}
-          >
+          <button className="ghost-button" type="button" onClick={() => router.push('/app/manpower?afterGrocery=1')}>
             Back to Manpower
           </button>
         </div>
 
         <style>{`
-          .operations-page{padding-bottom:28px}.operations-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.operations-fields{margin-top:16px}.operations-total-box{min-height:78px;padding:13px 15px;border:1px solid rgba(148,163,184,.2);border-radius:14px;background:rgba(148,163,184,.06);display:grid;gap:2px}.operations-total-box span,.operations-total-box small{color:var(--muted);font-size:11px}.operations-total-box strong{font-size:21px}.operations-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 6px;padding-top:18px;border-top:1px solid rgba(148,163,184,.14)}.operations-section-title>div{display:grid;gap:3px}.operations-section-title small{color:var(--muted)}.operations-section-title>b{font-size:18px}.operations-transport-heading{margin-top:26px}.operations-mode-row{margin-top:10px}.operations-function-card{overflow:hidden}@media(max-width:900px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.operations-grid{grid-template-columns:1fr}.operations-mode-row{display:grid;grid-template-columns:1fr}.operations-mode-row button{width:100%}.operations-section-title{align-items:flex-start}.operations-summary-card .final-profit-strip{grid-template-columns:1fr 1fr}}
+          .operations-page{padding-bottom:28px}.operations-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.operations-fields{margin-top:16px}.operations-total-box{min-height:78px;padding:13px 15px;border:1px solid rgba(148,163,184,.2);border-radius:14px;background:rgba(148,163,184,.06);display:grid;gap:2px}.operations-total-box span,.operations-total-box small{color:var(--muted);font-size:11px}.operations-total-box strong{font-size:21px}.operations-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 6px;padding-top:18px;border-top:1px solid rgba(148,163,184,.14)}.operations-section-title>div{display:grid;gap:3px}.operations-section-title small{color:var(--muted)}.operations-section-title>b{font-size:18px}.operations-mode-row{margin-top:10px}.operations-function-card{overflow:hidden}@media(max-width:900px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.operations-grid{grid-template-columns:1fr}.operations-mode-row{display:grid;grid-template-columns:1fr}.operations-mode-row button{width:100%}}
         `}</style>
       </section>
     </AppShell>
