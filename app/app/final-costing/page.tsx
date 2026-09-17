@@ -114,6 +114,8 @@ export default function FinalCostingPage() {
   const priceReady = costReady && pricing.sellingPricePerCover > 0;
 
   function selectMode(nextMode: SellingPriceMode) {
+    if (!work) return;
+
     setMode(nextMode);
     setMessage('');
 
@@ -127,7 +129,7 @@ export default function FinalCostingPage() {
   }
 
   function savePrice(): WorkState | null {
-    if (!session || !priceReady) return null;
+    if (!work || !session || !priceReady) return null;
 
     const nextWork: WorkState = {
       ...work,
