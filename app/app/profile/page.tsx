@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import CostingHistoryCard from '../../components/CostingHistoryCard';
+import { useLanguage } from '../../components/LanguageProvider';
 import { clearWork, getClients, getSession, loadWork, logout, saveWork, upsertClient } from '../../../lib/store';
 import type { ClientUser, Session, WorkState } from '../../../lib/types';
 
@@ -26,6 +27,7 @@ declare global {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { language, setLanguage, t } = useLanguage();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
   const [client, setClient] = useState<ClientUser | null>(null);
@@ -250,6 +252,37 @@ export default function ProfilePage() {
   return (
     <AppShell title="Profile" subtitle="Step 6 of 6: business profile, plan status and logout">
       <section className="content-grid">
+        {session.role === 'CLIENT' ? (
+          <div className="glass-card language-preference-card">
+            <div>
+              <div className="section-kicker">{t('Language preference')}</div>
+              <h2>{t('App language')}</h2>
+              <p className="muted">{t('Choose the language used for navigation and key workflow instructions.')}</p>
+              <small>{t('Saved on this device and applied immediately.')}</small>
+            </div>
+            <div className="language-choice" role="group" aria-label={t('App language')}>
+              <button
+                type="button"
+                className={language === 'en' ? 'is-active' : ''}
+                aria-pressed={language === 'en'}
+                onClick={() => setLanguage('en')}
+              >
+                <span>EN</span>
+                <b>English</b>
+              </button>
+              <button
+                type="button"
+                className={language === 'hi' ? 'is-active' : ''}
+                aria-pressed={language === 'hi'}
+                onClick={() => setLanguage('hi')}
+              >
+                <span>हिं</span>
+                <b>हिन्दी</b>
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="stat-grid">
           <div className="stat-card"><small>Role</small><strong>{session.role}</strong><span>{session.userId}</span></div>
           <div className="stat-card">

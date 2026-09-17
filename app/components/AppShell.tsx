@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
 import { getSession, logout, refreshSessionFromClient } from '../../lib/store';
 import type { Session } from '../../lib/types';
+import { useLanguage } from './LanguageProvider';
 
 type NavIcon = 'profile' | 'clients' | 'dishes' | 'ingredients';
 
@@ -48,6 +49,7 @@ export default function AppShell({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { language, setLanguage, t } = useLanguage();
   const [session, setSession] = useState<Session | null>(() => cachedShellSession);
   const [ready, setReady] = useState(() => cachedShellSession !== null);
 
@@ -70,7 +72,7 @@ export default function AppShell({
   if (!ready) {
     return (
       <main className="page-shell center-screen">
-        <div className="loader-card">Opening Menu Costing App...</div>
+        <div className="loader-card">{t('Opening Menu Costing App...')}</div>
       </main>
     );
   }
@@ -87,14 +89,28 @@ export default function AppShell({
         </Link>
 
         <div className="topbar-actions">
+          {!isAdmin ? (
+            <label className="app-language-select">
+              <span>{t('App language')}</span>
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value === 'hi' ? 'hi' : 'en')}
+                aria-label={t('App language')}
+              >
+                <option value="en">EN · English</option>
+                <option value="hi">हिं · हिन्दी</option>
+              </select>
+            </label>
+          ) : null}
+
           <span className={`account-status ${session?.status === 'ACTIVE' ? 'active' : ''}`}>
             <i aria-hidden="true" />
-            {isAdmin ? 'Admin' : session?.status === 'ACTIVE' ? 'Active' : session?.status}
+            {isAdmin ? 'Admin' : session?.status === 'ACTIVE' ? t('Active') : session?.status}
           </span>
 
           <button
             className="ghost-button logout-button"
-            aria-label="Log out of Menu Costing"
+            aria-label={t('Sign out')}
             onClick={() => {
               cachedShellSession = null;
               logout();
@@ -106,7 +122,7 @@ export default function AppShell({
               <path d="M14 8l4 4-4 4M18 12H8" />
               <path d="M11 5H5v14h6" />
             </svg>
-            <span>Sign out</span>
+            <span>{t('Sign out')}</span>
           </button>
         </div>
       </header>

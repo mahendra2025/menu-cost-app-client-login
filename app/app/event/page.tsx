@@ -8,6 +8,7 @@ import {
 import { useRouter } from 'next/navigation';
 
 import FreeLimitPaywall from '../../components/FreeLimitPaywall';
+import { useLanguage } from '../../components/LanguageProvider';
 
 
 import AppShell, {
@@ -805,6 +806,7 @@ function normalizeAiEventDetails(
 
 export default function EventPage() {
   const router = useRouter();
+  const { language, t } = useLanguage();
 
   const [session, setSession] =
     useState<Session | null>(null);
@@ -6634,8 +6636,8 @@ export default function EventPage() {
                 <div className="event-import-step-title">
                   <span aria-hidden="true">1</span>
                   <div>
-                    <h3>Set up this function</h3>
-                    <p>Name the meal or celebration and confirm its guest count.</p>
+                    <h3>{t('Set up this function')}</h3>
+                    <p>{t('Name the meal or celebration and confirm its guest count.')}</p>
                   </div>
                 </div>
                 {work.menu.length > 0 ? (
@@ -6646,7 +6648,7 @@ export default function EventPage() {
               <div className="function-import-context">
                 <div className="field">
                   <label htmlFor="importFunctionName">
-                    Function name
+                    {t('Function name')}
                   </label>
                   <input
                     id="importFunctionName"
@@ -6656,14 +6658,14 @@ export default function EventPage() {
                       setError('');
                       setImportFunctionName(event.target.value);
                     }}
-                    placeholder="e.g. Sangeet dinner"
+                    placeholder={t('e.g. Sangeet dinner')}
                   />
-                  <small>Use the name your team will recognise.</small>
+                  <small>{t('Use the name your team will recognise.')}</small>
                 </div>
 
                 <div className="field">
                   <label htmlFor="importFunctionPax">
-                    Guests for this function
+                    {t('Guests for this function')}
                   </label>
                   <input
                     id="importFunctionPax"
@@ -6677,15 +6679,15 @@ export default function EventPage() {
                     }
                     placeholder={work.event.pax > 0 ? String(work.event.pax) : '300'}
                   />
-                  <small>Used to calculate ingredient quantities.</small>
+                  <small>{t('Used to calculate ingredient quantities.')}</small>
                 </div>
               </div>
 
               <div className="event-import-step-heading">
                 <span aria-hidden="true">2</span>
                 <div>
-                  <h3>Add dishes for this function</h3>
-                  <p>Upload a menu or paste its text. You can review every detected dish before saving.</p>
+                  <h3>{t('Add dishes for this function')}</h3>
+                  <p>{t('Upload a menu or paste its text. You can review every detected dish before saving.')}</p>
                 </div>
               </div>
 
@@ -6699,8 +6701,8 @@ export default function EventPage() {
                       </svg>
                     </span>
                     <div>
-                      <b id="upload-menu-title">Upload a menu</b>
-                      <p>Best for a PDF, printed menu or phone photo.</p>
+                      <b id="upload-menu-title">{t('Upload a menu')}</b>
+                      <p>{t('Best for a PDF, printed menu or phone photo.')}</p>
                     </div>
                   </div>
 
@@ -6724,8 +6726,8 @@ export default function EventPage() {
                     htmlFor="menuFileUpload"
                     aria-disabled={Boolean(uploading)}
                   >
-                    <b>{uploading ? 'Reading menu…' : 'Choose PDF or photo'}</b>
-                    <small>PDF up to 15 MB · photos up to 20 MB</small>
+                    <b>{uploading ? t('Reading menu…') : t('Choose PDF or photo')}</b>
+                    <small>{t('PDF up to 15 MB · photos up to 20 MB')}</small>
                   </label>
                 </section>
                 </div>
@@ -6735,13 +6737,13 @@ export default function EventPage() {
                       <div>
                         <span className="menu-paste-icon" aria-hidden="true">Aa</span>
                         <div>
-                          <label htmlFor="rawMenuText">Paste menu text</label>
-                          <small>Best when you already have the menu in WhatsApp or a document.</small>
+                          <label htmlFor="rawMenuText">{t('Paste menu text')}</label>
+                          <small>{t('Best when you already have the menu in WhatsApp or a document.')}</small>
                         </div>
                       </div>
                       <div>
-                        <button className="event-text-action" type="button" onClick={useSampleMenu}>Use sample</button>
-                        {work.event.rawMenuText ? <button className="event-text-action danger" type="button" onClick={clearMenuText}>Clear</button> : null}
+                        <button className="event-text-action" type="button" onClick={useSampleMenu}>{t('Use sample')}</button>
+                        {work.event.rawMenuText ? <button className="event-text-action danger" type="button" onClick={clearMenuText}>{t('Clear')}</button> : null}
                       </div>
                     </div>
 
@@ -6756,7 +6758,15 @@ export default function EventPage() {
                         setSelectedPreviewIds(new Set());
                         updateEvent('rawMenuText', event.target.value);
                       }}
-                      placeholder={`Paste one dish per line, for example:
+                      placeholder={language === 'hi' ? `हर लाइन में एक व्यंजन पेस्ट करें, जैसे:
+
+वेलकम ड्रिंक
+ऑरेंज जूस
+जल जीरा
+
+स्टार्टर
+पनीर टिक्का
+हरा भरा कबाब` : `Paste one dish per line, for example:
 
 Welcome drinks
 Orange juice
@@ -6767,7 +6777,7 @@ Paneer tikka
 Hara bhara kebab`}
                     />
                     <div className="event-text-meta">
-                      <span>{menuLines ? `${menuLines} menu lines` : 'No menu text yet'}</span>
+                      <span>{menuLines ? (language === 'hi' ? `${menuLines} मेन्यू लाइनें` : `${menuLines} menu lines`) : t('No menu text yet')}</span>
                       <span>English, Roman Hindi, हिन्दी or ગુજરાતી</span>
                     </div>
                 </div>
@@ -6824,11 +6834,11 @@ Hara bhara kebab`}
                   }
                 >
                   {manualDishLoading
-                    ? 'Loading Dishes…'
-                    : 'Browse Dish Master'}
+                    ? t('Loading Dishes…')
+                    : t('Browse Dish Master')}
                 </button>
 
-                <small>Already costed these dishes? Add them directly without detection.</small>
+                <small>{t('Already costed these dishes? Add them directly without detection.')}</small>
               </div>
 
               {showManualDishSelector ? (
@@ -10658,11 +10668,11 @@ Hara bhara kebab`}
               <div className="event-detect-copy">
                 <span aria-hidden="true">3</span>
                 <div>
-                  <b>Review detected dishes</b>
+                  <b>{t('Review detected dishes')}</b>
                   <small>
                     {work.event.rawMenuText.trim()
-                      ? `${menuLines} menu lines are ready to check.`
-                      : 'Upload a menu or paste text to continue.'}
+                      ? (language === 'hi' ? `${menuLines} मेन्यू लाइनें जाँच के लिए तैयार हैं।` : `${menuLines} menu lines are ready to check.`)
+                      : t('Upload a menu or paste text to continue.')}
                   </small>
                 </div>
               </div>
@@ -10673,10 +10683,10 @@ Hara bhara kebab`}
                 disabled={detecting || Boolean(uploading) || !work.event.rawMenuText.trim()}
               >
                 {detecting
-                  ? 'Detecting Dishes...'
+                  ? t('Detecting Dishes...')
                   : detectionPreview
-                    ? 'Refresh Detection Preview'
-                    : 'Detect dishes'}
+                    ? t('Refresh Detection Preview')
+                    : t('Detect dishes')}
               </button>
             </div>
           </div>

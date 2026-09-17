@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import PwaRegister from './components/PwaRegister';
 import AdminPerformanceBootstrap from './components/AdminPerformanceBootstrap';
+import { LanguageProvider } from './components/LanguageProvider';
 import './globals.css';
 import './hide-detection-summary.css';
 
@@ -52,9 +53,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en-IN" data-theme="dark" data-scroll-behavior="smooth">
       <body>
-        {children}
-        <AdminPerformanceBootstrap />
-        <PwaRegister />
+        <LanguageProvider>
+          {children}
+          <AdminPerformanceBootstrap />
+          <PwaRegister />
+        </LanguageProvider>
       </body>
     </html>
   );
