@@ -30,13 +30,23 @@ export default function EventLayout({
       return;
     }
 
+    // Resume mode is used when an in-progress costing returns from Manpower
+    // or an old /app/menu link. Never clear the current event in this mode.
+    const resumeCurrentCosting =
+      new URLSearchParams(window.location.search).get('resume') === '1';
+
+    if (resumeCurrentCosting) {
+      setReady(true);
+      return;
+    }
+
     const savedWork = loadWork(
       session.tenantId,
     );
     const blankWork =
       createEmptyWorkState(session);
 
-    // Start every Event-page visit as a fresh costing, while keeping the
+    // A normal Event-page visit starts a fresh costing, while keeping the
     // caterer's saved business/profile details intact.
     blankWork.profile = {
       ...savedWork.profile,
@@ -54,8 +64,7 @@ export default function EventLayout({
       session.tenantId,
     );
 
-    // Never allow the previous event's detected menu preview to repopulate
-    // the Event page after refresh or a fresh visit.
+    // A fresh costing should never reuse the previous event's detection cache.
     window.sessionStorage.removeItem(
       `menu-detection:${session.tenantId}`,
     );
