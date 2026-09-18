@@ -311,6 +311,99 @@ export async function GET(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const authError = await requireAdmin();
+    if (authError) return authError;
+
+    const body = await request.json() as Record<string, unknown>;
+    const ingredientId = String(body.id || '').trim();
+    const nextRate = Number(body.rate);
+
+    if (!ingredientId) {
+      return NextResponse.json(
+        { error: 'Ingredient id is required' },
+        { status: 400 },
+      );
+    }
+
+    if (!Number.isFinite(nextRate) || !(nextRate > 0)) {
+      return NextResponse.json(
+        { error: 'Market rate must be greater than ₹0' },
+        { status: 400 },
+      );
+    }
+
+    const catalog = await prisma.recipeCatalog.findUnique({
+      where: { id: CATALOG_ID },
+      select: {
+        rates: true,
+        dishes: true,
+      },
+    });
+
+    const rawRates = Array.isArray(catalog?.rates)
+      ? catalog.rates
+      : [];
+
+    const normalizedRates = rawRates.map(normalizeIngredientRate);
+    const index = normalizedRates.findIndex(
+      (rate) => rate?.id === ingredientId,
+    );
+
+    if (index < 0 || !normalizedRates[index]) {
+      return NextResponse.json(
+        { error: 'Ingredient was not found' },
+        { status: 404 },
+      );
+    }
+
+    const current = normalizedRates[index] as IngredientRate;
+    const next: IngredientRate = {
+      ...current,
+      rate: Math.round(nextRate * 100) / 100,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const nextRates = rawRates.map((value, rateIndex) =>
+      rateIndex === index ? next : value,
+    );
+
+    const ratesByOriginalId = new Map<string, IngredientRate>([
+      [current.id, next],
+    ]);
+
+    const dishes = updateRecipeIngredients(
+      catalog?.dishes ?? [],
+      ratesByOriginalId,
+    );
+
+    const saved = await prisma.recipeCatalog.update({
+      where: { id: CATALOG_ID },
+      data: {
+        rates: nextRates as Prisma.InputJsonValue,
+        dishes: dishes as Prisma.InputJsonValue,
+      },
+      select: {
+        updatedAt: true,
+      },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      ingredient: next,
+      updatedAt: saved.updatedAt,
+    });
+  } catch (error) {
+    console.error('Ingredient rate PATCH failed:', error);
+
+    return NextResponse.json(
+      { error: 'Failed to update ingredient rate' },
+      { status: 500 },
+    );
+  }
+}
+
 export async function PUT(request: Request) {
   try {
     const authError = await requireAdmin();
