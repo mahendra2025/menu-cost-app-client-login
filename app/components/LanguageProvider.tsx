@@ -81,6 +81,17 @@ const hindi: Record<string, string> = {
   'Detect dishes': 'व्यंजन पहचानें',
   'Detecting Dishes...': 'व्यंजन पहचाने जा रहे हैं…',
   'Refresh Detection Preview': 'पहचान फिर से चलाएँ',
+  'Event & Menu': 'इवेंट और मेन्यू',
+  Team: 'स्टाफ़',
+  Expenses: 'खर्च',
+  More: 'अधिक',
+  'Costing progress': 'लागत प्रगति',
+  'Main navigation': 'मुख्य नेविगेशन',
+  'Menu Costing': 'मेन्यू कॉस्टिंग',
+  'Ingredient requirements': 'सामग्री आवश्यकता',
+  'Cost Review': 'लागत जाँच',
+  'Dish costs': 'व्यंजन लागत',
+  'Client quote': 'ग्राहक कोटेशन',
 };
 
 const fullAppHindi: Record<string, string> = {
