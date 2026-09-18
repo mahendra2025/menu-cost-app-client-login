@@ -108,8 +108,10 @@ export function rankDishMatches<T extends DishMatchOption>(
 
 export function unknownDishPriorityScore(input: UnknownDishPriorityInput): number {
   const occurrences = Math.max(0, Number(input.occurrences) || 0);
-  const duplicate = Math.max(0, Math.min(100, Number(input.duplicateScore) || 0));
-  const confidence = Math.max(0, Math.min(100, Number(input.aiConfidence) || 0));
+  const rawDuplicate = Math.max(0, Number(input.duplicateScore) || 0);
+  const rawConfidence = Math.max(0, Number(input.aiConfidence) || 0);
+  const duplicate = Math.min(100, rawDuplicate <= 1 ? rawDuplicate * 100 : rawDuplicate);
+  const confidence = Math.min(100, rawConfidence <= 1 ? rawConfidence * 100 : rawConfidence);
   const risk = String(input.riskLevel || '').toUpperCase();
 
   const riskWeight =
