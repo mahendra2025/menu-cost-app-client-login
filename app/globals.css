@@ -18414,3 +18414,60 @@ small {
     font-size: 16px;
   }
 }
+
+
+/* Event single-page function guest counts */
+.menu-preview-group-pax {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: rgba(74,156,255,.035);
+}
+
+.menu-preview-group-pax label {
+  display: grid;
+  gap: 5px;
+  min-width: min(220px, 100%);
+}
+
+.menu-preview-group-pax label > span {
+  color: #aab4c2;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.menu-preview-group-pax input {
+  width: 150px;
+  max-width: 100%;
+}
+
+.menu-preview-group-pax small {
+  color: #7f8b9d;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .menu-preview-group-pax {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .menu-preview-group-pax label,
+  .menu-preview-group-pax input {
+    width: 100%;
+  }
+
+  .menu-preview-actions {
+    bottom: calc(
+      var(--client-mobile-nav-height, 70px) +
+      10px +
+      env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
