@@ -10,6 +10,12 @@ import {
   prisma,
 } from '../../../../lib/prisma';
 
+import {
+  buildAdminReviewedAliasRules,
+  mergeLearnedDishAliasRules,
+  type LearnedDishAliasRule,
+} from '../../../../lib/dishAliasLearning';
+
 function normalizeAliasKey(
   value: string,
 ) {
@@ -58,8 +64,11 @@ export async function GET() {
       );
     }
 
-    const aliases =
-      await prisma
+    const [
+      tenantAliases,
+      reviewedAliases,
+    ] = await Promise.all([
+      prisma
         .tenantDishAlias
         .findMany({
           where: {
@@ -89,10 +98,119 @@ export async function GET() {
             usageCount:
               true,
           },
-        });
+        }),
+
+      prisma
+        .pendingDishSuggestion
+        .findMany({
+          where: {
+            status: {
+              in: [
+                'MATCHED',
+                'APPROVED',
+              ],
+            },
+          },
+
+          orderBy: [
+            {
+              analyzedAt:
+                'desc',
+            },
+            {
+              updatedAt:
+                'desc',
+            },
+          ],
+
+          take: 2500,
+
+          select: {
+            name:
+              true,
+
+            canonicalName:
+              true,
+
+            matchedDishName:
+              true,
+
+            suggestedCategory:
+              true,
+
+            categoryHint:
+              true,
+
+            occurrences:
+              true,
+
+            status:
+              true,
+          },
+        }),
+    ]);
+
+    const tenantRules:
+      LearnedDishAliasRule[] =
+        tenantAliases.map(
+          (alias) => ({
+            aliasName:
+              alias.aliasName,
+
+            canonicalName:
+              alias.canonicalName,
+
+            category:
+              alias.category,
+
+            action:
+              alias.action ===
+              'REJECT'
+                ? 'REJECT'
+                : 'MAP',
+
+            usageCount:
+              alias.usageCount,
+
+            scope:
+              'TENANT',
+          }),
+        );
+
+    const globalRules =
+      buildAdminReviewedAliasRules(
+        reviewedAliases,
+      );
+
+    /*
+     * Tenant-specific learning wins over
+     * global admin learning for the same
+     * normalized alias.
+     *
+     * This keeps a caterer's explicit
+     * correction authoritative while making
+     * admin-reviewed aliases available to all
+     * other clients automatically.
+     */
+    const aliases =
+      mergeLearnedDishAliasRules(
+        tenantRules,
+        globalRules,
+      );
 
     return NextResponse.json({
       aliases,
+
+      learningSummary: {
+        tenant:
+          tenantRules.length,
+
+        global:
+          globalRules.length,
+
+        effective:
+          aliases.length,
+      },
     });
 
   } catch (error) {

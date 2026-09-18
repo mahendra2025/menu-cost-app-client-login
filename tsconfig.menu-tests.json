@@ -20,6 +20,7 @@
     "lib/operationsCost.ts",
     "lib/disposableCost.ts",
     "lib/unknownDishQueue.ts",
+    "lib/dishAliasLearning.ts",
     "tests/**/*.test.ts",
     "lib/correctedDishCosting.ts",
     "lib/caterersOsSync.ts"
