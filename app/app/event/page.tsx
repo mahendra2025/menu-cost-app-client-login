@@ -7349,7 +7349,7 @@ Hara bhara kebab`}
                       }
                       disabled={!selectedPreviewMenu.length || !detectionReviewGateReady}
                     >
-                      Next: Manpower
+                      Save Menu & Continue
                     </button>
                     <div className="menu-preview-metrics">
                       <span><b>{selectedPreviewMenu.length}</b> selected</span>
