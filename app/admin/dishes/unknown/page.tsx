@@ -120,6 +120,7 @@ function riskLabel(item: PendingDish) {
 }
 
 function statusLabel(status: string) {
+  if (status === 'ALL') return 'All';
   if (status === 'APPROVED') return 'Added';
   if (status === 'MATCHED') return 'Matched';
   if (status === 'IGNORED') return 'Ignored';
