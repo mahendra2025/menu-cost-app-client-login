@@ -7581,7 +7581,7 @@ Hara bhara kebab`}
                         <small>
                           {sourceCompareAttentionCount > 0
                             ? `${sourceCompareAttentionCount} item${sourceCompareAttentionCount === 1 ? '' : 's'} need attention. Edit the detected dishes below.`
-                            : 'Review the detected dishes, make any correction, then use this menu.'}
+                            : 'Review the detected dishes, make any correction, then save and continue.'}
                         </small>
                       </div>
 
@@ -10181,50 +10181,6 @@ Hara bhara kebab`}
                             ⌄
                           </span>
                         </summary>
-
-                        <div className="menu-preview-group-pax">
-                          <label>
-                            <span>
-                              Guests for {
-                                group.mealLabel ||
-                                'this function'
-                              }
-                            </span>
-
-                            <input
-                              className="input"
-                              type="number"
-                              min="1"
-                              inputMode="numeric"
-                              value={
-                                group.servicePax > 0
-                                  ? String(
-                                      group.servicePax,
-                                    )
-                                  : ''
-                              }
-                              placeholder={
-                                Number(
-                                  work.event.pax,
-                                ) > 0
-                                  ? String(
-                                      work.event.pax,
-                                    )
-                                  : '300'
-                              }
-                              onChange={(event) =>
-                                updateDetectionGroupPax(
-                                  group.key,
-                                  event.target.value,
-                                )
-                              }
-                            />
-                          </label>
-
-                          <small>
-                            Used for grocery quantities and manpower.
-                          </small>
-                        </div>
 
                         <div className="menu-preview-items">
                           {group.items.map((item) => {
