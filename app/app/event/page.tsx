@@ -1626,28 +1626,31 @@ export default function EventPage() {
         ),
       );
 
+    const groupCount =
+      new Set(
+        (
+          detectionPreview?.menu ||
+          []
+        ).map(
+          (item) =>
+            detectionGroupKeyForItem(
+              item,
+            ),
+        ),
+      ).size;
+
+    if (groupCount === 1) {
+      setImportFunctionPax(
+        nextPax > 0
+          ? String(nextPax)
+          : '',
+      );
+    }
+
     setDetectionPreview(
       (current) => {
         if (!current) {
           return current;
-        }
-
-        const groupKeys =
-          new Set(
-            current.menu.map(
-              (item) =>
-                detectionGroupKeyForItem(
-                  item,
-                ),
-            ),
-          );
-
-        if (groupKeys.size === 1) {
-          setImportFunctionPax(
-            nextPax > 0
-              ? String(nextPax)
-              : '',
-          );
         }
 
         return {
@@ -6502,11 +6505,9 @@ export default function EventPage() {
 
       const servicePax =
         Math.max(
+          0,
           Number(
             item.servicePax,
-          ) || 0,
-          Number(
-            work.event.pax,
           ) || 0,
         );
 
@@ -6538,6 +6539,16 @@ export default function EventPage() {
   const detectionGuestGroups =
     Array.from(
       detectionGuestGroupMap.values(),
+    ).map(
+      (group) => ({
+        ...group,
+        servicePax:
+          group.servicePax ||
+          Number(
+            work.event.pax,
+          ) ||
+          0,
+      }),
     );
 
   const existingMenuKeys =
@@ -7291,7 +7302,7 @@ Hara bhara kebab`}
                         void addManualMenuAndContinue()
                       }
                     >
-                      Add Selected & Continue to Manpower
+                      Add Selected & Continue to Grocery
                     </button>
                   </div>
                 </div>
