@@ -5,8 +5,6 @@ import {
   useState,
 } from 'react';
 
-import { useRouter } from 'next/navigation';
-
 import FreeLimitPaywall from '../../components/FreeLimitPaywall';
 import { useLanguage } from '../../components/LanguageProvider';
 
@@ -823,7 +821,6 @@ function normalizeAiEventDetails(
 }
 
 export default function EventPage() {
-  const router = useRouter();
   const { language, t } = useLanguage();
 
   const [session, setSession] =
@@ -1036,6 +1033,34 @@ export default function EventPage() {
       );
     }
   }, []);
+
+  useEffect(() => {
+    if (
+      !session ||
+      !work ||
+      !detectionPreview
+    ) {
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(
+        `menu-detection:${session.tenantId}`,
+        JSON.stringify({
+          rawMenuText:
+            work.event.rawMenuText,
+          preview:
+            detectionPreview,
+        }),
+      );
+    } catch {
+      // Detection review still works if session storage is unavailable.
+    }
+  }, [
+    detectionPreview,
+    session,
+    work,
+  ]);
 
 
 
@@ -1553,7 +1578,7 @@ export default function EventPage() {
     );
 
     window.location.assign(
-      '/app/manpower',
+      '/app/grocery',
     );
   }
 
@@ -1587,6 +1612,86 @@ export default function EventPage() {
       item.serviceId ||
       `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`
     );
+  }
+
+  function updateDetectionGroupPax(
+    groupKey: string,
+    value: string,
+  ) {
+    const nextPax =
+      Math.max(
+        0,
+        Math.round(
+          Number(value) || 0,
+        ),
+      );
+
+    const groupCount =
+      new Set(
+        (
+          detectionPreview?.menu ||
+          []
+        ).map(
+          (item) =>
+            detectionGroupKeyForItem(
+              item,
+            ),
+        ),
+      ).size;
+
+    if (groupCount === 1) {
+      setImportFunctionPax(
+        nextPax > 0
+          ? String(nextPax)
+          : '',
+      );
+    }
+
+    setDetectionPreview(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+
+          menu:
+            current.menu.map(
+              (item) =>
+                detectionGroupKeyForItem(
+                  item,
+                ) === groupKey
+                  ? {
+                      ...item,
+                      servicePax:
+                        nextPax,
+                    }
+                  : item,
+            ),
+
+          possibleMissed:
+            current.possibleMissed.map(
+              (candidate) => {
+                const candidateKey =
+                  candidate.serviceId ||
+                  `${candidate.dayLabel || 'Event'}::${candidate.mealLabel || 'Event Menu'}`;
+
+                return candidateKey ===
+                  groupKey
+                  ? {
+                      ...candidate,
+                      servicePax:
+                        nextPax,
+                    }
+                  : candidate;
+              },
+            ),
+        };
+      },
+    );
+
+    setError('');
   }
 
   async function recostReviewedDish(
@@ -4900,16 +5005,6 @@ export default function EventPage() {
         ),
       );
 
-      if (uploadWork) {
-        sessionStorage.setItem(`menu-detection:${session.tenantId}`, JSON.stringify({
-          rawMenuText,
-          preview: { menu: detectedMenu, possibleMissed: possibleMissedDishes,
-            eventDetails: detectedDetails, source: detectionSource },
-        }));
-        router.push('/app/menu');
-        return;
-      }
-
       window.setTimeout(() => {
         document
           .getElementById(
@@ -4959,6 +5054,48 @@ export default function EventPage() {
     if (!selectedMenu.length) {
       setError(
         'Select at least one detected dish before continuing.',
+      );
+      return;
+    }
+
+    const selectedFunctionPax =
+      new Map<string, number>();
+
+    selectedMenu.forEach(
+      (item) => {
+        const key =
+          detectionGroupKeyForItem(
+            item,
+          );
+
+        selectedFunctionPax.set(
+          key,
+          Math.max(
+            selectedFunctionPax.get(
+              key,
+            ) || 0,
+            Number(
+              item.servicePax,
+            ) ||
+              Number(
+                work.event.pax,
+              ) ||
+              0,
+          ),
+        );
+      },
+    );
+
+    const missingFunctionPax =
+      Array.from(
+        selectedFunctionPax.values(),
+      ).filter(
+        (pax) => !(pax > 0),
+      ).length;
+
+    if (missingFunctionPax) {
+      setError(
+        `Enter guest count for ${missingFunctionPax} function${missingFunctionPax === 1 ? '' : 's'} before saving the menu.`,
       );
       return;
     }
@@ -5153,7 +5290,7 @@ export default function EventPage() {
       );
 
       // Full navigation prevents the next page from getting stuck.
-      window.location.assign('/app/manpower');
+      window.location.assign('/app/grocery');
     } catch (saveError) {
       console.error(
         'Detected menu save failed:',
@@ -6343,6 +6480,77 @@ export default function EventPage() {
       previewGroupMap.values(),
     );
 
+  const detectionGuestGroupMap =
+    new Map<
+      string,
+      {
+        key: string;
+        dayLabel: string;
+        mealLabel: string;
+        servicePax: number;
+      }
+    >();
+
+  detectionReviewItems.forEach(
+    (item) => {
+      const key =
+        detectionGroupKeyForItem(
+          item,
+        );
+
+      const current =
+        detectionGuestGroupMap.get(
+          key,
+        );
+
+      const servicePax =
+        Math.max(
+          0,
+          Number(
+            item.servicePax,
+          ) || 0,
+        );
+
+      if (current) {
+        current.servicePax =
+          Math.max(
+            current.servicePax,
+            servicePax,
+          );
+
+        return;
+      }
+
+      detectionGuestGroupMap.set(
+        key,
+        {
+          key,
+          dayLabel:
+            item.dayLabel || '',
+          mealLabel:
+            item.mealLabel ||
+            'Event Menu',
+          servicePax,
+        },
+      );
+    },
+  );
+
+  const detectionGuestGroups =
+    Array.from(
+      detectionGuestGroupMap.values(),
+    ).map(
+      (group) => ({
+        ...group,
+        servicePax:
+          group.servicePax ||
+          Number(
+            work.event.pax,
+          ) ||
+          0,
+      }),
+    );
+
   const existingMenuKeys =
     new Set(
       work.menu.map(
@@ -7094,7 +7302,7 @@ Hara bhara kebab`}
                         void addManualMenuAndContinue()
                       }
                     >
-                      Add Selected & Continue to Manpower
+                      Add Selected & Continue to Grocery
                     </button>
                   </div>
                 </div>
@@ -7373,7 +7581,7 @@ Hara bhara kebab`}
                         <small>
                           {sourceCompareAttentionCount > 0
                             ? `${sourceCompareAttentionCount} item${sourceCompareAttentionCount === 1 ? '' : 's'} need attention. Edit the detected dishes below.`
-                            : 'Review the detected dishes, make any correction, then use this menu.'}
+                            : 'Review the detected dishes, make any correction, then save and continue.'}
                         </small>
                       </div>
 
@@ -7436,6 +7644,73 @@ Hara bhara kebab`}
                         ×
                       </button>
                     </div>
+
+                    {detectionGuestGroups.length ? (
+                      <div className="menu-source-function-pax">
+                        <div className="menu-source-function-pax-head">
+                          <span>
+                            Function Guests
+                          </span>
+
+                          <small>
+                            Used for grocery quantities and manpower.
+                          </small>
+                        </div>
+
+                        <div className="menu-source-function-pax-grid">
+                          {detectionGuestGroups.map(
+                            (group, index) => {
+                              const label =
+                                [
+                                  group.dayLabel,
+                                  group.mealLabel,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' • ') ||
+                                `Function ${index + 1}`;
+
+                              return (
+                                <label
+                                  className="menu-source-function-pax-field"
+                                  key={group.key}
+                                >
+                                  <span>
+                                    {label}
+                                  </span>
+
+                                  <div>
+                                    <b>
+                                      {t('Guests')}
+                                    </b>
+
+                                    <input
+                                      className="input"
+                                      type="number"
+                                      min="1"
+                                      inputMode="numeric"
+                                      value={
+                                        group.servicePax > 0
+                                          ? String(
+                                              group.servicePax,
+                                            )
+                                          : ''
+                                      }
+                                      placeholder="300"
+                                      onChange={(event) =>
+                                        updateDetectionGroupPax(
+                                          group.key,
+                                          event.target.value,
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                </label>
+                              );
+                            },
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
 
                     <div className="menu-source-compare-columns">
                       <section className="menu-source-compare-panel">
@@ -10571,7 +10846,7 @@ Hara bhara kebab`}
                     }
                     disabled={!selectedPreviewMenu.length || !detectionReviewGateReady}
                   >
-                    Use This Menu
+                    Save Menu & Continue
                   </button>
                   <button
                     className="menu-preview-cancel"
