@@ -4,6 +4,9 @@ import {
   buildAdminReviewedAliasRules,
   mergeLearnedDishAliasRules,
 } from '../lib/dishAliasLearning';
+import {
+  preprocessMenuTextWithTenantLearning,
+} from '../lib/menuDetectionCore';
 
 const globalRules = buildAdminReviewedAliasRules([
   {
@@ -34,6 +37,15 @@ assert.equal(globalRules[0]?.aliasName, 'Panner Tikka');
 assert.equal(globalRules[0]?.canonicalName, 'Paneer Tikka');
 assert.equal(globalRules[0]?.scope, 'GLOBAL');
 assert.equal(globalRules[0]?.usageCount, 4);
+
+const preprocessed = preprocessMenuTextWithTenantLearning(
+  'Starter\nPanner Tikka\nSweet\nGulab Jamun',
+  globalRules,
+);
+
+assert.equal(preprocessed.replacements, 1);
+assert.ok(preprocessed.menuText.includes('Paneer Tikka'));
+assert.ok(!preprocessed.menuText.includes('Panner Tikka'));
 
 const merged = mergeLearnedDishAliasRules(
   [
