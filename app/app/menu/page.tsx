@@ -12,7 +12,7 @@ export default function LegacyMenuRedirect() {
   return (
     <main className="page-shell center-screen">
       <div className="loader-card">
-        Opening detected menu…
+        Opening menu review…
       </div>
     </main>
   );
