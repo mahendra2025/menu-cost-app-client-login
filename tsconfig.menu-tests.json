@@ -21,6 +21,7 @@
     "lib/disposableCost.ts",
     "lib/unknownDishQueue.ts",
     "lib/dishAliasLearning.ts",
+    "lib/recipeCoverage.ts",
     "tests/**/*.test.ts",
     "lib/correctedDishCosting.ts",
     "lib/caterersOsSync.ts"

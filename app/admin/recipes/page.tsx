@@ -4,6 +4,7 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -337,6 +338,9 @@ export default function RecipesPage() {
       null,
     );
 
+  const coverageCreateHandled =
+    useRef(false);
+
   const [
     recipePage,
     setRecipePage,
@@ -579,6 +583,135 @@ export default function RecipesPage() {
 
     void loadRecipes();
   }, []);
+
+  useEffect(() => {
+    if (
+      !catalog ||
+      coverageCreateHandled.current ||
+      typeof window === 'undefined'
+    ) {
+      return;
+    }
+
+    const params =
+      new URLSearchParams(
+        window.location.search,
+      );
+
+    const requestedName =
+      String(
+        params.get('create') ||
+        '',
+      )
+        .normalize('NFKC')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 120);
+
+    if (!requestedName) {
+      return;
+    }
+
+    coverageCreateHandled.current =
+      true;
+
+    const existingIndex =
+      catalog.dishes.findIndex(
+        (dish) =>
+          recipeName(dish)
+            .toLocaleLowerCase(
+              'en-IN',
+            ) ===
+          requestedName
+            .toLocaleLowerCase(
+              'en-IN',
+            ),
+      );
+
+    if (existingIndex >= 0) {
+      setSelectedIndex(
+        existingIndex,
+      );
+
+      setRecipePage(
+        recipePageForIndex(
+          existingIndex,
+        ),
+      );
+
+      setQuery('');
+      setCategory('ALL');
+
+      setMessage(
+        `Existing recipe opened for ${requestedName}.`,
+      );
+
+      return;
+    }
+
+    const requestedCategory =
+      String(
+        params.get('category') ||
+        'Other',
+      )
+        .normalize('NFKC')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60) ||
+      'Other';
+
+    const requestedSubcategory =
+      String(
+        params.get(
+          'subcategory',
+        ) || '',
+      )
+        .normalize('NFKC')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60);
+
+    const index =
+      catalog.dishes.length;
+
+    const dish = {
+      dishName:
+        requestedName,
+      category:
+        requestedCategory,
+      subcategory:
+        requestedSubcategory,
+      baseGuests: 100,
+      servingSize: 1,
+      servingUnit:
+        'serving',
+      pieceWeightGrams: 0,
+      dishRate: 0,
+      ingredients: [],
+    };
+
+    setCatalog({
+      ...catalog,
+      dishes: [
+        ...catalog.dishes,
+        dish,
+      ],
+    });
+
+    setQuery('');
+    setCategory('ALL');
+    setSelectedIndex(index);
+
+    setRecipePage(
+      recipePageForIndex(
+        index,
+      ),
+    );
+
+    setMessage(
+      `New recipe created for ${requestedName}. Add ingredients, then Save & Sync.`,
+    );
+  }, [catalog]);
 
   const categories =
     useMemo(
