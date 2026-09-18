@@ -408,7 +408,11 @@ async function requestTenantDishAliases():
 
     return data.aliases
       .map(
-        (value) => {
+        (
+          value,
+        ):
+          | TenantDishAliasRule
+          | null => {
           if (
             !value ||
             typeof value !==
