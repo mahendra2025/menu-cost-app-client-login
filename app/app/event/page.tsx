@@ -5495,7 +5495,6 @@ export default function EventPage() {
     [
       firstMenuTextReady,
       firstMenuDetected,
-      firstMenuSaved,
     ].filter(Boolean).length;
 
   function scrollToFirstMenuSection(
@@ -6427,15 +6426,15 @@ export default function EventPage() {
                 </h2>
 
                 <p>
-                  Follow these three steps.
+                  Follow these two steps.
                   Menu Costing will guide you from
-                  function import to a saved menu.
+                  adding a menu to reviewing detected dishes.
                 </p>
               </div>
 
               <div className="first-menu-guide-progress">
                 <strong>
-                  {firstMenuCompletedSteps}/3
+                  {firstMenuCompletedSteps}/2
                 </strong>
 
                 <span>
@@ -6452,7 +6451,7 @@ export default function EventPage() {
                       5,
                       (
                         firstMenuCompletedSteps /
-                        3
+                        2
                       ) * 100,
                     )}%`,
                 }}
@@ -6529,39 +6528,7 @@ export default function EventPage() {
                 </span>
               </button>
 
-              <button
-                type="button"
-                className={
-                  firstMenuSaved
-                    ? 'is-complete'
-                    : firstMenuDetected
-                      ? 'is-current'
-                      : ''
-                }
-                onClick={() =>
-                  scrollToFirstMenuSection(
-                    firstMenuDetected
-                      ? 'menuDetectionPreview'
-                      : 'menuInput',
-                  )
-                }
-              >
-                <span className="first-menu-step-number">
-                  {firstMenuSaved
-                    ? '✓'
-                    : '3'}
-                </span>
 
-                <span>
-                  <b>
-                    Save menu
-                  </b>
-
-                  <small>
-                    Continue to costing
-                  </small>
-                </span>
-              </button>
             </div>
 
             {!firstMenuTextReady ? (
