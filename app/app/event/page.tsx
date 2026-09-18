@@ -5,7 +5,6 @@ import {
   useState,
 } from 'react';
 
-import FreeLimitPaywall from '../../components/FreeLimitPaywall';
 import { useLanguage } from '../../components/LanguageProvider';
 
 
@@ -835,8 +834,6 @@ export default function EventPage() {
   const [error, setError] =
     useState('');
 
-  const [freeLimitBlocked, setFreeLimitBlocked] = useState(false);
-
   const [uploading, setUploading] =
     useState<'pdf' | 'photo' | null>(null);
 
@@ -1398,47 +1395,6 @@ export default function EventPage() {
     if (!selected.length) {
       setError(
         'Select at least one dish.',
-      );
-      return;
-    }
-
-    /*
-     * Respect free-costing allowance.
-     */
-    try {
-      const usageResponse =
-        await fetch(
-          `/api/client/free-usage?costingId=${encodeURIComponent(
-            work.costingId,
-          )}`,
-          {
-            cache: 'no-store',
-          },
-        );
-
-      if (!usageResponse.ok) {
-        throw new Error(
-          'Could not verify costing allowance.',
-        );
-      }
-
-      const usage =
-        await usageResponse.json();
-
-      if (
-        !usage.canUseCurrentCosting
-      ) {
-        setFreeLimitBlocked(true);
-
-        setError(
-          'Your 5 free costings are used. Upgrade to Pro to start a new costing.',
-        );
-
-        return;
-      }
-    } catch {
-      setError(
-        'Could not verify your costing allowance. Please try again.',
       );
       return;
     }
@@ -5207,28 +5163,6 @@ export default function EventPage() {
       }
   
   
-    }
-
-    setFreeLimitBlocked(false);
-
-    try {
-      const usageResponse = await fetch(
-        `/api/client/free-usage?costingId=${encodeURIComponent(work.costingId)}`,
-        { cache: 'no-store' },
-      );
-      if (!usageResponse.ok) {
-        setError('Could not verify your costing allowance. Please try again.');
-        return;
-      }
-      const usage = await usageResponse.json();
-      if (!usage.canUseCurrentCosting) {
-        setFreeLimitBlocked(true);
-        setError('Your 5 free costings are used. Upgrade to Pro to start a new costing.');
-        return;
-      }
-    } catch {
-      setError('Could not verify your costing allowance. Please try again.');
-      return;
     }
 
     const functionName =
@@ -10963,10 +10897,6 @@ Hara bhara kebab`}
           </div>
         </div>
       </section>
-            <FreeLimitPaywall
-          open={freeLimitBlocked}
-          onClose={() => setFreeLimitBlocked(false)}
-        />
 
 </AppShell>
   );
