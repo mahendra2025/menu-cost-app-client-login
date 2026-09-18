@@ -233,6 +233,23 @@ export default function UnknownDishQueuePage() {
     });
   }, [items, sortMode]);
 
+  const pendingReviewItems = useMemo(
+    () => sortedItems.filter((item) => item.status === 'PENDING'),
+    [sortedItems],
+  );
+
+  const selectedPendingIndex = selected
+    ? pendingReviewItems.findIndex((item) => item.id === selected.id)
+    : -1;
+  const previousPending =
+    selectedPendingIndex > 0
+      ? pendingReviewItems[selectedPendingIndex - 1]
+      : null;
+  const nextPending =
+    selectedPendingIndex >= 0
+      ? pendingReviewItems[selectedPendingIndex + 1] ?? null
+      : null;
+
   const totalOccurrences = useMemo(
     () =>
       items.reduce(
@@ -413,6 +430,17 @@ export default function UnknownDishQueuePage() {
     });
   }
 
+  function moveReview(direction: -1 | 1) {
+    if (selectedPendingIndex < 0) return;
+
+    const target =
+      pendingReviewItems[selectedPendingIndex + direction];
+
+    if (target) {
+      beginReview(target);
+    }
+  }
+
   function toggleChecked(id: string) {
     setCheckedIds((current) => {
       const next = new Set(current);
@@ -447,6 +475,8 @@ export default function UnknownDishQueuePage() {
     ) {
       return;
     }
+
+    const nextCandidate = advance ? nextPending : null;
 
     setBusy(true);
     setMessage('');
@@ -492,6 +522,7 @@ export default function UnknownDishQueuePage() {
 
   async function submitAction(
     action: 'ADD_NEW' | 'MATCH_EXISTING' | 'IGNORE',
+    advance = true,
   ) {
     if (!selected || selected.status !== 'PENDING') return;
 
@@ -567,19 +598,32 @@ export default function UnknownDishQueuePage() {
         );
       }
 
-      setMessageType('success');
-      setMessage(
+      const successMessage =
         action === 'ADD_NEW'
           ? 'Dish added to Dish Master.'
           : action === 'MATCH_EXISTING'
             ? 'Unknown name saved as an alias of the existing dish.'
-            : 'Dish suggestion ignored.',
-      );
-      setSelectedId(null);
-      setDraft(emptyDraft());
+            : 'Dish suggestion ignored.';
+
+      setMessageType('success');
+
       await loadQueue();
+
       if (action !== 'IGNORE') {
         await loadDishMaster();
+      }
+
+      if (nextCandidate) {
+        beginReview(nextCandidate);
+        setMessage(`${successMessage} Next pending dish opened.`);
+      } else {
+        setSelectedId(null);
+        setDraft(emptyDraft());
+        setMessage(
+          advance
+            ? `${successMessage} Fast review is complete for this view.`
+            : successMessage,
+        );
       }
     } catch (error) {
       setMessageType('error');
@@ -973,16 +1017,60 @@ export default function UnknownDishQueuePage() {
                     : `This item is already ${statusLabel(selected.status).toLowerCase()}.`}
                 </p>
               </div>
-              <button
-                className="ghost-button"
-                type="button"
-                onClick={() => {
-                  setSelectedId(null);
-                  setDraft(emptyDraft());
-                }}
-              >
-                Close
-              </button>
+              {selected.status === 'PENDING' ? (
+                <div className="queue-fast-review">
+                  <div className="queue-fast-progress">
+                    <b>
+                      {selectedPendingIndex >= 0
+                        ? `${selectedPendingIndex + 1} of ${pendingReviewItems.length}`
+                        : 'Fast review'}
+                    </b>
+                    <span>
+                      {statusCounts.PENDING.toLocaleString('en-IN')} pending overall
+                    </span>
+                  </div>
+                  <div className="queue-fast-actions">
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      disabled={!previousPending || busy}
+                      onClick={() => moveReview(-1)}
+                    >
+                      ← Previous
+                    </button>
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      disabled={!nextPending || busy}
+                      onClick={() => moveReview(1)}
+                    >
+                      Next →
+                    </button>
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setSelectedId(null);
+                        setDraft(emptyDraft());
+                      }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => {
+                    setSelectedId(null);
+                    setDraft(emptyDraft());
+                  }}
+                >
+                  Close
+                </button>
+              )}
             </div>
 
             <div className="queue-analysis-grid">
@@ -1137,7 +1225,7 @@ export default function UnknownDishQueuePage() {
                         void submitAction('MATCH_EXISTING')
                       }
                     >
-                      Match & Learn Alias
+                      {nextPending ? 'Match & Next' : 'Match & Finish'}
                     </button>
                   </section>
 
@@ -1275,7 +1363,7 @@ export default function UnknownDishQueuePage() {
                         void submitAction('ADD_NEW')
                       }
                     >
-                      Add to Dish Master
+                      {nextPending ? 'Add New & Next' : 'Add New & Finish'}
                     </button>
                   </section>
                 </div>
@@ -1308,7 +1396,7 @@ export default function UnknownDishQueuePage() {
                     disabled={busy}
                     onClick={() => void submitAction('IGNORE')}
                   >
-                    Ignore This Item
+                    {nextPending ? 'Ignore & Next' : 'Ignore & Finish'}
                   </button>
                 </div>
               </>
@@ -1334,7 +1422,7 @@ export default function UnknownDishQueuePage() {
           .queue-row-main{min-width:0;display:grid;gap:6px}.queue-row-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.queue-row-title>b{font-size:15px}
           .queue-badge{display:inline-flex;align-items:center;padding:3px 7px;border:1px solid rgba(148,163,184,.2);border-radius:999px;font-size:10px;font-weight:750;letter-spacing:.03em}
           .queue-row-meta,.queue-row-insight{display:flex;gap:8px 14px;flex-wrap:wrap;color:var(--muted);font-size:12px}.queue-row-insight b{color:inherit}
-          .queue-review-card{scroll-margin-top:20px}.queue-analysis-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px}
+          .queue-review-card{scroll-margin-top:20px}.queue-fast-review{display:grid;gap:8px;justify-items:end}.queue-fast-progress{display:flex;align-items:baseline;gap:8px}.queue-fast-progress b{font-size:14px}.queue-fast-progress span{color:var(--muted);font-size:11px}.queue-fast-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.queue-analysis-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px}
           .queue-analysis-grid>div,.queue-resolved-summary>div{padding:13px;border:1px solid rgba(148,163,184,.17);border-radius:14px;display:grid;gap:4px}.queue-analysis-grid span,.queue-resolved-summary span{color:var(--muted);font-size:11px}
           .queue-analysis-note{margin-top:12px;padding:14px 15px;border:1px solid rgba(99,102,241,.2);border-radius:14px;background:rgba(99,102,241,.05)}.queue-analysis-note p{margin:5px 0 0;color:var(--muted)}
           .queue-resolved-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
@@ -1345,7 +1433,7 @@ export default function UnknownDishQueuePage() {
           .queue-admin-notes{margin-top:14px}.queue-admin-notes textarea{width:100%;resize:vertical}
           .queue-ignore-zone{margin-top:14px;padding:14px 15px;border:1px dashed rgba(148,163,184,.25);border-radius:15px;display:flex;align-items:center;justify-content:space-between;gap:14px}.queue-ignore-zone>div{display:grid;gap:3px}.queue-ignore-zone span{color:var(--muted);font-size:12px}
           @media(max-width:900px){.queue-stat-grid{grid-template-columns:1fr 1fr}.queue-filter-grid{grid-template-columns:1fr 1fr}.queue-filter-grid .field:first-child{grid-column:1/-1}.queue-decision-grid{grid-template-columns:1fr}}
-          @media(max-width:620px){.queue-stat-grid,.queue-analysis-grid,.queue-resolved-summary,.queue-add-grid,.queue-filter-grid{grid-template-columns:1fr}.queue-filter-grid .field:first-child{grid-column:auto}.queue-row{grid-template-columns:auto minmax(0,1fr)}.queue-row>button{grid-column:1/-1;width:100%}.queue-bulk-bar,.queue-ignore-zone{align-items:stretch;flex-direction:column}.queue-tabs{display:grid;grid-template-columns:1fr 1fr}.queue-tabs button{justify-content:center}.queue-stat b{font-size:22px}}
+          @media(max-width:620px){.queue-stat-grid,.queue-analysis-grid,.queue-resolved-summary,.queue-add-grid,.queue-filter-grid{grid-template-columns:1fr}.queue-filter-grid .field:first-child{grid-column:auto}.queue-row{grid-template-columns:auto minmax(0,1fr)}.queue-row>button{grid-column:1/-1;width:100%}.queue-fast-review{justify-items:stretch}.queue-fast-progress{justify-content:space-between}.queue-fast-actions{display:grid;grid-template-columns:1fr 1fr}.queue-fast-actions button:last-child{grid-column:1/-1}.queue-bulk-bar,.queue-ignore-zone{align-items:stretch;flex-direction:column}.queue-tabs{display:grid;grid-template-columns:1fr 1fr}.queue-tabs button{justify-content:center}.queue-stat b{font-size:22px}}
         `}</style>
       </section>
     </AppShell>
