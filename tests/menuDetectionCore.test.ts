@@ -96,6 +96,21 @@ test(
 );
 
 test(
+  'dish phrase must end at a word boundary',
+  () => {
+    const score =
+      getDishSourceEvidenceScore(
+        'Paneer Tikkaish Special',
+        'Paneer Tikka',
+      );
+
+    assert.ok(
+      score < 90,
+    );
+  },
+);
+
+test(
   'long prose is rejected as strong dish evidence',
   () => {
     const menu =

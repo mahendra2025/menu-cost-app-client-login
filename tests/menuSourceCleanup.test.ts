@@ -93,6 +93,87 @@ test(
 );
 
 test(
+  'repairs a four-line wrapped known dish',
+  () => {
+    const result =
+      cleanupMenuSourceText(
+        [
+          '• Paneer',
+          'Butter',
+          'Masala',
+          'Tikka',
+        ].join(
+          '\n',
+        ),
+
+        knownDishMatcher([
+          'Paneer Butter Masala Tikka',
+        ]),
+      );
+
+    assert.equal(
+      result.menuText,
+      '• Paneer Butter Masala Tikka',
+    );
+
+    assert.equal(
+      result.mergedWrappedLines,
+      3,
+    );
+  },
+);
+
+test(
+  'repairs a word hyphenated across OCR lines',
+  () => {
+    const result =
+      cleanupMenuSourceText(
+        '• Paneer But-\nter Masala',
+      );
+
+    assert.equal(
+      result.menuText,
+      '• Paneer Butter Masala',
+    );
+
+    assert.ok(
+      result.normalizedArtifacts >=
+        1,
+    );
+  },
+);
+
+test(
+  'removes printed dot leaders and trailing price',
+  () => {
+    const result =
+      cleanupMenuSourceText(
+        'Paneer Tikka ........ ₹250',
+      );
+
+    assert.equal(
+      result.menuText,
+      'Paneer Tikka',
+    );
+  },
+);
+
+test(
+  'normalizes checkbox bullets from scanned menus',
+  () => {
+    const result =
+      cleanupMenuSourceText(
+        '☑ Paneer Tikka\n☐ Dal Fry',
+      );
+
+    assert.equal(
+      result.menuText,
+      '• Paneer Tikka\n• Dal Fry',
+    );
+  },
+);
+
+test(
   'never merges separately bulleted dishes',
   () => {
     const result =

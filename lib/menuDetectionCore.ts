@@ -262,8 +262,8 @@ export function getDishSourceEvidenceScore(
     }
 
     if (
-      sourceLine.includes(
-        dish,
+      ` ${sourceLine} `.includes(
+        ` ${dish} `,
       )
     ) {
       bestScore =
@@ -462,6 +462,45 @@ export function cleanupMenuSourceText(
   );
 
   /*
+   * Remove soft hyphens and repair words that
+   * OCR/PDF extraction split across a line.
+   *
+   * Paneer But-\nter Masala
+   *
+   * becomes:
+   *
+   * Paneer Butter Masala
+   *
+   * Requiring a lowercase continuation avoids
+   * joining two ordinary menu items.
+   */
+  const softHyphenMatches =
+    text.match(
+      /\u00AD/g,
+    ) || [];
+
+  normalizedArtifacts +=
+    softHyphenMatches.length;
+
+  text = text.replace(
+    /\u00AD/g,
+    '',
+  );
+
+  const wrappedWordMatches =
+    text.match(
+      /[\p{L}\p{M}]-\s*\n\s*[\p{Ll}\p{M}]/gu,
+    ) || [];
+
+  normalizedArtifacts +=
+    wrappedWordMatches.length;
+
+  text = text.replace(
+    /([\p{L}\p{M}])-\s*\n\s*([\p{Ll}\p{M}])/gu,
+    '$1$2',
+  );
+
+  /*
    * Normalize line endings / page breaks.
    */
   text = text
@@ -496,14 +535,14 @@ export function cleanupMenuSourceText(
    */
   const bulletMatches =
     text.match(
-      /[●▪◦◆◇■□✓✔]/g,
+      /[●▪◦◆◇■□✓✔☐☑☒·∙]/g,
     ) || [];
 
   normalizedArtifacts +=
     bulletMatches.length;
 
   text = text.replace(
-    /[●▪◦◆◇■□✓✔]/g,
+    /[●▪◦◆◇■□✓✔☐☑☒·∙]/g,
     '•',
   );
 
@@ -603,12 +642,22 @@ export function cleanupMenuSourceText(
     lines.map(
       (line) =>
         line
+          /*
+           * Printed menus often use dot leaders
+           * between an item and its price. Remove
+           * the leader and amount so the remaining
+           * text can match the Dish Master.
+           */
+          .replace(
+            /\s*(?:\.{2,}|…+|_{2,}|-{3,})\s*(?:(?:₹|rs\.?|inr)\s*)?\d+(?:\.\d+)?\s*(?:\/-)?\s*$/gi,
+            '',
+          )
           .replace(
             /\s*\|\s*/g,
             ' | ',
           )
           .replace(
-            /^\s*[●▪◦◆◇■□✓✔]\s*/u,
+            /^\s*[●▪◦◆◇■□✓✔☐☑☒·∙]\s*/u,
             '• ',
           )
           .trimEnd(),
@@ -664,6 +713,7 @@ export function cleanupMenuSourceText(
     for (
       const span
       of [
+        4,
         3,
         2,
       ]
