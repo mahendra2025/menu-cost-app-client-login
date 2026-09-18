@@ -1812,8 +1812,20 @@ export default function CostPage() {
         </div>
 
         <div className="action-row page-actions">
-          <button className="primary-button" type="button" onClick={() => router.push('/app/final-costing')}>Next: Final Costing</button>
-          <button className="ghost-button" type="button" onClick={() => router.push('/app/extra-cost')}>Back to Extra Cost</button>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => router.push('/app/grocery')}
+          >
+            Next: Grocery & Ingredients
+          </button>
+          <button
+            className="ghost-button"
+            type="button"
+            onClick={() => router.push('/app/event')}
+          >
+            Back to Event & Menu
+          </button>
         </div>
       </section>
     </AppShell>
