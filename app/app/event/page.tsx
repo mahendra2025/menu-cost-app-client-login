@@ -855,6 +855,11 @@ export default function EventPage() {
   const [detectionPreview, setDetectionPreview] =
     useState<MenuDetectionPreview | null>(null);
 
+  const [
+    autoContinueDetectedMenu,
+    setAutoContinueDetectedMenu,
+  ] = useState(false);
+
   const [manualRateIds, setManualRateIds] =
     useState<Set<string>>(
       () => new Set(),
@@ -1060,6 +1065,43 @@ export default function EventPage() {
     detectionPreview,
     session,
     work,
+  ]);
+
+  useEffect(() => {
+    if (
+      !autoContinueDetectedMenu ||
+      !detectionPreview ||
+      !work ||
+      !session
+    ) {
+      return;
+    }
+
+    let active = true;
+
+    void applyDetectionPreview(
+      work.menu.length > 0
+        ? 'merge'
+        : 'replace',
+      true,
+    ).finally(() => {
+      if (active) {
+        setAutoContinueDetectedMenu(
+          false,
+        );
+        setUploadStatus('');
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+    // applyDetectionPreview is a component function that reads the latest
+    // state from this render; the trigger is controlled by these state values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    autoContinueDetectedMenu,
+    detectionPreview,
   ]);
 
 
@@ -4988,21 +5030,18 @@ export default function EventPage() {
        */
       setSelectedPreviewIds(
         new Set(
-          detectedMenu
-            .filter(
-              (item) =>
-                (
-                  Number(
-                    item
-                      .detectionConfidence,
-                  ) || 100
-                ) >= 45,
-            )
-            .map(
-              (item) =>
-                item.id,
-            ),
+          detectedMenu.map(
+            (item) =>
+              item.id,
+          ),
         ),
+      );
+
+      setUploadStatus(
+        'Menu detected. Saving and opening Grocery…',
+      );
+      setAutoContinueDetectedMenu(
+        true,
       );
 
       window.setTimeout(() => {
@@ -5034,6 +5073,7 @@ export default function EventPage() {
 
   async function applyDetectionPreview(
     mode: 'replace' | 'merge',
+    skipReview = false,
   ) {
     if (
       !work ||
@@ -5044,12 +5084,14 @@ export default function EventPage() {
     }
 
     const selectedMenu =
-      detectionPreview.menu.filter(
-        (item) =>
-          selectedPreviewIds.has(
-            item.id,
-          ),
-      );
+      skipReview
+        ? detectionPreview.menu
+        : detectionPreview.menu.filter(
+            (item) =>
+              selectedPreviewIds.has(
+                item.id,
+              ),
+          );
 
     if (!selectedMenu.length) {
       setError(
@@ -5058,109 +5100,113 @@ export default function EventPage() {
       return;
     }
 
-    const selectedFunctionPax =
-      new Map<string, number>();
-
-    selectedMenu.forEach(
-      (item) => {
-        const key =
-          detectionGroupKeyForItem(
-            item,
-          );
-
-        selectedFunctionPax.set(
-          key,
-          Math.max(
-            selectedFunctionPax.get(
-              key,
-            ) || 0,
-            Number(
-              item.servicePax,
-            ) ||
-              Number(
-                work.event.pax,
-              ) ||
-              0,
-          ),
-        );
-      },
-    );
-
-    const missingFunctionPax =
-      Array.from(
-        selectedFunctionPax.values(),
-      ).filter(
-        (pax) => !(pax > 0),
-      ).length;
-
-    if (missingFunctionPax) {
-      setError(
-        `Enter guest count for ${missingFunctionPax} function${missingFunctionPax === 1 ? '' : 's'} before saving the menu.`,
-      );
-      return;
-    }
-
-    const blockingCoverage =
-      selectedMenu.filter(
+    if (!skipReview) {
+      const selectedFunctionPax =
+        new Map<string, number>();
+  
+      selectedMenu.forEach(
         (item) => {
-          const status =
-            getMenuCoverageStatus(
+          const key =
+            detectionGroupKeyForItem(
               item,
-              true,
             );
-
-          return (
-            status ===
-              'UNRESOLVED' ||
-            status ===
-              'NEW_DISH_PENDING'
+  
+          selectedFunctionPax.set(
+            key,
+            Math.max(
+              selectedFunctionPax.get(
+                key,
+              ) || 0,
+              Number(
+                item.servicePax,
+              ) ||
+                Number(
+                  work.event.pax,
+                ) ||
+                0,
+            ),
           );
         },
       );
-
-    if (
-      blockingCoverage.length
-    ) {
-      setError(
-        `${blockingCoverage.length} selected dish${blockingCoverage.length === 1 ? '' : 'es'} still need a cost. Enter a rate, resolve the dish, or deselect it before continuing.`,
-      );
-
-      return;
-    }
-
-    const hardBlockedCosts =
-      selectedMenu.filter(
-        hasHardCostBlock,
-      );
-
-    if (
-      hardBlockedCosts.length
-    ) {
-      setError(
-        `${hardBlockedCosts.length} selected dish${hardBlockedCosts.length === 1 ? ' has' : 'es have'} blocked recipe QA. Correct the recipe or enter a manual rate before continuing.`,
-      );
-
-      return;
-    }
-
-    const pendingApprovals =
-      selectedMenu.filter(
-        (item) =>
-          requiresCostApproval(
-            item,
-          ) &&
-          item.costApprovalStatus !==
-            'APPROVED',
-      );
-
-    if (
-      pendingApprovals.length
-    ) {
-      setError(
-        `${pendingApprovals.length} selected dish cost${pendingApprovals.length === 1 ? ' requires' : 's require'} approval before continuing.`,
-      );
-
-      return;
+  
+      const missingFunctionPax =
+        Array.from(
+          selectedFunctionPax.values(),
+        ).filter(
+          (pax) => !(pax > 0),
+        ).length;
+  
+      if (missingFunctionPax) {
+        setError(
+          `Enter guest count for ${missingFunctionPax} function${missingFunctionPax === 1 ? '' : 's'} before saving the menu.`,
+        );
+        return;
+      }
+  
+      const blockingCoverage =
+        selectedMenu.filter(
+          (item) => {
+            const status =
+              getMenuCoverageStatus(
+                item,
+                true,
+              );
+  
+            return (
+              status ===
+                'UNRESOLVED' ||
+              status ===
+                'NEW_DISH_PENDING'
+            );
+          },
+        );
+  
+      if (
+        blockingCoverage.length
+      ) {
+        setError(
+          `${blockingCoverage.length} selected dish${blockingCoverage.length === 1 ? '' : 'es'} still need a cost. Enter a rate, resolve the dish, or deselect it before continuing.`,
+        );
+  
+        return;
+      }
+  
+      const hardBlockedCosts =
+        selectedMenu.filter(
+          hasHardCostBlock,
+        );
+  
+      if (
+        hardBlockedCosts.length
+      ) {
+        setError(
+          `${hardBlockedCosts.length} selected dish${hardBlockedCosts.length === 1 ? ' has' : 'es have'} blocked recipe QA. Correct the recipe or enter a manual rate before continuing.`,
+        );
+  
+        return;
+      }
+  
+      const pendingApprovals =
+        selectedMenu.filter(
+          (item) =>
+            requiresCostApproval(
+              item,
+            ) &&
+            item.costApprovalStatus !==
+              'APPROVED',
+        );
+  
+      if (
+        pendingApprovals.length
+      ) {
+        setError(
+          `${pendingApprovals.length} selected dish cost${pendingApprovals.length === 1 ? ' requires' : 's require'} approval before continuing.`,
+        );
+  
+        return;
+      }
+  
+  
     }
 
     setFreeLimitBlocked(false);
@@ -6630,7 +6676,7 @@ export default function EventPage() {
                 <p>
                   Follow these two steps.
                   Menu Costing will guide you from
-                  adding a menu to reviewing detected dishes.
+                  adding a menu to automatic dish detection.
                 </p>
               </div>
 
@@ -6725,7 +6771,7 @@ export default function EventPage() {
                   </b>
 
                   <small>
-                    Review what Menu Costing found
+                    Save detected dishes automatically
                   </small>
                 </span>
               </button>
@@ -6784,21 +6830,7 @@ export default function EventPage() {
                     : 'Detect My Menu'}
                 </button>
               </div>
-            ) : firstMenuDetected ? (
-              <div className="first-menu-guide-actions">
-                <button
-                  className="primary-button"
-                  type="button"
-                  onClick={() =>
-                    scrollToFirstMenuSection(
-                      'menuDetectionPreview',
-                    )
-                  }
-                >
-                  Review Detected Dishes
-                </button>
-              </div>
-            ) : null}
+) : null}
           </div>
         ) : null}
 
@@ -10907,10 +10939,10 @@ Hara bhara kebab`}
               <div className="event-detect-copy">
                 <span aria-hidden="true">3</span>
                 <div>
-                  <b>{t('Review detected dishes')}</b>
+                  <b>{t('Detect menu')}</b>
                   <small>
                     {work.event.rawMenuText.trim()
-                      ? (language === 'hi' ? `${menuLines} मेन्यू लाइनें जाँच के लिए तैयार हैं।` : `${menuLines} menu lines are ready to check.`)
+                      ? (language === 'hi' ? `${menuLines} मेन्यू लाइनें डिटेक्शन के लिए तैयार हैं।` : `${menuLines} menu lines are ready for detection.`)
                       : t('Upload a menu or paste text to continue.')}
                   </small>
                 </div>
@@ -10924,7 +10956,7 @@ Hara bhara kebab`}
                 {detecting
                   ? t('Detecting Dishes...')
                   : detectionPreview
-                    ? t('Refresh Detection Preview')
+                    ? t('Detect dishes again')
                     : t('Detect dishes')}
               </button>
             </div>
