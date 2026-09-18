@@ -92,6 +92,12 @@ const hindi: Record<string, string> = {
   'Cost Review': 'लागत जाँच',
   'Dish costs': 'व्यंजन लागत',
   'Client quote': 'ग्राहक कोटेशन',
+  'Save & Continue to Gas & Transport': 'सेव करें और गैस व परिवहन पर जाएँ',
+  'Back to Grocery': 'किराना सूची पर वापस जाएँ',
+  'Next: Grocery & Ingredients': 'अगला: किराना और सामग्री',
+  'Back to Event & Menu': 'इवेंट और मेन्यू पर वापस जाएँ',
+  'Remove Item': 'सामान हटाएँ',
+  'Item name': 'सामान का नाम',
 };
 
 const fullAppHindi: Record<string, string> = {
