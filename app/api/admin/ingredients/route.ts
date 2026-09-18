@@ -311,13 +311,107 @@ export async function GET(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const authError = await requireAdmin();
+    if (authError) return authError;
+
+    const body = await request.json() as Record<string, unknown>;
+    const ingredientId = String(body.id || '').trim();
+    const nextRate = Number(body.rate);
+
+    if (!ingredientId) {
+      return NextResponse.json(
+        { error: 'Ingredient id is required' },
+        { status: 400 },
+      );
+    }
+
+    if (!Number.isFinite(nextRate) || !(nextRate > 0)) {
+      return NextResponse.json(
+        { error: 'Market rate must be greater than ₹0' },
+        { status: 400 },
+      );
+    }
+
+    const catalog = await prisma.recipeCatalog.findUnique({
+      where: { id: CATALOG_ID },
+      select: {
+        rates: true,
+        dishes: true,
+      },
+    });
+
+    const rawRates = Array.isArray(catalog?.rates)
+      ? catalog.rates
+      : [];
+
+    const normalizedRates = rawRates.map(normalizeIngredientRate);
+    const index = normalizedRates.findIndex(
+      (rate) => rate?.id === ingredientId,
+    );
+
+    if (index < 0 || !normalizedRates[index]) {
+      return NextResponse.json(
+        { error: 'Ingredient was not found' },
+        { status: 404 },
+      );
+    }
+
+    const current = normalizedRates[index] as IngredientRate;
+    const next: IngredientRate = {
+      ...current,
+      rate: Math.round(nextRate * 100) / 100,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const nextRates = rawRates.map((value, rateIndex) =>
+      rateIndex === index ? next : value,
+    );
+
+    const ratesByOriginalId = new Map<string, IngredientRate>([
+      [current.id, next],
+    ]);
+
+    const dishes = updateRecipeIngredients(
+      catalog?.dishes ?? [],
+      ratesByOriginalId,
+    );
+
+    const saved = await prisma.recipeCatalog.update({
+      where: { id: CATALOG_ID },
+      data: {
+        rates: nextRates as Prisma.InputJsonValue,
+        dishes: dishes as Prisma.InputJsonValue,
+      },
+      select: {
+        updatedAt: true,
+      },
+    });
+
+    return NextResponse.json({
+      ok: true,
+      ingredient: next,
+      updatedAt: saved.updatedAt,
+    });
+  } catch (error) {
+    console.error('Ingredient rate PATCH failed:', error);
+
+    return NextResponse.json(
+      { error: 'Failed to update ingredient rate' },
+      { status: 500 },
+    );
+  }
+}
+
 export async function PUT(request: Request) {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
     const body = await request.json() as Record<string, unknown>;
     if (!Array.isArray(body.rates)) return NextResponse.json({ error: 'Invalid ingredient catalog' }, { status: 400 });
-    const rates = body.rates.map(normalizeIngredientRate);
+    const submittedRates = body.rates;
+    const rates = submittedRates.map(normalizeIngredientRate);
     if (rates.some((rate) => !rate)) return NextResponse.json({ error: 'Every ingredient needs a name, category, rate and valid unit' }, { status: 400 });
     const cleanedRates = rates.filter((rate): rate is NonNullable<typeof rate> => Boolean(rate));
     if (cleanedRates.some((rate) => !(Number(rate.rate) > 0))) {
@@ -329,17 +423,50 @@ export async function PUT(request: Request) {
     if (new Set(cleanedRates.map((rate) => rate.id)).size !== cleanedRates.length) {
       return NextResponse.json({ error: 'Ingredient name and unit combinations must be unique' }, { status: 400 });
     }
-    const categories = normalizeCategories(body.categories, cleanedRates);
 
     const catalog = await prisma.recipeCatalog.findUnique({ where: { id: CATALOG_ID } });
     const previousRates = Array.isArray(catalog?.rates) ? catalog.rates : [];
-    const previousIds = new Set(previousRates.map((rate) => rate && typeof rate === 'object' ? String((rate as Record<string, unknown>).id || '') : '').filter(Boolean));
-    const nextIds = new Set(cleanedRates.map((rate) => rate.id));
+    const previousById = new Map(
+      previousRates.flatMap((value) => {
+        const normalized = normalizeIngredientRate(value);
+        return normalized ? [[normalized.id, normalized] as const] : [];
+      }),
+    );
+    const previousIds = new Set(previousById.keys());
+    const now = new Date().toISOString();
+
+    const stampedRates = cleanedRates.map((rate, index) => {
+      const submitted =
+        submittedRates[index] &&
+        typeof submittedRates[index] === 'object'
+          ? submittedRates[index] as Record<string, unknown>
+          : null;
+      const originalId = String(submitted?.originalId || '').trim();
+      const previous =
+        previousById.get(originalId) ||
+        previousById.get(rate.id);
+
+      const rateChanged =
+        !previous ||
+        Math.abs(Number(previous.rate) - Number(rate.rate)) > 0.000001;
+
+      return {
+        ...rate,
+        ...(rateChanged
+          ? { updatedAt: now }
+          : previous?.updatedAt
+            ? { updatedAt: previous.updatedAt }
+            : {}),
+      };
+    });
+
+    const categories = normalizeCategories(body.categories, stampedRates);
+    const nextIds = new Set(stampedRates.map((rate) => rate.id));
     const ratesByOriginalId = new Map<string, IngredientRate>();
-    body.rates.forEach((submitted, index) => {
+    submittedRates.forEach((submitted, index) => {
       if (!submitted || typeof submitted !== 'object') return;
       const originalId = String((submitted as Record<string, unknown>).originalId || '').trim();
-      if (originalId && previousIds.has(originalId)) ratesByOriginalId.set(originalId, cleanedRates[index]);
+      if (originalId && previousIds.has(originalId)) ratesByOriginalId.set(originalId, stampedRates[index]);
     });
     const usage = recipeIngredientUsage(catalog?.dishes);
     const usedDeletions = [...previousIds].filter(
@@ -354,13 +481,13 @@ export async function PUT(request: Request) {
       where: { id: CATALOG_ID },
       create: {
         id: CATALOG_ID,
-        rates: cleanedRates,
+        rates: stampedRates,
         ingredientCategories: categories,
         dishes: [],
         deletedDishIds: [],
       },
       update: {
-        rates: cleanedRates,
+        rates: stampedRates,
         ingredientCategories: categories,
         dishes: dishes as Prisma.InputJsonValue,
       },
