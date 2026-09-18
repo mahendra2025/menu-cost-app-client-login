@@ -5,8 +5,6 @@ import {
   useState,
 } from 'react';
 
-import { useRouter } from 'next/navigation';
-
 import FreeLimitPaywall from '../../components/FreeLimitPaywall';
 import { useLanguage } from '../../components/LanguageProvider';
 
@@ -823,7 +821,6 @@ function normalizeAiEventDetails(
 }
 
 export default function EventPage() {
-  const router = useRouter();
   const { language, t } = useLanguage();
 
   const [session, setSession] =
@@ -1581,7 +1578,7 @@ export default function EventPage() {
     );
 
     window.location.assign(
-      '/app/manpower',
+      '/app/grocery',
     );
   }
 
@@ -6480,6 +6477,69 @@ export default function EventPage() {
       previewGroupMap.values(),
     );
 
+  const detectionGuestGroupMap =
+    new Map<
+      string,
+      {
+        key: string;
+        dayLabel: string;
+        mealLabel: string;
+        servicePax: number;
+      }
+    >();
+
+  detectionReviewItems.forEach(
+    (item) => {
+      const key =
+        detectionGroupKeyForItem(
+          item,
+        );
+
+      const current =
+        detectionGuestGroupMap.get(
+          key,
+        );
+
+      const servicePax =
+        Math.max(
+          Number(
+            item.servicePax,
+          ) || 0,
+          Number(
+            work.event.pax,
+          ) || 0,
+        );
+
+      if (current) {
+        current.servicePax =
+          Math.max(
+            current.servicePax,
+            servicePax,
+          );
+
+        return;
+      }
+
+      detectionGuestGroupMap.set(
+        key,
+        {
+          key,
+          dayLabel:
+            item.dayLabel || '',
+          mealLabel:
+            item.mealLabel ||
+            'Event Menu',
+          servicePax,
+        },
+      );
+    },
+  );
+
+  const detectionGuestGroups =
+    Array.from(
+      detectionGuestGroupMap.values(),
+    );
+
   const existingMenuKeys =
     new Set(
       work.menu.map(
@@ -7573,6 +7633,73 @@ Hara bhara kebab`}
                         ×
                       </button>
                     </div>
+
+                    {detectionGuestGroups.length ? (
+                      <div className="menu-source-function-pax">
+                        <div className="menu-source-function-pax-head">
+                          <span>
+                            Function Guests
+                          </span>
+
+                          <small>
+                            Used for grocery quantities and manpower.
+                          </small>
+                        </div>
+
+                        <div className="menu-source-function-pax-grid">
+                          {detectionGuestGroups.map(
+                            (group, index) => {
+                              const label =
+                                [
+                                  group.dayLabel,
+                                  group.mealLabel,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' • ') ||
+                                `Function ${index + 1}`;
+
+                              return (
+                                <label
+                                  className="menu-source-function-pax-field"
+                                  key={group.key}
+                                >
+                                  <span>
+                                    {label}
+                                  </span>
+
+                                  <div>
+                                    <b>
+                                      {t('Guests')}
+                                    </b>
+
+                                    <input
+                                      className="input"
+                                      type="number"
+                                      min="1"
+                                      inputMode="numeric"
+                                      value={
+                                        group.servicePax > 0
+                                          ? String(
+                                              group.servicePax,
+                                            )
+                                          : ''
+                                      }
+                                      placeholder="300"
+                                      onChange={(event) =>
+                                        updateDetectionGroupPax(
+                                          group.key,
+                                          event.target.value,
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                </label>
+                              );
+                            },
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
 
                     <div className="menu-source-compare-columns">
                       <section className="menu-source-compare-panel">
