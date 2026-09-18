@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 
 import {
   getAdminCookieName,
@@ -97,7 +98,7 @@ export async function GET(request: Request) {
       ),
     );
 
-    const where: Record<string, unknown> = {};
+    const where: Prisma.PendingDishSuggestionWhereInput = {};
 
     if (status !== 'ALL') {
       where.status = status;
