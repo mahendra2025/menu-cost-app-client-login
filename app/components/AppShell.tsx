@@ -227,6 +227,21 @@ export default function AppShell({
               >
                 Unknown Queue
               </Link>
+              <Link
+                href="/admin/dishes/coverage"
+                className={
+                  pathname === '/admin/dishes/coverage'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/dishes/coverage'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Recipe Coverage
+              </Link>
             </nav>
           ) : null}
 
