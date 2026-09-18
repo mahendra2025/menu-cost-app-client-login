@@ -6771,7 +6771,7 @@ export default function EventPage() {
                   </b>
 
                   <small>
-                    Review what Menu Costing found
+                    Save detected dishes automatically
                   </small>
                 </span>
               </button>
