@@ -273,102 +273,7 @@ export default function MultiFunctionMenuReview() {
       [cached],
     );
 
-  function continueToDishReview() {
-    if (
-      !cached?.preview ||
-      !tenantId
-    ) {
-      return;
-    }
 
-    const missing =
-      groups.filter(
-        (group) =>
-          !(
-            Number(
-              paxByGroup[
-                group.key
-              ],
-            ) > 0
-          ),
-      );
-
-    if (missing.length) {
-      setError(
-        `Enter guest count for ${missing.length} function${missing.length === 1 ? '' : 's'} before continuing.`,
-      );
-      return;
-    }
-
-    const nextMenu =
-      cached.preview.menu.map(
-        (item) => ({
-          ...item,
-          servicePax:
-            Math.max(
-              1,
-              Math.round(
-                Number(
-                  paxByGroup[
-                    groupKey(item)
-                  ],
-                ) ||
-                defaultPax ||
-                1,
-              ),
-            ),
-        }),
-      );
-
-    const nextPossibleMissed =
-      (
-        cached.preview
-          .possibleMissed ||
-        []
-      ).map(
-        (candidate) => {
-          const key =
-            candidateGroupKey(
-              candidate,
-            );
-
-          const pax =
-            Number(
-              paxByGroup[key],
-            );
-
-          return pax > 0
-            ? {
-                ...candidate,
-                servicePax:
-                  Math.round(pax),
-              }
-            : candidate;
-        },
-      );
-
-    const nextCache:
-      CachedDetection = {
-        ...cached,
-        preview: {
-          ...cached.preview,
-          menu: nextMenu,
-          possibleMissed:
-            nextPossibleMissed,
-        },
-      };
-
-    sessionStorage.setItem(
-      `menu-detection:${tenantId}`,
-      JSON.stringify(
-        nextCache,
-      ),
-    );
-
-    window.location.assign(
-      '/app/event?resume=1#menuDetectionPreview',
-    );
-  }
 
   if (!ready) {
     return (
@@ -599,15 +504,6 @@ export default function MultiFunctionMenuReview() {
               Back to Upload
             </button>
 
-            <button
-              className="primary-button"
-              type="button"
-              onClick={
-                continueToDishReview
-              }
-            >
-              Continue to Dish Review
-            </button>
           </div>
         </div>
       </section>
