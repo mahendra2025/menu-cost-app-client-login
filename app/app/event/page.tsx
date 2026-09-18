@@ -7491,33 +7491,6 @@ Hara bhara kebab`}
 
                     <button
                       type="button"
-                      className={`secondary-button menu-source-compare-toggle ${
-                        showDetectionSourceCompare
-                          ? 'active'
-                          : ''
-                      }`}
-                      data-menu-source-compare
-                      aria-pressed={
-                        showDetectionSourceCompare
-                      }
-                      onClick={() =>
-                        setShowDetectionSourceCompare(
-                          (current) =>
-                            !current,
-                        )
-                      }
-                    >
-                      {showDetectionSourceCompare
-                        ? 'Hide Compare'
-                        : 'Compare Source'}
-
-                      <kbd>
-                        C
-                      </kbd>
-                    </button>
-
-                    <button
-                      type="button"
                       className="ghost-button"
                       onClick={() =>
                         setDetectionReviewFilter(
@@ -7566,7 +7539,74 @@ Hara bhara kebab`}
                   </div>
                 ) : null}
 
-                {showDetectionSourceCompare ? (
+                {detectionGuestGroups.length ? (
+                  <div className="menu-source-function-pax">
+                    <div className="menu-source-function-pax-head">
+                      <span>
+                        Function Guests
+                      </span>
+
+                      <small>
+                        Used for grocery quantities and manpower.
+                      </small>
+                    </div>
+
+                    <div className="menu-source-function-pax-grid">
+                      {detectionGuestGroups.map(
+                        (group, index) => {
+                          const label =
+                            [
+                              group.dayLabel,
+                              group.mealLabel,
+                            ]
+                              .filter(Boolean)
+                              .join(' • ') ||
+                            `Function ${index + 1}`;
+
+                          return (
+                            <label
+                              className="menu-source-function-pax-field"
+                              key={group.key}
+                            >
+                              <span>
+                                {label}
+                              </span>
+
+                              <div>
+                                <b>
+                                  {t('Guests')}
+                                </b>
+
+                                <input
+                                  className="input"
+                                  type="number"
+                                  min="1"
+                                  inputMode="numeric"
+                                  value={
+                                    group.servicePax > 0
+                                      ? String(
+                                          group.servicePax,
+                                        )
+                                      : ''
+                                  }
+                                  placeholder="300"
+                                  onChange={(event) =>
+                                    updateDetectionGroupPax(
+                                      group.key,
+                                      event.target.value,
+                                    )
+                                  }
+                                />
+                              </div>
+                            </label>
+                          );
+                        },
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
+                {false && showDetectionSourceCompare ? (
                   <div className="menu-source-compare">
                     <div className="menu-source-compare-head">
                       <div>
