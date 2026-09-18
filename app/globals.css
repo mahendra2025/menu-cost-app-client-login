@@ -18420,3 +18420,9 @@ small {
 .menu-source-compare {
   display: none !important;
 }
+
+
+/* Remove customer detected-menu review step */
+.client-theme .menu-detection-preview {
+  display: none !important;
+}
