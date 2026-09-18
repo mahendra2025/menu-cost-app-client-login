@@ -1133,14 +1133,9 @@ export default function EventPage() {
 
   async function openManualDishSelector() {
     const functionName =
-      importFunctionName.trim();
-
-    if (!functionName) {
-      setError(
-        'Enter the function name first, for example Breakfast, Lunch or Reception Dinner.',
-      );
-      return;
-    }
+      importFunctionName.trim() ||
+      work?.event.functionType ||
+      'Event Menu';
 
     setError('');
     setShowManualDishSelector(true);
@@ -1301,14 +1296,9 @@ export default function EventPage() {
     }
 
     const functionName =
-      importFunctionName.trim();
-
-    if (!functionName) {
-      setError(
-        'Enter the function name first.',
-      );
-      return;
-    }
+      importFunctionName.trim() ||
+      work.event.functionType ||
+      'Event Menu';
 
     const selected =
       manualDishCatalog.filter(
@@ -6632,59 +6622,14 @@ export default function EventPage() {
         >
           <div className="form-grid">
             <div className="menu-source-workspace">
-              <div className="menu-source-workspace-heading">
-                <div className="event-import-step-title">
-                  <span aria-hidden="true">1</span>
-                  <div>
-                    <h3>{t('Set up this function')}</h3>
-                    <p>{t('Name the meal or celebration and confirm its guest count.')}</p>
-                  </div>
-                </div>
-                {work.menu.length > 0 ? (
+              {work.menu.length > 0 ? (
+                <div className="menu-source-workspace-heading">
                   <small>{work.menu.length} dishes already saved</small>
-                ) : null}
-              </div>
-
-              <div className="function-import-context">
-                <div className="field">
-                  <label htmlFor="importFunctionName">
-                    {t('Function name')}
-                  </label>
-                  <input
-                    id="importFunctionName"
-                    className="input"
-                    value={importFunctionName}
-                    onChange={(event) => {
-                      setError('');
-                      setImportFunctionName(event.target.value);
-                    }}
-                    placeholder={t('e.g. Sangeet dinner')}
-                  />
-                  <small>{t('Use the name your team will recognise.')}</small>
                 </div>
-
-                <div className="field">
-                  <label htmlFor="importFunctionPax">
-                    {t('Guests for this function')}
-                  </label>
-                  <input
-                    id="importFunctionPax"
-                    className="input"
-                    type="number"
-                    min="1"
-                    inputMode="numeric"
-                    value={importFunctionPax}
-                    onChange={(event) =>
-                      setImportFunctionPax(event.target.value)
-                    }
-                    placeholder={work.event.pax > 0 ? String(work.event.pax) : '300'}
-                  />
-                  <small>{t('Used to calculate ingredient quantities.')}</small>
-                </div>
-              </div>
+              ) : null}
 
               <div className="event-import-step-heading">
-                <span aria-hidden="true">2</span>
+                <span aria-hidden="true">1</span>
                 <div>
                   <h3>{t('Add dishes for this function')}</h3>
                   <p>{t('Upload a menu or paste its text. You can review every detected dish before saving.')}</p>
