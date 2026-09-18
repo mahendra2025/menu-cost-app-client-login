@@ -18414,3 +18414,9 @@ small {
     font-size: 16px;
   }
 }
+
+
+/* Hide legacy detected-menu comparison card */
+.menu-source-compare {
+  display: none !important;
+}
