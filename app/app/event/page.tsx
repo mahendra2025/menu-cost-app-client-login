@@ -477,6 +477,17 @@ async function requestTenantDishAliases():
               Number(
                 row.usageCount,
               ) || 0,
+
+            scope:
+              String(
+                row.scope ||
+                'TENANT',
+              )
+                .trim()
+                .toUpperCase() ===
+              'GLOBAL'
+                ? 'GLOBAL'
+                : 'TENANT',
           };
         },
       )
@@ -751,7 +762,10 @@ async function applyTenantDishLearning(
             100,
 
           detectionReason:
-            `Learned from a previous correction: "${rule.aliasName}" → "${canonicalName}"`,
+            rule.scope ===
+            'GLOBAL'
+              ? `Admin-approved global alias: "${rule.aliasName}" → "${canonicalName}"`
+              : `Learned from a previous correction: "${rule.aliasName}" → "${canonicalName}"`,
         };
 
       return [
