@@ -3519,15 +3519,9 @@ export default function EventPage() {
     }
 
     const functionName =
-      importFunctionName.trim() || (uploadWork ? detectionWork.event.functionType || 'Event Menu' : '');
-
-    if (!functionName) {
-      setError(
-        'Enter the function name first, for example Breakfast, Lunch, Sangeet or Reception Dinner.',
-      );
-
-      return;
-    }
+      importFunctionName.trim() ||
+      detectionWork.event.functionType ||
+      'Event Menu';
 
     setDetecting(true);
 
