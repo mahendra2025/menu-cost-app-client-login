@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -173,6 +174,7 @@ export default function UnknownDishQueuePage() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] =
     useState<'success' | 'error'>('success');
+  const reviewRef = useRef<HTMLDivElement | null>(null);
 
   const selected = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -374,6 +376,15 @@ export default function UnknownDishQueuePage() {
 
     return () => window.clearTimeout(timer);
   }, [statusFilter, categoryFilter, search]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+
+    reviewRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, [selectedId]);
 
   function beginReview(item: PendingDish) {
     const suggestions = rankDishMatches(item.name, dishOptions, 3);
@@ -843,6 +854,19 @@ export default function UnknownDishQueuePage() {
                         ? 'queue-row is-selected'
                         : 'queue-row'
                     }
+                    onClick={(event) => {
+                      const target = event.target as HTMLElement;
+
+                      if (
+                        target.closest(
+                          'input, button, a, select, textarea, label',
+                        )
+                      ) {
+                        return;
+                      }
+
+                      beginReview(item);
+                    }}
                   >
                     {item.status === 'PENDING' ? (
                       <input
@@ -931,7 +955,10 @@ export default function UnknownDishQueuePage() {
         </div>
 
         {selected ? (
-          <div className="glass-card queue-review-card">
+          <div
+            ref={reviewRef}
+            className="glass-card queue-review-card"
+          >
             <div className="section-head">
               <div>
                 <div className="section-kicker">
@@ -1301,7 +1328,7 @@ export default function UnknownDishQueuePage() {
           .queue-filter-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}.queue-view-summary{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:13px}.queue-view-summary b{color:inherit}
           .queue-bulk-bar{display:flex;align-items:center;justify-content:space-between;gap:14px}.queue-check-all{display:flex;align-items:center;gap:10px;font-weight:650}
           .queue-empty{padding:22px 0 8px}.queue-list{display:grid;gap:9px;margin-top:12px}
-          .queue-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 15px;border:1px solid rgba(148,163,184,.18);border-radius:16px;background:rgba(148,163,184,.025);transition:.15s ease}
+          .queue-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 15px;border:1px solid rgba(148,163,184,.18);border-radius:16px;background:rgba(148,163,184,.025);transition:.15s ease;cursor:pointer}
           .queue-row:hover,.queue-row.is-selected{border-color:rgba(99,102,241,.38);background:rgba(99,102,241,.05)}
           .queue-row-check{width:18px;height:18px}.queue-status-dot{width:10px;height:10px;border-radius:50%;background:rgba(148,163,184,.5)}
           .queue-row-main{min-width:0;display:grid;gap:6px}.queue-row-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.queue-row-title>b{font-size:15px}
