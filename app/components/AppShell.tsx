@@ -70,9 +70,13 @@ export default function AppShell({
   const isDishWorkspace =
     pathname === '/admin/dishes' ||
     pathname.startsWith('/admin/dishes/');
+  const isIngredientWorkspace =
+    pathname === '/admin/ingredients' ||
+    pathname.startsWith('/admin/ingredients/');
   const isAdminNavItemActive = (href: string) =>
     pathname === href ||
-    (href === '/admin/dishes' && isDishWorkspace);
+    (href === '/admin/dishes' && isDishWorkspace) ||
+    (href === '/admin/ingredients' && isIngredientWorkspace);
 
   if (!ready) {
     return (
@@ -241,6 +245,50 @@ export default function AppShell({
                 }
               >
                 Recipe Coverage
+              </Link>
+            </nav>
+          ) : null}
+
+          {isAdmin && isIngredientWorkspace ? (
+            <nav
+              className="action-row no-print"
+              aria-label="Ingredient management"
+              style={{
+                justifyContent: 'flex-start',
+                gap: '10px',
+                marginBottom: '18px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Link
+                href="/admin/ingredients"
+                className={
+                  pathname === '/admin/ingredients'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/ingredients'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Ingredient Master
+              </Link>
+              <Link
+                href="/admin/ingredients/health"
+                className={
+                  pathname === '/admin/ingredients/health'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/ingredients/health'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Rate Health
               </Link>
             </nav>
           ) : null}
