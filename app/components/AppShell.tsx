@@ -8,6 +8,44 @@ import type { Session } from '../../lib/types';
 import { useLanguage } from './LanguageProvider';
 
 type NavIcon = 'profile' | 'clients' | 'dishes' | 'ingredients';
+type ClientNavIcon = 'event' | 'team' | 'expenses' | 'pricing' | 'more';
+
+type ClientFlowStep = {
+  step: number;
+  label: string;
+};
+
+function clientFlowForPath(pathname: string): ClientFlowStep | null {
+  if (
+    pathname === '/app/event' ||
+    pathname === '/app/menu' ||
+    pathname === '/app/cost' ||
+    pathname === '/app/grocery'
+  ) {
+    return { step: 1, label: 'Event & Menu' };
+  }
+
+  if (pathname === '/app/manpower') {
+    return { step: 2, label: 'Team' };
+  }
+
+  if (
+    pathname === '/app/operations' ||
+    pathname === '/app/disposable'
+  ) {
+    return { step: 3, label: 'Expenses' };
+  }
+
+  if (pathname === '/app/final-costing') {
+    return { step: 4, label: 'Pricing' };
+  }
+
+  if (pathname === '/app/quotation') {
+    return { step: 5, label: 'Quotation' };
+  }
+
+  return null;
+}
 
 const adminNav = [
   { href: '/admin/users', label: 'Clients', mobileLabel: 'Clients', description: 'Accounts and access', icon: 'clients' as NavIcon },
@@ -18,6 +56,58 @@ const adminNav = [
 ];
 
 let cachedShellSession: Session | null = null;
+
+function ClientNavIconMark({ icon }: { icon: ClientNavIcon }) {
+  const paths: Record<ClientNavIcon, ReactNode> = {
+    event: (
+      <>
+        <rect x="4" y="5" width="16" height="15" rx="3" />
+        <path d="M8 3v4M16 3v4M7 11h10M8 15h3" />
+      </>
+    ),
+    team: (
+      <>
+        <circle cx="9" cy="8" r="3" />
+        <circle cx="17" cy="9" r="2.5" />
+        <path d="M3.5 19c.4-3.4 2.2-5.2 5.5-5.2s5.1 1.8 5.5 5.2M15 14c3 .1 4.7 1.8 5 5" />
+      </>
+    ),
+    expenses: (
+      <>
+        <path d="M4 7h16v11H4zM4 10h16" />
+        <path d="M8 15h3M16 14v2" />
+      </>
+    ),
+    pricing: (
+      <>
+        <path d="M4 17.5V11l7-7h6l3 3v6l-7 7H6.5z" />
+        <circle cx="15.5" cy="8.5" r="1.2" />
+      </>
+    ),
+    more: (
+      <>
+        <circle cx="5" cy="12" r="1.4" />
+        <circle cx="12" cy="12" r="1.4" />
+        <circle cx="19" cy="12" r="1.4" />
+      </>
+    ),
+  };
+
+  return (
+    <span className="client-nav-icon" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {paths[icon]}
+      </svg>
+    </span>
+  );
+}
 
 function NavIconMark({ icon }: { icon: NavIcon }) {
   const paths: Record<NavIcon, ReactNode> = {
@@ -52,6 +142,7 @@ export default function AppShell({
   const { language, setLanguage, t } = useLanguage();
   const [session, setSession] = useState<Session | null>(() => cachedShellSession);
   const [ready, setReady] = useState(() => cachedShellSession !== null);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     const current = refreshSessionFromClient() ?? getSession();
@@ -66,6 +157,26 @@ export default function AppShell({
     setReady(true);
   }, [router]);
 
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMoreOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [moreOpen]);
+
   const isAdmin = session?.role === 'ADMIN';
   const isDishWorkspace =
     pathname === '/admin/dishes' ||
@@ -77,6 +188,27 @@ export default function AppShell({
     pathname === href ||
     (href === '/admin/dishes' && isDishWorkspace) ||
     (href === '/admin/ingredients' && isIngredientWorkspace);
+
+  const clientFlow =
+    !isAdmin
+      ? clientFlowForPath(pathname)
+      : null;
+
+  const clientMoreActive =
+    moreOpen ||
+    clientFlow?.step === 5 ||
+    pathname === '/app/history' ||
+    pathname === '/app/ingredients' ||
+    pathname === '/app/profile';
+
+  const signOut = () => {
+    cachedShellSession = null;
+    logout();
+    void fetch('/api/client/session', {
+      method: 'DELETE',
+    });
+    router.replace('/login');
+  };
 
   if (!ready) {
     return (
@@ -120,12 +252,7 @@ export default function AppShell({
           <button
             className="ghost-button logout-button"
             aria-label={t('Sign out')}
-            onClick={() => {
-              cachedShellSession = null;
-              logout();
-              void fetch('/api/client/session', { method: 'DELETE' });
-              router.replace('/login');
-            }}
+            onClick={signOut}
           >
             <svg className="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M14 8l4 4-4 4M18 12H8" />
@@ -293,9 +420,181 @@ export default function AppShell({
             </nav>
           ) : null}
 
+          {!isAdmin && clientFlow ? (
+            <section
+              className="client-flow-progress no-print"
+              aria-label={t('Costing progress')}
+            >
+              <div className="client-flow-progress-copy">
+                <span>{t(`Step ${clientFlow.step} of 5`)}</span>
+                <b>{t(clientFlow.label)}</b>
+              </div>
+              <div className="client-flow-progress-track" aria-hidden="true">
+                {[1, 2, 3, 4, 5].map((step) => (
+                  <i
+                    key={step}
+                    className={
+                      step <= clientFlow.step
+                        ? 'is-complete'
+                        : ''
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           {children}
         </div>
       </div>
+
+      {!isAdmin ? (
+        <>
+          <nav
+            className="client-mobile-nav no-print"
+            aria-label={t('Main navigation')}
+          >
+            <Link
+              href="/app/event"
+              className={clientFlow?.step === 1 ? 'active' : ''}
+              aria-current={clientFlow?.step === 1 ? 'page' : undefined}
+            >
+              <ClientNavIconMark icon="event" />
+              <small>{t('Event')}</small>
+            </Link>
+
+            <Link
+              href="/app/manpower"
+              className={clientFlow?.step === 2 ? 'active' : ''}
+              aria-current={clientFlow?.step === 2 ? 'page' : undefined}
+            >
+              <ClientNavIconMark icon="team" />
+              <small>{t('Team')}</small>
+            </Link>
+
+            <Link
+              href="/app/operations"
+              className={clientFlow?.step === 3 ? 'active' : ''}
+              aria-current={clientFlow?.step === 3 ? 'page' : undefined}
+            >
+              <ClientNavIconMark icon="expenses" />
+              <small>{t('Expenses')}</small>
+            </Link>
+
+            <Link
+              href="/app/final-costing"
+              className={clientFlow?.step === 4 ? 'active' : ''}
+              aria-current={clientFlow?.step === 4 ? 'page' : undefined}
+            >
+              <ClientNavIconMark icon="pricing" />
+              <small>{t('Pricing')}</small>
+            </Link>
+
+            <button
+              type="button"
+              className={clientMoreActive ? 'active' : ''}
+              aria-expanded={moreOpen}
+              aria-controls="client-more-sheet"
+              onClick={() =>
+                setMoreOpen((current) => !current)
+              }
+            >
+              <ClientNavIconMark icon="more" />
+              <small>{t('More')}</small>
+            </button>
+          </nav>
+
+          {moreOpen ? (
+            <div className="client-more-layer no-print">
+              <button
+                type="button"
+                className="client-more-backdrop"
+                aria-label={t('Close')}
+                onClick={() => setMoreOpen(false)}
+              />
+
+              <section
+                id="client-more-sheet"
+                className="client-more-sheet"
+                role="dialog"
+                aria-modal="true"
+                aria-label={t('More')}
+              >
+                <div className="client-more-handle" aria-hidden="true" />
+
+                <div className="client-more-heading">
+                  <div>
+                    <span>{t('Menu Costing')}</span>
+                    <b>{t('More')}</b>
+                  </div>
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => setMoreOpen(false)}
+                  >
+                    {t('Close')}
+                  </button>
+                </div>
+
+                <div className="client-more-grid">
+                  <Link href="/app/history">
+                    <b>{t('History')}</b>
+                    <small>{t('Saved work')}</small>
+                  </Link>
+                  <Link href="/app/grocery">
+                    <b>{t('Grocery')}</b>
+                    <small>{t('Ingredient requirements')}</small>
+                  </Link>
+                  <Link href="/app/cost">
+                    <b>{t('Cost Review')}</b>
+                    <small>{t('Dish costs')}</small>
+                  </Link>
+                  <Link href="/app/quotation">
+                    <b>{t('Quotation')}</b>
+                    <small>{t('Client quote')}</small>
+                  </Link>
+                  <Link href="/app/ingredients">
+                    <b>{t('Ingredients')}</b>
+                    <small>{t('My custom rates')}</small>
+                  </Link>
+                  <Link href="/app/profile">
+                    <b>{t('Profile')}</b>
+                    <small>{t('Business settings')}</small>
+                  </Link>
+                </div>
+
+                <div className="client-more-language">
+                  <span>{t('App language')}</span>
+                  <div>
+                    <button
+                      type="button"
+                      className={language === 'en' ? 'active' : ''}
+                      onClick={() => setLanguage('en')}
+                    >
+                      English
+                    </button>
+                    <button
+                      type="button"
+                      className={language === 'hi' ? 'active' : ''}
+                      onClick={() => setLanguage('hi')}
+                    >
+                      हिन्दी
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  className="client-more-signout"
+                  type="button"
+                  onClick={signOut}
+                >
+                  {t('Sign out')}
+                </button>
+              </section>
+            </div>
+          ) : null}
+        </>
+      ) : null}
 
       {isAdmin ? (
         <nav className="bottom-nav no-print" aria-label="Admin navigation">

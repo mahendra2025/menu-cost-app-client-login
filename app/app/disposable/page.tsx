@@ -175,6 +175,8 @@ export default function DisposableCostPage() {
               Next: Pricing
             </button>
           </div>
+
+
         </div>
 
         <div className="glass-card">
@@ -269,6 +271,116 @@ export default function DisposableCostPage() {
               </tbody>
             </table>
           </div>
+
+          <div className="disposable-card-list">
+            {summary.items.map((item) => {
+              const custom =
+                item.id.startsWith('disposable_custom');
+              const legacyFuel =
+                item.name.trim().toLowerCase() === 'fuel';
+
+              return (
+                <article
+                  key={`mobile-${item.id}`}
+                  className={
+                    item.lineTotal > 0
+                      ? 'disposable-mobile-card is-active'
+                      : 'disposable-mobile-card'
+                  }
+                >
+                  <div className="disposable-mobile-card-heading">
+                    <div>
+                      {custom ? (
+                        <label className="field">
+                          <span>Item</span>
+                          <input
+                            className="input"
+                            value={item.name}
+                            placeholder="Item name"
+                            onChange={(event) =>
+                              updateItem(item.id, {
+                                name: event.target.value,
+                              })
+                            }
+                          />
+                        </label>
+                      ) : (
+                        <>
+                          <strong>{item.name}</strong>
+                          {legacyFuel ? (
+                            <small>
+                              Use Gas & Transport instead
+                            </small>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+
+                    <b>{money(item.lineTotal)}</b>
+                  </div>
+
+                  <div className="disposable-mobile-fields">
+                    <label className="field">
+                      <span>Quantity</span>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputMode="decimal"
+                        value={item.quantity || ''}
+                        placeholder="0"
+                        onChange={(event) =>
+                          updateItem(item.id, {
+                            quantity:
+                              numberValue(event.target.value),
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span>Rate / item</span>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputMode="decimal"
+                        value={item.unitCost || ''}
+                        placeholder="₹0"
+                        onChange={(event) =>
+                          updateItem(item.id, {
+                            unitCost:
+                              numberValue(event.target.value),
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+
+                  <div className="disposable-mobile-total">
+                    <span>
+                      {item.quantity || 0}
+                      {' × '}
+                      {money(item.unitCost || 0)}
+                    </span>
+                    <strong>{money(item.lineTotal)}</strong>
+                  </div>
+
+                  {custom ? (
+                    <button
+                      type="button"
+                      className="ghost-button disposable-remove"
+                      onClick={() => removeCustomItem(item.id)}
+                    >
+                      Remove Item
+                    </button>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
         </div>
 
         <div className="glass-card">
@@ -311,7 +423,7 @@ export default function DisposableCostPage() {
         </div>
 
         <style>{`
-          .disposable-page{padding-bottom:28px}.disposable-table{width:100%;border-collapse:collapse}.disposable-table th,.disposable-table td{padding:11px 10px;border-bottom:1px solid rgba(148,163,184,.14);text-align:left;vertical-align:middle}.disposable-table th{color:var(--muted);font-size:11px;font-weight:700}.disposable-table td:nth-child(2),.disposable-table td:nth-child(3),.disposable-table td:nth-child(4){width:150px}.disposable-number{min-width:110px}.disposable-name{display:grid;gap:2px}.disposable-name small{color:#f59e0b;font-size:10px}.disposable-remove{padding:7px 10px}.disposable-table tr.is-active{background:rgba(59,130,246,.04)}@media(max-width:720px){.disposable-table-wrap{overflow:auto}.disposable-table{min-width:720px}.disposable-page .final-costing-section-heading{align-items:flex-start;gap:14px}}
+          .disposable-page{padding-bottom:28px}.disposable-table{width:100%;border-collapse:collapse}.disposable-table th,.disposable-table td{padding:11px 10px;border-bottom:1px solid rgba(148,163,184,.14);text-align:left;vertical-align:middle}.disposable-table th{color:var(--muted);font-size:11px;font-weight:700}.disposable-table td:nth-child(2),.disposable-table td:nth-child(3),.disposable-table td:nth-child(4){width:150px}.disposable-number{min-width:110px}.disposable-name{display:grid;gap:2px}.disposable-name small{color:#f59e0b;font-size:10px}.disposable-remove{padding:7px 10px}.disposable-table tr.is-active{background:rgba(59,130,246,.04)}.disposable-card-list{display:none}@media(max-width:720px){.disposable-table-wrap{display:none}.disposable-card-list{display:grid;gap:10px;margin-top:14px}.disposable-mobile-card{display:grid;gap:12px;padding:14px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(148,163,184,.025)}.disposable-mobile-card.is-active{border-color:rgba(59,130,246,.28);background:rgba(59,130,246,.055)}.disposable-mobile-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.disposable-mobile-card-heading>div{display:grid;gap:3px;min-width:0}.disposable-mobile-card-heading strong{font-size:14px}.disposable-mobile-card-heading small{color:#f59e0b;font-size:10px}.disposable-mobile-card-heading>b{font-size:16px;white-space:nowrap}.disposable-mobile-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.disposable-mobile-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,.12)}.disposable-mobile-total span{color:var(--muted);font-size:11px}.disposable-mobile-total strong{font-size:15px}.disposable-page .final-costing-section-heading{align-items:flex-start;gap:14px}}@media(max-width:420px){.disposable-mobile-fields{grid-template-columns:1fr}}
         `}</style>
       </section>
     </AppShell>
