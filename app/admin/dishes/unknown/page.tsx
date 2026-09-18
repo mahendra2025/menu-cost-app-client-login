@@ -476,8 +476,6 @@ export default function UnknownDishQueuePage() {
       return;
     }
 
-    const nextCandidate = advance ? nextPending : null;
-
     setBusy(true);
     setMessage('');
 
@@ -562,6 +560,8 @@ export default function UnknownDishQueuePage() {
     ) {
       return;
     }
+
+    const nextCandidate = advance ? nextPending : null;
 
     setBusy(true);
     setMessage('');
