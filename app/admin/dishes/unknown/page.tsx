@@ -1140,6 +1140,12 @@ export default function UnknownDishQueuePage() {
                     )}
                   </b>
                 </div>
+                {selected.status === 'MATCHED' ? (
+                  <div>
+                    <span>Future detection</span>
+                    <b>Automatic · Global alias</b>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <>
@@ -1214,6 +1220,20 @@ export default function UnknownDishQueuePage() {
                             </small>
                           </button>
                         ))}
+                      </div>
+                    ) : null}
+
+                    {draft.targetDishName ? (
+                      <div className="queue-learning-result">
+                        <span>Automatic learning after Match</span>
+                        <b>
+                          {selected.name}
+                          {' → '}
+                          {draft.targetDishName}
+                        </b>
+                        <small>
+                          Global alias · future customer uploads will resolve to the canonical Dish Master item automatically, reuse its cost/recipe path, and stay out of the Unknown Queue.
+                        </small>
                       </div>
                     ) : null}
 
@@ -1429,6 +1449,7 @@ export default function UnknownDishQueuePage() {
           .queue-decision-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.queue-decision-card{padding:17px;border:1px solid rgba(148,163,184,.18);border-radius:18px;display:grid;gap:12px}.queue-decision-card.is-match{border-color:rgba(34,197,94,.26);background:rgba(34,197,94,.035)}
           .queue-decision-card h3,.queue-decision-card p{margin:0}.queue-suggestions{display:flex;gap:7px;flex-wrap:wrap}.queue-suggestions button{display:inline-flex;align-items:center;gap:7px}.queue-suggestions small{opacity:.7}
           .queue-match-results{display:grid;gap:6px;max-height:190px;overflow:auto}.queue-match-results button{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:9px 11px;border:1px solid rgba(148,163,184,.16);border-radius:11px;background:transparent;color:inherit}.queue-match-results small{color:var(--muted)}
+          .queue-learning-result{display:grid;gap:4px;padding:12px 13px;border:1px solid rgba(34,197,94,.24);border-radius:13px;background:rgba(34,197,94,.06)}.queue-learning-result span{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.queue-learning-result b{font-size:13px}.queue-learning-result small{color:var(--muted);line-height:1.45}
           .queue-add-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.queue-decision-action{margin-top:4px;width:100%}
           .queue-admin-notes{margin-top:14px}.queue-admin-notes textarea{width:100%;resize:vertical}
           .queue-ignore-zone{margin-top:14px;padding:14px 15px;border:1px dashed rgba(148,163,184,.25);border-radius:15px;display:flex;align-items:center;justify-content:space-between;gap:14px}.queue-ignore-zone>div{display:grid;gap:3px}.queue-ignore-zone span{color:var(--muted);font-size:12px}
