@@ -19,6 +19,7 @@
     "lib/pdfMenuExtraction.ts",
     "lib/operationsCost.ts",
     "lib/disposableCost.ts",
+    "lib/unknownDishQueue.ts",
     "tests/**/*.test.ts",
     "lib/correctedDishCosting.ts",
     "lib/caterersOsSync.ts"

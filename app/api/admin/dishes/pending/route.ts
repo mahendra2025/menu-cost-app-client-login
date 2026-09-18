@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 
 import {
   getAdminCookieName,
@@ -65,29 +66,94 @@ function addAlias(
   return cleanAliases([...aliases, candidate]);
 }
 
+const ALLOWED_STATUSES = new Set([
+  'PENDING',
+  'APPROVED',
+  'MATCHED',
+  'IGNORED',
+  'ALL',
+]);
+
 export async function GET(request: Request) {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
 
     const url = new URL(request.url);
-    const status = cleanText(
+    const requestedStatus = cleanText(
       url.searchParams.get('status') || 'PENDING',
       30,
     ).toUpperCase();
+    const status = ALLOWED_STATUSES.has(requestedStatus)
+      ? requestedStatus
+      : 'PENDING';
+    const query = cleanText(url.searchParams.get('q'), 120);
+    const category = cleanText(url.searchParams.get('category'), 60);
+    const requestedLimit = Number(url.searchParams.get('limit'));
+    const take = Math.min(
+      500,
+      Math.max(
+        20,
+        Number.isFinite(requestedLimit) ? requestedLimit : 250,
+      ),
+    );
 
-    const where = status === 'ALL'
-      ? {}
-      : { status };
+    const where: Prisma.PendingDishSuggestionWhereInput = {};
 
-    const [items, pendingCount] = await Promise.all([
+    if (status !== 'ALL') {
+      where.status = status;
+    }
+
+    if (category && category !== 'ALL') {
+      where.categoryHint = {
+        equals: category,
+        mode: 'insensitive',
+      };
+    }
+
+    if (query) {
+      where.OR = [
+        {
+          name: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          normalizedName: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          sourceFileName: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          matchedDishName: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
+
+    const [
+      items,
+      pendingCount,
+      approvedCount,
+      matchedCount,
+      ignoredCount,
+    ] = await Promise.all([
       prisma.pendingDishSuggestion.findMany({
         where,
         orderBy: [
           { occurrences: 'desc' },
           { updatedAt: 'desc' },
         ],
-        take: 200,
+        take,
         select: {
           id: true,
           name: true,
@@ -100,9 +166,14 @@ export async function GET(request: Request) {
           canonicalName: true,
           suggestedCategory: true,
           suggestedSubcategory: true,
+          aiConfidence: true,
+          duplicateScore: true,
           matchedDishName: true,
           recommendation: true,
+          riskLevel: true,
+          analysisReason: true,
           adminNotes: true,
+          analyzedAt: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -110,11 +181,31 @@ export async function GET(request: Request) {
       prisma.pendingDishSuggestion.count({
         where: { status: 'PENDING' },
       }),
+      prisma.pendingDishSuggestion.count({
+        where: { status: 'APPROVED' },
+      }),
+      prisma.pendingDishSuggestion.count({
+        where: { status: 'MATCHED' },
+      }),
+      prisma.pendingDishSuggestion.count({
+        where: { status: 'IGNORED' },
+      }),
     ]);
 
     return NextResponse.json({
       items,
       pendingCount,
+      statusCounts: {
+        PENDING: pendingCount,
+        APPROVED: approvedCount,
+        MATCHED: matchedCount,
+        IGNORED: ignoredCount,
+        ALL:
+          pendingCount +
+          approvedCount +
+          matchedCount +
+          ignoredCount,
+      },
     });
   } catch (error) {
     console.error('Pending dish GET failed:', error);
@@ -132,9 +223,48 @@ export async function POST(request: Request) {
     if (authError) return authError;
 
     const body = await request.json() as Record<string, unknown>;
-    const id = cleanText(body.id, 80);
     const action = cleanText(body.action, 30).toUpperCase();
     const adminNotes = cleanText(body.adminNotes, 500);
+
+    if (action === 'IGNORE_MANY') {
+      const ids = Array.isArray(body.ids)
+        ? Array.from(
+            new Set(
+              body.ids
+                .map((id) => cleanText(id, 80))
+                .filter(Boolean),
+            ),
+          ).slice(0, 100)
+        : [];
+
+      if (!ids.length) {
+        return NextResponse.json(
+          { error: 'Select at least one pending dish.' },
+          { status: 400 },
+        );
+      }
+
+      const saved = await prisma.pendingDishSuggestion.updateMany({
+        where: {
+          id: { in: ids },
+          status: 'PENDING',
+        },
+        data: {
+          status: 'IGNORED',
+          recommendation: 'IGNORE',
+          adminNotes,
+          analyzedAt: new Date(),
+        },
+      });
+
+      return NextResponse.json({
+        ok: true,
+        action,
+        count: saved.count,
+      });
+    }
+
+    const id = cleanText(body.id, 80);
 
     if (!id) {
       return NextResponse.json(
@@ -151,6 +281,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Unknown dish was not found.' },
         { status: 404 },
+      );
+    }
+
+    if (pending.status !== 'PENDING') {
+      return NextResponse.json(
+        { error: 'This queue item has already been reviewed.' },
+        { status: 409 },
       );
     }
 
@@ -242,13 +379,21 @@ export async function POST(request: Request) {
     if (action === 'ADD_NEW') {
       const name = cleanText(body.name || pending.name, 120);
       const category = cleanText(
-        body.category || pending.categoryHint || 'Other',
+        body.category ||
+          pending.suggestedCategory ||
+          pending.categoryHint ||
+          'Other',
         60,
       ) || 'Other';
-      const subcategory = cleanText(body.subcategory, 60);
+      const subcategory = cleanText(
+        body.subcategory || pending.suggestedSubcategory,
+        60,
+      );
       const rate = Number(body.rate);
       const servingQuantity = Number(body.servingQuantity || 1);
-      const servingUnit = cleanText(body.servingUnit || 'serving', 40) || 'serving';
+      const servingUnit =
+        cleanText(body.servingUnit || 'serving', 40) ||
+        'serving';
 
       if (
         !name ||
