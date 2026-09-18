@@ -7606,7 +7606,7 @@ Hara bhara kebab`}
                   </div>
                 ) : null}
 
-                {false && showDetectionSourceCompare ? (
+                {showDetectionSourceCompare ? (
                   <div className="menu-source-compare">
                     <div className="menu-source-compare-head">
                       <div>
