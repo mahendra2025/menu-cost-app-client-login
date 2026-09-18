@@ -176,6 +176,102 @@ export default function DisposableCostPage() {
             </button>
           </div>
 
+
+        </div>
+
+        <div className="glass-card">
+          <div className="final-costing-section-heading">
+            <div>
+              <span className="section-kicker">Plastic / disposable items</span>
+              <h2>Enter quantity and rate</h2>
+              <p>
+                Example: 330 plates × ₹6 = ₹1,980. Keep the legacy Fuel row at zero and use Gas & Transport for LPG/fuel.
+              </p>
+            </div>
+            <button className="secondary-button" type="button" onClick={addItem}>
+              + Add Item
+            </button>
+          </div>
+
+          <div className="table-wrap disposable-table-wrap">
+            <table className="disposable-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Quantity</th>
+                  <th>Rate / item</th>
+                  <th>Total</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {summary.items.map((item) => {
+                  const custom = item.id.startsWith('disposable_custom');
+                  const legacyFuel = item.name.trim().toLowerCase() === 'fuel';
+
+                  return (
+                    <tr key={item.id} className={item.lineTotal > 0 ? 'is-active' : ''}>
+                      <td>
+                        {custom ? (
+                          <input
+                            className="input"
+                            value={item.name}
+                            onChange={(event) => updateItem(item.id, { name: event.target.value })}
+                          />
+                        ) : (
+                          <div className="disposable-name">
+                            <strong>{item.name}</strong>
+                            {legacyFuel ? <small>Use Gas & Transport instead</small> : null}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <input
+                          className="input disposable-number"
+                          type="number"
+                          min="0"
+                          step="1"
+                          inputMode="decimal"
+                          value={item.quantity || ''}
+                          placeholder="0"
+                          onChange={(event) =>
+                            updateItem(item.id, { quantity: numberValue(event.target.value) })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="input disposable-number"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={item.unitCost || ''}
+                          placeholder="₹0"
+                          onChange={(event) =>
+                            updateItem(item.id, { unitCost: numberValue(event.target.value) })
+                          }
+                        />
+                      </td>
+                      <td><b>{money(item.lineTotal)}</b></td>
+                      <td>
+                        {custom ? (
+                          <button
+                            type="button"
+                            className="ghost-button disposable-remove"
+                            onClick={() => removeCustomItem(item.id)}
+                          >
+                            Remove
+                          </button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
           <div className="disposable-card-list">
             {summary.items.map((item) => {
               const custom =
@@ -284,100 +380,6 @@ export default function DisposableCostPage() {
                 </article>
               );
             })}
-          </div>
-        </div>
-
-        <div className="glass-card">
-          <div className="final-costing-section-heading">
-            <div>
-              <span className="section-kicker">Plastic / disposable items</span>
-              <h2>Enter quantity and rate</h2>
-              <p>
-                Example: 330 plates × ₹6 = ₹1,980. Keep the legacy Fuel row at zero and use Gas & Transport for LPG/fuel.
-              </p>
-            </div>
-            <button className="secondary-button" type="button" onClick={addItem}>
-              + Add Item
-            </button>
-          </div>
-
-          <div className="table-wrap disposable-table-wrap">
-            <table className="disposable-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Quantity</th>
-                  <th>Rate / item</th>
-                  <th>Total</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {summary.items.map((item) => {
-                  const custom = item.id.startsWith('disposable_custom');
-                  const legacyFuel = item.name.trim().toLowerCase() === 'fuel';
-
-                  return (
-                    <tr key={item.id} className={item.lineTotal > 0 ? 'is-active' : ''}>
-                      <td>
-                        {custom ? (
-                          <input
-                            className="input"
-                            value={item.name}
-                            onChange={(event) => updateItem(item.id, { name: event.target.value })}
-                          />
-                        ) : (
-                          <div className="disposable-name">
-                            <strong>{item.name}</strong>
-                            {legacyFuel ? <small>Use Gas & Transport instead</small> : null}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <input
-                          className="input disposable-number"
-                          type="number"
-                          min="0"
-                          step="1"
-                          inputMode="decimal"
-                          value={item.quantity || ''}
-                          placeholder="0"
-                          onChange={(event) =>
-                            updateItem(item.id, { quantity: numberValue(event.target.value) })
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="input disposable-number"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          inputMode="decimal"
-                          value={item.unitCost || ''}
-                          placeholder="₹0"
-                          onChange={(event) =>
-                            updateItem(item.id, { unitCost: numberValue(event.target.value) })
-                          }
-                        />
-                      </td>
-                      <td><b>{money(item.lineTotal)}</b></td>
-                      <td>
-                        {custom ? (
-                          <button
-                            type="button"
-                            className="ghost-button disposable-remove"
-                            onClick={() => removeCustomItem(item.id)}
-                          >
-                            Remove
-                          </button>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
           </div>
         </div>
 
