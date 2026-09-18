@@ -8,6 +8,10 @@ export type TenantDishAliasRule = {
     | 'REJECT';
 
   usageCount: number;
+
+  scope?:
+    | 'TENANT'
+    | 'GLOBAL';
 };
 
 export function dishNameKey(
