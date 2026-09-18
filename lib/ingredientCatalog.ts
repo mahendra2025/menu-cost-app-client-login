@@ -24,6 +24,7 @@ export type IngredientRate = {
   category: IngredientCategory;
   rate: number;
   unit: IngredientUnit;
+  updatedAt?: string;
 };
 
 function includesAny(value: string, words: string[]) {
@@ -218,11 +219,24 @@ export function normalizeIngredientRate(value: unknown): IngredientRate | null {
   const unit = String(row.unit || '').trim() as IngredientUnit;
   if (!name || !INGREDIENT_UNITS.includes(unit)) return null;
   const suppliedCategory = String(row.category || '').trim();
+  const suppliedUpdatedAt =
+    String(row.updatedAt || '').trim();
+  const updatedDate =
+    suppliedUpdatedAt
+      ? new Date(suppliedUpdatedAt)
+      : null;
+  const updatedAt =
+    updatedDate &&
+    !Number.isNaN(updatedDate.getTime())
+      ? updatedDate.toISOString()
+      : undefined;
+
   return {
     id: normalizeIngredientId(name, unit),
     name,
     category: suppliedCategory && suppliedCategory.length <= 60 ? suppliedCategory : inferIngredientCategory(name),
     rate: Math.max(0, Number(row.rate) || 0),
     unit,
+    ...(updatedAt ? { updatedAt } : {}),
   };
 }
