@@ -18,7 +18,6 @@ type ClientFlowStep = {
 function clientFlowForPath(pathname: string): ClientFlowStep | null {
   if (
     pathname === '/app/event' ||
-    pathname === '/app/menu' ||
     pathname === '/app/cost' ||
     pathname === '/app/grocery'
   ) {
