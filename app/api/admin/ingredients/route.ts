@@ -410,7 +410,8 @@ export async function PUT(request: Request) {
     if (authError) return authError;
     const body = await request.json() as Record<string, unknown>;
     if (!Array.isArray(body.rates)) return NextResponse.json({ error: 'Invalid ingredient catalog' }, { status: 400 });
-    const rates = body.rates.map(normalizeIngredientRate);
+    const submittedRates = body.rates;
+    const rates = submittedRates.map(normalizeIngredientRate);
     if (rates.some((rate) => !rate)) return NextResponse.json({ error: 'Every ingredient needs a name, category, rate and valid unit' }, { status: 400 });
     const cleanedRates = rates.filter((rate): rate is NonNullable<typeof rate> => Boolean(rate));
     if (cleanedRates.some((rate) => !(Number(rate.rate) > 0))) {
@@ -436,9 +437,9 @@ export async function PUT(request: Request) {
 
     const stampedRates = cleanedRates.map((rate, index) => {
       const submitted =
-        body.rates[index] &&
-        typeof body.rates[index] === 'object'
-          ? body.rates[index] as Record<string, unknown>
+        submittedRates[index] &&
+        typeof submittedRates[index] === 'object'
+          ? submittedRates[index] as Record<string, unknown>
           : null;
       const originalId = String(submitted?.originalId || '').trim();
       const previous =
@@ -462,7 +463,7 @@ export async function PUT(request: Request) {
     const categories = normalizeCategories(body.categories, stampedRates);
     const nextIds = new Set(stampedRates.map((rate) => rate.id));
     const ratesByOriginalId = new Map<string, IngredientRate>();
-    body.rates.forEach((submitted, index) => {
+    submittedRates.forEach((submitted, index) => {
       if (!submitted || typeof submitted !== 'object') return;
       const originalId = String((submitted as Record<string, unknown>).originalId || '').trim();
       if (originalId && previousIds.has(originalId)) ratesByOriginalId.set(originalId, stampedRates[index]);
