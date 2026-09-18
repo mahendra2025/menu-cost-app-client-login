@@ -329,17 +329,50 @@ export async function PUT(request: Request) {
     if (new Set(cleanedRates.map((rate) => rate.id)).size !== cleanedRates.length) {
       return NextResponse.json({ error: 'Ingredient name and unit combinations must be unique' }, { status: 400 });
     }
-    const categories = normalizeCategories(body.categories, cleanedRates);
 
     const catalog = await prisma.recipeCatalog.findUnique({ where: { id: CATALOG_ID } });
     const previousRates = Array.isArray(catalog?.rates) ? catalog.rates : [];
-    const previousIds = new Set(previousRates.map((rate) => rate && typeof rate === 'object' ? String((rate as Record<string, unknown>).id || '') : '').filter(Boolean));
-    const nextIds = new Set(cleanedRates.map((rate) => rate.id));
+    const previousById = new Map(
+      previousRates.flatMap((value) => {
+        const normalized = normalizeIngredientRate(value);
+        return normalized ? [[normalized.id, normalized] as const] : [];
+      }),
+    );
+    const previousIds = new Set(previousById.keys());
+    const now = new Date().toISOString();
+
+    const stampedRates = cleanedRates.map((rate, index) => {
+      const submitted =
+        body.rates[index] &&
+        typeof body.rates[index] === 'object'
+          ? body.rates[index] as Record<string, unknown>
+          : null;
+      const originalId = String(submitted?.originalId || '').trim();
+      const previous =
+        previousById.get(originalId) ||
+        previousById.get(rate.id);
+
+      const rateChanged =
+        !previous ||
+        Math.abs(Number(previous.rate) - Number(rate.rate)) > 0.000001;
+
+      return {
+        ...rate,
+        ...(rateChanged
+          ? { updatedAt: now }
+          : previous?.updatedAt
+            ? { updatedAt: previous.updatedAt }
+            : {}),
+      };
+    });
+
+    const categories = normalizeCategories(body.categories, stampedRates);
+    const nextIds = new Set(stampedRates.map((rate) => rate.id));
     const ratesByOriginalId = new Map<string, IngredientRate>();
     body.rates.forEach((submitted, index) => {
       if (!submitted || typeof submitted !== 'object') return;
       const originalId = String((submitted as Record<string, unknown>).originalId || '').trim();
-      if (originalId && previousIds.has(originalId)) ratesByOriginalId.set(originalId, cleanedRates[index]);
+      if (originalId && previousIds.has(originalId)) ratesByOriginalId.set(originalId, stampedRates[index]);
     });
     const usage = recipeIngredientUsage(catalog?.dishes);
     const usedDeletions = [...previousIds].filter(
@@ -354,13 +387,13 @@ export async function PUT(request: Request) {
       where: { id: CATALOG_ID },
       create: {
         id: CATALOG_ID,
-        rates: cleanedRates,
+        rates: stampedRates,
         ingredientCategories: categories,
         dishes: [],
         deletedDishIds: [],
       },
       update: {
-        rates: cleanedRates,
+        rates: stampedRates,
         ingredientCategories: categories,
         dishes: dishes as Prisma.InputJsonValue,
       },
