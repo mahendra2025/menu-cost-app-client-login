@@ -1037,6 +1037,34 @@ export default function EventPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (
+      !session ||
+      !work ||
+      !detectionPreview
+    ) {
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(
+        `menu-detection:${session.tenantId}`,
+        JSON.stringify({
+          rawMenuText:
+            work.event.rawMenuText,
+          preview:
+            detectionPreview,
+        }),
+      );
+    } catch {
+      // Detection review still works if session storage is unavailable.
+    }
+  }, [
+    detectionPreview,
+    session,
+    work,
+  ]);
+
 
 
   useEffect(() => {
@@ -1587,6 +1615,83 @@ export default function EventPage() {
       item.serviceId ||
       `${item.dayLabel || 'Event'}::${item.mealLabel || 'Event Menu'}`
     );
+  }
+
+  function updateDetectionGroupPax(
+    groupKey: string,
+    value: string,
+  ) {
+    const nextPax =
+      Math.max(
+        0,
+        Math.round(
+          Number(value) || 0,
+        ),
+      );
+
+    setDetectionPreview(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        const groupKeys =
+          new Set(
+            current.menu.map(
+              (item) =>
+                detectionGroupKeyForItem(
+                  item,
+                ),
+            ),
+          );
+
+        if (groupKeys.size === 1) {
+          setImportFunctionPax(
+            nextPax > 0
+              ? String(nextPax)
+              : '',
+          );
+        }
+
+        return {
+          ...current,
+
+          menu:
+            current.menu.map(
+              (item) =>
+                detectionGroupKeyForItem(
+                  item,
+                ) === groupKey
+                  ? {
+                      ...item,
+                      servicePax:
+                        nextPax,
+                    }
+                  : item,
+            ),
+
+          possibleMissed:
+            current.possibleMissed.map(
+              (candidate) => {
+                const candidateKey =
+                  candidate.serviceId ||
+                  `${candidate.dayLabel || 'Event'}::${candidate.mealLabel || 'Event Menu'}`;
+
+                return candidateKey ===
+                  groupKey
+                  ? {
+                      ...candidate,
+                      servicePax:
+                        nextPax,
+                    }
+                  : candidate;
+              },
+            ),
+        };
+      },
+    );
+
+    setError('');
   }
 
   async function recostReviewedDish(
@@ -4900,16 +5005,6 @@ export default function EventPage() {
         ),
       );
 
-      if (uploadWork) {
-        sessionStorage.setItem(`menu-detection:${session.tenantId}`, JSON.stringify({
-          rawMenuText,
-          preview: { menu: detectedMenu, possibleMissed: possibleMissedDishes,
-            eventDetails: detectedDetails, source: detectionSource },
-        }));
-        router.push('/app/menu');
-        return;
-      }
-
       window.setTimeout(() => {
         document
           .getElementById(
@@ -4959,6 +5054,48 @@ export default function EventPage() {
     if (!selectedMenu.length) {
       setError(
         'Select at least one detected dish before continuing.',
+      );
+      return;
+    }
+
+    const selectedFunctionPax =
+      new Map<string, number>();
+
+    selectedMenu.forEach(
+      (item) => {
+        const key =
+          detectionGroupKeyForItem(
+            item,
+          );
+
+        selectedFunctionPax.set(
+          key,
+          Math.max(
+            selectedFunctionPax.get(
+              key,
+            ) || 0,
+            Number(
+              item.servicePax,
+            ) ||
+              Number(
+                work.event.pax,
+              ) ||
+              0,
+          ),
+        );
+      },
+    );
+
+    const missingFunctionPax =
+      Array.from(
+        selectedFunctionPax.values(),
+      ).filter(
+        (pax) => !(pax > 0),
+      ).length;
+
+    if (missingFunctionPax) {
+      setError(
+        `Enter guest count for ${missingFunctionPax} function${missingFunctionPax === 1 ? '' : 's'} before saving the menu.`,
       );
       return;
     }
@@ -5153,7 +5290,7 @@ export default function EventPage() {
       );
 
       // Full navigation prevents the next page from getting stuck.
-      window.location.assign('/app/manpower');
+      window.location.assign('/app/grocery');
     } catch (saveError) {
       console.error(
         'Detected menu save failed:',
@@ -9907,6 +10044,50 @@ Hara bhara kebab`}
                           </span>
                         </summary>
 
+                        <div className="menu-preview-group-pax">
+                          <label>
+                            <span>
+                              Guests for {
+                                group.mealLabel ||
+                                'this function'
+                              }
+                            </span>
+
+                            <input
+                              className="input"
+                              type="number"
+                              min="1"
+                              inputMode="numeric"
+                              value={
+                                group.servicePax > 0
+                                  ? String(
+                                      group.servicePax,
+                                    )
+                                  : ''
+                              }
+                              placeholder={
+                                Number(
+                                  work.event.pax,
+                                ) > 0
+                                  ? String(
+                                      work.event.pax,
+                                    )
+                                  : '300'
+                              }
+                              onChange={(event) =>
+                                updateDetectionGroupPax(
+                                  group.key,
+                                  event.target.value,
+                                )
+                              }
+                            />
+                          </label>
+
+                          <small>
+                            Used for grocery quantities and manpower.
+                          </small>
+                        </div>
+
                         <div className="menu-preview-items">
                           {group.items.map((item) => {
                             const isSelected =
@@ -10571,7 +10752,7 @@ Hara bhara kebab`}
                     }
                     disabled={!selectedPreviewMenu.length || !detectionReviewGateReady}
                   >
-                    Use This Menu
+                    Save Menu & Continue
                   </button>
                   <button
                     className="menu-preview-cancel"
