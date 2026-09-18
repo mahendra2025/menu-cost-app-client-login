@@ -11,6 +11,8 @@ import {
   useState,
 } from 'react';
 
+import { DISH_COST_ITEMS } from '../../lib/dishCostMaster';
+
 export type AppLanguage = 'en' | 'hi';
 
 const LANGUAGE_STORAGE_KEY = 'menu_cost_language';
@@ -703,6 +705,86 @@ const fullAppHindi: Record<string, string> = {
 
 const hindiTranslations = { ...hindi, ...fullAppHindi };
 
+const hindiDishNames = new Map<string, string>();
+
+DISH_COST_ITEMS.forEach((dish) => {
+  const hindiName = dish.aliases?.find((alias) => /[\u0900-\u097f]/.test(alias));
+  if (!hindiName) return;
+
+  [dish.name, ...(dish.aliases ?? [])].forEach((name) => {
+    if (!/[\u0900-\u097f]/.test(name)) {
+      hindiDishNames.set(name.trim().toLowerCase(), hindiName);
+    }
+  });
+});
+
+const hindiIngredientNames: Record<string, string> = {
+  Tomato: 'टमाटर',
+  Potato: 'आलू',
+  Onion: 'प्याज़',
+  Ginger: 'अदरक',
+  Garlic: 'लहसुन',
+  'Green Chilli': 'हरी मिर्च',
+  'Coriander Leaves': 'हरा धनिया',
+  Cumin: 'जीरा',
+  Turmeric: 'हल्दी',
+  'Red Chilli Powder': 'लाल मिर्च पाउडर',
+  'Coriander Powder': 'धनिया पाउडर',
+  'Green Peas': 'मटर',
+  Cauliflower: 'फूल गोभी',
+  Capsicum: 'शिमला मिर्च',
+  Curd: 'दही',
+  Besan: 'बेसन',
+  Atta: 'गेहूँ का आटा',
+  Rava: 'सूजी',
+  Ghee: 'घी',
+  Milk: 'दूध',
+  Cream: 'क्रीम',
+  Cheese: 'चीज़',
+  Butter: 'मक्खन',
+  Khoya: 'खोया',
+  Sugar: 'चीनी',
+  Jaggery: 'गुड़',
+  Honey: 'शहद',
+  Oil: 'तेल',
+  'Cooking Oil': 'खाना पकाने का तेल',
+  Salt: 'नमक',
+  'Black Pepper': 'काली मिर्च',
+  Cardamom: 'इलायची',
+  Cinnamon: 'दालचीनी',
+  Saffron: 'केसर',
+  Rice: 'चावल',
+  'Basmati Rice': 'बासमती चावल',
+  'Wheat Flour': 'गेहूँ का आटा',
+  Maida: 'मैदा',
+  'Corn Flour': 'कॉर्न फ्लोर',
+  'Moong Dal': 'मूंग दाल',
+  'Chana Dal': 'चना दाल',
+  'Toor Dal': 'तूर दाल',
+  'Urad Dal': 'उड़द दाल',
+  Rajma: 'राजमा',
+  Chickpeas: 'काबुली चना',
+  Water: 'पानी',
+  Lemon: 'नींबू',
+  'Mint Leaves': 'पुदीना',
+  Coconut: 'नारियल',
+  Cashew: 'काजू',
+  Almond: 'बादाम',
+  Raisin: 'किशमिश',
+  'Vegetables & Herbs': 'सब्ज़ियाँ और जड़ी-बूटियाँ',
+  Fruits: 'फल',
+  Dairy: 'डेयरी',
+  'Grains & Flour': 'अनाज और आटा',
+  'Pulses & Legumes': 'दालें',
+  'Spices & Seasonings': 'मसाले',
+  'Oils & Fats': 'तेल और वसा',
+  'Sauces & Condiments': 'सॉस और साथ की चीज़ें',
+  Beverages: 'पेय',
+  Sweeteners: 'मिठास की सामग्री',
+  'Bakery & Packaged': 'बेकरी और पैक सामान',
+  gram: 'ग्राम',
+};
+
 const dynamicHindiTranslations: Array<[
   RegExp,
   (...matches: string[]) => string,
@@ -753,7 +835,9 @@ function translateHindiText(input: string): string {
   const leading = input.match(/^\s*/)?.[0] ?? '';
   const trailing = input.match(/\s*$/)?.[0] ?? '';
   const text = input.trim();
-  const exact = hindiTranslations[text];
+  const exact = hindiTranslations[text]
+    ?? hindiIngredientNames[text]
+    ?? hindiDishNames.get(text.toLowerCase());
   if (exact) return `${leading}${exact}${trailing}`;
 
   for (const [pattern, replacement] of dynamicHindiTranslations) {
