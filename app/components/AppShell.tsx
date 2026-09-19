@@ -464,14 +464,14 @@ export default function AppShell({
               <small>{t('Event')}</small>
             </Link>
 
-            <Link
+            <a
               href="/app/manpower"
               className={clientFlow?.step === 2 ? 'active' : ''}
               aria-current={clientFlow?.step === 2 ? 'page' : undefined}
             >
               <ClientNavIconMark icon="team" />
               <small>{t('Team')}</small>
-            </Link>
+            </a>
 
             <Link
               href="/app/operations"
@@ -546,10 +546,10 @@ export default function AppShell({
                     <b>{t('Cost Review')}</b>
                     <small>{t('Dish costs')}</small>
                   </Link>
-                  <Link href="/app/manpower">
+                  <a href="/app/manpower">
                     <b>{t('Manpower')}</b>
                     <small>{t('Meal-wise staff cost')}</small>
-                  </Link>
+                  </a>
                   <Link href="/app/quotation">
                     <b>{t('Quotation')}</b>
                     <small>{t('Client quote')}</small>
