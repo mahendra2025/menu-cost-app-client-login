@@ -228,8 +228,6 @@ const fullAppHindi: Record<string, string> = {
   'Detection confidence': 'पहचान का भरोसा',
   'Detected dishes': 'पहचाने गए व्यंजन',
   'Function / Meal': 'फंक्शन / भोजन',
-  Menu: 'मेन्यू',
-  Guests: 'मेहमान',
   'Enter guests': 'मेहमान दर्ज करें',
   'function needs guest count': 'फंक्शन के लिए मेहमानों की संख्या चाहिए',
   'functions need guest counts': 'फंक्शनों के लिए मेहमानों की संख्या चाहिए',
