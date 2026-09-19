@@ -1746,6 +1746,16 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
     servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
     servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
 
+    gasKgPer100:
+      item.gasKgPer100 === undefined ||
+      item.gasKgPer100 === null ||
+      String(item.gasKgPer100).trim() === ''
+        ? undefined
+        : Math.max(
+            0,
+            Number(item.gasKgPer100) || 0,
+          ),
+
     pieceWeightGrams:
       Math.max(
         0,
