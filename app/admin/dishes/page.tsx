@@ -1296,6 +1296,77 @@ export default function AdminDishesPage() {
     }
   }
 
+  async function persistDishRow(
+    row: EditableDish,
+  ) {
+    const item =
+      toDishCostItem(
+        row,
+      );
+
+    const response =
+      await fetch(
+        '/api/admin/dishes/item',
+        {
+          method:
+            'PATCH',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body:
+            JSON.stringify({
+              id:
+                row.persistedId,
+              originalName:
+                row.originalName ||
+                row.name,
+              ...item,
+            }),
+        },
+      );
+
+    const data =
+      await response
+        .json()
+        .catch(
+          () => ({}),
+        );
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          'Could not save dish.',
+      );
+    }
+
+    const saved =
+      data.item &&
+      typeof data.item ===
+        'object'
+        ? data.item as
+            Record<
+              string,
+              unknown
+            >
+        : {};
+
+    return {
+      item,
+      persistedId:
+        String(
+          saved.id ||
+          row.persistedId ||
+          '',
+        ).trim(),
+      savedName:
+        String(
+          saved.name ||
+          item.name,
+        ).trim(),
+    };
+  }
+
   async function saveDishRow(
     row: EditableDish,
   ) {
@@ -1323,70 +1394,14 @@ export default function AdminDishesPage() {
     setMessage('');
 
     try {
-      const item =
-        toDishCostItem(
+      const {
+        item,
+        persistedId,
+        savedName,
+      } =
+        await persistDishRow(
           row,
         );
-
-      const response =
-        await fetch(
-          '/api/admin/dishes/item',
-          {
-            method:
-              'PATCH',
-            headers: {
-              'Content-Type':
-                'application/json',
-            },
-            body:
-              JSON.stringify({
-                id:
-                  row.persistedId,
-                originalName:
-                  row.originalName ||
-                  row.name,
-                ...item,
-              }),
-          },
-        );
-
-      const data =
-        await response
-          .json()
-          .catch(
-            () => ({}),
-          );
-
-      if (!response.ok) {
-        throw new Error(
-          data.error ||
-            'Could not save dish.',
-        );
-      }
-
-      const saved =
-        data.item &&
-        typeof data.item ===
-          'object'
-          ? data.item as
-              Record<
-                string,
-                unknown
-              >
-          : {};
-
-      const persistedId =
-        String(
-          saved.id ||
-          row.persistedId ||
-          '',
-        ).trim();
-
-      const savedName =
-        String(
-          saved.name ||
-          item.name,
-        ).trim();
 
       setRows(
         (current) => {
@@ -1491,6 +1506,109 @@ export default function AdminDishesPage() {
 
     setSaving(true);
     setMessage('');
+
+    /*
+     * Normal edits save only changed rows.
+     * Rewriting thousands of Dish Master rows for one rate/name edit is slow
+     * and can time out in production.
+     */
+    if (
+      !structureDirty &&
+      dirtyRowIds.size > 0
+    ) {
+      try {
+        const changedRows =
+          rows.filter(
+            (row) =>
+              dirtyRowIds.has(
+                row.id,
+              ),
+          );
+
+        const savedRows =
+          new Map<
+            string,
+            {
+              item: DishCostItem;
+              persistedId: string;
+              savedName: string;
+            }
+          >();
+
+        for (
+          const row of changedRows
+        ) {
+          const saved =
+            await persistDishRow(
+              row,
+            );
+
+          savedRows.set(
+            row.id,
+            saved,
+          );
+        }
+
+        const nextRows =
+          rows.map(
+            (row) => {
+              const saved =
+                savedRows.get(
+                  row.id,
+                );
+
+              if (!saved) {
+                return row;
+              }
+
+              return {
+                ...row,
+                ...saved.item,
+                persistedId:
+                  saved.persistedId ||
+                  undefined,
+                originalName:
+                  saved.savedName,
+              };
+            },
+          );
+
+        setRows(
+          nextRows,
+        );
+
+        saveDishCostItems(
+          nextRows.map(
+            toDishCostItem,
+          ),
+        );
+
+        setDirty(false);
+        setDirtyRowIds(
+          new Set(),
+        );
+        setMessageType(
+          'success',
+        );
+        setMessage(
+          `${changedRows.length} dish${changedRows.length === 1 ? '' : 'es'} saved successfully.`,
+        );
+      } catch (error) {
+        setMessageType(
+          'error',
+        );
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : 'Could not save dish changes.',
+        );
+      } finally {
+        setSaving(false);
+      }
+
+      return;
+    }
+
     const cleaned = rows
       .map(toDishCostItem)
       .filter((row) => row.name && row.category.trim());
