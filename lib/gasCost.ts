@@ -237,14 +237,13 @@ export function effectiveGasCategoryRates(
     | null
     | undefined,
 ) {
-  return (
-    Array.isArray(rates) &&
-    rates.length
-      ? rates
-      : [
-          ...DEFAULT_GAS_CATEGORY_RATES,
-        ]
-  );
+  return Array.isArray(
+    rates,
+  )
+    ? rates
+    : [
+        ...DEFAULT_GAS_CATEGORY_RATES,
+      ];
 }
 
 export function categoryGasKgPer100(
