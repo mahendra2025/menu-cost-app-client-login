@@ -18506,6 +18506,25 @@ body.client-sheet-open {
   font-weight: 800;
 }
 
+.event-menu-source-grid.upload-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.event-menu-source-grid.upload-only .menu-upload-options,
+.event-menu-source-grid.upload-only .menu-upload-option {
+  width: 100%;
+}
+
+.event-menu-source-grid.upload-only .menu-upload-option {
+  min-height: 190px;
+  align-content: center;
+}
+
+.event-menu-source-grid.upload-only .menu-upload-button {
+  width: min(420px, 100%);
+  margin-inline: auto;
+}
+
 @media (max-width: 700px) {
   .event-function-details {
     grid-template-columns: 1fr;
@@ -18520,6 +18539,10 @@ body.client-sheet-open {
   .event-function-details .input {
     min-height: 48px;
     font-size: 16px;
+  }
+
+  .event-menu-source-grid.upload-only .menu-upload-option {
+    min-height: 165px;
   }
 }
 

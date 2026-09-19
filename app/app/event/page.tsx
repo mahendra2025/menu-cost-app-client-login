@@ -6755,7 +6755,7 @@ export default function EventPage() {
                 <span aria-hidden="true">1</span>
                 <div>
                   <h3>{t('Add dishes for this function')}</h3>
-                  <p>{t('Upload a menu or paste its text. You can review every detected dish before saving.')}</p>
+                  <p>{t('Upload a PDF or photo of the menu. Dishes will be detected automatically.')}</p>
                 </div>
               </div>
 
@@ -6806,7 +6806,7 @@ export default function EventPage() {
                 </div>
               </div>
 
-              <div className="event-menu-source-grid">
+              <div className="event-menu-source-grid upload-only">
                 <div className="menu-upload-options">
                 <section className="menu-upload-option" aria-labelledby="upload-menu-title">
                   <div className="menu-upload-heading">
@@ -6846,57 +6846,6 @@ export default function EventPage() {
                   </label>
                 </section>
                 </div>
-
-                <div className="field menu-text-field">
-                    <div className="event-menu-text-heading">
-                      <div>
-                        <span className="menu-paste-icon" aria-hidden="true">Aa</span>
-                        <div>
-                          <label htmlFor="rawMenuText">{t('Paste menu text')}</label>
-                          <small>{t('Best when you already have the menu in WhatsApp or a document.')}</small>
-                        </div>
-                      </div>
-                      <div>
-                        <button className="event-text-action" type="button" onClick={useSampleMenu}>{t('Use sample')}</button>
-                        {work.event.rawMenuText ? <button className="event-text-action danger" type="button" onClick={clearMenuText}>{t('Clear')}</button> : null}
-                      </div>
-                    </div>
-
-                    <textarea
-                      id="rawMenuText"
-                      className="textarea textarea-large"
-                      value={work.event.rawMenuText}
-                      onChange={(event) => {
-                        setError('');
-                        setUploadStatus('');
-                        setDetectedEventDetails({});
-                        setDetectionPreview(null);
-                        setSelectedPreviewIds(new Set());
-                        updateEvent('rawMenuText', event.target.value);
-                      }}
-                      placeholder={language === 'hi' ? `हर लाइन में एक व्यंजन पेस्ट करें, जैसे:
-
-वेलकम ड्रिंक
-ऑरेंज जूस
-जल जीरा
-
-स्टार्टर
-पनीर टिक्का
-हरा भरा कबाब` : `Paste one dish per line, for example:
-
-Welcome drinks
-Orange juice
-Jal jeera
-
-Starters
-Paneer tikka
-Hara bhara kebab`}
-                    />
-                    <div className="event-text-meta">
-                      <span>{menuLines ? (language === 'hi' ? `${menuLines} मेन्यू लाइनें` : `${menuLines} menu lines`) : t('No menu text yet')}</span>
-                      <span>English, Roman Hindi, हिन्दी or ગુજરાતી</span>
-                    </div>
-                </div>
               </div>
 
               <div className="event-menu-detect-inline">
@@ -6907,7 +6856,7 @@ Hara bhara kebab`}
                       ? (language === 'hi'
                           ? `${menuLines} मेन्यू लाइनें डिटेक्शन के लिए तैयार हैं।`
                           : `${menuLines} menu lines ready for detection.`)
-                      : t('Upload a menu or paste text to continue.')}
+                      : t('Upload a menu to continue.')}
                   </small>
                 </div>
 
@@ -6965,27 +6914,6 @@ Hara bhara kebab`}
                   </div>
                 </div>
               ) : null}
-
-              <div
-                className="event-manual-menu-row"
-              >
-                <button
-                  className="ghost-button"
-                  type="button"
-                  disabled={
-                    manualDishLoading
-                  }
-                  onClick={() =>
-                    void openManualDishSelector()
-                  }
-                >
-                  {manualDishLoading
-                    ? t('Loading Dishes…')
-                    : t('Browse Dish Master')}
-                </button>
-
-                <small>{t('Already costed these dishes? Add them directly without detection.')}</small>
-              </div>
 
               {showManualDishSelector ? (
                 <div
