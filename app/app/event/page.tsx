@@ -6455,6 +6455,94 @@ export default function EventPage() {
       previewGroupMap.values(),
     );
 
+  const simpleDetectedGroupMap =
+    new Map<
+      string,
+      {
+        key: string;
+        label: string;
+        items: MenuItem[];
+      }
+    >();
+
+  (
+    detectionPreview?.menu || []
+  )
+    .filter(
+      (item) =>
+        item.coverageStatus !==
+        'REJECTED',
+    )
+    .forEach((item) => {
+      const dayLabel =
+        String(
+          item.dayLabel || '',
+        ).trim();
+      const mealLabel =
+        String(
+          item.mealLabel || '',
+        ).trim();
+      const hasNamedService =
+        Boolean(dayLabel) ||
+        Boolean(
+          mealLabel &&
+          mealLabel.toLowerCase() !==
+            'event menu',
+        );
+      const key =
+        hasNamedService
+          ? `${dayLabel || 'Event'}::${mealLabel || 'Event Menu'}`
+          : 'event-menu';
+      const label =
+        hasNamedService
+          ? [
+              dayLabel,
+              mealLabel,
+            ]
+              .filter(Boolean)
+              .join(' • ')
+          : 'Event Menu';
+      const current =
+        simpleDetectedGroupMap.get(
+          key,
+        );
+
+      if (current) {
+        current.items.push(item);
+        return;
+      }
+
+      simpleDetectedGroupMap.set(
+        key,
+        {
+          key,
+          label,
+          items: [item],
+        },
+      );
+    });
+
+  const simpleDetectedGroups =
+    Array.from(
+      simpleDetectedGroupMap.values(),
+    );
+
+  const simpleDetectedDishCount =
+    simpleDetectedGroups.reduce(
+      (total, group) =>
+        total +
+        group.items.length,
+      0,
+    );
+
+  const showSimpleDetectedGroupHeadings =
+    simpleDetectedGroups.length > 1 ||
+    simpleDetectedGroups.some(
+      (group) =>
+        group.label !==
+        'Event Menu',
+    );
+
   const detectionGuestGroupMap =
     new Map<
       string,
@@ -6912,45 +7000,63 @@ export default function EventPage() {
                     <div>
                       <span>{t('Detected dishes')}</span>
                       <h2 id="simpleDetectedMenuTitle">
-                        {detectionPreview.menu.filter(
-                          (item) => item.coverageStatus !== 'REJECTED',
-                        ).length}{' '}
+                        {simpleDetectedDishCount}{' '}
                         {t('dishes detected')}
                       </h2>
                       <p>{t('Check the detected dishes, then tap Done to continue.')}</p>
                     </div>
 
                     <span className="simple-detected-menu-count">
-                      {detectionPreview.menu.filter(
-                        (item) => item.coverageStatus !== 'REJECTED',
-                      ).length}
+                      {simpleDetectedDishCount}
                     </span>
                   </div>
 
-                  <div className="simple-detected-dish-list">
-                    {detectionPreview.menu
-                      .filter(
-                        (item) => item.coverageStatus !== 'REJECTED',
-                      )
-                      .map((item, index) => (
-                        <div
-                          className="simple-detected-dish"
-                          key={item.id}
+                  <div className="simple-detected-groups">
+                    {simpleDetectedGroups.map(
+                      (group) => (
+                        <section
+                          className="simple-detected-group"
+                          key={group.key}
                         >
-                          <span className="simple-detected-dish-number">
-                            {index + 1}
-                          </span>
+                          {showSimpleDetectedGroupHeadings ? (
+                            <div className="simple-detected-group-head">
+                              <div>
+                                <span>{t('Function / Meal')}</span>
+                                <h3>{group.label}</h3>
+                              </div>
+                              <b>
+                                {group.items.length}{' '}
+                                {t('dishes detected')}
+                              </b>
+                            </div>
+                          ) : null}
 
-                          <div>
-                            <b>{item.name}</b>
-                            <small>{item.category || 'Other'}</small>
+                          <div className="simple-detected-dish-list">
+                            {group.items.map(
+                              (item, index) => (
+                                <div
+                                  className="simple-detected-dish"
+                                  key={item.id}
+                                >
+                                  <span className="simple-detected-dish-number">
+                                    {index + 1}
+                                  </span>
+
+                                  <div>
+                                    <b>{item.name}</b>
+                                    <small>{item.category || 'Other'}</small>
+                                  </div>
+
+                                  <span className="simple-detected-check" aria-hidden="true">
+                                    ✓
+                                  </span>
+                                </div>
+                              ),
+                            )}
                           </div>
-
-                          <span className="simple-detected-check" aria-hidden="true">
-                            ✓
-                          </span>
-                        </div>
-                      ))}
+                        </section>
+                      ),
+                    )}
                   </div>
 
                   <button
