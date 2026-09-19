@@ -235,7 +235,11 @@ function removeTimeDecoration(
       ' ',
     )
     .replace(
-      /\s*(?:[-–—|]\s*)?\d{1,2}:\d{2}\s*(?:am|pm)(?:\s*(?:to|[-–—])\s*\d{1,2}:\d{2}\s*(?:am|pm))?\s*$/i,
+      /\s*(?:[-–—|]\s*)?\d{1,2}(?::\d{2})?\s*(?:am|pm)(?:\s*(?:to|[-–—])\s*\d{1,2}(?::\d{2})?\s*(?:am|pm))?(?:\s+onwards?)?\s*$/i,
+      ' ',
+    )
+    .replace(
+      /\s*(?:[-–—|]\s*)?(?:12\s*)?(?:noon|midnight)(?:\s+onwards?)?\s*$/i,
       ' ',
     )
     .replace(/\s+/g, ' ')
