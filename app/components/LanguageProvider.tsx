@@ -229,7 +229,6 @@ const fullAppHindi: Record<string, string> = {
   'Detected dishes': 'पहचाने गए व्यंजन',
   'Function / Meal': 'फंक्शन / भोजन',
   'Not in Dish Master': 'डिश मास्टर में नहीं है',
-  'Enter rate': 'रेट दर्ज करें',
   'per plate': 'प्रति प्लेट',
   'dish needs a manual rate': 'डिश के लिए मैनुअल रेट चाहिए',
   'dishes need manual rates': 'डिशों के लिए मैनुअल रेट चाहिए',
