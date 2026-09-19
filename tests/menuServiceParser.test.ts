@@ -61,6 +61,18 @@ test('ignores meal timing when detecting heading', () => {
   );
 });
 
+
+test('detects meal heading with simple hour timing', () => {
+  assert.deepEqual(
+    parseMenuServiceHeading('Hi Tea - 4 PM'),
+    {
+      dayLabel: undefined,
+      mealLabel: 'Hi Tea',
+      servicePax: undefined,
+    },
+  );
+});
+
 test('detects explicit custom function names without guest count', () => {
   assert.deepEqual(
     parseMenuServiceHeading('Function Name: Mahila Sangeet'),
