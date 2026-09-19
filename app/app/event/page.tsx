@@ -5480,9 +5480,11 @@ export default function EventPage() {
     setEditingDetectionId(null);
     setShowAddMissedDish(false);
 
-    sessionStorage.removeItem(
-      `menu-detection:${session.tenantId}`,
-    );
+    if (session) {
+      sessionStorage.removeItem(
+        `menu-detection:${session.tenantId}`,
+      );
+    }
 
     window.setTimeout(() => {
       document
