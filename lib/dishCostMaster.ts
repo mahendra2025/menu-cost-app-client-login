@@ -22,6 +22,12 @@ export type DishCostItem = {
   servingUnit?: string;
 
   /*
+   * Optional LPG override for this dish.
+   * When absent, gas costing uses the category master.
+   */
+  gasKgPer100?: number;
+
+  /*
    * Physical weight of one piece.
    * Example: Gulab Jamun = 35 g / piece.
    */
