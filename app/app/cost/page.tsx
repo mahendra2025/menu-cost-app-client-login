@@ -1815,7 +1815,7 @@ export default function CostPage() {
           <button
             className="primary-button"
             type="button"
-            onClick={() => router.push('/app/manpower')}
+            onClick={() => window.location.assign('/app/manpower')}
           >
             Next: Manpower
           </button>
