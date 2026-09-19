@@ -3598,31 +3598,6 @@ export default function EventPage() {
       return;
     }
 
-    const guestCount =
-      Math.max(
-        0,
-        Math.round(
-          Number(importFunctionPax) ||
-          Number(detectionWork.event.pax) ||
-          0,
-        ),
-      );
-
-    if (!guestCount) {
-      setError(
-        'Enter the number of guests for this function before detecting dishes.',
-      );
-      document
-        .getElementById('importFunctionPax')
-        ?.focus();
-      return;
-    }
-
-    const functionName =
-      importFunctionName.trim() ||
-      detectionWork.event.functionType ||
-      'Event Menu';
-
     setDetecting(true);
 
     try {
@@ -4991,13 +4966,13 @@ export default function EventPage() {
       );
 
       setUploadStatus(
-        'Menu detected. Review the dishes below, then save when ready.',
+        'Dishes detected. Tap Done to continue.',
       );
 
       window.setTimeout(() => {
         document
           .getElementById(
-            'menuDetectionPreview',
+            'simpleDetectedMenu',
           )
           ?.scrollIntoView({
             behavior: 'smooth',
@@ -6588,7 +6563,7 @@ export default function EventPage() {
       title="Create Event"
       hidePageTitle
     >
-      <section className="content-grid">
+      <section className="content-grid event-simple-flow">
         {showFirstMenuGuide ? (
           <div className="first-menu-guide">
             <div className="first-menu-guide-top">
@@ -6744,7 +6719,7 @@ export default function EventPage() {
           style={{ order: 1 }}
         >
           <div className="form-grid">
-            <div className="menu-source-workspace">
+            <div className={`menu-source-workspace${detectionPreview ? ' is-detected' : ''}`}>
               {work.menu.length > 0 ? (
                 <div className="menu-source-workspace-heading">
                   <small>{work.menu.length} dishes already saved</small>
@@ -6889,6 +6864,76 @@ export default function EventPage() {
                     ) : null}
                   </div>
                 </div>
+              ) : null}
+
+
+              {detectionPreview ? (
+                <section
+                  id="simpleDetectedMenu"
+                  className="simple-detected-menu"
+                  aria-labelledby="simpleDetectedMenuTitle"
+                >
+                  <div className="simple-detected-menu-head">
+                    <div>
+                      <span>{t('Detected dishes')}</span>
+                      <h2 id="simpleDetectedMenuTitle">
+                        {detectionPreview.menu.filter(
+                          (item) => item.coverageStatus !== 'REJECTED',
+                        ).length}{' '}
+                        {t('dishes detected')}
+                      </h2>
+                      <p>{t('Check the detected dishes, then tap Done to continue.')}</p>
+                    </div>
+
+                    <span className="simple-detected-menu-count">
+                      {detectionPreview.menu.filter(
+                        (item) => item.coverageStatus !== 'REJECTED',
+                      ).length}
+                    </span>
+                  </div>
+
+                  <div className="simple-detected-dish-list">
+                    {detectionPreview.menu
+                      .filter(
+                        (item) => item.coverageStatus !== 'REJECTED',
+                      )
+                      .map((item, index) => (
+                        <div
+                          className="simple-detected-dish"
+                          key={item.id}
+                        >
+                          <span className="simple-detected-dish-number">
+                            {index + 1}
+                          </span>
+
+                          <div>
+                            <b>{item.name}</b>
+                            <small>{item.category || 'Other'}</small>
+                          </div>
+
+                          <span className="simple-detected-check" aria-hidden="true">
+                            ✓
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+
+                  <button
+                    className="primary-button simple-detected-done"
+                    type="button"
+                    disabled={!detectionPreview.menu.length || detecting}
+                    onClick={() =>
+                      void applyDetectionPreview(
+                        work.menu.length > 0
+                          ? 'merge'
+                          : 'replace',
+                        true,
+                      )
+                    }
+                  >
+                    {t('Done')}
+                  </button>
+                </section>
               ) : null}
 
               {Object.keys(detectedEventDetails).length > 0 ? (
