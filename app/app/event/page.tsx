@@ -5031,9 +5031,7 @@ export default function EventPage() {
                           costPerPlate:
                             rate,
                           costSource:
-                            rate > 0
-                              ? 'manual'
-                              : 'manual',
+                            'manual',
                           coverageStatus:
                             rate > 0
                               ? 'COSTED'
