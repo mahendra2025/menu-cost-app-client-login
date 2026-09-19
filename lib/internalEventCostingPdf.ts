@@ -27,6 +27,9 @@ import {
 import type {
   WorkState,
 } from './types';
+import type {
+  EventGasCostBreakdown,
+} from './gasCost';
 
 function money(
   value: number,
@@ -159,6 +162,7 @@ function addPageFooter(
 export function downloadInternalEventCostingPdf(
   work: WorkState,
   groceryPlan?: FunctionGroceryPlan | null,
+  gasBreakdown?: EventGasCostBreakdown | null,
 ) {
   const doc =
     new jsPDF({
@@ -198,6 +202,7 @@ export function downloadInternalEventCostingPdf(
   const operationsTotals =
     calculateOperationsTotals(
       operations,
+      gasBreakdown?.totalGasCost,
     );
 
   const otherCost =
@@ -1145,22 +1150,104 @@ export function downloadInternalEventCostingPdf(
     'Gas Cost Details',
   );
 
-  const gasRows =
-    operations.functions.map(
+  const automaticGasRows:
+    string[][] = [];
+
+  if (
+    gasBreakdown &&
+    gasBreakdown.rows.length
+  ) {
+    gasBreakdown.functionTotals.forEach(
+      (group) => {
+        const label =
+          [
+            group.dayLabel,
+            group.mealLabel,
+          ]
+            .filter(Boolean)
+            .join(' · ') ||
+          'Event Menu';
+
+        gasBreakdown.rows
+          .filter(
+            (row) =>
+              row.serviceKey ===
+              group.serviceKey,
+          )
+          .forEach(
+            (row) => {
+              automaticGasRows.push([
+                label,
+                row.dish,
+                row.category,
+                String(
+                  row.guests,
+                ),
+                quantity(
+                  row.gasKgPer100,
+                ),
+                `${quantity(
+                  row.gasKg,
+                )} kg`,
+                decimalMoney(
+                  row.lpgRatePerKg,
+                ),
+                decimalMoney(
+                  row.gasCost,
+                ),
+              ]);
+            },
+          );
+
+        automaticGasRows.push([
+          `${label} subtotal`,
+          '',
+          '',
+          String(
+            group.guests,
+          ),
+          '',
+          `${quantity(
+            group.gasKg,
+          )} kg`,
+          '',
+          decimalMoney(
+            group.gasCost,
+          ),
+        ]);
+      },
+    );
+
+    automaticGasRows.push([
+      'EVENT TOTAL',
+      '',
+      '',
+      '',
+      '',
+      `${quantity(
+        gasBreakdown.totalGasKg,
+      )} kg`,
+      decimalMoney(
+        gasBreakdown.lpgRatePerKg,
+      ),
+      decimalMoney(
+        gasBreakdown.totalGasCost,
+      ),
+    ]);
+  } else {
+    operations.functions.forEach(
       (row) => {
         const label =
           [
             row.dayLabel,
             row.mealLabel,
           ]
-            .filter(
-              Boolean,
-            )
+            .filter(Boolean)
             .join(' · ') ||
           'Event';
 
-        let usage = '';
-        let rate = '';
+        let usage = '-';
+        let rate = '-';
 
         if (
           row.gas.mode ===
@@ -1196,55 +1283,61 @@ export function downloadInternalEventCostingPdf(
               row.gas
                 .cylinderPrice,
             );
-        } else {
-          usage =
-            'Manual';
-
-          rate =
-            '-';
         }
 
-        return [
+        automaticGasRows.push([
           label,
-          row.gas.mode,
+          'Legacy gas entry',
+          '-',
+          String(
+            row.pax,
+          ),
+          '-',
           usage,
           rate,
-          money(
+          decimalMoney(
             calculateGasCost(
               row.gas,
             ),
           ),
-        ];
+        ]);
       },
     );
+  }
 
   autoTable(doc, {
     startY: y,
     head: [[
       'Function / Meal',
-      'Method',
-      'Usage',
-      'Rate',
+      'Dish',
+      'Category',
+      'Guests',
+      'LPG kg / 100',
+      'LPG Used',
+      'LPG Rate/kg',
       'Gas Cost',
     ]],
     body:
-      gasRows.length
-        ? gasRows
+      automaticGasRows.length
+        ? automaticGasRows
         : [[
             'Event',
+            'No gas usage',
             '-',
             '-',
             '-',
             '-',
+            '-',
+            decimalMoney(0),
           ]],
     margin: {
-      left: 12,
-      right: 12,
+      left: 6,
+      right: 6,
     },
     styles: {
       font: 'helvetica',
-      fontSize: 7.6,
-      cellPadding: 2,
+      fontSize: 6.2,
+      cellPadding: 1.45,
       textColor: [
         51,
         65,
@@ -1255,7 +1348,7 @@ export function downloadInternalEventCostingPdf(
         232,
         240,
       ],
-      lineWidth: 0.15,
+      lineWidth: 0.12,
     },
     headStyles: {
       fillColor: [
@@ -1273,13 +1366,36 @@ export function downloadInternalEventCostingPdf(
     },
     columnStyles: {
       0: {
-        cellWidth: 56,
+        cellWidth: 30,
+      },
+      1: {
+        cellWidth: 34,
+      },
+      2: {
+        cellWidth: 22,
       },
       3: {
+        cellWidth: 13,
         halign:
           'right',
       },
       4: {
+        cellWidth: 20,
+        halign:
+          'right',
+      },
+      5: {
+        cellWidth: 19,
+        halign:
+          'right',
+      },
+      6: {
+        cellWidth: 26,
+        halign:
+          'right',
+      },
+      7: {
+        cellWidth: 25,
         halign:
           'right',
       },
