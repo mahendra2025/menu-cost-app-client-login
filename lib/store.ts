@@ -1488,15 +1488,26 @@ function parseServiceHeading(value: string): {
   servicePax?: number;
 } | null {
   const rawLabel = cleanServiceLabel(value);
+  const servicePrefixPattern =
+    /^(?:function|meal|service)(?:\s+(?:name|type))?\s*[:\-]\s*/i;
   const hasExplicitServicePrefix =
-    /^(?:function|meal|service)\s*[:\-]\s*\S/i.test(
-      rawLabel,
-    );
+    new RegExp(
+      `^${servicePrefixPattern.source}\\S`,
+      'i',
+    ).test(rawLabel);
   const cleaned = rawLabel
-    .replace(/^(?:function|meal|service)\s*[:\-]\s*/i, '')
+    .replace(servicePrefixPattern, '')
     .trim();
   const normalized = normalizeMenuHeading(cleaned);
-  const plainMeal = MEAL_SERVICE_LABELS[normalized];
+  const normalizedWithoutMenu =
+    normalized
+      .replace(/\s+menu$/i, '')
+      .trim();
+  const plainMeal =
+    MEAL_SERVICE_LABELS[normalized] ||
+    MEAL_SERVICE_LABELS[
+      normalizedWithoutMenu
+    ];
 
   if (plainMeal) return { mealLabel: plainMeal };
 
