@@ -18740,6 +18740,97 @@ body.client-sheet-open {
   background: rgba(255, 255, 255, 0.025);
 }
 
+.simple-detected-dish.needs-manual-rate {
+  grid-template-columns: 30px minmax(0, 1fr) minmax(132px, 160px);
+  border-color: rgba(245, 158, 11, 0.24);
+  background: rgba(245, 158, 11, 0.035);
+}
+
+.simple-detected-dish-copy {
+  min-width: 0;
+}
+
+.simple-detected-unmatched {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 3px 7px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 999px;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.08);
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.simple-detected-rate {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 5px;
+  row-gap: 2px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.simple-detected-rate > span {
+  color: #fbbf24;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.simple-detected-rate input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #f8fafc;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.simple-detected-rate input::placeholder {
+  color: #667085;
+  font-weight: 700;
+}
+
+.simple-detected-rate small {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #8f9aaa;
+  font-size: 9px;
+  white-space: normal;
+}
+
+.simple-detected-rate-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 13px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 12px;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.07);
+  font-size: 11px;
+}
+
+.simple-detected-rate-notice b {
+  color: #fbbf24;
+  font-size: 11px;
+}
+
+.simple-detected-rate-notice span {
+  color: #cbd5e1;
+  text-align: right;
+}
+
 .simple-detected-dish-number {
   display: grid;
   width: 30px;
@@ -18816,6 +18907,25 @@ body.client-sheet-open {
 
   .simple-detected-dish {
     min-height: 60px;
+  }
+
+  .simple-detected-dish.needs-manual-rate {
+    grid-template-columns: 30px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .simple-detected-rate {
+    grid-column: 2;
+    width: min(180px, 100%);
+  }
+
+  .simple-detected-rate-notice {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .simple-detected-rate-notice span {
+    text-align: left;
   }
 
   .simple-detected-done {
