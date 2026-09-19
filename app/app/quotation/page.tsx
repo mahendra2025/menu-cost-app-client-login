@@ -162,6 +162,12 @@ export default function QuotationPage() {
     useState(false);
 
   const [
+    internalPdfBusy,
+    setInternalPdfBusy,
+  ] =
+    useState(false);
+
+  const [
     message,
     setMessage,
   ] =
@@ -825,6 +831,39 @@ export default function QuotationPage() {
       );
     } finally {
       setPdfBusy(false);
+    }
+  }
+
+  async function downloadInternalCostingPdf() {
+    if (
+      !work ||
+      internalPdfBusy ||
+      detailsLoading
+    ) {
+      return;
+    }
+
+    setInternalPdfBusy(true);
+    setError('');
+
+    try {
+      const {
+        downloadInternalEventCostingPdf,
+      } =
+        await import(
+          '../../../lib/internalEventCostingPdf'
+        );
+
+      downloadInternalEventCostingPdf(
+        work,
+        groceryPlan,
+      );
+    } catch {
+      setError(
+        'Could not prepare the internal costing PDF.',
+      );
+    } finally {
+      setInternalPdfBusy(false);
     }
   }
 
@@ -1758,7 +1797,7 @@ export default function QuotationPage() {
           </div>
 
           <div className="quote-safe">
-            Complete event quotation: menu, grocery quantities, manpower quantities, gas/transport plan and disposable quantities are included. Internal purchase rates, staff rates, event cost and profit remain private.
+            Client Event PDF keeps internal costs private. Internal Costing PDF includes dish rates, ingredient rates, manpower rates, plastic rates and the full cost index for your team only.
           </div>
 
           {message ? (
@@ -1804,7 +1843,25 @@ export default function QuotationPage() {
                 ? 'Preparing PDF…'
                 : detailsLoading
                   ? 'Loading Event Details…'
-                  : 'Download Complete Event PDF'}
+                  : 'Download Client Event PDF'}
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={
+                internalPdfBusy ||
+                detailsLoading
+              }
+              onClick={() =>
+                void downloadInternalCostingPdf()
+              }
+            >
+              {internalPdfBusy
+                ? 'Preparing Internal PDF…'
+                : detailsLoading
+                  ? 'Loading Cost Details…'
+                  : 'Download Internal Costing PDF'}
             </button>
 
             <button
