@@ -19343,3 +19343,144 @@ body.client-sheet-open {
     min-height: 44px;
   }
 }
+
+
+/* Automatic LPG / Gas Cost */
+.dish-gas-section {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 14px;
+  background: rgba(148, 163, 184, 0.045);
+}
+
+.dish-gas-section-heading h3 {
+  margin: 3px 0 4px;
+  font-size: 14px;
+}
+
+.dish-gas-section-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.dish-gas-mode {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.dish-gas-manual-field {
+  max-width: 300px;
+}
+
+.gas-master-page {
+  padding-bottom: 28px;
+}
+
+.gas-category-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.gas-category-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 150px 90px;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+  background: rgba(148, 163, 184, 0.035);
+}
+
+.gas-category-row > div {
+  display: grid;
+  gap: 2px;
+}
+
+.gas-category-row small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.gas-category-row > label {
+  display: grid;
+  gap: 5px;
+}
+
+.gas-category-row > label > span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.gas-category-row input[type='number'] {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 9px;
+  color: inherit;
+  background: rgba(15, 23, 42, 0.45);
+  font: inherit;
+}
+
+.gas-active-toggle {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  grid-auto-flow: column;
+  gap: 7px !important;
+}
+
+.gas-active-toggle > span {
+  text-transform: none !important;
+}
+
+.gas-setting-grid {
+  margin-top: 16px;
+}
+
+.gas-rate-result {
+  margin-top: 14px;
+  max-width: 360px;
+}
+
+@media (max-width: 720px) {
+  .dish-gas-mode {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .dish-gas-mode button {
+    width: 100%;
+  }
+
+  .gas-category-row {
+    grid-template-columns: 1fr 130px;
+  }
+
+  .gas-category-row .gas-active-toggle {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .gas-category-row {
+    grid-template-columns: 1fr;
+  }
+
+  .gas-category-row .gas-active-toggle {
+    grid-column: auto;
+  }
+
+  .dish-gas-manual-field {
+    max-width: none;
+  }
+}
