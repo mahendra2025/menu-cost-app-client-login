@@ -146,7 +146,7 @@ export default function FinalCostingPage() {
   function createQuotation() {
     const saved = savePrice();
     if (!saved) return;
-    router.push('/app/quotation');
+    window.location.assign('/app/quotation?full=1');
   }
 
   return (
@@ -175,7 +175,7 @@ export default function FinalCostingPage() {
               onClick={createQuotation}
               disabled={!priceReady}
             >
-              Use Price → Quotation
+              Use Price → Full Event Quotation
             </button>
           </div>
         </div>
@@ -360,7 +360,7 @@ export default function FinalCostingPage() {
 
         <div className="action-row page-actions">
           <button className="primary-button" type="button" disabled={!priceReady} onClick={createQuotation}>
-            Use Price & Create Quotation
+            Use Price & Create Full Event Quotation
           </button>
           <button className="secondary-button" type="button" disabled={!priceReady} onClick={() => { savePrice(); }}>
             Save Selling Price

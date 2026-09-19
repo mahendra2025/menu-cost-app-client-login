@@ -4,6 +4,16 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import type { WorkState } from './types';
+import {
+  calculateDisposableCost,
+} from './disposableCost';
+import type {
+  FunctionGroceryPlan,
+} from './functionGrocery';
+import {
+  normalizeOperationsState,
+  type WorkWithOperations,
+} from './operationsCost';
 
 export type ClientQuotationData = {
   quotationNumber: string;
@@ -71,7 +81,7 @@ function addPageFooter(
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.text(
-      `${businessName} · Client Quotation`,
+      `${businessName} · Complete Event Quotation`,
       14,
       287,
     );
@@ -132,6 +142,7 @@ function groupMenu(menu: PublicMenuItem[]) {
 export function downloadClientQuotationPdf(
   work: WorkState,
   quotation: ClientQuotationData,
+  groceryPlan?: FunctionGroceryPlan | null,
 ) {
   const doc = new jsPDF({
     unit: 'mm',
@@ -189,7 +200,7 @@ export function downloadClientQuotationPdf(
   doc.setFontSize(16);
   doc.setTextColor(255, 255, 255);
   doc.text(
-    'QUOTATION',
+    'EVENT QUOTATION',
     196,
     16,
     { align: 'right' },
@@ -405,6 +416,460 @@ export function downloadClientQuotationPdf(
         finalY: number;
       };
     };
+
+  y =
+    (tableDoc.lastAutoTable
+      ?.finalY || y) + 10;
+
+  const ensureSpace = (
+    minimum = 34,
+  ) => {
+    if (y > 277 - minimum) {
+      doc.addPage();
+      y = 20;
+    }
+  };
+
+  const sectionHeading = (
+    title: string,
+  ) => {
+    ensureSpace(18);
+    doc.setFont(
+      'helvetica',
+      'bold',
+    );
+    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59);
+    doc.text(
+      title,
+      14,
+      y,
+    );
+    y += 5;
+  };
+
+  sectionHeading(
+    'Function & Guest Summary',
+  );
+
+  autoTable(doc, {
+    startY: y,
+    head: [[
+      'Function / Meal',
+      'Guests',
+      'Dishes',
+    ]],
+    body:
+      groups.length
+        ? groups.map((group) => [
+            group.label,
+            group.pax
+              ? group.pax.toLocaleString('en-IN')
+              : '-',
+            String(group.dishes.length),
+          ])
+        : [[
+            'Event Menu',
+            quotation.totalCovers
+              ? quotation.totalCovers.toLocaleString('en-IN')
+              : '-',
+            String(work.menu.length),
+          ]],
+    margin: {
+      left: 14,
+      right: 14,
+    },
+    styles: {
+      font: 'helvetica',
+      fontSize: 8,
+      cellPadding: 2.2,
+      textColor: [51, 65, 85],
+      lineColor: [226, 232, 240],
+      lineWidth: 0.15,
+    },
+    headStyles: {
+      fillColor: [30, 41, 59],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+    },
+    columnStyles: {
+      1: { halign: 'right' },
+      2: { halign: 'right' },
+    },
+  });
+
+  y =
+    (tableDoc.lastAutoTable
+      ?.finalY || y) + 10;
+
+  sectionHeading(
+    'Grocery Requirements',
+  );
+
+  if (
+    groceryPlan &&
+    groceryPlan.combinedItems.length
+  ) {
+    autoTable(doc, {
+      startY: y,
+      head: [[
+        'Ingredient',
+        'Required Qty',
+        'Used In',
+      ]],
+      body:
+        groceryPlan.combinedItems.map(
+          (item) => [
+            item.name,
+            `${item.quantity
+              .toFixed(3)
+              .replace(/\.?0+$/, '')} ${item.unit}`,
+            item.dishes.join(', '),
+          ],
+        ),
+      margin: {
+        left: 14,
+        right: 14,
+      },
+      styles: {
+        font: 'helvetica',
+        fontSize: 7.5,
+        cellPadding: 2,
+        textColor: [51, 65, 85],
+        lineColor: [226, 232, 240],
+        lineWidth: 0.15,
+      },
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 48 },
+        1: {
+          cellWidth: 30,
+          halign: 'right',
+        },
+      },
+    });
+
+    y =
+      (tableDoc.lastAutoTable
+        ?.finalY || y) + 5;
+
+    if (
+      groceryPlan.unmatchedDishes.length
+    ) {
+      ensureSpace(16);
+      doc.setFont(
+        'helvetica',
+        'normal',
+      );
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+
+      const pendingLines =
+        doc.splitTextToSize(
+          `Recipe pending for: ${groceryPlan.unmatchedDishes.join(', ')}`,
+          178,
+        );
+
+      doc.text(
+        pendingLines,
+        14,
+        y,
+      );
+
+      y +=
+        pendingLines.length * 4 + 4;
+    }
+  } else {
+    doc.setFont(
+      'helvetica',
+      'normal',
+    );
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+      'Grocery quantities are unavailable until saved recipes are available for the menu dishes.',
+      14,
+      y,
+    );
+    y += 8;
+  }
+
+  const activeManpower =
+    (
+      Array.isArray(
+        work.manpower,
+      )
+        ? work.manpower
+        : []
+    ).filter(
+      (row) =>
+        Number(
+          row.quantity,
+        ) > 0,
+    );
+
+  sectionHeading(
+    'Manpower Plan',
+  );
+
+  if (activeManpower.length) {
+    autoTable(doc, {
+      startY: y,
+      head: [[
+        'Function / Meal',
+        'Role',
+        'Qty',
+      ]],
+      body:
+        activeManpower.map(
+          (row) => [
+            [
+              row.dayLabel,
+              row.mealLabel,
+            ]
+              .filter(Boolean)
+              .join(' · ') ||
+              'Event',
+            row.role,
+            String(
+              Math.max(
+                0,
+                Number(
+                  row.quantity,
+                ) || 0,
+              ),
+            ),
+          ],
+        ),
+      margin: {
+        left: 14,
+        right: 14,
+      },
+      styles: {
+        font: 'helvetica',
+        fontSize: 8,
+        cellPadding: 2.1,
+        textColor: [51, 65, 85],
+        lineColor: [226, 232, 240],
+        lineWidth: 0.15,
+      },
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 72 },
+        2: {
+          cellWidth: 22,
+          halign: 'right',
+        },
+      },
+    });
+
+    y =
+      (tableDoc.lastAutoTable
+        ?.finalY || y) + 10;
+  } else {
+    doc.setFont(
+      'helvetica',
+      'normal',
+    );
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+      'No manpower quantities have been entered.',
+      14,
+      y,
+    );
+    y += 8;
+  }
+
+  const disposable =
+    calculateDisposableCost(
+      work.disposableItems,
+    );
+
+  const activeDisposable =
+    disposable.items.filter(
+      (item) =>
+        Number(
+          item.quantity,
+        ) > 0,
+    );
+
+  sectionHeading(
+    'Plastic & Disposable Plan',
+  );
+
+  if (activeDisposable.length) {
+    autoTable(doc, {
+      startY: y,
+      head: [[
+        'Item',
+        'Quantity',
+      ]],
+      body:
+        activeDisposable.map(
+          (item) => [
+            item.name,
+            String(
+              Math.max(
+                0,
+                Number(
+                  item.quantity,
+                ) || 0,
+              ),
+            ),
+          ],
+        ),
+      margin: {
+        left: 14,
+        right: 14,
+      },
+      styles: {
+        font: 'helvetica',
+        fontSize: 8,
+        cellPadding: 2.1,
+        textColor: [51, 65, 85],
+        lineColor: [226, 232, 240],
+        lineWidth: 0.15,
+      },
+      headStyles: {
+        fillColor: [30, 41, 59],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        1: {
+          cellWidth: 34,
+          halign: 'right',
+        },
+      },
+    });
+
+    y =
+      (tableDoc.lastAutoTable
+        ?.finalY || y) + 10;
+  } else {
+    doc.setFont(
+      'helvetica',
+      'normal',
+    );
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+      'No plastic or disposable quantities have been entered.',
+      14,
+      y,
+    );
+    y += 8;
+  }
+
+  const operations =
+    normalizeOperationsState(
+      work,
+      (
+        work as WorkWithOperations
+      ).operations,
+    );
+
+  sectionHeading(
+    'Gas & Transport Plan',
+  );
+
+  const operationRows:
+    Array<[string, string, string]> = [];
+
+  operations.functions.forEach(
+    (row) => {
+      const label =
+        [
+          row.dayLabel,
+          row.mealLabel,
+        ]
+          .filter(Boolean)
+          .join(' · ') ||
+        'Event';
+
+      const gas =
+        row.gas.mode ===
+          'CYLINDER'
+          ? `${row.gas.cylindersUsed || 0} cylinder(s)`
+          : row.gas.mode ===
+              'KG'
+            ? `${row.gas.usedKg || 0} kg LPG`
+            : 'Manual gas plan';
+
+      const transport =
+        operations.transportMode ===
+          'FUNCTION_WISE'
+          ? `${row.transport.vehicleLabel || 'Vehicle'} · ${row.transport.vehicles || 0} vehicle(s) · ${row.transport.tripsPerVehicle || 0} trip(s)/vehicle`
+          : 'Shared event transport';
+
+      operationRows.push([
+        label,
+        gas,
+        transport,
+      ]);
+    },
+  );
+
+  if (
+    operations.transportMode ===
+    'EVENT_SHARED'
+  ) {
+    const shared =
+      operations.sharedTransport;
+
+    operationRows.unshift([
+      'Whole Event',
+      '-',
+      `${shared.vehicleLabel || 'Vehicle'} · ${shared.vehicles || 0} vehicle(s) · ${shared.tripsPerVehicle || 0} trip(s)/vehicle`,
+    ]);
+  }
+
+  autoTable(doc, {
+    startY: y,
+    head: [[
+      'Function / Meal',
+      'Gas',
+      'Transport',
+    ]],
+    body:
+      operationRows.length
+        ? operationRows
+        : [[
+            'Event',
+            '-',
+            '-',
+          ]],
+    margin: {
+      left: 14,
+      right: 14,
+    },
+    styles: {
+      font: 'helvetica',
+      fontSize: 7.5,
+      cellPadding: 2,
+      textColor: [51, 65, 85],
+      lineColor: [226, 232, 240],
+      lineWidth: 0.15,
+    },
+    headStyles: {
+      fillColor: [30, 41, 59],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+    },
+    columnStyles: {
+      0: { cellWidth: 58 },
+      1: { cellWidth: 42 },
+    },
+  });
 
   y =
     (tableDoc.lastAutoTable

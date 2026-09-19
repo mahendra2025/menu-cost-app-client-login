@@ -76,6 +76,299 @@ function cleanPublicSnapshot(value: unknown): Prisma.InputJsonValue {
         .slice(0, 500)
     : [];
 
+  const groceryRow =
+    row.grocery &&
+    typeof row.grocery === 'object' &&
+    !Array.isArray(row.grocery)
+      ? row.grocery as Record<string, unknown>
+      : {};
+
+  const groceryItems =
+    Array.isArray(
+      groceryRow.combinedItems,
+    )
+      ? groceryRow.combinedItems
+          .map((item) => {
+            if (
+              !item ||
+              typeof item !== 'object' ||
+              Array.isArray(item)
+            ) {
+              return null;
+            }
+
+            const grocery =
+              item as Record<
+                string,
+                unknown
+              >;
+
+            return {
+              name: clean(
+                grocery.name,
+                160,
+              ),
+              quantity:
+                numberValue(
+                  grocery.quantity,
+                ),
+              unit: clean(
+                grocery.unit,
+                30,
+              ),
+              dishes:
+                Array.isArray(
+                  grocery.dishes,
+                )
+                  ? grocery.dishes
+                      .map(
+                        (dish) =>
+                          clean(
+                            dish,
+                            160,
+                          ),
+                      )
+                      .filter(
+                        Boolean,
+                      )
+                      .slice(
+                        0,
+                        40,
+                      )
+                  : [],
+            };
+          })
+          .filter(
+            (item) =>
+              item?.name,
+          )
+          .slice(
+            0,
+            600,
+          )
+      : [];
+
+  const unmatchedDishes =
+    Array.isArray(
+      groceryRow.unmatchedDishes,
+    )
+      ? groceryRow.unmatchedDishes
+          .map(
+            (dish) =>
+              clean(
+                dish,
+                160,
+              ),
+          )
+          .filter(
+            Boolean,
+          )
+          .slice(
+            0,
+            200,
+          )
+      : [];
+
+  const manpower =
+    Array.isArray(
+      row.manpower,
+    )
+      ? row.manpower
+          .map((item) => {
+            if (
+              !item ||
+              typeof item !== 'object' ||
+              Array.isArray(item)
+            ) {
+              return null;
+            }
+
+            const staff =
+              item as Record<
+                string,
+                unknown
+              >;
+
+            return {
+              role: clean(
+                staff.role,
+                120,
+              ),
+              quantity:
+                numberValue(
+                  staff.quantity,
+                ),
+              dayLabel:
+                clean(
+                  staff.dayLabel,
+                  100,
+                ),
+              mealLabel:
+                clean(
+                  staff.mealLabel,
+                  100,
+                ),
+            };
+          })
+          .filter(
+            (item) =>
+              item?.role &&
+              Number(
+                item.quantity,
+              ) > 0,
+          )
+          .slice(
+            0,
+            300,
+          )
+      : [];
+
+  const disposable =
+    Array.isArray(
+      row.disposable,
+    )
+      ? row.disposable
+          .map((item) => {
+            if (
+              !item ||
+              typeof item !== 'object' ||
+              Array.isArray(item)
+            ) {
+              return null;
+            }
+
+            const disposableItem =
+              item as Record<
+                string,
+                unknown
+              >;
+
+            return {
+              name: clean(
+                disposableItem.name,
+                120,
+              ),
+              quantity:
+                numberValue(
+                  disposableItem.quantity,
+                ),
+            };
+          })
+          .filter(
+            (item) =>
+              item?.name &&
+              Number(
+                item.quantity,
+              ) > 0,
+          )
+          .slice(
+            0,
+            200,
+          )
+      : [];
+
+  const operations =
+    row.operations &&
+    typeof row.operations === 'object' &&
+    !Array.isArray(row.operations)
+      ? row.operations as Record<string, unknown>
+      : {};
+
+  const operationFunctions =
+    Array.isArray(
+      operations.functions,
+    )
+      ? operations.functions
+          .map((item) => {
+            if (
+              !item ||
+              typeof item !== 'object' ||
+              Array.isArray(item)
+            ) {
+              return null;
+            }
+
+            const operation =
+              item as Record<
+                string,
+                unknown
+              >;
+
+            const gas =
+              operation.gas &&
+              typeof operation.gas === 'object' &&
+              !Array.isArray(operation.gas)
+                ? operation.gas as Record<string, unknown>
+                : {};
+
+            const transport =
+              operation.transport &&
+              typeof operation.transport === 'object' &&
+              !Array.isArray(operation.transport)
+                ? operation.transport as Record<string, unknown>
+                : {};
+
+            return {
+              dayLabel:
+                clean(
+                  operation.dayLabel,
+                  100,
+                ),
+              mealLabel:
+                clean(
+                  operation.mealLabel,
+                  100,
+                ),
+              pax:
+                intValue(
+                  operation.pax,
+                ),
+              gas: {
+                mode:
+                  clean(
+                    gas.mode,
+                    20,
+                  ),
+                usedKg:
+                  numberValue(
+                    gas.usedKg,
+                  ),
+                cylindersUsed:
+                  numberValue(
+                    gas.cylindersUsed,
+                  ),
+              },
+              transport: {
+                vehicleLabel:
+                  clean(
+                    transport.vehicleLabel,
+                    80,
+                  ),
+                vehicles:
+                  numberValue(
+                    transport.vehicles,
+                  ),
+                tripsPerVehicle:
+                  numberValue(
+                    transport.tripsPerVehicle,
+                  ),
+              },
+            };
+          })
+          .filter(Boolean)
+          .slice(
+            0,
+            100,
+          )
+      : [];
+
+  const sharedTransport =
+    operations.sharedTransport &&
+    typeof operations.sharedTransport === 'object' &&
+    !Array.isArray(operations.sharedTransport)
+      ? operations.sharedTransport as Record<string, unknown>
+      : {};
+
   return {
     profile: {
       businessName: clean(profile.businessName, 180),
@@ -94,6 +387,37 @@ function cleanPublicSnapshot(value: unknown): Prisma.InputJsonValue {
       pax: intValue(event.pax),
     },
     menu,
+    grocery: {
+      combinedItems:
+        groceryItems,
+      unmatchedDishes,
+    },
+    manpower,
+    disposable,
+    operations: {
+      transportMode:
+        clean(
+          operations.transportMode,
+          30,
+        ),
+      sharedTransport: {
+        vehicleLabel:
+          clean(
+            sharedTransport.vehicleLabel,
+            80,
+          ),
+        vehicles:
+          numberValue(
+            sharedTransport.vehicles,
+          ),
+        tripsPerVehicle:
+          numberValue(
+            sharedTransport.tripsPerVehicle,
+          ),
+      },
+      functions:
+        operationFunctions,
+    },
   } as Prisma.InputJsonValue;
 }
 
