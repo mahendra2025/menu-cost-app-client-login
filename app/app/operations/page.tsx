@@ -381,7 +381,7 @@ export default function OperationsCostPage() {
               <p>Use shared transport for one common event trip, or function-wise for separate meal trips.</p>
             </div>
           </div>
-          <div className="action-row">
+          <div className="action-row operations-mode-row" role="group" aria-label="Transport method">
             <button
               type="button"
               className={operations.transportMode === 'EVENT_SHARED' ? 'primary-button' : 'secondary-button'}

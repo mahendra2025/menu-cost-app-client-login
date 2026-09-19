@@ -684,7 +684,7 @@ export default function QuotationPage() {
           </p>
           <Link
             className="primary-button"
-            href="/app/event"
+            href="/app/event?resume=1"
           >
             Open Costing
           </Link>

@@ -170,9 +170,11 @@ export default function AppShell({
     };
 
     window.addEventListener('keydown', handleEscape);
+    document.body.classList.add('client-sheet-open');
 
     return () => {
       window.removeEventListener('keydown', handleEscape);
+      document.body.classList.remove('client-sheet-open');
     };
   }, [moreOpen]);
 
@@ -220,7 +222,7 @@ export default function AppShell({
   return (
     <main className={`page-shell app-frame admin-theme ${isAdmin ? 'admin-workspace-shell' : 'client-theme'}`}>
       <header className="topbar no-print">
-        <Link href={isAdmin ? '/admin/users' : '/app/event'} className="brand-chip">
+        <Link href={isAdmin ? '/admin/users' : '/app/event?resume=1'} className="brand-chip">
           <span className="brand-logo">MC</span>
           <span className="brand-copy">
             <b>Menu Costing</b>
@@ -454,7 +456,7 @@ export default function AppShell({
             aria-label={t('Main navigation')}
           >
             <Link
-              href="/app/event"
+              href="/app/event?resume=1"
               className={clientFlow?.step === 1 ? 'active' : ''}
               aria-current={clientFlow?.step === 1 ? 'page' : undefined}
             >

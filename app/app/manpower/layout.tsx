@@ -71,13 +71,21 @@ export default function ManpowerGroceryGate({
         }
         @media (max-width: 720px) {
           .manpower-next-pricing-bar {
-            bottom: 8px;
-            margin: 12px;
-            align-items: stretch;
-            flex-direction: column;
+            bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            margin: 10px 8px;
+            padding: 9px 10px;
+            border-radius: 14px;
           }
+          .manpower-next-pricing-copy span { display: none; }
+          .manpower-next-pricing-copy strong { font-size: 11px; line-height: 1.3; }
           .manpower-next-pricing-bar button {
-            width: 100%;
+            width: auto;
+            min-height: 42px;
+            padding-inline: 12px;
+            font-size: 11px;
           }
         }
       `}</style>

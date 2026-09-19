@@ -17968,6 +17968,10 @@ small {
 
 
 /* Mobile client journey -------------------------------------------------- */
+body.client-sheet-open {
+  overflow: hidden;
+}
+
 .client-mobile-nav,
 .client-flow-progress {
   display: none;
