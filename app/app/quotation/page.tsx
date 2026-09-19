@@ -948,7 +948,7 @@ export default function QuotationPage() {
     >
       <section className="quote-page">
         <style>{`
-          .quote-page{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:14px;align-items:start}.quote-main,.quote-preview{display:grid;gap:14px}.quote-preview{position:sticky;top:86px}.quote-card{padding:19px;border:1px solid #29313c;border-radius:17px;background:#10151c}.quote-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.quote-heading h2{margin:4px 0 5px;font-size:19px;letter-spacing:-.03em}.quote-heading p{margin:0;color:#929dac;font-size:11px;line-height:1.5}.quote-number{padding:6px 8px;border-radius:999px;color:#8fc2ff;background:rgba(74,156,255,.1);font-size:9px;font-weight:900}.quote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.quote-field{display:grid;gap:6px}.quote-field.full{grid-column:1/-1}.quote-field label{color:#aeb8c5;font-size:10px;font-weight:850}.quote-input,.quote-textarea,.quote-select{width:100%;border:1px solid #303844;border-radius:10px;outline:0;color:#eef2f6;background:#151b23;font:inherit;font-size:13px;color-scheme:dark}.quote-input,.quote-select{min-height:43px;padding:0 11px}.quote-textarea{min-height:90px;padding:11px;resize:vertical}.quote-input:focus,.quote-textarea:focus,.quote-select:focus{border-color:rgba(74,156,255,.6);box-shadow:0 0 0 4px rgba(74,156,255,.07)}.quote-commercial{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.quote-total{padding:13px;border:1px solid rgba(74,156,255,.17);border-radius:12px;background:rgba(74,156,255,.05)}.quote-total small,.quote-total strong{display:block}.quote-total small{color:#8492a3;font-size:9px;text-transform:uppercase}.quote-total strong{margin-top:4px;font-size:17px}.quote-term{display:flex;gap:8px;margin-top:8px}.quote-term input{flex:1}.quote-term button{width:38px;border:1px solid #3a3034;border-radius:9px;color:#ff8d86;background:rgba(255,98,89,.06);cursor:pointer}.quote-actions{display:flex;flex-wrap:wrap;gap:7px}.quote-actions button,.quote-actions a{min-height:42px;font-size:11px}.quote-preview-sheet{padding:24px;border:1px solid #dfe5ec;border-radius:15px;color:#172033;background:#fff;box-shadow:0 20px 55px rgba(0,0,0,.24)}.quote-preview-head{display:flex;justify-content:space-between;gap:16px;padding-bottom:15px;border-bottom:1px solid #e7ebf0}.quote-preview-head b{font-size:16px}.quote-preview-head span{display:block;margin-top:3px;color:#758195;font-size:8px}.quote-preview-head>div:last-child{text-align:right}.quote-preview-client{display:grid;grid-template-columns:1fr 1fr;gap:15px;padding:15px 0}.quote-preview-client small{display:block;color:#8792a2;font-size:7px;text-transform:uppercase}.quote-preview-client b{display:block;margin-top:3px;font-size:10px}.quote-preview-menu{border-top:1px solid #e7ebf0;padding-top:12px}.quote-preview-menu h3,.quote-preview-commercial h3{margin:0 0 8px;font-size:10px}.quote-preview-group{margin-bottom:8px}.quote-preview-group b{font-size:9px}.quote-preview-group p{margin:3px 0 0;color:#596579;font-size:8px;line-height:1.45}.quote-preview-commercial{margin-top:12px;padding-top:12px;border-top:1px solid #e7ebf0}.quote-preview-price{display:flex;justify-content:space-between;gap:10px;margin-top:5px;color:#526074;font-size:8px}.quote-preview-price.total{margin-top:8px;padding-top:7px;border-top:1px solid #dfe5ec;color:#172033;font-size:10px;font-weight:900}.quote-safe{padding:11px 12px;border:1px solid rgba(61,220,132,.16);border-radius:10px;color:#8ed7aa;background:rgba(61,220,132,.05);font-size:10px;line-height:1.45}.quote-message{padding:10px;border-radius:10px;font-size:10px}.quote-message.ok{color:#79c99a;background:rgba(61,220,132,.06)}.quote-message.error{color:#ff938c;background:rgba(255,98,89,.06)}@media(max-width:1050px){.quote-page{grid-template-columns:1fr}.quote-preview{position:static}}@media(max-width:650px){.quote-page,.quote-main,.quote-preview{gap:10px}.quote-card{padding:13px;border-radius:13px}.quote-grid,.quote-commercial{grid-template-columns:1fr;gap:8px;margin-top:12px}.quote-field.full{grid-column:auto}.quote-input,.quote-textarea,.quote-select{font-size:16px}.quote-preview-client{grid-template-columns:1fr}.quote-actions{display:grid;grid-template-columns:1fr 1fr}.quote-actions button,.quote-actions a{width:100%;min-height:44px}}
+          .quote-page{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:14px;align-items:start}.quote-main,.quote-preview{display:grid;gap:14px}.quote-preview{position:sticky;top:86px}.quote-card{padding:19px;border:1px solid #29313c;border-radius:17px;background:#10151c}.quote-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.quote-heading h2{margin:4px 0 5px;font-size:19px;letter-spacing:-.03em}.quote-heading p{margin:0;color:#929dac;font-size:11px;line-height:1.5}.quote-number{padding:6px 8px;border-radius:999px;color:#8fc2ff;background:rgba(74,156,255,.1);font-size:9px;font-weight:900}.quote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.quote-field{display:grid;gap:6px}.quote-field.full{grid-column:1/-1}.quote-field label{color:#aeb8c5;font-size:10px;font-weight:850}.quote-input,.quote-textarea,.quote-select{width:100%;border:1px solid #303844;border-radius:10px;outline:0;color:#eef2f6;background:#151b23;font:inherit;font-size:13px;color-scheme:dark}.quote-input,.quote-select{min-height:43px;padding:0 11px}.quote-textarea{min-height:90px;padding:11px;resize:vertical}.quote-input:focus,.quote-textarea:focus,.quote-select:focus{border-color:rgba(74,156,255,.6);box-shadow:0 0 0 4px rgba(74,156,255,.07)}.quote-commercial{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.quote-total{padding:13px;border:1px solid rgba(74,156,255,.17);border-radius:12px;background:rgba(74,156,255,.05)}.quote-total small,.quote-total strong{display:block}.quote-total small{color:#8492a3;font-size:9px;text-transform:uppercase}.quote-total strong{margin-top:4px;font-size:17px}.quote-term{display:flex;gap:8px;margin-top:8px}.quote-term input{flex:1}.quote-term button{width:38px;border:1px solid #3a3034;border-radius:9px;color:#ff8d86;background:rgba(255,98,89,.06);cursor:pointer}.quote-actions{display:flex;flex-wrap:wrap;gap:7px}.quote-actions button,.quote-actions a{min-height:42px;font-size:11px}.quote-preview-sheet{padding:24px;border:1px solid #dfe5ec;border-radius:15px;color:#172033;background:#fff;box-shadow:0 20px 55px rgba(0,0,0,.24)}.quote-preview-head{display:flex;justify-content:space-between;gap:16px;padding-bottom:15px;border-bottom:1px solid #e7ebf0}.quote-preview-head b{font-size:16px}.quote-preview-head span{display:block;margin-top:3px;color:#758195;font-size:8px}.quote-preview-head>div:last-child{text-align:right}.quote-preview-client{display:grid;grid-template-columns:1fr 1fr;gap:15px;padding:15px 0}.quote-preview-client small{display:block;color:#8792a2;font-size:7px;text-transform:uppercase}.quote-preview-client b{display:block;margin-top:3px;font-size:10px}.quote-preview-menu{border-top:1px solid #e7ebf0;padding-top:12px}.quote-preview-menu h3,.quote-preview-commercial h3{margin:0 0 8px;font-size:10px}.quote-preview-group{margin-bottom:8px}.quote-preview-group b{font-size:9px}.quote-preview-group p{margin:3px 0 0;color:#596579;font-size:8px;line-height:1.45}.quote-preview-commercial{margin-top:12px;padding-top:12px;border-top:1px solid #e7ebf0}.quote-preview-price{display:flex;justify-content:space-between;gap:10px;margin-top:5px;color:#526074;font-size:8px}.quote-preview-price.total{margin-top:8px;padding-top:7px;border-top:1px solid #dfe5ec;color:#172033;font-size:10px;font-weight:900}.quote-detail-section{display:grid;gap:9px;margin-top:18px;padding-top:16px;border-top:1px solid #29313c}.quote-detail-section h3{margin:0;font-size:13px}.quote-detail-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.quote-detail-section-head>span{color:#8fc2ff;font-size:10px;font-weight:800}.quote-detail-block{padding:10px 11px;border:1px solid #29313c;border-radius:11px;background:#151b23}.quote-detail-block-head{display:flex;justify-content:space-between;gap:10px}.quote-detail-block-head>b{font-size:12px}.quote-detail-block-head>span{color:#8fc2ff;font-size:9px}.quote-detail-block p{margin:6px 0 0;color:#aab4c2;font-size:10px;line-height:1.5}.quote-detail-table{display:grid;border:1px solid #29313c;border-radius:11px;overflow:hidden}.quote-detail-row{display:grid;grid-template-columns:minmax(140px,.8fr) minmax(100px,.45fr) minmax(180px,1.2fr);gap:10px;align-items:start;padding:8px 10px;border-top:1px solid #252d37;font-size:10px}.quote-detail-row:first-child{border-top:0}.quote-detail-row.is-head{color:#9eabba;background:#151b23;font-size:9px;text-transform:uppercase}.quote-detail-row>span,.quote-detail-row>b{min-width:0;overflow-wrap:anywhere}.quote-detail-row.manpower{grid-template-columns:minmax(150px,1fr) minmax(120px,.75fr) 55px}.quote-detail-row.disposable{grid-template-columns:minmax(180px,1fr) 100px}.quote-detail-row.operations{grid-template-columns:minmax(140px,.8fr) minmax(110px,.6fr) minmax(180px,1.1fr)}.quote-detail-warning{padding:9px 10px;border:1px solid rgba(245,158,11,.18);border-radius:10px;color:#facc15;background:rgba(245,158,11,.06);font-size:10px;line-height:1.45}.quote-safe{padding:11px 12px;border:1px solid rgba(61,220,132,.16);border-radius:10px;color:#8ed7aa;background:rgba(61,220,132,.05);font-size:10px;line-height:1.45}.quote-message{padding:10px;border-radius:10px;font-size:10px}.quote-message.ok{color:#79c99a;background:rgba(61,220,132,.06)}.quote-message.error{color:#ff938c;background:rgba(255,98,89,.06)}@media(max-width:1050px){.quote-page{grid-template-columns:1fr}.quote-preview{position:static}}@media(max-width:650px){.quote-detail-row,.quote-detail-row.manpower,.quote-detail-row.operations{grid-template-columns:1fr}.quote-detail-row.disposable{grid-template-columns:minmax(0,1fr) 90px}.quote-detail-section-head{align-items:flex-start;flex-direction:column}.quote-page,.quote-main,.quote-preview{gap:10px}.quote-card{padding:13px;border-radius:13px}.quote-grid,.quote-commercial{grid-template-columns:1fr;gap:8px;margin-top:12px}.quote-field.full{grid-column:auto}.quote-input,.quote-textarea,.quote-select{font-size:16px}.quote-preview-client{grid-template-columns:1fr}.quote-actions{display:grid;grid-template-columns:1fr 1fr}.quote-actions button,.quote-actions a{width:100%;min-height:44px}}
         `}</style>
 
         <div className="quote-main">
@@ -1275,6 +1275,282 @@ export default function QuotationPage() {
                   )}
                 </strong>
               </div>
+            </div>
+          </div>
+
+          <div className="quote-card quote-event-details-card">
+            <div className="quote-heading">
+              <div>
+                <span className="section-kicker">
+                  Complete event plan
+                </span>
+                <h2>
+                  A-to-Z Event Details
+                </h2>
+                <p>
+                  Everything required to execute the event is carried into this quotation.
+                </p>
+              </div>
+
+              <span className="quote-number">
+                {menuGroups.length} function{menuGroups.length === 1 ? '' : 's'}
+              </span>
+            </div>
+
+            <div className="quote-detail-section">
+              <h3>Event, Functions & Menu</h3>
+
+              {menuGroups.length ? (
+                menuGroups.map(
+                  (group) => (
+                    <div
+                      className="quote-detail-block"
+                      key={`detail-${group.label}`}
+                    >
+                      <div className="quote-detail-block-head">
+                        <b>{group.label}</b>
+                        <span>
+                          {group.pax > 0
+                            ? `${group.pax.toLocaleString('en-IN')} guests`
+                            : 'Guest count pending'}
+                        </span>
+                      </div>
+                      <p>
+                        {group.dishes.join(' · ')}
+                      </p>
+                    </div>
+                  ),
+                )
+              ) : (
+                <p className="muted">
+                  No menu functions saved.
+                </p>
+              )}
+            </div>
+
+            <div className="quote-detail-section">
+              <div className="quote-detail-section-head">
+                <h3>Grocery Requirements</h3>
+                <span>
+                  {detailsLoading
+                    ? 'Loading…'
+                    : `${groceryPlan?.combinedItems.length || 0} ingredients`}
+                </span>
+              </div>
+
+              {detailsLoading ? (
+                <p className="muted">
+                  Preparing grocery quantities from saved recipes…
+                </p>
+              ) : groceryPlan?.combinedItems.length ? (
+                <div className="quote-detail-table">
+                  <div className="quote-detail-row is-head">
+                    <b>Ingredient</b>
+                    <b>Required Qty</b>
+                    <b>Used In</b>
+                  </div>
+
+                  {groceryPlan.combinedItems.map(
+                    (item) => (
+                      <div
+                        className="quote-detail-row"
+                        key={`quote-grocery-${item.name}-${item.unit}`}
+                      >
+                        <span>{item.name}</span>
+                        <b>
+                          {item.quantity
+                            .toFixed(3)
+                            .replace(/\.?0+$/, '')}{' '}
+                          {item.unit}
+                        </b>
+                        <span>
+                          {item.dishes.join(', ')}
+                        </span>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <p className="muted">
+                  Grocery quantities will appear when saved recipes are available.
+                </p>
+              )}
+
+              {groceryPlan?.unmatchedDishes.length ? (
+                <div className="quote-detail-warning">
+                  Recipe pending: {groceryPlan.unmatchedDishes.join(', ')}
+                </div>
+              ) : null}
+
+              {detailsWarning ? (
+                <div className="quote-detail-warning">
+                  {detailsWarning}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="quote-detail-section">
+              <div className="quote-detail-section-head">
+                <h3>Manpower Plan</h3>
+                <span>
+                  {activeManpower.reduce(
+                    (sum, row) =>
+                      sum +
+                      Math.max(
+                        0,
+                        Number(
+                          row.quantity,
+                        ) || 0,
+                      ),
+                    0,
+                  )}{' '}
+                  assignments
+                </span>
+              </div>
+
+              {activeManpower.length ? (
+                <div className="quote-detail-table">
+                  <div className="quote-detail-row manpower is-head">
+                    <b>Function / Meal</b>
+                    <b>Role</b>
+                    <b>Qty</b>
+                  </div>
+
+                  {activeManpower.map(
+                    (row) => (
+                      <div
+                        className="quote-detail-row manpower"
+                        key={row.id}
+                      >
+                        <span>
+                          {[
+                            row.dayLabel,
+                            row.mealLabel,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ') ||
+                            'Event'}
+                        </span>
+                        <span>{row.role}</span>
+                        <b>
+                          {Math.max(
+                            0,
+                            Number(
+                              row.quantity,
+                            ) || 0,
+                          )}
+                        </b>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <p className="muted">
+                  No manpower quantities entered yet.
+                </p>
+              )}
+            </div>
+
+            <div className="quote-detail-section">
+              <div className="quote-detail-section-head">
+                <h3>Plastic & Disposable</h3>
+                <span>
+                  {activeDisposable.length} active item{activeDisposable.length === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              {activeDisposable.length ? (
+                <div className="quote-detail-table compact">
+                  <div className="quote-detail-row disposable is-head">
+                    <b>Item</b>
+                    <b>Quantity</b>
+                  </div>
+
+                  {activeDisposable.map(
+                    (item) => (
+                      <div
+                        className="quote-detail-row disposable"
+                        key={item.id}
+                      >
+                        <span>{item.name}</span>
+                        <b>
+                          {Math.max(
+                            0,
+                            Number(
+                              item.quantity,
+                            ) || 0,
+                          )}
+                        </b>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <p className="muted">
+                  No plastic or disposable quantities entered yet.
+                </p>
+              )}
+            </div>
+
+            <div className="quote-detail-section">
+              <h3>Gas & Transport Plan</h3>
+
+              {operations ? (
+                <div className="quote-detail-table">
+                  <div className="quote-detail-row operations is-head">
+                    <b>Function / Meal</b>
+                    <b>Gas</b>
+                    <b>Transport</b>
+                  </div>
+
+                  {operations.transportMode === 'EVENT_SHARED' ? (
+                    <div className="quote-detail-row operations">
+                      <span>Whole Event</span>
+                      <span>—</span>
+                      <span>
+                        {operations.sharedTransport.vehicleLabel || 'Vehicle'}
+                        {' · '}
+                        {operations.sharedTransport.vehicles || 0} vehicle(s)
+                        {' · '}
+                        {operations.sharedTransport.tripsPerVehicle || 0} trip(s)/vehicle
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {operations.functions.map(
+                    (row) => (
+                      <div
+                        className="quote-detail-row operations"
+                        key={row.id}
+                      >
+                        <span>
+                          {[
+                            row.dayLabel,
+                            row.mealLabel,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ') ||
+                            'Event'}
+                        </span>
+
+                        <span>
+                          {row.gas.mode === 'CYLINDER'
+                            ? `${row.gas.cylindersUsed || 0} cylinder(s)`
+                            : row.gas.mode === 'KG'
+                              ? `${row.gas.usedKg || 0} kg LPG`
+                              : 'Manual gas plan'}
+                        </span>
+
+                        <span>
+                          {operations.transportMode === 'FUNCTION_WISE'
+                            ? `${row.transport.vehicleLabel || 'Vehicle'} · ${row.transport.vehicles || 0} vehicle(s) · ${row.transport.tripsPerVehicle || 0} trip(s)/vehicle`
+                            : 'Shared event transport'}
+                        </span>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
 
