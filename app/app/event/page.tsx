@@ -1377,6 +1377,26 @@ export default function EventPage() {
       return;
     }
 
+    const guestCount =
+      Math.max(
+        0,
+        Math.round(
+          Number(importFunctionPax) ||
+          Number(work.event.pax) ||
+          0,
+        ),
+      );
+
+    if (!guestCount) {
+      setError(
+        'Enter the number of guests for this function.',
+      );
+      document
+        .getElementById('importFunctionPax')
+        ?.focus();
+      return;
+    }
+
     const functionName =
       importFunctionName.trim() ||
       work.event.functionType ||
@@ -3618,6 +3638,26 @@ export default function EventPage() {
         'Please paste the menu before continuing.',
       );
 
+      return;
+    }
+
+    const guestCount =
+      Math.max(
+        0,
+        Math.round(
+          Number(importFunctionPax) ||
+          Number(detectionWork.event.pax) ||
+          0,
+        ),
+      );
+
+    if (!guestCount) {
+      setError(
+        'Enter the number of guests for this function before detecting dishes.',
+      );
+      document
+        .getElementById('importFunctionPax')
+        ?.focus();
       return;
     }
 
@@ -6786,6 +6826,53 @@ export default function EventPage() {
                 <div>
                   <h3>{t('Add dishes for this function')}</h3>
                   <p>{t('Upload a menu or paste its text. You can review every detected dish before saving.')}</p>
+                </div>
+              </div>
+
+              <div className="event-function-details" aria-label="Function details">
+                <div className="event-function-details-copy">
+                  <b>{t('Function details')}</b>
+                  <small>{t('Add the function name and guest count before uploading its menu.')}</small>
+                </div>
+
+                <div className="event-function-details-fields">
+                  <label className="field" htmlFor="importFunctionName">
+                    <span>{t('Function name')}</span>
+                    <input
+                      id="importFunctionName"
+                      className="input"
+                      value={importFunctionName}
+                      placeholder={t('e.g. Sangeet dinner')}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setImportFunctionName(value);
+                        updateEvent('functionType', value);
+                      }}
+                    />
+                  </label>
+
+                  <label className="field" htmlFor="importFunctionPax">
+                    <span>{t('Guests for this function')}</span>
+                    <input
+                      id="importFunctionPax"
+                      className="input"
+                      type="number"
+                      min="1"
+                      step="1"
+                      inputMode="numeric"
+                      value={importFunctionPax}
+                      placeholder="300"
+                      required
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        const guests = Math.max(0, Math.round(Number(value) || 0));
+                        setImportFunctionPax(value);
+                        updateEvent('pax', guests);
+                        setError('');
+                      }}
+                    />
+                    <small>{t('Used for grocery quantities, manpower and pricing.')}</small>
+                  </label>
                 </div>
               </div>
 
