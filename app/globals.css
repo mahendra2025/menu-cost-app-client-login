@@ -364,6 +364,41 @@ a { color: inherit; text-decoration: none; }
   font-size: 10px;
 }
 
+.client-theme .event-menu-detect-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-left: 43px;
+  padding: 11px 12px;
+  border: 1px solid #2b3543;
+  border-radius: 13px;
+  background: #111923;
+}
+
+.event-menu-detect-inline b,
+.event-menu-detect-inline small {
+  display: block;
+}
+
+.event-menu-detect-inline b {
+  color: #f4f7fb;
+  font-size: 12px;
+}
+
+.event-menu-detect-inline small {
+  margin-top: 3px;
+  color: #818d9d;
+  font-size: 10px;
+}
+
+.client-theme .event-menu-detect-inline .primary-button {
+  flex: 0 0 auto;
+  min-width: 150px;
+  min-height: 42px;
+  border-radius: 11px;
+}
+
 .client-theme .event-detect-action {
   position: sticky;
   z-index: 6;
@@ -476,6 +511,16 @@ a { color: inherit; text-decoration: none; }
   }
 
   .client-theme .event-manual-menu-row .ghost-button {
+    width: 100%;
+  }
+
+  .client-theme .event-menu-detect-inline {
+    align-items: stretch;
+    flex-direction: column;
+    margin-left: 0;
+  }
+
+  .client-theme .event-menu-detect-inline .primary-button {
     width: 100%;
   }
 
