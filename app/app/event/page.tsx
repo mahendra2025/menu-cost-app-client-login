@@ -5470,6 +5470,30 @@ export default function EventPage() {
     updateEvent('rawMenuText', '');
   }
 
+
+  function returnToMenuUpload() {
+    setError('');
+    setUploadStatus('');
+    setDetectionPreview(null);
+    setSelectedPreviewIds(new Set());
+    setDetectionReviewFilter('ALL');
+    setEditingDetectionId(null);
+    setShowAddMissedDish(false);
+
+    sessionStorage.removeItem(
+      `menu-detection:${session.tenantId}`,
+    );
+
+    window.setTimeout(() => {
+      document
+        .getElementById('menuInput')
+        ?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+    }, 40);
+  }
+
   if (!work || !session) {
     return (
       <AppShell title="Event Details">
@@ -6873,6 +6897,15 @@ export default function EventPage() {
                   className="simple-detected-menu"
                   aria-labelledby="simpleDetectedMenuTitle"
                 >
+                  <button
+                    className="simple-detected-back"
+                    type="button"
+                    onClick={returnToMenuUpload}
+                  >
+                    <span aria-hidden="true">←</span>
+                    {t('Back to Upload')}
+                  </button>
+
                   <div className="simple-detected-menu-head">
                     <div>
                       <span>{t('Detected dishes')}</span>

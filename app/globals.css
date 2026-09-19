@@ -18589,6 +18589,33 @@ body.client-sheet-open {
   box-shadow: 0 18px 55px rgba(0, 0, 0, 0.18);
 }
 
+.simple-detected-back {
+  width: fit-content;
+  min-height: 44px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.05);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.simple-detected-back:hover {
+  color: #fff;
+  border-color: rgba(96, 165, 250, 0.36);
+  background: rgba(37, 99, 235, 0.10);
+}
+
+.simple-detected-back:active {
+  transform: translateY(1px);
+}
+
 .simple-detected-menu-head {
   display: flex;
   align-items: flex-start;
