@@ -24,8 +24,13 @@ import {
 
 import { getSession, uid } from '../../../lib/store';
 
+type ParsedDishItem = DishCostItem & {
+  id?: string;
+};
+
 type EditableDish = DishCostItem & {
   id: string;
+  persistedId?: string;
   originalName: string;
   aliasesText: string;
   hindiAliasesText: string;
@@ -60,13 +65,22 @@ function allRowAliases(item: EditableDish) {
 }
 
 function toEditableDish(
-  item: DishCostItem,
+  item: ParsedDishItem,
 ): EditableDish {
   const aliases = item.aliases ?? [];
+  const persistedId =
+    String(
+      item.id || '',
+    ).trim();
 
   return {
     ...item,
-    id: uid('dish_master'),
+    id:
+      persistedId
+        ? `dish_master_${persistedId}`
+        : uid('dish_master'),
+    persistedId:
+      persistedId || undefined,
     originalName: item.name,
     aliasesText: aliases
       .filter(
@@ -88,11 +102,11 @@ function toEditableDish(
   };
 }
 
-function parseDishItems(items: unknown): DishCostItem[] {
+function parseDishItems(items: unknown): ParsedDishItem[] {
   if (!Array.isArray(items)) return [];
 
   return items
-    .map((item): DishCostItem | null => {
+    .map((item): ParsedDishItem | null => {
       if (!item || typeof item !== 'object') return null;
       const row = item as Record<string, unknown>;
       const name = String(row.name || '').trim();
@@ -120,6 +134,11 @@ function parseDishItems(items: unknown): DishCostItem[] {
 
       if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
       return {
+        id:
+          String(
+            row.id || '',
+          ).trim() ||
+          undefined,
         name,
         category,
         subcategory,
@@ -130,7 +149,7 @@ function parseDishItems(items: unknown): DishCostItem[] {
         aliases,
       };
     })
-    .filter((item): item is DishCostItem => item !== null);
+    .filter((item): item is ParsedDishItem => item !== null);
 }
 
 function toDishCostItem(item: EditableDish): DishCostItem {
@@ -231,6 +250,20 @@ export default function AdminDishesPage() {
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [
+    savingRowId,
+    setSavingRowId,
+  ] = useState<string | null>(null);
+  const [
+    dirtyRowIds,
+    setDirtyRowIds,
+  ] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [
+    structureDirty,
+    setStructureDirty,
+  ] = useState(false);
   const [
     recipeSyncStatus,
     setRecipeSyncStatus,
@@ -412,6 +445,11 @@ export default function AdminDishesPage() {
             );
 
           setRows(cleaned);
+          setDirty(false);
+          setDirtyRowIds(
+            new Set(),
+          );
+          setStructureDirty(false);
 
           setCategories(
             Array.from(
@@ -723,6 +761,11 @@ export default function AdminDishesPage() {
         );
 
       setRows(cleaned);
+      setDirty(false);
+      setDirtyRowIds(
+        new Set(),
+      );
+      setStructureDirty(false);
 
       setCategories(
         Array.from(
@@ -886,6 +929,16 @@ export default function AdminDishesPage() {
   function updateRow(id: string, patch: Partial<EditableDish>) {
     setMessage('');
     setDirty(true);
+    setDirtyRowIds(
+      (current) => {
+        const next =
+          new Set(
+            current,
+          );
+        next.add(id);
+        return next;
+      },
+    );
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   }
 
@@ -899,6 +952,18 @@ export default function AdminDishesPage() {
     setPage(1);
     setExpandedRowId(newRowId);
     setDirty(true);
+    setDirtyRowIds(
+      (current) => {
+        const next =
+          new Set(
+            current,
+          );
+        next.add(
+          newRowId,
+        );
+        return next;
+      },
+    );
     setRows((current) => [
       {
         id: newRowId,
@@ -955,6 +1020,7 @@ export default function AdminDishesPage() {
     setCategoryFilter(category);
     setStatusFilter('ALL');
     setDirty(true);
+    setStructureDirty(true);
   }
 
   function renameCategory(category: string) {
@@ -989,6 +1055,7 @@ export default function AdminDishesPage() {
     setRows((current) => current.map((row) => row.category === category ? { ...row, category: nextName } : row));
     if (categoryFilter === category) setCategoryFilter(nextName);
     setDirty(true);
+    setStructureDirty(true);
     setMessageType('success');
     setMessage(`${category} renamed to ${nextName}. Save all changes to publish it.`);
   }
@@ -1048,6 +1115,7 @@ export default function AdminDishesPage() {
     }
     setSubcategories((current) => ({ ...current, [category]: [...(current[category] ?? []), subcategory] }));
     setDirty(true);
+    setStructureDirty(true);
     setMessageType('success');
     setMessage(`${subcategory} added under ${category}. Save all changes to publish.`);
   }
@@ -1077,6 +1145,7 @@ export default function AdminDishesPage() {
       row.category === category && row.subcategory === subcategory ? { ...row, subcategory: nextName } : row
     ));
     setDirty(true);
+    setStructureDirty(true);
     setMessageType('success');
     setMessage(`${subcategory} renamed to ${nextName}.`);
   }
@@ -1097,6 +1166,7 @@ export default function AdminDishesPage() {
       ));
     }
     setDirty(true);
+    setStructureDirty(true);
     setMessageType('success');
     setMessage(`${subcategory} deleted${assignedCount ? ` and cleared from ${assignedCount} dish${assignedCount === 1 ? '' : 'es'}` : ''}.`);
   }
@@ -1136,6 +1206,16 @@ export default function AdminDishesPage() {
               row.id !== id,
           ),
       );
+      setDirtyRowIds(
+        (current) => {
+          const next =
+            new Set(
+              current,
+            );
+          next.delete(id);
+          return next;
+        },
+      );
 
       return;
     }
@@ -1144,11 +1224,18 @@ export default function AdminDishesPage() {
     setSaving(true);
 
     try {
+      const deleteQuery =
+        selectedDish.persistedId
+          ? `id=${encodeURIComponent(
+              selectedDish.persistedId,
+            )}`
+          : `name=${encodeURIComponent(
+              persistedName,
+            )}`;
+
       const response =
         await fetch(
-          `/api/admin/dishes/item?name=${encodeURIComponent(
-            persistedName,
-          )}`,
+          `/api/admin/dishes/item?${deleteQuery}`,
           {
             method: 'DELETE',
           },
@@ -1180,6 +1267,16 @@ export default function AdminDishesPage() {
               row.id !== id,
           ),
       );
+      setDirtyRowIds(
+        (current) => {
+          const next =
+            new Set(
+              current,
+            );
+          next.delete(id);
+          return next;
+        },
+      );
 
       setMessageType('success');
 
@@ -1196,6 +1293,190 @@ export default function AdminDishesPage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function persistDishRow(
+    row: EditableDish,
+  ) {
+    const item =
+      toDishCostItem(
+        row,
+      );
+
+    const response =
+      await fetch(
+        '/api/admin/dishes/item',
+        {
+          method:
+            'PATCH',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body:
+            JSON.stringify({
+              id:
+                row.persistedId,
+              originalName:
+                row.originalName ||
+                row.name,
+              ...item,
+            }),
+        },
+      );
+
+    const data =
+      await response
+        .json()
+        .catch(
+          () => ({}),
+        );
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          'Could not save dish.',
+      );
+    }
+
+    const saved =
+      data.item &&
+      typeof data.item ===
+        'object'
+        ? data.item as
+            Record<
+              string,
+              unknown
+            >
+        : {};
+
+    return {
+      item,
+      persistedId:
+        String(
+          saved.id ||
+          row.persistedId ||
+          '',
+        ).trim(),
+      savedName:
+        String(
+          saved.name ||
+          item.name,
+        ).trim(),
+    };
+  }
+
+  async function saveDishRow(
+    row: EditableDish,
+  ) {
+    const rowError =
+      rowErrors.get(
+        row.id,
+      );
+
+    if (rowError) {
+      setMessageType(
+        'error',
+      );
+      setMessage(
+        'Fix the highlighted dish fields before saving.',
+      );
+      setExpandedRowId(
+        row.id,
+      );
+      return false;
+    }
+
+    setSavingRowId(
+      row.id,
+    );
+    setMessage('');
+
+    try {
+      const {
+        item,
+        persistedId,
+        savedName,
+      } =
+        await persistDishRow(
+          row,
+        );
+
+      setRows(
+        (current) => {
+          const next =
+            current.map(
+              (currentRow) =>
+                currentRow.id ===
+                row.id
+                  ? {
+                      ...currentRow,
+                      ...item,
+                      persistedId:
+                        persistedId ||
+                        undefined,
+                      originalName:
+                        savedName,
+                    }
+                  : currentRow,
+            );
+
+          saveDishCostItems(
+            next.map(
+              toDishCostItem,
+            ),
+          );
+
+          return next;
+        },
+      );
+
+      const remainingDirty =
+        new Set(
+          dirtyRowIds,
+        );
+
+      remainingDirty.delete(
+        row.id,
+      );
+
+      setDirtyRowIds(
+        remainingDirty,
+      );
+
+      if (
+        !structureDirty &&
+        remainingDirty.size === 0
+      ) {
+        setDirty(
+          false,
+        );
+      }
+
+      setMessageType(
+        'success',
+      );
+      setMessage(
+        `${savedName} saved successfully.`,
+      );
+
+      return true;
+    } catch (error) {
+      setMessageType(
+        'error',
+      );
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not save dish.',
+      );
+
+      return false;
+    } finally {
+      setSavingRowId(
+        null,
+      );
     }
   }
 
@@ -1225,6 +1506,109 @@ export default function AdminDishesPage() {
 
     setSaving(true);
     setMessage('');
+
+    /*
+     * Normal edits save only changed rows.
+     * Rewriting thousands of Dish Master rows for one rate/name edit is slow
+     * and can time out in production.
+     */
+    if (
+      !structureDirty &&
+      dirtyRowIds.size > 0
+    ) {
+      try {
+        const changedRows =
+          rows.filter(
+            (row) =>
+              dirtyRowIds.has(
+                row.id,
+              ),
+          );
+
+        const savedRows =
+          new Map<
+            string,
+            {
+              item: DishCostItem;
+              persistedId: string;
+              savedName: string;
+            }
+          >();
+
+        for (
+          const row of changedRows
+        ) {
+          const saved =
+            await persistDishRow(
+              row,
+            );
+
+          savedRows.set(
+            row.id,
+            saved,
+          );
+        }
+
+        const nextRows =
+          rows.map(
+            (row) => {
+              const saved =
+                savedRows.get(
+                  row.id,
+                );
+
+              if (!saved) {
+                return row;
+              }
+
+              return {
+                ...row,
+                ...saved.item,
+                persistedId:
+                  saved.persistedId ||
+                  undefined,
+                originalName:
+                  saved.savedName,
+              };
+            },
+          );
+
+        setRows(
+          nextRows,
+        );
+
+        saveDishCostItems(
+          nextRows.map(
+            toDishCostItem,
+          ),
+        );
+
+        setDirty(false);
+        setDirtyRowIds(
+          new Set(),
+        );
+        setMessageType(
+          'success',
+        );
+        setMessage(
+          `${changedRows.length} dish${changedRows.length === 1 ? '' : 'es'} saved successfully.`,
+        );
+      } catch (error) {
+        setMessageType(
+          'error',
+        );
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : 'Could not save dish changes.',
+        );
+      } finally {
+        setSaving(false);
+      }
+
+      return;
+    }
+
     const cleaned = rows
       .map(toDishCostItem)
       .filter((row) => row.name && row.category.trim());
@@ -1259,6 +1643,10 @@ export default function AdminDishesPage() {
       );
 
       setDirty(false);
+      setDirtyRowIds(
+        new Set(),
+      );
+      setStructureDirty(false);
       setMessageType('success');
       setMessage('Dish Master saved. Client menus now use the latest names, categories and rates.');
     } catch {
@@ -1382,6 +1770,7 @@ async function handleCsvImport(
         setStatusFilter('ALL');
         setPage(1);
         setDirty(true);
+        setStructureDirty(true);
         setMessageType('success');
 
         setMessage(
@@ -1448,6 +1837,10 @@ async function handleCsvImport(
       ]))
       : {});
     setDirty(false);
+    setDirtyRowIds(
+      new Set(),
+    );
+    setStructureDirty(false);
     setMessageType('success');
     setMessage('Dish master reset to the default shared catalog.');
   }
@@ -1775,7 +2168,9 @@ async function handleCsvImport(
                       >
                         {rowErrors.has(row.id)
                           ? 'Needs attention'
-                          : 'Ready'}
+                          : dirtyRowIds.has(row.id)
+                            ? 'Unsaved'
+                            : 'Saved'}
                       </span>
                       <button
                         className="dish-row-edit"
@@ -1870,7 +2265,41 @@ async function handleCsvImport(
                       </div>
                     </div>
                   </details>
-                  <button className="admin-dish-delete" type="button" onClick={() => void removeRow(row.id)} aria-label={`Delete ${row.name || 'new dish'}`}>Delete dish + recipe</button>
+                  <div className="dish-row-editor-actions">
+                    <button
+                      className="primary-button"
+                      type="button"
+                      disabled={
+                        savingRowId === row.id ||
+                        !dirtyRowIds.has(row.id) ||
+                        rowErrors.has(row.id)
+                      }
+                      onClick={() =>
+                        void saveDishRow(
+                          row,
+                        )
+                      }
+                    >
+                      {savingRowId === row.id
+                        ? 'Saving Dish…'
+                        : dirtyRowIds.has(row.id)
+                          ? 'Save Dish'
+                          : 'Dish Saved'}
+                    </button>
+
+                    <button
+                      className="admin-dish-delete"
+                      type="button"
+                      onClick={() =>
+                        void removeRow(
+                          row.id,
+                        )
+                      }
+                      aria-label={`Delete ${row.name || 'new dish'}`}
+                    >
+                      Delete dish + recipe
+                    </button>
+                  </div>
                   </div>
                   ) : null}
                   </div>

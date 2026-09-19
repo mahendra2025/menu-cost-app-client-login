@@ -9,6 +9,117 @@ import {
 
 import { prisma } from '../../../../../lib/prisma';
 
+const CATEGORY_CATALOG_ID =
+  'global';
+
+function cleanCategoryValues(
+  value: unknown,
+) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(
+    new Map(
+      value
+        .map(
+          (item) =>
+            String(
+              item || '',
+            )
+              .trim()
+              .replace(
+                /\s+/g,
+                ' ',
+              ),
+        )
+        .filter(Boolean)
+        .map(
+          (item) => [
+            item.toLocaleLowerCase(
+              'en-IN',
+            ),
+            item,
+          ],
+        ),
+    ).values(),
+  );
+}
+
+function mergeSubcategory(
+  value: unknown,
+  category: string,
+  subcategory: string,
+) {
+  const source =
+    value &&
+    typeof value ===
+      'object' &&
+    !Array.isArray(
+      value,
+    )
+      ? value as Record<
+          string,
+          unknown
+        >
+      : {};
+
+  const next =
+    Object.fromEntries(
+      Object.entries(
+        source,
+      ).map(
+        ([
+          key,
+          values,
+        ]) => [
+          key,
+          cleanCategoryValues(
+            values,
+          ),
+        ],
+      ),
+    ) as Record<
+      string,
+      string[]
+    >;
+
+  if (
+    !subcategory
+  ) {
+    next[category] ??= [];
+    return next;
+  }
+
+  const current =
+    next[category] ||
+    [];
+
+  if (
+    !current.some(
+      (item) =>
+        item.toLocaleLowerCase(
+          'en-IN',
+        ) ===
+        subcategory.toLocaleLowerCase(
+          'en-IN',
+        ),
+    )
+  ) {
+    next[category] = [
+      ...current,
+      subcategory,
+    ].sort(
+      (left, right) =>
+        left.localeCompare(
+          right,
+        ),
+    );
+  }
+
+  return next;
+}
+
 async function requireAdmin() {
   const cookieStore =
     await cookies();
@@ -380,6 +491,63 @@ export async function PATCH(
                           dish.aliases,
                       },
                     });
+
+            const categoryCatalog =
+              await tx
+                .dishCategoryCatalog
+                .findUnique({
+                  where: {
+                    id:
+                      CATEGORY_CATALOG_ID,
+                  },
+                  select: {
+                    categories:
+                      true,
+                    subcategories:
+                      true,
+                  },
+                });
+
+            const categories =
+              cleanCategoryValues([
+                ...(
+                  Array.isArray(
+                    categoryCatalog
+                      ?.categories,
+                  )
+                    ? categoryCatalog
+                        ?.categories
+                    : []
+                ),
+                dish.category,
+              ]);
+
+            const subcategories =
+              mergeSubcategory(
+                categoryCatalog
+                  ?.subcategories,
+                dish.category,
+                dish.subcategory,
+              );
+
+            await tx
+              .dishCategoryCatalog
+              .upsert({
+                where: {
+                  id:
+                    CATEGORY_CATALOG_ID,
+                },
+                create: {
+                  id:
+                    CATEGORY_CATALOG_ID,
+                  categories,
+                  subcategories,
+                },
+                update: {
+                  categories,
+                  subcategories,
+                },
+              });
 
             const recipeCatalog =
               await tx
