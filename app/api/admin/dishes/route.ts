@@ -37,6 +37,19 @@ function normalizeItems(items: unknown) {
       const servingQuantity = Math.max(Number(row.servingQuantity) || 1, 0.01);
       const servingUnit = String(row.servingUnit || 'serving').trim() || 'serving';
 
+      const rawGasKgPer100 =
+        row.gasKgPer100;
+
+      const gasKgPer100 =
+        rawGasKgPer100 === null ||
+        rawGasKgPer100 === undefined ||
+        String(rawGasKgPer100).trim() === ''
+          ? null
+          : Math.max(
+              0,
+              Number(rawGasKgPer100) || 0,
+            );
+
       const pieceWeightGrams =
         servingUnit.toLowerCase() === 'piece'
           ? (
@@ -62,6 +75,7 @@ function normalizeItems(items: unknown) {
         rate,
         servingQuantity,
         servingUnit,
+        gasKgPer100,
         pieceWeightGrams,
         aliases,
         originalName,
@@ -328,6 +342,7 @@ export async function GET(request: Request) {
           rate: true,
           servingQuantity: true,
           servingUnit: true,
+          gasKgPer100: true,
           aliases: true,
         },
       }),
@@ -350,6 +365,9 @@ export async function GET(request: Request) {
         rate: item.rate,
         servingQuantity: item.servingQuantity,
         servingUnit: item.servingUnit,
+        gasKgPer100:
+          item.gasKgPer100 ??
+          undefined,
         aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
       })))
       : [];
@@ -619,6 +637,8 @@ export async function PUT(request: Request) {
             rate: item!.rate,
             servingQuantity: item!.servingQuantity,
             servingUnit: item!.servingUnit,
+            gasKgPer100:
+              item!.gasKgPer100,
             aliases: item!.aliases,
           },
         })

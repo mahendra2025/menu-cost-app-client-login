@@ -281,6 +281,7 @@ export async function GET() {
           rate: true,
           servingQuantity: true,
           servingUnit: true,
+          gasKgPer100: true,
           aliases: true,
         },
       }),
@@ -441,6 +442,10 @@ export async function GET() {
 
           servingUnit:
             item.servingUnit,
+
+          gasKgPer100:
+            item.gasKgPer100 ??
+            undefined,
 
           pieceWeightGrams:
             recipePieceWeightByName.get(

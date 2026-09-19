@@ -7,16 +7,20 @@ import AppShell, { LockedCard } from '../../components/AppShell';
 import { getSession, loadWork, saveWork } from '../../../lib/store';
 import type { Session, WorkState } from '../../../lib/types';
 import {
-  calculateGasCost,
   calculateOperationsTotals,
   calculateTransportCost,
   normalizeOperationsState,
   type FunctionOperationsRow,
-  type GasCostInput,
   type OperationsCostState,
   type TransportCostInput,
   type WorkWithOperations,
 } from '../../../lib/operationsCost';
+
+import {
+  calculateEventGas,
+  defaultGasCostMaster,
+  type GasCostMaster,
+} from '../../../lib/gasCost';
 
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
@@ -118,138 +122,22 @@ function TransportFields({
   );
 }
 
-function GasFields({
-  value,
-  pax,
-  onChange,
-}: {
-  value: GasCostInput;
-  pax: number;
-  onChange: (patch: Partial<GasCostInput>) => void;
-}) {
-  const total = calculateGasCost(value);
-  const ratePerKg =
-    value.cylinderSizeKg > 0
-      ? value.cylinderPrice / value.cylinderSizeKg
-      : 0;
-
-  return (
-    <div>
-      <div className="action-row operations-mode-row">
-        <button
-          type="button"
-          className={value.mode === 'KG' ? 'primary-button' : 'ghost-button'}
-          onClick={() => onChange({ mode: 'KG' })}
-        >
-          LPG by kg
-        </button>
-        <button
-          type="button"
-          className={value.mode === 'CYLINDER' ? 'primary-button' : 'ghost-button'}
-          onClick={() => onChange({ mode: 'CYLINDER' })}
-        >
-          Cylinder fraction
-        </button>
-        <button
-          type="button"
-          className={value.mode === 'MANUAL' ? 'primary-button' : 'ghost-button'}
-          onClick={() => onChange({ mode: 'MANUAL' })}
-        >
-          Manual cost
-        </button>
-      </div>
-
-      {value.mode === 'MANUAL' ? (
-        <div className="two-grid operations-fields">
-          <div className="field">
-            <label>Gas cost</label>
-            <input
-              className="input input-large"
-              type="number"
-              min="0"
-              value={value.manualCost || ''}
-              placeholder="800"
-              onChange={(event) => onChange({ manualCost: numberValue(event.target.value) })}
-            />
-          </div>
-          <div className="operations-total-box">
-            <span>Gas total</span>
-            <strong>{money(total)}</strong>
-            <small>{pax > 0 ? `${money(total / pax)} / guest` : 'Enter guest count'}</small>
-          </div>
-        </div>
-      ) : (
-        <div className="operations-grid operations-fields">
-          <div className="field">
-            <label>Cylinder size (kg)</label>
-            <input
-              className="input"
-              type="number"
-              min="0.1"
-              step="0.1"
-              value={value.cylinderSizeKg || ''}
-              onChange={(event) => onChange({ cylinderSizeKg: numberValue(event.target.value) })}
-            />
-          </div>
-          <div className="field">
-            <label>Cylinder price</label>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              value={value.cylinderPrice || ''}
-              placeholder="1900"
-              onChange={(event) => onChange({ cylinderPrice: numberValue(event.target.value) })}
-            />
-          </div>
-          {value.mode === 'KG' ? (
-            <div className="field">
-              <label>LPG used (kg)</label>
-              <input
-                className="input"
-                type="number"
-                min="0"
-                step="0.1"
-                value={value.usedKg || ''}
-                placeholder="8"
-                onChange={(event) => onChange({ usedKg: numberValue(event.target.value) })}
-              />
-            </div>
-          ) : (
-            <div className="field">
-              <label>Cylinders used</label>
-              <input
-                className="input"
-                type="number"
-                min="0"
-                step="0.05"
-                value={value.cylindersUsed || ''}
-                placeholder="0.42"
-                onChange={(event) => onChange({ cylindersUsed: numberValue(event.target.value) })}
-              />
-            </div>
-          )}
-          <div className="operations-total-box">
-            <span>Gas total</span>
-            <strong>{money(total)}</strong>
-            <small>
-              {value.mode === 'KG'
-                ? `${money(ratePerKg)} / kg${pax > 0 ? ` · ${money(total / pax)} / guest` : ''}`
-                : `${value.cylindersUsed || 0} cylinder used${pax > 0 ? ` · ${money(total / pax)} / guest` : ''}`}
-            </small>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function OperationsCostPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkWithOperations | null>(null);
   const [operations, setOperations] = useState<OperationsCostState | null>(null);
   const [message, setMessage] = useState('');
+  const [
+    gasMaster,
+    setGasMaster,
+  ] = useState<GasCostMaster>(
+    () => defaultGasCostMaster(),
+  );
+  const [
+    gasMasterWarning,
+    setGasMasterWarning,
+  ] = useState('');
 
   useEffect(() => {
     const current = getSession();
@@ -263,17 +151,80 @@ export default function OperationsCostPage() {
     const saved = loadWork(current.tenantId) as WorkWithOperations;
     setWork(saved);
     setOperations(normalizeOperationsState(saved, saved.operations));
+
+    void fetch(
+      '/api/client/gas-cost',
+      {
+        cache: 'no-store',
+      },
+    )
+      .then(
+        async (response) => {
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error ||
+              'Could not load gas master.',
+            );
+          }
+
+          setGasMaster(
+            data as GasCostMaster,
+          );
+          setGasMasterWarning('');
+        },
+      )
+      .catch(
+        () => {
+          setGasMaster(
+            defaultGasCostMaster(),
+          );
+          setGasMasterWarning(
+            'Gas Master could not be loaded. Built-in category defaults are being used.',
+          );
+        },
+      );
   }, [router]);
 
+  const gasBreakdown =
+    useMemo(
+      () =>
+        work
+          ? calculateEventGas(
+              work,
+              gasMaster,
+            )
+          : null,
+      [
+        work,
+        gasMaster,
+      ],
+    );
+
   const totals = useMemo(
-    () => (operations ? calculateOperationsTotals(operations) : null),
-    [operations],
+    () =>
+      operations &&
+      gasBreakdown
+        ? calculateOperationsTotals(
+            operations,
+            gasBreakdown.totalGasCost,
+          )
+        : null,
+    [
+      operations,
+      gasBreakdown,
+    ],
   );
 
   function persist(nextOperations: OperationsCostState, nextMessage = '') {
     if (!work || !session) return;
 
-    const nextTotals = calculateOperationsTotals(nextOperations);
+    const nextTotals = calculateOperationsTotals(
+      nextOperations,
+      gasBreakdown?.totalGasCost ?? 0,
+    );
     const nextWork: WorkWithOperations = {
       ...work,
       operations: nextOperations,
@@ -295,30 +246,30 @@ export default function OperationsCostPage() {
     setMessage(nextMessage);
   }
 
-  function updateFunction(
+  function updateFunctionTransport(
     index: number,
-    key: 'gas' | 'transport',
-    patch: Partial<GasCostInput> | Partial<TransportCostInput>,
+    patch: Partial<TransportCostInput>,
   ) {
     if (!operations) return;
 
-    const functions = operations.functions.map((row, rowIndex) => {
-      if (rowIndex !== index) return row;
+    const functions =
+      operations.functions.map(
+        (row, rowIndex) =>
+          rowIndex === index
+            ? {
+                ...row,
+                transport: {
+                  ...row.transport,
+                  ...patch,
+                },
+              } satisfies FunctionOperationsRow
+            : row,
+      );
 
-      if (key === 'gas') {
-        return {
-          ...row,
-          gas: { ...row.gas, ...(patch as Partial<GasCostInput>) },
-        } satisfies FunctionOperationsRow;
-      }
-
-      return {
-        ...row,
-        transport: { ...row.transport, ...(patch as Partial<TransportCostInput>) },
-      } satisfies FunctionOperationsRow;
+    persist({
+      ...operations,
+      functions,
     });
-
-    persist({ ...operations, functions });
   }
 
   function updateSharedTransport(patch: Partial<TransportCostInput>) {
@@ -360,8 +311,8 @@ export default function OperationsCostPage() {
         <div className="final-costing-overview is-ready">
           <div>
             <span className="page-eyebrow">Real event cost</span>
-            <h2>Gas + transport by function</h2>
-            <p>Gas is function-wise. Transport can be shared for the event or entered separately for every function.</p>
+            <h2>Automatic gas + transport by function</h2>
+            <p>Gas is calculated from each selected dish, its category LPG rate and that function's own guest count. Transport remains editable.</p>
           </div>
           <div className="final-costing-overview-total">
             <span>Operations cost</span>
@@ -403,7 +354,21 @@ export default function OperationsCostPage() {
         </div>
 
         {operations.functions.map((row, index) => {
-          const gasTotal = calculateGasCost(row.gas);
+          const gasFunction =
+            gasBreakdown?.functionTotals.find(
+              (item) =>
+                item.serviceKey === row.id,
+            );
+
+          const gasRows =
+            gasBreakdown?.rows.filter(
+              (item) =>
+                item.serviceKey === row.id,
+            ) || [];
+
+          const gasTotal =
+            gasFunction?.gasCost || 0;
+
           const transportTotal =
             operations.transportMode === 'FUNCTION_WISE'
               ? calculateTransportCost(row.transport)
@@ -426,15 +391,48 @@ export default function OperationsCostPage() {
               <div className="operations-section-title">
                 <div>
                   <strong>LPG / Gas</strong>
-                  <small>Use actual kg, cylinder fraction or manual cost.</small>
+                  <small>Automatic from Dish Master override or Gas Category Master.</small>
                 </div>
                 <b>{money(gasTotal)}</b>
               </div>
-              <GasFields
-                value={row.gas}
-                pax={row.pax}
-                onChange={(patch) => updateFunction(index, 'gas', patch)}
-              />
+
+              <div className="operations-total-box gas-auto-summary">
+                <span>Automatic LPG used</span>
+                <strong>
+                  {(gasFunction?.gasKg || 0).toFixed(2)} kg
+                </strong>
+                <small>
+                  ₹{(gasBreakdown?.lpgRatePerKg || 0).toFixed(2)} / kg · {row.pax.toLocaleString('en-IN')} guests
+                </small>
+              </div>
+
+              {gasRows.length ? (
+                <div className="gas-mini-table">
+                  {gasRows.map(
+                    (dish) => (
+                      <div key={dish.key}>
+                        <span>
+                          <b>{dish.dish}</b>
+                          <small>{dish.category}</small>
+                        </span>
+                        <span>
+                          {dish.gasKgPer100.toFixed(2)} kg / 100
+                        </span>
+                        <span>
+                          {dish.gasKg.toFixed(2)} kg
+                        </span>
+                        <b>
+                          {money(dish.gasCost)}
+                        </b>
+                      </div>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <p className="muted">
+                  No menu dishes are available for automatic gas calculation.
+                </p>
+              )}
 
               {operations.transportMode === 'FUNCTION_WISE' ? (
                 <>
@@ -447,13 +445,19 @@ export default function OperationsCostPage() {
                   </div>
                   <TransportFields
                     value={row.transport}
-                    onChange={(patch) => updateFunction(index, 'transport', patch)}
+                    onChange={(patch) => updateFunctionTransport(index, patch)}
                   />
                 </>
               ) : null}
             </article>
           );
         })}
+
+        {gasMasterWarning ? (
+          <div className="admin-message error">
+            {gasMasterWarning}
+          </div>
+        ) : null}
 
         <div className="glass-card operations-summary-card">
           <div className="final-profit-strip is-positive">
@@ -475,7 +479,7 @@ export default function OperationsCostPage() {
         </div>
 
         <style>{`
-          .operations-page{padding-bottom:28px}.operations-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.operations-fields{margin-top:16px}.operations-total-box{min-height:78px;padding:13px 15px;border:1px solid rgba(148,163,184,.2);border-radius:14px;background:rgba(148,163,184,.06);display:grid;gap:2px}.operations-total-box span,.operations-total-box small{color:var(--muted);font-size:11px}.operations-total-box strong{font-size:21px}.operations-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 6px;padding-top:18px;border-top:1px solid rgba(148,163,184,.14)}.operations-section-title>div{display:grid;gap:3px}.operations-section-title small{color:var(--muted)}.operations-section-title>b{font-size:18px}.operations-mode-row{margin-top:10px}.operations-function-card{overflow:hidden}@media(max-width:900px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.operations-grid{grid-template-columns:1fr}.operations-mode-row{display:grid;grid-template-columns:1fr}.operations-mode-row button{width:100%}}
+          .operations-page{padding-bottom:28px}.operations-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.operations-fields{margin-top:16px}.operations-total-box{min-height:78px;padding:13px 15px;border:1px solid rgba(148,163,184,.2);border-radius:14px;background:rgba(148,163,184,.06);display:grid;gap:2px}.operations-total-box span,.operations-total-box small{color:var(--muted);font-size:11px}.operations-total-box strong{font-size:21px}.operations-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 6px;padding-top:18px;border-top:1px solid rgba(148,163,184,.14)}.operations-section-title>div{display:grid;gap:3px}.operations-section-title small{color:var(--muted)}.operations-section-title>b{font-size:18px}.operations-mode-row{margin-top:10px}.operations-function-card{overflow:hidden}.gas-auto-summary{margin-top:12px}.gas-mini-table{display:grid;margin-top:12px;border:1px solid rgba(148,163,184,.14);border-radius:12px;overflow:hidden}.gas-mini-table>div{display:grid;grid-template-columns:minmax(160px,1.4fr) minmax(90px,.7fr) minmax(80px,.6fr) minmax(80px,.6fr);gap:10px;align-items:center;padding:9px 11px;border-top:1px solid rgba(148,163,184,.1);font-size:11px}.gas-mini-table>div:first-child{border-top:0}.gas-mini-table span{display:grid;gap:2px}.gas-mini-table small{color:var(--muted)}@media(max-width:900px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.operations-grid{grid-template-columns:1fr}.gas-mini-table>div{grid-template-columns:1fr 1fr}.gas-mini-table>div>span:first-child{grid-column:1/-1}.operations-mode-row{display:grid;grid-template-columns:1fr}.operations-mode-row button{width:100%}}
         `}</style>
       </section>
     </AppShell>

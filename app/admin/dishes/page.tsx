@@ -24,6 +24,12 @@ import {
 
 import { getSession, uid } from '../../../lib/store';
 
+import {
+  DEFAULT_GAS_CATEGORY_RATES,
+  categoryGasKgPer100,
+  type GasCategoryRateValue,
+} from '../../../lib/gasCost';
+
 type ParsedDishItem = DishCostItem & {
   id?: string;
 };
@@ -116,6 +122,16 @@ function parseDishItems(items: unknown): ParsedDishItem[] {
       const servingQuantity = Math.max(Number(row.servingQuantity) || 1, 0.01);
       const servingUnit = String(row.servingUnit || 'serving').trim() || 'serving';
 
+      const gasKgPer100 =
+        row.gasKgPer100 === null ||
+        row.gasKgPer100 === undefined ||
+        String(row.gasKgPer100).trim() === ''
+          ? undefined
+          : Math.max(
+              0,
+              Number(row.gasKgPer100) || 0,
+            );
+
       const pieceWeightGrams =
         servingUnit.toLowerCase() === 'piece'
           ? (
@@ -145,6 +161,7 @@ function parseDishItems(items: unknown): ParsedDishItem[] {
         rate,
         servingQuantity,
         servingUnit,
+        gasKgPer100,
         pieceWeightGrams,
         aliases,
       };
@@ -160,6 +177,14 @@ function toDishCostItem(item: EditableDish): DishCostItem {
     rate: Math.max(Number(item.rate) || 0, 0),
     servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
     servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
+
+    gasKgPer100:
+      item.gasKgPer100 === undefined
+        ? undefined
+        : Math.max(
+            0,
+            Number(item.gasKgPer100) || 0,
+          ),
 
     pieceWeightGrams:
       String(
@@ -239,6 +264,17 @@ export default function AdminDishesPage() {
   const [rows, setRows] = useState<EditableDish[]>([]);
   const [categories, setCategories] = useState<string[]>([...CATEGORIES]);
   const [subcategories, setSubcategories] = useState<Record<string, string[]>>({});
+  const [
+    gasCategoryRates,
+    setGasCategoryRates,
+  ] = useState<GasCategoryRateValue[]>(
+    () =>
+      DEFAULT_GAS_CATEGORY_RATES.map(
+        (rate) => ({
+          ...rate,
+        }),
+      ),
+  );
   const [categoryQuery, setCategoryQuery] = useState('');
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
@@ -342,6 +378,7 @@ export default function AdminDishesPage() {
         const [
           response,
           recipeVersionResponse,
+          gasMasterResponse,
         ] = await Promise.all([
           fetch(
             '/api/admin/dishes',
@@ -358,6 +395,14 @@ export default function AdminDishesPage() {
                 'no-store',
             },
           ),
+
+          fetch(
+            '/api/admin/gas-cost',
+            {
+              cache:
+                'no-store',
+            },
+          ),
         ]);
 
         if (!response.ok) {
@@ -368,6 +413,23 @@ export default function AdminDishesPage() {
 
         let data =
           await response.json();
+
+        if (
+          gasMasterResponse.ok
+        ) {
+          const gasData =
+            await gasMasterResponse.json();
+
+          if (
+            Array.isArray(
+              gasData.categoryRates,
+            )
+          ) {
+            setGasCategoryRates(
+              gasData.categoryRates,
+            );
+          }
+        }
 
         function showDishData(
           payload:
@@ -1322,6 +1384,9 @@ export default function AdminDishesPage() {
                 row.originalName ||
                 row.name,
               ...item,
+              gasKgPer100:
+                item.gasKgPer100 ??
+                null,
             }),
         },
       );
@@ -2147,6 +2212,17 @@ async function handleCsvImport(
                   ...(subcategories[row.category] ?? []),
                   ...(row.subcategory ? [row.subcategory] : []),
                 ])).sort((left, right) => left.localeCompare(right));
+
+                const categoryGasDefault =
+                  categoryGasKgPer100(
+                    row.category,
+                    gasCategoryRates,
+                  );
+
+                const hasGasOverride =
+                  row.gasKgPer100 !==
+                  undefined;
+
                 return (
                   <div
                     className={`admin-dish-row ${rowErrors.has(row.id) ? 'admin-dish-row-error' : ''}`}
@@ -2240,6 +2316,96 @@ async function handleCsvImport(
                       {rowErrors.get(row.id)?.servingUnit ? <span className="field-error">{rowErrors.get(row.id)?.servingUnit}</span> : null}
                     </div>
                   </div>
+                  <section className="dish-gas-section">
+                    <div className="dish-gas-section-heading">
+                      <div>
+                        <span className="section-kicker">Gas Calculation</span>
+                        <h3>LPG usage for this dish</h3>
+                        <p>
+                          Category Default: <b>{categoryGasDefault.toFixed(2)} kg / 100 pax</b>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      className="action-row dish-gas-mode"
+                      role="group"
+                      aria-label={`Gas calculation mode for ${row.name || 'dish'}`}
+                    >
+                      <button
+                        type="button"
+                        className={!hasGasOverride ? 'primary-button' : 'ghost-button'}
+                        onClick={() =>
+                          updateRow(
+                            row.id,
+                            {
+                              gasKgPer100:
+                                undefined,
+                            },
+                          )
+                        }
+                      >
+                        Auto from Category
+                      </button>
+
+                      <button
+                        type="button"
+                        className={hasGasOverride ? 'primary-button' : 'ghost-button'}
+                        onClick={() =>
+                          updateRow(
+                            row.id,
+                            {
+                              gasKgPer100:
+                                hasGasOverride
+                                  ? row.gasKgPer100
+                                  : categoryGasDefault,
+                            },
+                          )
+                        }
+                      >
+                        Manual Override
+                      </button>
+                    </div>
+
+                    {hasGasOverride ? (
+                      <div className="field dish-gas-manual-field">
+                        <label>
+                          Gas LPG kg / 100 pax
+                        </label>
+
+                        <input
+                          className="input input-large"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={row.gasKgPer100 ?? 0}
+                          onChange={(event) =>
+                            updateRow(
+                              row.id,
+                              {
+                                gasKgPer100:
+                                  Math.max(
+                                    0,
+                                    Number(
+                                      event.target.value,
+                                    ) || 0,
+                                  ),
+                              },
+                            )
+                          }
+                        />
+
+                        <small className="dish-field-hint">
+                          This overrides the {row.category || 'category'} default only for this dish.
+                        </small>
+                      </div>
+                    ) : (
+                      <small className="dish-field-hint">
+                        Auto mode uses {categoryGasDefault.toFixed(2)} kg LPG per 100 guests from the Gas Category Master.
+                      </small>
+                    )}
+                  </section>
+
                   <details className="admin-alias-section" open={Boolean(rowErrors.get(row.id)?.aliases) || undefined}>
                     <summary>
                       <span>Aliases &amp; search names</span>

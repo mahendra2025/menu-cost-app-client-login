@@ -22,6 +22,12 @@ export type DishCostItem = {
   servingUnit?: string;
 
   /*
+   * Optional LPG override for this dish.
+   * When absent, gas costing uses the category master.
+   */
+  gasKgPer100?: number;
+
+  /*
    * Physical weight of one piece.
    * Example: Gulab Jamun = 35 g / piece.
    */
@@ -1739,6 +1745,16 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
     rate: Math.max(Number(item.rate) || 0, 0),
     servingQuantity: Math.max(Number(item.servingQuantity) || 1, 0.01),
     servingUnit: String(item.servingUnit || 'serving').trim() || 'serving',
+
+    gasKgPer100:
+      item.gasKgPer100 === undefined ||
+      item.gasKgPer100 === null ||
+      String(item.gasKgPer100).trim() === ''
+        ? undefined
+        : Math.max(
+            0,
+            Number(item.gasKgPer100) || 0,
+          ),
 
     pieceWeightGrams:
       Math.max(

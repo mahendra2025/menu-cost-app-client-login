@@ -18,10 +18,23 @@ import {
 } from '../../../lib/sellingPrice';
 import type { Session, WorkState } from '../../../lib/types';
 
+import {
+  calculateEventGas,
+  defaultGasCostMaster,
+  type GasCostMaster,
+} from '../../../lib/gasCost';
+
 const PRICE_PRESETS = [10, 20, 30, 40];
 
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
+}
+
+function money2(value: number) {
+  return `₹${Math.max(0, Number(value) || 0).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function displayPercent(value: number) {
@@ -49,6 +62,20 @@ export default function FinalCostingPage() {
   const [pricingPercent, setPricingPercent] = useState(20);
   const [manualPrice, setManualPrice] = useState(0);
   const [message, setMessage] = useState('');
+  const [
+    gasMaster,
+    setGasMaster,
+  ] = useState<GasCostMaster>(
+    () => defaultGasCostMaster(),
+  );
+  const [
+    gasMasterWarning,
+    setGasMasterWarning,
+  ] = useState('');
+  const [
+    showGasDetails,
+    setShowGasDetails,
+  ] = useState(false);
 
   useEffect(() => {
     const current = getSession();
@@ -71,11 +98,86 @@ export default function FinalCostingPage() {
       setMode('MANUAL');
       setManualPrice(cleanWork.sellingPricePerPlate);
     }
+
+    void fetch(
+      '/api/client/gas-cost',
+      {
+        cache: 'no-store',
+      },
+    )
+      .then(
+        async (response) => {
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error ||
+              'Could not load gas master.',
+            );
+          }
+
+          setGasMaster(
+            data as GasCostMaster,
+          );
+          setGasMasterWarning('');
+        },
+      )
+      .catch(
+        () => {
+          setGasMaster(
+            defaultGasCostMaster(),
+          );
+          setGasMasterWarning(
+            'Gas Master could not be loaded. Built-in category defaults are being used.',
+          );
+        },
+      );
   }, [router]);
 
+  const gasBreakdown =
+    useMemo(
+      () =>
+        work
+          ? calculateEventGas(
+              work,
+              gasMaster,
+            )
+          : null,
+      [
+        work,
+        gasMaster,
+      ],
+    );
+
+  const costingWork =
+    useMemo(
+      () =>
+        work
+          ? {
+              ...work,
+              extras: {
+                ...work.extras,
+                gasFuel:
+                  gasBreakdown?.totalGasCost ??
+                  0,
+              },
+            }
+          : null,
+      [
+        work,
+        gasBreakdown,
+      ],
+    );
+
   const costing = useMemo(
-    () => (work ? calculate(work) : null),
-    [work],
+    () =>
+      costingWork
+        ? calculate(
+            costingWork,
+          )
+        : null,
+    [costingWork],
   );
 
   const pricing = useMemo(
@@ -133,6 +235,12 @@ export default function FinalCostingPage() {
 
     const nextWork: WorkState = {
       ...work,
+      extras: {
+        ...work.extras,
+        gasFuel:
+          gasBreakdown?.totalGasCost ??
+          0,
+      },
       sellingPricePerPlate: pricing.sellingPricePerCover,
       updatedAt: new Date().toISOString(),
     };
@@ -305,36 +413,137 @@ export default function FinalCostingPage() {
 
           <div className="final-cost-breakdown">
             <div>
-              <span>Food cost</span>
+              <span>Food Cost</span>
               <b>{money(costing.menuFoodTotal)}</b>
               <button type="button" onClick={() => router.push('/app/cost')}>Review Food Cost</button>
             </div>
             <div>
-              <span>Manpower cost</span>
+              <span>Manpower Cost</span>
               <b>{money(work.extras.staff)}</b>
               <button type="button" onClick={() => router.push('/app/team')}>Edit</button>
             </div>
             <div>
-              <span>LPG / gas</span>
-              <b>{money(work.extras.gasFuel)}</b>
-              <button type="button" onClick={() => router.push('/app/operations')}>Edit</button>
-            </div>
-            <div>
-              <span>Transport</span>
-              <b>{money(work.extras.transport)}</b>
-              <button type="button" onClick={() => router.push('/app/operations')}>Edit</button>
-            </div>
-            <div>
-              <span>Plastic / disposable</span>
+              <span>Plastic / Disposable Cost</span>
               <b>{money(work.extras.disposable)}</b>
               <button type="button" onClick={() => router.push('/app/disposable')}>Edit</button>
             </div>
+            <div>
+              <span>Gas Cost</span>
+              <b>{money(gasBreakdown?.totalGasCost || 0)}</b>
+              <button
+                type="button"
+                onClick={() =>
+                  setShowGasDetails(
+                    (current) => !current,
+                  )
+                }
+              >
+                {showGasDetails ? 'Hide Details' : 'View Details'}
+              </button>
+            </div>
+            <div>
+              <span>Transport Cost</span>
+              <b>{money(work.extras.transport)}</b>
+              <button type="button" onClick={() => router.push('/app/operations')}>Edit</button>
+            </div>
             <div className="final-cost-breakdown-total">
-              <span>Total event cost</span>
+              <span>TOTAL COST</span>
               <b>{money(pricing.totalCost)}</b>
               <small>{money(pricing.costPerCover)} per cover</small>
             </div>
           </div>
+
+          {showGasDetails && gasBreakdown ? (
+            <div className="gas-pricing-details">
+              <div className="gas-pricing-summary">
+                <span>
+                  LPG rate <b>{money2(gasBreakdown.lpgRatePerKg)} / kg</b>
+                </span>
+                <span>
+                  LPG used <b>{gasBreakdown.totalGasKg.toFixed(2)} kg</b>
+                </span>
+                <span>
+                  Gas cost <b>{money2(gasBreakdown.totalGasCost)}</b>
+                </span>
+              </div>
+
+              {gasBreakdown.functionTotals.map(
+                (group) => {
+                  const rows =
+                    gasBreakdown.rows.filter(
+                      (row) =>
+                        row.serviceKey ===
+                        group.serviceKey,
+                    );
+
+                  const label =
+                    [
+                      group.dayLabel,
+                      group.mealLabel,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') ||
+                    'Event Menu';
+
+                  return (
+                    <div
+                      className="gas-pricing-function"
+                      key={group.serviceKey}
+                    >
+                      <div className="gas-pricing-function-heading">
+                        <div>
+                          <b>{label}</b>
+                          <small>{group.guests.toLocaleString('en-IN')} guests</small>
+                        </div>
+                        <div>
+                          <b>{group.gasKg.toFixed(2)} kg</b>
+                          <strong>{money2(group.gasCost)}</strong>
+                        </div>
+                      </div>
+
+                      <div className="gas-pricing-table">
+                        <div className="is-head">
+                          <span>Dish</span>
+                          <span>Category</span>
+                          <span>Guests</span>
+                          <span>LPG kg / 100</span>
+                          <span>LPG Used</span>
+                          <span>LPG Rate/kg</span>
+                          <span>Gas Cost</span>
+                        </div>
+
+                        {rows.map(
+                          (row) => (
+                            <div key={row.key}>
+                              <span>{row.dish}</span>
+                              <span>{row.category}</span>
+                              <span>{row.guests}</span>
+                              <span>{row.gasKgPer100.toFixed(2)}</span>
+                              <span>{row.gasKg.toFixed(2)} kg</span>
+                              <span>{money2(row.lpgRatePerKg)}</span>
+                              <b>{money2(row.gasCost)}</b>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  );
+                },
+              )}
+
+              <div className="gas-pricing-event-total">
+                <span>Event Gas Total</span>
+                <b>{gasBreakdown.totalGasKg.toFixed(2)} kg</b>
+                <strong>{money2(gasBreakdown.totalGasCost)}</strong>
+              </div>
+            </div>
+          ) : null}
+
+          {gasMasterWarning ? (
+            <div className="admin-message error" style={{ marginTop: 12 }}>
+              {gasMasterWarning}
+            </div>
+          ) : null}
         </div>
 
         {!costReady ? (
@@ -370,7 +579,23 @@ export default function FinalCostingPage() {
           </button>
         </div>
 
-        <FinalCostingUsage tenantId={session.tenantId} work={work} />
+        <FinalCostingUsage tenantId={session.tenantId} work={costingWork || work} />
+
+        <style>{`
+          .gas-pricing-details{display:grid;gap:16px;margin-top:18px;padding-top:18px;border-top:1px solid rgba(148,163,184,.16)}
+          .gas-pricing-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+          .gas-pricing-summary>span,.gas-pricing-event-total{padding:10px 12px;border:1px solid rgba(148,163,184,.14);border-radius:12px;background:rgba(148,163,184,.05);font-size:11px}
+          .gas-pricing-summary b{display:block;margin-top:3px;font-size:15px}
+          .gas-pricing-function{display:grid;gap:9px}
+          .gas-pricing-function-heading{display:flex;align-items:end;justify-content:space-between;gap:12px}
+          .gas-pricing-function-heading>div{display:grid;gap:2px}.gas-pricing-function-heading small{color:var(--muted)}
+          .gas-pricing-function-heading>div:last-child{text-align:right}.gas-pricing-function-heading strong{font-size:14px}
+          .gas-pricing-table{overflow-x:auto;border:1px solid rgba(148,163,184,.14);border-radius:12px}
+          .gas-pricing-table>div{display:grid;grid-template-columns:minmax(150px,1.4fr) minmax(100px,.9fr) 70px 90px 90px 95px 90px;gap:9px;align-items:center;min-width:780px;padding:8px 10px;border-top:1px solid rgba(148,163,184,.1);font-size:10px}
+          .gas-pricing-table>div:first-child{border-top:0}.gas-pricing-table .is-head{background:rgba(148,163,184,.08);font-weight:800;color:var(--muted)}
+          .gas-pricing-event-total{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center}.gas-pricing-event-total strong{font-size:17px}
+          @media(max-width:650px){.gas-pricing-summary{grid-template-columns:1fr}.gas-pricing-function-heading{align-items:flex-start;flex-direction:column}.gas-pricing-function-heading>div:last-child{text-align:left}.gas-pricing-event-total{grid-template-columns:1fr auto}.gas-pricing-event-total strong{grid-column:1/-1}}
+        `}</style>
       </section>
     </AppShell>
   );
