@@ -1,4 +1,4 @@
-const CACHE_NAME = 'menu-cost-pwa-v13';
+const CACHE_NAME = 'menu-cost-pwa-v14';
 const APP_SHELL = [
   '/',
   '/login',

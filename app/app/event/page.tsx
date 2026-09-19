@@ -1176,8 +1176,40 @@ export default function EventPage() {
       work?.event.functionType ||
       'Event Menu';
 
+    if (!importFunctionName.trim()) {
+      setImportFunctionName(
+        functionName,
+      );
+    }
+
+    if (
+      !importFunctionPax.trim() &&
+      Number(
+        work?.event.pax,
+      ) > 0
+    ) {
+      setImportFunctionPax(
+        String(
+          work?.event.pax,
+        ),
+      );
+    }
+
     setError('');
     setShowManualDishSelector(true);
+
+    window.setTimeout(
+      () =>
+        document
+          .getElementById(
+            'manualDishSelector',
+          )
+          ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          }),
+      40,
+    );
 
     if (manualDishCatalog.length) {
       return;
@@ -1355,9 +1387,17 @@ export default function EventPage() {
     }
 
     const functionName =
-      importFunctionName.trim() ||
-      work.event.functionType ||
-      'Event Menu';
+      importFunctionName.trim();
+
+    if (!functionName) {
+      setError(
+        'Enter a function or meal name.',
+      );
+      document
+        .getElementById('manualFunctionName')
+        ?.focus();
+      return;
+    }
 
     const selected =
       manualDishCatalog.filter(
@@ -1553,7 +1593,7 @@ export default function EventPage() {
     );
 
     window.location.assign(
-      '/app/grocery',
+      '/app/cost',
     );
   }
 
@@ -7040,45 +7080,71 @@ export default function EventPage() {
                 </div>
               </div>
 
-              <div className="event-menu-source-grid upload-only">
+              <div className="event-menu-source-grid upload-only has-manual-option">
                 <div className="menu-upload-options">
-                <section className="menu-upload-option" aria-labelledby="upload-menu-title">
-                  <div className="menu-upload-heading">
-                    <span className="menu-upload-icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24">
-                        <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" />
-                      </svg>
-                    </span>
-                    <div>
-                      <b id="upload-menu-title">{t('Upload a menu')}</b>
-                      <p>{t('Best for a PDF, printed menu or phone photo.')}</p>
+                  <section className="menu-upload-option" aria-labelledby="upload-menu-title">
+                    <div className="menu-upload-heading">
+                      <span className="menu-upload-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" />
+                        </svg>
+                      </span>
+                      <div>
+                        <b id="upload-menu-title">{t('Upload a menu')}</b>
+                        <p>{t('Best for a PDF, printed menu or phone photo.')}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <input
-                    id="menuFileUpload"
-                    className="visually-hidden-file"
-                    type="file"
-                    accept="application/pdf,image/jpeg,image/png,image/webp"
-                    disabled={Boolean(uploading)}
-                    onChange={(event) => {
-                      const file = event.currentTarget.files?.[0];
-                      event.currentTarget.value = '';
+                    <input
+                      id="menuFileUpload"
+                      className="visually-hidden-file"
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      disabled={Boolean(uploading)}
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0];
+                        event.currentTarget.value = '';
 
-                      if (file) {
-                        void uploadMenuFile(file);
+                        if (file) {
+                          void uploadMenuFile(file);
+                        }
+                      }}
+                    />
+                    <label
+                      className={`primary-button menu-upload-button${uploading ? ' is-loading' : ''}`}
+                      htmlFor="menuFileUpload"
+                      aria-disabled={Boolean(uploading)}
+                    >
+                      <b>{uploading ? t('Reading menu…') : t('Choose PDF or photo')}</b>
+                      <small>{t('PDF up to 15 MB · photos up to 20 MB')}</small>
+                    </label>
+                  </section>
+
+                  <section className="menu-upload-option manual-selection-option" aria-labelledby="manual-menu-title">
+                    <div className="menu-upload-heading">
+                      <span className="menu-upload-icon manual" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                          <path d="M5 6h14M5 12h14M5 18h14" />
+                          <path d="M8 4v4M8 10v4M8 16v4" />
+                        </svg>
+                      </span>
+                      <div>
+                        <b id="manual-menu-title">{t('Select dishes manually')}</b>
+                        <p>{t('Choose dishes directly from Dish Master without uploading a menu.')}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      className="ghost-button manual-selection-button"
+                      type="button"
+                      disabled={Boolean(uploading)}
+                      onClick={() =>
+                        void openManualDishSelector()
                       }
-                    }}
-                  />
-                  <label
-                    className={`primary-button menu-upload-button${uploading ? ' is-loading' : ''}`}
-                    htmlFor="menuFileUpload"
-                    aria-disabled={Boolean(uploading)}
-                  >
-                    <b>{uploading ? t('Reading menu…') : t('Choose PDF or photo')}</b>
-                    <small>{t('PDF up to 15 MB · photos up to 20 MB')}</small>
-                  </label>
-                </section>
+                    >
+                      {t('Manual Dish Selection')}
+                    </button>
+                  </section>
                 </div>
               </div>
 
@@ -7340,6 +7406,7 @@ export default function EventPage() {
 
               {showManualDishSelector ? (
                 <div
+                  id="manualDishSelector"
                   style={{
                     marginTop:
                       '12px',
@@ -7405,6 +7472,44 @@ export default function EventPage() {
                     >
                       Close
                     </button>
+                  </div>
+
+                  <div className="manual-selection-context">
+                    <label>
+                      <span>{t('Function / Meal')}</span>
+                      <input
+                        id="manualFunctionName"
+                        className="input"
+                        value={importFunctionName}
+                        onChange={(event) => {
+                          setImportFunctionName(
+                            event.target.value,
+                          );
+                          setError('');
+                        }}
+                        placeholder={t('e.g. Breakfast, Lunch, Reception')}
+                      />
+                    </label>
+
+                    <label>
+                      <span>{t('Guests')}</span>
+                      <input
+                        id="importFunctionPax"
+                        className="input"
+                        type="number"
+                        min="1"
+                        step="1"
+                        inputMode="numeric"
+                        value={importFunctionPax}
+                        onChange={(event) => {
+                          setImportFunctionPax(
+                            event.target.value,
+                          );
+                          setError('');
+                        }}
+                        placeholder={t('Enter guests')}
+                      />
+                    </label>
                   </div>
 
                   <div
@@ -7667,7 +7772,7 @@ export default function EventPage() {
                         void addManualMenuAndContinue()
                       }
                     >
-                      Add Selected & Continue to Grocery
+                      Add Selected & Continue
                     </button>
                   </div>
                 </div>
