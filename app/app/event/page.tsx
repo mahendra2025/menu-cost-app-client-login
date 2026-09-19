@@ -852,11 +852,6 @@ export default function EventPage() {
   const [detectionPreview, setDetectionPreview] =
     useState<MenuDetectionPreview | null>(null);
 
-  const [
-    autoContinueDetectedMenu,
-    setAutoContinueDetectedMenu,
-  ] = useState(false);
-
   const [manualRateIds, setManualRateIds] =
     useState<Set<string>>(
       () => new Set(),
@@ -1063,44 +1058,6 @@ export default function EventPage() {
     session,
     work,
   ]);
-
-  useEffect(() => {
-    if (
-      !autoContinueDetectedMenu ||
-      !detectionPreview ||
-      !work ||
-      !session
-    ) {
-      return;
-    }
-
-    let active = true;
-
-    void applyDetectionPreview(
-      work.menu.length > 0
-        ? 'merge'
-        : 'replace',
-      true,
-    ).finally(() => {
-      if (active) {
-        setAutoContinueDetectedMenu(
-          false,
-        );
-        setUploadStatus('');
-      }
-    });
-
-    return () => {
-      active = false;
-    };
-    // applyDetectionPreview is a component function that reads the latest
-    // state from this render; the trigger is controlled by these state values.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    autoContinueDetectedMenu,
-    detectionPreview,
-  ]);
-
 
 
   useEffect(() => {
@@ -5034,10 +4991,7 @@ export default function EventPage() {
       );
 
       setUploadStatus(
-        'Menu detected. Saving and opening Grocery…',
-      );
-      setAutoContinueDetectedMenu(
-        true,
+        'Menu detected. Review the dishes below, then save when ready.',
       );
 
       window.setTimeout(() => {
@@ -6720,18 +6674,13 @@ export default function EventPage() {
                       ? 'is-current'
                       : ''
                 }
-                onClick={() => {
-                  if (
-                    firstMenuTextReady &&
-                    !detecting
-                  ) {
-                    void detectAndNext();
-                  } else {
-                    scrollToFirstMenuSection(
-                      'menuInput',
-                    );
-                  }
-                }}
+                onClick={() =>
+                  scrollToFirstMenuSection(
+                    firstMenuDetected
+                      ? 'menuDetectionPreview'
+                      : 'menuInput',
+                  )
+                }
               >
                 <span className="first-menu-step-number">
                   {firstMenuDetected
@@ -6745,7 +6694,7 @@ export default function EventPage() {
                   </b>
 
                   <small>
-                    Save detected dishes automatically
+                    Review detected dishes before saving
                   </small>
                 </span>
               </button>
@@ -6785,26 +6734,7 @@ export default function EventPage() {
                   Add My Menu
                 </button>
               </div>
-            ) : firstMenuTextReady &&
-              !firstMenuDetected ? (
-              <div className="first-menu-guide-actions">
-                <button
-                  className="primary-button"
-                  type="button"
-                  disabled={
-                    detecting ||
-                    Boolean(uploading)
-                  }
-                  onClick={() =>
-                    void detectAndNext()
-                  }
-                >
-                  {detecting
-                    ? 'Detecting…'
-                    : 'Detect My Menu'}
-                </button>
-              </div>
-) : null}
+            ) : null}
           </div>
         ) : null}
 
@@ -6938,6 +6868,7 @@ export default function EventPage() {
                       value={work.event.rawMenuText}
                       onChange={(event) => {
                         setError('');
+                        setUploadStatus('');
                         setDetectedEventDetails({});
                         setDetectionPreview(null);
                         setSelectedPreviewIds(new Set());
@@ -6968,11 +6899,41 @@ Hara bhara kebab`}
                 </div>
               </div>
 
+              <div className="event-menu-detect-inline">
+                <div>
+                  <b>{t('Detect dishes')}</b>
+                  <small>
+                    {work.event.rawMenuText.trim()
+                      ? (language === 'hi'
+                          ? `${menuLines} मेन्यू लाइनें डिटेक्शन के लिए तैयार हैं।`
+                          : `${menuLines} menu lines ready for detection.`)
+                      : t('Upload a menu or paste text to continue.')}
+                  </small>
+                </div>
+
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => void detectAndNext()}
+                  disabled={
+                    detecting ||
+                    Boolean(uploading) ||
+                    !work.event.rawMenuText.trim()
+                  }
+                >
+                  {detecting
+                    ? t('Detecting Dishes...')
+                    : detectionPreview
+                      ? t('Detect dishes again')
+                      : t('Detect dishes')}
+                </button>
+              </div>
+
               {uploadStatus ? (
                 <div className="menu-upload-status" role="status" aria-live="polite">
                   <span className={uploading ? 'upload-spinner' : 'upload-check'} aria-hidden="true" />
                   <div>
-                    <b>{detecting ? 'Detecting dishes' : uploading === 'pdf' ? 'Reading your menu PDF' : uploading === 'photo' ? 'Reading your menu photo' : 'Menu imported successfully'}</b>
+                    <b>{detecting ? 'Detecting dishes' : uploading === 'pdf' ? 'Reading your menu PDF' : uploading === 'photo' ? 'Reading your menu photo' : detectionPreview ? 'Menu detected' : 'Menu imported successfully'}</b>
                     <p>{uploadStatus}</p>
                     {work.event.uploadFileName && !uploading ? (
                       <small>{work.event.uploadFileName}</small>
@@ -10956,31 +10917,6 @@ Hara bhara kebab`}
               </div>
             ) : null}
 
-            <div className="action-row event-detect-action">
-              <div className="event-detect-copy">
-                <span aria-hidden="true">3</span>
-                <div>
-                  <b>{t('Detect menu')}</b>
-                  <small>
-                    {work.event.rawMenuText.trim()
-                      ? (language === 'hi' ? `${menuLines} मेन्यू लाइनें डिटेक्शन के लिए तैयार हैं।` : `${menuLines} menu lines are ready for detection.`)
-                      : t('Upload a menu or paste text to continue.')}
-                  </small>
-                </div>
-              </div>
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => void detectAndNext()}
-                disabled={detecting || Boolean(uploading) || !work.event.rawMenuText.trim()}
-              >
-                {detecting
-                  ? t('Detecting Dishes...')
-                  : detectionPreview
-                    ? t('Detect dishes again')
-                    : t('Detect dishes')}
-              </button>
-            </div>
           </div>
         </div>
       </section>
