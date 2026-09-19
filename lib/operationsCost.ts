@@ -183,11 +183,23 @@ export function normalizeOperationsState(
   };
 }
 
-export function calculateOperationsTotals(state: OperationsCostState) {
-  const gasTotal = state.functions.reduce(
-    (sum, row) => sum + calculateGasCost(row.gas),
-    0,
-  );
+export function calculateOperationsTotals(
+  state: OperationsCostState,
+  automaticGasTotal?: number,
+) {
+  const gasTotal =
+    automaticGasTotal === undefined
+      ? state.functions.reduce(
+          (sum, row) =>
+            sum +
+            calculateGasCost(
+              row.gas,
+            ),
+          0,
+        )
+      : safe(
+          automaticGasTotal,
+        );
 
   const transportTotal =
     state.transportMode === 'EVENT_SHARED'
