@@ -1398,6 +1398,13 @@ function isClearlyNonDishText(value: string): boolean {
   const normalized = normalizeMenuHeading(value);
 
   if (!normalized) return true;
+  if (
+    /^(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:\/-)?\s*(?:per\s+plate|\/\s*plate|plate)?$/i.test(
+      value.trim(),
+    )
+  ) {
+    return true;
+  }
   if (NON_DISH_TEXT_PATTERN.test(normalized)) return true;
   if (PROSE_WORD_PATTERN.test(normalized)) return true;
   if (/https?:\/\/|www\.|@\w+\.\w+/.test(value)) return true;
