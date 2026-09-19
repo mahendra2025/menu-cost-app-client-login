@@ -5127,49 +5127,45 @@ export default function EventPage() {
       return;
     }
 
-    if (!skipReview) {
-      const selectedFunctionPax =
-        new Map<string, number>();
+    const selectedFunctionPax =
+      new Map<string, number>();
   
-      selectedMenu.forEach(
-        (item) => {
-          const key =
-            detectionGroupKeyForItem(
-              item,
-            );
-  
-          selectedFunctionPax.set(
-            key,
-            Math.max(
-              selectedFunctionPax.get(
-                key,
-              ) || 0,
-              Number(
-                item.servicePax,
-              ) ||
-                Number(
-                  work.event.pax,
-                ) ||
-                0,
-            ),
+    selectedMenu.forEach(
+      (item) => {
+        const key =
+          detectionGroupKeyForItem(
+            item,
           );
-        },
-      );
   
-      const missingFunctionPax =
-        Array.from(
-          selectedFunctionPax.values(),
-        ).filter(
-          (pax) => !(pax > 0),
-        ).length;
-  
-      if (missingFunctionPax) {
-        setError(
-          `Enter guest count for ${missingFunctionPax} function${missingFunctionPax === 1 ? '' : 's'} before saving the menu.`,
+        selectedFunctionPax.set(
+          key,
+          Math.max(
+            selectedFunctionPax.get(
+              key,
+            ) || 0,
+            Number(
+              item.servicePax,
+            ) || 0,
+          ),
         );
-        return;
-      }
+      },
+    );
   
+    const missingFunctionPax =
+      Array.from(
+        selectedFunctionPax.values(),
+      ).filter(
+        (pax) => !(pax > 0),
+      ).length;
+  
+    if (missingFunctionPax) {
+      setError(
+        `Enter guest count for ${missingFunctionPax} function${missingFunctionPax === 1 ? '' : 's'} before saving the menu.`,
+      );
+      return;
+    }
+
+    if (!skipReview) {
       const blockingCoverage =
         selectedMenu.filter(
           (item) => {
@@ -6563,6 +6559,7 @@ export default function EventPage() {
       {
         key: string;
         label: string;
+        servicePax: number;
         items: MenuItem[];
       }
     >();
@@ -6616,6 +6613,13 @@ export default function EventPage() {
 
       if (current) {
         current.items.push(item);
+        current.servicePax =
+          Math.max(
+            current.servicePax,
+            Number(
+              item.servicePax,
+            ) || 0,
+          );
         return;
       }
 
@@ -6624,6 +6628,13 @@ export default function EventPage() {
         {
           key,
           label,
+          servicePax:
+            Math.max(
+              0,
+              Number(
+                item.servicePax,
+              ) || 0,
+            ),
           items: [item],
         },
       );
@@ -6655,6 +6666,16 @@ export default function EventPage() {
         !(
           Number(
             item.costPerPlate,
+          ) > 0
+        ),
+    ).length;
+
+  const simpleMissingGuestCount =
+    simpleDetectedGroups.filter(
+      (group) =>
+        !(
+          Number(
+            group.servicePax,
           ) > 0
         ),
     ).length;
@@ -7142,18 +7163,46 @@ export default function EventPage() {
                           className="simple-detected-group"
                           key={group.key}
                         >
-                          {showSimpleDetectedGroupHeadings ? (
-                            <div className="simple-detected-group-head">
-                              <div>
+                          <div className="simple-detected-group-head">
+                            <div>
+                              {showSimpleDetectedGroupHeadings ? (
                                 <span>{t('Function / Meal')}</span>
-                                <h3>{group.label}</h3>
-                              </div>
+                              ) : (
+                                <span>{t('Menu')}</span>
+                              )}
+                              <h3>{group.label}</h3>
+                            </div>
+
+                            <div className="simple-detected-group-meta">
+                              <label className="simple-detected-guests">
+                                <span>{t('Guests')}</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  inputMode="numeric"
+                                  value={
+                                    group.servicePax > 0
+                                      ? String(group.servicePax)
+                                      : ''
+                                  }
+                                  onChange={(event) =>
+                                    updateDetectionGroupPax(
+                                      group.key,
+                                      event.target.value,
+                                    )
+                                  }
+                                  placeholder={t('Enter guests')}
+                                  aria-label={`Guests for ${group.label}`}
+                                />
+                              </label>
+
                               <b>
                                 {group.items.length}{' '}
                                 {t('dishes detected')}
                               </b>
                             </div>
-                          ) : null}
+                          </div>
 
                           <div className="simple-detected-dish-list">
                             {group.items.map(
@@ -7230,13 +7279,26 @@ export default function EventPage() {
                     </div>
                   ) : null}
 
+                  {simpleMissingGuestCount > 0 ? (
+                    <div className="simple-detected-guest-notice" role="status">
+                      <b>
+                        {simpleMissingGuestCount}{' '}
+                        {simpleMissingGuestCount === 1
+                          ? t('function needs guest count')
+                          : t('functions need guest counts')}
+                      </b>
+                      <span>{t('Enter guests for every detected function or meal before Done.')}</span>
+                    </div>
+                  ) : null}
+
                   <button
                     className="primary-button simple-detected-done"
                     type="button"
                     disabled={
                       !detectionPreview.menu.length ||
                       detecting ||
-                      simpleMissingManualRateCount > 0
+                      simpleMissingManualRateCount > 0 ||
+                      simpleMissingGuestCount > 0
                     }
                     onClick={() =>
                       void applyDetectionPreview(
