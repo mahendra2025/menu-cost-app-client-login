@@ -18715,11 +18715,62 @@ body.client-sheet-open {
   white-space: nowrap;
 }
 
-.simple-detected-group-head > b {
+.simple-detected-group-meta {
+  display: flex;
   flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.simple-detected-group-meta > b {
   color: #9fc5ff;
   font-size: 10px;
   font-weight: 850;
+  white-space: nowrap;
+}
+
+.simple-detected-guests {
+  display: grid;
+  grid-template-columns: auto 92px;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+}
+
+.simple-detected-group-head .simple-detected-guests > span {
+  margin: 0;
+  color: #aeb8c8;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.simple-detected-guests input {
+  width: 92px;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  border-radius: 10px;
+  outline: 0;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.72);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.simple-detected-guests input:focus {
+  border-color: rgba(96, 165, 250, 0.58);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.simple-detected-guests input::placeholder {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .simple-detected-dish-list {
@@ -18831,6 +18882,28 @@ body.client-sheet-open {
   text-align: right;
 }
 
+.simple-detected-guest-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 13px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.08);
+  font-size: 11px;
+}
+
+.simple-detected-guest-notice b {
+  color: #93c5fd;
+  font-size: 11px;
+}
+
+.simple-detected-guest-notice span {
+  color: #cbd5e1;
+  text-align: right;
+}
+
 .simple-detected-dish-number {
   display: grid;
   width: 30px;
@@ -18903,6 +18976,36 @@ body.client-sheet-open {
 
   .simple-detected-dish-list {
     grid-template-columns: 1fr;
+  }
+
+  .simple-detected-group-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .simple-detected-group-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .simple-detected-guests {
+    grid-template-columns: auto minmax(100px, 1fr);
+    flex: 1;
+  }
+
+  .simple-detected-guests input {
+    width: 100%;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .simple-detected-guest-notice {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .simple-detected-guest-notice span {
+    text-align: left;
   }
 
   .simple-detected-dish {
