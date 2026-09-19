@@ -312,7 +312,7 @@ export default function FinalCostingPage() {
             <div>
               <span>Manpower cost</span>
               <b>{money(work.extras.staff)}</b>
-              <button type="button" onClick={() => router.push('/app/manpower')}>Edit</button>
+              <button type="button" onClick={() => router.push('/app/team')}>Edit</button>
             </div>
             <div>
               <span>LPG / gas</span>
