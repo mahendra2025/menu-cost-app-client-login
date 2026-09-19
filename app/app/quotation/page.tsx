@@ -20,6 +20,18 @@ import type {
 import type {
   ClientQuotationData,
 } from '../../../lib/clientQuotationPdf';
+import {
+  buildFunctionGroceryPlan,
+  type GroceryIngredientRate,
+  type GroceryRecipe,
+} from '../../../lib/functionGrocery';
+import {
+  normalizeOperationsState,
+  type WorkWithOperations,
+} from '../../../lib/operationsCost';
+import {
+  calculateDisposableCost,
+} from '../../../lib/disposableCost';
 
 type SavedQuotation =
   ClientQuotationData & {
@@ -161,6 +173,30 @@ export default function QuotationPage() {
   ] =
     useState('');
 
+  const [
+    groceryRecipes,
+    setGroceryRecipes,
+  ] =
+    useState<GroceryRecipe[]>([]);
+
+  const [
+    groceryRates,
+    setGroceryRates,
+  ] =
+    useState<GroceryIngredientRate[]>([]);
+
+  const [
+    detailsLoading,
+    setDetailsLoading,
+  ] =
+    useState(false);
+
+  const [
+    detailsWarning,
+    setDetailsWarning,
+  ] =
+    useState('');
+
   useEffect(() => {
     const current =
       getSession();
@@ -233,6 +269,10 @@ export default function QuotationPage() {
       }
 
       setWork(
+        currentWork,
+      );
+
+      void loadEventDetails(
         currentWork,
       );
 
@@ -326,6 +366,85 @@ export default function QuotationPage() {
     }
   }
 
+  async function loadEventDetails(
+    currentWork: WorkState,
+  ) {
+    setDetailsLoading(true);
+    setDetailsWarning('');
+
+    try {
+      const [
+        recipeResponse,
+        ingredientResponse,
+      ] =
+        await Promise.all([
+          fetch(
+            '/api/recipe-ingredients',
+            {
+              method: 'POST',
+              cache: 'no-store',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body:
+                JSON.stringify({
+                  dishNames:
+                    currentWork.menu.map(
+                      (item) =>
+                        item.name,
+                    ),
+                }),
+            },
+          ),
+          fetch(
+            '/api/client/ingredients',
+            {
+              cache: 'no-store',
+            },
+          ),
+        ]);
+
+      const recipeData =
+        await recipeResponse.json();
+      const ingredientData =
+        await ingredientResponse.json();
+
+      if (
+        !recipeResponse.ok ||
+        !ingredientResponse.ok
+      ) {
+        throw new Error(
+          'Some grocery details could not be loaded.',
+        );
+      }
+
+      setGroceryRecipes(
+        Array.isArray(
+          recipeData.recipes,
+        )
+          ? recipeData.recipes
+          : [],
+      );
+
+      setGroceryRates(
+        Array.isArray(
+          ingredientData.rates,
+        )
+          ? ingredientData.rates
+          : [],
+      );
+    } catch {
+      setGroceryRecipes([]);
+      setGroceryRates([]);
+      setDetailsWarning(
+        'Grocery quantities are unavailable for some dishes because recipe data could not be loaded.',
+      );
+    } finally {
+      setDetailsLoading(false);
+    }
+  }
+
   function patch(
     values: Partial<ClientQuotationData>,
   ) {
@@ -379,6 +498,7 @@ export default function QuotationPage() {
           string,
           {
             label: string;
+            pax: number;
             dishes: string[];
           }
         >();
@@ -404,9 +524,24 @@ export default function QuotationPage() {
             existing.dishes.push(
               item.name,
             );
+            existing.pax =
+              Math.max(
+                existing.pax,
+                Number(
+                  item.servicePax,
+                ) || 0,
+              );
           } else {
             groups.set(key, {
               label,
+              pax:
+                Number(
+                  item.servicePax,
+                ) ||
+                Number(
+                  work.event.pax,
+                ) ||
+                0,
               dishes: [
                 item.name,
               ],
@@ -419,6 +554,74 @@ export default function QuotationPage() {
         groups.values(),
       );
     }, [work]);
+
+  const groceryPlan =
+    useMemo(
+      () =>
+        work
+          ? buildFunctionGroceryPlan(
+              work,
+              groceryRecipes,
+              groceryRates,
+            )
+          : null,
+      [
+        work,
+        groceryRecipes,
+        groceryRates,
+      ],
+    );
+
+  const activeManpower =
+    useMemo(
+      () =>
+        (
+          work?.manpower ||
+          []
+        ).filter(
+          (row) =>
+            Number(
+              row.quantity,
+            ) > 0,
+        ),
+      [work],
+    );
+
+  const disposableSummary =
+    useMemo(
+      () =>
+        calculateDisposableCost(
+          work?.disposableItems ||
+          [],
+        ),
+      [work],
+    );
+
+  const activeDisposable =
+    useMemo(
+      () =>
+        disposableSummary.items.filter(
+          (item) =>
+            Number(
+              item.quantity,
+            ) > 0,
+        ),
+      [disposableSummary],
+    );
+
+  const operations =
+    useMemo(
+      () =>
+        work
+          ? normalizeOperationsState(
+              work,
+              (
+                work as WorkWithOperations
+              ).operations,
+            )
+          : null,
+      [work],
+    );
 
   async function save(
     status =
@@ -474,6 +677,50 @@ export default function QuotationPage() {
                           item.servicePax,
                       }),
                     ),
+                  grocery:
+                    groceryPlan
+                      ? {
+                          combinedItems:
+                            groceryPlan.combinedItems.map(
+                              (item) => ({
+                                name:
+                                  item.name,
+                                quantity:
+                                  item.quantity,
+                                unit:
+                                  item.unit,
+                                dishes:
+                                  item.dishes,
+                              }),
+                            ),
+                          unmatchedDishes:
+                            groceryPlan.unmatchedDishes,
+                        }
+                      : null,
+                  manpower:
+                    activeManpower.map(
+                      (row) => ({
+                        role:
+                          row.role,
+                        quantity:
+                          row.quantity,
+                        dayLabel:
+                          row.dayLabel,
+                        mealLabel:
+                          row.mealLabel,
+                      }),
+                    ),
+                  disposable:
+                    activeDisposable.map(
+                      (item) => ({
+                        name:
+                          item.name,
+                        quantity:
+                          item.quantity,
+                      }),
+                    ),
+                  operations:
+                    operations,
                 },
               }),
           },
@@ -567,6 +814,7 @@ export default function QuotationPage() {
       downloadClientQuotationPdf(
         work,
         quoteForPdf,
+        groceryPlan,
       );
     } finally {
       setPdfBusy(false);
@@ -696,7 +944,7 @@ export default function QuotationPage() {
   return (
     <AppShell
       title="Client Quotation"
-      subtitle="Create a professional client-facing offer without exposing internal costing"
+      subtitle="Create a complete A-to-Z event quotation with menu, grocery, manpower and execution details"
     >
       <section className="quote-page">
         <style>{`
@@ -1227,7 +1475,7 @@ export default function QuotationPage() {
           </div>
 
           <div className="quote-safe">
-            Client quotation safety: ingredient rates, food cost, manpower cost, internal event cost and profit are not included in this quotation or its PDF.
+            Complete event quotation: menu, grocery quantities, manpower quantities, gas/transport plan and disposable quantities are included. Internal purchase rates, staff rates, event cost and profit remain private.
           </div>
 
           {message ? (
@@ -1268,7 +1516,7 @@ export default function QuotationPage() {
             >
               {pdfBusy
                 ? 'Preparing PDF…'
-                : 'Download Client PDF'}
+                : 'Download Complete Event PDF'}
             </button>
 
             <button
