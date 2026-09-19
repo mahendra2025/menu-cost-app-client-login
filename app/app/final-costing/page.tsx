@@ -160,7 +160,7 @@ export default function FinalCostingPage() {
             <span className="page-eyebrow">Selling price engine</span>
             <h2>{priceReady ? 'Your selling price is ready' : 'Finish cost details before pricing'}</h2>
             <p>
-              Food, LPG, transport and plastic/disposable cost form the event cost before markup or gross margin.
+              Food, manpower, LPG, transport and plastic/disposable cost form the real event cost before markup or gross margin.
             </p>
           </div>
           <div className="final-costing-overview-total">
@@ -298,7 +298,7 @@ export default function FinalCostingPage() {
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Cost basis</span>
-              <h2>Food + gas + transport + disposable</h2>
+              <h2>Food + manpower + gas + transport + disposable</h2>
               <p>These internal costs build the real event cost. The client quotation still uses the final selling rate.</p>
             </div>
           </div>
@@ -308,6 +308,11 @@ export default function FinalCostingPage() {
               <span>Food cost</span>
               <b>{money(costing.menuFoodTotal)}</b>
               <button type="button" onClick={() => router.push('/app/cost')}>Review Food Cost</button>
+            </div>
+            <div>
+              <span>Manpower cost</span>
+              <b>{money(work.extras.staff)}</b>
+              <button type="button" onClick={() => router.push('/app/manpower')}>Edit</button>
             </div>
             <div>
               <span>LPG / gas</span>
