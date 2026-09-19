@@ -230,6 +230,9 @@ export type ManpowerRow = {
   quantity: number;
   rate: number;
 
+  /* User-created role added from the Team page. */
+  customRole?: boolean;
+
   /*
    * Billing basis:
    * PER_MEAL  = charge every meal

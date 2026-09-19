@@ -7,6 +7,7 @@ import {
   getSession,
   loadWork,
   saveWork,
+  uid,
 } from '../../../lib/store';
 import {
   calculateManpowerCost,
@@ -56,11 +57,24 @@ const MANPOWER_ROLES: RoleTemplate[] = [
   { id: 'simple_cc_boys', role: 'CC Boys', rate: 900, aliases: ['cc boy', 'cc boys'] },
 ];
 
+type NewRoleDraft = {
+  role: string;
+  rate: string;
+};
+
 function normalizeRole(value: string) {
   return String(value || '')
     .trim()
     .toLowerCase()
     .replace(/\s+/g, ' ');
+}
+
+const BUILT_IN_ROLE_NAMES = new Set(
+  MANPOWER_ROLES.flatMap((template) => template.aliases).map(normalizeRole),
+);
+
+function isCustomRole(row: ManpowerRow) {
+  return Boolean(row.customRole) || !BUILT_IN_ROLE_NAMES.has(normalizeRole(row.role));
 }
 
 function normalizePart(value: unknown) {
@@ -180,8 +194,8 @@ function buildMealManpowerRows(
       ? savedRows
       : [];
 
-  return meals.flatMap((meal, mealIndex) =>
-    MANPOWER_ROLES.map((template) => {
+  return meals.flatMap((meal, mealIndex) => {
+    const builtInRows = MANPOWER_ROLES.map((template) => {
       const aliases = new Set(template.aliases.map(normalizeRole));
       const roleMatches = safeRows.filter((row) =>
         aliases.has(normalizeRole(row.role)),
@@ -219,8 +233,26 @@ function buildMealManpowerRows(
         servicePax: meal.pax,
         assignedDishIds: meal.dishIds,
       } satisfies ManpowerRow;
-    }),
-  );
+    });
+    const customRows = safeRows
+      .filter(isCustomRole)
+      .filter(
+        (row) =>
+          rowBelongsToMeal(row, meal) ||
+          (mealIndex === 0 && isLegacyGlobalRow(row)),
+      )
+      .map((row) => ({
+        ...row,
+        rateMode: 'PER_MEAL' as const,
+        serviceId: meal.serviceId,
+        dayLabel: meal.dayLabel || undefined,
+        mealLabel: meal.mealLabel,
+        servicePax: meal.pax,
+        assignedDishIds: row.assignedDishIds || meal.dishIds,
+      }));
+
+    return [...builtInRows, ...customRows];
+  });
 }
 
 function money(value: number) {
@@ -273,6 +305,8 @@ export default function ManpowerPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
+  const [newRoleDrafts, setNewRoleDrafts] = useState<Record<string, NewRoleDraft>>({});
+  const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const current = getSession();
@@ -352,6 +386,61 @@ export default function ManpowerPage() {
     );
   }
 
+  function updateNewRoleDraft(mealKey: string, patch: Partial<NewRoleDraft>) {
+    setNewRoleDrafts((current) => ({
+      ...current,
+      [mealKey]: {
+        ...(current[mealKey] || { role: '', rate: '' }),
+        ...patch,
+      },
+    }));
+    setRoleErrors((current) => ({ ...current, [mealKey]: '' }));
+  }
+
+  function addStaffRole(meal: MealPlan) {
+    if (!work) return;
+
+    const draft = newRoleDrafts[meal.key] || { role: '', rate: '' };
+    const role = draft.role.trim().replace(/\s+/g, ' ');
+    const mealRows = rowsForMeal(meal);
+
+    if (!role) {
+      setRoleErrors((current) => ({ ...current, [meal.key]: 'Enter a staff role name.' }));
+      return;
+    }
+
+    if (mealRows.some((row) => normalizeRole(row.role) === normalizeRole(role))) {
+      setRoleErrors((current) => ({ ...current, [meal.key]: 'This role is already in the meal.' }));
+      return;
+    }
+
+    const newRow: ManpowerRow = {
+      id: uid('manpower_custom'),
+      role,
+      quantity: 1,
+      rate: Math.max(0, Number(draft.rate) || 0),
+      customRole: true,
+      rateMode: 'PER_MEAL',
+      serviceId: meal.serviceId,
+      dayLabel: meal.dayLabel || undefined,
+      mealLabel: meal.mealLabel,
+      servicePax: meal.pax,
+      assignedDishIds: meal.dishIds,
+    };
+
+    persistRows([...work.manpower, newRow]);
+    setNewRoleDrafts((current) => ({
+      ...current,
+      [meal.key]: { role: '', rate: '' },
+    }));
+    setRoleErrors((current) => ({ ...current, [meal.key]: '' }));
+  }
+
+  function removeStaffRole(id: string) {
+    if (!work) return;
+    persistRows(work.manpower.filter((row) => row.id !== id));
+  }
+
   function continueToExpenses() {
     if (!work || !session) return;
 
@@ -408,6 +497,7 @@ export default function ManpowerPage() {
 
         {meals.map((meal, mealIndex) => {
           const mealRows = rowsForMeal(meal);
+          const newRoleDraft = newRoleDrafts[meal.key] || { role: '', rate: '' };
           const mealTotal = calculateManpowerCost(mealRows);
           const mealPeople = mealRows.reduce(
             (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
@@ -449,7 +539,21 @@ export default function ManpowerPage() {
                         className={Number(row.quantity) > 0 ? 'is-active' : ''}
                       >
                         <td><b>{index + 1}</b></td>
-                        <td><b>{row.role}</b></td>
+                        <td>
+                          <div className="manpower-role-name-cell">
+                            <b>{row.role}</b>
+                            {isCustomRole(row) ? (
+                              <button
+                                className="manpower-remove-button"
+                                type="button"
+                                onClick={() => removeStaffRole(row.id)}
+                                aria-label={`Remove ${row.role}`}
+                              >
+                                Remove
+                              </button>
+                            ) : null}
+                          </div>
+                        </td>
                         <td>
                           <QuantityControl
                             row={row}
@@ -492,6 +596,16 @@ export default function ManpowerPage() {
                         <small>#{index + 1}</small>
                         <b>{row.role}</b>
                       </div>
+                      {isCustomRole(row) ? (
+                        <button
+                          className="manpower-remove-button"
+                          type="button"
+                          onClick={() => removeStaffRole(row.id)}
+                          aria-label={`Remove ${row.role}`}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
                     </div>
 
                     <div className="manpower-role-card-fields">
@@ -531,6 +645,50 @@ export default function ManpowerPage() {
                   </article>
                 ))}
               </div>
+
+              <form
+                className="manpower-add-role"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  addStaffRole(meal);
+                }}
+              >
+                <div className="manpower-add-role-copy">
+                  <b>Add staff role</b>
+                  <small>Add a custom role for this meal.</small>
+                </div>
+                <label className="field">
+                  <span>Role name</span>
+                  <input
+                    className="input"
+                    value={newRoleDraft.role}
+                    onChange={(event) => updateNewRoleDraft(meal.key, { role: event.target.value })}
+                    placeholder="e.g. Security"
+                  />
+                </label>
+                <label className="field">
+                  <span>Rate / person</span>
+                  <div className="manpower-rate-input">
+                    <span aria-hidden="true">₹</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="decimal"
+                      value={newRoleDraft.rate}
+                      onChange={(event) => updateNewRoleDraft(meal.key, { rate: event.target.value })}
+                      placeholder="0"
+                      aria-label="Rate for new staff role"
+                    />
+                  </div>
+                </label>
+                <button className="secondary-button" type="submit">
+                  + Add role
+                </button>
+                {roleErrors[meal.key] ? (
+                  <p className="manpower-add-role-error" role="alert">{roleErrors[meal.key]}</p>
+                ) : null}
+              </form>
             </div>
           );
         })}

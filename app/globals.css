@@ -2921,6 +2921,27 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .manpower-rate-input input::placeholder { color: #a7650b; font-size: 10px; }
 .manpower-row-total { font-size: 12px; white-space: nowrap; }
 .manpower-remove-button { padding: 7px 9px; border: 0; border-radius: 9px; color: #a02b24; background: rgba(255,59,48,.08); font-size: 10px; font-weight: 850; cursor: pointer; }
+.manpower-role-name-cell { display: flex; align-items: center; gap: 8px; }
+.manpower-add-role {
+  display: grid;
+  grid-template-columns: minmax(150px, .8fr) minmax(180px, 1fr) 150px auto;
+  align-items: end;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,.42);
+}
+.manpower-add-role-copy { align-self: center; display: grid; gap: 3px; }
+.manpower-add-role-copy b { font-size: 13px; }
+.manpower-add-role-copy small { color: var(--muted); font-size: 10px; }
+.manpower-add-role .field { gap: 4px; }
+.manpower-add-role .field > span { color: var(--muted); font-size: 10px; font-weight: 750; }
+.manpower-add-role .input,
+.manpower-add-role .manpower-rate-input,
+.manpower-add-role .secondary-button { width: 100%; min-height: 42px; }
+.manpower-add-role-error { grid-column: 2 / -1; margin: 0; color: #b42318; font-size: 11px; font-weight: 750; }
 .manpower-function-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .manpower-function-actions .secondary-button,
 .manpower-function-actions .ghost-button { min-height: 40px; padding: 9px 13px; font-size: 11px; }
@@ -7812,6 +7833,18 @@ td:last-child {
   background: #10141b;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
 }
+
+.client-theme .manpower-add-role {
+  border-color: #313a46;
+  background: rgba(255,255,255,.025);
+}
+
+.client-theme .manpower-remove-button {
+  color: #ff8b82;
+  background: rgba(255,89,80,.11);
+}
+
+.client-theme .manpower-add-role-error { color: #ff9b92; }
 
 .client-theme .input,
 .client-theme .textarea,
@@ -15901,6 +15934,13 @@ small {
     padding: 10px;
     border-radius: 11px;
   }
+
+  .manpower-add-role {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .manpower-add-role-error { grid-column: 1; }
 
   .client-theme .billing-card .action-row,
   .client-theme .glass-card > .action-row {
