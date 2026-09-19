@@ -227,6 +227,7 @@ const fullAppHindi: Record<string, string> = {
   'Menu source line': 'मेन्यू की मूल लाइन',
   'Detection confidence': 'पहचान का भरोसा',
   'Detected dishes': 'पहचाने गए व्यंजन',
+  'Function / Meal': 'फंक्शन / भोजन',
   'dishes detected': 'व्यंजन पहचाने गए',
   'Check the detected dishes, then tap Done to continue.': 'पहचाने गए व्यंजन जाँचें, फिर आगे बढ़ने के लिए पूरा दबाएँ।',
   Done: 'पूरा',
