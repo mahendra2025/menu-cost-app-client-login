@@ -84,6 +84,7 @@ const hindi: Record<string, string> = {
   'Refresh Detection Preview': 'पहचान फिर से चलाएँ',
   'Event & Menu': 'इवेंट और मेन्यू',
   Team: 'स्टाफ़',
+  'Meal-wise staff cost': 'भोजन के अनुसार स्टाफ लागत',
   Expenses: 'खर्च',
   More: 'अधिक',
   'Costing progress': 'लागत प्रगति',

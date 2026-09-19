@@ -469,8 +469,8 @@ export default function OperationsCostPage() {
           <button className="primary-button" type="button" onClick={continueToDisposable}>
             Save & Continue to Plastic
           </button>
-          <button className="ghost-button" type="button" onClick={() => router.push('/app/cost')}>
-            Back to Food Cost
+          <button className="ghost-button" type="button" onClick={() => router.push('/app/manpower')}>
+            Back to Manpower
           </button>
         </div>
 
