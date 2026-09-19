@@ -81,6 +81,12 @@ export type MenuItem = {
   portionUnit?: string;
 
   /*
+   * Optional LPG override copied from Dish Master when available.
+   * Event gas costing otherwise falls back to the category master.
+   */
+  gasKgPer100?: number;
+
+  /*
    * Base serving used for proportional costing.
    * Example:
    * base = 1 piece @ ₹12
