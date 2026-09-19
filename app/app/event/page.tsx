@@ -13,6 +13,7 @@ import AppShell, {
 } from '../../components/AppShell';
 
 import {
+  createEmptyWorkState,
   findPendingDishCandidates,
   flushDraftToServer,
   flushWorkSave,
@@ -124,6 +125,16 @@ type ManualDishOption = {
   servingQuantity?: number;
   servingUnit?: string;
   pieceWeightGrams?: number;
+};
+
+type NewEventDraft = {
+  clientName: string;
+  eventName: string;
+  eventDate: string;
+  venue: string;
+  city: string;
+  functionType: string;
+  pax: string;
 };
 
 type AiMenuExtraction = {
@@ -827,6 +838,32 @@ export default function EventPage() {
 
   const [work, setWork] =
     useState<WorkState | null>(null);
+
+  const [
+    showNewEventForm,
+    setShowNewEventForm,
+  ] =
+    useState(false);
+
+  const [
+    newEventError,
+    setNewEventError,
+  ] =
+    useState('');
+
+  const [
+    newEventDraft,
+    setNewEventDraft,
+  ] =
+    useState<NewEventDraft>({
+      clientName: '',
+      eventName: '',
+      eventDate: '',
+      venue: '',
+      city: '',
+      functionType: '',
+      pax: '',
+    });
 
   const [detecting, setDetecting] =
     useState(false);
@@ -5609,6 +5646,251 @@ export default function EventPage() {
   }
 
 
+  function openNewEventForm() {
+    setNewEventError('');
+
+    setNewEventDraft({
+      clientName: '',
+      eventName: '',
+      eventDate: '',
+      venue: '',
+      city:
+        work?.profile.city ||
+        '',
+      functionType: '',
+      pax: '',
+    });
+
+    setShowNewEventForm(true);
+  }
+
+  async function createNewEvent() {
+    if (
+      !session ||
+      !work
+    ) {
+      return;
+    }
+
+    const clientName =
+      newEventDraft.clientName.trim();
+
+    if (!clientName) {
+      setNewEventError(
+        'Enter client name first.',
+      );
+
+      window.setTimeout(
+        () =>
+          document
+            .getElementById(
+              'newEventClientName',
+            )
+            ?.focus(),
+        20,
+      );
+
+      return;
+    }
+
+    setNewEventError('');
+
+    /*
+     * Preserve the current event in server history
+     * before replacing the local active workspace.
+     */
+    flushWorkSave(
+      session.tenantId,
+    );
+
+    await flushDraftToServer(
+      session.tenantId,
+      work,
+    );
+
+    const fresh =
+      createEmptyWorkState(
+        session,
+      );
+
+    /*
+     * Keep the caterer's current manpower rate
+     * templates, but remove all old event
+     * quantities and meal assignments.
+     */
+    const manpowerRateRows =
+      new Map<
+        string,
+        WorkState['manpower'][number]
+      >();
+
+    (
+      Array.isArray(
+        work.manpower,
+      )
+        ? work.manpower
+        : []
+    ).forEach((row) => {
+      const role =
+        String(
+          row.role ||
+          '',
+        ).trim();
+
+      const rate =
+        Math.max(
+          0,
+          Number(
+            row.rate,
+          ) || 0,
+        );
+
+      if (
+        !role ||
+        !(rate > 0)
+      ) {
+        return;
+      }
+
+      const key =
+        role
+          .toLocaleLowerCase(
+            'en-IN',
+          )
+          .replace(
+            /\s+/g,
+            ' ',
+          );
+
+      if (
+        manpowerRateRows.has(
+          key,
+        )
+      ) {
+        return;
+      }
+
+      manpowerRateRows.set(
+        key,
+        {
+          id:
+            `new_event_rate_${manpowerRateRows.size + 1}`,
+          role,
+          quantity: 0,
+          rate,
+          rateMode:
+            row.rateMode,
+        },
+      );
+    });
+
+    fresh.manpower.forEach(
+      (row) => {
+        const key =
+          String(
+            row.role ||
+            '',
+          )
+            .trim()
+            .toLocaleLowerCase(
+              'en-IN',
+            )
+            .replace(
+              /\s+/g,
+              ' ',
+            );
+
+        if (
+          !manpowerRateRows.has(
+            key,
+          )
+        ) {
+          manpowerRateRows.set(
+            key,
+            {
+              ...row,
+              quantity: 0,
+            },
+          );
+        }
+      },
+    );
+
+    const disposableItems =
+      (
+        Array.isArray(
+          work.disposableItems,
+        ) &&
+        work.disposableItems.length
+      )
+        ? work.disposableItems.map(
+            (item) => ({
+              ...item,
+              quantity: 0,
+            }),
+          )
+        : fresh.disposableItems;
+
+    const nextWork:
+      WorkState = {
+        ...fresh,
+        event: {
+          ...fresh.event,
+          clientName,
+          eventName:
+            newEventDraft.eventName.trim(),
+          eventDate:
+            newEventDraft.eventDate,
+          venue:
+            newEventDraft.venue.trim(),
+          city:
+            newEventDraft.city.trim(),
+          functionType:
+            newEventDraft.functionType.trim(),
+          pax:
+            Math.max(
+              0,
+              Math.round(
+                Number(
+                  newEventDraft.pax,
+                ) || 0,
+              ),
+            ),
+        },
+        profile: {
+          ...work.profile,
+        },
+        manpower:
+          Array.from(
+            manpowerRateRows.values(),
+          ),
+        disposableItems,
+        updatedAt:
+          new Date().toISOString(),
+      };
+
+    saveWork(
+      session.tenantId,
+      nextWork,
+    );
+
+    flushWorkSave(
+      session.tenantId,
+    );
+
+    try {
+      sessionStorage.removeItem(
+        `menu-detection:${session.tenantId}`,
+      );
+    } catch {
+      // A fresh event can continue even when session storage is unavailable.
+    }
+
+    window.location.assign(
+      '/app/event?new=1',
+    );
+  }
+
   function returnToMenuUpload() {
     setError('');
     setUploadStatus('');
@@ -6863,6 +7145,293 @@ export default function EventPage() {
       hidePageTitle
     >
       <section className="content-grid event-simple-flow">
+        <div className="event-page-topbar no-print">
+          <div>
+            <span className="page-eyebrow">
+              Event workspace
+            </span>
+
+            <h1>
+              {work.event.eventName ||
+                'Event'}
+            </h1>
+
+            <p>
+              {work.event.clientName
+                ? `Client: ${work.event.clientName}`
+                : 'Create or continue an event costing.'}
+            </p>
+          </div>
+
+          <button
+            className="primary-button event-new-button"
+            type="button"
+            onClick={
+              openNewEventForm
+            }
+          >
+            + New Event
+          </button>
+        </div>
+
+        {showNewEventForm ? (
+          <div
+            className="new-event-modal-layer no-print"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (
+                event.target ===
+                event.currentTarget
+              ) {
+                setShowNewEventForm(
+                  false,
+                );
+              }
+            }}
+          >
+            <section
+              className="new-event-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="new-event-title"
+            >
+              <div className="new-event-modal-heading">
+                <div>
+                  <span className="section-kicker">
+                    New costing
+                  </span>
+
+                  <h2 id="new-event-title">
+                    Create New Event
+                  </h2>
+
+                  <p>
+                    Start a fresh event without changing your Dish Master, recipes or saved business settings.
+                  </p>
+                </div>
+
+                <button
+                  className="ghost-button new-event-close"
+                  type="button"
+                  aria-label="Close new event form"
+                  onClick={() =>
+                    setShowNewEventForm(
+                      false,
+                    )
+                  }
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="new-event-form-grid">
+                <label className="field new-event-client-field">
+                  <span>
+                    Client Name
+                  </span>
+
+                  <input
+                    id="newEventClientName"
+                    className="input"
+                    autoFocus
+                    value={
+                      newEventDraft.clientName
+                    }
+                    onChange={(event) => {
+                      setNewEventDraft(
+                        (current) => ({
+                          ...current,
+                          clientName:
+                            event.target.value,
+                        }),
+                      );
+                      setNewEventError(
+                        '',
+                      );
+                    }}
+                    placeholder="Client or company name"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>
+                    Event Name
+                  </span>
+
+                  <input
+                    className="input"
+                    value={
+                      newEventDraft.eventName
+                    }
+                    onChange={(event) =>
+                      setNewEventDraft(
+                        (current) => ({
+                          ...current,
+                          eventName:
+                            event.target.value,
+                        }),
+                      )
+                    }
+                    placeholder="Wedding, Birthday, Corporate Event"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>
+                    Event Date
+                  </span>
+
+                  <input
+                    className="input"
+                    type="date"
+                    value={
+                      newEventDraft.eventDate
+                    }
+                    onChange={(event) =>
+                      setNewEventDraft(
+                        (current) => ({
+                          ...current,
+                          eventDate:
+                            event.target.value,
+                        }),
+                      )
+                    }
+                  />
+                </label>
+
+                <label className="field">
+                  <span>
+                    Venue
+                  </span>
+
+                  <input
+                    className="input"
+                    value={
+                      newEventDraft.venue
+                    }
+                    onChange={(event) =>
+                      setNewEventDraft(
+                        (current) => ({
+                          ...current,
+                          venue:
+                            event.target.value,
+                        }),
+                      )
+                    }
+                    placeholder="Venue name"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>
+                    City
+                  </span>
+
+                  <input
+                    className="input"
+                    value={
+                      newEventDraft.city
+                    }
+                    onChange={(event) =>
+                      setNewEventDraft(
+                        (current) => ({
+                          ...current,
+                          city:
+                            event.target.value,
+                        }),
+                      )
+                    }
+                    placeholder="City"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>
+                    First Function / Meal
+                  </span>
+
+                  <input
+                    className="input"
+                    value={
+                      newEventDraft.functionType
+                    }
+                    onChange={(event) =>
+                      setNewEventDraft(
+                        (current) => ({
+                          ...current,
+                          functionType:
+                            event.target.value,
+                        }),
+                      )
+                    }
+                    placeholder="Breakfast, Lunch, Dinner, Reception"
+                  />
+                </label>
+
+                <label className="field">
+                  <span>
+                    Guests
+                  </span>
+
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputMode="numeric"
+                    value={
+                      newEventDraft.pax
+                    }
+                    onChange={(event) =>
+                      setNewEventDraft(
+                        (current) => ({
+                          ...current,
+                          pax:
+                            event.target.value,
+                        }),
+                      )
+                    }
+                    placeholder="0"
+                  />
+                </label>
+              </div>
+
+              {newEventError ? (
+                <div
+                  className="new-event-error"
+                  role="alert"
+                >
+                  {newEventError}
+                </div>
+              ) : null}
+
+              <div className="new-event-modal-actions">
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() =>
+                    setShowNewEventForm(
+                      false,
+                    )
+                  }
+                >
+                  Cancel
+                </button>
+
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() =>
+                    void createNewEvent()
+                  }
+                >
+                  Create Event
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
+
         {showFirstMenuGuide ? (
           <div className="first-menu-guide">
             <div className="first-menu-guide-top">
