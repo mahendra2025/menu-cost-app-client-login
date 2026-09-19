@@ -243,6 +243,23 @@ function normalizeDish(
       row.aliases,
     );
 
+  const rawGasKgPer100 =
+    row.gasKgPer100;
+
+  const gasKgPer100 =
+    rawGasKgPer100 ===
+        null ||
+      rawGasKgPer100 ===
+        undefined ||
+      String(
+        rawGasKgPer100,
+      ).trim() ===
+        ''
+      ? null
+      : Number(
+          rawGasKgPer100,
+        );
+
   if (
     !name ||
     !category ||
@@ -254,7 +271,17 @@ function normalizeDish(
       servingQuantity,
     ) ||
     servingQuantity <= 0 ||
-    !servingUnit
+    !servingUnit ||
+    (
+      gasKgPer100 !==
+        null &&
+      (
+        !Number.isFinite(
+          gasKgPer100,
+        ) ||
+        gasKgPer100 < 0
+      )
+    )
   ) {
     return null;
   }
@@ -268,6 +295,13 @@ function normalizeDish(
     rate,
     servingQuantity,
     servingUnit,
+    gasKgPer100:
+      gasKgPer100 === null
+        ? null
+        : Math.max(
+            0,
+            gasKgPer100,
+          ),
     aliases,
   };
 }
@@ -282,6 +316,7 @@ function updateRecipeDish(
     rate: number;
     servingQuantity: number;
     servingUnit: string;
+    gasKgPer100: number | null;
     aliases: string[];
   },
 ) {
@@ -348,6 +383,8 @@ function updateRecipeDish(
           next.servingQuantity,
         servingUnit:
           next.servingUnit,
+        gasKgPer100:
+          next.gasKgPer100,
       };
     },
   );
@@ -467,6 +504,8 @@ export async function PATCH(
                           dish.servingQuantity,
                         servingUnit:
                           dish.servingUnit,
+                        gasKgPer100:
+                          dish.gasKgPer100,
                         aliases:
                           dish.aliases,
                       },
@@ -487,6 +526,8 @@ export async function PATCH(
                           dish.servingQuantity,
                         servingUnit:
                           dish.servingUnit,
+                        gasKgPer100:
+                          dish.gasKgPer100,
                         aliases:
                           dish.aliases,
                       },
