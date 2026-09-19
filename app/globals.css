@@ -19274,3 +19274,32 @@ body.client-sheet-open {
     min-height: 46px;
   }
 }
+
+
+/* Admin Dishes: reliable per-row save */
+.dish-row-editor-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.dish-row-editor-actions .primary-button {
+  min-width: 128px;
+}
+
+@media (max-width: 650px) {
+  .dish-row-editor-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .dish-row-editor-actions button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
