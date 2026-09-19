@@ -305,8 +305,7 @@ function directDishOverride(
 
   if (
     raw === undefined ||
-    raw === null ||
-    raw === ''
+    raw === null
   ) {
     return undefined;
   }
