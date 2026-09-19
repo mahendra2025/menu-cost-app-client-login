@@ -1198,6 +1198,19 @@ export default function EventPage() {
     setError('');
     setShowManualDishSelector(true);
 
+    window.setTimeout(
+      () =>
+        document
+          .getElementById(
+            'manualDishSelector',
+          )
+          ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          }),
+      40,
+    );
+
     if (manualDishCatalog.length) {
       return;
     }
@@ -7393,6 +7406,7 @@ export default function EventPage() {
 
               {showManualDishSelector ? (
                 <div
+                  id="manualDishSelector"
                   style={{
                     marginTop:
                       '12px',
