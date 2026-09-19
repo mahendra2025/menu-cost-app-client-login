@@ -469,7 +469,7 @@ export default function OperationsCostPage() {
           <button className="primary-button" type="button" onClick={continueToDisposable}>
             Save & Continue to Plastic
           </button>
-          <button className="ghost-button" type="button" onClick={() => window.location.assign('/app/manpower')}>
+          <button className="ghost-button" type="button" onClick={() => window.location.assign('/app/team')}>
             Back to Manpower
           </button>
         </div>
