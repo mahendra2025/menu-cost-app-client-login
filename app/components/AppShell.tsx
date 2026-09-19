@@ -8,7 +8,7 @@ import type { Session } from '../../lib/types';
 import { useLanguage } from './LanguageProvider';
 
 type NavIcon = 'profile' | 'clients' | 'dishes' | 'ingredients';
-type ClientNavIcon = 'event' | 'team' | 'expenses' | 'pricing' | 'more';
+type ClientNavIcon = 'event' | 'expenses' | 'pricing' | 'more';
 
 type ClientFlowStep = {
   step: number;
@@ -24,23 +24,20 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return { step: 1, label: 'Event & Menu' };
   }
 
-  if (pathname === '/app/manpower') {
-    return { step: 2, label: 'Team' };
-  }
-
   if (
     pathname === '/app/operations' ||
-    pathname === '/app/disposable'
+    pathname === '/app/disposable' ||
+    pathname === '/app/manpower'
   ) {
-    return { step: 3, label: 'Expenses' };
+    return { step: 2, label: 'Expenses' };
   }
 
   if (pathname === '/app/final-costing') {
-    return { step: 4, label: 'Pricing' };
+    return { step: 3, label: 'Pricing' };
   }
 
   if (pathname === '/app/quotation') {
-    return { step: 5, label: 'Quotation' };
+    return { step: 4, label: 'Quotation' };
   }
 
   return null;
@@ -62,13 +59,6 @@ function ClientNavIconMark({ icon }: { icon: ClientNavIcon }) {
       <>
         <rect x="4" y="5" width="16" height="15" rx="3" />
         <path d="M8 3v4M16 3v4M7 11h10M8 15h3" />
-      </>
-    ),
-    team: (
-      <>
-        <circle cx="9" cy="8" r="3" />
-        <circle cx="17" cy="9" r="2.5" />
-        <path d="M3.5 19c.4-3.4 2.2-5.2 5.5-5.2s5.1 1.8 5.5 5.2M15 14c3 .1 4.7 1.8 5 5" />
       </>
     ),
     expenses: (
@@ -197,7 +187,7 @@ export default function AppShell({
 
   const clientMoreActive =
     moreOpen ||
-    clientFlow?.step === 5 ||
+    clientFlow?.step === 4 ||
     pathname === '/app/history' ||
     pathname === '/app/ingredients' ||
     pathname === '/app/profile';
@@ -427,11 +417,11 @@ export default function AppShell({
               aria-label={t('Costing progress')}
             >
               <div className="client-flow-progress-copy">
-                <span>{t(`Step ${clientFlow.step} of 5`)}</span>
+                <span>{t(`Step ${clientFlow.step} of 4`)}</span>
                 <b>{t(clientFlow.label)}</b>
               </div>
               <div className="client-flow-progress-track" aria-hidden="true">
-                {[1, 2, 3, 4, 5].map((step) => (
+                {[1, 2, 3, 4].map((step) => (
                   <i
                     key={step}
                     className={
@@ -465,18 +455,9 @@ export default function AppShell({
             </Link>
 
             <Link
-              href="/app/manpower"
+              href="/app/operations"
               className={clientFlow?.step === 2 ? 'active' : ''}
               aria-current={clientFlow?.step === 2 ? 'page' : undefined}
-            >
-              <ClientNavIconMark icon="team" />
-              <small>{t('Team')}</small>
-            </Link>
-
-            <Link
-              href="/app/operations"
-              className={clientFlow?.step === 3 ? 'active' : ''}
-              aria-current={clientFlow?.step === 3 ? 'page' : undefined}
             >
               <ClientNavIconMark icon="expenses" />
               <small>{t('Expenses')}</small>
@@ -484,8 +465,8 @@ export default function AppShell({
 
             <Link
               href="/app/final-costing"
-              className={clientFlow?.step === 4 ? 'active' : ''}
-              aria-current={clientFlow?.step === 4 ? 'page' : undefined}
+              className={clientFlow?.step === 3 ? 'active' : ''}
+              aria-current={clientFlow?.step === 3 ? 'page' : undefined}
             >
               <ClientNavIconMark icon="pricing" />
               <small>{t('Pricing')}</small>
@@ -541,10 +522,6 @@ export default function AppShell({
                   <Link href="/app/history">
                     <b>{t('History')}</b>
                     <small>{t('Saved work')}</small>
-                  </Link>
-                  <Link href="/app/grocery">
-                    <b>{t('Grocery')}</b>
-                    <small>{t('Ingredient requirements')}</small>
                   </Link>
                   <Link href="/app/cost">
                     <b>{t('Cost Review')}</b>

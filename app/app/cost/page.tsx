@@ -847,7 +847,7 @@ export default function CostPage() {
   }
 
   return (
-    <AppShell title="Cost" subtitle="Step 4 of 6: review food, manpower and extra costs">
+    <AppShell title="Cost" subtitle="Review meal-wise food cost and guest counts">
       <section className="content-grid">
         <div className="stat-grid">
           <StatCard label="Average Food / Cover" value={money(result.menuCostPerPlate)} note={`Food total ${money(result.menuFoodTotal)}`} />
@@ -1815,9 +1815,9 @@ export default function CostPage() {
           <button
             className="primary-button"
             type="button"
-            onClick={() => router.push('/app/grocery')}
+            onClick={() => router.push('/app/operations')}
           >
-            Next: Grocery & Ingredients
+            Next: Other Costs
           </button>
           <button
             className="ghost-button"
