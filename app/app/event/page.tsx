@@ -6490,9 +6490,14 @@ export default function EventPage() {
             'event menu',
         );
       const key =
-        hasNamedService
-          ? `${dayLabel || 'Event'}::${mealLabel || 'Event Menu'}`
-          : 'event-menu';
+        String(
+          item.serviceId || '',
+        ).trim() ||
+        (
+          hasNamedService
+            ? `${dayLabel || 'Event'}::${mealLabel || 'Event Menu'}`
+            : 'event-menu'
+        );
       const label =
         hasNamedService
           ? [

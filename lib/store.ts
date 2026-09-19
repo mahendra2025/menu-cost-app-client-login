@@ -21,6 +21,11 @@ import {
   calculateManpowerCost,
 } from './manpowerCost';
 
+import {
+  parseMenuDayHeading,
+  parseMenuServiceHeading,
+} from './menuServiceParser';
+
 const CLIENTS_KEY = 'menu_cost_clients_v1';
 
 type DishCatalogModule = typeof import('./dishCostMaster');
@@ -958,32 +963,6 @@ function normalizeMenuHeading(value: string): string {
   return normalizeText(text);
 }
 
-const MEAL_SERVICE_LABELS: Record<string, string> = {
-  breakfast: 'Breakfast',
-  brunch: 'Brunch',
-  lunch: 'Lunch',
-  dinner: 'Dinner',
-  'hi tea': 'Hi Tea',
-  'high tea': 'High Tea',
-  snacks: 'Snacks',
-  'evening snacks': 'Evening Snacks',
-  'morning snacks': 'Morning Snacks',
-  reception: 'Reception',
-  sangeet: 'Sangeet',
-  mehendi: 'Mehendi',
-  haldi: 'Haldi',
-  'wedding dinner': 'Wedding Dinner',
-  'dj night': 'DJ Night',
-  'cocktail dinner': 'Cocktail Dinner',
-  'स्वागत': 'स्वागत',
-  'नाश्ता': 'नाश्ता',
-  'दोपहर का भोजन': 'दोपहर का भोजन',
-  'रात्रि भोजन': 'रात्रि भोजन',
-  'સવારનો નાસ્તો': 'સવારનો નાસ્તો',
-  'બપોરનું ભોજન': 'બપોરનું ભોજન',
-  'રાત્રિ ભોજન': 'રાત્રિ ભોજન',
-};
-
 const COMMON_DISH_ALIASES: Record<
   string,
   string
@@ -1419,6 +1398,13 @@ function isClearlyNonDishText(value: string): boolean {
   const normalized = normalizeMenuHeading(value);
 
   if (!normalized) return true;
+  if (
+    /^(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:\/-)?\s*(?:per\s+plate|\/\s*plate|plate)?$/i.test(
+      value.trim(),
+    )
+  ) {
+    return true;
+  }
   if (NON_DISH_TEXT_PATTERN.test(normalized)) return true;
   if (PROSE_WORD_PATTERN.test(normalized)) return true;
   if (/https?:\/\/|www\.|@\w+\.\w+/.test(value)) return true;
@@ -1470,85 +1456,6 @@ function normalizeOcrMenuText(value: string): string {
     .replace(/\n[ \t]+/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
-}
-
-function parseDayHeading(value: string): string | undefined {
-  const normalized = normalizeMenuHeading(value)
-    .replace(/\b(?:date|menu)\b.*$/i, '')
-    .trim();
-  const match = normalized.match(
-    /^(?:day\s*[-:]?\s*(\d+)|(\d+)(?:st|nd|rd|th)?\s*day)$/i,
-  );
-  const dayNumber = match?.[1] || match?.[2];
-  return dayNumber ? `Day ${dayNumber}` : undefined;
-}
-
-function parseServiceHeading(value: string): {
-  mealLabel: string;
-  servicePax?: number;
-} | null {
-  const rawLabel = cleanServiceLabel(value);
-  const servicePrefixPattern =
-    /^(?:function|meal|service)(?:\s+(?:name|type))?\s*[:\-]\s*/i;
-  const hasExplicitServicePrefix =
-    new RegExp(
-      `^${servicePrefixPattern.source}\\S`,
-      'i',
-    ).test(rawLabel);
-  const cleaned = rawLabel
-    .replace(servicePrefixPattern, '')
-    .trim();
-  const normalized = normalizeMenuHeading(cleaned);
-  const normalizedWithoutMenu =
-    normalized
-      .replace(/\s+menu$/i, '')
-      .trim();
-  const plainMeal =
-    MEAL_SERVICE_LABELS[normalized] ||
-    MEAL_SERVICE_LABELS[
-      normalizedWithoutMenu
-    ];
-
-  if (plainMeal) return { mealLabel: plainMeal };
-
-  const trailingPax = cleaned.match(
-    /^(.*?)\s*(?:[-–—|:]|\()\s*(?:(?:pax|members?|guests?|persons?|people)\s*[:\-]?\s*)?(\d+(?:\.\d+)?)\s*(?:pax|members?|guests?|persons?|people)?\s*\)?\s*$/i,
-  );
-  const leadingPax = cleaned.match(
-    /^(?:pax|members?|guests?|persons?|people)?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(?:pax|members?|guests?|persons?|people)\s*[-–—|:]?\s*(.+)$/i,
-  );
-  const simpleTrailingPax = cleaned.match(
-    /^(.*?)\s+(\d+(?:\.\d+)?)\s*(?:pax|members?|guests?|persons?|people)\s*$/i,
-  );
-  const labelThenPax = cleaned.match(
-    /^(.*?)\s+(?:\d{1,2}(?::\d{2})?\s*(?:am|pm)\.?\s+)?(?:pax|members?|guests?|persons?|people)\s*[:\-]?\s*(\d+(?:\.\d+)?)(?:\s+(?:timing|time)?\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)\.?)?\s*$/i,
-  );
-  const labelSource = trailingPax?.[1] || leadingPax?.[2] || simpleTrailingPax?.[1] || labelThenPax?.[1] || '';
-  const paxSource = trailingPax?.[2] || leadingPax?.[1] || simpleTrailingPax?.[2] || labelThenPax?.[2] || '';
-  const mealKey = normalizeMenuHeading(labelSource);
-  const knownMeal = MEAL_SERVICE_LABELS[mealKey];
-  const servicePax = Math.max(0, Number(paxSource) || 0);
-  const customMealLabel = cleanServiceLabel(labelSource);
-  const customMealWords = normalizeMenuHeading(customMealLabel)
-    .split(' ')
-    .filter(Boolean);
-
-  if (
-    !knownMeal &&
-    !hasExplicitServicePrefix &&
-    (!(servicePax > 0) || !customMealWords.length || customMealWords.length > 7)
-  ) return null;
-
-  if (
-    !knownMeal &&
-    hasExplicitServicePrefix &&
-    (!customMealWords.length || customMealWords.length > 7)
-  ) return null;
-
-  return {
-    mealLabel: knownMeal || customMealLabel,
-    servicePax: servicePax > 0 ? servicePax : undefined,
-  };
 }
 
 function splitMenuText(
@@ -1616,7 +1523,7 @@ function splitMenuText(
         .trim();
     }
 
-    const dayLabel = parseDayHeading(segment);
+    const dayLabel = parseMenuDayHeading(segment);
 
     if (dayLabel) {
       activeCategory = undefined;
@@ -1638,14 +1545,23 @@ function splitMenuText(
       continue;
     }
 
-    const serviceHeading = parseServiceHeading(segment);
+    const serviceHeading = parseMenuServiceHeading(segment);
 
     if (serviceHeading) {
       serviceIndex += 1;
       activeCategory = undefined;
-      activeMealLabel = serviceHeading.mealLabel;
-      activeServicePax = serviceHeading.servicePax;
-      activeServiceId = `service_${serviceIndex}`;
+
+      if (serviceHeading.dayLabel) {
+        activeDayLabel =
+          serviceHeading.dayLabel;
+      }
+
+      activeMealLabel =
+        serviceHeading.mealLabel;
+      activeServicePax =
+        serviceHeading.servicePax;
+      activeServiceId =
+        `service_${serviceIndex}`;
       continue;
     }
 

@@ -110,3 +110,29 @@ test(
     assert.equal(result.newItems[1].servicePax, 150);
   },
 );
+
+
+test(
+  'preserves one detected named meal instead of replacing it with Event Menu',
+  () => {
+    const breakfast: MenuItem = {
+      ...dish('breakfast-poha', 'Poha', 'Breakfast'),
+      serviceId: 'detected_breakfast',
+      servicePax: 120,
+    };
+
+    const result =
+      mergeFunctionMenu({
+        existingMenu: [],
+        detectedMenu: [breakfast],
+        functionName: 'Event Menu',
+        functionPax: 0,
+        defaultPax: 300,
+      });
+
+    assert.equal(result.menu.length, 1);
+    assert.equal(result.newItems[0].mealLabel, 'Breakfast');
+    assert.equal(result.newItems[0].serviceId, 'detected_breakfast');
+    assert.equal(result.newItems[0].servicePax, 120);
+  },
+);
