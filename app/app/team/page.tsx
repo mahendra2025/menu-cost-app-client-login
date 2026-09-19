@@ -4,11 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import {
+  deleteCustomManpowerRole,
   getSession,
+  loadCustomManpowerRoles,
   loadWork,
+  saveCustomManpowerRole,
   saveWork,
+  syncCustomManpowerRoles,
   uid,
 } from '../../../lib/store';
+import type { CustomManpowerRole } from '../../../lib/store';
 import {
   calculateManpowerCost,
   manpowerRawCost,
@@ -186,6 +191,7 @@ function isLegacyGlobalRow(row: ManpowerRow) {
 function buildMealManpowerRows(
   savedRows: ManpowerRow[],
   meals: MealPlan[],
+  savedCustomRoles: CustomManpowerRole[] = [],
 ): ManpowerRow[] {
   const safeRows =
     Array.isArray(
@@ -234,7 +240,7 @@ function buildMealManpowerRows(
         assignedDishIds: meal.dishIds,
       } satisfies ManpowerRow;
     });
-    const customRows = safeRows
+    const eventCustomRows = safeRows
       .filter(isCustomRole)
       .filter(
         (row) =>
@@ -250,8 +256,26 @@ function buildMealManpowerRows(
         servicePax: meal.pax,
         assignedDishIds: row.assignedDishIds || meal.dishIds,
       }));
+    const eventCustomNames = new Set(
+      eventCustomRows.map((row) => normalizeRole(row.role)),
+    );
+    const permanentCustomRows = savedCustomRoles
+      .filter((template) => !eventCustomNames.has(normalizeRole(template.role)))
+      .map((template) => ({
+        id: `${meal.key}::${template.id}`,
+        role: template.role,
+        quantity: 0,
+        rate: template.rate,
+        customRole: true,
+        rateMode: 'PER_MEAL' as const,
+        serviceId: meal.serviceId,
+        dayLabel: meal.dayLabel || undefined,
+        mealLabel: meal.mealLabel,
+        servicePax: meal.pax,
+        assignedDishIds: meal.dishIds,
+      } satisfies ManpowerRow));
 
-    return [...builtInRows, ...customRows];
+    return [...builtInRows, ...eventCustomRows, ...permanentCustomRows];
   });
 }
 
@@ -320,7 +344,19 @@ export default function ManpowerPage() {
 
     const savedWork = loadWork(current.tenantId);
     const meals = buildMealPlans(savedWork);
-    const manpower = buildMealManpowerRows(savedWork.manpower, meals);
+    let customRoles = loadCustomManpowerRoles(current.tenantId);
+
+    savedWork.manpower
+      .filter((row) => row.customRole)
+      .forEach((row) => {
+        customRoles = saveCustomManpowerRole(
+          current.tenantId,
+          row.role,
+          row.rate,
+        );
+      });
+
+    const manpower = buildMealManpowerRows(savedWork.manpower, meals, customRoles);
     const nextWork: WorkState = {
       ...savedWork,
       manpower,
@@ -333,6 +369,31 @@ export default function ManpowerPage() {
 
     setWork(nextWork);
     saveWork(current.tenantId, nextWork);
+
+    void syncCustomManpowerRoles(current.tenantId).then((syncedRoles) => {
+      setWork((latestWork) => {
+        if (!latestWork) return latestWork;
+
+        const latestMeals = buildMealPlans(latestWork);
+        const syncedManpower = buildMealManpowerRows(
+          latestWork.manpower,
+          latestMeals,
+          syncedRoles,
+        );
+        const syncedWork: WorkState = {
+          ...latestWork,
+          manpower: syncedManpower,
+          extras: {
+            ...latestWork.extras,
+            staff: calculateManpowerCost(syncedManpower),
+          },
+          updatedAt: new Date().toISOString(),
+        };
+
+        saveWork(current.tenantId, syncedWork);
+        return syncedWork;
+      });
+    });
   }, [router]);
 
   const meals = useMemo(
@@ -379,6 +440,16 @@ export default function ManpowerPage() {
   function updateRow(id: string, patch: Partial<ManpowerRow>) {
     if (!work) return;
 
+    const currentRow = work.manpower.find((row) => row.id === id);
+    if (
+      session &&
+      currentRow &&
+      isCustomRole(currentRow) &&
+      patch.rate !== undefined
+    ) {
+      saveCustomManpowerRole(session.tenantId, currentRow.role, patch.rate);
+    }
+
     persistRows(
       work.manpower.map((row) =>
         row.id === id ? { ...row, ...patch } : row,
@@ -398,7 +469,7 @@ export default function ManpowerPage() {
   }
 
   function addStaffRole(meal: MealPlan) {
-    if (!work) return;
+    if (!work || !session) return;
 
     const draft = newRoleDrafts[meal.key] || { role: '', rate: '' };
     const role = draft.role.trim().replace(/\s+/g, ' ');
@@ -428,6 +499,7 @@ export default function ManpowerPage() {
       assignedDishIds: meal.dishIds,
     };
 
+    saveCustomManpowerRole(session.tenantId, role, newRow.rate);
     persistRows([...work.manpower, newRow]);
     setNewRoleDrafts((current) => ({
       ...current,
@@ -436,9 +508,16 @@ export default function ManpowerPage() {
     setRoleErrors((current) => ({ ...current, [meal.key]: '' }));
   }
 
-  function removeStaffRole(id: string) {
-    if (!work) return;
-    persistRows(work.manpower.filter((row) => row.id !== id));
+  function removeStaffRole(rowToRemove: ManpowerRow) {
+    if (!work || !session) return;
+
+    deleteCustomManpowerRole(session.tenantId, rowToRemove.role);
+    const normalizedRole = normalizeRole(rowToRemove.role);
+    persistRows(
+      work.manpower.filter(
+        (row) => !(isCustomRole(row) && normalizeRole(row.role) === normalizedRole),
+      ),
+    );
   }
 
   function continueToExpenses() {
@@ -546,10 +625,10 @@ export default function ManpowerPage() {
                               <button
                                 className="manpower-remove-button"
                                 type="button"
-                                onClick={() => removeStaffRole(row.id)}
+                                onClick={() => removeStaffRole(row)}
                                 aria-label={`Remove ${row.role}`}
                               >
-                                Remove
+                                Delete
                               </button>
                             ) : null}
                           </div>
@@ -600,10 +679,10 @@ export default function ManpowerPage() {
                         <button
                           className="manpower-remove-button"
                           type="button"
-                          onClick={() => removeStaffRole(row.id)}
+                          onClick={() => removeStaffRole(row)}
                           aria-label={`Remove ${row.role}`}
                         >
-                          Remove
+                          Delete
                         </button>
                       ) : null}
                     </div>
@@ -655,7 +734,7 @@ export default function ManpowerPage() {
               >
                 <div className="manpower-add-role-copy">
                   <b>Add staff role</b>
-                  <small>Add a custom role for this meal.</small>
+                  <small>Saved for this event and future events.</small>
                 </div>
                 <label className="field">
                   <span>Role name</span>

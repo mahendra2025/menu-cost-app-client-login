@@ -315,6 +315,172 @@ function workKey(tenantId: string): string {
   return `menu_cost_work_${tenantId}_v1`;
 }
 
+function customManpowerRolesKey(tenantId: string): string {
+  return `menu_cost_custom_manpower_roles_${tenantId}_v1`;
+}
+
+export type CustomManpowerRole = {
+  id: string;
+  role: string;
+  rate: number;
+};
+
+function normalizeCustomManpowerRoles(
+  roles: CustomManpowerRole[],
+): CustomManpowerRole[] {
+  const seen = new Set<string>();
+
+  return roles.flatMap((item) => {
+    const role = String(item?.role || '').trim().replace(/\s+/g, ' ');
+    const normalizedRole = role.toLocaleLowerCase('en-IN');
+
+    if (!role || seen.has(normalizedRole)) return [];
+    seen.add(normalizedRole);
+
+    return [{
+      id: String(item?.id || uid('manpower_role')),
+      role,
+      rate: Math.max(0, Number(item?.rate) || 0),
+    }];
+  });
+}
+
+function writeCustomManpowerRoles(
+  tenantId: string,
+  roles: CustomManpowerRole[],
+) {
+  const normalizedRoles = normalizeCustomManpowerRoles(roles);
+
+  window.localStorage.setItem(
+    customManpowerRolesKey(tenantId),
+    JSON.stringify(normalizedRoles),
+  );
+
+  return normalizedRoles;
+}
+
+async function saveCustomManpowerRolesToServer(
+  roles: CustomManpowerRole[],
+) {
+  try {
+    await fetch('/api/client/staff-roles', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roles }),
+    });
+  } catch {
+    // The local tenant copy remains available when offline.
+  }
+}
+
+export function loadCustomManpowerRoles(
+  tenantId: string,
+): CustomManpowerRole[] {
+  if (typeof window === 'undefined') return [];
+
+  const saved = safeJsonParse<CustomManpowerRole[]>(
+    window.localStorage.getItem(customManpowerRolesKey(tenantId)),
+    [],
+  );
+
+  if (!Array.isArray(saved)) return [];
+
+  return normalizeCustomManpowerRoles(saved);
+}
+
+export async function syncCustomManpowerRoles(
+  tenantId: string,
+): Promise<CustomManpowerRole[]> {
+  const localRoles = loadCustomManpowerRoles(tenantId);
+
+  try {
+    const response = await fetch('/api/client/staff-roles', { cache: 'no-store' });
+    if (!response.ok) return localRoles;
+
+    const data = await response.json();
+    if (data.exists) {
+      const serverRoles = normalizeCustomManpowerRoles(
+        Array.isArray(data.roles) ? data.roles : [],
+      );
+      const mergedByName = new Map(
+        serverRoles.map((item) => [item.role.toLocaleLowerCase('en-IN'), item]),
+      );
+      localRoles.forEach((item) => {
+        mergedByName.set(item.role.toLocaleLowerCase('en-IN'), item);
+      });
+      const mergedRoles = writeCustomManpowerRoles(
+        tenantId,
+        Array.from(mergedByName.values()),
+      );
+
+      if (JSON.stringify(mergedRoles) !== JSON.stringify(serverRoles)) {
+        await saveCustomManpowerRolesToServer(mergedRoles);
+      }
+
+      return mergedRoles;
+    }
+
+    if (localRoles.length) {
+      await saveCustomManpowerRolesToServer(localRoles);
+    }
+
+    return localRoles;
+  } catch {
+    return localRoles;
+  }
+}
+
+export function saveCustomManpowerRole(
+  tenantId: string,
+  roleName: string,
+  rate: number,
+): CustomManpowerRole[] {
+  if (typeof window === 'undefined') return [];
+
+  const role = roleName.trim().replace(/\s+/g, ' ');
+  const normalizedRole = role.toLocaleLowerCase('en-IN');
+  const roles = loadCustomManpowerRoles(tenantId);
+  const existing = roles.find(
+    (item) => item.role.toLocaleLowerCase('en-IN') === normalizedRole,
+  );
+  const nextRoles = existing
+    ? roles.map((item) =>
+        item.id === existing.id
+          ? { ...item, role, rate: Math.max(0, Number(rate) || 0) }
+          : item,
+      )
+    : [
+        ...roles,
+        {
+          id: uid('manpower_role'),
+          role,
+          rate: Math.max(0, Number(rate) || 0),
+        },
+      ];
+
+  const savedRoles = writeCustomManpowerRoles(tenantId, nextRoles);
+  void saveCustomManpowerRolesToServer(savedRoles);
+
+  return savedRoles;
+}
+
+export function deleteCustomManpowerRole(
+  tenantId: string,
+  roleName: string,
+): CustomManpowerRole[] {
+  if (typeof window === 'undefined') return [];
+
+  const normalizedRole = roleName.trim().toLocaleLowerCase('en-IN');
+  const nextRoles = loadCustomManpowerRoles(tenantId).filter(
+    (item) => item.role.toLocaleLowerCase('en-IN') !== normalizedRole,
+  );
+
+  const savedRoles = writeCustomManpowerRoles(tenantId, nextRoles);
+  void saveCustomManpowerRolesToServer(savedRoles);
+
+  return savedRoles;
+}
+
 const pendingWorkSaves = new Map<string, WorkState>();
 const workSaveTimers = new Map<string, number>();
 const workSaveIdleCallbacks = new Map<string, number>();
