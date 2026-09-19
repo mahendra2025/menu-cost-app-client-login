@@ -1020,6 +1020,7 @@ export default function AdminDishesPage() {
     setCategoryFilter(category);
     setStatusFilter('ALL');
     setDirty(true);
+    setStructureDirty(true);
   }
 
   function renameCategory(category: string) {
@@ -1416,30 +1417,22 @@ export default function AdminDishesPage() {
         },
       );
 
-      let hasOtherDirtyRows =
-        false;
+      const remainingDirty =
+        new Set(
+          dirtyRowIds,
+        );
+
+      remainingDirty.delete(
+        row.id,
+      );
 
       setDirtyRowIds(
-        (current) => {
-          const next =
-            new Set(
-              current,
-            );
-
-          next.delete(
-            row.id,
-          );
-
-          hasOtherDirtyRows =
-            next.size > 0;
-
-          return next;
-        },
+        remainingDirty,
       );
 
       if (
         !structureDirty &&
-        !hasOtherDirtyRows
+        remainingDirty.size === 0
       ) {
         setDirty(
           false,
@@ -2057,7 +2050,9 @@ async function handleCsvImport(
                       >
                         {rowErrors.has(row.id)
                           ? 'Needs attention'
-                          : 'Ready'}
+                          : dirtyRowIds.has(row.id)
+                            ? 'Unsaved'
+                            : 'Saved'}
                       </span>
                       <button
                         className="dish-row-edit"
@@ -2152,7 +2147,41 @@ async function handleCsvImport(
                       </div>
                     </div>
                   </details>
-                  <button className="admin-dish-delete" type="button" onClick={() => void removeRow(row.id)} aria-label={`Delete ${row.name || 'new dish'}`}>Delete dish + recipe</button>
+                  <div className="dish-row-editor-actions">
+                    <button
+                      className="primary-button"
+                      type="button"
+                      disabled={
+                        savingRowId === row.id ||
+                        !dirtyRowIds.has(row.id) ||
+                        rowErrors.has(row.id)
+                      }
+                      onClick={() =>
+                        void saveDishRow(
+                          row,
+                        )
+                      }
+                    >
+                      {savingRowId === row.id
+                        ? 'Saving Dish…'
+                        : dirtyRowIds.has(row.id)
+                          ? 'Save Dish'
+                          : 'Dish Saved'}
+                    </button>
+
+                    <button
+                      className="admin-dish-delete"
+                      type="button"
+                      onClick={() =>
+                        void removeRow(
+                          row.id,
+                        )
+                      }
+                      aria-label={`Delete ${row.name || 'new dish'}`}
+                    >
+                      Delete dish + recipe
+                    </button>
+                  </div>
                   </div>
                   ) : null}
                   </div>
