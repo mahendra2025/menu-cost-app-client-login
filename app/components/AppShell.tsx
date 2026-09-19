@@ -51,6 +51,7 @@ const adminNav = [
   { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish catalog and rates', icon: 'dishes' as NavIcon },
   { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients and recipe costing', icon: 'dishes' as NavIcon },
   { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Categories and rates', icon: 'ingredients' as NavIcon },
+  { href: '/admin/gas', label: 'Gas Cost', mobileLabel: 'Gas', description: 'LPG settings and category usage', icon: 'ingredients' as NavIcon },
   { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Workspace settings', icon: 'profile' as NavIcon },
 ];
 
@@ -185,10 +186,15 @@ export default function AppShell({
   const isIngredientWorkspace =
     pathname === '/admin/ingredients' ||
     pathname.startsWith('/admin/ingredients/');
+  const isGasWorkspace =
+    pathname === '/admin/gas' ||
+    pathname.startsWith('/admin/gas/') ||
+    pathname.startsWith('/admin/settings/cost-masters/lpg');
   const isAdminNavItemActive = (href: string) =>
     pathname === href ||
     (href === '/admin/dishes' && isDishWorkspace) ||
-    (href === '/admin/ingredients' && isIngredientWorkspace);
+    (href === '/admin/ingredients' && isIngredientWorkspace) ||
+    (href === '/admin/gas' && isGasWorkspace);
 
   const clientFlow =
     !isAdmin
