@@ -32,6 +32,11 @@ import {
 import {
   calculateDisposableCost,
 } from '../../../lib/disposableCost';
+import {
+  calculateEventGas,
+  defaultGasCostMaster,
+  type GasCostMaster,
+} from '../../../lib/gasCost';
 
 type SavedQuotation =
   ClientQuotationData & {
@@ -190,6 +195,15 @@ export default function QuotationPage() {
     setGroceryRates,
   ] =
     useState<GroceryIngredientRate[]>([]);
+
+  const [
+    gasMaster,
+    setGasMaster,
+  ] =
+    useState<GasCostMaster>(
+      () =>
+        defaultGasCostMaster(),
+    );
 
   const [
     detailsLoading,
@@ -382,6 +396,7 @@ export default function QuotationPage() {
       const [
         recipeResponse,
         ingredientResponse,
+        gasResponse,
       ] =
         await Promise.all([
           fetch(
@@ -409,16 +424,25 @@ export default function QuotationPage() {
               cache: 'no-store',
             },
           ),
+          fetch(
+            '/api/client/gas-cost',
+            {
+              cache: 'no-store',
+            },
+          ),
         ]);
 
       const recipeData =
         await recipeResponse.json();
       const ingredientData =
         await ingredientResponse.json();
+      const gasData =
+        await gasResponse.json();
 
       if (
         !recipeResponse.ok ||
-        !ingredientResponse.ok
+        !ingredientResponse.ok ||
+        !gasResponse.ok
       ) {
         throw new Error(
           'Some grocery details could not be loaded.',
@@ -440,9 +464,16 @@ export default function QuotationPage() {
           ? ingredientData.rates
           : [],
       );
+
+      setGasMaster(
+        gasData as GasCostMaster,
+      );
     } catch {
       setGroceryRecipes([]);
       setGroceryRates([]);
+      setGasMaster(
+        defaultGasCostMaster(),
+      );
       setDetailsWarning(
         'Grocery quantities are unavailable for some dishes because recipe data could not be loaded.',
       );
@@ -575,6 +606,21 @@ export default function QuotationPage() {
         work,
         groceryRecipes,
         groceryRates,
+      ],
+    );
+
+  const gasBreakdown =
+    useMemo(
+      () =>
+        work
+          ? calculateEventGas(
+              work,
+              gasMaster,
+            )
+          : null,
+      [
+        work,
+        gasMaster,
       ],
     );
 
@@ -857,6 +903,7 @@ export default function QuotationPage() {
       downloadInternalEventCostingPdf(
         work,
         groceryPlan,
+        gasBreakdown,
       );
     } catch {
       setError(
