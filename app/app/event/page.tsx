@@ -5340,8 +5340,8 @@ export default function EventPage() {
         },
       );
 
-      // Full navigation prevents the next page from getting stuck.
-      window.location.assign('/app/grocery');
+      // Continue directly to cost review.
+      window.location.assign('/app/cost');
     } catch (saveError) {
       console.error(
         'Detected menu save failed:',
