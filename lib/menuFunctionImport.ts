@@ -56,8 +56,29 @@ export function mergeFunctionMenu({
       ),
     ).size;
 
+  const hasNamedDetectedService =
+    detectedMenu.some((item) => {
+      const dayLabel =
+        normalizeIdentityPart(
+          item.dayLabel || '',
+        );
+      const mealLabel =
+        normalizeIdentityPart(
+          item.mealLabel || '',
+        );
+
+      return (
+        Boolean(dayLabel) ||
+        (
+          Boolean(mealLabel) &&
+          mealLabel !== 'event menu'
+        )
+      );
+    });
+
   const preserveDetectedServices =
-    detectedServiceCount > 1;
+    detectedServiceCount > 1 ||
+    hasNamedDetectedService;
 
   const importedMenu =
     detectedMenu.map((item) => {
