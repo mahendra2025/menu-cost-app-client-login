@@ -196,6 +196,32 @@ function splitLeadingDay(
   };
 }
 
+function removeCommercialDecoration(
+  value: string,
+  hasPax: boolean,
+): string {
+  let cleaned = value
+    .replace(
+      /\b(?:rate|price)\s*[:\-]?\s*(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?(?:\s*(?:per|\/)\s*(?:plate|pax|person))?/gi,
+      ' ',
+    )
+    .replace(
+      /\s*(?:@|[-–—])?\s*(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:per\s+plate|\/\s*plate|plate)\s*$/i,
+      ' ',
+    );
+
+  if (hasPax) {
+    cleaned = cleaned.replace(
+      /\s+(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:\/-)?\s*$/i,
+      ' ',
+    );
+  }
+
+  return cleaned
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function removeTimeDecoration(
   value: string,
 ): string {
@@ -292,8 +318,13 @@ export function parseMenuServiceHeading(
   const pax =
     extractPax(label);
   label =
-    removeTimeDecoration(
-      pax.label,
+    removeCommercialDecoration(
+      removeTimeDecoration(
+        pax.label,
+      ),
+      Boolean(
+        pax.servicePax,
+      ),
     )
       .replace(
         /\s+menu\s*$/i,
