@@ -19,6 +19,7 @@
     "lib/detectionBenchmark.ts",
     "lib/pdfMenuExtraction.ts",
     "lib/operationsCost.ts",
+    "lib/gasCost.ts",
     "lib/disposableCost.ts",
     "lib/unknownDishQueue.ts",
     "lib/dishAliasLearning.ts",
