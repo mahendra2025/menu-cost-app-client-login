@@ -24,7 +24,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return { step: 1, label: 'Event & Menu' };
   }
 
-  if (pathname === '/app/manpower') {
+  if (pathname === '/app/team') {
     return { step: 2, label: 'Team' };
   }
 
@@ -465,7 +465,7 @@ export default function AppShell({
             </Link>
 
             <a
-              href="/app/manpower"
+              href="/app/team"
               className={clientFlow?.step === 2 ? 'active' : ''}
               aria-current={clientFlow?.step === 2 ? 'page' : undefined}
             >
@@ -546,7 +546,7 @@ export default function AppShell({
                     <b>{t('Cost Review')}</b>
                     <small>{t('Dish costs')}</small>
                   </Link>
-                  <a href="/app/manpower">
+                  <a href="/app/team">
                     <b>{t('Manpower')}</b>
                     <small>{t('Meal-wise staff cost')}</small>
                   </a>
