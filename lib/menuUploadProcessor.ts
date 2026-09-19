@@ -928,6 +928,57 @@ export async function extractMenuPhoto(
     let recognitionPass =
       'Reading improved menu photo';
 
+    type PhotoOcrCandidate = {
+      text: string;
+      confidence: number;
+      label: string;
+    };
+
+    const candidates:
+      PhotoOcrCandidate[] = [];
+
+    const usefulCharacterCount = (
+      value: string,
+    ) =>
+      value.match(
+        /[\p{L}\p{N}]/gu,
+      )?.length ?? 0;
+
+    const pushCandidate = (
+      label: string,
+      result: {
+        data: {
+          text: string;
+          confidence: number;
+        };
+      },
+    ) => {
+      const text =
+        String(
+          result.data.text ||
+          '',
+        )
+          .replace(
+            /\u0000/g,
+            '',
+          )
+          .trim();
+
+      if (!text) {
+        return;
+      }
+
+      candidates.push({
+        text,
+        confidence:
+          Number(
+            result.data
+              .confidence,
+          ) || 0,
+        label,
+      });
+    };
+
     try {
       const options = {
         logger: (
@@ -997,6 +1048,11 @@ export async function extractMenuPhoto(
             },
           );
 
+      pushCandidate(
+        'enhanced sparse',
+        enhancedResult,
+      );
+
       recognitionPass =
         'Checking original photo';
 
@@ -1017,74 +1073,190 @@ export async function extractMenuPhoto(
             },
           );
 
+      pushCandidate(
+        'original auto',
+        originalResult,
+      );
+
+      const bestUsefulCharacters =
+        Math.max(
+          0,
+          ...candidates.map(
+            (candidate) =>
+              usefulCharacterCount(
+                candidate.text,
+              ),
+          ),
+        );
+
+      /*
+       * Some phone photos have decorative backgrounds,
+       * tightly packed columns, or auto-rotation that
+       * causes AUTO/SPARSE_TEXT to return an empty result.
+       *
+       * Retry only when the first two passes found almost
+       * no text so normal uploads stay fast.
+       */
+      if (
+        bestUsefulCharacters <
+        12
+      ) {
+        recognitionPass =
+          'Retrying photo with block text recognition';
+
+        onStatus(
+          'Trying another photo reading method...',
+        );
+
+        await worker
+          .setParameters({
+            tessedit_pageseg_mode:
+              PSM
+                .SINGLE_BLOCK,
+
+            preserve_interword_spaces:
+              '1',
+
+            user_defined_dpi:
+              '220',
+          });
+
+        const blockResult =
+          await worker
+            .recognize(
+              prepared
+                .enhanced,
+              {
+                rotateAuto:
+                  false,
+              },
+            );
+
+        pushCandidate(
+          'enhanced block',
+          blockResult,
+        );
+      }
+
+      const usefulAfterBlock =
+        Math.max(
+          0,
+          ...candidates.map(
+            (candidate) =>
+              usefulCharacterCount(
+                candidate.text,
+              ),
+          ),
+        );
+
+      if (
+        usefulAfterBlock <
+        12
+      ) {
+        recognitionPass =
+          'Retrying original photo without auto rotation';
+
+        await worker
+          .setParameters({
+            tessedit_pageseg_mode:
+              PSM
+                .SPARSE_TEXT,
+
+            preserve_interword_spaces:
+              '1',
+
+            user_defined_dpi:
+              '220',
+          });
+
+        const noRotationResult =
+          await worker
+            .recognize(
+              prepared
+                .original,
+              {
+                rotateAuto:
+                  false,
+              },
+            );
+
+        pushCandidate(
+          'original sparse no rotation',
+          noRotationResult,
+        );
+      }
+
+      if (
+        !candidates.length
+      ) {
+        throw new Error(
+          'Menu photo could not be read. Try another photo with the full menu visible and clear text.',
+        );
+      }
+
       onStatus(
         'Validating detected dishes against the catalog...',
       );
 
-      const [
-        enhancedBoost,
-        originalBoost,
-      ] =
-        await Promise.all([
-          catalogBoost
-            ? catalogBoost(
-                enhancedResult
-                  .data
-                  .text,
-              )
-            : Promise.resolve(
-                0,
-              ),
+      const scored =
+        await Promise.all(
+          candidates.map(
+            async (
+              candidate,
+            ) => {
+              const boost =
+                catalogBoost
+                  ? await catalogBoost(
+                      candidate.text,
+                    )
+                  : 0;
 
-          catalogBoost
-            ? catalogBoost(
-                originalResult
-                  .data
-                  .text,
-              )
-            : Promise.resolve(
-                0,
-              ),
-        ]);
-
-      const enhancedScore =
-        enhancedBoost +
-        ocrResultScore(
-          enhancedResult
-            .data
-            .text,
-
-          enhancedResult
-            .data
-            .confidence,
+              return {
+                ...candidate,
+                score:
+                  boost +
+                  ocrResultScore(
+                    candidate.text,
+                    candidate.confidence,
+                  ),
+              };
+            },
+          ),
         );
 
-      const originalScore =
-        originalBoost +
-        ocrResultScore(
-          originalResult
-            .data
-            .text,
+      scored.sort(
+        (left, right) =>
+          right.score -
+          left.score,
+      );
 
-          originalResult
-            .data
-            .confidence,
+      const best =
+        scored[0];
+
+      if (
+        !best ||
+        usefulCharacterCount(
+          best.text,
+        ) < 4
+      ) {
+        throw new Error(
+          'Menu photo could not be read. Try another photo with the full menu visible and clear text.',
         );
-
-      const bestResult =
-        originalScore >
-        enhancedScore
-          ? originalResult
-          : enhancedResult;
+      }
 
       return {
         text:
-          bestResult
-            .data
-            .text,
+          best.text,
 
         sourceLabel:
-          'Menu photo',
+          best.label.includes(
+            'block',
+          ) ||
+          best.label.includes(
+            'no rotation',
+          )
+            ? 'Menu photo (enhanced OCR)'
+            : 'Menu photo',
       };
 
     } finally {
