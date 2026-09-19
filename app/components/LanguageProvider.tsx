@@ -257,7 +257,6 @@ const fullAppHindi: Record<string, string> = {
   'No problems left': 'कोई समस्या बाकी नहीं',
   'Ready to continue': 'आगे बढ़ने के लिए तैयार',
   'Ready to save': 'सेव करने के लिए तैयार',
-  'Continue to Dish Review': 'व्यंजन जाँच पर जाएँ',
   'Continue to Manpower': 'स्टाफ़ पर जाएँ',
   'Add Selected & Continue to Manpower': 'चुने हुए जोड़ें और स्टाफ़ पर जाएँ',
   'Next: Manpower': 'अगला: स्टाफ़',
