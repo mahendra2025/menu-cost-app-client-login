@@ -38,6 +38,18 @@ test('detects meal heading with guest count', () => {
   );
 });
 
+
+test('ignores per-plate rate after guest count', () => {
+  assert.deepEqual(
+    parseMenuServiceHeading('Breakfast - 22 Members - 200 per plate'),
+    {
+      dayLabel: undefined,
+      mealLabel: 'Breakfast',
+      servicePax: 22,
+    },
+  );
+});
+
 test('ignores meal timing when detecting heading', () => {
   assert.deepEqual(
     parseMenuServiceHeading('Breakfast - 8:00 AM'),
