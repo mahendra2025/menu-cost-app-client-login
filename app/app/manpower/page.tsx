@@ -73,9 +73,11 @@ function normalizePart(value: unknown) {
 function buildMealPlans(work: WorkState): MealPlan[] {
   const meals = new Map<string, MealPlan>();
   const fallbackMealLabel =
-    normalizePart(
-      work.event.functionType,
-    ) || 'event menu';
+    String(
+      work.event.functionType ||
+      '',
+    ).trim() ||
+    'Event Menu';
   const fallbackPax = Math.max(0, Number(work.event.pax) || 0);
   const menu = Array.isArray(work.menu) ? work.menu : [];
 
