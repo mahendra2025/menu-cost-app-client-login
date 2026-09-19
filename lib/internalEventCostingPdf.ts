@@ -697,36 +697,36 @@ export function downloadInternalEventCostingPdf(
     },
     columnStyles: {
       0: {
-        cellWidth: 31,
+        cellWidth: 28,
       },
       1: {
-        cellWidth: 39,
+        cellWidth: 35,
       },
       2: {
-        cellWidth: 22,
+        cellWidth: 20,
       },
       3: {
-        cellWidth: 25,
+        cellWidth: 23,
         halign:
           'right',
       },
       4: {
-        cellWidth: 16,
-        halign:
-          'right',
-      },
-      5: {
-        cellWidth: 26,
-        halign:
-          'right',
-      },
-      6: {
         cellWidth: 14,
         halign:
           'right',
       },
+      5: {
+        cellWidth: 24,
+        halign:
+          'right',
+      },
+      6: {
+        cellWidth: 13,
+        halign:
+          'right',
+      },
       7: {
-        cellWidth: 26,
+        cellWidth: 23,
         halign:
           'right',
       },
