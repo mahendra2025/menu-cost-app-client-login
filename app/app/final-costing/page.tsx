@@ -160,7 +160,7 @@ export default function FinalCostingPage() {
             <span className="page-eyebrow">Selling price engine</span>
             <h2>{priceReady ? 'Your selling price is ready' : 'Finish cost details before pricing'}</h2>
             <p>
-              Food, manpower, LPG, transport and plastic/disposable cost form the real event cost before markup or gross margin.
+              Food, LPG, transport and plastic/disposable cost form the event cost before markup or gross margin.
             </p>
           </div>
           <div className="final-costing-overview-total">
