@@ -1487,7 +1487,12 @@ function parseServiceHeading(value: string): {
   mealLabel: string;
   servicePax?: number;
 } | null {
-  const cleaned = cleanServiceLabel(value)
+  const rawLabel = cleanServiceLabel(value);
+  const hasExplicitServicePrefix =
+    /^(?:function|meal|service)\s*[:\-]\s*\S/i.test(
+      rawLabel,
+    );
+  const cleaned = rawLabel
     .replace(/^(?:function|meal|service)\s*[:\-]\s*/i, '')
     .trim();
   const normalized = normalizeMenuHeading(cleaned);
@@ -1519,7 +1524,14 @@ function parseServiceHeading(value: string): {
 
   if (
     !knownMeal &&
+    !hasExplicitServicePrefix &&
     (!(servicePax > 0) || !customMealWords.length || customMealWords.length > 7)
+  ) return null;
+
+  if (
+    !knownMeal &&
+    hasExplicitServicePrefix &&
+    (!customMealWords.length || customMealWords.length > 7)
   ) return null;
 
   return {
