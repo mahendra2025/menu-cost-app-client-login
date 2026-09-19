@@ -18233,7 +18233,7 @@ body.client-sheet-open {
 
   .client-flow-progress-track {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 5px;
   }
 
@@ -18254,7 +18254,7 @@ body.client-sheet-open {
     left: 0;
     z-index: 110;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     min-height: var(--client-mobile-nav-height);
     padding:
       7px 8px
