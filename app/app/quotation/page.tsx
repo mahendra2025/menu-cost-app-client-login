@@ -635,6 +635,13 @@ export default function QuotationPage() {
       return null;
     }
 
+    if (detailsLoading) {
+      setError(
+        'Please wait while complete event details finish loading.',
+      );
+      return null;
+    }
+
     setSaving(true);
     setMessage('');
     setError('');
@@ -943,7 +950,7 @@ export default function QuotationPage() {
 
   return (
     <AppShell
-      title="Client Quotation"
+      title="Complete Event Quotation"
       subtitle="Create a complete A-to-Z event quotation with menu, grocery, manpower and execution details"
     >
       <section className="quote-page">
@@ -1785,14 +1792,19 @@ export default function QuotationPage() {
             <button
               className="secondary-button"
               type="button"
-              disabled={pdfBusy}
+              disabled={
+                pdfBusy ||
+                detailsLoading
+              }
               onClick={() =>
                 void downloadPdf()
               }
             >
               {pdfBusy
                 ? 'Preparing PDF…'
-                : 'Download Complete Event PDF'}
+                : detailsLoading
+                  ? 'Loading Event Details…'
+                  : 'Download Complete Event PDF'}
             </button>
 
             <button
