@@ -72,13 +72,30 @@ function normalizePart(value: unknown) {
 
 function buildMealPlans(work: WorkState): MealPlan[] {
   const meals = new Map<string, MealPlan>();
-  const fallbackMealLabel = work.event.functionType?.trim() || 'Event Menu';
+  const fallbackMealLabel =
+    normalizePart(
+      work.event.functionType,
+    ) || 'event menu';
   const fallbackPax = Math.max(0, Number(work.event.pax) || 0);
+  const menu = Array.isArray(work.menu) ? work.menu : [];
 
-  work.menu.forEach((dish) => {
-    const serviceId = dish.serviceId?.trim() || undefined;
-    const dayLabel = dish.dayLabel?.trim() || '';
-    const mealLabel = dish.mealLabel?.trim() || fallbackMealLabel;
+  menu.forEach((dish) => {
+    const rawServiceId =
+      String(
+        dish.serviceId || '',
+      ).trim();
+    const serviceId =
+      rawServiceId || undefined;
+    const dayLabel =
+      String(
+        dish.dayLabel || '',
+      ).trim();
+    const mealLabel =
+      String(
+        dish.mealLabel ||
+        fallbackMealLabel,
+      ).trim() ||
+      'Event Menu';
     const pax = Math.max(0, Number(dish.servicePax) || fallbackPax);
     const key = serviceId
       ? `service:${serviceId}`
@@ -117,10 +134,17 @@ function buildMealPlans(work: WorkState): MealPlan[] {
 }
 
 function rowBelongsToMeal(row: ManpowerRow, meal: MealPlan) {
-  const rowServiceId = row.serviceId?.trim();
+  const rowServiceId =
+    normalizePart(
+      row.serviceId,
+    );
+  const mealServiceId =
+    normalizePart(
+      meal.serviceId,
+    );
 
-  if (rowServiceId && meal.serviceId) {
-    return rowServiceId === meal.serviceId;
+  if (rowServiceId && mealServiceId) {
+    return rowServiceId === mealServiceId;
   }
 
   return (
@@ -131,9 +155,15 @@ function rowBelongsToMeal(row: ManpowerRow, meal: MealPlan) {
 
 function isLegacyGlobalRow(row: ManpowerRow) {
   return !(
-    row.serviceId?.trim() ||
-    row.dayLabel?.trim() ||
-    row.mealLabel?.trim()
+    normalizePart(
+      row.serviceId,
+    ) ||
+    normalizePart(
+      row.dayLabel,
+    ) ||
+    normalizePart(
+      row.mealLabel,
+    )
   );
 }
 
@@ -141,10 +171,17 @@ function buildMealManpowerRows(
   savedRows: ManpowerRow[],
   meals: MealPlan[],
 ): ManpowerRow[] {
+  const safeRows =
+    Array.isArray(
+      savedRows,
+    )
+      ? savedRows
+      : [];
+
   return meals.flatMap((meal, mealIndex) =>
     MANPOWER_ROLES.map((template) => {
       const aliases = new Set(template.aliases.map(normalizeRole));
-      const roleMatches = savedRows.filter((row) =>
+      const roleMatches = safeRows.filter((row) =>
         aliases.has(normalizeRole(row.role)),
       );
       const scopedMatches = roleMatches.filter((row) =>
@@ -325,7 +362,7 @@ export default function ManpowerPage() {
       updatedAt: new Date().toISOString(),
     });
 
-    router.push('/app/operations');
+    window.location.assign('/app/operations');
   }
 
   if (!work) {
@@ -507,7 +544,7 @@ export default function ManpowerPage() {
           <button
             className="ghost-button"
             type="button"
-            onClick={() => router.push('/app/cost')}
+            onClick={() => window.location.assign('/app/cost')}
           >
             Back to Food Cost
           </button>
