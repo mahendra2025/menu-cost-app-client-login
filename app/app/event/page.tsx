@@ -4548,7 +4548,17 @@ export default function EventPage() {
             },
             body: JSON.stringify({
               dishes: detectedMenu
-                .filter((item) => !(Number(item.costPerPlate) > 0))
+                .filter(
+                  (item) =>
+                    !pendingMenuIds.has(
+                      item.id,
+                    ) &&
+                    !(
+                      Number(
+                        item.costPerPlate,
+                      ) > 0
+                    ),
+                )
                 .map((item) => ({
                   name: item.name,
                   category: item.category,
@@ -4996,6 +5006,76 @@ export default function EventPage() {
     }
   }
 
+  function setDetectedManualRate(
+    itemId: string,
+    rawValue: string,
+  ) {
+    const rate =
+      Math.max(
+        0,
+        Number(rawValue) || 0,
+      );
+
+    setDetectionPreview(
+      (current) =>
+        current
+          ? {
+              ...current,
+              menu:
+                current.menu.map(
+                  (item) =>
+                    item.id ===
+                    itemId
+                      ? {
+                          ...item,
+                          costPerPlate:
+                            rate,
+                          costSource:
+                            rate > 0
+                              ? 'manual'
+                              : 'manual',
+                          coverageStatus:
+                            rate > 0
+                              ? 'COSTED'
+                              : 'NEW_DISH_PENDING',
+                          costQualityStatus:
+                            rate > 0
+                              ? 'READY'
+                              : undefined,
+                          costConfidence:
+                            rate > 0
+                              ? 100
+                              : 0,
+                          rateCoveragePercent:
+                            rate > 0
+                              ? 100
+                              : 0,
+                          coverageReason:
+                            rate > 0
+                              ? 'Manual rate entered by user'
+                              : 'Manual rate required',
+                          costApprovalStatus:
+                            rate > 0
+                              ? 'APPROVED'
+                              : 'PENDING',
+                          costApprovedAt:
+                            rate > 0
+                              ? new Date().toISOString()
+                              : undefined,
+                          costApprovalReason:
+                            rate > 0
+                              ? 'User manually entered and accepted this rate'
+                              : 'Manual rate required',
+                        }
+                      : item,
+                ),
+            }
+          : current,
+    );
+
+    setError('');
+  }
+
   async function applyDetectionPreview(
     mode: 'replace' | 'merge',
     skipReview = false,
@@ -5010,7 +5090,11 @@ export default function EventPage() {
 
     const selectedMenu =
       skipReview
-        ? detectionPreview.menu
+        ? detectionPreview.menu.filter(
+            (item) =>
+              item.coverageStatus !==
+              'REJECTED',
+          )
         : detectionPreview.menu.filter(
             (item) =>
               selectedPreviewIds.has(
@@ -5021,6 +5105,26 @@ export default function EventPage() {
     if (!selectedMenu.length) {
       setError(
         'Select at least one detected dish before continuing.',
+      );
+      return;
+    }
+
+    const missingManualRates =
+      selectedMenu.filter(
+        (item) =>
+          manualRateIds.has(
+            item.id,
+          ) &&
+          !(
+            Number(
+              item.costPerPlate,
+            ) > 0
+          ),
+      );
+
+    if (missingManualRates.length) {
+      setError(
+        `Enter a manual ₹/plate rate for ${missingManualRates.length} dish${missingManualRates.length === 1 ? '' : 'es'} not found in Dish Master.`,
       );
       return;
     }
@@ -6540,6 +6644,23 @@ export default function EventPage() {
       0,
     );
 
+  const simpleMissingManualRateCount =
+    (
+      detectionPreview?.menu || []
+    ).filter(
+      (item) =>
+        item.coverageStatus !==
+          'REJECTED' &&
+        manualRateIds.has(
+          item.id,
+        ) &&
+        !(
+          Number(
+            item.costPerPlate,
+          ) > 0
+        ),
+    ).length;
+
   const showSimpleDetectedGroupHeadings =
     simpleDetectedGroups.length > 1 ||
     simpleDetectedGroups.some(
@@ -7038,25 +7159,60 @@ export default function EventPage() {
 
                           <div className="simple-detected-dish-list">
                             {group.items.map(
-                              (item, index) => (
-                                <div
-                                  className="simple-detected-dish"
-                                  key={item.id}
-                                >
-                                  <span className="simple-detected-dish-number">
-                                    {index + 1}
-                                  </span>
+                              (item, index) => {
+                                const needsManualRate =
+                                  manualRateIds.has(
+                                    item.id,
+                                  );
 
-                                  <div>
-                                    <b>{item.name}</b>
-                                    <small>{item.category || 'Other'}</small>
+                                return (
+                                  <div
+                                    className={`simple-detected-dish${needsManualRate ? ' needs-manual-rate' : ''}`}
+                                    key={item.id}
+                                  >
+                                    <span className="simple-detected-dish-number">
+                                      {index + 1}
+                                    </span>
+
+                                    <div className="simple-detected-dish-copy">
+                                      <b>{item.name}</b>
+                                      <small>{item.category || 'Other'}</small>
+
+                                      {needsManualRate ? (
+                                        <span className="simple-detected-unmatched">
+                                          {t('Not in Dish Master')}
+                                        </span>
+                                      ) : null}
+                                    </div>
+
+                                    {needsManualRate ? (
+                                      <label className="simple-detected-rate">
+                                        <span>₹</span>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          step="0.01"
+                                          inputMode="decimal"
+                                          value={item.costPerPlate || ''}
+                                          onChange={(event) =>
+                                            setDetectedManualRate(
+                                              item.id,
+                                              event.target.value,
+                                            )
+                                          }
+                                          aria-label={`Manual rate for ${item.name}`}
+                                          placeholder={t('Enter rate')}
+                                        />
+                                        <small>{t('per plate')}</small>
+                                      </label>
+                                    ) : (
+                                      <span className="simple-detected-check" aria-hidden="true">
+                                        ✓
+                                      </span>
+                                    )}
                                   </div>
-
-                                  <span className="simple-detected-check" aria-hidden="true">
-                                    ✓
-                                  </span>
-                                </div>
-                              ),
+                                );
+                              },
                             )}
                           </div>
                         </section>
@@ -7064,10 +7220,26 @@ export default function EventPage() {
                     )}
                   </div>
 
+                  {simpleMissingManualRateCount > 0 ? (
+                    <div className="simple-detected-rate-notice" role="status">
+                      <b>
+                        {simpleMissingManualRateCount}{' '}
+                        {simpleMissingManualRateCount === 1
+                          ? t('dish needs a manual rate')
+                          : t('dishes need manual rates')}
+                      </b>
+                      <span>{t('Enter ₹/plate for dishes not found in Dish Master.')}</span>
+                    </div>
+                  ) : null}
+
                   <button
                     className="primary-button simple-detected-done"
                     type="button"
-                    disabled={!detectionPreview.menu.length || detecting}
+                    disabled={
+                      !detectionPreview.menu.length ||
+                      detecting ||
+                      simpleMissingManualRateCount > 0
+                    }
                     onClick={() =>
                       void applyDetectionPreview(
                         work.menu.length > 0
