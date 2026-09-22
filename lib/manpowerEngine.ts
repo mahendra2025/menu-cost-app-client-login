@@ -385,7 +385,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
 
   const farsanCount = countByCategory(menu, ['farsan']);
   const farsanCooks = farsanCount > 0
-    ? Math.max(1, ceilRatio(guests, rules.beverageGuestsPerStaff) + Math.floor(Math.max(0, farsanCount - 1) / 3))
+    ? Math.max(
+        1,
+        ceilRatio(guests, rules.farsanGuestsPerCook) +
+          Math.floor(Math.max(0, farsanCount - 1) / rules.farsanDishesPerExtraCook),
+      )
     : 0;
   recommendations.set('farsan_cook', {
     quantity: farsanCooks,
@@ -488,8 +492,12 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   recommendations.set('loading_helper', {
-    quantity: guests >= 150 ? Math.max(1, ceilRatio(guests, rules.beverageGuestsPerStaff)) : 0,
-    reason: guests >= 150 ? `1 loading/unloading helper per 250 guests` : 'Small equipment load',
+    quantity: guests >= rules.loadingMinGuests
+      ? Math.max(1, ceilRatio(guests, rules.loadingGuestsPerHelper))
+      : 0,
+    reason: guests >= rules.loadingMinGuests
+      ? `1 loading/unloading helper per ${rules.loadingGuestsPerHelper} guests`
+      : 'Small equipment load',
   });
 
   const autoCoreTotal = Array.from(recommendations.values()).reduce(
