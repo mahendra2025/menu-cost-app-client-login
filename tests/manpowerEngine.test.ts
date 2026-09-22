@@ -71,12 +71,15 @@ test('premium buffet increases waiter recommendation', () => {
   assert.equal(result.find((row) => row.role === 'Waiter')?.quantity, 35);
 });
 
-test('bread section uses guests plus bread variety workload', () => {
+test('chef manpower uses one dish = one chef by category', () => {
   const result = rows();
 
-  assert.equal(result.find((row) => row.role === 'Bread Cook')?.quantity, 5);
-  assert.equal(result.find((row) => row.role === 'Bread Helper')?.quantity, 3);
-  assert.ok((result.find((row) => row.role === 'Chaat Cook')?.quantity ?? 0) > 0);
+  assert.equal(result.find((row) => row.role === 'Bread Cook')?.quantity, 3);
+  assert.equal(result.find((row) => row.role === 'Bread Helper')?.quantity, 2);
+  assert.equal(result.find((row) => row.role === 'Chaat Cook')?.quantity, 1);
+  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.quantity, 2);
+  assert.equal(result.find((row) => row.role === 'Farsan Cook')?.quantity, 1);
+  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.quantity, 4);
 });
 
 test('manual quantity override survives automatic recalculation', () => {
@@ -120,19 +123,20 @@ test('utility manpower changes with crockery and outdoor venue settings', () => 
 });
 
 
-test('admin manpower rules change automatic recommendations', () => {
+test('admin manpower rules change service and chef dish ratio', () => {
   const result = rows({
     rules: {
       standardBuffetGuestsPerWaiter: 35,
-      chaatGuestsPerCook: 175,
-      breadGuestsPerCook: 250,
+      chefDishesPerCook: 2,
       standardGuestsPerDishwasher: 200,
     },
   });
 
   assert.equal(result.find((row) => row.role === 'Waiter')?.quantity, 20);
-  assert.equal(result.find((row) => row.role === 'Chaat Cook')?.quantity, 4);
-  assert.equal(result.find((row) => row.role === 'Bread Cook')?.quantity, 4);
+  assert.equal(result.find((row) => row.role === 'Chaat Cook')?.quantity, 1);
+  assert.equal(result.find((row) => row.role === 'Bread Cook')?.quantity, 2);
+  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.quantity, 1);
+  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.quantity, 2);
   assert.equal(result.find((row) => row.role === 'Dishwasher')?.quantity, 4);
 });
 
@@ -160,4 +164,51 @@ test('manual override still wins after admin master changes', () => {
   assert.equal(waiter?.recommendedQuantity, 20);
   assert.equal(waiter?.quantity, 28);
   assert.equal(waiter?.manualOverride, true);
+});
+
+
+test('starter and soup each get one chef per dish while non-cooking categories get no chef', () => {
+  const customMenu: MenuItem[] = [
+    dish('starter_1', 'Paneer Tikka', 'Starter'),
+    dish('starter_2', 'Hara Bhara Kabab', 'Starter'),
+    dish('soup_1', 'Tomato Soup', 'Soup'),
+    dish('soup_2', 'Manchow Soup', 'Soup'),
+    dish('drink_1', 'Fruit Punch', 'Welcome Drink'),
+    dish('salad_1', 'Green Salad', 'Salad'),
+    dish('fruit_1', 'Cut Fruit', 'Fruit'),
+    dish('papad_1', 'Papad', 'Papad'),
+  ];
+
+  const result = generateMealManpowerRows({
+    mealKey: 'service:lunch',
+    menu: customMenu,
+    guests: 300,
+    serviceStyle: 'BUFFET',
+    serviceId: 'lunch',
+    mealLabel: 'Lunch',
+  });
+
+  assert.equal(result.find((row) => row.role === 'Starter Cook')?.quantity, 2);
+  assert.equal(result.find((row) => row.role === 'Soup Cook')?.quantity, 2);
+  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.quantity, 0);
+  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.quantity, 0);
+});
+
+test('new cooked categories automatically fall back to one main-course chef per dish', () => {
+  const customMenu: MenuItem[] = [
+    dish('thai_1', 'Thai Green Curry', 'Thai'),
+    dish('mexican_1', 'Mexican Rice Bowl', 'Mexican'),
+    dish('breakfast_1', 'Poha', 'Breakfast'),
+  ];
+
+  const result = generateMealManpowerRows({
+    mealKey: 'service:lunch',
+    menu: customMenu,
+    guests: 200,
+    serviceStyle: 'BUFFET',
+    serviceId: 'lunch',
+    mealLabel: 'Lunch',
+  });
+
+  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.quantity, 3);
 });
