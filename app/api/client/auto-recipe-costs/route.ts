@@ -702,12 +702,12 @@ export async function POST(request: Request) {
             ? false
             : Boolean(recipe),
         source:
-          catalogRecipe
-            ? 'catalog_recipe'
-            : recipe
-              ? 'ai_recipe'
-              : savedTenantRate > 0
-                ? 'tenant_saved_rate'
+          savedTenantRate > 0
+            ? 'tenant_saved_rate'
+            : catalogRecipe
+              ? 'catalog_recipe'
+              : recipe
+                ? 'ai_recipe'
                 : 'unresolved',
       };
     });
