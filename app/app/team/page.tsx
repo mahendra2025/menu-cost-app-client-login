@@ -18,49 +18,17 @@ import {
   calculateManpowerCost,
   manpowerRawCost,
 } from '../../../lib/manpowerCost';
+import { generateMealManpowerRows } from '../../../lib/manpowerEngine';
+import {
+  DEFAULT_MANPOWER_INPUTS,
+  MANPOWER_ROLE_MASTER,
+} from '../../../lib/manpowerMaster';
 import type {
+  ManpowerInputs,
   ManpowerRow,
   Session,
   WorkState,
 } from '../../../lib/types';
-
-type RoleTemplate = {
-  id: string;
-  role: string;
-  rate: number;
-  aliases: string[];
-};
-
-type MealPlan = {
-  key: string;
-  serviceId?: string;
-  dayLabel: string;
-  mealLabel: string;
-  pax: number;
-  dishIds: string[];
-};
-
-const MANPOWER_ROLES: RoleTemplate[] = [
-  { id: 'simple_chef', role: 'Chef / Cook', rate: 2500, aliases: ['chef / cook', 'chef', 'cook'] },
-  { id: 'simple_helper', role: 'Helper', rate: 700, aliases: ['helper', 'helper / masi', 'masi'] },
-  { id: 'simple_juice', role: 'Juice / Mocktail', rate: 1600, aliases: ['juice / mocktail', 'juice / mocktail maker', 'bartender'] },
-  { id: 'simple_soup', role: 'Soup', rate: 2500, aliases: ['soup', 'soup cook'] },
-  { id: 'simple_chaat', role: 'Chaat', rate: 2500, aliases: ['chaat', 'chaat master'] },
-  { id: 'simple_live_counter', role: 'Live Counter', rate: 2500, aliases: ['live counter', 'live counter cook'] },
-  { id: 'simple_starter', role: 'Starter', rate: 2500, aliases: ['starter', 'starter cook'] },
-  { id: 'simple_chinese', role: 'Chinese', rate: 2500, aliases: ['chinese', 'chinese cook'] },
-  { id: 'simple_italian', role: 'Italian', rate: 2500, aliases: ['italian', 'italian cook'] },
-  { id: 'simple_indian_bread', role: 'Indian Bread', rate: 2500, aliases: ['indian bread', 'indian bread / tandoor cook', 'tandoor cook'] },
-  { id: 'simple_paan', role: 'Paan Counter', rate: 900, aliases: ['paan counter', 'pan counter', 'paan', 'pan'] },
-  { id: 'simple_waiter', role: 'Waiter', rate: 750, aliases: ['waiter'] },
-  { id: 'simple_tie_waiter', role: 'Tie Waiter', rate: 900, aliases: ['tie waiter'] },
-  { id: 'simple_model', role: 'Model', rate: 1500, aliases: ['model', 'models'] },
-  { id: 'simple_pyaro', role: 'Pyaro', rate: 1000, aliases: ['pyaro'] },
-  { id: 'simple_girls', role: 'Girls', rate: 900, aliases: ['girls', 'girl'] },
-  { id: 'simple_cleaning', role: 'Cleaning', rate: 600, aliases: ['cleaning', 'cleaner'] },
-  { id: 'simple_ghati', role: 'Ghati', rate: 900, aliases: ['ghati'] },
-  { id: 'simple_cc_boys', role: 'CC Boys', rate: 900, aliases: ['cc boy', 'cc boys'] },
-];
 
 type NewRoleDraft = {
   role: string;
@@ -75,7 +43,9 @@ function normalizeRole(value: string) {
 }
 
 const BUILT_IN_ROLE_NAMES = new Set(
-  MANPOWER_ROLES.flatMap((template) => template.aliases).map(normalizeRole),
+  MANPOWER_ROLE_MASTER
+    .flatMap((template) => [template.role, ...template.aliases])
+    .map(normalizeRole),
 );
 
 function isCustomRole(row: ManpowerRow) {
@@ -191,55 +161,26 @@ function isLegacyGlobalRow(row: ManpowerRow) {
 function buildMealManpowerRows(
   savedRows: ManpowerRow[],
   meals: MealPlan[],
+  work: WorkState,
   savedCustomRoles: CustomManpowerRole[] = [],
 ): ManpowerRow[] {
-  const safeRows =
-    Array.isArray(
-      savedRows,
-    )
-      ? savedRows
-      : [];
+  const safeRows = Array.isArray(savedRows) ? savedRows : [];
 
   return meals.flatMap((meal, mealIndex) => {
-    const builtInRows = MANPOWER_ROLES.map((template) => {
-      const aliases = new Set(template.aliases.map(normalizeRole));
-      const roleMatches = safeRows.filter((row) =>
-        aliases.has(normalizeRole(row.role)),
-      );
-      const scopedMatches = roleMatches.filter((row) =>
-        rowBelongsToMeal(row, meal),
-      );
-      const legacyMatches = roleMatches.filter(isLegacyGlobalRow);
-      const quantitySource =
-        scopedMatches.length > 0
-          ? scopedMatches
-          : mealIndex === 0
-            ? legacyMatches
-            : [];
-      const quantity = quantitySource.reduce(
-        (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
-        0,
-      );
-      const savedRate = [
-        ...scopedMatches,
-        ...roleMatches,
-      ]
-        .map((row) => Math.max(0, Number(row.rate) || 0))
-        .find((rate) => rate > 0);
-
-      return {
-        id: `${meal.key}::${template.id}`,
-        role: template.role,
-        quantity,
-        rate: savedRate ?? template.rate,
-        rateMode: 'PER_MEAL',
-        serviceId: meal.serviceId,
-        dayLabel: meal.dayLabel || undefined,
-        mealLabel: meal.mealLabel,
-        servicePax: meal.pax,
-        assignedDishIds: meal.dishIds,
-      } satisfies ManpowerRow;
+    const mealMenu = work.menu.filter((dish) => meal.dishIds.includes(dish.id));
+    const builtInRows = generateMealManpowerRows({
+      mealKey: meal.key,
+      menu: mealMenu,
+      guests: meal.pax,
+      serviceStyle: mealMenu.find((dish) => dish.serviceStyle)?.serviceStyle,
+      inputs: work.manpowerInputs,
+      existingRows: safeRows,
+      serviceId: meal.serviceId,
+      dayLabel: meal.dayLabel,
+      mealLabel: meal.mealLabel,
+      allowLegacyRows: mealIndex === 0,
     });
+
     const eventCustomRows = safeRows
       .filter(isCustomRole)
       .filter(
@@ -249,6 +190,9 @@ function buildMealManpowerRows(
       )
       .map((row) => ({
         ...row,
+        customRole: true,
+        manualOverride: true,
+        calculationSource: 'MANUAL' as const,
         rateMode: 'PER_MEAL' as const,
         serviceId: meal.serviceId,
         dayLabel: meal.dayLabel || undefined,
@@ -256,9 +200,11 @@ function buildMealManpowerRows(
         servicePax: meal.pax,
         assignedDishIds: row.assignedDishIds || meal.dishIds,
       }));
+
     const eventCustomNames = new Set(
       eventCustomRows.map((row) => normalizeRole(row.role)),
     );
+
     const permanentCustomRows = savedCustomRoles
       .filter((template) => !eventCustomNames.has(normalizeRole(template.role)))
       .map((template) => ({
@@ -267,6 +213,8 @@ function buildMealManpowerRows(
         quantity: 0,
         rate: template.rate,
         customRole: true,
+        manualOverride: true,
+        calculationSource: 'MANUAL' as const,
         rateMode: 'PER_MEAL' as const,
         serviceId: meal.serviceId,
         dayLabel: meal.dayLabel || undefined,
@@ -356,7 +304,7 @@ export default function ManpowerPage() {
         );
       });
 
-    const manpower = buildMealManpowerRows(savedWork.manpower, meals, customRoles);
+    const manpower = buildMealManpowerRows(savedWork.manpower, meals, savedWork, customRoles);
     const nextWork: WorkState = {
       ...savedWork,
       manpower,
@@ -378,6 +326,7 @@ export default function ManpowerPage() {
         const syncedManpower = buildMealManpowerRows(
           latestWork.manpower,
           latestMeals,
+          latestWork,
           syncedRoles,
         );
         const syncedWork: WorkState = {
@@ -455,6 +404,50 @@ export default function ManpowerPage() {
         row.id === id ? { ...row, ...patch } : row,
       ),
     );
+  }
+
+  function updateManpowerInputs(patch: Partial<ManpowerInputs>) {
+    if (!work || !session) return;
+
+    const baseWork: WorkState = {
+      ...work,
+      manpowerInputs: {
+        ...DEFAULT_MANPOWER_INPUTS,
+        ...work.manpowerInputs,
+        ...patch,
+      },
+    };
+
+    const nextMeals = buildMealPlans(baseWork);
+    const customRoles = loadCustomManpowerRoles(session.tenantId);
+    const manpower = buildMealManpowerRows(
+      baseWork.manpower,
+      nextMeals,
+      baseWork,
+      customRoles,
+    );
+
+    const nextWork: WorkState = {
+      ...baseWork,
+      manpower,
+      extras: {
+        ...baseWork.extras,
+        staff: calculateManpowerCost(manpower),
+      },
+      sellingPricePerPlate: 0,
+      updatedAt: new Date().toISOString(),
+    };
+
+    setWork(nextWork);
+    saveWork(session.tenantId, nextWork);
+  }
+
+  function resetRowToAuto(row: ManpowerRow) {
+    updateRow(row.id, {
+      quantity: Math.max(0, Number(row.recommendedQuantity) || 0),
+      manualOverride: false,
+      calculationSource: 'AUTO',
+    });
   }
 
   function updateNewRoleDraft(mealKey: string, patch: Partial<NewRoleDraft>) {
@@ -554,7 +547,7 @@ export default function ManpowerPage() {
             <span className="page-eyebrow">Meal-wise manpower costing</span>
             <h2>Manpower by Meal</h2>
             <p>
-              Set Chef, Helper, Waiter and specialist manpower separately for every meal. Each meal is costed independently.
+              Manpower is recommended automatically from guests, service style and detected menu stations. You can override any quantity.
             </p>
           </div>
 
@@ -571,6 +564,72 @@ export default function ManpowerPage() {
             >
               Next: Gas & Transport
             </button>
+          </div>
+        </div>
+
+        <div className="glass-card">
+          <div className="section-head">
+            <div>
+              <div className="section-kicker">Automatic manpower settings</div>
+              <h2>Service & Utility Rules</h2>
+              <p className="muted">
+                These settings recalculate only Auto rows. Manual overrides stay unchanged.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+            <label className="field">
+              <span>Service Level</span>
+              <select
+                className="input"
+                value={work.manpowerInputs?.serviceLevel ?? DEFAULT_MANPOWER_INPUTS.serviceLevel}
+                onChange={(event) => updateManpowerInputs({ serviceLevel: event.target.value as NonNullable<ManpowerInputs['serviceLevel']> })}
+              >
+                <option value="STANDARD">Standard</option>
+                <option value="PREMIUM">Premium</option>
+                <option value="VIP">VIP</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Venue</span>
+              <select
+                className="input"
+                value={work.manpowerInputs?.venueType ?? DEFAULT_MANPOWER_INPUTS.venueType}
+                onChange={(event) => updateManpowerInputs({ venueType: event.target.value as NonNullable<ManpowerInputs['venueType']> })}
+              >
+                <option value="INDOOR">Indoor</option>
+                <option value="OUTDOOR">Outdoor</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Water Service</span>
+              <select
+                className="input"
+                value={work.manpowerInputs?.waterService ?? DEFAULT_MANPOWER_INPUTS.waterService}
+                onChange={(event) => updateManpowerInputs({ waterService: event.target.value as NonNullable<ManpowerInputs['waterService']> })}
+              >
+                <option value="BOTTLE_COUNTER">Bottle Counter</option>
+                <option value="BOTTLE_TABLE">Bottle on Table</option>
+                <option value="GLASS_SERVICE">Glass Service</option>
+                <option value="TABLE_SERVICE">Table Water Service</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Crockery</span>
+              <select
+                className="input"
+                value={work.manpowerInputs?.crockeryType ?? DEFAULT_MANPOWER_INPUTS.crockeryType}
+                onChange={(event) => updateManpowerInputs({ crockeryType: event.target.value as NonNullable<ManpowerInputs['crockeryType']> })}
+              >
+                <option value="DISPOSABLE">Disposable</option>
+                <option value="STANDARD">Standard Crockery</option>
+                <option value="PREMIUM">Premium Crockery</option>
+              </select>
+            </label>
           </div>
         </div>
 
@@ -620,8 +679,28 @@ export default function ManpowerPage() {
                         <td><b>{index + 1}</b></td>
                         <td>
                           <div className="manpower-role-name-cell">
-                            <b>{row.role}</b>
-                            {isCustomRole(row) ? (
+                            <div>
+                              <b>{row.role}</b>
+                              {!isCustomRole(row) ? (
+                                <small className="muted" style={{ display: 'block', marginTop: 3 }}>
+                                  {(row.department || 'MANPOWER').replace(/_/g, ' ')} · Auto {row.recommendedQuantity ?? 0}
+                                </small>
+                              ) : null}
+                              {!isCustomRole(row) && row.calculationReason ? (
+                                <small className="muted" style={{ display: 'block', marginTop: 3 }}>
+                                  {row.calculationReason}
+                                </small>
+                              ) : null}
+                            </div>
+                            {row.manualOverride && !isCustomRole(row) ? (
+                              <button
+                                className="manpower-remove-button"
+                                type="button"
+                                onClick={() => resetRowToAuto(row)}
+                              >
+                                Reset Auto
+                              </button>
+                            ) : isCustomRole(row) ? (
                               <button
                                 className="manpower-remove-button"
                                 type="button"
@@ -636,7 +715,7 @@ export default function ManpowerPage() {
                         <td>
                           <QuantityControl
                             row={row}
-                            onChange={(quantity) => updateRow(row.id, { quantity })}
+                            onChange={(quantity) => updateRow(row.id, { quantity, manualOverride: true, calculationSource: 'MANUAL' })}
                           />
                         </td>
                         <td>
@@ -672,10 +751,26 @@ export default function ManpowerPage() {
                   >
                     <div className="manpower-role-card-heading">
                       <div>
-                        <small>#{index + 1}</small>
+                        <small>
+                          #{index + 1}
+                          {!isCustomRole(row) && row.department ? ` · ${row.department.replace(/_/g, ' ')}` : ''}
+                        </small>
                         <b>{row.role}</b>
+                        {!isCustomRole(row) && row.calculationReason ? (
+                          <small className="muted" style={{ display: 'block', marginTop: 4 }}>
+                            Auto {row.recommendedQuantity ?? 0} · {row.calculationReason}
+                          </small>
+                        ) : null}
                       </div>
-                      {isCustomRole(row) ? (
+                      {row.manualOverride && !isCustomRole(row) ? (
+                        <button
+                          className="manpower-remove-button"
+                          type="button"
+                          onClick={() => resetRowToAuto(row)}
+                        >
+                          Reset Auto
+                        </button>
+                      ) : isCustomRole(row) ? (
                         <button
                           className="manpower-remove-button"
                           type="button"
@@ -692,7 +787,7 @@ export default function ManpowerPage() {
                         <label>Quantity</label>
                         <QuantityControl
                           row={row}
-                          onChange={(quantity) => updateRow(row.id, { quantity })}
+                          onChange={(quantity) => updateRow(row.id, { quantity, manualOverride: true, calculationSource: 'MANUAL' })}
                         />
                       </div>
 
