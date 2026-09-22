@@ -14,6 +14,10 @@ import {
 import { prisma } from '../../../lib/prisma';
 
 import {
+  normalizeRecipeName,
+} from '../../../lib/recipeCosting';
+
+import {
   filterDishCatalogByStoredCategories,
   readDeletedDishCategories,
 } from '../../../lib/dishCostMaster';
@@ -723,7 +727,7 @@ export async function POST(
     }
 
     const normalizedName =
-      normalizeName(
+      normalizeRecipeName(
         name,
       );
 
