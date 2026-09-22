@@ -3491,6 +3491,14 @@ export default function EventPage() {
           ),
       );
 
+    const catalogCategory =
+      catalogDish &&
+      CATEGORIES.includes(
+        catalogDish.category as Category,
+      )
+        ? catalogDish.category as Category
+        : newDetectionDishCategory;
+
     const savedRate =
       Math.max(
         0,
@@ -3521,7 +3529,7 @@ export default function EventPage() {
           name,
 
         category:
-          newDetectionDishCategory,
+          catalogCategory,
 
         costPerPlate:
           savedRate,
@@ -3679,7 +3687,7 @@ export default function EventPage() {
         name,
 
       category:
-        newDetectionDishCategory,
+        catalogCategory,
 
       action:
         'MAP',
@@ -3696,7 +3704,7 @@ export default function EventPage() {
           catalogDish?.name ||
           name,
         category:
-          newDetectionDishCategory,
+          catalogCategory,
         hasSavedRate,
       },
     );
@@ -3706,7 +3714,7 @@ export default function EventPage() {
         newItem.id,
         catalogDish?.name ||
           name,
-        newDetectionDishCategory,
+        catalogCategory,
         'manual_add',
       );
     }
