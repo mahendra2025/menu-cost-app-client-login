@@ -35,6 +35,15 @@ type NewRoleDraft = {
   rate: string;
 };
 
+type MealPlan = {
+  key: string;
+  serviceId?: string;
+  dayLabel: string;
+  mealLabel: string;
+  pax: number;
+  dishIds: string[];
+};
+
 function normalizeRole(value: string) {
   return String(value || '')
     .trim()
