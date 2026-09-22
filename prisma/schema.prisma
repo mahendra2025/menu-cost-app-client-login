@@ -115,6 +115,13 @@ model LpgSetting {
   updatedAt        DateTime @updatedAt
 }
 
+model ManpowerMasterSetting {
+  id        String   @id @default("global")
+  rules     Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model PendingDishSuggestion {
   id             String @id @default(cuid())
   name           String
