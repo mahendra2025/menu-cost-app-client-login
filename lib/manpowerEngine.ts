@@ -1,11 +1,13 @@
 import {
   CATEGORY_WORKLOAD,
-  CLEANING_RATIO,
   DEFAULT_MANPOWER_INPUTS,
-  DISHWASHING_RATIO,
   MANPOWER_ROLE_MASTER,
-  WATER_SERVICE_RATIO,
+  cleaningRatio,
+  dishwashingRatio,
+  normalizeManpowerRules,
   waiterRatio,
+  waterServiceRatio,
+  type ManpowerRuleConfig,
 } from './manpowerMaster';
 import type {
   ManpowerInputs,
@@ -32,6 +34,7 @@ export type MealManpowerEngineInput = {
   dayLabel?: string;
   mealLabel?: string;
   allowLegacyRows?: boolean;
+  rules?: Partial<ManpowerRuleConfig> | null;
 };
 
 function normalize(value: unknown) {
@@ -230,45 +233,57 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   const guests = Math.max(0, Number(input.guests) || 0);
   const serviceStyle = resolveServiceStyle(menu, input.serviceStyle);
   const settings = resolveInputs(input.inputs);
+  const rules = normalizeManpowerRules(input.rules);
   const recommendations = new Map<string, Recommendation>();
   const workload = calculateMenuWorkload(menu);
 
   const waiters = ceilRatio(
     guests,
-    waiterRatio(serviceStyle, settings.serviceLevel),
+    waiterRatio(serviceStyle, settings.serviceLevel, rules),
   );
   recommendations.set('waiter', {
     quantity: waiters,
-    reason: `${guests} guests ÷ ${waiterRatio(serviceStyle, settings.serviceLevel)} per ${serviceStyle.toLowerCase().replace(/_/g, ' ')} waiter`,
+    reason: `${guests} guests ÷ ${waiterRatio(serviceStyle, settings.serviceLevel, rules)} per ${serviceStyle.toLowerCase().replace(/_/g, ' ')} waiter`,
   });
 
-  const captains = waiters > 0 ? Math.ceil(waiters / 10) : 0;
+  const captains = waiters > 0 ? Math.ceil(waiters / rules.waitersPerCaptain) : 0;
   recommendations.set('captain', {
     quantity: captains,
-    reason: waiters > 0 ? `1 captain per 10 waiters · ${waiters} waiters` : 'No waiter team detected',
+    reason: waiters > 0 ? `1 captain per ${rules.waitersPerCaptain} waiters · ${waiters} waiters` : 'No waiter team detected',
   });
 
+  const waterRatio = waterServiceRatio(settings.waterService, rules);
   const waterStaff = ceilRatio(
     guests,
-    WATER_SERVICE_RATIO[settings.waterService],
+    waterRatio,
   );
   recommendations.set('water_staff', {
     quantity: waterStaff,
-    reason: `${guests} guests ÷ ${WATER_SERVICE_RATIO[settings.waterService]} for ${settings.waterService.toLowerCase().replace(/_/g, ' ')}`,
+    reason: `${guests} guests ÷ ${waterRatio} for ${settings.waterService.toLowerCase().replace(/_/g, ' ')}`,
   });
 
   const serviceTeam = waiters + captains + waterStaff;
   const serviceSupervisors = serviceTeam > 0
-    ? Math.max(guests >= 200 ? 1 : 0, Math.ceil(serviceTeam / 25))
+    ? Math.max(
+        guests >= rules.serviceSupervisorMinGuests ? 1 : 0,
+        Math.ceil(serviceTeam / rules.serviceStaffPerSupervisor),
+      )
     : 0;
   recommendations.set('service_supervisor', {
     quantity: serviceSupervisors,
-    reason: serviceTeam > 0 ? `1 supervisor per 25 service staff · ${serviceTeam} service staff` : 'No service team detected',
+    reason: serviceTeam > 0 ? `1 supervisor per ${rules.serviceStaffPerSupervisor} service staff · ${serviceTeam} service staff` : 'No service team detected',
   });
 
   const stations = generalCounterStationCount(menu);
   const attendantsPerStation =
-    guests <= 350 ? 1 : guests <= 800 ? 2 : Math.max(2, Math.ceil(guests / 400));
+    guests <= rules.counterSmallMaxGuests
+      ? rules.counterSmallStaffPerStation
+      : guests <= rules.counterMediumMaxGuests
+        ? rules.counterMediumStaffPerStation
+        : Math.max(
+            rules.counterMediumStaffPerStation,
+            Math.ceil(guests / rules.counterLargeGuestsPerStaff),
+          );
   recommendations.set('counter_attendant', {
     quantity: stations * attendantsPerStation,
     reason: `${stations} detected serving stations × ${attendantsPerStation} attendant(s)`,
@@ -276,58 +291,60 @@ function buildRecommendations(input: MealManpowerEngineInput) {
 
   const beverageDishes = countByCategory(menu, ['welcome drink', 'mocktail', 'beverage']);
   recommendations.set('juice_mocktail', {
-    quantity: beverageDishes > 0 ? Math.max(1, ceilRatio(guests, 250)) : 0,
-    reason: beverageDishes > 0 ? `${beverageDishes} beverage dish(es) · 1 staff per 250 guests` : 'No beverage station detected',
+    quantity: beverageDishes > 0 ? Math.max(1, ceilRatio(guests, rules.beverageGuestsPerStaff)) : 0,
+    reason: beverageDishes > 0 ? `${beverageDishes} beverage dish(es) · 1 staff per ${rules.beverageGuestsPerStaff} guests` : 'No beverage station detected',
     stationLabel: beverageDishes > 0 ? 'Beverage' : undefined,
   });
 
   const chaatCount = countByCategory(menu, ['chaat']);
-  const chaatCooks = chaatCount > 0 ? Math.max(1, ceilRatio(guests, 120)) : 0;
+  const chaatCooks = chaatCount > 0 ? Math.max(1, ceilRatio(guests, rules.chaatGuestsPerCook)) : 0;
   recommendations.set('chaat_cook', {
     quantity: chaatCooks,
-    reason: chaatCount > 0 ? `${chaatCount} chaat dish(es) · 1 cook per 120 guests` : 'No chaat station detected',
+    reason: chaatCount > 0 ? `${chaatCount} chaat dish(es) · 1 cook per ${rules.chaatGuestsPerCook} guests` : 'No chaat station detected',
     stationLabel: chaatCount > 0 ? 'Chaat' : undefined,
   });
 
   const chineseCount = countByCategory(menu, ['chinese']);
   recommendations.set('chinese_cook', {
-    quantity: chineseCount > 0 ? Math.max(1, ceilRatio(guests, 120)) : 0,
-    reason: chineseCount > 0 ? `${chineseCount} Chinese dish(es) · 1 cook per 120 guests` : 'No Chinese station detected',
+    quantity: chineseCount > 0 ? Math.max(1, ceilRatio(guests, rules.chineseGuestsPerCook)) : 0,
+    reason: chineseCount > 0 ? `${chineseCount} Chinese dish(es) · 1 cook per ${rules.chineseGuestsPerCook} guests` : 'No Chinese station detected',
     stationLabel: chineseCount > 0 ? 'Chinese' : undefined,
   });
 
   const italianCount = countByCategory(menu, ['italian']);
   recommendations.set('italian_cook', {
-    quantity: italianCount > 0 ? Math.max(1, ceilRatio(guests, 140)) : 0,
-    reason: italianCount > 0 ? `${italianCount} Italian/Pasta dish(es) · 1 cook per 140 guests` : 'No Italian station detected',
+    quantity: italianCount > 0 ? Math.max(1, ceilRatio(guests, rules.italianGuestsPerCook)) : 0,
+    reason: italianCount > 0 ? `${italianCount} Italian/Pasta dish(es) · 1 cook per ${rules.italianGuestsPerCook} guests` : 'No Italian station detected',
     stationLabel: italianCount > 0 ? 'Italian' : undefined,
   });
 
   const southIndianCount = countByCategory(menu, ['south indian']);
   recommendations.set('south_indian_cook', {
-    quantity: southIndianCount > 0 ? Math.max(1, ceilRatio(guests, 100)) : 0,
-    reason: southIndianCount > 0 ? `${southIndianCount} South Indian dish(es) · 1 cook per 100 guests` : 'No South Indian station detected',
+    quantity: southIndianCount > 0 ? Math.max(1, ceilRatio(guests, rules.southIndianGuestsPerCook)) : 0,
+    reason: southIndianCount > 0 ? `${southIndianCount} South Indian dish(es) · 1 cook per ${rules.southIndianGuestsPerCook} guests` : 'No South Indian station detected',
     stationLabel: southIndianCount > 0 ? 'South Indian' : undefined,
   });
 
   const otherLiveCount = menu.filter(isOtherLiveDish).length;
   const liveCooks = otherLiveCount > 0
-    ? Math.max(1, ceilRatio(guests, 120)) * Math.min(2, otherLiveCount)
+    ? Math.max(1, ceilRatio(guests, rules.liveCounterGuestsPerCook)) * Math.min(2, otherLiveCount)
     : 0;
   recommendations.set('live_counter_cook', {
     quantity: liveCooks,
-    reason: otherLiveCount > 0 ? `${otherLiveCount} other live dish(es) · capacity based on 120 guests per cook` : 'No other live counter detected',
+    reason: otherLiveCount > 0 ? `${otherLiveCount} other live dish(es) · capacity based on ${rules.liveCounterGuestsPerCook} guests per cook` : 'No other live counter detected',
     stationLabel: otherLiveCount > 0 ? 'Live Counter' : undefined,
   });
   recommendations.set('live_counter_helper', {
-    quantity: liveCooks > 0 ? Math.ceil(liveCooks / 2) : 0,
-    reason: liveCooks > 0 ? `1 helper per 2 live cooks · ${liveCooks} live cooks` : 'No live cooks detected',
+    quantity: liveCooks > 0 ? Math.ceil(liveCooks / rules.liveCooksPerHelper) : 0,
+    reason: liveCooks > 0 ? `1 helper per ${rules.liveCooksPerHelper} live cooks · ${liveCooks} live cooks` : 'No live cooks detected',
     stationLabel: otherLiveCount > 0 ? 'Live Counter' : undefined,
   });
 
   const breadCount = countByCategory(menu, ['bread', 'indian bread']);
   const breadCooks = breadCount > 0
-    ? Math.max(1, ceilRatio(guests, 180)) + (breadCount >= 3 ? 1 : 0) + (breadCount >= 5 ? 1 : 0)
+    ? Math.max(1, ceilRatio(guests, rules.breadGuestsPerCook)) +
+        (breadCount >= rules.breadVarietyBonusThreshold1 ? 1 : 0) +
+        (breadCount >= rules.breadVarietyBonusThreshold2 ? 1 : 0)
     : 0;
   recommendations.set('bread_cook', {
     quantity: breadCooks,
@@ -336,8 +353,8 @@ function buildRecommendations(input: MealManpowerEngineInput) {
     stationLabel: breadCount > 0 ? 'Bread' : undefined,
   });
   recommendations.set('bread_helper', {
-    quantity: breadCooks > 0 ? Math.ceil(breadCooks / 2) : 0,
-    reason: breadCooks > 0 ? `1 helper per 2 bread cooks · ${breadCooks} bread cooks` : 'No bread cooks detected',
+    quantity: breadCooks > 0 ? Math.ceil(breadCooks / rules.breadCooksPerHelper) : 0,
+    reason: breadCooks > 0 ? `1 helper per ${rules.breadCooksPerHelper} bread cooks · ${breadCooks} bread cooks` : 'No bread cooks detected',
     stationLabel: breadCount > 0 ? 'Bread' : undefined,
   });
 
@@ -356,7 +373,8 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   const mainCourseCooks = mainCourseCount > 0
     ? Math.max(
         1,
-        ceilRatio(guests, 300) + Math.max(0, Math.ceil(mainCourseCount / 5) - 1),
+        ceilRatio(guests, rules.mainCourseGuestsPerCook) +
+          Math.max(0, Math.ceil(mainCourseCount / rules.mainCourseDishesPerExtraCook) - 1),
       )
     : 0;
   recommendations.set('main_course_cook', {
@@ -367,7 +385,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
 
   const farsanCount = countByCategory(menu, ['farsan']);
   const farsanCooks = farsanCount > 0
-    ? Math.max(1, ceilRatio(guests, 250) + Math.floor(Math.max(0, farsanCount - 1) / 3))
+    ? Math.max(1, ceilRatio(guests, rules.beverageGuestsPerStaff) + Math.floor(Math.max(0, farsanCount - 1) / 3))
     : 0;
   recommendations.set('farsan_cook', {
     quantity: farsanCooks,
@@ -377,7 +395,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
 
   const sweetCount = countByCategory(menu, ['sweet']);
   const sweetCooks = sweetCount > 0
-    ? Math.max(1, ceilRatio(guests, 300) + Math.floor(Math.max(0, sweetCount - 1) / 3))
+    ? Math.max(
+        1,
+        ceilRatio(guests, rules.sweetGuestsPerCook) +
+          Math.floor(Math.max(0, sweetCount - 1) / rules.sweetDishesPerExtraCook),
+      )
     : 0;
   recommendations.set('sweet_halwai', {
     quantity: sweetCooks,
@@ -397,20 +419,20 @@ function buildRecommendations(input: MealManpowerEngineInput) {
     liveCooks;
 
   recommendations.set('head_chef', {
-    quantity: guests > 150 || productionCooks >= 4 ? 1 : 0,
-    reason: guests > 150 || productionCooks >= 4 ? `${guests} guests and ${productionCooks} production cooks require kitchen leadership` : 'Small kitchen team',
+    quantity: guests >= rules.headChefMinGuests || productionCooks >= rules.headChefMinProductionCooks ? 1 : 0,
+    reason: guests >= rules.headChefMinGuests || productionCooks >= rules.headChefMinProductionCooks ? `${guests} guests and ${productionCooks} production cooks require kitchen leadership` : 'Small kitchen team',
     workloadScore: workload,
   });
 
   recommendations.set('assistant_cook', {
-    quantity: productionCooks > 0 ? Math.ceil(productionCooks * 0.5) : 0,
-    reason: productionCooks > 0 ? `50% support ratio for ${productionCooks} production cooks` : 'No production cooks detected',
+    quantity: productionCooks > 0 ? Math.ceil(productionCooks * rules.assistantCooksPerProductionCook) : 0,
+    reason: productionCooks > 0 ? `${rules.assistantCooksPerProductionCook} assistant per production cook · ${productionCooks} production cooks` : 'No production cooks detected',
     workloadScore: workload,
   });
 
   recommendations.set('kitchen_supervisor', {
-    quantity: guests > 1000 || productionCooks >= 12 ? 1 : 0,
-    reason: guests > 1000 || productionCooks >= 12 ? `Large kitchen: ${guests} guests / ${productionCooks} production cooks` : 'Head Chef can supervise this kitchen size',
+    quantity: guests >= rules.kitchenSupervisorMinGuests || productionCooks >= rules.kitchenSupervisorMinProductionCooks ? 1 : 0,
+    reason: guests >= rules.kitchenSupervisorMinGuests || productionCooks >= rules.kitchenSupervisorMinProductionCooks ? `Large kitchen: ${guests} guests / ${productionCooks} production cooks` : 'Head Chef can supervise this kitchen size',
     workloadScore: workload,
   });
 
@@ -430,7 +452,8 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   const prepHelpers = menu.length > 0
     ? Math.max(
         1,
-        ceilRatio(guests, 150) + Math.max(0, Math.ceil(prepHeavyCount / 6) - 1),
+        ceilRatio(guests, rules.prepGuestsPerHelper) +
+          Math.max(0, Math.ceil(prepHeavyCount / rules.prepDishesPerExtraHelper) - 1),
       )
     : 0;
   recommendations.set('prep_helper', {
@@ -439,31 +462,33 @@ function buildRecommendations(input: MealManpowerEngineInput) {
     workloadScore: workload,
   });
 
+  const dishwashRatio = dishwashingRatio(settings.crockeryType, rules);
   const dishwashers = ceilRatio(
     guests,
-    DISHWASHING_RATIO[settings.crockeryType],
+    dishwashRatio,
   );
   recommendations.set('dishwasher', {
     quantity: dishwashers,
-    reason: `${guests} guests ÷ ${DISHWASHING_RATIO[settings.crockeryType]} for ${settings.crockeryType.toLowerCase()} serviceware`,
+    reason: `${guests} guests ÷ ${dishwashRatio} for ${settings.crockeryType.toLowerCase()} serviceware`,
   });
 
   const liveHeavy = chaatCount + chineseCount + italianCount + southIndianCount + otherLiveCount > 0;
-  const cleaningRatio = liveHeavy
-    ? Math.min(CLEANING_RATIO[settings.venueType], 100)
-    : CLEANING_RATIO[settings.venueType];
+  const baseCleaningRatio = cleaningRatio(settings.venueType, rules);
+  const cleanerCapacity = liveHeavy
+    ? Math.min(baseCleaningRatio, rules.liveFoodGuestsPerCleaner)
+    : baseCleaningRatio;
   recommendations.set('cleaning', {
-    quantity: ceilRatio(guests, cleaningRatio),
-    reason: `${guests} guests ÷ ${cleaningRatio} for ${settings.venueType.toLowerCase()} venue${liveHeavy ? ' with live-food load' : ''}`,
+    quantity: ceilRatio(guests, cleanerCapacity),
+    reason: `${guests} guests ÷ ${cleanerCapacity} for ${settings.venueType.toLowerCase()} venue${liveHeavy ? ' with live-food load' : ''}`,
   });
 
   recommendations.set('waste_utility', {
-    quantity: guests >= 250 ? Math.max(1, ceilRatio(guests, 500)) : 0,
-    reason: guests >= 250 ? `1 waste/utility staff per 500 guests` : 'Small event',
+    quantity: guests >= rules.wasteMinGuests ? Math.max(1, ceilRatio(guests, rules.wasteGuestsPerStaff)) : 0,
+    reason: guests >= rules.wasteMinGuests ? `1 waste/utility staff per ${rules.wasteGuestsPerStaff} guests` : 'Small event',
   });
 
   recommendations.set('loading_helper', {
-    quantity: guests >= 150 ? Math.max(1, ceilRatio(guests, 250)) : 0,
+    quantity: guests >= 150 ? Math.max(1, ceilRatio(guests, rules.beverageGuestsPerStaff)) : 0,
     reason: guests >= 150 ? `1 loading/unloading helper per 250 guests` : 'Small equipment load',
   });
 
@@ -472,8 +497,8 @@ function buildRecommendations(input: MealManpowerEngineInput) {
     0,
   );
   recommendations.set('event_manager', {
-    quantity: guests >= 500 || autoCoreTotal >= 40 ? 1 : 0,
-    reason: guests >= 500 || autoCoreTotal >= 40 ? `Event size requires one event manager · ${guests} guests, ${autoCoreTotal} recommended staff` : 'Event can run under section supervisors',
+    quantity: guests >= rules.eventManagerMinGuests || autoCoreTotal >= rules.eventManagerMinRecommendedStaff ? 1 : 0,
+    reason: guests >= rules.eventManagerMinGuests || autoCoreTotal >= rules.eventManagerMinRecommendedStaff ? `Event size requires one event manager · ${guests} guests, ${autoCoreTotal} recommended staff` : 'Event can run under section supervisors',
   });
 
   return recommendations;
