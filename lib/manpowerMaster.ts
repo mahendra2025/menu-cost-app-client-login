@@ -13,12 +13,305 @@ export type ManpowerRoleMaster = {
   auto: boolean;
 };
 
+export type ManpowerRuleConfig = {
+  standardBuffetGuestsPerWaiter: number;
+  premiumBuffetGuestsPerWaiter: number;
+  vipBuffetGuestsPerWaiter: number;
+
+  standardTableGuestsPerWaiter: number;
+  premiumTableGuestsPerWaiter: number;
+  vipTableGuestsPerWaiter: number;
+
+  standardPackedGuestsPerWaiter: number;
+  premiumPackedGuestsPerWaiter: number;
+  vipPackedGuestsPerWaiter: number;
+
+  standardLiveGuestsPerWaiter: number;
+  premiumLiveGuestsPerWaiter: number;
+  vipLiveGuestsPerWaiter: number;
+
+  waitersPerCaptain: number;
+  serviceStaffPerSupervisor: number;
+  serviceSupervisorMinGuests: number;
+
+  bottleCounterGuestsPerWaterStaff: number;
+  bottleTableGuestsPerWaterStaff: number;
+  glassServiceGuestsPerWaterStaff: number;
+  tableServiceGuestsPerWaterStaff: number;
+
+  counterSmallMaxGuests: number;
+  counterMediumMaxGuests: number;
+  counterSmallStaffPerStation: number;
+  counterMediumStaffPerStation: number;
+  counterLargeGuestsPerStaff: number;
+  beverageGuestsPerStaff: number;
+
+  chaatGuestsPerCook: number;
+  chineseGuestsPerCook: number;
+  italianGuestsPerCook: number;
+  southIndianGuestsPerCook: number;
+  liveCounterGuestsPerCook: number;
+  liveCooksPerHelper: number;
+
+  breadGuestsPerCook: number;
+  breadVarietyBonusThreshold1: number;
+  breadVarietyBonusThreshold2: number;
+  breadCooksPerHelper: number;
+
+  mainCourseGuestsPerCook: number;
+  mainCourseDishesPerExtraCook: number;
+  farsanGuestsPerCook: number;
+  farsanDishesPerExtraCook: number;
+  sweetGuestsPerCook: number;
+  sweetDishesPerExtraCook: number;
+
+  headChefMinGuests: number;
+  headChefMinProductionCooks: number;
+  assistantCooksPerProductionCook: number;
+  kitchenSupervisorMinGuests: number;
+  kitchenSupervisorMinProductionCooks: number;
+
+  prepGuestsPerHelper: number;
+  prepDishesPerExtraHelper: number;
+
+  disposableGuestsPerDishwasher: number;
+  standardGuestsPerDishwasher: number;
+  premiumGuestsPerDishwasher: number;
+
+  indoorGuestsPerCleaner: number;
+  outdoorGuestsPerCleaner: number;
+  liveFoodGuestsPerCleaner: number;
+
+  wasteMinGuests: number;
+  wasteGuestsPerStaff: number;
+  loadingMinGuests: number;
+  loadingGuestsPerHelper: number;
+
+  eventManagerMinGuests: number;
+  eventManagerMinRecommendedStaff: number;
+};
+
+export type ManpowerRuleDefinition = {
+  key: keyof ManpowerRuleConfig;
+  group:
+    | 'Service'
+    | 'Water Service'
+    | 'Counters'
+    | 'Live Counters'
+    | 'Bread'
+    | 'Kitchen'
+    | 'Preparation'
+    | 'Utility'
+    | 'Logistics & Management';
+  label: string;
+  unit: string;
+  description: string;
+  min: number;
+  max: number;
+  step: number;
+};
+
 export const DEFAULT_MANPOWER_INPUTS: Required<ManpowerInputs> = {
   venueType: 'INDOOR',
   waterService: 'BOTTLE_COUNTER',
   crockeryType: 'STANDARD',
   serviceLevel: 'STANDARD',
 };
+
+export const DEFAULT_MANPOWER_RULES: ManpowerRuleConfig = {
+  standardBuffetGuestsPerWaiter: 30,
+  premiumBuffetGuestsPerWaiter: 20,
+  vipBuffetGuestsPerWaiter: 12,
+
+  standardTableGuestsPerWaiter: 15,
+  premiumTableGuestsPerWaiter: 12,
+  vipTableGuestsPerWaiter: 8,
+
+  standardPackedGuestsPerWaiter: 50,
+  premiumPackedGuestsPerWaiter: 40,
+  vipPackedGuestsPerWaiter: 30,
+
+  standardLiveGuestsPerWaiter: 25,
+  premiumLiveGuestsPerWaiter: 20,
+  vipLiveGuestsPerWaiter: 15,
+
+  waitersPerCaptain: 10,
+  serviceStaffPerSupervisor: 25,
+  serviceSupervisorMinGuests: 200,
+
+  bottleCounterGuestsPerWaterStaff: 150,
+  bottleTableGuestsPerWaterStaff: 80,
+  glassServiceGuestsPerWaterStaff: 60,
+  tableServiceGuestsPerWaterStaff: 40,
+
+  counterSmallMaxGuests: 350,
+  counterMediumMaxGuests: 800,
+  counterSmallStaffPerStation: 1,
+  counterMediumStaffPerStation: 2,
+  counterLargeGuestsPerStaff: 400,
+  beverageGuestsPerStaff: 250,
+
+  chaatGuestsPerCook: 120,
+  chineseGuestsPerCook: 120,
+  italianGuestsPerCook: 140,
+  southIndianGuestsPerCook: 100,
+  liveCounterGuestsPerCook: 120,
+  liveCooksPerHelper: 2,
+
+  breadGuestsPerCook: 180,
+  breadVarietyBonusThreshold1: 3,
+  breadVarietyBonusThreshold2: 5,
+  breadCooksPerHelper: 2,
+
+  mainCourseGuestsPerCook: 300,
+  mainCourseDishesPerExtraCook: 5,
+  farsanGuestsPerCook: 250,
+  farsanDishesPerExtraCook: 3,
+  sweetGuestsPerCook: 300,
+  sweetDishesPerExtraCook: 3,
+
+  headChefMinGuests: 151,
+  headChefMinProductionCooks: 4,
+  assistantCooksPerProductionCook: 0.5,
+  kitchenSupervisorMinGuests: 1001,
+  kitchenSupervisorMinProductionCooks: 12,
+
+  prepGuestsPerHelper: 150,
+  prepDishesPerExtraHelper: 6,
+
+  disposableGuestsPerDishwasher: 350,
+  standardGuestsPerDishwasher: 140,
+  premiumGuestsPerDishwasher: 90,
+
+  indoorGuestsPerCleaner: 150,
+  outdoorGuestsPerCleaner: 120,
+  liveFoodGuestsPerCleaner: 100,
+
+  wasteMinGuests: 250,
+  wasteGuestsPerStaff: 500,
+  loadingMinGuests: 150,
+  loadingGuestsPerHelper: 250,
+
+  eventManagerMinGuests: 500,
+  eventManagerMinRecommendedStaff: 40,
+};
+
+const D = (
+  key: keyof ManpowerRuleConfig,
+  group: ManpowerRuleDefinition['group'],
+  label: string,
+  unit: string,
+  description: string,
+  min = 0.01,
+  max = 10000,
+  step = 1,
+): ManpowerRuleDefinition => ({
+  key,
+  group,
+  label,
+  unit,
+  description,
+  min,
+  max,
+  step,
+});
+
+export const MANPOWER_RULE_DEFINITIONS: ManpowerRuleDefinition[] = [
+  D('standardBuffetGuestsPerWaiter', 'Service', 'Standard Buffet Waiter', 'guests / waiter', 'Standard buffet service capacity.'),
+  D('premiumBuffetGuestsPerWaiter', 'Service', 'Premium Buffet Waiter', 'guests / waiter', 'Premium buffet service capacity.'),
+  D('vipBuffetGuestsPerWaiter', 'Service', 'VIP Buffet Waiter', 'guests / waiter', 'VIP buffet service capacity.'),
+  D('standardTableGuestsPerWaiter', 'Service', 'Standard Table Service Waiter', 'guests / waiter', 'Standard table service capacity.'),
+  D('premiumTableGuestsPerWaiter', 'Service', 'Premium Table Service Waiter', 'guests / waiter', 'Premium table service capacity.'),
+  D('vipTableGuestsPerWaiter', 'Service', 'VIP Table Service Waiter', 'guests / waiter', 'VIP table service capacity.'),
+  D('standardPackedGuestsPerWaiter', 'Service', 'Standard Packed Meal Staff', 'guests / staff', 'Packed meal distribution capacity.'),
+  D('premiumPackedGuestsPerWaiter', 'Service', 'Premium Packed Meal Staff', 'guests / staff', 'Premium packed meal distribution capacity.'),
+  D('vipPackedGuestsPerWaiter', 'Service', 'VIP Packed Meal Staff', 'guests / staff', 'VIP packed meal distribution capacity.'),
+  D('standardLiveGuestsPerWaiter', 'Service', 'Standard Live-Counter Service', 'guests / waiter', 'Service manpower around live counters.'),
+  D('premiumLiveGuestsPerWaiter', 'Service', 'Premium Live-Counter Service', 'guests / waiter', 'Premium live-counter service capacity.'),
+  D('vipLiveGuestsPerWaiter', 'Service', 'VIP Live-Counter Service', 'guests / waiter', 'VIP live-counter service capacity.'),
+  D('waitersPerCaptain', 'Service', 'Captain Span', 'waiters / captain', 'How many waiters one captain supervises.'),
+  D('serviceStaffPerSupervisor', 'Service', 'Service Supervisor Span', 'service staff / supervisor', 'Front-of-house staff per supervisor.'),
+  D('serviceSupervisorMinGuests', 'Service', 'Service Supervisor Minimum Event', 'guests', 'Minimum guest count before a service supervisor is forced.'),
+
+  D('bottleCounterGuestsPerWaterStaff', 'Water Service', 'Bottle Counter Water Staff', 'guests / staff', 'Water bottle counter capacity.'),
+  D('bottleTableGuestsPerWaterStaff', 'Water Service', 'Bottle-on-Table Water Staff', 'guests / staff', 'Bottle placement and replenishment capacity.'),
+  D('glassServiceGuestsPerWaterStaff', 'Water Service', 'Glass Water Service', 'guests / staff', 'Glass water service capacity.'),
+  D('tableServiceGuestsPerWaterStaff', 'Water Service', 'Table Water Service', 'guests / staff', 'Dedicated table water service capacity.'),
+
+  D('counterSmallMaxGuests', 'Counters', 'Small Event Limit', 'guests', 'Upper guest limit for small-event counter staffing.'),
+  D('counterMediumMaxGuests', 'Counters', 'Medium Event Limit', 'guests', 'Upper guest limit for medium-event counter staffing.'),
+  D('counterSmallStaffPerStation', 'Counters', 'Small Event Counter Staff', 'staff / station', 'Counter attendants per detected station for small events.'),
+  D('counterMediumStaffPerStation', 'Counters', 'Medium Event Counter Staff', 'staff / station', 'Counter attendants per detected station for medium events.'),
+  D('counterLargeGuestsPerStaff', 'Counters', 'Large Event Counter Capacity', 'guests / staff / station', 'Counter capacity when guest count exceeds the medium threshold.'),
+  D('beverageGuestsPerStaff', 'Counters', 'Beverage Counter Staff', 'guests / staff', 'Welcome drink, mocktail and beverage staffing capacity.'),
+
+  D('chaatGuestsPerCook', 'Live Counters', 'Chaat Cook Capacity', 'guests / cook', 'Live chaat cook capacity.'),
+  D('chineseGuestsPerCook', 'Live Counters', 'Chinese Cook Capacity', 'guests / cook', 'Live Chinese station cook capacity.'),
+  D('italianGuestsPerCook', 'Live Counters', 'Italian / Pasta Cook Capacity', 'guests / cook', 'Live pasta or Italian station capacity.'),
+  D('southIndianGuestsPerCook', 'Live Counters', 'South Indian Cook Capacity', 'guests / cook', 'Dosa and South Indian live station capacity.'),
+  D('liveCounterGuestsPerCook', 'Live Counters', 'Other Live Counter Cook Capacity', 'guests / cook', 'Generic live counter cook capacity.'),
+  D('liveCooksPerHelper', 'Live Counters', 'Live Counter Helper Span', 'cooks / helper', 'Number of live cooks supported by one helper.'),
+
+  D('breadGuestsPerCook', 'Bread', 'Bread Cook Capacity', 'guests / cook', 'Base bread cook capacity before variety bonuses.'),
+  D('breadVarietyBonusThreshold1', 'Bread', 'Bread Variety Bonus 1', 'bread varieties', 'Add one cook when this many bread varieties are detected.'),
+  D('breadVarietyBonusThreshold2', 'Bread', 'Bread Variety Bonus 2', 'bread varieties', 'Add another cook when this many bread varieties are detected.'),
+  D('breadCooksPerHelper', 'Bread', 'Bread Helper Span', 'cooks / helper', 'Number of bread cooks supported by one helper.'),
+
+  D('mainCourseGuestsPerCook', 'Kitchen', 'Main Course Cook Capacity', 'guests / cook', 'Guest capacity for main-course production.'),
+  D('mainCourseDishesPerExtraCook', 'Kitchen', 'Main Course Dish Load', 'dishes / extra cook', 'Additional cook trigger from number of main-course dishes.'),
+  D('farsanGuestsPerCook', 'Kitchen', 'Farsan Cook Capacity', 'guests / cook', 'Guest capacity for farsan production.'),
+  D('farsanDishesPerExtraCook', 'Kitchen', 'Farsan Dish Load', 'dishes / extra cook', 'Additional cook trigger from farsan variety.'),
+  D('sweetGuestsPerCook', 'Kitchen', 'Sweet / Halwai Capacity', 'guests / cook', 'Guest capacity for sweet production.'),
+  D('sweetDishesPerExtraCook', 'Kitchen', 'Sweet Dish Load', 'dishes / extra cook', 'Additional halwai trigger from sweet variety.'),
+  D('headChefMinGuests', 'Kitchen', 'Head Chef Minimum Guests', 'guests', 'Guest count that requires one Head Chef.'),
+  D('headChefMinProductionCooks', 'Kitchen', 'Head Chef Cook-Team Trigger', 'production cooks', 'Production cook count that requires one Head Chef.'),
+  D('assistantCooksPerProductionCook', 'Kitchen', 'Assistant Cook Ratio', 'assistants / cook', 'Assistant cooks per production cook.', 0.05, 3, 0.05),
+  D('kitchenSupervisorMinGuests', 'Kitchen', 'Kitchen Supervisor Minimum Guests', 'guests', 'Guest count that requires a Kitchen Supervisor.'),
+  D('kitchenSupervisorMinProductionCooks', 'Kitchen', 'Kitchen Supervisor Cook Trigger', 'production cooks', 'Production cook count that requires a Kitchen Supervisor.'),
+
+  D('prepGuestsPerHelper', 'Preparation', 'Preparation Helper Capacity', 'guests / helper', 'Base preparation helper capacity.'),
+  D('prepDishesPerExtraHelper', 'Preparation', 'Prep-Heavy Dish Load', 'dishes / extra helper', 'Additional helper trigger from prep-heavy dish count.'),
+
+  D('disposableGuestsPerDishwasher', 'Utility', 'Disposable Service Utility', 'guests / staff', 'Utility staff capacity when serviceware is disposable.'),
+  D('standardGuestsPerDishwasher', 'Utility', 'Standard Crockery Dishwasher', 'guests / dishwasher', 'Dishwashing capacity for standard crockery.'),
+  D('premiumGuestsPerDishwasher', 'Utility', 'Premium Crockery Dishwasher', 'guests / dishwasher', 'Dishwashing capacity for premium multi-piece crockery.'),
+  D('indoorGuestsPerCleaner', 'Utility', 'Indoor Cleaning Capacity', 'guests / cleaner', 'Cleaning capacity for indoor venues.'),
+  D('outdoorGuestsPerCleaner', 'Utility', 'Outdoor Cleaning Capacity', 'guests / cleaner', 'Cleaning capacity for outdoor venues.'),
+  D('liveFoodGuestsPerCleaner', 'Utility', 'Live-Food Cleaning Capacity', 'guests / cleaner', 'Cleaning capacity when live food creates heavier floor/waste load.'),
+
+  D('wasteMinGuests', 'Logistics & Management', 'Waste Staff Minimum Event', 'guests', 'Minimum event size before dedicated waste staff is added.'),
+  D('wasteGuestsPerStaff', 'Logistics & Management', 'Waste Staff Capacity', 'guests / staff', 'Waste-management capacity.'),
+  D('loadingMinGuests', 'Logistics & Management', 'Loading Helper Minimum Event', 'guests', 'Minimum event size before loading/unloading helpers are added.'),
+  D('loadingGuestsPerHelper', 'Logistics & Management', 'Loading Helper Capacity', 'guests / helper', 'Fallback loading/unloading helper capacity.'),
+  D('eventManagerMinGuests', 'Logistics & Management', 'Event Manager Minimum Guests', 'guests', 'Guest count that requires an Event Manager.'),
+  D('eventManagerMinRecommendedStaff', 'Logistics & Management', 'Event Manager Staff Trigger', 'recommended staff', 'Total recommended manpower that triggers an Event Manager.'),
+];
+
+export function normalizeManpowerRules(
+  input?: Partial<ManpowerRuleConfig> | null,
+): ManpowerRuleConfig {
+  const next: ManpowerRuleConfig = {
+    ...DEFAULT_MANPOWER_RULES,
+  };
+
+  if (!input || typeof input !== 'object') {
+    return next;
+  }
+
+  MANPOWER_RULE_DEFINITIONS.forEach((definition) => {
+    const value = Number(input[definition.key]);
+
+    if (
+      Number.isFinite(value) &&
+      value >= definition.min &&
+      value <= definition.max
+    ) {
+      next[definition.key] = value;
+    }
+  });
+
+  return next;
+}
 
 export const MANPOWER_ROLE_MASTER: ManpowerRoleMaster[] = [
   { id: 'waiter', role: 'Waiter', department: 'SERVICE', rate: 750, aliases: ['waiter'], auto: true },
@@ -95,48 +388,72 @@ export const CATEGORY_WORKLOAD: Record<string, number> = {
 export function waiterRatio(
   serviceStyle: ServiceStyle,
   level: Required<ManpowerInputs>['serviceLevel'],
+  rulesInput?: Partial<ManpowerRuleConfig> | null,
 ) {
+  const rules = normalizeManpowerRules(rulesInput);
+
   const ratios = {
     STANDARD: {
-      BUFFET: 30,
-      TABLE_SERVICE: 15,
-      PACKED_MEAL: 50,
-      LIVE_COUNTER: 25,
+      BUFFET: rules.standardBuffetGuestsPerWaiter,
+      TABLE_SERVICE: rules.standardTableGuestsPerWaiter,
+      PACKED_MEAL: rules.standardPackedGuestsPerWaiter,
+      LIVE_COUNTER: rules.standardLiveGuestsPerWaiter,
     },
     PREMIUM: {
-      BUFFET: 20,
-      TABLE_SERVICE: 12,
-      PACKED_MEAL: 40,
-      LIVE_COUNTER: 20,
+      BUFFET: rules.premiumBuffetGuestsPerWaiter,
+      TABLE_SERVICE: rules.premiumTableGuestsPerWaiter,
+      PACKED_MEAL: rules.premiumPackedGuestsPerWaiter,
+      LIVE_COUNTER: rules.premiumLiveGuestsPerWaiter,
     },
     VIP: {
-      BUFFET: 12,
-      TABLE_SERVICE: 8,
-      PACKED_MEAL: 30,
-      LIVE_COUNTER: 15,
+      BUFFET: rules.vipBuffetGuestsPerWaiter,
+      TABLE_SERVICE: rules.vipTableGuestsPerWaiter,
+      PACKED_MEAL: rules.vipPackedGuestsPerWaiter,
+      LIVE_COUNTER: rules.vipLiveGuestsPerWaiter,
     },
   } as const;
 
   return ratios[level][serviceStyle];
 }
 
-export const WATER_SERVICE_RATIO: Record<Required<ManpowerInputs>['waterService'], number> = {
-  BOTTLE_COUNTER: 150,
-  BOTTLE_TABLE: 80,
-  GLASS_SERVICE: 60,
-  TABLE_SERVICE: 40,
-};
+export function waterServiceRatio(
+  waterService: Required<ManpowerInputs>['waterService'],
+  rulesInput?: Partial<ManpowerRuleConfig> | null,
+) {
+  const rules = normalizeManpowerRules(rulesInput);
 
-export const DISHWASHING_RATIO: Record<Required<ManpowerInputs>['crockeryType'], number> = {
-  DISPOSABLE: 350,
-  STANDARD: 140,
-  PREMIUM: 90,
-};
+  return {
+    BOTTLE_COUNTER: rules.bottleCounterGuestsPerWaterStaff,
+    BOTTLE_TABLE: rules.bottleTableGuestsPerWaterStaff,
+    GLASS_SERVICE: rules.glassServiceGuestsPerWaterStaff,
+    TABLE_SERVICE: rules.tableServiceGuestsPerWaterStaff,
+  }[waterService];
+}
 
-export const CLEANING_RATIO: Record<Required<ManpowerInputs>['venueType'], number> = {
-  INDOOR: 150,
-  OUTDOOR: 120,
-};
+export function dishwashingRatio(
+  crockeryType: Required<ManpowerInputs>['crockeryType'],
+  rulesInput?: Partial<ManpowerRuleConfig> | null,
+) {
+  const rules = normalizeManpowerRules(rulesInput);
+
+  return {
+    DISPOSABLE: rules.disposableGuestsPerDishwasher,
+    STANDARD: rules.standardGuestsPerDishwasher,
+    PREMIUM: rules.premiumGuestsPerDishwasher,
+  }[crockeryType];
+}
+
+export function cleaningRatio(
+  venueType: Required<ManpowerInputs>['venueType'],
+  rulesInput?: Partial<ManpowerRuleConfig> | null,
+) {
+  const rules = normalizeManpowerRules(rulesInput);
+
+  return {
+    INDOOR: rules.indoorGuestsPerCleaner,
+    OUTDOOR: rules.outdoorGuestsPerCleaner,
+  }[venueType];
+}
 
 export const DEPARTMENT_ORDER: ManpowerDepartment[] = [
   'SERVICE',
