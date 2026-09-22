@@ -1253,7 +1253,8 @@ export default function EventPage() {
           ? data.items
           : [];
 
-      const cleaned =
+      const cleaned:
+        ManualDishOption[] =
         items.flatMap(
           (value: unknown) => {
             if (
