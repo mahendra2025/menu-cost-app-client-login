@@ -276,7 +276,6 @@ export async function POST(request: Request) {
       overrides,
       savedRecipes,
       masterDishes,
-      tenantDishMaster,
     ] = await Promise.all([
       prisma.recipeCatalog.findUnique({
         where: { id: 'global' },
@@ -298,17 +297,38 @@ export async function POST(request: Request) {
           rate: true,
         },
       }),
-
-      prisma.tenantDishMasterItem.findMany({
-        where: {
-          tenantId,
-        },
-        select: {
-          normalizedName: true,
-          rate: true,
-        },
-      }),
     ]);
+
+    let tenantDishMaster:
+      Array<{
+        normalizedName: string;
+        rate: number;
+      }> = [];
+
+    try {
+      tenantDishMaster =
+        await prisma
+          .tenantDishMasterItem
+          .findMany({
+            where: {
+              tenantId,
+            },
+            select: {
+              normalizedName: true,
+              rate: true,
+            },
+          });
+    } catch (privateCatalogError) {
+      /*
+       * Private saved rates are an optional override.
+       * Global/recipe costing must continue to work if
+       * an additive migration has not reached production.
+       */
+      console.warn(
+        'Tenant Dish Master unavailable during auto costing; continuing without private overrides:',
+        privateCatalogError,
+      );
+    }
 
     const previousTenantCostMap =
       new Map(
