@@ -52,6 +52,7 @@ const adminNav = [
   { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients and recipe costing', icon: 'dishes' as NavIcon },
   { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Categories and rates', icon: 'ingredients' as NavIcon },
   { href: '/admin/gas', label: 'Gas Cost', mobileLabel: 'Gas', description: 'LPG settings and category usage', icon: 'ingredients' as NavIcon },
+  { href: '/admin/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Automatic manpower rules', icon: 'clients' as NavIcon },
   { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Workspace settings', icon: 'profile' as NavIcon },
 ];
 
