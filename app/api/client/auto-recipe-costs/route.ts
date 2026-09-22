@@ -276,6 +276,7 @@ export async function POST(request: Request) {
       overrides,
       savedRecipes,
       masterDishes,
+      tenantDishMaster,
     ] = await Promise.all([
       prisma.recipeCatalog.findUnique({
         where: { id: 'global' },
@@ -294,6 +295,16 @@ export async function POST(request: Request) {
       prisma.dishMasterItem.findMany({
         select: {
           name: true,
+          rate: true,
+        },
+      }),
+
+      prisma.tenantDishMasterItem.findMany({
+        where: {
+          tenantId,
+        },
+        select: {
+          normalizedName: true,
           rate: true,
         },
       }),
@@ -337,6 +348,21 @@ export async function POST(request: Request) {
                 ] as const]
               : [];
           },
+        ),
+      );
+
+    const tenantDishRateMap =
+      new Map(
+        tenantDishMaster.map(
+          (dish) => [
+            dish.normalizedName,
+            Math.max(
+              0,
+              Number(
+                dish.rate,
+              ) || 0,
+            ),
+          ],
         ),
       );
 
@@ -398,7 +424,12 @@ export async function POST(request: Request) {
     );
 
     const missing = Array.from(unique.entries())
-      .filter(([key]) => !catalogMap.has(key) && !savedMap.has(key))
+      .filter(
+        ([key]) =>
+          !tenantDishRateMap.has(key) &&
+          !catalogMap.has(key) &&
+          !savedMap.has(key),
+      )
       .map(([, dish]) => dish);
     const ingredientCatalog = masterRates
       .map(normalizeIngredientRate)
@@ -527,10 +558,9 @@ export async function POST(request: Request) {
         ) || 0;
 
       const savedTenantRate =
-        !recipe &&
-        previousTenantCost > 0
-          ? previousTenantCost
-          : 0;
+        tenantDishRateMap.get(
+          key,
+        ) || 0;
 
       const finalCostPerPlate =
         savedTenantRate > 0
@@ -628,7 +658,9 @@ export async function POST(request: Request) {
         );
 
       const costDrivers =
-        recipe
+        savedTenantRate > 0
+          ? []
+          : recipe
           ? buildIngredientCostDrivers(
               recipe,
               previousSavedRecipeMap.get(
@@ -661,8 +693,14 @@ export async function POST(request: Request) {
         quality,
         accuracy,
         costDrivers,
-        estimatedIngredientRates: priced?.estimatedRates || 0,
-        recipeAvailable: Boolean(recipe),
+        estimatedIngredientRates:
+          savedTenantRate > 0
+            ? 0
+            : priced?.estimatedRates || 0,
+        recipeAvailable:
+          savedTenantRate > 0
+            ? false
+            : Boolean(recipe),
         source:
           catalogRecipe
             ? 'catalog_recipe'
