@@ -1,6 +1,5 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
 
 import {
   getClientCookieName,
@@ -309,14 +308,18 @@ export async function GET() {
       }),
 
       tenantId
-        ? prisma.tenantAutoRecipe.findMany({
+        ? prisma.tenantDishMasterItem.findMany({
             where: {
               tenantId,
             },
             select: {
               name: true,
               category: true,
-              costPerPlate: true,
+              subcategory: true,
+              rate: true,
+              servingQuantity: true,
+              servingUnit: true,
+              gasKgPer100: true,
             },
           })
         : Promise.resolve([]),
@@ -493,7 +496,7 @@ export async function GET() {
           .filter(
             (item) =>
               item.name.trim() &&
-              Number(item.costPerPlate) > 0,
+              Number(item.rate) > 0,
           )
           .map(
             (item) => [
@@ -534,14 +537,30 @@ export async function GET() {
             category:
               saved.category ||
               item.category,
+            subcategory:
+              saved.subcategory ||
+              item.subcategory,
             rate:
               Math.max(
                 0,
                 Number(
-                  saved.costPerPlate,
+                  saved.rate,
                 ) || 0,
               ) ||
               item.rate,
+            servingQuantity:
+              Math.max(
+                0.01,
+                Number(
+                  saved.servingQuantity,
+                ) || 1,
+              ),
+            servingUnit:
+              saved.servingUnit ||
+              item.servingUnit,
+            gasKgPer100:
+              saved.gasKgPer100 ??
+              item.gasKgPer100,
             source:
               'tenant' as const,
           };
@@ -557,19 +576,27 @@ export async function GET() {
             saved.category ||
             'Other',
           subcategory:
+            saved.subcategory ||
             '',
           rate:
             Math.max(
               0,
               Number(
-                saved.costPerPlate,
+                saved.rate,
               ) || 0,
             ),
           servingQuantity:
-            1,
+            Math.max(
+              0.01,
+              Number(
+                saved.servingQuantity,
+              ) || 1,
+            ),
           servingUnit:
+            saved.servingUnit ||
             'serving',
           gasKgPer100:
+            saved.gasKgPer100 ??
             undefined,
           pieceWeightGrams:
             undefined,
@@ -700,27 +727,53 @@ export async function POST(
         name,
       );
 
-    const existing =
-      await prisma
-        .tenantAutoRecipe
-        .findUnique({
-          where: {
-            tenantId_normalizedName: {
-              tenantId,
-              normalizedName,
-            },
-          },
-          select: {
-            ingredients:
-              true,
-            baseGuests:
-              true,
-          },
-        });
+    const servingQuantity =
+      Math.max(
+        0.01,
+        Number(
+          body.servingQuantity,
+        ) || 1,
+      );
+
+    const servingUnit =
+      String(
+        body.servingUnit ||
+        'serving',
+      ).trim() ||
+      'serving';
+
+    const subcategory =
+      String(
+        body.subcategory ||
+        '',
+      )
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60);
+
+    const rawGasKgPer100 =
+      body.gasKgPer100;
+
+    const gasKgPer100 =
+      rawGasKgPer100 ===
+          null ||
+        rawGasKgPer100 ===
+          undefined ||
+        String(
+          rawGasKgPer100,
+        ).trim() ===
+          ''
+        ? null
+        : Math.max(
+            0,
+            Number(
+              rawGasKgPer100,
+            ) || 0,
+          );
 
     const saved =
       await prisma
-        .tenantAutoRecipe
+        .tenantDishMasterItem
         .upsert({
           where: {
             tenantId_normalizedName: {
@@ -733,33 +786,29 @@ export async function POST(
             normalizedName,
             name,
             category,
-            baseGuests:
-              100,
-            ingredients:
-              [] as Prisma.InputJsonValue,
-            costPerPlate:
-              rate,
+            subcategory,
+            rate,
+            servingQuantity,
+            servingUnit,
+            gasKgPer100,
           },
           update: {
             name,
             category,
-            baseGuests:
-              existing
-                ?.baseGuests ||
-              100,
-            ingredients:
-              (
-                existing
-                  ?.ingredients ??
-                []
-              ) as Prisma.InputJsonValue,
-            costPerPlate:
-              rate,
+            subcategory,
+            rate,
+            servingQuantity,
+            servingUnit,
+            gasKgPer100,
           },
           select: {
             name: true,
             category: true,
-            costPerPlate: true,
+            subcategory: true,
+            rate: true,
+            servingQuantity: true,
+            servingUnit: true,
+            gasKgPer100: true,
           },
         });
 
@@ -771,13 +820,16 @@ export async function POST(
         category:
           saved.category,
         subcategory:
-          '',
+          saved.subcategory,
         rate:
-          saved.costPerPlate,
+          saved.rate,
         servingQuantity:
-          1,
+          saved.servingQuantity,
         servingUnit:
-          'serving',
+          saved.servingUnit,
+        gasKgPer100:
+          saved.gasKgPer100 ??
+          undefined,
         source:
           'tenant',
       },
