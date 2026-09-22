@@ -1,5 +1,5 @@
 .menu { max-width: 960px; margin: 0 auto; padding: 8px 0 32px; }
-.actions { margin-bottom: 24px; }
+.actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
 .actions a { color: var(--blue); font-size: 14px; font-weight: 600; text-underline-offset: 4px; }
 .actions a:focus-visible { outline: 2px solid var(--blue); outline-offset: 5px; }
 .mealCard { margin-bottom: 22px; padding: 20px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface, transparent); }
@@ -36,3 +36,4 @@
   .footerActions > * { flex: 1; }
   .footerActions :global(.primary-button) { min-width: 0; }
 }
+.actions .nextButton { margin-left: auto; color: #fff; text-decoration: none; white-space: nowrap; }

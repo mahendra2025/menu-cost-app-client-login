@@ -339,6 +339,11 @@ export type WorkState = {
   manpowerInputs?: ManpowerInputs;
   extras: ExtraCost;
   disposableItems: DisposableCostItem[];
+  gasCostMaster?: {
+    setting: { cylinderPrice: number; cylinderWeightKg: number };
+    categoryRates: Array<{ categoryName: string; lpgKgPer100: number; basePax: number; active: boolean }>;
+    dishOverrides: Array<{ name: string; gasKgPer100: number }>;
+  };
   sellingPricePerPlate: number;
   profile: BusinessProfile;
   updatedAt: string;

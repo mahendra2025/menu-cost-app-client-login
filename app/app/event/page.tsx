@@ -3675,6 +3675,10 @@ export default function EventPage() {
       return;
     }
 
+    const functionName =
+      importFunctionName.trim() ||
+      detectionWork.event.functionType ||
+      'Event Menu';
     setDetecting(true);
 
     try {
@@ -5059,7 +5063,7 @@ export default function EventPage() {
       window.setTimeout(() => {
         document
           .getElementById(
-            'simpleDetectedMenu',
+            'detectedDishesSimple',
           )
           ?.scrollIntoView({
             behavior: 'smooth',
@@ -7144,34 +7148,45 @@ export default function EventPage() {
       title="Create Event"
       hidePageTitle
     >
-      <section className="content-grid event-simple-flow">
+      <section className="content-grid event-simple-flow event-upload-only-page">
         <div className="event-page-topbar no-print">
-          <div>
-            <span className="page-eyebrow">
-              Event workspace
+          <div className="event-page-heading">
+            <span className="event-page-step">
+              <i aria-hidden="true">1</i>
+              Event &amp; menu
             </span>
 
             <h1>
               {work.event.eventName ||
-                'Event'}
+                'Start a new event'}
             </h1>
 
             <p>
               {work.event.clientName
-                ? `Client: ${work.event.clientName}`
-                : 'Create or continue an event costing.'}
+                ? `Preparing a cost-ready menu for ${work.event.clientName}.`
+                : 'Add the event details, then upload the menu to detect every dish.'}
             </p>
           </div>
 
-          <button
-            className="primary-button event-new-button"
-            type="button"
-            onClick={
-              openNewEventForm
-            }
-          >
-            + New Event
-          </button>
+          <div className="event-page-actions">
+            {work.menu.length > 0 ? (
+              <span className="event-saved-status">
+                <i aria-hidden="true">✓</i>
+                {work.menu.length} dishes saved
+              </span>
+            ) : null}
+
+            <button
+              className="primary-button event-new-button"
+              type="button"
+              onClick={
+                openNewEventForm
+              }
+            >
+              <span aria-hidden="true">＋</span>
+              New event
+            </button>
+          </div>
         </div>
 
         {showNewEventForm ? (
@@ -7586,8 +7601,133 @@ export default function EventPage() {
           className="glass-card event-menu-card"
           style={{ order: 1 }}
         >
+          <div className="event-brief-strip" aria-label="Current event details">
+            <div className="event-brief-intro">
+              <span className="event-brief-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 4.5h14v15H5zM8 2.5v4M16 2.5v4M5 9h14" />
+                  <path d="M8.5 13h3M8.5 16h6" />
+                </svg>
+              </span>
+              <div>
+                <b>{work.event.eventName || 'Event brief'}</b>
+                <small>{work.event.clientName || 'Add a client to begin'}</small>
+              </div>
+            </div>
+
+            <dl className="event-brief-facts">
+              <div>
+                <dt>Date</dt>
+                <dd>{work.event.eventDate || 'Not set'}</dd>
+              </div>
+              <div>
+                <dt>Guests</dt>
+                <dd>{Number(work.event.pax) > 0 ? Number(work.event.pax).toLocaleString('en-IN') : 'Not set'}</dd>
+              </div>
+              <div>
+                <dt>Function</dt>
+                <dd>{work.event.functionType || 'Not set'}</dd>
+              </div>
+              <div>
+                <dt>Venue</dt>
+                <dd>{[work.event.venue, work.event.city].filter(Boolean).join(', ') || 'Not set'}</dd>
+              </div>
+            </dl>
+
+            <button className="event-brief-edit" type="button" onClick={openNewEventForm}>
+              {work.event.clientName ? 'Start another event' : 'Add event details'}
+            </button>
+          </div>
+
           <div className="form-grid">
             <div className={`menu-source-workspace${detectionPreview ? ' is-detected' : ''}`}>
+              <div className="event-upload-simple">
+                {!detectionPreview ? (
+                  <section className="event-upload-simple-card" aria-labelledby="simple-upload-title">
+                    <div className="event-upload-copy">
+                      <span className="event-upload-index" aria-hidden="true">Menu</span>
+                      <div>
+                        <h2 id="simple-upload-title">{t('Bring in the menu')}</h2>
+                        <p>{t('Upload a PDF or a clear photo. We will find the dishes and organise them by function for you.')}</p>
+                      </div>
+                    </div>
+
+                    <input
+                      id="simpleMenuFileUpload"
+                      className="visually-hidden-file"
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      disabled={Boolean(uploading) || detecting}
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0];
+                        event.currentTarget.value = '';
+                        if (file) void uploadMenuFile(file);
+                      }}
+                    />
+                    <label
+                      className={`primary-button event-upload-simple-button${uploading || detecting ? ' is-loading' : ''}`}
+                      htmlFor="simpleMenuFileUpload"
+                      aria-disabled={Boolean(uploading) || detecting}
+                    >
+                      <span className="event-upload-button-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" />
+                        </svg>
+                      </span>
+                      <span>
+                        <b>{uploading || detecting ? t('Detecting dishes…') : t('Choose PDF or photo')}</b>
+                        <small>{t('PDF, JPG, PNG or WebP')}</small>
+                      </span>
+                    </label>
+
+                    <div className="event-upload-assurance" aria-label="Upload information">
+                      <span><i aria-hidden="true">✓</i> PDF up to 15 MB</span>
+                      <span><i aria-hidden="true">✓</i> Photos up to 20 MB</span>
+                      <span><i aria-hidden="true">✓</i> Review before saving</span>
+                    </div>
+
+                    {uploadStatus ? (
+                      <div className="event-upload-simple-status" role="status" aria-live="polite">
+                        <span className="upload-spinner" aria-hidden="true" />
+                        <p>{uploadStatus}</p>
+                      </div>
+                    ) : null}
+                    {error ? <p className="event-upload-simple-error" role="alert">{error}</p> : null}
+                  </section>
+                ) : (
+                  <section className="event-detected-simple" id="detectedDishesSimple" aria-labelledby="detected-dishes-title">
+                    <div className="event-detected-simple-head">
+                      <span className="event-detected-simple-check" aria-hidden="true">✓</span>
+                      <div>
+                        <h2 id="detected-dishes-title">{t('Dishes detected')}</h2>
+                        <p>{detectionPreview.menu.length} {detectionPreview.menu.length === 1 ? t('dish found') : t('dishes found')}</p>
+                      </div>
+                    </div>
+
+                    <div className="event-detected-simple-list">
+                      {detectionPreview.menu.map((item, index) => (
+                        <div className="event-detected-simple-dish" key={item.id}>
+                          <span>{index + 1}</span>
+                          <div>
+                            <b>{item.name}</b>
+                            <small>{item.category || t('Other')}</small>
+                          </div>
+                          <i aria-hidden="true">✓</i>
+                        </div>
+                      ))}
+                    </div>
+
+                    {error ? <p className="event-upload-simple-error" role="alert">{error}</p> : null}
+                    <button
+                      className="primary-button event-detected-done"
+                      type="button"
+                      onClick={() => void applyDetectionPreview(work.menu.length > 0 ? 'merge' : 'replace', true)}
+                    >
+                      {t('Done')}
+                    </button>
+                  </section>
+                )}
+              </div>
               {work.menu.length > 0 ? (
                 <div className="menu-source-workspace-heading">
                   <small>{work.menu.length} dishes already saved</small>
