@@ -20261,12 +20261,20 @@ body.client-sheet-open {
   background: rgba(57, 136, 238, .055);
 }
 
+.event-review-picker-field,
 .event-review-add-form > label {
   display: grid;
   gap: 6px;
   min-width: 0;
 }
 
+.event-review-picker-field > label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.event-review-picker-field > label > span,
 .event-review-add-form > label > span {
   color: #91a0b2;
   font-size: 9px;
@@ -20275,6 +20283,141 @@ body.client-sheet-open {
 
 .event-review-add-form :is(.input, .select) {
   min-height: 43px;
+}
+
+.event-review-picker-help {
+  color: #748397;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.event-review-dish-suggestions {
+  display: grid;
+  overflow: auto;
+  max-height: 248px;
+  border: 1px solid rgba(103, 169, 251, .16);
+  border-radius: 11px;
+  background: #0d1520;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .18);
+}
+
+.event-review-dish-suggestions button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 9px 11px;
+  border: 0;
+  border-bottom: 1px solid rgba(157, 178, 204, .08);
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.event-review-dish-suggestions button:last-child {
+  border-bottom: 0;
+}
+
+.event-review-dish-suggestions button:hover,
+.event-review-dish-suggestions button.is-selected {
+  background: rgba(57, 136, 238, .10);
+}
+
+.event-review-dish-suggestions button:focus-visible {
+  outline: 2px solid rgba(103, 169, 251, .65);
+  outline-offset: -2px;
+}
+
+.event-review-dish-suggestions button > span {
+  min-width: 0;
+}
+
+.event-review-dish-suggestions b,
+.event-review-dish-suggestions small {
+  display: block;
+}
+
+.event-review-dish-suggestions b {
+  overflow: hidden;
+  color: #eef4fb;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-review-dish-suggestions small {
+  margin-top: 3px;
+  color: #718197;
+  font-size: 8px;
+}
+
+.event-review-dish-suggestions strong {
+  color: #9cc9ff;
+  font-size: 9px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.event-review-new-dish-note,
+.event-review-existing-dish-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  font-size: 9px;
+}
+
+.event-review-new-dish-note {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+  color: #a89168;
+  border: 1px solid rgba(244, 182, 74, .18);
+  background: rgba(244, 182, 74, .045);
+}
+
+.event-review-new-dish-note b {
+  color: #e8c57f;
+}
+
+.event-review-new-dish-note span {
+  line-height: 1.45;
+}
+
+.event-review-existing-dish-note {
+  color: #a6dbbc;
+  border: 1px solid rgba(71, 205, 128, .17);
+  background: rgba(71, 205, 128, .045);
+}
+
+.event-review-existing-dish-note > span {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: #07180f;
+  background: #58d78e;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.event-review-existing-dish-note b {
+  color: #b9e8cc;
+  font-size: 9px;
+}
+
+.event-review-existing-dish-note small {
+  margin-left: auto;
+  color: #769789;
+  font-size: 8px;
 }
 
 .event-review-add-actions {
@@ -20560,6 +20703,7 @@ body.client-sheet-open {
     grid-template-columns: 1fr 1fr;
   }
 
+  .event-review-picker-field,
   .event-review-add-form > label:first-child,
   .event-review-add-actions {
     grid-column: 1 / -1;
@@ -20628,6 +20772,25 @@ body.client-sheet-open {
 
   .event-review-attention span {
     text-align: left;
+  }
+
+  .event-review-dish-suggestions button {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .event-review-dish-suggestions strong {
+    justify-self: start;
+  }
+
+  .event-review-existing-dish-note {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .event-review-existing-dish-note small {
+    width: 100%;
+    margin-left: 25px;
   }
 }
 

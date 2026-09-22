@@ -1207,49 +1207,9 @@ export default function EventPage() {
     );
   }
 
-  async function openManualDishSelector() {
-    const functionName =
-      importFunctionName.trim() ||
-      work?.event.functionType ||
-      'Event Menu';
-
-    if (!importFunctionName.trim()) {
-      setImportFunctionName(
-        functionName,
-      );
-    }
-
-    if (
-      !importFunctionPax.trim() &&
-      Number(
-        work?.event.pax,
-      ) > 0
-    ) {
-      setImportFunctionPax(
-        String(
-          work?.event.pax,
-        ),
-      );
-    }
-
-    setError('');
-    setShowManualDishSelector(true);
-
-    window.setTimeout(
-      () =>
-        document
-          .getElementById(
-            'manualDishSelector',
-          )
-          ?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          }),
-      40,
-    );
-
+  async function loadManualDishCatalog() {
     if (manualDishCatalog.length) {
-      return;
+      return manualDishCatalog;
     }
 
     setManualDishLoading(true);
@@ -1362,6 +1322,8 @@ export default function EventPage() {
         cleaned,
       );
 
+      return cleaned;
+
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -1369,9 +1331,55 @@ export default function EventPage() {
           : 'Could not load Dish Master.',
       );
 
+      return [];
+
     } finally {
       setManualDishLoading(false);
     }
+  }
+
+  async function openManualDishSelector() {
+    const functionName =
+      importFunctionName.trim() ||
+      work?.event.functionType ||
+      'Event Menu';
+
+    if (!importFunctionName.trim()) {
+      setImportFunctionName(
+        functionName,
+      );
+    }
+
+    if (
+      !importFunctionPax.trim() &&
+      Number(
+        work?.event.pax,
+      ) > 0
+    ) {
+      setImportFunctionPax(
+        String(
+          work?.event.pax,
+        ),
+      );
+    }
+
+    setError('');
+    setShowManualDishSelector(true);
+
+    window.setTimeout(
+      () =>
+        document
+          .getElementById(
+            'manualDishSelector',
+          )
+          ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          }),
+      40,
+    );
+
+    await loadManualDishCatalog();
   }
 
   function toggleManualDish(
@@ -3472,24 +3480,74 @@ export default function EventPage() {
       return;
     }
 
+    const catalogDish =
+      manualDishCatalog.find(
+        (dish) =>
+          dishNameKey(
+            dish.name,
+          ) ===
+          dishNameKey(
+            name,
+          ),
+      );
+
+    const catalogCategory =
+      catalogDish &&
+      CATEGORIES.includes(
+        catalogDish.category as Category,
+      )
+        ? catalogDish.category as Category
+        : newDetectionDishCategory;
+
+    const savedRate =
+      Math.max(
+        0,
+        Number(
+          catalogDish?.rate,
+        ) || 0,
+      );
+
+    const servingQuantity =
+      Math.max(
+        0.01,
+        Number(
+          catalogDish
+            ?.servingQuantity,
+        ) || 1,
+      );
+
+    const hasSavedRate =
+      savedRate > 0;
+
     const newItem:
       MenuItem = {
         id:
           uid('dish'),
 
-        name,
+        name:
+          catalogDish?.name ||
+          name,
 
         category:
-          newDetectionDishCategory,
+          catalogCategory,
 
         costPerPlate:
-          0,
+          savedRate,
 
         portionQuantity:
-          1,
+          servingQuantity,
+
+        portionBaseQuantity:
+          servingQuantity,
 
         portionUnit:
+          catalogDish
+            ?.servingUnit ||
           'serving',
+
+        pieceWeightGrams:
+          catalogDish
+            ?.pieceWeightGrams,
 
         serviceId:
           groupSource
@@ -3515,31 +3573,59 @@ export default function EventPage() {
           0,
 
         detectionSource:
-          'manual',
+          catalogDish
+            ? 'catalog'
+            : 'manual',
 
         detectionConfidence:
           100,
 
         detectionReason:
-          'User manually added a dish missed by detection',
+          catalogDish
+            ? 'User selected an existing Dish Master dish while editing the menu'
+            : 'User manually added a new dish while editing the menu',
+
+        costSource:
+          hasSavedRate
+            ? 'catalog'
+            : 'manual',
 
         coverageStatus:
-          'NEW_DISH_PENDING',
+          hasSavedRate
+            ? 'COSTED'
+            : 'NEW_DISH_PENDING',
+
+        costQualityStatus:
+          hasSavedRate
+            ? 'READY'
+            : undefined,
 
         costConfidence:
-          0,
+          hasSavedRate
+            ? 100
+            : 0,
 
         rateCoveragePercent:
-          0,
+          hasSavedRate
+            ? 100
+            : 0,
 
         coverageReason:
-          'Manually added dish needs a confirmed cost.',
+          hasSavedRate
+            ? 'Dish Master cost available'
+            : catalogDish
+              ? 'Dish Master item has no saved rate yet.'
+              : 'New dish needs a confirmed cost.',
 
         costApprovalStatus:
-          'PENDING',
+          hasSavedRate
+            ? 'NOT_REQUIRED'
+            : 'PENDING',
 
         costApprovalReason:
-          'Manually added dish needs a confirmed cost.',
+          hasSavedRate
+            ? 'Dish Master rate'
+            : 'A confirmed cost is required before saving.',
       };
 
     setDetectionPreview(
@@ -3574,9 +3660,15 @@ export default function EventPage() {
         const next =
           new Set(current);
 
-        next.add(
-          newItem.id,
-        );
+        if (hasSavedRate) {
+          next.delete(
+            newItem.id,
+          );
+        } else {
+          next.add(
+            newItem.id,
+          );
+        }
 
         return next;
       },
@@ -3586,20 +3678,16 @@ export default function EventPage() {
       '',
     );
 
-    /*
-     * A manually added dish is valid menu
-     * knowledge too. Saving a self-alias
-     * remembers its category next time.
-     */
     void saveTenantDishLearning({
       aliasName:
         name,
 
       canonicalName:
+        catalogDish?.name ||
         name,
 
       category:
-        newDetectionDishCategory,
+        catalogCategory,
 
       action:
         'MAP',
@@ -3609,20 +3697,27 @@ export default function EventPage() {
       'menu_detection_review_action',
       {
         action:
-          'manual_add_missed',
+          catalogDish
+            ? 'add_from_dish_master'
+            : 'manual_add_missed',
         dish:
+          catalogDish?.name ||
           name,
         category:
-          newDetectionDishCategory,
+          catalogCategory,
+        hasSavedRate,
       },
     );
 
-    void recostReviewedDish(
-      newItem.id,
-      name,
-      newDetectionDishCategory,
-      'manual_add',
-    );
+    if (!hasSavedRate) {
+      void recostReviewedDish(
+        newItem.id,
+        catalogDish?.name ||
+          name,
+        catalogCategory,
+        'manual_add',
+      );
+    }
 
     setNewDetectionDishCategory(
       'Other',
@@ -6003,6 +6098,81 @@ export default function EventPage() {
         100,
       );
 
+  const normalizedNewDetectionDishSearch =
+    newDetectionDishName
+      .trim()
+      .toLowerCase();
+
+  const newDetectionDishSuggestions =
+    normalizedNewDetectionDishSearch
+      ? manualDishCatalog
+          .filter(
+            (dish) =>
+              [
+                dish.name,
+                dish.category,
+                dish.subcategory,
+              ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase()
+                .includes(
+                  normalizedNewDetectionDishSearch,
+                ),
+          )
+          .sort(
+            (left, right) => {
+              const leftName =
+                left.name.toLowerCase();
+              const rightName =
+                right.name.toLowerCase();
+              const leftExact =
+                leftName ===
+                normalizedNewDetectionDishSearch;
+              const rightExact =
+                rightName ===
+                normalizedNewDetectionDishSearch;
+              const leftStarts =
+                leftName.startsWith(
+                  normalizedNewDetectionDishSearch,
+                );
+              const rightStarts =
+                rightName.startsWith(
+                  normalizedNewDetectionDishSearch,
+                );
+
+              if (leftExact !== rightExact) {
+                return leftExact ? -1 : 1;
+              }
+
+              if (leftStarts !== rightStarts) {
+                return leftStarts ? -1 : 1;
+              }
+
+              return left.name.localeCompare(
+                right.name,
+              );
+            },
+          )
+          .slice(
+            0,
+            6,
+          )
+      : [];
+
+  const exactNewDetectionCatalogDish =
+    normalizedNewDetectionDishSearch
+      ? manualDishCatalog.find(
+          (dish) =>
+            dishNameKey(
+              dish.name,
+            ) ===
+            dishNameKey(
+              newDetectionDishName,
+            ),
+        )
+      : undefined;
+
   const manualSelectedCount =
     selectedManualDishKeys.size;
 
@@ -7738,6 +7908,7 @@ export default function EventPage() {
                         className="event-review-add"
                         onClick={() => {
                           setShowAddMissedDish((current) => !current);
+                          void loadManualDishCatalog();
                           if (!newDetectionDishGroupKey && simpleDetectedGroups[0]) {
                             setNewDetectionDishGroupKey(simpleDetectedGroups[0].key);
                           }
@@ -7749,16 +7920,76 @@ export default function EventPage() {
 
                     {showAddMissedDish ? (
                       <div className="event-review-add-form">
-                        <label>
-                          <span>Dish name</span>
-                          <input
-                            className="input"
-                            value={newDetectionDishName}
-                            onChange={(event) => setNewDetectionDishName(event.target.value)}
-                            placeholder="e.g. Paneer tikka"
-                            autoFocus
-                          />
-                        </label>
+                        <div className="event-review-picker-field">
+                          <label htmlFor="newDetectionDishName">
+                            <span>Dish name</span>
+                            <input
+                              id="newDetectionDishName"
+                              className="input"
+                              value={newDetectionDishName}
+                              onChange={(event) => setNewDetectionDishName(event.target.value)}
+                              onFocus={() => void loadManualDishCatalog()}
+                              placeholder="Search Dish Master or type a new dish"
+                              autoComplete="off"
+                              autoFocus
+                            />
+                          </label>
+
+                          {manualDishLoading ? (
+                            <small className="event-review-picker-help">Loading Dish Master…</small>
+                          ) : newDetectionDishSuggestions.length ? (
+                            <div className="event-review-dish-suggestions" role="listbox" aria-label="Dish Master suggestions">
+                              {newDetectionDishSuggestions.map((dish) => {
+                                const active =
+                                  dishNameKey(dish.name) ===
+                                  dishNameKey(newDetectionDishName);
+
+                                return (
+                                  <button
+                                    type="button"
+                                    key={`${dish.category}::${dish.name}`}
+                                    className={active ? 'is-selected' : ''}
+                                    onClick={() => {
+                                      setNewDetectionDishName(dish.name);
+                                      setNewDetectionDishCategory(
+                                        CATEGORIES.includes(dish.category as Category)
+                                          ? dish.category as Category
+                                          : 'Other',
+                                      );
+                                      setError('');
+                                    }}
+                                  >
+                                    <span>
+                                      <b>{dish.name}</b>
+                                      <small>{dish.category}{dish.subcategory ? ` · ${dish.subcategory}` : ''}</small>
+                                    </span>
+                                    <strong>{dish.rate > 0 ? `₹${dish.rate.toFixed(2)} / plate` : 'Rate needed'}</strong>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : newDetectionDishName.trim() ? (
+                            <div className="event-review-new-dish-note">
+                              <b>New dish</b>
+                              <span>Not found in Dish Master. It will be added to this event and checked for a cost.</span>
+                            </div>
+                          ) : (
+                            <small className="event-review-picker-help">Start typing to choose an existing Dish Master item.</small>
+                          )}
+
+                          {exactNewDetectionCatalogDish ? (
+                            <div className="event-review-existing-dish-note">
+                              <span aria-hidden="true">✓</span>
+                              <b>Using Dish Master</b>
+                              <small>
+                                {exactNewDetectionCatalogDish.rate > 0
+                                  ? `Saved rate ₹${exactNewDetectionCatalogDish.rate.toFixed(2)} / plate`
+                                  : 'Existing dish found · rate still required'}
+                              </small>
+                            </div>
+                          ) : null}
+                        </div>
+
                         <label>
                           <span>Category</span>
                           <select
@@ -7783,7 +8014,9 @@ export default function EventPage() {
                         ) : null}
                         <div className="event-review-add-actions">
                           <button type="button" className="ghost-button" onClick={() => setShowAddMissedDish(false)}>Cancel</button>
-                          <button type="button" className="primary-button" onClick={addMissedDetectedDish}>Add dish</button>
+                          <button type="button" className="primary-button" onClick={addMissedDetectedDish}>
+                            {exactNewDetectionCatalogDish ? 'Add existing dish' : 'Add new dish'}
+                          </button>
                         </div>
                       </div>
                     ) : null}
