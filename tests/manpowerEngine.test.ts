@@ -118,3 +118,46 @@ test('utility manpower changes with crockery and outdoor venue settings', () => 
   assert.equal(result.find((row) => row.role === 'Water Staff')?.quantity, 18);
   assert.ok((result.find((row) => row.role === 'Cleaning')?.quantity ?? 0) >= 6);
 });
+
+
+test('admin manpower rules change automatic recommendations', () => {
+  const result = rows({
+    rules: {
+      standardBuffetGuestsPerWaiter: 35,
+      chaatGuestsPerCook: 175,
+      breadGuestsPerCook: 250,
+      standardGuestsPerDishwasher: 200,
+    },
+  });
+
+  assert.equal(result.find((row) => row.role === 'Waiter')?.quantity, 20);
+  assert.equal(result.find((row) => row.role === 'Chaat Cook')?.quantity, 4);
+  assert.equal(result.find((row) => row.role === 'Bread Cook')?.quantity, 4);
+  assert.equal(result.find((row) => row.role === 'Dishwasher')?.quantity, 4);
+});
+
+test('manual override still wins after admin master changes', () => {
+  const result = rows({
+    rules: {
+      standardBuffetGuestsPerWaiter: 35,
+    },
+    existingRows: [
+      {
+        id: 'saved_waiter',
+        role: 'Waiter',
+        quantity: 28,
+        rate: 750,
+        manualOverride: true,
+        calculationSource: 'MANUAL',
+        serviceId: 'lunch',
+        mealLabel: 'Lunch',
+      },
+    ],
+  });
+
+  const waiter = result.find((row) => row.role === 'Waiter');
+
+  assert.equal(waiter?.recommendedQuantity, 20);
+  assert.equal(waiter?.quantity, 28);
+  assert.equal(waiter?.manualOverride, true);
+});
