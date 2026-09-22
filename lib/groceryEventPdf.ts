@@ -11,6 +11,12 @@ import {
   inferIngredientCategory,
 } from './ingredientCatalog';
 import {
+  calculateDisposableCost,
+} from './disposableCost';
+import type {
+  EventGasCostBreakdown,
+} from './gasCost';
+import {
   calculate,
 } from './store';
 import type {
@@ -280,6 +286,7 @@ function sectionTitle(
 export function downloadGroceryEventPdf(
   work: WorkState,
   plan: FunctionGroceryPlan,
+  gasBreakdown?: EventGasCostBreakdown | null,
 ) {
   const doc =
     new jsPDF({
@@ -291,6 +298,52 @@ export function downloadGroceryEventPdf(
 
   const result =
     calculate(work);
+
+  const disposable =
+    calculateDisposableCost(
+      work.disposableItems,
+    );
+
+  const totalCovers =
+    Math.max(
+      0,
+      Number(
+        result.totalCovers,
+      ) || 0,
+    );
+
+  const gasTotal =
+    Math.max(
+      0,
+      Number(
+        gasBreakdown
+          ?.totalGasCost ??
+        work.extras.gasFuel,
+      ) || 0,
+    );
+
+  const gasPerCover =
+    totalCovers > 0
+      ? gasTotal /
+        totalCovers
+      : 0;
+
+  const disposablePerCover =
+    totalCovers > 0
+      ? disposable.total /
+        totalCovers
+      : 0;
+
+  const foodGasPlasticTotal =
+    result.menuFoodTotal +
+    gasTotal +
+    disposable.total;
+
+  const foodGasPlasticPerCover =
+    totalCovers > 0
+      ? foodGasPlasticTotal /
+        totalCovers
+      : 0;
 
   const businessName =
     work.profile.businessName ||
@@ -481,7 +534,7 @@ export function downloadGroceryEventPdf(
     doc,
     'Cost Summary',
     y,
-    'Food and grocery cost only. Manpower, gas, transport and disposable costs are excluded.',
+    'Menu food, grocery reference, LPG gas and plastic/disposable costs. Recipe grocery cost is shown for purchasing reference and is not double-counted in the combined total.',
   );
 
   const groceryPerCover =
@@ -520,12 +573,39 @@ export function downloadGroceryEventPdf(
           ),
         ],
         [
-          'Recipe Grocery Cost',
+          'Recipe Grocery Cost (Reference)',
           money(
             groceryPerCover,
           ),
           money(
             plan.combinedIngredientCost,
+          ),
+        ],
+        [
+          'LPG / Gas Cost',
+          money(
+            gasPerCover,
+          ),
+          money(
+            gasTotal,
+          ),
+        ],
+        [
+          'Plastic / Disposable Cost',
+          money(
+            disposablePerCover,
+          ),
+          money(
+            disposable.total,
+          ),
+        ],
+        [
+          'Menu + Gas + Plastic Total',
+          money(
+            foodGasPlasticPerCover,
+          ),
+          money(
+            foodGasPlasticTotal,
           ),
         ],
       ],
@@ -1202,6 +1282,610 @@ export function downloadGroceryEventPdf(
       doc,
       y + 24,
     ) + 8;
+
+  if (
+    y > 226
+  ) {
+    doc.addPage();
+    y = 18;
+  }
+
+  sectionTitle(
+    doc,
+    'Gas Cost Details',
+    y,
+    'Dish-wise LPG calculation using the current LPG rate and each dish/category gas usage.',
+  );
+
+  const gasRows =
+    gasBreakdown
+      ?.rows ||
+    [];
+
+  const cylinderPrice =
+    Math.max(
+      0,
+      Number(
+        gasBreakdown
+          ?.setting
+          .cylinderPrice,
+      ) || 0,
+    );
+
+  const cylinderWeightKg =
+    Math.max(
+      0,
+      Number(
+        gasBreakdown
+          ?.setting
+          .cylinderWeightKg,
+      ) || 0,
+    );
+
+  autoTable(
+    doc,
+    {
+      startY:
+        y + 8,
+      margin: {
+        left:
+          14,
+        right:
+          14,
+      },
+      theme:
+        'grid',
+      body: [
+        [
+          'Commercial Cylinder Price',
+          money(
+            cylinderPrice,
+          ),
+        ],
+        [
+          'Cylinder Weight',
+          cylinderWeightKg > 0
+            ? `${quantity(cylinderWeightKg)} kg`
+            : '-',
+        ],
+        [
+          'LPG Rate / kg',
+          money(
+            gasBreakdown
+              ?.lpgRatePerKg ||
+            0,
+          ),
+        ],
+        [
+          'Total LPG Used',
+          gasBreakdown
+            ? `${quantity(gasBreakdown.totalGasKg)} kg`
+            : '-',
+        ],
+        [
+          'Gas Cost / Cover',
+          money(
+            gasPerCover,
+          ),
+        ],
+        [
+          'Total Gas Cost',
+          money(
+            gasTotal,
+          ),
+        ],
+      ],
+      columnStyles: {
+        0: {
+          cellWidth:
+            105,
+          fontStyle:
+            'bold',
+        },
+        1: {
+          halign:
+            'right',
+          fontStyle:
+            'bold',
+        },
+      },
+      styles: {
+        font:
+          'helvetica',
+        fontSize:
+          8,
+        cellPadding:
+          2,
+      },
+    },
+  );
+
+  y =
+    tableEnd(
+      doc,
+      y + 28,
+    ) + 7;
+
+  if (
+    gasRows.length
+  ) {
+    autoTable(
+      doc,
+      {
+        startY:
+          y,
+        margin: {
+          left:
+            8,
+          right:
+            8,
+          bottom:
+            16,
+        },
+        theme:
+          'grid',
+        head: [[
+          'Function',
+          'Dish',
+          'Category',
+          'Guests',
+          'kg / 100',
+          'LPG Used',
+          'Rate / kg',
+          'Gas Cost',
+        ]],
+        body:
+          gasRows.map(
+            (row) => [
+              [
+                row.dayLabel,
+                row.mealLabel,
+              ]
+                .filter(
+                  Boolean,
+                )
+                .join(
+                  ' - ',
+                ) ||
+                'Event Menu',
+              row.dish,
+              row.category,
+              row.guests.toLocaleString(
+                'en-IN',
+              ),
+              quantity(
+                row.gasKgPer100,
+              ),
+              `${quantity(row.gasKg)} kg`,
+              money(
+                row.lpgRatePerKg,
+              ),
+              money(
+                row.gasCost,
+              ),
+            ],
+          ),
+        headStyles: {
+          fillColor: [
+            15,
+            23,
+            42,
+          ],
+          textColor:
+            255,
+          fontStyle:
+            'bold',
+        },
+        alternateRowStyles: {
+          fillColor: [
+            249,
+            250,
+            251,
+          ],
+        },
+        columnStyles: {
+          0: {
+            cellWidth:
+              29,
+          },
+          1: {
+            cellWidth:
+              38,
+          },
+          2: {
+            cellWidth:
+              25,
+          },
+          3: {
+            cellWidth:
+              15,
+            halign:
+              'right',
+          },
+          4: {
+            cellWidth:
+              18,
+            halign:
+              'right',
+          },
+          5: {
+            cellWidth:
+              20,
+            halign:
+              'right',
+          },
+          6: {
+            cellWidth:
+              21,
+            halign:
+              'right',
+          },
+          7: {
+            cellWidth:
+              24,
+            halign:
+              'right',
+            fontStyle:
+              'bold',
+          },
+        },
+        styles: {
+          font:
+            'helvetica',
+          fontSize:
+            6.3,
+          cellPadding:
+            1.45,
+          overflow:
+            'linebreak',
+          valign:
+            'middle',
+        },
+      },
+    );
+
+    y =
+      tableEnd(
+        doc,
+        y + 28,
+      ) + 7;
+
+    const functionTotals =
+      gasBreakdown
+        ?.functionTotals ||
+      [];
+
+    if (
+      functionTotals.length
+    ) {
+      if (
+        y > 238
+      ) {
+        doc.addPage();
+        y = 18;
+      }
+
+      doc.setFont(
+        'helvetica',
+        'bold',
+      );
+      doc.setFontSize(
+        9,
+      );
+      doc.setTextColor(
+        35,
+        105,
+        190,
+      );
+      doc.text(
+        'Gas Function Subtotals',
+        14,
+        y,
+      );
+
+      autoTable(
+        doc,
+        {
+          startY:
+            y + 3,
+          margin: {
+            left:
+              14,
+            right:
+              14,
+          },
+          theme:
+            'grid',
+          head: [[
+            'Function',
+            'Guests',
+            'LPG Used',
+            'Gas Cost',
+          ]],
+          body:
+            functionTotals.map(
+              (row) => [
+                [
+                  row.dayLabel,
+                  row.mealLabel,
+                ]
+                  .filter(
+                    Boolean,
+                  )
+                  .join(
+                    ' - ',
+                  ) ||
+                  'Event Menu',
+                row.guests.toLocaleString(
+                  'en-IN',
+                ),
+                `${quantity(row.gasKg)} kg`,
+                money(
+                  row.gasCost,
+                ),
+              ],
+            ),
+          headStyles: {
+            fillColor: [
+              35,
+              105,
+              190,
+            ],
+            textColor:
+              255,
+            fontStyle:
+              'bold',
+          },
+          columnStyles: {
+            0: {
+              cellWidth:
+                80,
+            },
+            1: {
+              halign:
+                'right',
+            },
+            2: {
+              halign:
+                'right',
+            },
+            3: {
+              halign:
+                'right',
+              fontStyle:
+                'bold',
+            },
+          },
+          styles: {
+            font:
+              'helvetica',
+            fontSize:
+              7.5,
+            cellPadding:
+              1.8,
+          },
+        },
+      );
+
+      y =
+        tableEnd(
+          doc,
+          y + 22,
+        ) + 9;
+    }
+  } else {
+    autoTable(
+      doc,
+      {
+        startY:
+          y,
+        margin: {
+          left:
+            14,
+          right:
+            14,
+        },
+        theme:
+          'grid',
+        body: [[
+          'Detailed gas rows are unavailable. The saved gas total is shown above.',
+        ]],
+        styles: {
+          font:
+            'helvetica',
+          fontSize:
+            8,
+          cellPadding:
+            2.4,
+        },
+      },
+    );
+
+    y =
+      tableEnd(
+        doc,
+        y + 12,
+      ) + 9;
+  }
+
+  if (
+    y > 232
+  ) {
+    doc.addPage();
+    y = 18;
+  }
+
+  sectionTitle(
+    doc,
+    'Plastic / Disposable Cost Details',
+    y,
+    'Item-wise quantity, unit cost and total disposable cost used for this event.',
+  );
+
+  const disposableRows =
+    disposable.items.filter(
+      (item) =>
+        item.quantity > 0 ||
+        item.unitCost > 0,
+    );
+
+  autoTable(
+    doc,
+    {
+      startY:
+        y + 8,
+      margin: {
+        left:
+          14,
+        right:
+          14,
+        bottom:
+          16,
+      },
+      theme:
+        'grid',
+      head: [[
+        'Item',
+        'Quantity',
+        'Unit Cost',
+        'Total Cost',
+      ]],
+      body:
+        disposableRows.length
+          ? disposableRows.map(
+              (item) => [
+                item.name,
+                quantity(
+                  item.quantity,
+                ),
+                money(
+                  item.unitCost,
+                ),
+                money(
+                  item.lineTotal,
+                ),
+              ],
+            )
+          : [[
+              'No plastic / disposable items entered',
+              '-',
+              '-',
+              money(0),
+            ]],
+      headStyles: {
+        fillColor: [
+          15,
+          23,
+          42,
+        ],
+        textColor:
+          255,
+        fontStyle:
+          'bold',
+      },
+      alternateRowStyles: {
+        fillColor: [
+          249,
+          250,
+          251,
+        ],
+      },
+      columnStyles: {
+        0: {
+          cellWidth:
+            88,
+        },
+        1: {
+          cellWidth:
+            28,
+          halign:
+            'right',
+        },
+        2: {
+          cellWidth:
+            32,
+          halign:
+            'right',
+        },
+        3: {
+          halign:
+            'right',
+          fontStyle:
+            'bold',
+        },
+      },
+      styles: {
+        font:
+          'helvetica',
+        fontSize:
+          8,
+        cellPadding:
+          2,
+      },
+    },
+  );
+
+  y =
+    tableEnd(
+      doc,
+      y + 30,
+    ) + 7;
+
+  autoTable(
+    doc,
+    {
+      startY:
+        y,
+      margin: {
+        left:
+          70,
+        right:
+          14,
+      },
+      theme:
+        'grid',
+      body: [
+        [
+          'Plastic / Disposable Cost / Cover',
+          money(
+            disposablePerCover,
+          ),
+        ],
+        [
+          'Total Plastic / Disposable Cost',
+          money(
+            disposable.total,
+          ),
+        ],
+      ],
+      columnStyles: {
+        0: {
+          fontStyle:
+            'bold',
+        },
+        1: {
+          halign:
+            'right',
+          fontStyle:
+            'bold',
+        },
+      },
+      styles: {
+        font:
+          'helvetica',
+        fontSize:
+          8,
+        cellPadding:
+          2,
+      },
+    },
+  );
+
+  y =
+    tableEnd(
+      doc,
+      y + 16,
+    ) + 9;
 
   if (
     plan.unmatchedDishes
