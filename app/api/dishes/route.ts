@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 
 import {
   getClientCookieName,
@@ -268,6 +269,7 @@ export async function GET() {
       items,
       categoryCatalog,
       recipeCatalog,
+      tenantSavedDishes,
     ] = await Promise.all([
       prisma.dishMasterItem.findMany({
         orderBy: {
@@ -305,6 +307,19 @@ export async function GET() {
           rates: true,
         },
       }),
+
+      tenantId
+        ? prisma.tenantAutoRecipe.findMany({
+            where: {
+              tenantId,
+            },
+            select: {
+              name: true,
+              category: true,
+              costPerPlate: true,
+            },
+          })
+        : Promise.resolve([]),
     ]);
 
     let personalDishRates =
@@ -472,9 +487,103 @@ export async function GET() {
         }),
       );
 
+    const tenantSavedByName =
+      new Map(
+        tenantSavedDishes
+          .filter(
+            (item) =>
+              item.name.trim() &&
+              Number(item.costPerPlate) > 0,
+          )
+          .map(
+            (item) => [
+              normalizeName(
+                item.name,
+              ),
+              item,
+            ],
+          ),
+      );
+
+    const personalizedItems =
+      mergedItems.map(
+        (item) => {
+          const saved =
+            tenantSavedByName.get(
+              normalizeName(
+                item.name,
+              ),
+            );
+
+          if (!saved) {
+            return {
+              ...item,
+              source:
+                'global' as const,
+            };
+          }
+
+          tenantSavedByName.delete(
+            normalizeName(
+              item.name,
+            ),
+          );
+
+          return {
+            ...item,
+            category:
+              saved.category ||
+              item.category,
+            rate:
+              Math.max(
+                0,
+                Number(
+                  saved.costPerPlate,
+                ) || 0,
+              ) ||
+              item.rate,
+            source:
+              'tenant' as const,
+          };
+        },
+      );
+
+    tenantSavedByName.forEach(
+      (saved) => {
+        personalizedItems.push({
+          name:
+            saved.name,
+          category:
+            saved.category ||
+            'Other',
+          subcategory:
+            '',
+          rate:
+            Math.max(
+              0,
+              Number(
+                saved.costPerPlate,
+              ) || 0,
+            ),
+          servingQuantity:
+            1,
+          servingUnit:
+            'serving',
+          gasKgPer100:
+            undefined,
+          pieceWeightGrams:
+            undefined,
+          aliases:
+            [],
+          source:
+            'tenant' as const,
+        });
+      },
+    );
+
     const catalogItems =
       filterDishCatalogByStoredCategories(
-        mergedItems,
+        personalizedItems,
         categoryCatalog?.categories,
         readDeletedDishCategories(
           categoryCatalog
@@ -503,6 +612,187 @@ export async function GET() {
         items: [],
         error:
           'Dish catalog unavailable.',
+      },
+      {
+        status: 500,
+      },
+    );
+  }
+}
+
+
+export async function POST(
+  request: Request,
+) {
+  try {
+    const cookieStore =
+      await cookies();
+
+    const tenantId =
+      readClientSessionToken(
+        cookieStore.get(
+          getClientCookieName(),
+        )?.value,
+      );
+
+    if (!tenantId) {
+      return NextResponse.json(
+        {
+          error:
+            'Client login required',
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    const body =
+      await request.json() as Record<
+        string,
+        unknown
+      >;
+
+    const name =
+      String(
+        body.name || '',
+      )
+        .normalize('NFKC')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 120);
+
+    const category =
+      String(
+        body.category ||
+        'Other',
+      )
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60) ||
+      'Other';
+
+    const rate =
+      Math.max(
+        0,
+        Number(
+          body.rate,
+        ) || 0,
+      );
+
+    if (
+      !name ||
+      !(rate > 0)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Dish name and a valid rate are required.',
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const normalizedName =
+      normalizeName(
+        name,
+      );
+
+    const existing =
+      await prisma
+        .tenantAutoRecipe
+        .findUnique({
+          where: {
+            tenantId_normalizedName: {
+              tenantId,
+              normalizedName,
+            },
+          },
+          select: {
+            ingredients:
+              true,
+            baseGuests:
+              true,
+          },
+        });
+
+    const saved =
+      await prisma
+        .tenantAutoRecipe
+        .upsert({
+          where: {
+            tenantId_normalizedName: {
+              tenantId,
+              normalizedName,
+            },
+          },
+          create: {
+            tenantId,
+            normalizedName,
+            name,
+            category,
+            baseGuests:
+              100,
+            ingredients:
+              [] as Prisma.InputJsonValue,
+            costPerPlate:
+              rate,
+          },
+          update: {
+            name,
+            category,
+            baseGuests:
+              existing
+                ?.baseGuests ||
+              100,
+            ingredients:
+              (
+                existing
+                  ?.ingredients ??
+                []
+              ) as Prisma.InputJsonValue,
+            costPerPlate:
+              rate,
+          },
+          select: {
+            name: true,
+            category: true,
+            costPerPlate: true,
+          },
+        });
+
+    return NextResponse.json({
+      ok: true,
+      item: {
+        name:
+          saved.name,
+        category:
+          saved.category,
+        subcategory:
+          '',
+        rate:
+          saved.costPerPlate,
+        servingQuantity:
+          1,
+        servingUnit:
+          'serving',
+        source:
+          'tenant',
+      },
+    });
+
+  } catch (error) {
+    console.error(
+      'Dish catalog POST:',
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          'Could not save dish to your Dish Master.',
       },
       {
         status: 500,
