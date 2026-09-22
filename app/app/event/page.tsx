@@ -7697,33 +7697,198 @@ export default function EventPage() {
                 ) : (
                   <section className="event-detected-simple" id="detectedDishesSimple" aria-labelledby="detected-dishes-title">
                     <div className="event-detected-simple-head">
-                      <span className="event-detected-simple-check" aria-hidden="true">✓</span>
                       <div>
-                        <h2 id="detected-dishes-title">{t('Dishes detected')}</h2>
-                        <p>{detectionPreview.menu.length} {detectionPreview.menu.length === 1 ? t('dish found') : t('dishes found')}</p>
+                        <span className="event-review-step">Review</span>
+                        <h2 id="detected-dishes-title">Check the detected menu</h2>
+                        <p>Correct any dish, add what is missing, then save the menu.</p>
+                      </div>
+                      <div className="event-review-count" aria-label={`${simpleDetectedDishCount} dishes detected`}>
+                        <b>{simpleDetectedDishCount}</b>
+                        <span>dishes</span>
                       </div>
                     </div>
 
-                    <div className="event-detected-simple-list">
-                      {detectionPreview.menu.map((item, index) => (
-                        <div className="event-detected-simple-dish" key={item.id}>
-                          <span>{index + 1}</span>
-                          <div>
-                            <b>{item.name}</b>
-                            <small>{item.category || t('Other')}</small>
-                          </div>
-                          <i aria-hidden="true">✓</i>
+                    <div className="event-review-toolbar">
+                      <button type="button" className="event-review-back" onClick={returnToMenuUpload}>
+                        <span aria-hidden="true">←</span> Upload again
+                      </button>
+                      <button
+                        type="button"
+                        className="event-review-add"
+                        onClick={() => {
+                          setShowAddMissedDish((current) => !current);
+                          if (!newDetectionDishGroupKey && simpleDetectedGroups[0]) {
+                            setNewDetectionDishGroupKey(simpleDetectedGroups[0].key);
+                          }
+                        }}
+                      >
+                        <span aria-hidden="true">＋</span> Add missed dish
+                      </button>
+                    </div>
+
+                    {showAddMissedDish ? (
+                      <div className="event-review-add-form">
+                        <label>
+                          <span>Dish name</span>
+                          <input
+                            className="input"
+                            value={newDetectionDishName}
+                            onChange={(event) => setNewDetectionDishName(event.target.value)}
+                            placeholder="e.g. Paneer tikka"
+                            autoFocus
+                          />
+                        </label>
+                        <label>
+                          <span>Category</span>
+                          <select
+                            className="select"
+                            value={newDetectionDishCategory}
+                            onChange={(event) => setNewDetectionDishCategory(event.target.value as Category)}
+                          >
+                            {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                          </select>
+                        </label>
+                        {simpleDetectedGroups.length > 1 ? (
+                          <label>
+                            <span>Function</span>
+                            <select
+                              className="select"
+                              value={newDetectionDishGroupKey}
+                              onChange={(event) => setNewDetectionDishGroupKey(event.target.value)}
+                            >
+                              {simpleDetectedGroups.map((group) => <option key={group.key} value={group.key}>{group.label}</option>)}
+                            </select>
+                          </label>
+                        ) : null}
+                        <div className="event-review-add-actions">
+                          <button type="button" className="ghost-button" onClick={() => setShowAddMissedDish(false)}>Cancel</button>
+                          <button type="button" className="primary-button" onClick={addMissedDetectedDish}>Add dish</button>
                         </div>
+                      </div>
+                    ) : null}
+
+                    <div className="event-review-groups">
+                      {simpleDetectedGroups.map((group) => (
+                        <section className="event-review-group" key={group.key}>
+                          <div className="event-review-group-head">
+                            <div>
+                              <h3>{group.label}</h3>
+                              <span>{group.items.length} {group.items.length === 1 ? 'dish' : 'dishes'}</span>
+                            </div>
+                            <label>
+                              <span>Guests</span>
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                inputMode="numeric"
+                                value={group.servicePax > 0 ? String(group.servicePax) : ''}
+                                onChange={(event) => updateDetectionGroupPax(group.key, event.target.value)}
+                                placeholder="Required"
+                                aria-label={`Guests for ${group.label}`}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="event-review-dishes">
+                            {group.items.map((item, index) => {
+                              const needsManualRate = manualRateIds.has(item.id);
+                              const isEditing = editingDetectionId === item.id;
+
+                              return (
+                                <div className={`event-review-dish${needsManualRate ? ' needs-rate' : ''}`} key={item.id}>
+                                  <span className="event-review-dish-number">{index + 1}</span>
+
+                                  {isEditing ? (
+                                    <div className="event-review-edit-fields">
+                                      <input
+                                        className="input"
+                                        value={editDetectionName}
+                                        onChange={(event) => setEditDetectionName(event.target.value)}
+                                        aria-label="Dish name"
+                                        autoFocus
+                                      />
+                                      <select
+                                        className="select"
+                                        value={editDetectionCategory}
+                                        onChange={(event) => setEditDetectionCategory(event.target.value as Category)}
+                                        aria-label="Dish category"
+                                      >
+                                        {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                                      </select>
+                                      <div>
+                                        <button type="button" onClick={cancelDetectionEdit}>Cancel</button>
+                                        <button type="button" onClick={() => saveDetectionEdit(item.id)}>Save</button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <div className="event-review-dish-copy">
+                                        <b>{item.name}</b>
+                                        <span>{item.category || 'Other'}</span>
+                                        {recostingDishIds.has(item.id) ? <small>Checking rate…</small> : null}
+                                      </div>
+
+                                      {needsManualRate ? (
+                                        <label className="event-review-rate">
+                                          <span>₹</span>
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            inputMode="decimal"
+                                            value={item.costPerPlate || ''}
+                                            onChange={(event) => setDetectedManualRate(item.id, event.target.value)}
+                                            placeholder="Rate"
+                                            aria-label={`Per-plate rate for ${item.name}`}
+                                          />
+                                          <small>/ plate</small>
+                                        </label>
+                                      ) : (
+                                        <span className="event-review-ready" aria-label="Rate ready">✓</span>
+                                      )}
+
+                                      <div className="event-review-dish-actions">
+                                        <button type="button" onClick={() => beginDetectionEdit(item)} aria-label={`Edit ${item.name}`}>Edit</button>
+                                        <button type="button" className="remove" onClick={() => toggleDetectedDishRejection(item)} aria-label={`Remove ${item.name}`}>Remove</button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </section>
                       ))}
                     </div>
+
+                    {(simpleMissingManualRateCount > 0 || simpleMissingGuestCount > 0) ? (
+                      <div className="event-review-attention" role="status">
+                        <b>Complete before saving</b>
+                        <span>
+                          {[
+                            simpleMissingManualRateCount > 0 ? `${simpleMissingManualRateCount} missing ${simpleMissingManualRateCount === 1 ? 'rate' : 'rates'}` : '',
+                            simpleMissingGuestCount > 0 ? `${simpleMissingGuestCount} missing guest ${simpleMissingGuestCount === 1 ? 'count' : 'counts'}` : '',
+                          ].filter(Boolean).join(' · ')}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="event-review-ready-note"><span aria-hidden="true">✓</span> Menu is ready to save</div>
+                    )}
 
                     {error ? <p className="event-upload-simple-error" role="alert">{error}</p> : null}
                     <button
                       className="primary-button event-detected-done"
                       type="button"
+                      disabled={
+                        !simpleDetectedDishCount ||
+                        detecting ||
+                        simpleMissingManualRateCount > 0 ||
+                        simpleMissingGuestCount > 0
+                      }
                       onClick={() => void applyDetectionPreview(work.menu.length > 0 ? 'merge' : 'replace', true)}
                     >
-                      {t('Done')}
+                      Save menu and continue
                     </button>
                   </section>
                 )}
