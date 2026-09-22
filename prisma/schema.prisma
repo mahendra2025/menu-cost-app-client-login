@@ -21,6 +21,7 @@ model Tenant {
   works                  MenuWork[]
   ingredientRates        TenantIngredientRate[]
   autoRecipes            TenantAutoRecipe[]
+  dishMasterItems        TenantDishMasterItem[]
   dishAliases            TenantDishAlias[]
   freeCostings           TenantFreeCosting[]
   costingHistory         TenantCostingHistory[]
@@ -46,6 +47,25 @@ model TenantAutoRecipe {
   costPerPlate   Float    @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  @@unique([tenantId, normalizedName])
+  @@index([tenantId, updatedAt])
+}
+
+model TenantDishMasterItem {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  normalizedName  String
+  name            String
+  category        String   @default("Other")
+  subcategory     String   @default("")
+  rate            Float
+  servingQuantity Float    @default(1)
+  servingUnit     String   @default("serving")
+  gasKgPer100     Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@unique([tenantId, normalizedName])
   @@index([tenantId, updatedAt])
