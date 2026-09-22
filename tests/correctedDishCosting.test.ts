@@ -331,3 +331,85 @@ test(
     );
   },
 );
+
+
+test(
+  'tenant saved Dish Master rate is reused as trusted manual cost',
+  () => {
+    const result =
+      buildAutoRecipeCostRefresh({
+        costPerPlate:
+          32,
+
+        source:
+          'tenant_saved_rate',
+
+        quality: {
+          status:
+            'READY',
+
+          score:
+            100,
+
+          rateCoveragePercent:
+            100,
+
+          issues:
+            [],
+        },
+
+        accuracy: {
+          risk:
+            'STABLE',
+
+          previousCostPerPlate:
+            32,
+
+          changeAmount:
+            0,
+
+          changePercent:
+            0,
+
+          baselineSource:
+            'previous_tenant_recipe',
+
+          reason:
+            'Saved tenant rate reused.',
+        },
+
+        costDrivers:
+          [],
+      });
+
+    assert.equal(
+      result.usable,
+      true,
+    );
+
+    assert.equal(
+      result.source,
+      'tenant_saved_rate',
+    );
+
+    assert.equal(
+      result.patch.costPerPlate,
+      32,
+    );
+
+    assert.equal(
+      result.patch.costSource,
+      'manual',
+    );
+
+    assert.equal(
+      result.patch.coverageStatus,
+      'COSTED',
+    );
+
+    assert.equal(
+      result.patch.costApprovalStatus,
+      'NOT_REQUIRED',
+    );
+  },
+);
