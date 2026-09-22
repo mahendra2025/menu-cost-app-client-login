@@ -7640,7 +7640,7 @@ export default function EventPage() {
           </div>
 
           <div className="form-grid">
-            <div className={`menu-source-workspace${detectionPreview ? ' is-detected' : ''}`}>
+            <div className={`menu-source-workspace${detectionPreview ? ' is-detected' : ''}${showManualDishSelector ? ' is-manual-selection' : ''}`}>
               <div className="event-upload-simple">
                 {!detectionPreview ? (
                   <section className="event-upload-simple-card" aria-labelledby="simple-upload-title">
@@ -7679,6 +7679,27 @@ export default function EventPage() {
                         <small>{t('PDF, JPG, PNG or WebP')}</small>
                       </span>
                     </label>
+
+                    <div className="event-menu-choice" aria-hidden="true"><span>or</span></div>
+
+                    <button
+                      className="event-manual-entry"
+                      type="button"
+                      disabled={Boolean(uploading) || detecting}
+                      onClick={() => void openManualDishSelector()}
+                    >
+                      <span className="event-manual-entry-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M6 6h14M6 12h14M6 18h14" />
+                          <path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+                        </svg>
+                      </span>
+                      <span className="event-manual-entry-copy">
+                        <b>Select dishes manually</b>
+                        <small>Build this menu directly from your Dish Master</small>
+                      </span>
+                      <span className="event-manual-entry-arrow" aria-hidden="true">›</span>
+                    </button>
 
                     <div className="event-upload-assurance" aria-label="Upload information">
                       <span><i aria-hidden="true">✓</i> PDF up to 15 MB</span>
@@ -8281,6 +8302,7 @@ export default function EventPage() {
               {showManualDishSelector ? (
                 <div
                   id="manualDishSelector"
+                  className="event-manual-selector"
                   style={{
                     marginTop:
                       '12px',
@@ -8299,6 +8321,7 @@ export default function EventPage() {
                   }}
                 >
                   <div
+                    className="event-manual-selector-head"
                     style={{
                       display:
                         'flex',
@@ -8387,6 +8410,7 @@ export default function EventPage() {
                   </div>
 
                   <div
+                    className="event-manual-selector-filters"
                     style={{
                       display:
                         'grid',
@@ -8448,6 +8472,7 @@ export default function EventPage() {
 
                   {manualDishLoading ? (
                     <div
+                      className="event-manual-selector-grid"
                       style={{
                         color:
                           '#8995a4',
@@ -8603,6 +8628,7 @@ export default function EventPage() {
                   )}
 
                   <div
+                    className="event-manual-selector-footer"
                     style={{
                       display:
                         'flex',
