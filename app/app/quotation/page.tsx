@@ -944,6 +944,7 @@ export default function QuotationPage() {
       downloadGroceryEventPdf(
         work,
         groceryPlan,
+        gasBreakdown,
       );
     } catch {
       setError(
@@ -1884,7 +1885,7 @@ export default function QuotationPage() {
           </div>
 
           <div className="quote-safe">
-            Client Event PDF keeps internal costs private. Grocery PDF includes event details, menu cost, category-wise grocery quantities, ingredient rates, per-cover grocery cost and total grocery cost. Internal Costing PDF includes the full private cost index for your team only.
+            Client Event PDF keeps internal costs private. Grocery PDF includes event details, menu cost, category-wise grocery quantities, ingredient rates, LPG gas details, plastic/disposable item costs, per-cover costs and totals. Internal Costing PDF includes the full private cost index for your team only.
           </div>
 
           {message ? (
