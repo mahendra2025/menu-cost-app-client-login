@@ -3707,9 +3707,7 @@ export default function EventPage() {
         catalogDish?.name ||
           name,
         newDetectionDishCategory,
-        catalogDish
-          ? 'catalog'
-          : 'manual_add',
+        'manual_add',
       );
     }
 
