@@ -171,19 +171,129 @@ function generalCounterStationCount(menu: MenuItem[]) {
   ).length;
 }
 
-function isOtherLiveDish(item: MenuItem) {
-  const category = categoryKey(item);
+type ChefRoleId =
+  | 'chaat_cook'
+  | 'chinese_cook'
+  | 'italian_cook'
+  | 'south_indian_cook'
+  | 'live_counter_cook'
+  | 'starter_cook'
+  | 'soup_cook'
+  | 'bread_cook'
+  | 'main_course_cook'
+  | 'farsan_cook'
+  | 'sweet_halwai';
+
+function chefRoleForItem(
+  item: MenuItem,
+): ChefRoleId | null {
+  const category =
+    categoryKey(item);
+
+  /*
+   * These sections need service/preparation manpower,
+   * but not a dedicated production chef per dish.
+   */
   if (
-    ['chaat', 'chinese', 'italian', 'south indian', 'bread'].some((key) =>
-      category.includes(key),
+    [
+      'welcome drink',
+      'mocktail',
+      'beverage',
+      'salad',
+      'fruit',
+      'ice cream',
+      'papad',
+      'pickle',
+      'condiment',
+      'mukhwas',
+      'paan',
+      'pan',
+      'dry fruit',
+      'raita',
+      'water',
+    ].some(
+      (key) =>
+        category === key ||
+        category.includes(key),
     )
   ) {
-    return false;
+    return null;
   }
 
-  const name = normalize(item.name);
-  return /\b(live|grill|barbecue|bbq|pizza|jalebi|malpua|momos|tawa|fry)\b/.test(name) ||
-    category.includes('live counter');
+  if (category.includes('chaat')) {
+    return 'chaat_cook';
+  }
+
+  if (category.includes('chinese')) {
+    return 'chinese_cook';
+  }
+
+  if (
+    category.includes('italian') ||
+    category.includes('pasta') ||
+    category.includes('pizza')
+  ) {
+    return 'italian_cook';
+  }
+
+  if (category.includes('south indian')) {
+    return 'south_indian_cook';
+  }
+
+  if (
+    category.includes('bread') ||
+    category.includes('indian bread')
+  ) {
+    return 'bread_cook';
+  }
+
+  if (category.includes('farsan')) {
+    return 'farsan_cook';
+  }
+
+  if (category.includes('sweet')) {
+    return 'sweet_halwai';
+  }
+
+  if (category.includes('starter')) {
+    return 'starter_cook';
+  }
+
+  if (category.includes('soup')) {
+    return 'soup_cook';
+  }
+
+  const name =
+    normalize(item.name);
+
+  if (
+    category.includes('live counter') ||
+    category.includes('street food') ||
+    category.includes('sizzler') ||
+    /\b(live|grill|barbecue|bbq|momos|tawa)\b/.test(
+      name,
+    )
+  ) {
+    return 'live_counter_cook';
+  }
+
+  /*
+   * All remaining cooked categories fall back to
+   * Main Course Cook. This makes new/custom cooking
+   * categories obey the same one-dish-one-chef rule
+   * without needing a code change for every category.
+   */
+  return 'main_course_cook';
+}
+
+function countChefRole(
+  menu: MenuItem[],
+  role: ChefRoleId,
+) {
+  return menu.filter(
+    (item) =>
+      chefRoleForItem(item) === role,
+  ).length;
 }
 
 function rowBelongsToMeal(
@@ -236,6 +346,22 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   const rules = normalizeManpowerRules(input.rules);
   const recommendations = new Map<string, Recommendation>();
   const workload = calculateMenuWorkload(menu);
+
+  const chefCount = (
+    dishCount: number,
+  ) =>
+    ceilRatio(
+      dishCount,
+      rules.chefDishesPerCook,
+    );
+
+  const chefReason = (
+    dishCount: number,
+    label: string,
+  ) =>
+    dishCount > 0
+      ? `${dishCount} ${label} dish${dishCount === 1 ? '' : 'es'} ÷ ${rules.chefDishesPerCook} dish${rules.chefDishesPerCook === 1 ? '' : 'es'} per chef`
+      : `No ${label.toLowerCase()} dishes detected`;
 
   const waiters = ceilRatio(
     guests,
@@ -296,119 +422,284 @@ function buildRecommendations(input: MealManpowerEngineInput) {
     stationLabel: beverageDishes > 0 ? 'Beverage' : undefined,
   });
 
-  const chaatCount = countByCategory(menu, ['chaat']);
-  const chaatCooks = chaatCount > 0 ? Math.max(1, ceilRatio(guests, rules.chaatGuestsPerCook)) : 0;
+  const chaatCount =
+    countChefRole(
+      menu,
+      'chaat_cook',
+    );
+  const chaatCooks =
+    chefCount(
+      chaatCount,
+    );
   recommendations.set('chaat_cook', {
     quantity: chaatCooks,
-    reason: chaatCount > 0 ? `${chaatCount} chaat dish(es) · 1 cook per ${rules.chaatGuestsPerCook} guests` : 'No chaat station detected',
-    stationLabel: chaatCount > 0 ? 'Chaat' : undefined,
+    reason:
+      chefReason(
+        chaatCount,
+        'Chaat',
+      ),
+    stationLabel:
+      chaatCount > 0
+        ? 'Chaat'
+        : undefined,
   });
 
-  const chineseCount = countByCategory(menu, ['chinese']);
+  const chineseCount =
+    countChefRole(
+      menu,
+      'chinese_cook',
+    );
+  const chineseCooks =
+    chefCount(
+      chineseCount,
+    );
   recommendations.set('chinese_cook', {
-    quantity: chineseCount > 0 ? Math.max(1, ceilRatio(guests, rules.chineseGuestsPerCook)) : 0,
-    reason: chineseCount > 0 ? `${chineseCount} Chinese dish(es) · 1 cook per ${rules.chineseGuestsPerCook} guests` : 'No Chinese station detected',
-    stationLabel: chineseCount > 0 ? 'Chinese' : undefined,
+    quantity: chineseCooks,
+    reason:
+      chefReason(
+        chineseCount,
+        'Chinese',
+      ),
+    stationLabel:
+      chineseCount > 0
+        ? 'Chinese'
+        : undefined,
   });
 
-  const italianCount = countByCategory(menu, ['italian']);
+  const italianCount =
+    countChefRole(
+      menu,
+      'italian_cook',
+    );
+  const italianCooks =
+    chefCount(
+      italianCount,
+    );
   recommendations.set('italian_cook', {
-    quantity: italianCount > 0 ? Math.max(1, ceilRatio(guests, rules.italianGuestsPerCook)) : 0,
-    reason: italianCount > 0 ? `${italianCount} Italian/Pasta dish(es) · 1 cook per ${rules.italianGuestsPerCook} guests` : 'No Italian station detected',
-    stationLabel: italianCount > 0 ? 'Italian' : undefined,
+    quantity: italianCooks,
+    reason:
+      chefReason(
+        italianCount,
+        'Italian / Pasta',
+      ),
+    stationLabel:
+      italianCount > 0
+        ? 'Italian'
+        : undefined,
   });
 
-  const southIndianCount = countByCategory(menu, ['south indian']);
+  const southIndianCount =
+    countChefRole(
+      menu,
+      'south_indian_cook',
+    );
+  const southIndianCooks =
+    chefCount(
+      southIndianCount,
+    );
   recommendations.set('south_indian_cook', {
-    quantity: southIndianCount > 0 ? Math.max(1, ceilRatio(guests, rules.southIndianGuestsPerCook)) : 0,
-    reason: southIndianCount > 0 ? `${southIndianCount} South Indian dish(es) · 1 cook per ${rules.southIndianGuestsPerCook} guests` : 'No South Indian station detected',
-    stationLabel: southIndianCount > 0 ? 'South Indian' : undefined,
+    quantity:
+      southIndianCooks,
+    reason:
+      chefReason(
+        southIndianCount,
+        'South Indian',
+      ),
+    stationLabel:
+      southIndianCount > 0
+        ? 'South Indian'
+        : undefined,
   });
 
-  const otherLiveCount = menu.filter(isOtherLiveDish).length;
-  const liveCooks = otherLiveCount > 0
-    ? Math.max(1, ceilRatio(guests, rules.liveCounterGuestsPerCook)) * Math.min(2, otherLiveCount)
-    : 0;
+  const starterCount =
+    countChefRole(
+      menu,
+      'starter_cook',
+    );
+  const starterCooks =
+    chefCount(
+      starterCount,
+    );
+  recommendations.set('starter_cook', {
+    quantity:
+      starterCooks,
+    reason:
+      chefReason(
+        starterCount,
+        'Starter',
+      ),
+    stationLabel:
+      starterCount > 0
+        ? 'Starter'
+        : undefined,
+  });
+
+  const soupCount =
+    countChefRole(
+      menu,
+      'soup_cook',
+    );
+  const soupCooks =
+    chefCount(
+      soupCount,
+    );
+  recommendations.set('soup_cook', {
+    quantity:
+      soupCooks,
+    reason:
+      chefReason(
+        soupCount,
+        'Soup',
+      ),
+    stationLabel:
+      soupCount > 0
+        ? 'Soup'
+        : undefined,
+  });
+
+  const otherLiveCount =
+    countChefRole(
+      menu,
+      'live_counter_cook',
+    );
+  const liveCooks =
+    chefCount(
+      otherLiveCount,
+    );
   recommendations.set('live_counter_cook', {
-    quantity: liveCooks,
-    reason: otherLiveCount > 0 ? `${otherLiveCount} other live dish(es) · capacity based on ${rules.liveCounterGuestsPerCook} guests per cook` : 'No other live counter detected',
-    stationLabel: otherLiveCount > 0 ? 'Live Counter' : undefined,
+    quantity:
+      liveCooks,
+    reason:
+      chefReason(
+        otherLiveCount,
+        'Live Counter',
+      ),
+    stationLabel:
+      otherLiveCount > 0
+        ? 'Live Counter'
+        : undefined,
   });
   recommendations.set('live_counter_helper', {
-    quantity: liveCooks > 0 ? Math.ceil(liveCooks / rules.liveCooksPerHelper) : 0,
-    reason: liveCooks > 0 ? `1 helper per ${rules.liveCooksPerHelper} live cooks · ${liveCooks} live cooks` : 'No live cooks detected',
-    stationLabel: otherLiveCount > 0 ? 'Live Counter' : undefined,
+    quantity:
+      liveCooks > 0
+        ? Math.ceil(
+            liveCooks /
+              rules.liveCooksPerHelper,
+          )
+        : 0,
+    reason:
+      liveCooks > 0
+        ? `1 helper per ${rules.liveCooksPerHelper} live cooks · ${liveCooks} live cooks`
+        : 'No live cooks detected',
+    stationLabel:
+      otherLiveCount > 0
+        ? 'Live Counter'
+        : undefined,
   });
 
-  const breadCount = countByCategory(menu, ['bread', 'indian bread']);
-  const breadCooks = breadCount > 0
-    ? Math.max(1, ceilRatio(guests, rules.breadGuestsPerCook)) +
-        (breadCount >= rules.breadVarietyBonusThreshold1 ? 1 : 0) +
-        (breadCount >= rules.breadVarietyBonusThreshold2 ? 1 : 0)
-    : 0;
+  const breadCount =
+    countChefRole(
+      menu,
+      'bread_cook',
+    );
+  const breadCooks =
+    chefCount(
+      breadCount,
+    );
   recommendations.set('bread_cook', {
-    quantity: breadCooks,
-    reason: breadCount > 0 ? `${breadCount} bread variet${breadCount === 1 ? 'y' : 'ies'} · guest capacity plus variety load` : 'No bread section detected',
-    workloadScore: breadCount * 1.5,
-    stationLabel: breadCount > 0 ? 'Bread' : undefined,
+    quantity:
+      breadCooks,
+    reason:
+      chefReason(
+        breadCount,
+        'Bread',
+      ),
+    workloadScore:
+      breadCount * 1.5,
+    stationLabel:
+      breadCount > 0
+        ? 'Bread'
+        : undefined,
   });
   recommendations.set('bread_helper', {
-    quantity: breadCooks > 0 ? Math.ceil(breadCooks / rules.breadCooksPerHelper) : 0,
-    reason: breadCooks > 0 ? `1 helper per ${rules.breadCooksPerHelper} bread cooks · ${breadCooks} bread cooks` : 'No bread cooks detected',
-    stationLabel: breadCount > 0 ? 'Bread' : undefined,
+    quantity:
+      breadCooks > 0
+        ? Math.ceil(
+            breadCooks /
+              rules.breadCooksPerHelper,
+          )
+        : 0,
+    reason:
+      breadCooks > 0
+        ? `1 helper per ${rules.breadCooksPerHelper} bread cooks · ${breadCooks} bread cooks`
+        : 'No bread cooks detected',
+    stationLabel:
+      breadCount > 0
+        ? 'Bread'
+        : undefined,
   });
 
-  const mainCourseCount = countByCategory(menu, [
-    'paneer',
-    'sabji',
-    'vegetable',
-    'dal',
-    'kadhi',
-    'rice',
-    'punjabi',
-    'gujarati',
-    'kathiyawadi',
-    'rajasthani',
-  ]);
-  const mainCourseCooks = mainCourseCount > 0
-    ? Math.max(
-        1,
-        ceilRatio(guests, rules.mainCourseGuestsPerCook) +
-          Math.max(0, Math.ceil(mainCourseCount / rules.mainCourseDishesPerExtraCook) - 1),
-      )
-    : 0;
+  const mainCourseCount =
+    countChefRole(
+      menu,
+      'main_course_cook',
+    );
+  const mainCourseCooks =
+    chefCount(
+      mainCourseCount,
+    );
   recommendations.set('main_course_cook', {
-    quantity: mainCourseCooks,
-    reason: mainCourseCount > 0 ? `${mainCourseCount} main-course dish(es) · guest and dish workload` : 'No main-course production detected',
-    workloadScore: workload,
+    quantity:
+      mainCourseCooks,
+    reason:
+      chefReason(
+        mainCourseCount,
+        'Main Course / Other Cooked',
+      ),
+    workloadScore:
+      workload,
   });
 
-  const farsanCount = countByCategory(menu, ['farsan']);
-  const farsanCooks = farsanCount > 0
-    ? Math.max(
-        1,
-        ceilRatio(guests, rules.farsanGuestsPerCook) +
-          Math.floor(Math.max(0, farsanCount - 1) / rules.farsanDishesPerExtraCook),
-      )
-    : 0;
+  const farsanCount =
+    countChefRole(
+      menu,
+      'farsan_cook',
+    );
+  const farsanCooks =
+    chefCount(
+      farsanCount,
+    );
   recommendations.set('farsan_cook', {
-    quantity: farsanCooks,
-    reason: farsanCount > 0 ? `${farsanCount} farsan dish(es) · frying/preparation workload` : 'No farsan production detected',
-    workloadScore: farsanCount,
+    quantity:
+      farsanCooks,
+    reason:
+      chefReason(
+        farsanCount,
+        'Farsan',
+      ),
+    workloadScore:
+      farsanCount,
   });
 
-  const sweetCount = countByCategory(menu, ['sweet']);
-  const sweetCooks = sweetCount > 0
-    ? Math.max(
-        1,
-        ceilRatio(guests, rules.sweetGuestsPerCook) +
-          Math.floor(Math.max(0, sweetCount - 1) / rules.sweetDishesPerExtraCook),
-      )
-    : 0;
+  const sweetCount =
+    countChefRole(
+      menu,
+      'sweet_halwai',
+    );
+  const sweetCooks =
+    chefCount(
+      sweetCount,
+    );
   recommendations.set('sweet_halwai', {
-    quantity: sweetCooks,
-    reason: sweetCount > 0 ? `${sweetCount} sweet dish(es) · halwai workload` : 'No sweet production detected',
-    workloadScore: sweetCount * 1.5,
+    quantity:
+      sweetCooks,
+    reason:
+      chefReason(
+        sweetCount,
+        'Sweet',
+      ),
+    workloadScore:
+      sweetCount * 1.5,
   });
 
   const productionCooks =
@@ -417,9 +708,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
     sweetCooks +
     breadCooks +
     chaatCooks +
-    (recommendations.get('chinese_cook')?.quantity ?? 0) +
-    (recommendations.get('italian_cook')?.quantity ?? 0) +
-    (recommendations.get('south_indian_cook')?.quantity ?? 0) +
+    chineseCooks +
+    italianCooks +
+    southIndianCooks +
+    starterCooks +
+    soupCooks +
     liveCooks;
 
   recommendations.set('head_chef', {
