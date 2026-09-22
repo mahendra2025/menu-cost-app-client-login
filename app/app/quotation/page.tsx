@@ -173,6 +173,12 @@ export default function QuotationPage() {
     useState(false);
 
   const [
+    groceryPdfBusy,
+    setGroceryPdfBusy,
+  ] =
+    useState(false);
+
+  const [
     message,
     setMessage,
   ] =
@@ -911,6 +917,40 @@ export default function QuotationPage() {
       );
     } finally {
       setInternalPdfBusy(false);
+    }
+  }
+
+  async function downloadGroceryPdf() {
+    if (
+      !work ||
+      !groceryPlan ||
+      groceryPdfBusy ||
+      detailsLoading
+    ) {
+      return;
+    }
+
+    setGroceryPdfBusy(true);
+    setError('');
+
+    try {
+      const {
+        downloadGroceryEventPdf,
+      } =
+        await import(
+          '../../../lib/groceryEventPdf'
+        );
+
+      downloadGroceryEventPdf(
+        work,
+        groceryPlan,
+      );
+    } catch {
+      setError(
+        'Could not prepare the grocery PDF.',
+      );
+    } finally {
+      setGroceryPdfBusy(false);
     }
   }
 
@@ -1844,7 +1884,7 @@ export default function QuotationPage() {
           </div>
 
           <div className="quote-safe">
-            Client Event PDF keeps internal costs private. Internal Costing PDF includes dish rates, ingredient rates, manpower rates, plastic rates and the full cost index for your team only.
+            Client Event PDF keeps internal costs private. Grocery PDF includes event details, menu cost, category-wise grocery quantities, ingredient rates, per-cover grocery cost and total grocery cost. Internal Costing PDF includes the full private cost index for your team only.
           </div>
 
           {message ? (
@@ -1909,6 +1949,24 @@ export default function QuotationPage() {
                 : detailsLoading
                   ? 'Loading Cost Details…'
                   : 'Download Internal Costing PDF'}
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={
+                groceryPdfBusy ||
+                detailsLoading
+              }
+              onClick={() =>
+                void downloadGroceryPdf()
+              }
+            >
+              {groceryPdfBusy
+                ? 'Preparing Grocery PDF…'
+                : detailsLoading
+                  ? 'Loading Grocery Details…'
+                  : 'Download Grocery PDF'}
             </button>
 
             <button
