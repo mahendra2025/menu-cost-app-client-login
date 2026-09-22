@@ -21,7 +21,10 @@ import {
 import { generateMealManpowerRows } from '../../../lib/manpowerEngine';
 import {
   DEFAULT_MANPOWER_INPUTS,
+  DEFAULT_MANPOWER_RULES,
   MANPOWER_ROLE_MASTER,
+  normalizeManpowerRules,
+  type ManpowerRuleConfig,
 } from '../../../lib/manpowerMaster';
 import type {
   ManpowerInputs,
@@ -172,6 +175,7 @@ function buildMealManpowerRows(
   meals: MealPlan[],
   work: WorkState,
   savedCustomRoles: CustomManpowerRole[] = [],
+  rules: ManpowerRuleConfig = DEFAULT_MANPOWER_RULES,
 ): ManpowerRow[] {
   const safeRows = Array.isArray(savedRows) ? savedRows : [];
 
@@ -188,6 +192,7 @@ function buildMealManpowerRows(
       dayLabel: meal.dayLabel,
       mealLabel: meal.mealLabel,
       allowLegacyRows: mealIndex === 0,
+      rules,
     });
 
     const eventCustomRows = safeRows
@@ -288,6 +293,9 @@ export default function ManpowerPage() {
   const [work, setWork] = useState<WorkState | null>(null);
   const [newRoleDrafts, setNewRoleDrafts] = useState<Record<string, NewRoleDraft>>({});
   const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
+  const [manpowerRules, setManpowerRules] = useState<ManpowerRuleConfig>({
+    ...DEFAULT_MANPOWER_RULES,
+  });
 
   useEffect(() => {
     const current = getSession();
@@ -313,7 +321,13 @@ export default function ManpowerPage() {
         );
       });
 
-    const manpower = buildMealManpowerRows(savedWork.manpower, meals, savedWork, customRoles);
+    const manpower = buildMealManpowerRows(
+      savedWork.manpower,
+      meals,
+      savedWork,
+      customRoles,
+      DEFAULT_MANPOWER_RULES,
+    );
     const nextWork: WorkState = {
       ...savedWork,
       manpower,
@@ -327,7 +341,31 @@ export default function ManpowerPage() {
     setWork(nextWork);
     saveWork(current.tenantId, nextWork);
 
-    void syncCustomManpowerRoles(current.tenantId).then((syncedRoles) => {
+    const rulesPromise = fetch(
+      '/api/client/manpower-master',
+      {
+        cache: 'no-store',
+      },
+    )
+      .then(async (response) => {
+        if (!response.ok) {
+          return DEFAULT_MANPOWER_RULES;
+        }
+
+        const data = await response.json();
+
+        return normalizeManpowerRules(
+          data.rules,
+        );
+      })
+      .catch(() => DEFAULT_MANPOWER_RULES);
+
+    void Promise.all([
+      syncCustomManpowerRoles(current.tenantId),
+      rulesPromise,
+    ]).then(([syncedRoles, loadedRules]) => {
+      setManpowerRules(loadedRules);
+
       setWork((latestWork) => {
         if (!latestWork) return latestWork;
 
@@ -337,6 +375,7 @@ export default function ManpowerPage() {
           latestMeals,
           latestWork,
           syncedRoles,
+          loadedRules,
         );
         const syncedWork: WorkState = {
           ...latestWork,
@@ -434,6 +473,7 @@ export default function ManpowerPage() {
       nextMeals,
       baseWork,
       customRoles,
+      manpowerRules,
     );
 
     const nextWork: WorkState = {
