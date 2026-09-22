@@ -272,7 +272,6 @@ export async function GET() {
       items,
       categoryCatalog,
       recipeCatalog,
-      tenantSavedDishes,
     ] = await Promise.all([
       prisma.dishMasterItem.findMany({
         orderBy: {
@@ -310,24 +309,59 @@ export async function GET() {
           rates: true,
         },
       }),
-
-      tenantId
-        ? prisma.tenantDishMasterItem.findMany({
-            where: {
-              tenantId,
-            },
-            select: {
-              name: true,
-              category: true,
-              subcategory: true,
-              rate: true,
-              servingQuantity: true,
-              servingUnit: true,
-              gasKgPer100: true,
-            },
-          })
-        : Promise.resolve([]),
     ]);
+
+    let tenantSavedDishes:
+      Array<{
+        name: string;
+        category: string;
+        subcategory: string;
+        rate: number;
+        servingQuantity: number;
+        servingUnit: string;
+        gasKgPer100: number | null;
+      }> = [];
+
+    let privateDishMasterAvailable =
+      true;
+
+    if (tenantId) {
+      try {
+        tenantSavedDishes =
+          await prisma
+            .tenantDishMasterItem
+            .findMany({
+              where: {
+                tenantId,
+              },
+              select: {
+                name: true,
+                category: true,
+                subcategory: true,
+                rate: true,
+                servingQuantity: true,
+                servingUnit: true,
+                gasKgPer100: true,
+              },
+            });
+      } catch (privateCatalogError) {
+        /*
+         * Manual menu selection must never be blocked by
+         * the optional tenant-private Dish Master layer.
+         *
+         * This also keeps the Event page usable during a
+         * rolling deployment before the additive migration
+         * has reached the production database.
+         */
+        privateDishMasterAvailable =
+          false;
+
+        console.warn(
+          'Tenant Dish Master unavailable; using global catalog only:',
+          privateCatalogError,
+        );
+      }
+    }
 
     let personalDishRates =
       new Map<
@@ -626,7 +660,11 @@ export async function GET() {
       items:
         catalogItems,
       personalized:
-        Boolean(tenantId),
+        Boolean(
+          tenantId &&
+          privateDishMasterAvailable,
+        ),
+      privateDishMasterAvailable,
     });
   } catch (error) {
     console.error(
