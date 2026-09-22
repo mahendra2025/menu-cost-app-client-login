@@ -521,31 +521,62 @@ export async function POST(request: Request) {
         ? calculateRecipeCost(recipe, masterRates, overrideMap)
         : { costPerPlate: 0, missingRates: 0 };
 
-      const finalCostPerPlate =
-        withWastage(
-          costing.costPerPlate,
-        );
-
-      const quality =
-        assessRecipeQuality(
-          recipe,
-          {
-            missingRates:
-              costing.missingRates,
-
-            estimatedRates:
-              priced?.estimatedRates ||
-              0,
-
-            costPerPlate:
-              finalCostPerPlate,
-          },
-        );
-
       const previousTenantCost =
         previousTenantCostMap.get(
           key,
         ) || 0;
+
+      const savedTenantRate =
+        !recipe &&
+        previousTenantCost > 0
+          ? previousTenantCost
+          : 0;
+
+      const finalCostPerPlate =
+        savedTenantRate > 0
+          ? savedTenantRate
+          : withWastage(
+              costing.costPerPlate,
+            );
+
+      const quality =
+        savedTenantRate > 0
+          ? {
+              status:
+                'READY' as const,
+              score:
+                100,
+              ingredientCount:
+                0,
+              trustedRateCount:
+                0,
+              rateCoveragePercent:
+                100,
+              estimatedRates:
+                0,
+              missingRates:
+                0,
+              warningCount:
+                0,
+              errorCount:
+                0,
+              issues:
+                [],
+            }
+          : assessRecipeQuality(
+              recipe,
+              {
+                missingRates:
+                  costing.missingRates,
+
+                estimatedRates:
+                  priced?.estimatedRates ||
+                  0,
+
+                costPerPlate:
+                  finalCostPerPlate,
+              },
+            );
 
       const dishMasterCost =
         dishMasterCostMap.get(
@@ -618,8 +649,13 @@ export async function POST(request: Request) {
         costPerPlate:
           finalCostPerPlate,
         rawCostPerPlate:
-          costing.costPerPlate,
-        wastagePercent: 8,
+          savedTenantRate > 0
+            ? savedTenantRate
+            : costing.costPerPlate,
+        wastagePercent:
+          savedTenantRate > 0
+            ? 0
+            : 8,
         missingRates:
           costing.missingRates,
         quality,
@@ -627,7 +663,14 @@ export async function POST(request: Request) {
         costDrivers,
         estimatedIngredientRates: priced?.estimatedRates || 0,
         recipeAvailable: Boolean(recipe),
-        source: catalogRecipe ? 'catalog_recipe' : recipe ? 'ai_recipe' : 'unresolved',
+        source:
+          catalogRecipe
+            ? 'catalog_recipe'
+            : recipe
+              ? 'ai_recipe'
+              : savedTenantRate > 0
+                ? 'tenant_saved_rate'
+                : 'unresolved',
       };
     });
 
