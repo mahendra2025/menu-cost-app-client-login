@@ -46,24 +46,9 @@ export type ManpowerRuleConfig = {
   counterLargeGuestsPerStaff: number;
   beverageGuestsPerStaff: number;
 
-  chaatGuestsPerCook: number;
-  chineseGuestsPerCook: number;
-  italianGuestsPerCook: number;
-  southIndianGuestsPerCook: number;
-  liveCounterGuestsPerCook: number;
+  chefDishesPerCook: number;
   liveCooksPerHelper: number;
-
-  breadGuestsPerCook: number;
-  breadVarietyBonusThreshold1: number;
-  breadVarietyBonusThreshold2: number;
   breadCooksPerHelper: number;
-
-  mainCourseGuestsPerCook: number;
-  mainCourseDishesPerExtraCook: number;
-  farsanGuestsPerCook: number;
-  farsanDishesPerExtraCook: number;
-  sweetGuestsPerCook: number;
-  sweetDishesPerExtraCook: number;
 
   headChefMinGuests: number;
   headChefMinProductionCooks: number;
@@ -151,24 +136,10 @@ export const DEFAULT_MANPOWER_RULES: ManpowerRuleConfig = {
   counterLargeGuestsPerStaff: 400,
   beverageGuestsPerStaff: 250,
 
-  chaatGuestsPerCook: 120,
-  chineseGuestsPerCook: 120,
-  italianGuestsPerCook: 140,
-  southIndianGuestsPerCook: 100,
-  liveCounterGuestsPerCook: 120,
+  // One chef for every chef-relevant dish by default.
+  chefDishesPerCook: 1,
   liveCooksPerHelper: 2,
-
-  breadGuestsPerCook: 180,
-  breadVarietyBonusThreshold1: 3,
-  breadVarietyBonusThreshold2: 5,
   breadCooksPerHelper: 2,
-
-  mainCourseGuestsPerCook: 300,
-  mainCourseDishesPerExtraCook: 5,
-  farsanGuestsPerCook: 250,
-  farsanDishesPerExtraCook: 3,
-  sweetGuestsPerCook: 300,
-  sweetDishesPerExtraCook: 3,
 
   headChefMinGuests: 151,
   headChefMinProductionCooks: 4,
@@ -245,24 +216,10 @@ export const MANPOWER_RULE_DEFINITIONS: ManpowerRuleDefinition[] = [
   D('counterLargeGuestsPerStaff', 'Counters', 'Large Event Counter Capacity', 'guests / staff / station', 'Counter capacity when guest count exceeds the medium threshold.'),
   D('beverageGuestsPerStaff', 'Counters', 'Beverage Counter Staff', 'guests / staff', 'Welcome drink, mocktail and beverage staffing capacity.'),
 
-  D('chaatGuestsPerCook', 'Live Counters', 'Chaat Cook Capacity', 'guests / cook', 'Live chaat cook capacity.'),
-  D('chineseGuestsPerCook', 'Live Counters', 'Chinese Cook Capacity', 'guests / cook', 'Live Chinese station cook capacity.'),
-  D('italianGuestsPerCook', 'Live Counters', 'Italian / Pasta Cook Capacity', 'guests / cook', 'Live pasta or Italian station capacity.'),
-  D('southIndianGuestsPerCook', 'Live Counters', 'South Indian Cook Capacity', 'guests / cook', 'Dosa and South Indian live station capacity.'),
-  D('liveCounterGuestsPerCook', 'Live Counters', 'Other Live Counter Cook Capacity', 'guests / cook', 'Generic live counter cook capacity.'),
+  D('chefDishesPerCook', 'Kitchen', 'Chef Dish Ratio', 'dishes / chef', 'Chef requirement across chef-relevant menu categories. Default: 1 dish = 1 chef.', 1, 20, 1),
   D('liveCooksPerHelper', 'Live Counters', 'Live Counter Helper Span', 'cooks / helper', 'Number of live cooks supported by one helper.'),
-
-  D('breadGuestsPerCook', 'Bread', 'Bread Cook Capacity', 'guests / cook', 'Base bread cook capacity before variety bonuses.'),
-  D('breadVarietyBonusThreshold1', 'Bread', 'Bread Variety Bonus 1', 'bread varieties', 'Add one cook when this many bread varieties are detected.'),
-  D('breadVarietyBonusThreshold2', 'Bread', 'Bread Variety Bonus 2', 'bread varieties', 'Add another cook when this many bread varieties are detected.'),
   D('breadCooksPerHelper', 'Bread', 'Bread Helper Span', 'cooks / helper', 'Number of bread cooks supported by one helper.'),
 
-  D('mainCourseGuestsPerCook', 'Kitchen', 'Main Course Cook Capacity', 'guests / cook', 'Guest capacity for main-course production.'),
-  D('mainCourseDishesPerExtraCook', 'Kitchen', 'Main Course Dish Load', 'dishes / extra cook', 'Additional cook trigger from number of main-course dishes.'),
-  D('farsanGuestsPerCook', 'Kitchen', 'Farsan Cook Capacity', 'guests / cook', 'Guest capacity for farsan production.'),
-  D('farsanDishesPerExtraCook', 'Kitchen', 'Farsan Dish Load', 'dishes / extra cook', 'Additional cook trigger from farsan variety.'),
-  D('sweetGuestsPerCook', 'Kitchen', 'Sweet / Halwai Capacity', 'guests / cook', 'Guest capacity for sweet production.'),
-  D('sweetDishesPerExtraCook', 'Kitchen', 'Sweet Dish Load', 'dishes / extra cook', 'Additional halwai trigger from sweet variety.'),
   D('headChefMinGuests', 'Kitchen', 'Head Chef Minimum Guests', 'guests', 'Guest count that requires one Head Chef.'),
   D('headChefMinProductionCooks', 'Kitchen', 'Head Chef Cook-Team Trigger', 'production cooks', 'Production cook count that requires one Head Chef.'),
   D('assistantCooksPerProductionCook', 'Kitchen', 'Assistant Cook Ratio', 'assistants / cook', 'Assistant cooks per production cook.', 0.05, 3, 0.05),
@@ -333,8 +290,8 @@ export const MANPOWER_ROLE_MASTER: ManpowerRoleMaster[] = [
   { id: 'chinese_cook', role: 'Chinese Cook', department: 'LIVE_COUNTER', rate: 2500, aliases: ['chinese cook', 'chinese'], auto: true },
   { id: 'south_indian_cook', role: 'South Indian Cook', department: 'LIVE_COUNTER', rate: 2500, aliases: ['south indian cook', 'south indian'], auto: true },
   { id: 'italian_cook', role: 'Italian / Pasta Cook', department: 'LIVE_COUNTER', rate: 2500, aliases: ['italian / pasta cook', 'italian cook', 'pasta cook', 'italian'], auto: true },
-  { id: 'starter_cook', role: 'Starter Cook', department: 'LIVE_COUNTER', rate: 2500, aliases: ['starter cook', 'starter'], auto: false },
-  { id: 'soup_cook', role: 'Soup Cook', department: 'LIVE_COUNTER', rate: 2500, aliases: ['soup cook', 'soup'], auto: false },
+  { id: 'starter_cook', role: 'Starter Cook', department: 'LIVE_COUNTER', rate: 2500, aliases: ['starter cook', 'starter'], auto: true },
+  { id: 'soup_cook', role: 'Soup Cook', department: 'LIVE_COUNTER', rate: 2500, aliases: ['soup cook', 'soup'], auto: true },
 
   { id: 'bread_cook', role: 'Bread Cook', department: 'BREAD', rate: 2500, aliases: ['bread cook', 'indian bread', 'indian bread / tandoor cook', 'tandoor cook'], auto: true },
   { id: 'bread_helper', role: 'Bread Helper', department: 'BREAD', rate: 900, aliases: ['bread helper', 'dough helper'], auto: true },
