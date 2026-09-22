@@ -5354,6 +5354,20 @@ export default function EventPage() {
                   item.category ||
                   'Other',
                 rate,
+                servingQuantity:
+                  Math.max(
+                    0.01,
+                    Number(
+                      item.portionBaseQuantity ??
+                      item.portionQuantity,
+                    ) || 1,
+                  ),
+                servingUnit:
+                  item.portionUnit ||
+                  'serving',
+                gasKgPer100:
+                  item.gasKgPer100 ??
+                  null,
               }),
           },
         );
