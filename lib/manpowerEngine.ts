@@ -56,10 +56,6 @@ function countByCategory(menu: MenuItem[], keys: string[]) {
   return menu.filter((item) => matchesCategory(item, keys)).length;
 }
 
-function hasCategory(menu: MenuItem[], keys: string[]) {
-  return countByCategory(menu, keys) > 0;
-}
-
 function ceilRatio(value: number, ratio: number) {
   if (!(value > 0) || !(ratio > 0)) return 0;
   return Math.ceil(value / ratio);
