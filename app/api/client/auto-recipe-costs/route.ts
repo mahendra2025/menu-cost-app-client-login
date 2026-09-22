@@ -276,6 +276,7 @@ export async function POST(request: Request) {
       overrides,
       savedRecipes,
       masterDishes,
+      tenantDishMaster,
     ] = await Promise.all([
       prisma.recipeCatalog.findUnique({
         where: { id: 'global' },
@@ -294,6 +295,16 @@ export async function POST(request: Request) {
       prisma.dishMasterItem.findMany({
         select: {
           name: true,
+          rate: true,
+        },
+      }),
+
+      prisma.tenantDishMasterItem.findMany({
+        where: {
+          tenantId,
+        },
+        select: {
+          normalizedName: true,
           rate: true,
         },
       }),
@@ -337,6 +348,21 @@ export async function POST(request: Request) {
                 ] as const]
               : [];
           },
+        ),
+      );
+
+    const tenantDishRateMap =
+      new Map(
+        tenantDishMaster.map(
+          (dish) => [
+            dish.normalizedName,
+            Math.max(
+              0,
+              Number(
+                dish.rate,
+              ) || 0,
+            ),
+          ],
         ),
       );
 
@@ -398,7 +424,12 @@ export async function POST(request: Request) {
     );
 
     const missing = Array.from(unique.entries())
-      .filter(([key]) => !catalogMap.has(key) && !savedMap.has(key))
+      .filter(
+        ([key]) =>
+          !tenantDishRateMap.has(key) &&
+          !catalogMap.has(key) &&
+          !savedMap.has(key),
+      )
       .map(([, dish]) => dish);
     const ingredientCatalog = masterRates
       .map(normalizeIngredientRate)
@@ -521,31 +552,61 @@ export async function POST(request: Request) {
         ? calculateRecipeCost(recipe, masterRates, overrideMap)
         : { costPerPlate: 0, missingRates: 0 };
 
-      const finalCostPerPlate =
-        withWastage(
-          costing.costPerPlate,
-        );
-
-      const quality =
-        assessRecipeQuality(
-          recipe,
-          {
-            missingRates:
-              costing.missingRates,
-
-            estimatedRates:
-              priced?.estimatedRates ||
-              0,
-
-            costPerPlate:
-              finalCostPerPlate,
-          },
-        );
-
       const previousTenantCost =
         previousTenantCostMap.get(
           key,
         ) || 0;
+
+      const savedTenantRate =
+        tenantDishRateMap.get(
+          key,
+        ) || 0;
+
+      const finalCostPerPlate =
+        savedTenantRate > 0
+          ? savedTenantRate
+          : withWastage(
+              costing.costPerPlate,
+            );
+
+      const quality =
+        savedTenantRate > 0
+          ? {
+              status:
+                'READY' as const,
+              score:
+                100,
+              ingredientCount:
+                0,
+              trustedRateCount:
+                0,
+              rateCoveragePercent:
+                100,
+              estimatedRates:
+                0,
+              missingRates:
+                0,
+              warningCount:
+                0,
+              errorCount:
+                0,
+              issues:
+                [],
+            }
+          : assessRecipeQuality(
+              recipe,
+              {
+                missingRates:
+                  costing.missingRates,
+
+                estimatedRates:
+                  priced?.estimatedRates ||
+                  0,
+
+                costPerPlate:
+                  finalCostPerPlate,
+              },
+            );
 
       const dishMasterCost =
         dishMasterCostMap.get(
@@ -597,7 +658,9 @@ export async function POST(request: Request) {
         );
 
       const costDrivers =
-        recipe
+        savedTenantRate > 0
+          ? []
+          : recipe
           ? buildIngredientCostDrivers(
               recipe,
               previousSavedRecipeMap.get(
@@ -618,16 +681,34 @@ export async function POST(request: Request) {
         costPerPlate:
           finalCostPerPlate,
         rawCostPerPlate:
-          costing.costPerPlate,
-        wastagePercent: 8,
+          savedTenantRate > 0
+            ? savedTenantRate
+            : costing.costPerPlate,
+        wastagePercent:
+          savedTenantRate > 0
+            ? 0
+            : 8,
         missingRates:
           costing.missingRates,
         quality,
         accuracy,
         costDrivers,
-        estimatedIngredientRates: priced?.estimatedRates || 0,
-        recipeAvailable: Boolean(recipe),
-        source: catalogRecipe ? 'catalog_recipe' : recipe ? 'ai_recipe' : 'unresolved',
+        estimatedIngredientRates:
+          savedTenantRate > 0
+            ? 0
+            : priced?.estimatedRates || 0,
+        recipeAvailable:
+          savedTenantRate > 0
+            ? false
+            : Boolean(recipe),
+        source:
+          savedTenantRate > 0
+            ? 'tenant_saved_rate'
+            : catalogRecipe
+              ? 'catalog_recipe'
+              : recipe
+                ? 'ai_recipe'
+                : 'unresolved',
       };
     });
 

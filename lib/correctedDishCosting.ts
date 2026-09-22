@@ -9,6 +9,7 @@ export type DishCostRefresh = {
     | 'catalog'
     | 'catalog_recipe'
     | 'ai_recipe'
+    | 'tenant_saved_rate'
     | 'category_estimate'
     | 'unresolved';
 
@@ -390,7 +391,9 @@ export function buildAutoRecipeCostRefresh(
     sourceRaw ===
       'catalog_recipe' ||
     sourceRaw ===
-      'ai_recipe';
+      'ai_recipe' ||
+    sourceRaw ===
+      'tenant_saved_rate';
 
   const source:
     DishCostRefresh[
@@ -400,6 +403,7 @@ export function buildAutoRecipeCostRefresh(
         ? sourceRaw as
             | 'catalog_recipe'
             | 'ai_recipe'
+            | 'tenant_saved_rate'
         : 'unresolved';
 
   const cost =
@@ -598,7 +602,10 @@ export function buildAutoRecipeCostRefresh(
         source ===
           'ai_recipe'
           ? source
-          : undefined,
+          : source ===
+              'tenant_saved_rate'
+            ? 'manual'
+            : undefined,
 
       coverageStatus,
 
@@ -622,7 +629,10 @@ export function buildAutoRecipeCostRefresh(
           source ===
             'catalog_recipe'
             ? 'Fresh catalog recipe cost calculated with 8% wastage.'
-            : 'Fresh AI-assisted recipe cost calculated with 8% wastage.'
+            : source ===
+                'tenant_saved_rate'
+              ? 'Saved rate from your Dish Master applied.'
+              : 'Fresh AI-assisted recipe cost calculated with 8% wastage.'
         ),
 
       accuracyRisk:
@@ -671,7 +681,10 @@ export function buildAutoRecipeCostRefresh(
         undefined,
 
       costApprovalReason:
-        needsApproval
+        source ===
+          'tenant_saved_rate'
+          ? 'Saved private Dish Master rate is trusted.'
+          : needsApproval
           ? (
               risk ===
                 'HIGH'

@@ -14,6 +14,10 @@ import {
 import { prisma } from '../../../lib/prisma';
 
 import {
+  normalizeRecipeName,
+} from '../../../lib/recipeCosting';
+
+import {
   filterDishCatalogByStoredCategories,
   readDeletedDishCategories,
 } from '../../../lib/dishCostMaster';
@@ -268,6 +272,7 @@ export async function GET() {
       items,
       categoryCatalog,
       recipeCatalog,
+      tenantSavedDishes,
     ] = await Promise.all([
       prisma.dishMasterItem.findMany({
         orderBy: {
@@ -305,6 +310,23 @@ export async function GET() {
           rates: true,
         },
       }),
+
+      tenantId
+        ? prisma.tenantDishMasterItem.findMany({
+            where: {
+              tenantId,
+            },
+            select: {
+              name: true,
+              category: true,
+              subcategory: true,
+              rate: true,
+              servingQuantity: true,
+              servingUnit: true,
+              gasKgPer100: true,
+            },
+          })
+        : Promise.resolve([]),
     ]);
 
     let personalDishRates =
@@ -472,9 +494,127 @@ export async function GET() {
         }),
       );
 
+    const tenantSavedByName =
+      new Map(
+        tenantSavedDishes
+          .filter(
+            (item) =>
+              item.name.trim() &&
+              Number(item.rate) > 0,
+          )
+          .map(
+            (item) => [
+              normalizeName(
+                item.name,
+              ),
+              item,
+            ],
+          ),
+      );
+
+    const personalizedItems =
+      mergedItems.map(
+        (item) => {
+          const saved =
+            tenantSavedByName.get(
+              normalizeName(
+                item.name,
+              ),
+            );
+
+          if (!saved) {
+            return {
+              ...item,
+              source:
+                'global' as const,
+            };
+          }
+
+          tenantSavedByName.delete(
+            normalizeName(
+              item.name,
+            ),
+          );
+
+          return {
+            ...item,
+            category:
+              saved.category ||
+              item.category,
+            subcategory:
+              saved.subcategory ||
+              item.subcategory,
+            rate:
+              Math.max(
+                0,
+                Number(
+                  saved.rate,
+                ) || 0,
+              ) ||
+              item.rate,
+            servingQuantity:
+              Math.max(
+                0.01,
+                Number(
+                  saved.servingQuantity,
+                ) || 1,
+              ),
+            servingUnit:
+              saved.servingUnit ||
+              item.servingUnit,
+            gasKgPer100:
+              saved.gasKgPer100 ??
+              item.gasKgPer100,
+            source:
+              'tenant' as const,
+          };
+        },
+      );
+
+    tenantSavedByName.forEach(
+      (saved) => {
+        personalizedItems.push({
+          name:
+            saved.name,
+          category:
+            saved.category ||
+            'Other',
+          subcategory:
+            saved.subcategory ||
+            '',
+          rate:
+            Math.max(
+              0,
+              Number(
+                saved.rate,
+              ) || 0,
+            ),
+          servingQuantity:
+            Math.max(
+              0.01,
+              Number(
+                saved.servingQuantity,
+              ) || 1,
+            ),
+          servingUnit:
+            saved.servingUnit ||
+            'serving',
+          gasKgPer100:
+            saved.gasKgPer100 ??
+            undefined,
+          pieceWeightGrams:
+            undefined,
+          aliases:
+            [],
+          source:
+            'tenant' as const,
+        });
+      },
+    );
+
     const catalogItems =
       filterDishCatalogByStoredCategories(
-        mergedItems,
+        personalizedItems,
         categoryCatalog?.categories,
         readDeletedDishCategories(
           categoryCatalog
@@ -503,6 +643,212 @@ export async function GET() {
         items: [],
         error:
           'Dish catalog unavailable.',
+      },
+      {
+        status: 500,
+      },
+    );
+  }
+}
+
+
+export async function POST(
+  request: Request,
+) {
+  try {
+    const cookieStore =
+      await cookies();
+
+    const tenantId =
+      readClientSessionToken(
+        cookieStore.get(
+          getClientCookieName(),
+        )?.value,
+      );
+
+    if (!tenantId) {
+      return NextResponse.json(
+        {
+          error:
+            'Client login required',
+        },
+        {
+          status: 401,
+        },
+      );
+    }
+
+    const body =
+      await request.json() as Record<
+        string,
+        unknown
+      >;
+
+    const name =
+      String(
+        body.name || '',
+      )
+        .normalize('NFKC')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 120);
+
+    const category =
+      String(
+        body.category ||
+        'Other',
+      )
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60) ||
+      'Other';
+
+    const rate =
+      Math.max(
+        0,
+        Number(
+          body.rate,
+        ) || 0,
+      );
+
+    if (
+      !name ||
+      !(rate > 0)
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Dish name and a valid rate are required.',
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const normalizedName =
+      normalizeRecipeName(
+        name,
+      );
+
+    const servingQuantity =
+      Math.max(
+        0.01,
+        Number(
+          body.servingQuantity,
+        ) || 1,
+      );
+
+    const servingUnit =
+      String(
+        body.servingUnit ||
+        'serving',
+      ).trim() ||
+      'serving';
+
+    const subcategory =
+      String(
+        body.subcategory ||
+        '',
+      )
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60);
+
+    const rawGasKgPer100 =
+      body.gasKgPer100;
+
+    const gasKgPer100 =
+      rawGasKgPer100 ===
+          null ||
+        rawGasKgPer100 ===
+          undefined ||
+        String(
+          rawGasKgPer100,
+        ).trim() ===
+          ''
+        ? null
+        : Math.max(
+            0,
+            Number(
+              rawGasKgPer100,
+            ) || 0,
+          );
+
+    const saved =
+      await prisma
+        .tenantDishMasterItem
+        .upsert({
+          where: {
+            tenantId_normalizedName: {
+              tenantId,
+              normalizedName,
+            },
+          },
+          create: {
+            tenantId,
+            normalizedName,
+            name,
+            category,
+            subcategory,
+            rate,
+            servingQuantity,
+            servingUnit,
+            gasKgPer100,
+          },
+          update: {
+            name,
+            category,
+            subcategory,
+            rate,
+            servingQuantity,
+            servingUnit,
+            gasKgPer100,
+          },
+          select: {
+            name: true,
+            category: true,
+            subcategory: true,
+            rate: true,
+            servingQuantity: true,
+            servingUnit: true,
+            gasKgPer100: true,
+          },
+        });
+
+    return NextResponse.json({
+      ok: true,
+      item: {
+        name:
+          saved.name,
+        category:
+          saved.category,
+        subcategory:
+          saved.subcategory,
+        rate:
+          saved.rate,
+        servingQuantity:
+          saved.servingQuantity,
+        servingUnit:
+          saved.servingUnit,
+        gasKgPer100:
+          saved.gasKgPer100 ??
+          undefined,
+        source:
+          'tenant',
+      },
+    });
+
+  } catch (error) {
+    console.error(
+      'Dish catalog POST:',
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          'Could not save dish to your Dish Master.',
       },
       {
         status: 500,
