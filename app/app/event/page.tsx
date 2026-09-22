@@ -122,6 +122,7 @@ type ManualDishOption = {
   category: string;
   subcategory?: string;
   rate: number;
+  source?: 'global' | 'tenant';
   servingQuantity?: number;
   servingUnit?: string;
   pieceWeightGrams?: number;
@@ -1034,6 +1035,20 @@ export default function EventPage() {
     () => new Set(),
   );
 
+  const [
+    savingDishMasterIds,
+    setSavingDishMasterIds,
+  ] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const [
+    savedPersonalDishKeys,
+    setSavedPersonalDishKeys,
+  ] = useState<Set<string>>(
+    () => new Set(),
+  );
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -1291,6 +1306,15 @@ export default function EventPage() {
                     ) || 0,
                   ),
 
+                source:
+                  String(
+                    row.source ||
+                      'global',
+                  ).trim() ===
+                    'tenant'
+                    ? 'tenant'
+                    : 'global',
+
                 servingQuantity:
                   Math.max(
                     0.01,
@@ -1320,6 +1344,23 @@ export default function EventPage() {
 
       setManualDishCatalog(
         cleaned,
+      );
+
+      setSavedPersonalDishKeys(
+        new Set(
+          cleaned
+            .filter(
+              (dish) =>
+                dish.source ===
+                'tenant',
+            )
+            .map(
+              (dish) =>
+                dishNameKey(
+                  dish.name,
+                ),
+            ),
+        ),
       );
 
       return cleaned;
@@ -5250,6 +5291,231 @@ export default function EventPage() {
     setError('');
   }
 
+  async function saveDetectedDishToMaster(
+    item: MenuItem,
+  ) {
+    const rate =
+      Math.max(
+        0,
+        Number(
+          item.costPerPlate,
+        ) || 0,
+      );
+
+    if (!(rate > 0)) {
+      setError(
+        'Enter a valid ₹/plate rate before saving this dish.',
+      );
+      return;
+    }
+
+    const key =
+      dishNameKey(
+        item.name,
+      );
+
+    if (!key) {
+      return;
+    }
+
+    setSavingDishMasterIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          item.id,
+        );
+
+        return next;
+      },
+    );
+
+    setError('');
+
+    try {
+      const response =
+        await fetch(
+          '/api/dishes',
+          {
+            method:
+              'POST',
+
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+
+            body:
+              JSON.stringify({
+                name:
+                  item.name,
+                category:
+                  item.category ||
+                  'Other',
+                rate,
+              }),
+          },
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not save dish to Dish Master.',
+        );
+      }
+
+      const saved =
+        data.item &&
+        typeof data.item ===
+          'object'
+          ? data.item as Record<
+              string,
+              unknown
+            >
+          : {};
+
+      const savedDish:
+        ManualDishOption = {
+          name:
+            String(
+              saved.name ||
+              item.name,
+            ).trim() ||
+            item.name,
+
+          category:
+            String(
+              saved.category ||
+              item.category ||
+              'Other',
+            ).trim() ||
+            'Other',
+
+          subcategory:
+            String(
+              saved.subcategory ||
+              '',
+            ).trim(),
+
+          rate:
+            Math.max(
+              0,
+              Number(
+                saved.rate,
+              ) || rate,
+            ),
+
+          servingQuantity:
+            Math.max(
+              0.01,
+              Number(
+                saved.servingQuantity,
+              ) || 1,
+            ),
+
+          servingUnit:
+            String(
+              saved.servingUnit ||
+              'serving',
+            ).trim() ||
+            'serving',
+
+          source:
+            'tenant',
+        };
+
+      setManualDishCatalog(
+        (current) => {
+          const next =
+            current.filter(
+              (dish) =>
+                dishNameKey(
+                  dish.name,
+                ) !==
+                key,
+            );
+
+          next.push(
+            savedDish,
+          );
+
+          return next.sort(
+            (left, right) =>
+              left.name.localeCompare(
+                right.name,
+              ),
+          );
+        },
+      );
+
+      setSavedPersonalDishKeys(
+        (current) => {
+          const next =
+            new Set(current);
+
+          next.add(
+            key,
+          );
+
+          return next;
+        },
+      );
+
+      void saveTenantDishLearning({
+        aliasName:
+          item.name,
+
+        canonicalName:
+          savedDish.name,
+
+        category:
+          savedDish.category,
+
+        action:
+          'MAP',
+      });
+
+      void trackProductEvent(
+        'menu_detection_review_action',
+        {
+          action:
+            'save_to_private_dish_master',
+          dish:
+            savedDish.name,
+          category:
+            savedDish.category,
+          rate:
+            savedDish.rate,
+        },
+      );
+
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Could not save dish to Dish Master.',
+      );
+
+    } finally {
+      setSavingDishMasterIds(
+        (current) => {
+          const next =
+            new Set(current);
+
+          next.delete(
+            item.id,
+          );
+
+          return next;
+        },
+      );
+    }
+  }
+
   async function applyDetectionPreview(
     mode: 'replace' | 'merge',
     skipReview = false,
@@ -8048,6 +8314,14 @@ export default function EventPage() {
                             {group.items.map((item, index) => {
                               const needsManualRate = manualRateIds.has(item.id);
                               const isEditing = editingDetectionId === item.id;
+                              const personalDishKey = dishNameKey(item.name);
+                              const isSavedToDishMaster = savedPersonalDishKeys.has(personalDishKey);
+                              const canSaveToDishMaster =
+                                needsManualRate &&
+                                item.detectionSource !== 'catalog' &&
+                                Number(item.costPerPlate) > 0;
+                              const isSavingToDishMaster =
+                                savingDishMasterIds.has(item.id);
 
                               return (
                                 <div className={`event-review-dish${needsManualRate ? ' needs-rate' : ''}`} key={item.id}>
@@ -8103,6 +8377,23 @@ export default function EventPage() {
                                       )}
 
                                       <div className="event-review-dish-actions">
+                                        {canSaveToDishMaster ? (
+                                          isSavedToDishMaster ? (
+                                            <span className="event-review-master-saved">
+                                              <span aria-hidden="true">✓</span> Saved
+                                            </span>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              className="save-master"
+                                              disabled={isSavingToDishMaster}
+                                              onClick={() => void saveDetectedDishToMaster(item)}
+                                              aria-label={`Save ${item.name} to Dish Master`}
+                                            >
+                                              {isSavingToDishMaster ? 'Saving…' : 'Save to Dish Master'}
+                                            </button>
+                                          )
+                                        ) : null}
                                         <button type="button" onClick={() => beginDetectionEdit(item)} aria-label={`Edit ${item.name}`}>Edit</button>
                                         <button type="button" className="remove" onClick={() => toggleDetectedDishRejection(item)} aria-label={`Remove ${item.name}`}>Remove</button>
                                       </div>
