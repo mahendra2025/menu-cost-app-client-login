@@ -8315,7 +8315,9 @@ export default function EventPage() {
                               const needsManualRate = manualRateIds.has(item.id);
                               const isEditing = editingDetectionId === item.id;
                               const personalDishKey = dishNameKey(item.name);
-                              const isSavedToDishMaster = savedPersonalDishKeys.has(personalDishKey);
+                              const isSavedToDishMaster =
+                                savedPersonalDishKeys.has(personalDishKey) ||
+                                String(item.coverageReason || '').includes('your Dish Master');
                               const canSaveToDishMaster =
                                 needsManualRate &&
                                 item.detectionSource !== 'catalog' &&
