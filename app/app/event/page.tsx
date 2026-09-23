@@ -9714,7 +9714,7 @@ export default function EventPage() {
                   </div>
 
                   <div className="event-dish-picker-toolbar">
-                    <label className="event-dish-picker-search">
+                    <div className="event-dish-picker-search">
                       <span className="event-dish-picker-search-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
                           <circle cx="11" cy="11" r="6" />
@@ -9731,6 +9731,7 @@ export default function EventPage() {
                           )
                         }
                         placeholder="Search paneer, starter, sweet..."
+                        aria-label="Search dishes"
                         autoFocus
                       />
                       {manualDishSearch ? (
@@ -9747,7 +9748,7 @@ export default function EventPage() {
                           ×
                         </button>
                       ) : null}
-                    </label>
+                    </div>
 
                     <select
                       className="select event-dish-picker-category"
@@ -10094,9 +10095,13 @@ export default function EventPage() {
                           void addManualMenuAndContinue()
                         }
                       >
-                        {addDishFunctionTarget
-                          ? `Add ${manualSelectedCount || ''} to ${addDishFunctionTarget.mealLabel}`
-                          : 'Add Selected & Continue'}
+                        {manualSelectedCount > 0
+                          ? addDishFunctionTarget
+                            ? `Add ${manualSelectedCount} to ${addDishFunctionTarget.mealLabel}`
+                            : 'Add Selected & Continue'
+                          : addDishFunctionTarget
+                            ? `Select dishes for ${addDishFunctionTarget.mealLabel}`
+                            : 'Select dishes to continue'}
                       </button>
                     </div>
                   </div>
