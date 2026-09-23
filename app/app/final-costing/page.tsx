@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 
 import AppShell, { LockedCard } from '../../components/AppShell';
 import FinalCostingUsage from '../../components/FinalCostingUsage';
-import StatCard from '../../components/StatCard';
 import {
   calculate,
   getSession,
