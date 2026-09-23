@@ -107,6 +107,26 @@ test('manual quantity override survives automatic recalculation', () => {
   assert.equal(waiter?.calculationSource, 'MANUAL');
 });
 
+test('dish assignments survive automatic recalculation and drop removed dishes', () => {
+  const result = rows({
+    existingRows: [
+      {
+        id: 'saved_bread_cook',
+        role: 'Bread Cook',
+        quantity: 5,
+        rate: 2500,
+        serviceId: 'lunch',
+        mealLabel: 'Lunch',
+        assignedDishIds: ['bread_1', 'bread_3', 'removed_dish'],
+      },
+    ],
+  });
+
+  const breadCook = result.find((row) => row.role === 'Bread Cook');
+
+  assert.deepEqual(breadCook?.assignedDishIds, ['bread_1', 'bread_3']);
+});
+
 test('utility manpower changes with crockery and outdoor venue settings', () => {
   const result = rows({
     inputs: {

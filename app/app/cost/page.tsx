@@ -8,9 +8,9 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell, { LockedCard } from '../../components/AppShell';
-import StatCard from '../../components/StatCard';
 import { calculate, getMenuServiceKey, getSession, loadWork, saveWork } from '../../../lib/store';
 import type { MenuItem, Session, WorkState } from '../../../lib/types';
+import { calculateManpowerCost } from '../../../lib/manpowerCost';
 import {
   CATEGORIES,
   type Category,
@@ -846,97 +846,152 @@ export default function CostPage() {
     });
   }
 
+  const manpowerTotal =
+    calculateManpowerCost(
+      work.manpower,
+    );
+  const gasTotal =
+    Math.max(
+      0,
+      Number(work.extras.gasFuel) || 0,
+    );
+  const transportTotal =
+    Math.max(
+      0,
+      Number(work.extras.transport) || 0,
+    );
+  const disposableTotal =
+    Math.max(
+      0,
+      Number(work.extras.disposable) || 0,
+    );
+  const otherTotal =
+    Math.max(
+      0,
+      Number(work.extras.other) || 0,
+    );
+  const operationsTotal =
+    gasTotal +
+    transportTotal +
+    disposableTotal +
+    otherTotal;
+  const foodShare =
+    result.totalCost > 0
+      ? Math.min(
+          100,
+          Math.max(
+            0,
+            (result.menuFoodTotal /
+              result.totalCost) *
+              100,
+          ),
+        )
+      : 0;
+
   return (
-    <AppShell title="Cost" subtitle="Review meal-wise food cost and guest counts">
-      <section className="content-grid">
-        <div className="stat-grid">
-          <StatCard label="Average Food / Cover" value={money(result.menuCostPerPlate)} note={`Food total ${money(result.menuFoodTotal)}`} />
-          <StatCard label="Extra / Cover" value={money(result.extraPerPlate)} note={`Total extra ${money(result.extrasTotal)}`} />
-          <StatCard label="Average Final / Cover" value={money(result.finalCostPerPlate)} note={`${result.totalCovers} total meal covers`} />
-          <StatCard label="Total Wedding Cost" value={money(result.totalCost)} note={`${result.serviceSummaries.length} meal${result.serviceSummaries.length === 1 ? '' : 's'}`} />
-        </div>
+    <AppShell title="Cost" subtitle="Know what this event costs before you price it">
+      <section className="content-grid cost-command-page">
+        <section className="cost-command-sheet" aria-labelledby="cost-command-title">
+          <div className="cost-command-main">
+            <div className="cost-command-heading">
+              <span className="cost-command-step"><i aria-hidden="true">1</i> Event cost</span>
+              <h2 id="cost-command-title">{work.event.eventName || 'Event cost summary'}</h2>
+              <p>
+                {work.event.clientName ? `${work.event.clientName} · ` : ''}
+                {result.serviceSummaries.length} {result.serviceSummaries.length === 1 ? 'function' : 'functions'} · {result.totalCovers.toLocaleString('en-IN')} meal covers
+              </p>
+            </div>
 
-        {hasWeddingServices ? (
-          <div className="glass-card">
-            <h2>Meal-wise Cost Summary</h2>
-            <p className="muted">Each meal uses its own member count. Repeated dishes are charged again in every meal where they appear.</p>
-            <div className="table-wrap">
-              <table className="meal-summary-table">
-                <thead><tr><th>Day</th><th>Date</th><th>Meal</th><th>Members</th><th>Dishes</th><th>Food / Plate</th><th>Meal Food Total</th></tr></thead>
-                <tbody>
-                  {result.serviceSummaries.map((service) => (
-                    <tr key={service.serviceKey}>
-                      <td>
-                        <input
-                          className="meal-summary-input meal-summary-day"
-                          defaultValue={service.dayLabel}
-                          placeholder="Day"
-                          aria-label={`Day for ${service.mealLabel}`}
-                          onBlur={(event) => updateMealDetails(service.serviceKey, {
-                            dayLabel: event.currentTarget.value.trim(),
-                          })}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') event.currentTarget.blur();
-                          }}
-                        />
-                      </td>
+            <div className="cost-command-total">
+              <span>Current event cost</span>
+              <strong>{money(result.totalCost)}</strong>
+              <small>{money(result.finalCostPerPlate)} average per cover</small>
+            </div>
 
-                      <td>
-                        <span
-                          className={`meal-summary-date ${
-                            serviceDateByKey.get(
-                              service.serviceKey,
-                            )
-                              ? 'has-date'
-                              : 'no-date'
-                          }`}
-                        >
-                          {serviceDateByKey.get(
-                            service.serviceKey,
-                          ) || '—'}
-                        </span>
-                      </td>
+            <div className="cost-command-split" aria-label="Food and operating cost split">
+              <div className="cost-command-split-bar">
+                <span style={{ width: `${foodShare}%` }} />
+              </div>
+              <div>
+                <span><i className="food" aria-hidden="true" /> Food <b>{money(result.menuFoodTotal)}</b></span>
+                <span><i className="operations" aria-hidden="true" /> Team &amp; operations <b>{money(result.extrasTotal)}</b></span>
+              </div>
+            </div>
 
-                      <td>
-                        <input
-                          className="meal-summary-input meal-summary-meal"
-                          defaultValue={service.mealLabel}
-                          placeholder="Meal name"
-                          aria-label={`Meal name for ${service.dayLabel || 'event'}`}
-                          onBlur={(event) => updateMealDetails(service.serviceKey, {
-                            mealLabel: event.currentTarget.value.trim() || 'Event Menu',
-                          })}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') event.currentTarget.blur();
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="meal-summary-input meal-summary-members"
-                          type="number"
-                          min="0"
-                          step="1"
-                          defaultValue={service.pax}
-                          aria-label={`Members for ${service.mealLabel}`}
-                          onBlur={(event) => updateMealDetails(service.serviceKey, {
-                            servicePax: Math.max(0, Math.round(Number(event.currentTarget.value) || 0)),
-                          })}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') event.currentTarget.blur();
-                          }}
-                        />
-                      </td>
-                      <td>{service.dishCount}</td>
-                      <td>{money(service.menuCostPerPlate)}</td>
-                      <td><b>{money(service.totalCost)}</b></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="cost-command-breakdown">
+              <div><span>Food</span><b>{money(result.menuFoodTotal)}</b><small>{money(result.menuCostPerPlate)} / cover</small></div>
+              <div><span>Manpower</span><b>{money(manpowerTotal)}</b><small>{work.manpower.filter((row) => Number(row.quantity) > 0).length} active roles</small></div>
+              <div><span>Gas</span><b>{money(gasTotal)}</b><small>Automatic LPG costing</small></div>
+              <div><span>Other operations</span><b>{money(operationsTotal - gasTotal)}</b><small>Transport, disposables &amp; other</small></div>
             </div>
           </div>
-        ) : null}
+
+          <aside className="cost-command-actions" aria-label="Costing next steps">
+            <div className={missingRateCount > 0 ? 'needs-attention' : 'is-ready'}>
+              <span aria-hidden="true">{missingRateCount > 0 ? '!' : '✓'}</span>
+              <div>
+                <b>{missingRateCount > 0 ? `${missingRateCount} ${missingRateCount === 1 ? 'rate needs' : 'rates need'} attention` : 'Food rates are ready'}</b>
+                <small>{missingRateCount > 0 ? 'Complete these before final pricing.' : 'Continue with team and operations.'}</small>
+              </div>
+            </div>
+            {missingRateCount > 0 ? (
+              <button type="button" className="cost-command-fix" onClick={() => {
+                setShowOnlyManualRates(true);
+                document.querySelector('.dish-cost-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}>Fix missing rates</button>
+            ) : null}
+            <button type="button" onClick={() => router.push('/app/team')}>Review manpower <span aria-hidden="true">›</span></button>
+            <button type="button" onClick={() => router.push('/app/operations')}>Add expenses <span aria-hidden="true">›</span></button>
+            <button type="button" onClick={() => router.push('/app/final-costing')}>Open pricing <span aria-hidden="true">›</span></button>
+          </aside>
+        </section>
+
+        <section className="cost-function-sheet" aria-labelledby="function-cost-title">
+          <div className="cost-function-heading">
+            <div>
+              <h2 id="function-cost-title">Function-wise food cost</h2>
+              <p>Each function uses its own guest count and menu.</p>
+            </div>
+            <button type="button" onClick={() => router.push('/app/event?resume=1')}>Edit event menu</button>
+          </div>
+
+          <div className="cost-function-list">
+            {result.serviceSummaries.map((service) => (
+              <article className="cost-function-row" key={service.serviceKey}>
+                <div className="cost-function-name">
+                  <span>{service.dayLabel || serviceDateByKey.get(service.serviceKey) || 'Event'}</span>
+                  <input
+                    defaultValue={service.mealLabel}
+                    placeholder="Function name"
+                    aria-label={`Function name for ${service.dayLabel || 'event'}`}
+                    onBlur={(event) => updateMealDetails(service.serviceKey, {
+                      mealLabel: event.currentTarget.value.trim() || 'Event Menu',
+                    })}
+                    onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }}
+                  />
+                  {serviceDateByKey.get(service.serviceKey) ? <small>{serviceDateByKey.get(service.serviceKey)}</small> : null}
+                </div>
+                <label>
+                  <span>Guests</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    defaultValue={service.pax}
+                    aria-label={`Guests for ${service.mealLabel}`}
+                    onBlur={(event) => updateMealDetails(service.serviceKey, {
+                      servicePax: Math.max(0, Math.round(Number(event.currentTarget.value) || 0)),
+                    })}
+                    onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }}
+                  />
+                </label>
+                <div><span>Dishes</span><b>{service.dishCount}</b></div>
+                <div><span>Food / cover</span><b>{money(service.menuCostPerPlate)}</b></div>
+                <div className="cost-function-total"><span>Food total</span><b>{money(service.totalCost)}</b></div>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <div className="glass-card dish-cost-panel">
           <div className="dish-cost-heading">

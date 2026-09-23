@@ -853,7 +853,11 @@ export function generateMealManpowerRows(
       dayLabel: input.dayLabel || undefined,
       mealLabel: input.mealLabel,
       servicePax: Math.max(0, Number(input.guests) || 0),
-      assignedDishIds: input.menu.map((item) => item.id),
+      assignedDishIds: existing?.assignedDishIds === undefined
+        ? input.menu.map((item) => item.id)
+        : existing.assignedDishIds.filter((dishId) =>
+            input.menu.some((item) => item.id === dishId),
+          ),
       autoDishAssignment: master.department === 'LIVE_COUNTER' || master.department === 'BREAD',
       autoStationHelper: master.id === 'live_counter_helper' || master.id === 'bread_helper',
     } satisfies ManpowerRow];
