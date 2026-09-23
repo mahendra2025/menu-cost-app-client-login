@@ -9659,7 +9659,7 @@ export default function EventPage() {
                         setAddDishFunctionTarget(
                           null,
                         );
-                      }
+                      }}
                     >
                       Close
                     </button>
