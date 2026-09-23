@@ -138,6 +138,14 @@ type NewEventDraft = {
   pax: string;
 };
 
+type ExistingFunctionDishTarget = {
+  key: string;
+  serviceId?: string;
+  dayLabel?: string;
+  mealLabel: string;
+  servicePax: number;
+};
+
 type AiMenuExtraction = {
   eventDetails?: Partial<
     Record<
@@ -1036,6 +1044,13 @@ export default function EventPage() {
   );
 
   const [
+    addDishFunctionTarget,
+    setAddDishFunctionTarget,
+  ] = useState<ExistingFunctionDishTarget | null>(
+    null,
+  );
+
+  const [
     savingDishMasterIds,
     setSavingDishMasterIds,
   ] = useState<Set<string>>(
@@ -1380,29 +1395,56 @@ export default function EventPage() {
     }
   }
 
-  async function openManualDishSelector() {
-    const functionName =
-      importFunctionName.trim() ||
-      work?.event.functionType ||
-      'Event Menu';
-
-    if (!importFunctionName.trim()) {
-      setImportFunctionName(
-        functionName,
+  async function openManualDishSelector(
+    target?: ExistingFunctionDishTarget,
+  ) {
+    if (target) {
+      setAddDishFunctionTarget(
+        target,
       );
-    }
-
-    if (
-      !importFunctionPax.trim() &&
-      Number(
-        work?.event.pax,
-      ) > 0
-    ) {
+      setImportFunctionName(
+        target.mealLabel,
+      );
       setImportFunctionPax(
         String(
-          work?.event.pax,
+          target.servicePax,
         ),
       );
+      setSelectedManualDishKeys(
+        new Set(),
+      );
+      setManualDishSearch('');
+      setManualDishCategory(
+        'ALL',
+      );
+    } else {
+      setAddDishFunctionTarget(
+        null,
+      );
+
+      const functionName =
+        importFunctionName.trim() ||
+        work?.event.functionType ||
+        'Event Menu';
+
+      if (!importFunctionName.trim()) {
+        setImportFunctionName(
+          functionName,
+        );
+      }
+
+      if (
+        !importFunctionPax.trim() &&
+        Number(
+          work?.event.pax,
+        ) > 0
+      ) {
+        setImportFunctionPax(
+          String(
+            work?.event.pax,
+          ),
+        );
+      }
     }
 
     setError('');
@@ -1445,6 +1487,184 @@ export default function EventPage() {
 
         return next;
       },
+    );
+  }
+
+  async function addNewDishToExistingFunction() {
+    if (
+      !work ||
+      !session ||
+      !addDishFunctionTarget
+    ) {
+      return;
+    }
+
+    const name =
+      manualDishSearch
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!name) {
+      setError(
+        'Enter a dish name first.',
+      );
+      return;
+    }
+
+    const key =
+      dishNameKey(
+        name,
+      );
+
+    const duplicate =
+      work.menu.some(
+        (item) =>
+          detectionGroupKeyForItem(
+            item,
+          ) ===
+            addDishFunctionTarget.key &&
+          dishNameKey(
+            item.name,
+          ) ===
+            key,
+      );
+
+    if (duplicate) {
+      setError(
+        `${name} already exists in this function.`,
+      );
+      return;
+    }
+
+    const category =
+      manualDishCategory !==
+        'ALL' &&
+      CATEGORIES.includes(
+        manualDishCategory as Category,
+      )
+        ? manualDishCategory as Category
+        : 'Other';
+
+    const newItem:
+      MenuItem = {
+        id:
+          uid('dish'),
+        name,
+        category,
+        costPerPlate:
+          0,
+        portionQuantity:
+          1,
+        portionBaseQuantity:
+          1,
+        portionUnit:
+          'serving',
+        serviceId:
+          addDishFunctionTarget.serviceId,
+        dayLabel:
+          addDishFunctionTarget.dayLabel,
+        mealLabel:
+          addDishFunctionTarget.mealLabel,
+        servicePax:
+          addDishFunctionTarget.servicePax,
+        detectionSource:
+          'manual',
+        detectionConfidence:
+          100,
+        detectionReason:
+          'User manually added a new dish to an existing function',
+        costSource:
+          'manual',
+        coverageStatus:
+          'NEW_DISH_PENDING',
+        costQualityStatus:
+          undefined,
+        costConfidence:
+          0,
+        rateCoveragePercent:
+          0,
+        coverageReason:
+          'New dish needs a confirmed cost and recipe.',
+        costApprovalStatus:
+          'PENDING',
+        costApprovalReason:
+          'A confirmed cost is required before final costing.',
+      };
+
+    const nextWork:
+      WorkState = {
+        ...work,
+        menu: [
+          ...work.menu,
+          newItem,
+        ],
+      };
+
+    persistWork(
+      nextWork,
+    );
+    flushWorkSave(
+      session.tenantId,
+    );
+    await flushDraftToServer(
+      session.tenantId,
+      nextWork,
+    );
+
+    void saveTenantDishLearning({
+      aliasName:
+        name,
+      canonicalName:
+        name,
+      category,
+      action:
+        'MAP',
+    });
+
+    void trackProductEvent(
+      'menu_saved',
+      {
+        costingKey:
+          getCostingAnalyticsKey(
+            nextWork,
+          ),
+        dishCount:
+          nextWork.menu.length,
+        importedDishCount:
+          1,
+        functionName:
+          addDishFunctionTarget.mealLabel,
+        mode:
+          'new_dish_existing_function',
+      },
+    );
+
+    setShowManualDishSelector(
+      false,
+    );
+    setAddDishFunctionTarget(
+      null,
+    );
+    setSelectedManualDishKeys(
+      new Set(),
+    );
+    setManualDishSearch('');
+    setManualDishCategory(
+      'ALL',
+    );
+    setError('');
+
+    window.setTimeout(
+      () =>
+        document
+          .getElementById(
+            'savedEventMenu',
+          )
+          ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          }),
+      40,
     );
   }
 
@@ -1600,6 +1820,127 @@ export default function EventPage() {
           };
         },
       );
+
+    if (addDishFunctionTarget) {
+      const existingDishKeys =
+        new Set(
+          work.menu
+            .filter(
+              (item) =>
+                detectionGroupKeyForItem(
+                  item,
+                ) ===
+                addDishFunctionTarget.key,
+            )
+            .map(
+              (item) =>
+                dishNameKey(
+                  item.name,
+                ),
+            ),
+        );
+
+      const newItems =
+        manualMenu
+          .filter(
+            (item) =>
+              !existingDishKeys.has(
+                dishNameKey(
+                  item.name,
+                ),
+              ),
+          )
+          .map(
+            (item) => ({
+              ...item,
+              serviceId:
+                addDishFunctionTarget.serviceId,
+              dayLabel:
+                addDishFunctionTarget.dayLabel,
+              mealLabel:
+                addDishFunctionTarget.mealLabel,
+              servicePax:
+                addDishFunctionTarget.servicePax,
+            }),
+          );
+
+      if (!newItems.length) {
+        setError(
+          'Selected dishes already exist in this function.',
+        );
+        return;
+      }
+
+      const nextWork:
+        WorkState = {
+          ...work,
+          menu: [
+            ...work.menu,
+            ...newItems,
+          ],
+        };
+
+      persistWork(
+        nextWork,
+      );
+
+      flushWorkSave(
+        session.tenantId,
+      );
+
+      await flushDraftToServer(
+        session.tenantId,
+        nextWork,
+      );
+
+      void trackProductEvent(
+        'menu_saved',
+        {
+          costingKey:
+            getCostingAnalyticsKey(
+              nextWork,
+            ),
+          dishCount:
+            nextWork.menu.length,
+          importedDishCount:
+            newItems.length,
+          functionName:
+            addDishFunctionTarget.mealLabel,
+          mode:
+            'add_dish_to_existing_function',
+        },
+      );
+
+      setShowManualDishSelector(
+        false,
+      );
+      setAddDishFunctionTarget(
+        null,
+      );
+      setSelectedManualDishKeys(
+        new Set(),
+      );
+      setManualDishSearch('');
+      setManualDishCategory(
+        'ALL',
+      );
+      setError('');
+
+      window.setTimeout(
+        () =>
+          document
+            .getElementById(
+              'savedEventMenu',
+            )
+            ?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            }),
+        40,
+      );
+
+      return;
+    }
 
     const {
       menu: mergedMenu,
@@ -6457,6 +6798,39 @@ export default function EventPage() {
   const manualSelectedCount =
     selectedManualDishKeys.size;
 
+  const exactManualCatalogDish =
+    manualDishSearch.trim()
+      ? manualDishCatalog.find(
+          (dish) =>
+            dishNameKey(
+              dish.name,
+            ) ===
+            dishNameKey(
+              manualDishSearch,
+            ),
+        )
+      : undefined;
+
+  const existingTargetDishKeys =
+    new Set(
+      addDishFunctionTarget
+        ? work.menu
+            .filter(
+              (item) =>
+                detectionGroupKeyForItem(
+                  item,
+                ) ===
+                addDishFunctionTarget.key,
+            )
+            .map(
+              (item) =>
+                dishNameKey(
+                  item.name,
+                ),
+            )
+        : [],
+    );
+
   const firstMenuTextReady =
     work.event.rawMenuText.trim().length > 0;
 
@@ -7594,6 +7968,66 @@ export default function EventPage() {
         'REJECTED',
     ).length;
 
+  const savedMenuFunctionGroups =
+    Array.from(
+      work.menu.reduce(
+        (
+          groups,
+          item,
+        ) => {
+          const key =
+            detectionGroupKeyForItem(
+              item,
+            );
+
+          if (!groups.has(key)) {
+            groups.set(
+              key,
+              {
+                key,
+                serviceId:
+                  item.serviceId,
+                dayLabel:
+                  item.dayLabel,
+                mealLabel:
+                  item.mealLabel ||
+                  work.event.functionType ||
+                  'Event Menu',
+                servicePax:
+                  Math.max(
+                    0,
+                    Number(
+                      item.servicePax,
+                    ) ||
+                      Number(
+                        work.event.pax,
+                      ) ||
+                      0,
+                  ),
+                dishCount:
+                  0,
+              },
+            );
+          }
+
+          const group =
+            groups.get(key);
+
+          if (group) {
+            group.dishCount += 1;
+          }
+
+          return groups;
+        },
+        new Map<
+          string,
+          ExistingFunctionDishTarget & {
+            dishCount: number;
+          }
+        >(),
+      ).values(),
+    );
+
   const savedMenuDishCount =
     work.menu.length;
 
@@ -8258,8 +8692,75 @@ export default function EventPage() {
           </aside>
 
           <div className="form-grid">
+            {work.menu.length > 0 &&
+            savedMenuFunctionGroups.length > 0 ? (
+              <section
+                className="event-add-dish-functions no-print"
+                aria-label="Add dishes to an existing function"
+              >
+                <div className="event-add-dish-functions-copy">
+                  <span className="section-kicker">
+                    Add dish
+                  </span>
+                  <div>
+                    <h2>
+                      Add a dish to any function
+                    </h2>
+                    <p>
+                      Choose the meal first. The dish will inherit that function's guest count and stay separate from other meals.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="event-add-dish-function-list">
+                  {savedMenuFunctionGroups.map(
+                    (group) => (
+                      <button
+                        className="event-add-dish-function-button"
+                        type="button"
+                        key={group.key}
+                        onClick={() =>
+                          void openManualDishSelector({
+                            key:
+                              group.key,
+                            serviceId:
+                              group.serviceId,
+                            dayLabel:
+                              group.dayLabel,
+                            mealLabel:
+                              group.mealLabel,
+                            servicePax:
+                              group.servicePax,
+                          })
+                        }
+                      >
+                        <span>
+                          <b>
+                            {group.mealLabel}
+                          </b>
+                          <small>
+                            {group.dayLabel
+                              ? `${group.dayLabel} · `
+                              : ''}
+                            {group.servicePax.toLocaleString('en-IN')} guests · {group.dishCount} dishes
+                          </small>
+                        </span>
+                        <strong>
+                          + Add Dish
+                        </strong>
+                      </button>
+                    ),
+                  )}
+                </div>
+              </section>
+            ) : null}
+
             {work.menu.length > 0 ? (
-              <section className="event-desktop-saved-menu no-print" aria-label="Saved event menu">
+              <section
+                id="savedEventMenu"
+                className="event-desktop-saved-menu no-print"
+                aria-label="Saved event menu"
+              >
                 <div className="event-desktop-saved-menu-head">
                   <div>
                     <span>Saved menu</span>
@@ -9119,7 +9620,9 @@ export default function EventPage() {
                   >
                     <div>
                       <strong>
-                        Manual Menu Selection
+                        {addDishFunctionTarget
+                          ? `Add dishes to ${addDishFunctionTarget.mealLabel}`
+                          : 'Manual Menu Selection'}
                       </strong>
 
                       <div
@@ -9132,21 +9635,30 @@ export default function EventPage() {
                             '11px',
                         }}
                       >
-                        Select existing Dish Master items for{' '}
-                        <b>
-                          {importFunctionName ||
-                            'this function'}
-                        </b>
+                        {addDishFunctionTarget
+                          ? `Select Dish Master items for ${addDishFunctionTarget.servicePax.toLocaleString('en-IN')} guests. Existing dishes are disabled.`
+                          : (
+                            <>
+                              Select existing Dish Master items for{' '}
+                              <b>
+                                {importFunctionName ||
+                                  'this function'}
+                              </b>
+                            </>
+                          )}
                       </div>
                     </div>
 
                     <button
                       className="ghost-button"
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
                         setShowManualDishSelector(
                           false,
-                        )
+                        );
+                        setAddDishFunctionTarget(
+                          null,
+                        );
                       }
                     >
                       Close
@@ -9160,6 +9672,9 @@ export default function EventPage() {
                         id="manualFunctionName"
                         className="input"
                         value={importFunctionName}
+                        readOnly={Boolean(
+                          addDishFunctionTarget,
+                        )}
                         onChange={(event) => {
                           setImportFunctionName(
                             event.target.value,
@@ -9180,6 +9695,9 @@ export default function EventPage() {
                         step="1"
                         inputMode="numeric"
                         value={importFunctionPax}
+                        readOnly={Boolean(
+                          addDishFunctionTarget,
+                        )}
                         onChange={(event) => {
                           setImportFunctionPax(
                             event.target.value,
@@ -9284,6 +9802,11 @@ export default function EventPage() {
                               dish.name,
                             );
 
+                          const alreadyInFunction =
+                            existingTargetDishKeys.has(
+                              key,
+                            );
+
                           const selected =
                             selectedManualDishKeys.has(
                               key,
@@ -9295,6 +9818,9 @@ export default function EventPage() {
                                 `${dish.category}-${dish.name}`
                               }
                               type="button"
+                              disabled={
+                                alreadyInFunction
+                              }
                               onClick={() =>
                                 toggleManualDish(
                                   dish,
@@ -9312,13 +9838,23 @@ export default function EventPage() {
                                 borderRadius:
                                   '10px',
                                 background:
-                                  selected
-                                    ? 'rgba(66,141,232,.12)'
-                                    : '#141a22',
+                                  alreadyInFunction
+                                    ? 'rgba(255,255,255,.025)'
+                                    : selected
+                                      ? 'rgba(66,141,232,.12)'
+                                      : '#141a22',
                                 color:
-                                  '#e7edf4',
+                                  alreadyInFunction
+                                    ? '#687587'
+                                    : '#e7edf4',
                                 cursor:
-                                  'pointer',
+                                  alreadyInFunction
+                                    ? 'not-allowed'
+                                    : 'pointer',
+                                opacity:
+                                  alreadyInFunction
+                                    ? .62
+                                    : 1,
                               }}
                             >
                               <div
@@ -9332,9 +9868,11 @@ export default function EventPage() {
                                 }}
                               >
                                 <span>
-                                  {selected
+                                  {alreadyInFunction
                                     ? '✓'
-                                    : '○'}
+                                    : selected
+                                      ? '✓'
+                                      : '○'}
                                 </span>
 
                                 <span>
@@ -9343,6 +9881,21 @@ export default function EventPage() {
                                       dish.name
                                     }
                                   </b>
+
+                                  {alreadyInFunction ? (
+                                    <small
+                                      style={{
+                                        display:
+                                          'block',
+                                        marginTop:
+                                          '3px',
+                                        color:
+                                          '#6f9bcf',
+                                      }}
+                                    >
+                                      Already in this function
+                                    </small>
+                                  ) : null}
 
                                   <small
                                     style={{
@@ -9409,6 +9962,30 @@ export default function EventPage() {
                     </div>
                   )}
 
+                  {addDishFunctionTarget &&
+                  manualDishSearch.trim() &&
+                  !exactManualCatalogDish ? (
+                    <div className="event-create-dish-inline">
+                      <div>
+                        <b>
+                          New dish: {manualDishSearch.trim()}
+                        </b>
+                        <small>
+                          Add it to {addDishFunctionTarget.mealLabel} now. Its rate and recipe can be completed in Dish Cost.
+                        </small>
+                      </div>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() =>
+                          void addNewDishToExistingFunction()
+                        }
+                      >
+                        + Create New Dish
+                      </button>
+                    </div>
+                  ) : null}
+
                   <div
                     className="event-manual-selector-footer"
                     style={{
@@ -9454,7 +10031,9 @@ export default function EventPage() {
                         void addManualMenuAndContinue()
                       }
                     >
-                      Add Selected & Continue
+                      {addDishFunctionTarget
+                        ? `Add Selected to ${addDishFunctionTarget.mealLabel}`
+                        : 'Add Selected & Continue'}
                     </button>
                   </div>
                 </div>

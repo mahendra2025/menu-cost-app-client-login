@@ -25798,3 +25798,161 @@ body.client-sheet-open {
     display: flex !important;
   }
 }
+
+
+/* Event: add dish to existing function ----------------------------------- */
+.event-add-dish-functions {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .018);
+}
+
+.event-add-dish-functions-copy {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.event-add-dish-functions-copy h2 {
+  margin: 2px 0 4px;
+  font-size: 16px;
+  letter-spacing: -.025em;
+}
+
+.event-add-dish-functions-copy p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.event-add-dish-function-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.event-add-dish-function-button {
+  min-width: 0;
+  min-height: 62px;
+  padding: 10px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 11px;
+  color: inherit;
+  background: rgba(255, 255, 255, .02);
+  text-align: left;
+  cursor: pointer;
+  transition: .18s ease;
+}
+
+.event-add-dish-function-button:hover {
+  border-color: rgba(74, 156, 255, .34);
+  background: rgba(74, 156, 255, .055);
+  transform: translateY(-1px);
+}
+
+.event-add-dish-function-button > span {
+  min-width: 0;
+}
+
+.event-add-dish-function-button b,
+.event-add-dish-function-button small {
+  display: block;
+}
+
+.event-add-dish-function-button b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.event-add-dish-function-button small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.event-add-dish-function-button strong {
+  flex: 0 0 auto;
+  color: #8fc2ff;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.event-manual-selector input[readonly] {
+  color: #a9b5c4;
+  background: rgba(255, 255, 255, .025);
+  cursor: default;
+}
+
+@media (max-width: 720px) {
+  .event-add-dish-functions {
+    padding: 12px;
+  }
+
+  .event-add-dish-functions-copy {
+    display: grid;
+    gap: 5px;
+  }
+
+  .event-add-dish-function-list {
+    grid-template-columns: 1fr;
+  }
+
+  .event-add-dish-function-button {
+    min-height: 58px;
+  }
+}
+
+
+.event-create-dish-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px dashed rgba(74, 156, 255, .28);
+  border-radius: 10px;
+  background: rgba(74, 156, 255, .045);
+}
+
+.event-create-dish-inline b,
+.event-create-dish-inline small {
+  display: block;
+}
+
+.event-create-dish-inline b {
+  font-size: 11px;
+}
+
+.event-create-dish-inline small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.event-create-dish-inline .secondary-button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 620px) {
+  .event-create-dish-inline {
+    display: grid;
+  }
+
+  .event-create-dish-inline .secondary-button {
+    width: 100%;
+  }
+}
