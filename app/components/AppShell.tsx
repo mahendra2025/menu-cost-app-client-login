@@ -8,7 +8,7 @@ import type { Session } from '../../lib/types';
 import { useLanguage } from './LanguageProvider';
 
 type NavIcon = 'profile' | 'clients' | 'dishes' | 'ingredients';
-type ClientNavIcon = 'event' | 'team' | 'expenses' | 'pricing' | 'more';
+type ClientNavIcon = 'event' | 'cost' | 'grocery' | 'team' | 'expenses' | 'pricing' | 'quotation' | 'history' | 'ingredients' | 'profile' | 'more';
 
 type ClientFlowStep = {
   step: number;
@@ -56,6 +56,22 @@ const adminNav = [
   { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Workspace settings', icon: 'profile' as NavIcon },
 ];
 
+const clientWorkflowNav = [
+  { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Upload and review menu', icon: 'event' as ClientNavIcon },
+  { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
+  { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
+  { href: '/app/team', match: '/app/team', label: 'Manpower', description: 'Manual staff costing', icon: 'team' as ClientNavIcon },
+  { href: '/app/operations', match: '/app/operations', label: 'Operations', description: 'Gas, transport and extras', icon: 'expenses' as ClientNavIcon },
+  { href: '/app/final-costing', match: '/app/final-costing', label: 'Final Cost', description: 'Cost per plate and margin', icon: 'pricing' as ClientNavIcon },
+  { href: '/app/quotation', match: '/app/quotation', label: 'Quotation', description: 'Client-facing quote', icon: 'quotation' as ClientNavIcon },
+];
+
+const clientWorkspaceNav = [
+  { href: '/app/history', match: '/app/history', label: 'History', description: 'Saved events', icon: 'history' as ClientNavIcon },
+  { href: '/app/ingredients', match: '/app/ingredients', label: 'My Ingredients', description: 'Custom ingredient rates', icon: 'ingredients' as ClientNavIcon },
+  { href: '/app/profile', match: '/app/profile', label: 'Profile', description: 'Business settings', icon: 'profile' as ClientNavIcon },
+];
+
 let cachedShellSession: Session | null = null;
 
 function ClientNavIconMark({ icon }: { icon: ClientNavIcon }) {
@@ -64,6 +80,18 @@ function ClientNavIconMark({ icon }: { icon: ClientNavIcon }) {
       <>
         <rect x="4" y="5" width="16" height="15" rx="3" />
         <path d="M8 3v4M16 3v4M7 11h10M8 15h3" />
+      </>
+    ),
+    cost: (
+      <>
+        <path d="M5 5h14v14H5z" />
+        <path d="M8 9h8M8 13h5M8 17h3" />
+      </>
+    ),
+    grocery: (
+      <>
+        <path d="M5 7h14l-1.4 10H6.4z" />
+        <path d="M8 7V5h8v2M9 11h6M9 14h4" />
       </>
     ),
     team: (
@@ -83,6 +111,30 @@ function ClientNavIconMark({ icon }: { icon: ClientNavIcon }) {
       <>
         <path d="M4 17.5V11l7-7h6l3 3v6l-7 7H6.5z" />
         <circle cx="15.5" cy="8.5" r="1.2" />
+      </>
+    ),
+    quotation: (
+      <>
+        <path d="M6 3h9l3 3v15H6z" />
+        <path d="M15 3v4h4M9 11h6M9 15h6" />
+      </>
+    ),
+    history: (
+      <>
+        <path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6" />
+        <path d="M4 4v4.6h4.6M12 8v5l3 2" />
+      </>
+    ),
+    ingredients: (
+      <>
+        <path d="M8 4h8l1 4v12H7V8zM7 8h10" />
+        <path d="M10 12h4M10 16h4" />
+      </>
+    ),
+    profile: (
+      <>
+        <circle cx="12" cy="8" r="3.5" />
+        <path d="M5 20c.5-4.2 2.8-6.3 7-6.3s6.5 2.1 7 6.3" />
       </>
     ),
     more: (
@@ -271,7 +323,7 @@ export default function AppShell({
         </div>
       </header>
 
-      <div className="app-layout" style={!isAdmin ? { display: 'block' } : undefined}>
+      <div className="app-layout">
         {isAdmin ? (
           <aside className="app-sidebar no-print">
             <div className="sidebar-heading">
@@ -299,6 +351,67 @@ export default function AppShell({
             <div className="sidebar-support">
               <span>Catalog workspace</span>
               <p>Review dish names, categories and rates before saving changes.</p>
+            </div>
+          </aside>
+        ) : null}
+
+        {!isAdmin ? (
+          <aside className="app-sidebar client-desktop-sidebar no-print">
+            <div className="sidebar-heading">
+              <span>Costing workspace</span>
+              <b>Build event cost</b>
+            </div>
+
+            <nav className="sidebar-nav client-desktop-nav" aria-label={t('Costing workflow')}>
+              {clientWorkflowNav.map((item, index) => {
+                const isActive =
+                  pathname === item.match ||
+                  (item.match === '/app/operations' && pathname === '/app/disposable');
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={isActive ? 'active' : ''}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <ClientNavIconMark icon={item.icon} />
+                    <span className="nav-copy">
+                      <b>{t(item.label)}</b>
+                      <small>{t(item.description)}</small>
+                    </span>
+                    <span className="client-desktop-step" aria-hidden="true">{index + 1}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="client-sidebar-divider" />
+
+            <nav className="sidebar-nav client-desktop-nav client-desktop-nav-secondary" aria-label={t('Workspace')}>
+              {clientWorkspaceNav.map((item) => {
+                const isActive = pathname === item.match;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={isActive ? 'active' : ''}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    <ClientNavIconMark icon={item.icon} />
+                    <span className="nav-copy">
+                      <b>{t(item.label)}</b>
+                      <small>{t(item.description)}</small>
+                    </span>
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="sidebar-support client-sidebar-support">
+              <span>Current workspace</span>
+              <p>{session?.businessName || 'Menu Costing'}</p>
             </div>
           </aside>
         ) : null}
@@ -426,6 +539,23 @@ export default function AppShell({
                 Rate Health
               </Link>
             </nav>
+          ) : null}
+
+          {!isAdmin && !hidePageTitle ? (
+            <section className="client-desktop-page-head no-print">
+              <div>
+                <span className="page-eyebrow">{t('Costing workspace')}</span>
+                <h1>{title}</h1>
+                <p>{subtitle ?? t('Plan and cost this event from one workspace.')}</p>
+              </div>
+              {clientFlow ? (
+                <div className="client-desktop-page-step">
+                  <span>{t('Workflow')}</span>
+                  <b>{t(clientFlow.label)}</b>
+                  <small>{t(`Step ${clientFlow.step} of 5`)}</small>
+                </div>
+              ) : null}
+            </section>
           ) : null}
 
           {!isAdmin && clientFlow ? (
