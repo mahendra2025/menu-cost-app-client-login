@@ -12,6 +12,7 @@ import {
   uid,
 } from '../../../lib/store';
 import {
+  buildDisposableAutoAssignment,
   calculateDisposableCost,
   disposableCostPerCover,
 } from '../../../lib/disposableCost';
@@ -46,11 +47,33 @@ export default function DisposableCostPage() {
 
     setSession(current);
     const saved = loadWork(current.tenantId);
-    const disposable = calculateDisposableCost(saved.disposableItems);
+    const totalCovers = calculate(saved).totalCovers;
+    const alreadyAssigned = saved.disposableItems.some(
+      (item) => Number(item.quantity) > 0,
+    );
+    const autoAssignment = alreadyAssigned
+      ? null
+      : buildDisposableAutoAssignment({
+          items: saved.disposableItems,
+          covers: totalCovers,
+          menu: saved.menu,
+          manpower: saved.manpower,
+          manpowerInputs: saved.manpowerInputs,
+        });
+    const disposableItems =
+      autoAssignment?.recommendations.length
+        ? autoAssignment.items
+        : saved.disposableItems;
+    const disposable = calculateDisposableCost(disposableItems);
+    const autoApplied = Boolean(autoAssignment?.recommendations.length);
 
-    if (Math.abs(disposable.total - Number(saved.extras.disposable || 0)) > 0.01) {
+    if (
+      autoApplied ||
+      Math.abs(disposable.total - Number(saved.extras.disposable || 0)) > 0.01
+    ) {
       const normalized: WorkState = {
         ...saved,
+        disposableItems,
         extras: {
           ...saved.extras,
           disposable: disposable.total,
@@ -60,6 +83,11 @@ export default function DisposableCostPage() {
       };
       setWork(normalized);
       saveWork(current.tenantId, normalized);
+      if (autoApplied && autoAssignment) {
+        setMessage(
+          `Auto assigned ${autoAssignment.recommendations.length} plastic/disposable items for ${autoAssignment.covers.toLocaleString('en-IN')} covers. Add or edit purchase rates to calculate cost.`,
+        );
+      }
       return;
     }
 
@@ -77,6 +105,18 @@ export default function DisposableCostPage() {
   );
 
   const perCover = disposableCostPerCover(summary.total, totalCovers);
+
+  const autoAssignment = useMemo(
+    () =>
+      buildDisposableAutoAssignment({
+        items: work?.disposableItems ?? [],
+        covers: totalCovers,
+        menu: work?.menu ?? [],
+        manpower: work?.manpower ?? [],
+        manpowerInputs: work?.manpowerInputs,
+      }),
+    [work, totalCovers],
+  );
 
   function persistItems(items: DisposableCostItem[], nextMessage = '') {
     if (!work || !session) return;
@@ -106,6 +146,15 @@ export default function DisposableCostPage() {
       work.disposableItems.map((item) =>
         item.id === id ? { ...item, ...patch } : item,
       ),
+    );
+  }
+
+  function autoAssignItems() {
+    if (!work) return;
+
+    persistItems(
+      autoAssignment.items,
+      `Auto assigned ${autoAssignment.recommendations.length} items for ${autoAssignment.covers.toLocaleString('en-IN')} covers. Existing purchase rates were kept.`,
     );
   }
 
@@ -153,15 +202,15 @@ export default function DisposableCostPage() {
   return (
     <AppShell
       title="Plastic & Disposable"
-      subtitle="Add plates, bowls, cups, spoons, packing and other single-use event items"
+      subtitle="Automatically assign plastic/disposable quantities from covers, service style, crockery and menu demand"
     >
       <section className="content-grid disposable-page">
         <div className="final-costing-overview is-ready">
           <div>
             <span className="page-eyebrow">Disposable event cost</span>
-            <h2>Quantity × purchase rate</h2>
+            <h2>Auto quantity × your purchase rate</h2>
             <p>
-              Enter the actual quantity you expect to use and your purchase rate. The total becomes part of the real event cost before markup or margin.
+              The app auto-assigns practical quantities from meal covers, service style, crockery, drink categories and food-handling staff. You can still edit every quantity and rate manually.
             </p>
           </div>
           <div className="final-costing-overview-total">
@@ -183,14 +232,22 @@ export default function DisposableCostPage() {
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Plastic / disposable items</span>
-              <h2>Enter quantity and rate</h2>
+              <h2>Auto assigned — fully editable</h2>
               <p>
-                Example: 330 plates × ₹6 = ₹1,980. Keep the legacy Fuel row at zero and use Gas & Transport for LPG/fuel.
+                Quantities use a safety buffer. Purchase rates stay yours. Fuel remains zero here because LPG/fuel is calculated in Gas & Transport.
               </p>
+              <small className="auto-assign-summary">
+                Auto plan: {autoAssignment.recommendations.length} items · {autoAssignment.totalSuggestedUnits.toLocaleString('en-IN')} units · {autoAssignment.disposableCovers.toLocaleString('en-IN')} disposable/packed covers
+              </small>
             </div>
-            <button className="secondary-button" type="button" onClick={addItem}>
-              + Add Item
-            </button>
+            <div className="disposable-heading-actions">
+              <button className="secondary-button" type="button" onClick={autoAssignItems}>
+                Auto Assign Again
+              </button>
+              <button className="secondary-button" type="button" onClick={addItem}>
+                + Add Item
+              </button>
+            </div>
           </div>
 
           <div className="table-wrap disposable-table-wrap">
@@ -423,7 +480,7 @@ export default function DisposableCostPage() {
         </div>
 
         <style>{`
-          .disposable-page{padding-bottom:28px}.disposable-table{width:100%;border-collapse:collapse}.disposable-table th,.disposable-table td{padding:11px 10px;border-bottom:1px solid rgba(148,163,184,.14);text-align:left;vertical-align:middle}.disposable-table th{color:var(--muted);font-size:11px;font-weight:700}.disposable-table td:nth-child(2),.disposable-table td:nth-child(3),.disposable-table td:nth-child(4){width:150px}.disposable-number{min-width:110px}.disposable-name{display:grid;gap:2px}.disposable-name small{color:#f59e0b;font-size:10px}.disposable-remove{padding:7px 10px}.disposable-table tr.is-active{background:rgba(59,130,246,.04)}.disposable-card-list{display:none}@media(max-width:720px){.disposable-table-wrap{display:none}.disposable-card-list{display:grid;gap:10px;margin-top:14px}.disposable-mobile-card{display:grid;gap:12px;padding:14px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(148,163,184,.025)}.disposable-mobile-card.is-active{border-color:rgba(59,130,246,.28);background:rgba(59,130,246,.055)}.disposable-mobile-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.disposable-mobile-card-heading>div{display:grid;gap:3px;min-width:0}.disposable-mobile-card-heading strong{font-size:14px}.disposable-mobile-card-heading small{color:#f59e0b;font-size:10px}.disposable-mobile-card-heading>b{font-size:16px;white-space:nowrap}.disposable-mobile-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.disposable-mobile-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,.12)}.disposable-mobile-total span{color:var(--muted);font-size:11px}.disposable-mobile-total strong{font-size:15px}.disposable-page .final-costing-section-heading{align-items:flex-start;gap:14px}}@media(max-width:420px){.disposable-mobile-fields{grid-template-columns:1fr}}
+          .disposable-page{padding-bottom:28px}.disposable-heading-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.auto-assign-summary{display:block;margin-top:8px;color:var(--muted);font-size:11px}.disposable-table{width:100%;border-collapse:collapse}.disposable-table th,.disposable-table td{padding:11px 10px;border-bottom:1px solid rgba(148,163,184,.14);text-align:left;vertical-align:middle}.disposable-table th{color:var(--muted);font-size:11px;font-weight:700}.disposable-table td:nth-child(2),.disposable-table td:nth-child(3),.disposable-table td:nth-child(4){width:150px}.disposable-number{min-width:110px}.disposable-name{display:grid;gap:2px}.disposable-name small{color:#f59e0b;font-size:10px}.disposable-remove{padding:7px 10px}.disposable-table tr.is-active{background:rgba(59,130,246,.04)}.disposable-card-list{display:none}@media(max-width:720px){.disposable-heading-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.disposable-heading-actions button{width:100%}.disposable-table-wrap{display:none}.disposable-card-list{display:grid;gap:10px;margin-top:14px}.disposable-mobile-card{display:grid;gap:12px;padding:14px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(148,163,184,.025)}.disposable-mobile-card.is-active{border-color:rgba(59,130,246,.28);background:rgba(59,130,246,.055)}.disposable-mobile-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.disposable-mobile-card-heading>div{display:grid;gap:3px;min-width:0}.disposable-mobile-card-heading strong{font-size:14px}.disposable-mobile-card-heading small{color:#f59e0b;font-size:10px}.disposable-mobile-card-heading>b{font-size:16px;white-space:nowrap}.disposable-mobile-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.disposable-mobile-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,.12)}.disposable-mobile-total span{color:var(--muted);font-size:11px}.disposable-mobile-total strong{font-size:15px}.disposable-page .final-costing-section-heading{align-items:flex-start;gap:14px}}@media(max-width:420px){.disposable-mobile-fields{grid-template-columns:1fr}}
         `}</style>
       </section>
     </AppShell>
