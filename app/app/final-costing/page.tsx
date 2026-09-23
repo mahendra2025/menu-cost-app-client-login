@@ -232,6 +232,12 @@ export default function FinalCostingPage() {
   ).length;
 
   async function downloadInternalCostingPdf() {
+    const currentWork = work;
+
+    if (!currentWork) {
+      return;
+    }
+
     const [
       pdfModule,
       groceryModule,
@@ -251,7 +257,7 @@ export default function FinalCostingPage() {
       const dishNames =
         Array.from(
           new Set(
-            work.menu
+            currentWork.menu
               .filter(
                 (item) =>
                   item.coverageStatus !==
@@ -309,7 +315,7 @@ export default function FinalCostingPage() {
       ) {
         groceryPlan =
           groceryModule.buildFunctionGroceryPlan(
-            work,
+            currentWork,
             Array.isArray(
               recipeData.recipes,
             )
@@ -327,7 +333,7 @@ export default function FinalCostingPage() {
     }
 
     pdfModule.downloadInternalEventCostingPdf(
-      work,
+      currentWork,
       groceryPlan,
       gasBreakdown,
     );
