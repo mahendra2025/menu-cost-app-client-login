@@ -53,9 +53,9 @@ function rows(overrides = {}) {
 test('standard buffet recommends service manpower from guest ratios', () => {
   const result = rows();
 
-  assert.equal(result.find((row) => row.role === 'Waiter')?.quantity, 24);
-  assert.equal(result.find((row) => row.role === 'Captain')?.quantity, 3);
-  assert.equal(result.find((row) => row.role === 'Water Staff')?.quantity, 5);
+  assert.equal(result.find((row) => row.role === 'Waiter')?.recommendedQuantity, 24);
+  assert.equal(result.find((row) => row.role === 'Captain')?.recommendedQuantity, 3);
+  assert.equal(result.find((row) => row.role === 'Water Staff')?.recommendedQuantity, 5);
 });
 
 test('premium buffet increases waiter recommendation', () => {
@@ -68,50 +68,37 @@ test('premium buffet increases waiter recommendation', () => {
     },
   });
 
-  assert.equal(result.find((row) => row.role === 'Waiter')?.quantity, 35);
+  assert.equal(result.find((row) => row.role === 'Waiter')?.recommendedQuantity, 35);
 });
 
 test('chef manpower uses one dish = one chef by category', () => {
   const result = rows();
 
-  assert.equal(result.find((row) => row.role === 'Bread Cook')?.quantity, 3);
-  assert.equal(result.find((row) => row.role === 'Bread Helper')?.quantity, 2);
-  assert.equal(result.find((row) => row.role === 'Chaat Cook')?.quantity, 1);
-  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.quantity, 2);
-  assert.equal(result.find((row) => row.role === 'Farsan Cook')?.quantity, 1);
-  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.quantity, 4);
+  assert.equal(result.find((row) => row.role === 'Bread Cook')?.recommendedQuantity, 3);
+  assert.equal(result.find((row) => row.role === 'Bread Helper')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Chaat Cook')?.recommendedQuantity, 1);
+  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Farsan Cook')?.recommendedQuantity, 1);
+  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.recommendedQuantity, 4);
 });
 
-test('automatic dish assignment maps each kitchen role only to matching dishes', () => {
+test('built-in manpower is not selected or assigned automatically', () => {
   const result = rows();
 
-  assert.deepEqual(
-    result.find((row) => row.role === 'Bread Cook')?.assignedDishIds,
-    ['bread_1', 'bread_2', 'bread_3'],
-  );
-  assert.deepEqual(
-    result.find((row) => row.role === 'Chaat Cook')?.assignedDishIds,
-    ['chaat_1'],
-  );
-  assert.deepEqual(
-    result.find((row) => row.role === 'Sweet / Halwai Cook')?.assignedDishIds,
-    ['sweet_1', 'sweet_2'],
-  );
-  assert.deepEqual(
-    result.find((row) => row.role === 'Farsan Cook')?.assignedDishIds,
-    ['farsan_1'],
-  );
-  assert.deepEqual(
-    result.find((row) => row.role === 'Main Course Cook')?.assignedDishIds,
-    ['sabji_1', 'sabji_2', 'dal_1', 'rice_1'],
-  );
-  assert.deepEqual(
-    result.find((row) => row.role === 'Waiter')?.assignedDishIds,
-    [],
-  );
+  for (const role of [
+    'Waiter',
+    'Bread Cook',
+    'Chaat Cook',
+    'Sweet / Halwai Cook',
+    'Main Course Cook',
+  ]) {
+    const row = result.find((item) => item.role === role);
+    assert.equal(row?.quantity, 0);
+    assert.deepEqual(row?.assignedDishIds, []);
+  }
 });
 
-test('stale automatic all-dish assignments are recalculated by category', () => {
+test('stale automatic selections are cleared when manpower is manual-only', () => {
   const result = rows({
     existingRows: [
       {
@@ -129,9 +116,20 @@ test('stale automatic all-dish assignments are recalculated by category', () => 
     ],
   });
 
-  assert.deepEqual(
-    result.find((row) => row.role === 'Bread Cook')?.assignedDishIds,
-    ['bread_1', 'bread_2', 'bread_3'],
+  const breadCook = result.find((row) => row.role === 'Bread Cook');
+
+  assert.equal(breadCook?.quantity, 0);
+  assert.deepEqual(breadCook?.assignedDishIds, []);
+});
+
+test('automatic recommendations never prefill manpower quantities', () => {
+  const result = rows();
+
+  assert.ok(
+    result.some((row) => (row.recommendedQuantity ?? 0) > 0),
+  );
+  assert.ok(
+    result.every((row) => row.quantity === 0),
   );
 });
 
@@ -190,9 +188,9 @@ test('utility manpower changes with crockery and outdoor venue settings', () => 
     },
   });
 
-  assert.equal(result.find((row) => row.role === 'Dishwasher')?.quantity, 8);
-  assert.equal(result.find((row) => row.role === 'Water Staff')?.quantity, 18);
-  assert.ok((result.find((row) => row.role === 'Cleaning')?.quantity ?? 0) >= 6);
+  assert.equal(result.find((row) => row.role === 'Dishwasher')?.recommendedQuantity, 8);
+  assert.equal(result.find((row) => row.role === 'Water Staff')?.recommendedQuantity, 18);
+  assert.ok((result.find((row) => row.role === 'Cleaning')?.recommendedQuantity ?? 0) >= 6);
 });
 
 
@@ -205,12 +203,12 @@ test('admin manpower rules change service and chef dish ratio', () => {
     },
   });
 
-  assert.equal(result.find((row) => row.role === 'Waiter')?.quantity, 20);
+  assert.equal(result.find((row) => row.role === 'Waiter')?.recommendedQuantity, 20);
   assert.equal(result.find((row) => row.role === 'Chaat Cook')?.quantity, 1);
-  assert.equal(result.find((row) => row.role === 'Bread Cook')?.quantity, 2);
-  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.quantity, 1);
-  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.quantity, 2);
-  assert.equal(result.find((row) => row.role === 'Dishwasher')?.quantity, 4);
+  assert.equal(result.find((row) => row.role === 'Bread Cook')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.recommendedQuantity, 1);
+  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Dishwasher')?.recommendedQuantity, 4);
 });
 
 test('manual override still wins after admin master changes', () => {
@@ -261,10 +259,10 @@ test('starter and soup each get one chef per dish while non-cooking categories g
     mealLabel: 'Lunch',
   });
 
-  assert.equal(result.find((row) => row.role === 'Starter Cook')?.quantity, 2);
-  assert.equal(result.find((row) => row.role === 'Soup Cook')?.quantity, 2);
-  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.quantity, 0);
-  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.quantity, 0);
+  assert.equal(result.find((row) => row.role === 'Starter Cook')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Soup Cook')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.recommendedQuantity, 0);
+  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.recommendedQuantity, 0);
 });
 
 test('new cooked categories automatically fall back to one main-course chef per dish', () => {
@@ -283,5 +281,5 @@ test('new cooked categories automatically fall back to one main-course chef per 
     mealLabel: 'Lunch',
   });
 
-  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.quantity, 3);
+  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.recommendedQuantity, 3);
 });
