@@ -34,6 +34,35 @@ type NewRoleDraft = {
   rate: string;
 };
 
+type ManpowerFilterGroup =
+  | 'ALL'
+  | 'SERVICE'
+  | 'KITCHEN'
+  | 'COUNTER'
+  | 'UTILITY'
+  | 'LOGISTICS'
+  | 'MANAGEMENT';
+
+const MANPOWER_FILTERS: Array<{
+  key: ManpowerFilterGroup;
+  label: string;
+}> = [
+  { key: 'ALL', label: 'All' },
+  { key: 'SERVICE', label: 'Service' },
+  { key: 'KITCHEN', label: 'Kitchen' },
+  { key: 'COUNTER', label: 'Counter' },
+  { key: 'UTILITY', label: 'Utility' },
+  { key: 'LOGISTICS', label: 'Logistics' },
+  { key: 'MANAGEMENT', label: 'Management' },
+];
+
+const QUICK_MANPOWER_ROLES = [
+  { label: 'Waiter', role: 'Waiter' },
+  { label: 'Captain', role: 'Captain' },
+  { label: 'Cook', role: 'Main Course Cook' },
+  { label: 'Helper', role: 'Preparation Helper' },
+] as const;
+
 type MealPlan = {
   key: string;
   serviceId?: string;
@@ -58,6 +87,34 @@ const BUILT_IN_ROLE_NAMES = new Set(
 
 function isCustomRole(row: ManpowerRow) {
   return Boolean(row.customRole) || !BUILT_IN_ROLE_NAMES.has(normalizeRole(row.role));
+}
+
+function manpowerFilterGroup(
+  row: ManpowerRow,
+): Exclude<ManpowerFilterGroup, 'ALL'> | 'CUSTOM' {
+  if (isCustomRole(row)) {
+    return 'CUSTOM';
+  }
+
+  if (
+    row.department === 'KITCHEN' ||
+    row.department === 'BREAD' ||
+    row.department === 'PREPARATION'
+  ) {
+    return 'KITCHEN';
+  }
+
+  if (
+    row.department === 'COUNTER' ||
+    row.department === 'LIVE_COUNTER'
+  ) {
+    return 'COUNTER';
+  }
+
+  return (
+    row.department ||
+    'CUSTOM'
+  );
 }
 
 const DISH_ASSIGNABLE_DEPARTMENTS = new Set([
@@ -226,7 +283,7 @@ function buildMealManpowerRows(
         dayLabel: meal.dayLabel || undefined,
         mealLabel: meal.mealLabel,
         servicePax: meal.pax,
-        assignedDishIds: row.assignedDishIds || meal.dishIds,
+        assignedDishIds: row.assignedDishIds ?? [],
       }));
 
     const eventCustomNames = new Set(
@@ -248,7 +305,7 @@ function buildMealManpowerRows(
         dayLabel: meal.dayLabel || undefined,
         mealLabel: meal.mealLabel,
         servicePax: meal.pax,
-        assignedDishIds: meal.dishIds,
+        assignedDishIds: [],
       } satisfies ManpowerRow));
 
     return [...builtInRows, ...eventCustomRows, ...permanentCustomRows];
@@ -429,6 +486,8 @@ export default function ManpowerPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
   const [selectedMealKey, setSelectedMealKey] = useState('');
+  const [departmentFilter, setDepartmentFilter] =
+    useState<ManpowerFilterGroup>('ALL');
   const [newRoleDrafts, setNewRoleDrafts] = useState<Record<string, NewRoleDraft>>({});
   const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
 
@@ -527,6 +586,91 @@ export default function ManpowerPage() {
     meals.some((meal) => meal.key === selectedMealKey)
       ? selectedMealKey
       : meals[0]?.key || '';
+
+  const totalMealCovers =
+    meals.reduce(
+      (sum, meal) =>
+        sum +
+        Math.max(
+          0,
+          Number(meal.pax) || 0,
+        ),
+      0,
+    );
+
+  const manpowerPerCover =
+    totalMealCovers > 0
+      ? manpowerTotal /
+        totalMealCovers
+      : 0;
+
+  const activeManpowerRows =
+    work?.manpower.filter(
+      (row) =>
+        Math.max(
+          0,
+          Number(row.quantity) || 0,
+        ) > 0,
+    ) ?? [];
+
+  function peopleForGroup(
+    group:
+      | 'SERVICE'
+      | 'KITCHEN'
+      | 'COUNTER'
+      | 'UTILITY'
+      | 'LOGISTICS'
+      | 'MANAGEMENT',
+  ) {
+    return activeManpowerRows
+      .filter(
+        (row) =>
+          manpowerFilterGroup(
+            row,
+          ) === group,
+      )
+      .reduce(
+        (sum, row) =>
+          sum +
+          Math.max(
+            0,
+            Number(row.quantity) || 0,
+          ),
+        0,
+      );
+  }
+
+  const servicePeople =
+    peopleForGroup(
+      'SERVICE',
+    );
+
+  const kitchenPeople =
+    peopleForGroup(
+      'KITCHEN',
+    );
+
+  const utilityPeople =
+    peopleForGroup(
+      'UTILITY',
+    );
+
+  const staffedMenuDishCount =
+    work?.menu.filter(
+      (dish) =>
+        activeManpowerRows.some(
+          (row) =>
+            canAssignDishes(
+              row,
+            ) &&
+            (
+              row.assignedDishIds ??
+              []
+            ).includes(
+              dish.id,
+            ),
+        ),
+    ).length ?? 0;
 
   function rowsForMeal(meal: MealPlan) {
     return work?.manpower.filter((row) => rowBelongsToMeal(row, meal)) ?? [];
@@ -629,6 +773,58 @@ export default function ManpowerPage() {
     setRoleErrors((current) => ({ ...current, [mealKey]: '' }));
   }
 
+  function addQuickRole(
+    meal: MealPlan,
+    roleName: string,
+  ) {
+    const row =
+      rowsForMeal(
+        meal,
+      ).find(
+        (item) =>
+          normalizeRole(
+            item.role,
+          ) ===
+          normalizeRole(
+            roleName,
+          ),
+      );
+
+    if (!row) {
+      setDepartmentFilter(
+        'ALL',
+      );
+      document
+        .getElementById(
+          `manpower-add-role-${meal.key}`,
+        )
+        ?.scrollIntoView({
+          behavior:
+            'smooth',
+          block:
+            'center',
+        });
+      return;
+    }
+
+    updateRow(
+      row.id,
+      {
+        quantity:
+          Math.max(
+            0,
+            Number(
+              row.quantity,
+            ) || 0,
+          ) + 1,
+        manualOverride:
+          true,
+        calculationSource:
+          'MANUAL',
+      },
+    );
+  }
+
   function addStaffRole(meal: MealPlan) {
     if (!work || !session) return;
 
@@ -657,7 +853,9 @@ export default function ManpowerPage() {
       dayLabel: meal.dayLabel || undefined,
       mealLabel: meal.mealLabel,
       servicePax: meal.pax,
-      assignedDishIds: meal.dishIds,
+      assignedDishIds: [],
+      manualOverride: true,
+      calculationSource: 'MANUAL',
     };
 
     saveCustomManpowerRole(session.tenantId, role, newRow.rate);
@@ -698,7 +896,7 @@ export default function ManpowerPage() {
 
   if (!work) {
     return (
-      <AppShell title="Team" subtitle="Set manpower for each meal">
+      <AppShell title="Manpower" subtitle="Set manpower manually for each meal">
         <div className="loader-card">Loading manpower…</div>
       </AppShell>
     );
@@ -706,8 +904,8 @@ export default function ManpowerPage() {
 
   return (
     <AppShell
-      title="Team"
-      subtitle="Select manpower manually for each meal."
+      title="Manpower"
+      subtitle="Select manpower manually for each meal. Nothing is added automatically."
     >
       <section className="content-grid manpower-page">
         <div className="manpower-overview manpower-overview-v2">
@@ -730,7 +928,7 @@ export default function ManpowerPage() {
               type="button"
               onClick={continueToExpenses}
             >
-              Next: Gas & Transport
+              Continue to Operations
             </button>
           </div>
         </div>
@@ -780,9 +978,18 @@ export default function ManpowerPage() {
           </div>
         </section>
 
+        <div className="manpower-desktop-workspace">
         {meals.filter((meal) => meal.key === activeMealKey).map((meal) => {
           const mealIndex = meals.findIndex((item) => item.key === meal.key);
           const mealRows = rowsForMeal(meal);
+          const filteredMealRows =
+            departmentFilter === 'ALL'
+              ? mealRows
+              : mealRows.filter(
+                  (row) =>
+                    manpowerFilterGroup(row) ===
+                    departmentFilter,
+                );
           const mealDishes = work.menu.filter((dish) =>
             meal.dishIds.includes(dish.id),
           );
@@ -832,6 +1039,50 @@ export default function ManpowerPage() {
                 </div>
               </div>
 
+              <section className="manpower-quick-add no-print" aria-label="Quick manual manpower add">
+                <div className="manpower-quick-add-copy">
+                  <span>Quick add</span>
+                  <b>Add one person manually</b>
+                  <small>Each click increases that role by 1 for this meal.</small>
+                </div>
+
+                <div className="manpower-quick-add-actions">
+                  {QUICK_MANPOWER_ROLES.map((quickRole) => (
+                    <button
+                      key={quickRole.role}
+                      type="button"
+                      onClick={() =>
+                        addQuickRole(
+                          meal,
+                          quickRole.role,
+                        )
+                      }
+                    >
+                      <span aria-hidden="true">＋</span>
+                      {quickRole.label}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    className="is-custom"
+                    onClick={() =>
+                      document
+                        .getElementById(
+                          `manpower-add-role-${meal.key}`,
+                        )
+                        ?.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'center',
+                        })
+                    }
+                  >
+                    <span aria-hidden="true">＋</span>
+                    Custom role
+                  </button>
+                </div>
+              </section>
+
               <DishManpowerBoard
                 dishes={mealDishes}
                 rows={mealRows}
@@ -847,6 +1098,36 @@ export default function ManpowerPage() {
                 <span>{mealRows.filter((row) => Number(row.quantity) > 0).length} active roles</span>
               </div>
 
+              <div className="manpower-department-filters no-print" aria-label="Filter manpower departments">
+                {MANPOWER_FILTERS.map((filter) => {
+                  const count =
+                    filter.key === 'ALL'
+                      ? mealRows.length
+                      : mealRows.filter(
+                          (row) =>
+                            manpowerFilterGroup(row) ===
+                            filter.key,
+                        ).length;
+
+                  return (
+                    <button
+                      key={filter.key}
+                      type="button"
+                      className={departmentFilter === filter.key ? 'active' : ''}
+                      aria-pressed={departmentFilter === filter.key}
+                      onClick={() =>
+                        setDepartmentFilter(
+                          filter.key,
+                        )
+                      }
+                    >
+                      <span>{filter.label}</span>
+                      <b>{count}</b>
+                    </button>
+                  );
+                })}
+              </div>
+
               <div className="table-wrap manpower-table-wrap">
                 <table className="manpower-table">
                   <thead>
@@ -859,7 +1140,7 @@ export default function ManpowerPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {mealRows.map((row, index) => (
+                    {filteredMealRows.map((row, index) => (
                       <tr
                         key={row.id}
                         className={Number(row.quantity) > 0 ? 'is-active' : ''}
@@ -919,7 +1200,7 @@ export default function ManpowerPage() {
               </div>
 
               <div className="manpower-role-cards">
-                {mealRows.map((row, index) => (
+                {filteredMealRows.map((row, index) => (
                   <article
                     key={row.id}
                     className={`manpower-role-card ${Number(row.quantity) > 0 ? 'is-active' : ''}`}
@@ -984,6 +1265,7 @@ export default function ManpowerPage() {
               </div>
 
               <form
+                id={`manpower-add-role-${meal.key}`}
                 className="manpower-add-role"
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -1030,20 +1312,92 @@ export default function ManpowerPage() {
           );
         })}
 
+          <aside className="manpower-desktop-summary no-print" aria-label="Manpower costing summary">
+            <div className="manpower-desktop-summary-head">
+              <span>Total manpower cost</span>
+              <strong>{money(manpowerTotal)}</strong>
+              <small>{money(manpowerPerCover)} per function cover</small>
+            </div>
+
+            <div className="manpower-desktop-summary-grid">
+              <div>
+                <span>People</span>
+                <b>{totalPeople}</b>
+              </div>
+              <div>
+                <span>Meals</span>
+                <b>{meals.length}</b>
+              </div>
+              <div>
+                <span>Active roles</span>
+                <b>{activeManpowerRows.length}</b>
+              </div>
+              <div>
+                <span>Dishes staffed</span>
+                <b>{staffedMenuDishCount}/{work.menu.length}</b>
+              </div>
+            </div>
+
+            <div className="manpower-desktop-team-split">
+              <div>
+                <span>Service</span>
+                <b>{servicePeople}</b>
+              </div>
+              <div>
+                <span>Kitchen</span>
+                <b>{kitchenPeople}</b>
+              </div>
+              <div>
+                <span>Utility</span>
+                <b>{utilityPeople}</b>
+              </div>
+            </div>
+
+            <div className="manpower-manual-note">
+              <span aria-hidden="true">✓</span>
+              <div>
+                <b>Manual-only manpower</b>
+                <small>No role quantity is selected automatically.</small>
+              </div>
+            </div>
+
+            <button
+              className="primary-button manpower-desktop-next"
+              type="button"
+              onClick={continueToExpenses}
+            >
+              Continue to Operations
+              <span aria-hidden="true">→</span>
+            </button>
+
+            <button
+              className="manpower-desktop-back"
+              type="button"
+              onClick={() =>
+                router.push(
+                  '/app/grocery',
+                )
+              }
+            >
+              Back to Grocery
+            </button>
+          </aside>
+        </div>
+
         <div className="action-row page-actions">
           <button
             className="primary-button"
             type="button"
             onClick={continueToExpenses}
           >
-            Save & Continue to Gas & Transport
+            Save & Continue to Operations
           </button>
           <button
             className="ghost-button"
             type="button"
-            onClick={() => window.location.assign('/app/cost')}
+            onClick={() => window.location.assign('/app/grocery')}
           >
-            Back to Food Cost
+            Back to Grocery
           </button>
         </div>
       </section>
