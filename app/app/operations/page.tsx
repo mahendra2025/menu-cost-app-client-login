@@ -286,9 +286,39 @@ export default function OperationsCostPage() {
     router.push('/app/disposable');
   }
 
+  const savedDisposableTotal =
+    Math.max(
+      0,
+      Number(
+        work?.extras
+          .disposable,
+      ) || 0,
+    );
+
+  const operationsGrandTotal =
+    (totals?.total || 0) +
+    savedDisposableTotal;
+
+  const operationsCovers =
+    operations?.functions.reduce(
+      (sum, row) =>
+        sum +
+        Math.max(
+          0,
+          Number(row.pax) || 0,
+        ),
+      0,
+    ) || 0;
+
+  const operationsPerCover =
+    operationsCovers > 0
+      ? operationsGrandTotal /
+        operationsCovers
+      : 0;
+
   if (!work || !session || !operations || !totals) {
     return (
-      <AppShell title="Gas & Transport">
+      <AppShell title="Operations" subtitle="Review gas, transport and event running costs">
         <div className="loader-card">Loading operations cost…</div>
       </AppShell>
     );
@@ -296,7 +326,7 @@ export default function OperationsCostPage() {
 
   if (session.status === 'EXPIRED') {
     return (
-      <AppShell title="Gas & Transport">
+      <AppShell title="Operations">
         <LockedCard />
       </AppShell>
     );
@@ -304,26 +334,28 @@ export default function OperationsCostPage() {
 
   return (
     <AppShell
-      title="Gas & Transport"
-      subtitle="Calculate LPG and vehicle cost before plastic and disposable cost"
+      title="Operations"
+      subtitle="Review LPG, transport and plastic/disposable costs before final costing"
     >
       <section className="content-grid operations-page">
         <div className="final-costing-overview is-ready">
           <div>
-            <span className="page-eyebrow">Real event cost</span>
-            <h2>Automatic gas + transport by function</h2>
-            <p>Gas is calculated from each selected dish, its category LPG rate and that function's own guest count. Transport remains editable.</p>
+            <span className="page-eyebrow">Operations cost control</span>
+            <h2>Gas, transport and disposable readiness</h2>
+            <p>Gas is calculated from dish/category LPG usage. Transport stays editable, and Plastic & Disposable is the next Operations sub-step.</p>
           </div>
           <div className="final-costing-overview-total">
-            <span>Operations cost</span>
+            <span>Gas + transport</span>
             <b>{money(totals.total)}</b>
             <small>Gas {money(totals.gasTotal)} · Transport {money(totals.transportTotal)}</small>
             <button className="primary-button" type="button" onClick={continueToDisposable}>
-              Next: Plastic & Disposable
+              Continue to Plastic
             </button>
           </div>
         </div>
 
+        <div className="operations-desktop-workspace">
+          <div className="operations-desktop-main">
         <div className="glass-card">
           <div className="final-costing-section-heading">
             <div>
@@ -469,9 +501,89 @@ export default function OperationsCostPage() {
           {message ? <div className="admin-message" style={{ marginTop: 14 }}>{message}</div> : null}
         </div>
 
+          </div>
+
+          <aside className="operations-desktop-summary no-print" aria-label="Operations cost summary">
+            <div className="operations-desktop-summary-head">
+              <span>Operations total</span>
+              <strong>{money(operationsGrandTotal)}</strong>
+              <small>
+                {money(operationsPerCover)} per function cover
+              </small>
+            </div>
+
+            <div className="operations-desktop-summary-grid">
+              <div>
+                <span>Gas</span>
+                <b>{money(totals.gasTotal)}</b>
+              </div>
+              <div>
+                <span>Transport</span>
+                <b>{money(totals.transportTotal)}</b>
+              </div>
+              <div>
+                <span>Plastic</span>
+                <b>{money(savedDisposableTotal)}</b>
+              </div>
+              <div>
+                <span>Functions</span>
+                <b>{operations.functions.length}</b>
+              </div>
+            </div>
+
+            <div className="operations-desktop-summary-list">
+              <div>
+                <span>LPG used</span>
+                <b>{(gasBreakdown?.totalGasKg || 0).toFixed(2)} kg</b>
+              </div>
+              <div>
+                <span>Transport mode</span>
+                <b>{operations.transportMode === 'EVENT_SHARED' ? 'Shared' : 'Function-wise'}</b>
+              </div>
+              <div>
+                <span>Covers</span>
+                <b>{operationsCovers.toLocaleString('en-IN')}</b>
+              </div>
+            </div>
+
+            <div className="operations-substep-status">
+              <span className="is-complete">1</span>
+              <div>
+                <b>Gas & Transport</b>
+                <small>Current screen</small>
+              </div>
+            </div>
+
+            <div className="operations-substep-status">
+              <span className={savedDisposableTotal > 0 ? 'is-complete' : ''}>2</span>
+              <div>
+                <b>Plastic & Disposable</b>
+                <small>{savedDisposableTotal > 0 ? 'Cost already saved' : 'Next sub-step'}</small>
+              </div>
+            </div>
+
+            <button
+              className="primary-button operations-desktop-next"
+              type="button"
+              onClick={continueToDisposable}
+            >
+              Continue to Plastic
+              <span aria-hidden="true">→</span>
+            </button>
+
+            <button
+              className="operations-desktop-back"
+              type="button"
+              onClick={() => router.push('/app/team')}
+            >
+              Back to Manpower
+            </button>
+          </aside>
+        </div>
+
         <div className="action-row page-actions">
           <button className="primary-button" type="button" onClick={continueToDisposable}>
-            Save & Continue to Plastic
+            Save & Continue to Plastic & Disposable
           </button>
           <button className="ghost-button" type="button" onClick={() => window.location.assign('/app/team')}>
             Back to Manpower
