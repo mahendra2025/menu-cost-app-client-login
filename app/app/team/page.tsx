@@ -283,7 +283,7 @@ function buildMealManpowerRows(
         dayLabel: meal.dayLabel || undefined,
         mealLabel: meal.mealLabel,
         servicePax: meal.pax,
-        assignedDishIds: row.assignedDishIds || meal.dishIds,
+        assignedDishIds: row.assignedDishIds ?? [],
       }));
 
     const eventCustomNames = new Set(
@@ -305,7 +305,7 @@ function buildMealManpowerRows(
         dayLabel: meal.dayLabel || undefined,
         mealLabel: meal.mealLabel,
         servicePax: meal.pax,
-        assignedDishIds: meal.dishIds,
+        assignedDishIds: [],
       } satisfies ManpowerRow));
 
     return [...builtInRows, ...eventCustomRows, ...permanentCustomRows];
@@ -605,13 +605,13 @@ export default function ManpowerPage() {
       : 0;
 
   const activeManpowerRows =
-    work.manpower.filter(
+    work?.manpower.filter(
       (row) =>
         Math.max(
           0,
           Number(row.quantity) || 0,
         ) > 0,
-    );
+    ) ?? [];
 
   function peopleForGroup(
     group:
@@ -656,7 +656,7 @@ export default function ManpowerPage() {
     );
 
   const staffedMenuDishCount =
-    work.menu.filter(
+    work?.menu.filter(
       (dish) =>
         activeManpowerRows.some(
           (row) =>
@@ -670,7 +670,7 @@ export default function ManpowerPage() {
               dish.id,
             ),
         ),
-    ).length;
+    ).length ?? 0;
 
   function rowsForMeal(meal: MealPlan) {
     return work?.manpower.filter((row) => rowBelongsToMeal(row, meal)) ?? [];
@@ -853,7 +853,9 @@ export default function ManpowerPage() {
       dayLabel: meal.dayLabel || undefined,
       mealLabel: meal.mealLabel,
       servicePax: meal.pax,
-      assignedDishIds: meal.dishIds,
+      assignedDishIds: [],
+      manualOverride: true,
+      calculationSource: 'MANUAL',
     };
 
     saveCustomManpowerRole(session.tenantId, role, newRow.rate);
