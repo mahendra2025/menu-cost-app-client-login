@@ -202,15 +202,15 @@ export default function DisposableCostPage() {
   return (
     <AppShell
       title="Plastic & Disposable"
-      subtitle="Automatically assign plastic/disposable quantities from covers, service style, crockery and menu demand"
+      subtitle="Review plastic and disposable quantities, purchase rates and event cost"
     >
       <section className="content-grid disposable-page">
         <div className="final-costing-overview is-ready">
           <div>
-            <span className="page-eyebrow">Disposable event cost</span>
-            <h2>Auto quantity × your purchase rate</h2>
+            <span className="page-eyebrow">Operations · Plastic & Disposable</span>
+            <h2>Finish the operations cost</h2>
             <p>
-              The app auto-assigns practical quantities from meal covers, service style, crockery, drink categories and food-handling staff. You can still edit every quantity and rate manually.
+              Quantities can be suggested from covers and service style. Review every item and purchase rate before moving to Final Cost.
             </p>
           </div>
           <div className="final-costing-overview-total">
@@ -221,14 +221,16 @@ export default function DisposableCostPage() {
               {totalCovers > 0 ? ` · ${money(perCover)} / cover` : ''}
             </small>
             <button className="primary-button" type="button" onClick={continueToPricing}>
-              Next: Pricing
+              Continue to Final Cost
             </button>
           </div>
 
 
         </div>
 
-        <div className="glass-card">
+        <div className="disposable-desktop-workspace">
+          <div className="disposable-desktop-main">
+        <div className="glass-card disposable-items-card">
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Plastic / disposable items</span>
@@ -440,7 +442,7 @@ export default function DisposableCostPage() {
           </div>
         </div>
 
-        <div className="glass-card">
+        <div className="glass-card disposable-inline-summary">
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Cost summary</span>
@@ -470,9 +472,87 @@ export default function DisposableCostPage() {
           {message ? <div className="admin-message" style={{ marginTop: 14 }}>{message}</div> : null}
         </div>
 
+          </div>
+
+          <aside className="disposable-desktop-summary no-print" aria-label="Plastic and disposable cost summary">
+            <div className="disposable-desktop-summary-head">
+              <span>Plastic & disposable</span>
+              <strong>{money(summary.total)}</strong>
+              <small>{money(perCover)} per meal cover</small>
+            </div>
+
+            <div className="disposable-desktop-summary-grid">
+              <div>
+                <span>Active items</span>
+                <b>{summary.activeItemCount}</b>
+              </div>
+              <div>
+                <span>Covers</span>
+                <b>{totalCovers.toLocaleString('en-IN')}</b>
+              </div>
+              <div>
+                <span>Suggested items</span>
+                <b>{autoAssignment.recommendations.length}</b>
+              </div>
+              <div>
+                <span>Suggested units</span>
+                <b>{autoAssignment.totalSuggestedUnits.toLocaleString('en-IN')}</b>
+              </div>
+            </div>
+
+            <div className="disposable-desktop-summary-list">
+              <div>
+                <span>Disposable covers</span>
+                <b>{autoAssignment.disposableCovers.toLocaleString('en-IN')}</b>
+              </div>
+              <div>
+                <span>Drink covers</span>
+                <b>{autoAssignment.drinkCovers.toLocaleString('en-IN')}</b>
+              </div>
+              <div>
+                <span>Food-handling staff</span>
+                <b>{autoAssignment.foodHandlingStaff}</b>
+              </div>
+            </div>
+
+            <div className="operations-substep-status">
+              <span className="is-complete">1</span>
+              <div>
+                <b>Gas & Transport</b>
+                <small>Saved in Operations</small>
+              </div>
+            </div>
+
+            <div className="operations-substep-status">
+              <span className="is-complete">2</span>
+              <div>
+                <b>Plastic & Disposable</b>
+                <small>Current sub-step</small>
+              </div>
+            </div>
+
+            <button
+              className="primary-button disposable-desktop-next"
+              type="button"
+              onClick={continueToPricing}
+            >
+              Continue to Final Cost
+              <span aria-hidden="true">→</span>
+            </button>
+
+            <button
+              className="disposable-desktop-back"
+              type="button"
+              onClick={() => router.push('/app/operations')}
+            >
+              Back to Gas & Transport
+            </button>
+          </aside>
+        </div>
+
         <div className="action-row page-actions">
           <button className="primary-button" type="button" onClick={continueToPricing}>
-            Save & Continue to Pricing
+            Save & Continue to Final Cost
           </button>
           <button className="ghost-button" type="button" onClick={() => router.push('/app/operations')}>
             Back to Gas & Transport
