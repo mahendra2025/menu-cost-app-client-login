@@ -905,11 +905,15 @@ export function generateMealManpowerRows(
       existing?.calculationSource === undefined &&
       Math.max(0, Number(existing?.quantity) || 0) > 0;
 
-    const manualOverride = Boolean(existing?.manualOverride || legacyManual);
+    const manualOverride = Boolean(
+      existing?.manualOverride ||
+      existing?.calculationSource === 'MANUAL' ||
+      legacyManual,
+    );
     const recommendedQuantity = Math.max(0, Math.round(recommendation.quantity || 0));
     const quantity = manualOverride
       ? Math.max(0, Number(existing?.quantity) || 0)
-      : recommendedQuantity;
+      : 0;
 
     const shouldShow =
       master.auto ||
@@ -946,17 +950,9 @@ export function generateMealManpowerRows(
                     item.id === dishId,
                 ),
             )
-          : automaticDishIdsForRole(
-              master.id,
-              input.menu,
-            ),
-      autoDishAssignment: [
-        'LIVE_COUNTER',
-        'BREAD',
-        'KITCHEN',
-        'PREPARATION',
-      ].includes(master.department),
-      autoStationHelper: master.id === 'live_counter_helper' || master.id === 'bread_helper',
+          : [],
+      autoDishAssignment: false,
+      autoStationHelper: false,
     } satisfies ManpowerRow];
   });
 }
