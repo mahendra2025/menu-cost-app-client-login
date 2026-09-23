@@ -2147,7 +2147,7 @@ export default function QuotationPage() {
             <button
               className="primary-button quotation-desktop-primary"
               type="button"
-              disabled={saving || !quotationReady}
+              disabled={saving}
               onClick={() =>
                 void shareWhatsApp()
               }
