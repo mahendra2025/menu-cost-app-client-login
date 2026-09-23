@@ -194,7 +194,7 @@ export default function FinalCostingPage() {
 
   if (!work || !session || !costing) {
     return (
-      <AppShell title="Pricing">
+      <AppShell title="Final Cost" subtitle="Review the real event cost and set the selling price">
         <div className="content-grid"><div className="glass-card">Loading pricing…</div></div>
       </AppShell>
     );
@@ -202,7 +202,7 @@ export default function FinalCostingPage() {
 
   if (session.status === 'EXPIRED') {
     return (
-      <AppShell title="Pricing"><LockedCard /></AppShell>
+      <AppShell title="Final Cost"><LockedCard /></AppShell>
     );
   }
 
@@ -214,6 +214,38 @@ export default function FinalCostingPage() {
     costing.totalCovers > 0 &&
     missingRateCount === 0;
   const priceReady = costReady && pricing.sellingPricePerCover > 0;
+
+  const profitPerCover =
+    pricing.totalCovers > 0
+      ? pricing.profit /
+        pricing.totalCovers
+      : 0;
+
+  const activeCostItems = [
+    costing.menuFoodTotal,
+    work.extras.staff,
+    gasBreakdown?.totalGasCost || 0,
+    work.extras.transport,
+    work.extras.disposable,
+  ].filter(
+    (value) =>
+      Number(value) > 0,
+  ).length;
+
+  async function downloadInternalCostingPdf() {
+    const {
+      downloadInternalEventCostingPdf,
+    } =
+      await import(
+        '../../../lib/internalEventCostingPdf'
+      );
+
+    downloadInternalEventCostingPdf(
+      work,
+      null,
+      gasBreakdown,
+    );
+  }
 
   function selectMode(nextMode: SellingPriceMode) {
     if (!work) return;
@@ -259,16 +291,16 @@ export default function FinalCostingPage() {
 
   return (
     <AppShell
-      title="Pricing"
-      subtitle="Set markup or target margin using the real event cost"
+      title="Final Cost"
+      subtitle="See the real cost per cover, set selling price and move to quotation"
     >
       <section className="content-grid">
         <div className={`final-costing-overview ${priceReady ? 'is-ready' : ''}`}>
           <div>
-            <span className="page-eyebrow">Selling price engine</span>
-            <h2>{priceReady ? 'Your selling price is ready' : 'Finish cost details before pricing'}</h2>
+            <span className="page-eyebrow">Final event costing</span>
+            <h2>{priceReady ? 'Real cost and selling price are ready' : 'Review the real event cost before pricing'}</h2>
             <p>
-              Food, manpower, LPG, transport and plastic/disposable cost form the real event cost before markup or gross margin.
+              Food, manpower, LPG, transport and plastic/disposable cost form the real event cost. This page converts that into cost per cover, selling price and profit.
             </p>
           </div>
           <div className="final-costing-overview-total">
@@ -283,16 +315,59 @@ export default function FinalCostingPage() {
               onClick={createQuotation}
               disabled={!priceReady}
             >
-              Use Price → Full Event Quotation
+              Continue to Quotation
             </button>
           </div>
         </div>
 
-        <div className="stat-grid">
-          <StatCard label="Cost / Cover" value={money(pricing.costPerCover)} note={`Total cost ${money(pricing.totalCost)}`} />
-          <StatCard label="Selling / Cover" value={money(pricing.sellingPricePerCover)} note={`Quotation ${money(pricing.totalSelling)}`} />
-          <StatCard label="Expected Profit" value={money(pricing.profit)} note={`${displayPercent(pricing.markupPercent)} markup`} />
-          <StatCard label="Gross Margin" value={displayPercent(pricing.marginPercent)} note="Profit ÷ selling price" />
+        <div className="final-cost-desktop-kpis">
+          <div>
+            <span>Total covers</span>
+            <strong>{pricing.totalCovers.toLocaleString('en-IN')}</strong>
+            <small>Meal / function covers</small>
+          </div>
+          <div>
+            <span>Total event cost</span>
+            <strong>{money(pricing.totalCost)}</strong>
+            <small>{activeCostItems} active cost groups</small>
+          </div>
+          <div className="is-primary">
+            <span>Real cost / cover</span>
+            <strong>{money(pricing.costPerCover)}</strong>
+            <small>Before profit</small>
+          </div>
+          <div>
+            <span>Selling / cover</span>
+            <strong>{money(pricing.sellingPricePerCover)}</strong>
+            <small>{money(profitPerCover)} profit / cover</small>
+          </div>
+        </div>
+
+        <div className="final-cost-desktop-workspace">
+          <div className="final-cost-desktop-main">
+
+        <div className="final-cost-desktop-actions no-print">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void downloadInternalCostingPdf()}
+          >
+            Internal Costing PDF
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => window.print()}
+          >
+            Print
+          </button>
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => router.push('/app/operations')}
+          >
+            Review Operations
+          </button>
         </div>
 
         <div className="glass-card final-selling-card">
@@ -569,7 +644,7 @@ export default function FinalCostingPage() {
 
         <div className="action-row page-actions">
           <button className="primary-button" type="button" disabled={!priceReady} onClick={createQuotation}>
-            Use Price & Create Full Event Quotation
+            Continue to Quotation
           </button>
           <button className="secondary-button" type="button" disabled={!priceReady} onClick={() => { savePrice(); }}>
             Save Selling Price
@@ -577,6 +652,113 @@ export default function FinalCostingPage() {
           <button className="ghost-button" type="button" onClick={() => router.push('/app/disposable')}>
             Back to Plastic & Disposable
           </button>
+        </div>
+
+          </div>
+
+          <aside className="final-cost-desktop-summary no-print" aria-label="Final costing summary">
+            <div className="final-cost-desktop-summary-head">
+              <span>Real cost / cover</span>
+              <strong>{money(pricing.costPerCover)}</strong>
+              <small>{money(pricing.totalCost)} total event cost</small>
+            </div>
+
+            <div className="final-cost-desktop-summary-price">
+              <span>Selling price / cover</span>
+              <b>{money(pricing.sellingPricePerCover)}</b>
+            </div>
+
+            <div className="final-cost-desktop-summary-grid">
+              <div>
+                <span>Profit / cover</span>
+                <b className={profitPerCover < 0 ? 'is-negative' : ''}>{money(profitPerCover)}</b>
+              </div>
+              <div>
+                <span>Event profit</span>
+                <b className={pricing.profit < 0 ? 'is-negative' : ''}>{money(pricing.profit)}</b>
+              </div>
+              <div>
+                <span>Markup</span>
+                <b>{displayPercent(pricing.markupPercent)}</b>
+              </div>
+              <div>
+                <span>Gross margin</span>
+                <b>{displayPercent(pricing.marginPercent)}</b>
+              </div>
+            </div>
+
+            <div className="final-cost-desktop-summary-list">
+              <div>
+                <span>Food</span>
+                <b>{money(costing.menuFoodTotal)}</b>
+              </div>
+              <div>
+                <span>Manpower</span>
+                <b>{money(work.extras.staff)}</b>
+              </div>
+              <div>
+                <span>Gas</span>
+                <b>{money(gasBreakdown?.totalGasCost || 0)}</b>
+              </div>
+              <div>
+                <span>Transport</span>
+                <b>{money(work.extras.transport)}</b>
+              </div>
+              <div>
+                <span>Disposable</span>
+                <b>{money(work.extras.disposable)}</b>
+              </div>
+            </div>
+
+            {!costReady ? (
+              <div className="final-cost-desktop-warning">
+                <b>Costing not ready</b>
+                <small>{missingRateCount} dish rate{missingRateCount === 1 ? '' : 's'} missing or guest/menu details incomplete.</small>
+              </div>
+            ) : pricing.profit < 0 ? (
+              <div className="final-cost-desktop-warning">
+                <b>Selling below cost</b>
+                <small>Current price creates a loss of {money(Math.abs(pricing.profit))}.</small>
+              </div>
+            ) : (
+              <div className="final-cost-desktop-ready">
+                <span aria-hidden="true">✓</span>
+                <div>
+                  <b>Ready for quotation</b>
+                  <small>Save this selling price and create the client quote.</small>
+                </div>
+              </div>
+            )}
+
+            <button
+              className="primary-button final-cost-desktop-next"
+              type="button"
+              disabled={!priceReady}
+              onClick={createQuotation}
+            >
+              Continue to Quotation
+              <span aria-hidden="true">→</span>
+            </button>
+
+            <button
+              className="final-cost-desktop-save"
+              type="button"
+              disabled={!priceReady}
+              onClick={() => {
+                savePrice();
+              }}
+            >
+              Save Selling Price
+            </button>
+
+            <button
+              className="final-cost-desktop-back"
+              type="button"
+              onClick={() => router.push('/app/disposable')}
+            >
+              Back to Plastic & Disposable
+            </button>
+          </aside>
         </div>
 
         <FinalCostingUsage tenantId={session.tenantId} work={costingWork || work} />
