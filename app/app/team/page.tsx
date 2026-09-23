@@ -20,14 +20,9 @@ import {
 } from '../../../lib/manpowerCost';
 import { generateMealManpowerRows } from '../../../lib/manpowerEngine';
 import {
-  DEFAULT_MANPOWER_INPUTS,
-  DEFAULT_MANPOWER_RULES,
   MANPOWER_ROLE_MASTER,
-  normalizeManpowerRules,
-  type ManpowerRuleConfig,
 } from '../../../lib/manpowerMaster';
 import type {
-  ManpowerInputs,
   ManpowerRow,
   MenuItem,
   Session,
@@ -196,7 +191,6 @@ function buildMealManpowerRows(
   meals: MealPlan[],
   work: WorkState,
   savedCustomRoles: CustomManpowerRole[] = [],
-  rules: ManpowerRuleConfig = DEFAULT_MANPOWER_RULES,
 ): ManpowerRow[] {
   const safeRows = Array.isArray(savedRows) ? savedRows : [];
 
@@ -213,7 +207,6 @@ function buildMealManpowerRows(
       dayLabel: meal.dayLabel,
       mealLabel: meal.mealLabel,
       allowLegacyRows: mealIndex === 0,
-      rules,
     });
 
     const eventCustomRows = safeRows
@@ -342,7 +335,7 @@ function DishManpowerBoard({
       <div className="manpower-menu-board-heading">
         <div>
           <h3>Menu &amp; kitchen manpower</h3>
-          <p>Cooks and helpers are auto-selected from each dish category. Open a dish only if you want to adjust the assignment.</p>
+          <p>Select cooks and helpers manually for each dish.</p>
         </div>
         <span className={staffedDishCount === dishes.length ? 'is-complete' : ''}>
           {staffedDishCount}/{dishes.length} staffed
@@ -375,12 +368,12 @@ function DishManpowerBoard({
                     </span>
                   ))
                 ) : (
-                  <span className="is-empty">No automatic kitchen manpower detected</span>
+                  <span className="is-empty">No kitchen manpower assigned</span>
                 )}
               </div>
 
               <details className="manpower-dish-add">
-                <summary>Adjust manpower</summary>
+                <summary>Assign manpower</summary>
                 <div className="manpower-dish-add-panel">
                   {kitchenRows.map((row) => {
                     const quantity = Math.max(0, Number(row.quantity) || 0);
@@ -404,9 +397,7 @@ function DishManpowerBoard({
                           <span>
                             <b>{row.role}</b>
                             <small>
-                              {row.recommendedQuantity !== undefined
-                                ? `Auto selected: ${row.recommendedQuantity}`
-                                : 'Manual kitchen role'}
+                              Manual selection
                             </small>
                           </span>
                         </label>
@@ -440,9 +431,6 @@ export default function ManpowerPage() {
   const [selectedMealKey, setSelectedMealKey] = useState('');
   const [newRoleDrafts, setNewRoleDrafts] = useState<Record<string, NewRoleDraft>>({});
   const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
-  const [manpowerRules, setManpowerRules] = useState<ManpowerRuleConfig>({
-    ...DEFAULT_MANPOWER_RULES,
-  });
 
   useEffect(() => {
     const current = getSession();
@@ -473,7 +461,6 @@ export default function ManpowerPage() {
       meals,
       savedWork,
       customRoles,
-      DEFAULT_MANPOWER_RULES,
     );
     const nextWork: WorkState = {
       ...savedWork,
@@ -488,31 +475,9 @@ export default function ManpowerPage() {
     setWork(nextWork);
     saveWork(current.tenantId, nextWork);
 
-    const rulesPromise = fetch(
-      '/api/client/manpower-master',
-      {
-        cache: 'no-store',
-      },
-    )
-      .then(async (response) => {
-        if (!response.ok) {
-          return DEFAULT_MANPOWER_RULES;
-        }
-
-        const data = await response.json();
-
-        return normalizeManpowerRules(
-          data.rules,
-        );
-      })
-      .catch(() => DEFAULT_MANPOWER_RULES);
-
-    void Promise.all([
-      syncCustomManpowerRoles(current.tenantId),
-      rulesPromise,
-    ]).then(([syncedRoles, loadedRules]) => {
-      setManpowerRules(loadedRules);
-
+    void syncCustomManpowerRoles(
+      current.tenantId,
+    ).then((syncedRoles) => {
       setWork((latestWork) => {
         if (!latestWork) return latestWork;
 
@@ -522,7 +487,6 @@ export default function ManpowerPage() {
           latestMeals,
           latestWork,
           syncedRoles,
-          loadedRules,
         );
         const syncedWork: WorkState = {
           ...latestWork,
@@ -654,51 +618,6 @@ export default function ManpowerPage() {
     });
   }
 
-  function updateManpowerInputs(patch: Partial<ManpowerInputs>) {
-    if (!work || !session) return;
-
-    const baseWork: WorkState = {
-      ...work,
-      manpowerInputs: {
-        ...DEFAULT_MANPOWER_INPUTS,
-        ...work.manpowerInputs,
-        ...patch,
-      },
-    };
-
-    const nextMeals = buildMealPlans(baseWork);
-    const customRoles = loadCustomManpowerRoles(session.tenantId);
-    const manpower = buildMealManpowerRows(
-      baseWork.manpower,
-      nextMeals,
-      baseWork,
-      customRoles,
-      manpowerRules,
-    );
-
-    const nextWork: WorkState = {
-      ...baseWork,
-      manpower,
-      extras: {
-        ...baseWork.extras,
-        staff: calculateManpowerCost(manpower),
-      },
-      sellingPricePerPlate: 0,
-      updatedAt: new Date().toISOString(),
-    };
-
-    setWork(nextWork);
-    saveWork(session.tenantId, nextWork);
-  }
-
-  function resetRowToAuto(row: ManpowerRow) {
-    updateRow(row.id, {
-      quantity: Math.max(0, Number(row.recommendedQuantity) || 0),
-      manualOverride: false,
-      calculationSource: 'AUTO',
-    });
-  }
-
   function updateNewRoleDraft(mealKey: string, patch: Partial<NewRoleDraft>) {
     setNewRoleDrafts((current) => ({
       ...current,
@@ -788,7 +707,7 @@ export default function ManpowerPage() {
   return (
     <AppShell
       title="Team"
-      subtitle="Manpower is auto-selected from the menu and guest count. Adjust only if needed."
+      subtitle="Select manpower manually for each meal."
     >
       <section className="content-grid manpower-page">
         <div className="manpower-overview manpower-overview-v2">
@@ -796,7 +715,7 @@ export default function ManpowerPage() {
             <span className="page-eyebrow">Meal-wise manpower costing</span>
             <h2>Build the team from the menu</h2>
             <p>
-              The system auto-selects cooks, helpers, service and utility manpower from the menu, categories and guest count. Review or override only when your event needs something different.
+              Add the cooks, helpers, service and utility manpower you actually need for each meal. Nothing is selected automatically.
             </p>
           </div>
 
@@ -860,71 +779,6 @@ export default function ManpowerPage() {
             })}
           </div>
         </section>
-
-        <details className="glass-card manpower-settings-card">
-          <summary className="manpower-settings-summary">
-            <div>
-              <div className="section-kicker">Automatic recommendations</div>
-              <b>Service &amp; utility settings</b>
-              <small>Venue, service level, water service and crockery</small>
-            </div>
-            <span>Settings</span>
-          </summary>
-
-          <div className="manpower-settings-grid">
-            <label className="field">
-              <span>Service Level</span>
-              <select
-                className="input"
-                value={work.manpowerInputs?.serviceLevel ?? DEFAULT_MANPOWER_INPUTS.serviceLevel}
-                onChange={(event) => updateManpowerInputs({ serviceLevel: event.target.value as NonNullable<ManpowerInputs['serviceLevel']> })}
-              >
-                <option value="STANDARD">Standard</option>
-                <option value="PREMIUM">Premium</option>
-                <option value="VIP">VIP</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span>Venue</span>
-              <select
-                className="input"
-                value={work.manpowerInputs?.venueType ?? DEFAULT_MANPOWER_INPUTS.venueType}
-                onChange={(event) => updateManpowerInputs({ venueType: event.target.value as NonNullable<ManpowerInputs['venueType']> })}
-              >
-                <option value="INDOOR">Indoor</option>
-                <option value="OUTDOOR">Outdoor</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span>Water Service</span>
-              <select
-                className="input"
-                value={work.manpowerInputs?.waterService ?? DEFAULT_MANPOWER_INPUTS.waterService}
-                onChange={(event) => updateManpowerInputs({ waterService: event.target.value as NonNullable<ManpowerInputs['waterService']> })}
-              >
-                <option value="BOTTLE_COUNTER">Bottle Counter</option>
-                <option value="BOTTLE_TABLE">Bottle on Table</option>
-                <option value="GLASS_SERVICE">Glass Service</option>
-                <option value="TABLE_SERVICE">Table Water Service</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span>Crockery</span>
-              <select
-                className="input"
-                value={work.manpowerInputs?.crockeryType ?? DEFAULT_MANPOWER_INPUTS.crockeryType}
-                onChange={(event) => updateManpowerInputs({ crockeryType: event.target.value as NonNullable<ManpowerInputs['crockeryType']> })}
-              >
-                <option value="DISPOSABLE">Disposable</option>
-                <option value="STANDARD">Standard Crockery</option>
-                <option value="PREMIUM">Premium Crockery</option>
-              </select>
-            </label>
-          </div>
-        </details>
 
         {meals.filter((meal) => meal.key === activeMealKey).map((meal) => {
           const mealIndex = meals.findIndex((item) => item.key === meal.key);
@@ -1015,26 +869,13 @@ export default function ManpowerPage() {
                           <div className="manpower-role-name-cell">
                             <div>
                               <b>{row.role}</b>
-                              {!isCustomRole(row) ? (
+                              {!isCustomRole(row) && row.department ? (
                                 <small className="muted" style={{ display: 'block', marginTop: 3 }}>
-                                  {(row.department || 'MANPOWER').replace(/_/g, ' ')} · Auto {row.recommendedQuantity ?? 0}
-                                </small>
-                              ) : null}
-                              {!isCustomRole(row) && row.calculationReason ? (
-                                <small className="muted" style={{ display: 'block', marginTop: 3 }}>
-                                  {row.calculationReason}
+                                  {row.department.replace(/_/g, ' ')}
                                 </small>
                               ) : null}
                             </div>
-                            {row.manualOverride && !isCustomRole(row) ? (
-                              <button
-                                className="manpower-remove-button"
-                                type="button"
-                                onClick={() => resetRowToAuto(row)}
-                              >
-                                Reset Auto
-                              </button>
-                            ) : isCustomRole(row) ? (
+                            {isCustomRole(row) ? (
                               <button
                                 className="manpower-remove-button"
                                 type="button"
@@ -1090,21 +931,9 @@ export default function ManpowerPage() {
                           {!isCustomRole(row) && row.department ? ` · ${row.department.replace(/_/g, ' ')}` : ''}
                         </small>
                         <b>{row.role}</b>
-                        {!isCustomRole(row) && row.calculationReason ? (
-                          <small className="muted" style={{ display: 'block', marginTop: 4 }}>
-                            Auto {row.recommendedQuantity ?? 0} · {row.calculationReason}
-                          </small>
-                        ) : null}
+
                       </div>
-                      {row.manualOverride && !isCustomRole(row) ? (
-                        <button
-                          className="manpower-remove-button"
-                          type="button"
-                          onClick={() => resetRowToAuto(row)}
-                        >
-                          Reset Auto
-                        </button>
-                      ) : isCustomRole(row) ? (
+                      {isCustomRole(row) ? (
                         <button
                           className="manpower-remove-button"
                           type="button"
