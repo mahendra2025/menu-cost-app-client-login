@@ -25914,3 +25914,45 @@ body.client-sheet-open {
     min-height: 58px;
   }
 }
+
+
+.event-create-dish-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px dashed rgba(74, 156, 255, .28);
+  border-radius: 10px;
+  background: rgba(74, 156, 255, .045);
+}
+
+.event-create-dish-inline b,
+.event-create-dish-inline small {
+  display: block;
+}
+
+.event-create-dish-inline b {
+  font-size: 11px;
+}
+
+.event-create-dish-inline small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.event-create-dish-inline .secondary-button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 620px) {
+  .event-create-dish-inline {
+    display: grid;
+  }
+
+  .event-create-dish-inline .secondary-button {
+    width: 100%;
+  }
+}
