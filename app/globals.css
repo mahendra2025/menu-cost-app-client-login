@@ -25282,11 +25282,11 @@ body.client-sheet-open {
     color: #d7e5f7;
   }
 
-  .final-cost-desktop-workspace + .page-actions {
+  .final-cost-desktop-main > .page-actions {
     display: none;
   }
 
-  .final-cost-desktop-workspace + .page-actions + .mc-complete-card {
+  .final-cost-desktop-workspace + .mc-complete-card {
     margin-top: 2px;
   }
 }
