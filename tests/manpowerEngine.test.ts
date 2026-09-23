@@ -204,7 +204,7 @@ test('admin manpower rules change service and chef dish ratio', () => {
   });
 
   assert.equal(result.find((row) => row.role === 'Waiter')?.recommendedQuantity, 20);
-  assert.equal(result.find((row) => row.role === 'Chaat Cook')?.quantity, 1);
+  assert.equal(result.find((row) => row.role === 'Chaat Cook')?.recommendedQuantity, 1);
   assert.equal(result.find((row) => row.role === 'Bread Cook')?.recommendedQuantity, 2);
   assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.recommendedQuantity, 1);
   assert.equal(result.find((row) => row.role === 'Main Course Cook')?.recommendedQuantity, 2);
