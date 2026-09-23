@@ -252,7 +252,7 @@ function extractPax(
   label: string;
   servicePax?: number;
 } {
-  let label = value;
+  let label = removeCommercialDecoration(value, false);
   let servicePax: number | undefined;
 
   const leading = label.match(
@@ -261,9 +261,9 @@ function extractPax(
   const trailing = label.match(
     /\b(\d{1,6})\s*(?:pax|members?|guests?|persons?|people)\b/i,
   );
-  const match =
-    leading ||
-    trailing;
+  const match = [leading, trailing]
+    .filter((candidate): candidate is RegExpMatchArray => candidate !== null)
+    .sort((left, right) => (left.index ?? 0) - (right.index ?? 0))[0];
 
   if (match) {
     const count = Number(
@@ -278,15 +278,8 @@ function extractPax(
         Math.round(count);
     }
 
-    label = label
-      .replace(
-        /\(?\s*(?:pax|members?|guests?|persons?|people)\s*[:\-]?\s*\d{1,6}\s*\)?/gi,
-        ' ',
-      )
-      .replace(
-        /\(?\s*\d{1,6}\s*(?:pax|members?|guests?|persons?|people)\s*\)?/gi,
-        ' ',
-      );
+    // Remove only the selected count; a later rate is not another guest count.
+    label = label.replace(match[0], ' ').replace(/\(\s*\)/g, ' ');
   }
 
   return {

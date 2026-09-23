@@ -1,4 +1,9 @@
 import {
+  collectMenuOcrCandidate,
+  selectMenuOcrCandidate,
+  type MenuOcrCandidate,
+} from './menuOcrCandidates';
+import {
   pdfPageNeedsOcr,
   reconstructPdfMenuText,
 } from './pdfMenuExtraction';
@@ -428,39 +433,6 @@ async function prepareMenuPhoto(
   };
 }
 
-function ocrResultScore(
-  text: string,
-  confidence: number,
-) {
-  const usefulCharacters =
-    text.match(
-      /[\p{L}\p{N}]/gu,
-    )?.length ?? 0;
-
-  const lines =
-    text
-      .split(/\r?\n/)
-      .filter(
-        (line) =>
-          /[\p{L}\p{N}]/u
-            .test(line),
-      )
-      .length;
-
-  return (
-    confidence +
-    Math.min(
-      20,
-      usefulCharacters /
-        8,
-    ) +
-    Math.min(
-      15,
-      lines * 1.5,
-    )
-  );
-}
-
 export async function extractPdfMenu(
   file: File,
   onStatus:
@@ -496,19 +468,14 @@ export async function extractPdfMenu(
         import.meta.url,
       ).toString();
 
-  const pdf =
-    await pdfjs
-      .getDocument({
-        data:
-          await file
-            .arrayBuffer(),
-      })
-      .promise;
+  const loadingTask = pdfjs.getDocument({ data: await file.arrayBuffer() });
+  const pdf = await loadingTask.promise;
 
   if (
     pdf.numPages >
     30
   ) {
+    await loadingTask.destroy();
     throw new Error(
       'Choose a PDF with 30 pages or fewer.',
     );
@@ -516,6 +483,7 @@ export async function extractPdfMenu(
 
   const pages:
     string[] = [];
+  const unreadablePages: number[] = [];
 
   let ocrPageCount =
     0;
@@ -735,86 +703,28 @@ export async function extractPdfMenu(
               `Scanning PDF page ${pageNumber} with sparse-text recognition...`,
             );
 
-            const sparseResult =
-              await worker
-                .recognize(
-                  canvas,
-                );
-
-            const { PSM } =
-              await import(
-                'tesseract.js'
-              );
-
-            onStatus(
-              `Checking PDF page ${pageNumber} with automatic layout recognition...`,
-            );
-
-            await worker.setParameters({
-              tessedit_pageseg_mode:
-                PSM.AUTO,
+            const candidates: MenuOcrCandidate[] = [];
+            const { PSM } = await import('tesseract.js');
+            await collectMenuOcrCandidate(candidates, 'sparse', async () => {
+              await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
+              return worker.recognize(canvas);
+            });
+            onStatus(`Checking PDF page ${pageNumber} with automatic layout recognition...`);
+            await collectMenuOcrCandidate(candidates, 'automatic', async () => {
+              await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
+              return worker.recognize(canvas);
             });
 
-            const automaticResult =
-              await worker.recognize(
-                canvas,
-              );
-
-            await worker.setParameters({
-              tessedit_pageseg_mode:
-                PSM.SPARSE_TEXT,
-            });
-
-            const ocrResults = [
-              sparseResult,
-              automaticResult,
-            ].map((result) => ({
-              text: result.data.text
-                .replace(/\u0000/g, '')
-                .trim(),
-              confidence:
-                result.data.confidence,
-            })).filter((result) => result.text);
-
-            const bestOcr = ocrResults.sort(
-              (left, right) =>
-                ocrResultScore(right.text, right.confidence) -
-                ocrResultScore(left.text, left.confidence),
-            )[0];
-
-            if (bestOcr) {
-              onStatus(
-                `Validating PDF page ${pageNumber} against the dish catalog...`,
-              );
-
-              const [nativeBoost, ocrBoost] =
-                await Promise.all([
-                  catalogBoost
-                    ? catalogBoost(pageText)
-                    : Promise.resolve(0),
-                  catalogBoost
-                    ? catalogBoost(bestOcr.text)
-                    : Promise.resolve(0),
-                ]);
-
-              const nativeScore =
-                nativeBoost +
-                ocrResultScore(
-                  pageText,
-                  pageText ? 45 : 0,
-                );
-              const ocrScore =
-                ocrBoost +
-                ocrResultScore(
-                  bestOcr.text,
-                  bestOcr.confidence,
-                );
-
-              if (ocrScore > nativeScore) {
-                pageText = bestOcr.text;
-                ocrPageCount += 1;
-              }
+            onStatus(`Validating PDF page ${pageNumber} against the dish catalog...`);
+            const best = await selectMenuOcrCandidate([
+              { text: pageText, confidence: 45, label: 'native' },
+              ...candidates,
+            ], catalogBoost);
+            if (best && best.label !== 'native') {
+              pageText = best.text;
+              ocrPageCount += 1;
             }
+
           } finally {
             canvas.width =
               0;
@@ -832,6 +742,9 @@ export async function extractPdfMenu(
         }
       }
 
+      if (!pageText.trim()) unreadablePages.push(pageNumber);
+      page.cleanup();
+
       if (pageText) {
         pages.push(
           pageText,
@@ -839,13 +752,15 @@ export async function extractPdfMenu(
       }
     }
   } finally {
-    await Promise.all(
-      createdWorkers.map(
-        (worker) =>
-          worker
-            .terminate(),
-      ),
-    );
+    try {
+      await Promise.allSettled(createdWorkers.map((worker) => worker.terminate()));
+    } finally {
+      await loadingTask.destroy();
+    }
+  }
+
+  if (unreadablePages.length) {
+    throw new Error(`Could not read PDF page${unreadablePages.length === 1 ? '' : 's'} ${unreadablePages.join(', ')}. Upload clearer pages or paste the full menu so dishes are not missed.`);
   }
 
   return {
@@ -928,14 +843,7 @@ export async function extractMenuPhoto(
     let recognitionPass =
       'Reading improved menu photo';
 
-    type PhotoOcrCandidate = {
-      text: string;
-      confidence: number;
-      label: string;
-    };
-
-    const candidates:
-      PhotoOcrCandidate[] = [];
+    const candidates: MenuOcrCandidate[] = [];
 
     const usefulCharacterCount = (
       value: string,
@@ -944,40 +852,6 @@ export async function extractMenuPhoto(
         /[\p{L}\p{N}]/gu,
       )?.length ?? 0;
 
-    const pushCandidate = (
-      label: string,
-      result: {
-        data: {
-          text: string;
-          confidence: number;
-        };
-      },
-    ) => {
-      const text =
-        String(
-          result.data.text ||
-          '',
-        )
-          .replace(
-            /\u0000/g,
-            '',
-          )
-          .trim();
-
-      if (!text) {
-        return;
-      }
-
-      candidates.push({
-        text,
-        confidence:
-          Number(
-            result.data
-              .confidence,
-          ) || 0,
-        label,
-      });
-    };
 
     try {
       const options = {
@@ -1037,46 +911,17 @@ export async function extractMenuPhoto(
             '220',
         });
 
-      const enhancedResult =
-        await worker
-          .recognize(
-            prepared
-              .enhanced,
-            {
-              rotateAuto:
-                true,
-            },
-          );
-
-      pushCandidate(
-        'enhanced sparse',
-        enhancedResult,
+      await collectMenuOcrCandidate(candidates, 'enhanced sparse', () =>
+        worker!.recognize(prepared!.enhanced, { rotateAuto: true }),
       );
 
       recognitionPass =
         'Checking original photo';
 
-      await worker
-        .setParameters({
-          tessedit_pageseg_mode:
-            PSM.AUTO,
-        });
-
-      const originalResult =
-        await worker
-          .recognize(
-            prepared
-              .original,
-            {
-              rotateAuto:
-                true,
-            },
-          );
-
-      pushCandidate(
-        'original auto',
-        originalResult,
-      );
+      await collectMenuOcrCandidate(candidates, 'original auto', async () => {
+        await worker!.setParameters({ tessedit_pageseg_mode: PSM.AUTO });
+        return worker!.recognize(prepared!.original, { rotateAuto: true });
+      });
 
       const bestUsefulCharacters =
         Math.max(
@@ -1121,20 +966,8 @@ export async function extractMenuPhoto(
               '220',
           });
 
-        const blockResult =
-          await worker
-            .recognize(
-              prepared
-                .enhanced,
-              {
-                rotateAuto:
-                  false,
-              },
-            );
-
-        pushCandidate(
-          'enhanced block',
-          blockResult,
+        await collectMenuOcrCandidate(candidates, 'enhanced block', () =>
+          worker!.recognize(prepared!.enhanced, { rotateAuto: false }),
         );
       }
 
@@ -1169,20 +1002,8 @@ export async function extractMenuPhoto(
               '220',
           });
 
-        const noRotationResult =
-          await worker
-            .recognize(
-              prepared
-                .original,
-              {
-                rotateAuto:
-                  false,
-              },
-            );
-
-        pushCandidate(
-          'original sparse no rotation',
-          noRotationResult,
+        await collectMenuOcrCandidate(candidates, 'original sparse no rotation', () =>
+          worker!.recognize(prepared!.original, { rotateAuto: false }),
         );
       }
 
@@ -1198,40 +1019,7 @@ export async function extractMenuPhoto(
         'Validating detected dishes against the catalog...',
       );
 
-      const scored =
-        await Promise.all(
-          candidates.map(
-            async (
-              candidate,
-            ) => {
-              const boost =
-                catalogBoost
-                  ? await catalogBoost(
-                      candidate.text,
-                    )
-                  : 0;
-
-              return {
-                ...candidate,
-                score:
-                  boost +
-                  ocrResultScore(
-                    candidate.text,
-                    candidate.confidence,
-                  ),
-              };
-            },
-          ),
-        );
-
-      scored.sort(
-        (left, right) =>
-          right.score -
-          left.score,
-      );
-
-      const best =
-        scored[0];
+      const best = await selectMenuOcrCandidate(candidates, catalogBoost);
 
       if (
         !best ||

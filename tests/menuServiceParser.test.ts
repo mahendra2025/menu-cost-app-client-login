@@ -140,3 +140,17 @@ test('detects standalone date headings', () => {
     'Day 3',
   );
 });
+
+test('keeps guest counts separate from bare prices and per-person rates', () => {
+  for (const heading of [
+    'Breakfast - 22 Members - 200 per plate',
+    'Breakfast - 22 Members - 200',
+    'Breakfast - 22 Members - Rate: 200 per person',
+    'Breakfast - Members: 22 - 200 per plate',
+    'Breakfast - (22 Members) - 200 per plate',
+  ]) {
+    assert.deepEqual(parseMenuServiceHeading(heading), {
+      dayLabel: undefined, mealLabel: 'Breakfast', servicePax: 22,
+    }, heading);
+  }
+});
