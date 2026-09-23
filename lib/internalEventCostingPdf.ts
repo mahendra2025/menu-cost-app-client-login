@@ -17,6 +17,7 @@ import {
   manpowerBillableCost,
   manpowerRateModeLabel,
 } from './manpowerCost';
+import { assignedDishNames } from './dishManpower';
 import {
   calculateGasCost,
   calculateOperationsTotals,
@@ -931,6 +932,10 @@ export function downloadInternalEventCostingPdf(
             .join(' · ') ||
             'Event',
           row.role,
+          assignedDishNames(
+            row,
+            work.menu,
+          ).join(', ') || '-',
           String(
             Math.max(
               0,
@@ -961,6 +966,7 @@ export function downloadInternalEventCostingPdf(
     head: [[
       'Function / Meal',
       'Role',
+      'Assigned Dishes',
       'Qty',
       'Rate / Person',
       'Billing Basis',
@@ -972,6 +978,7 @@ export function downloadInternalEventCostingPdf(
         : [[
             'Event',
             'No manpower entered',
+            '-',
             '-',
             '-',
             '-',
@@ -1013,26 +1020,29 @@ export function downloadInternalEventCostingPdf(
     },
     columnStyles: {
       0: {
-        cellWidth: 47,
+        cellWidth: 34,
       },
       1: {
-        cellWidth: 35,
+        cellWidth: 27,
       },
       2: {
-        cellWidth: 14,
-        halign:
-          'right',
+        cellWidth: 47,
       },
       3: {
-        cellWidth: 28,
+        cellWidth: 12,
         halign:
           'right',
       },
       4: {
-        cellWidth: 27,
+        cellWidth: 23,
+        halign:
+          'right',
       },
       5: {
-        cellWidth: 29,
+        cellWidth: 22,
+      },
+      6: {
+        cellWidth: 25,
         halign:
           'right',
       },

@@ -19,6 +19,7 @@ import type {
 import {
   calculate,
 } from './store';
+import { buildDishManpowerAssignments } from './dishManpower';
 import type {
   WorkState,
 } from './types';
@@ -534,7 +535,7 @@ export function downloadGroceryEventPdf(
     doc,
     'Cost Summary',
     y,
-    'Menu food, grocery reference, LPG gas and plastic/disposable costs. Recipe grocery cost is shown for purchasing reference and is not double-counted in the combined total.',
+    'Menu food, grocery reference, LPG gas and disposable costs. Grocery is shown only as a purchasing reference.',
   );
 
   const groceryPerCover =
@@ -654,6 +655,79 @@ export function downloadGroceryEventPdf(
       doc,
       y + 28,
     ) + 9;
+
+  if (y > 238) {
+    doc.addPage();
+    y = 18;
+  }
+
+  sectionTitle(
+    doc,
+    'Kitchen Manpower - Dish Wise',
+    y,
+    'Cook and helper responsibility saved from the Team page.',
+  );
+
+  const dishManpowerRows = buildDishManpowerAssignments(
+    work.menu,
+    work.manpower,
+  ).map((assignment) => [
+    assignment.functionLabel,
+    assignment.category,
+    assignment.dishName,
+    assignment.roles.length
+      ? assignment.roles
+          .map((role) => `${role.quantity} ${role.role}`)
+          .join(', ')
+      : 'Not assigned',
+  ]);
+
+  autoTable(doc, {
+    startY: y + 8,
+    margin: {
+      left: 10,
+      right: 10,
+      bottom: 16,
+    },
+    theme: 'grid',
+    head: [[
+      'Function',
+      'Category',
+      'Dish',
+      'Cook / Helper Assignment',
+    ]],
+    body: dishManpowerRows.length
+      ? dishManpowerRows
+      : [[
+          'Event Menu',
+          '-',
+          'No menu dishes added',
+          'Not assigned',
+        ]],
+    headStyles: {
+      fillColor: [15, 23, 42],
+      textColor: 255,
+      fontStyle: 'bold',
+    },
+    alternateRowStyles: {
+      fillColor: [249, 250, 251],
+    },
+    columnStyles: {
+      0: { cellWidth: 38 },
+      1: { cellWidth: 31 },
+      2: { cellWidth: 51 },
+      3: { cellWidth: 67 },
+    },
+    styles: {
+      font: 'helvetica',
+      fontSize: 7.2,
+      cellPadding: 1.9,
+      overflow: 'linebreak',
+      valign: 'middle',
+    },
+  });
+
+  y = tableEnd(doc, y + 30) + 10;
 
   if (y > 238) {
     doc.addPage();
