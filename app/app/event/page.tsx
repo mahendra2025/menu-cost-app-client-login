@@ -1037,6 +1037,13 @@ export default function EventPage() {
   ] = useState('ALL');
 
   const [
+    manualSelectionView,
+    setManualSelectionView,
+  ] = useState<
+    'ALL' | 'SELECTED'
+  >('ALL');
+
+  const [
     selectedManualDishKeys,
     setSelectedManualDishKeys,
   ] = useState<Set<string>>(
@@ -1417,6 +1424,9 @@ export default function EventPage() {
       setManualDishCategory(
         'ALL',
       );
+      setManualSelectionView(
+        'ALL',
+      );
     } else {
       setAddDishFunctionTarget(
         null,
@@ -1650,6 +1660,9 @@ export default function EventPage() {
     );
     setManualDishSearch('');
     setManualDishCategory(
+      'ALL',
+    );
+    setManualSelectionView(
       'ALL',
     );
     setError('');
@@ -2017,6 +2030,9 @@ export default function EventPage() {
 
     setManualDishSearch('');
     setManualDishCategory(
+      'ALL',
+    );
+    setManualSelectionView(
       'ALL',
     );
 
@@ -6695,6 +6711,15 @@ export default function EventPage() {
           dish.category ===
             manualDishCategory;
 
+        const matchesView =
+          manualSelectionView ===
+            'ALL' ||
+          selectedManualDishKeys.has(
+            dishNameKey(
+              dish.name,
+            ),
+          );
+
         const searchable =
           [
             dish.name,
@@ -6707,6 +6732,7 @@ export default function EventPage() {
 
         return (
           matchesCategory &&
+          matchesView &&
           (
             !normalizedManualDishSearch ||
             searchable.includes(
@@ -9583,75 +9609,32 @@ export default function EventPage() {
               ) : null}
 
               {showManualDishSelector ? (
-                <div
+                <section
                   id="manualDishSelector"
-                  className="event-manual-selector"
-                  style={{
-                    marginTop:
-                      '12px',
-                    padding:
-                      '14px',
-                    border:
-                      '1px solid #303944',
-                    borderRadius:
-                      '14px',
-                    background:
-                      '#10161e',
-                    display:
-                      'grid',
-                    gap:
-                      '12px',
-                  }}
+                  className="event-manual-selector event-dish-picker"
+                  aria-label="Manual dish selection"
                 >
-                  <div
-                    className="event-manual-selector-head"
-                    style={{
-                      display:
-                        'flex',
-                      justifyContent:
-                        'space-between',
-                      gap:
-                        '12px',
-                      alignItems:
-                        'center',
-                      flexWrap:
-                        'wrap',
-                    }}
-                  >
-                    <div>
-                      <strong>
+                  <div className="event-dish-picker-head">
+                    <div className="event-dish-picker-title">
+                      <span className="section-kicker">
+                        Dish picker
+                      </span>
+                      <h2>
                         {addDishFunctionTarget
                           ? `Add dishes to ${addDishFunctionTarget.mealLabel}`
-                          : 'Manual Menu Selection'}
-                      </strong>
-
-                      <div
-                        style={{
-                          marginTop:
-                            '4px',
-                          color:
-                            '#8995a4',
-                          fontSize:
-                            '11px',
-                        }}
-                      >
+                          : 'Build menu from Dish Master'}
+                      </h2>
+                      <p>
                         {addDishFunctionTarget
-                          ? `Select Dish Master items for ${addDishFunctionTarget.servicePax.toLocaleString('en-IN')} guests. Existing dishes are disabled.`
-                          : (
-                            <>
-                              Select existing Dish Master items for{' '}
-                              <b>
-                                {importFunctionName ||
-                                  'this function'}
-                              </b>
-                            </>
-                          )}
-                      </div>
+                          ? `Choose dishes for ${addDishFunctionTarget.servicePax.toLocaleString('en-IN')} guests. Dishes already in this function are locked.`
+                          : 'Search your Dish Master, select the dishes you need, then add them to this function.'}
+                      </p>
                     </div>
 
                     <button
-                      className="ghost-button"
+                      className="event-dish-picker-close"
                       type="button"
+                      aria-label="Close dish picker"
                       onClick={() => {
                         setShowManualDishSelector(
                           false,
@@ -9659,93 +9642,123 @@ export default function EventPage() {
                         setAddDishFunctionTarget(
                           null,
                         );
+                        setManualSelectionView(
+                          'ALL',
+                        );
                       }}
                     >
-                      Close
+                      <span aria-hidden="true">×</span>
                     </button>
                   </div>
 
-                  <div className="manual-selection-context">
-                    <label>
-                      <span>{t('Function / Meal')}</span>
-                      <input
-                        id="manualFunctionName"
-                        className="input"
-                        value={importFunctionName}
-                        readOnly={Boolean(
-                          addDishFunctionTarget,
-                        )}
-                        onChange={(event) => {
-                          setImportFunctionName(
-                            event.target.value,
-                          );
-                          setError('');
-                        }}
-                        placeholder={t('e.g. Breakfast, Lunch, Reception')}
-                      />
+                  <div className="event-dish-picker-context">
+                    <label className="event-dish-picker-context-field">
+                      <span>
+                        Function / Meal
+                      </span>
+                      <div className="event-dish-picker-context-input">
+                        <input
+                          id="manualFunctionName"
+                          className="input"
+                          value={importFunctionName}
+                          readOnly={Boolean(
+                            addDishFunctionTarget,
+                          )}
+                          onChange={(event) => {
+                            setImportFunctionName(
+                              event.target.value,
+                            );
+                            setError('');
+                          }}
+                          placeholder={t('e.g. Breakfast, Lunch, Reception')}
+                        />
+                        {addDishFunctionTarget ? (
+                          <small>
+                            Locked
+                          </small>
+                        ) : null}
+                      </div>
                     </label>
 
-                    <label>
-                      <span>{t('Guests')}</span>
-                      <input
-                        id="importFunctionPax"
-                        className="input"
-                        type="number"
-                        min="1"
-                        step="1"
-                        inputMode="numeric"
-                        value={importFunctionPax}
-                        readOnly={Boolean(
-                          addDishFunctionTarget,
-                        )}
-                        onChange={(event) => {
-                          setImportFunctionPax(
-                            event.target.value,
-                          );
-                          setError('');
-                        }}
-                        placeholder={t('Enter guests')}
-                      />
+                    <label className="event-dish-picker-context-field">
+                      <span>
+                        Guests
+                      </span>
+                      <div className="event-dish-picker-context-input">
+                        <input
+                          id="importFunctionPax"
+                          className="input"
+                          type="number"
+                          min="1"
+                          step="1"
+                          inputMode="numeric"
+                          value={importFunctionPax}
+                          readOnly={Boolean(
+                            addDishFunctionTarget,
+                          )}
+                          onChange={(event) => {
+                            setImportFunctionPax(
+                              event.target.value,
+                            );
+                            setError('');
+                          }}
+                          placeholder={t('Enter guests')}
+                        />
+                        {addDishFunctionTarget ? (
+                          <small>
+                            From function
+                          </small>
+                        ) : null}
+                      </div>
                     </label>
                   </div>
 
-                  <div
-                    className="event-manual-selector-filters"
-                    style={{
-                      display:
-                        'grid',
-                      gridTemplateColumns:
-                        'minmax(220px, 1fr) minmax(180px, 260px)',
-                      gap:
-                        '8px',
-                    }}
-                  >
-                    <input
-                      className="input"
-                      value={
-                        manualDishSearch
-                      }
-                      onChange={(event) =>
-                        setManualDishSearch(
-                          event.target
-                            .value,
-                        )
-                      }
-                      placeholder="Search dish..."
-                      autoFocus
-                    />
+                  <div className="event-dish-picker-toolbar">
+                    <div className="event-dish-picker-search">
+                      <span className="event-dish-picker-search-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+                          <circle cx="11" cy="11" r="6" />
+                          <path d="m16 16 4 4" />
+                        </svg>
+                      </span>
+                      <input
+                        className="input"
+                        type="search"
+                        value={manualDishSearch}
+                        onChange={(event) =>
+                          setManualDishSearch(
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Search paneer, starter, sweet..."
+                        aria-label="Search dishes"
+                        autoFocus
+                      />
+                      {manualDishSearch ? (
+                        <button
+                          type="button"
+                          className="event-dish-picker-search-clear"
+                          onClick={() =>
+                            setManualDishSearch(
+                              '',
+                            )
+                          }
+                          aria-label="Clear dish search"
+                        >
+                          ×
+                        </button>
+                      ) : null}
+                    </div>
 
                     <select
-                      className="select"
-                      value={
-                        manualDishCategory
-                      }
+                      className="select event-dish-picker-category"
+                      value={manualDishCategory}
                       onChange={(event) =>
                         setManualDishCategory(
-                          event.target
-                            .value,
+                          event.target.value,
                         )
                       }
+                      aria-label="Dish category"
                     >
                       <option value="ALL">
                         All categories
@@ -9754,47 +9767,113 @@ export default function EventPage() {
                       {manualDishCategories.map(
                         (category) => (
                           <option
-                            value={
-                              category
-                            }
-                            key={
-                              category
-                            }
+                            value={category}
+                            key={category}
                           >
-                            {
-                              category
-                            }
+                            {category}
                           </option>
                         ),
                       )}
                     </select>
+
+                    <div
+                      className="event-dish-picker-view"
+                      role="group"
+                      aria-label="Dish view"
+                    >
+                      <button
+                        type="button"
+                        className={
+                          manualSelectionView ===
+                          'ALL'
+                            ? 'active'
+                            : ''
+                        }
+                        aria-pressed={
+                          manualSelectionView ===
+                          'ALL'
+                        }
+                        onClick={() =>
+                          setManualSelectionView(
+                            'ALL',
+                          )
+                        }
+                      >
+                        All
+                      </button>
+                      <button
+                        type="button"
+                        className={
+                          manualSelectionView ===
+                          'SELECTED'
+                            ? 'active'
+                            : ''
+                        }
+                        aria-pressed={
+                          manualSelectionView ===
+                          'SELECTED'
+                        }
+                        onClick={() =>
+                          setManualSelectionView(
+                            'SELECTED',
+                          )
+                        }
+                      >
+                        Selected
+                        <span>
+                          {manualSelectedCount}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="event-dish-picker-results-head">
+                    <div>
+                      <b>
+                        {manualSelectionView ===
+                        'SELECTED'
+                          ? `${manualSelectedCount} selected`
+                          : `${filteredManualDishes.length} dishes shown`}
+                      </b>
+                      <small>
+                        {manualSelectionView ===
+                        'SELECTED'
+                          ? 'Review your choices before adding them.'
+                          : filteredManualDishes.length ===
+                              100
+                            ? 'Showing first 100 matches. Use search to narrow the list.'
+                            : 'Tap a dish card to select or remove it.'}
+                      </small>
+                    </div>
+
+                    {manualSelectedCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedManualDishKeys(
+                            new Set(),
+                          )
+                        }
+                      >
+                        Clear selected
+                      </button>
+                    ) : null}
                   </div>
 
                   {manualDishLoading ? (
-                    <div
-                      className="event-manual-selector-grid"
-                      style={{
-                        color:
-                          '#8995a4',
-                      }}
-                    >
-                      Loading Dish Master…
+                    <div className="event-dish-picker-loading">
+                      <span className="upload-spinner" aria-hidden="true" />
+                      <div>
+                        <b>
+                          Loading Dish Master…
+                        </b>
+                        <small>
+                          Preparing your saved dishes and rates.
+                        </small>
+                      </div>
                     </div>
                   ) : filteredManualDishes.length ? (
-                    <div
-                      style={{
-                        display:
-                          'grid',
-                        gridTemplateColumns:
-                          'repeat(auto-fill, minmax(230px, 1fr))',
-                        gap:
-                          '7px',
-                        maxHeight:
-                          '420px',
-                        overflowY:
-                          'auto',
-                      }}
-                    >
+                    <div className="event-dish-picker-grid">
                       {filteredManualDishes.map(
                         (dish) => {
                           const key =
@@ -9812,6 +9891,14 @@ export default function EventPage() {
                               key,
                             );
 
+                          const rate =
+                            Math.max(
+                              0,
+                              Number(
+                                dish.rate,
+                              ) || 0,
+                            );
+
                           return (
                             <button
                               key={
@@ -9821,148 +9908,125 @@ export default function EventPage() {
                               disabled={
                                 alreadyInFunction
                               }
+                              aria-pressed={
+                                selected
+                              }
+                              className={
+                                `event-dish-picker-card${selected ? ' is-selected' : ''}${alreadyInFunction ? ' is-existing' : ''}`
+                              }
                               onClick={() =>
                                 toggleManualDish(
                                   dish,
                                 )
                               }
-                              style={{
-                                textAlign:
-                                  'left',
-                                padding:
-                                  '10px',
-                                border:
-                                  selected
-                                    ? '1px solid #428de8'
-                                    : '1px solid #29323d',
-                                borderRadius:
-                                  '10px',
-                                background:
-                                  alreadyInFunction
-                                    ? 'rgba(255,255,255,.025)'
-                                    : selected
-                                      ? 'rgba(66,141,232,.12)'
-                                      : '#141a22',
-                                color:
-                                  alreadyInFunction
-                                    ? '#687587'
-                                    : '#e7edf4',
-                                cursor:
-                                  alreadyInFunction
-                                    ? 'not-allowed'
-                                    : 'pointer',
-                                opacity:
-                                  alreadyInFunction
-                                    ? .62
-                                    : 1,
-                              }}
                             >
-                              <div
-                                style={{
-                                  display:
-                                    'flex',
-                                  gap:
-                                    '8px',
-                                  alignItems:
-                                    'flex-start',
-                                }}
-                              >
-                                <span>
-                                  {alreadyInFunction
-                                    ? '✓'
-                                    : selected
-                                      ? '✓'
-                                      : '○'}
+                              <span className="event-dish-picker-check" aria-hidden="true">
+                                {alreadyInFunction ||
+                                selected
+                                  ? '✓'
+                                  : ''}
+                              </span>
+
+                              <span className="event-dish-picker-card-copy">
+                                <span className="event-dish-picker-card-title">
+                                  <b>
+                                    {dish.name}
+                                  </b>
+                                  {dish.source ===
+                                  'tenant' ? (
+                                    <em>
+                                      My dish
+                                    </em>
+                                  ) : null}
                                 </span>
 
-                                <span>
-                                  <b>
-                                    {
-                                      dish.name
-                                    }
-                                  </b>
-
-                                  {alreadyInFunction ? (
-                                    <small
-                                      style={{
-                                        display:
-                                          'block',
-                                        marginTop:
-                                          '3px',
-                                        color:
-                                          '#6f9bcf',
-                                      }}
-                                    >
-                                      Already in this function
+                                <span className="event-dish-picker-tags">
+                                  <small>
+                                    {dish.category}
+                                  </small>
+                                  {dish.subcategory ? (
+                                    <small>
+                                      {dish.subcategory}
                                     </small>
                                   ) : null}
-
-                                  <small
-                                    style={{
-                                      display:
-                                        'block',
-                                      marginTop:
-                                        '3px',
-                                      color:
-                                        '#8995a4',
-                                    }}
-                                  >
-                                    {
-                                      dish.category
-                                    }
-                                    {dish.subcategory
-                                      ? ` • ${dish.subcategory}`
-                                      : ''}
-                                  </small>
-
-                                  <small
-                                    style={{
-                                      display:
-                                        'block',
-                                      marginTop:
-                                        '3px',
-                                      color:
-                                        '#8995a4',
-                                    }}
-                                  >
-                                    ₹
-                                    {Number(
-                                      dish.rate,
-                                    ).toFixed(
-                                      2,
-                                    )}
-                                    {' • '}
-                                    {
-                                      dish.servingQuantity ||
-                                      1
-                                    }{' '}
-                                    {
-                                      dish.servingUnit ||
-                                      'serving'
-                                    }
-                                    {dish.pieceWeightGrams
-                                      ? ` • ${dish.pieceWeightGrams}g/pc`
-                                      : ''}
-                                  </small>
+                                  {alreadyInFunction ? (
+                                    <small className="is-existing">
+                                      Already added
+                                    </small>
+                                  ) : null}
                                 </span>
-                              </div>
+
+                                <span className="event-dish-picker-card-meta">
+                                  <span>
+                                    <small>
+                                      Cost / plate
+                                    </small>
+                                    <strong className={rate > 0 ? '' : 'needs-rate'}>
+                                      {rate > 0
+                                        ? `₹${rate.toFixed(2)}`
+                                        : 'Rate needed'}
+                                    </strong>
+                                  </span>
+                                  <span>
+                                    <small>
+                                      Serving
+                                    </small>
+                                    <strong>
+                                      {dish.servingQuantity ||
+                                        1}{' '}
+                                      {dish.servingUnit ||
+                                        'serving'}
+                                      {dish.pieceWeightGrams
+                                        ? ` · ${dish.pieceWeightGrams}g/pc`
+                                        : ''}
+                                    </strong>
+                                  </span>
+                                </span>
+                              </span>
                             </button>
                           );
                         },
                       )}
                     </div>
                   ) : (
-                    <div
-                      style={{
-                        color:
-                          '#8995a4',
-                      }}
-                    >
-                      No matching dishes found.
+                    <div className="event-dish-picker-empty">
+                      <span aria-hidden="true">
+                        ⌕
+                      </span>
+                      <div>
+                        <b>
+                          {manualSelectionView ===
+                          'SELECTED'
+                            ? 'No dishes selected yet'
+                            : 'No matching dishes'}
+                        </b>
+                        <small>
+                          {manualSelectionView ===
+                          'SELECTED'
+                            ? 'Go back to All and choose dishes for this function.'
+                            : 'Try another search or category. If this is a new dish, create it below.'}
+                        </small>
+                      </div>
+                      {manualSelectionView ===
+                      'SELECTED' ? (
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          onClick={() =>
+                            setManualSelectionView(
+                              'ALL',
+                            )
+                          }
+                        >
+                          Browse all dishes
+                        </button>
+                      ) : null}
                     </div>
                   )}
 
                   {addDishFunctionTarget &&
+                  manualSelectionView ===
+                    'ALL' &&
                   manualDishSearch.trim() &&
                   !exactManualCatalogDish ? (
                     <div className="event-create-dish-inline">
@@ -9986,57 +10050,62 @@ export default function EventPage() {
                     </div>
                   ) : null}
 
-                  <div
-                    className="event-manual-selector-footer"
-                    style={{
-                      display:
-                        'flex',
-                      justifyContent:
-                        'space-between',
-                      alignItems:
-                        'center',
-                      gap:
-                        '10px',
-                      flexWrap:
-                        'wrap',
-                    }}
-                  >
-                    <span
-                      style={{
-                        color:
-                          '#8995a4',
-                        fontSize:
-                          '11px',
-                      }}
-                    >
-                      <b>
-                        {
-                          manualSelectedCount
-                        }
-                      </b>{' '}
-                      selected
-                      {filteredManualDishes.length ===
-                      100
-                        ? ' • first 100 matches shown'
-                        : ''}
-                    </span>
+                  <div className="event-dish-picker-footer">
+                    <div className="event-dish-picker-selection-summary">
+                      <strong>
+                        {manualSelectedCount}
+                      </strong>
+                      <span>
+                        {manualSelectedCount ===
+                        1
+                          ? 'dish selected'
+                          : 'dishes selected'}
+                        <small>
+                          {addDishFunctionTarget
+                            ? `for ${addDishFunctionTarget.mealLabel}`
+                            : importFunctionName
+                              ? `for ${importFunctionName}`
+                              : 'for this function'}
+                        </small>
+                      </span>
+                    </div>
 
-                    <button
-                      className="primary-button"
-                      type="button"
-                      disabled={
-                        !manualSelectedCount
-                      }
-                      onClick={() =>
-                        void addManualMenuAndContinue()
-                      }
-                    >
-                      {addDishFunctionTarget
-                        ? `Add Selected to ${addDishFunctionTarget.mealLabel}`
-                        : 'Add Selected & Continue'}
-                    </button>
+                    <div className="event-dish-picker-footer-actions">
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        disabled={
+                          !manualSelectedCount
+                        }
+                        onClick={() =>
+                          setSelectedManualDishKeys(
+                            new Set(),
+                          )
+                        }
+                      >
+                        Clear
+                      </button>
+                      <button
+                        className="primary-button"
+                        type="button"
+                        disabled={
+                          !manualSelectedCount
+                        }
+                        onClick={() =>
+                          void addManualMenuAndContinue()
+                        }
+                      >
+                        {manualSelectedCount > 0
+                          ? addDishFunctionTarget
+                            ? `Add ${manualSelectedCount} to ${addDishFunctionTarget.mealLabel}`
+                            : 'Add Selected & Continue'
+                          : addDishFunctionTarget
+                            ? `Select dishes for ${addDishFunctionTarget.mealLabel}`
+                            : 'Select dishes to continue'}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </section>
               ) : null}
             </div>
 
