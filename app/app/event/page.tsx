@@ -8192,7 +8192,7 @@ export default function EventPage() {
                 ₹{Math.round(savedMenuFoodEstimate).toLocaleString('en-IN')}
               </strong>
               <small>
-                Saved dish cost total: ₹{savedMenuCostPerPlate.toFixed(2)} / plate
+                Sum of saved dish rates: ₹{savedMenuCostPerPlate.toFixed(2)}
               </small>
             </div>
 
