@@ -6620,6 +6620,26 @@ export default function EventPage() {
   const manualSelectedCount =
     selectedManualDishKeys.size;
 
+  const existingTargetDishKeys =
+    new Set(
+      addDishFunctionTarget
+        ? work.menu
+            .filter(
+              (item) =>
+                detectionGroupKeyForItem(
+                  item,
+                ) ===
+                addDishFunctionTarget.key,
+            )
+            .map(
+              (item) =>
+                dishNameKey(
+                  item.name,
+                ),
+            )
+        : [],
+    );
+
   const firstMenuTextReady =
     work.event.rawMenuText.trim().length > 0;
 
@@ -7756,6 +7776,66 @@ export default function EventPage() {
         item.coverageStatus ===
         'REJECTED',
     ).length;
+
+  const savedMenuFunctionGroups =
+    Array.from(
+      work.menu.reduce(
+        (
+          groups,
+          item,
+        ) => {
+          const key =
+            detectionGroupKeyForItem(
+              item,
+            );
+
+          if (!groups.has(key)) {
+            groups.set(
+              key,
+              {
+                key,
+                serviceId:
+                  item.serviceId,
+                dayLabel:
+                  item.dayLabel,
+                mealLabel:
+                  item.mealLabel ||
+                  work.event.functionType ||
+                  'Event Menu',
+                servicePax:
+                  Math.max(
+                    0,
+                    Number(
+                      item.servicePax,
+                    ) ||
+                      Number(
+                        work.event.pax,
+                      ) ||
+                      0,
+                  ),
+                dishCount:
+                  0,
+              },
+            );
+          }
+
+          const group =
+            groups.get(key);
+
+          if (group) {
+            group.dishCount += 1;
+          }
+
+          return groups;
+        },
+        new Map<
+          string,
+          ExistingFunctionDishTarget & {
+            dishCount: number;
+          }
+        >(),
+      ).values(),
+    );
 
   const savedMenuDishCount =
     work.menu.length;
@@ -9456,6 +9536,11 @@ export default function EventPage() {
                               dish.name,
                             );
 
+                          const alreadyInFunction =
+                            existingTargetDishKeys.has(
+                              key,
+                            );
+
                           const selected =
                             selectedManualDishKeys.has(
                               key,
@@ -9467,6 +9552,9 @@ export default function EventPage() {
                                 `${dish.category}-${dish.name}`
                               }
                               type="button"
+                              disabled={
+                                alreadyInFunction
+                              }
                               onClick={() =>
                                 toggleManualDish(
                                   dish,
@@ -9484,13 +9572,23 @@ export default function EventPage() {
                                 borderRadius:
                                   '10px',
                                 background:
-                                  selected
-                                    ? 'rgba(66,141,232,.12)'
-                                    : '#141a22',
+                                  alreadyInFunction
+                                    ? 'rgba(255,255,255,.025)'
+                                    : selected
+                                      ? 'rgba(66,141,232,.12)'
+                                      : '#141a22',
                                 color:
-                                  '#e7edf4',
+                                  alreadyInFunction
+                                    ? '#687587'
+                                    : '#e7edf4',
                                 cursor:
-                                  'pointer',
+                                  alreadyInFunction
+                                    ? 'not-allowed'
+                                    : 'pointer',
+                                opacity:
+                                  alreadyInFunction
+                                    ? .62
+                                    : 1,
                               }}
                             >
                               <div
@@ -9504,9 +9602,11 @@ export default function EventPage() {
                                 }}
                               >
                                 <span>
-                                  {selected
+                                  {alreadyInFunction
                                     ? '✓'
-                                    : '○'}
+                                    : selected
+                                      ? '✓'
+                                      : '○'}
                                 </span>
 
                                 <span>
@@ -9515,6 +9615,21 @@ export default function EventPage() {
                                       dish.name
                                     }
                                   </b>
+
+                                  {alreadyInFunction ? (
+                                    <small
+                                      style={{
+                                        display:
+                                          'block',
+                                        marginTop:
+                                          '3px',
+                                        color:
+                                          '#6f9bcf',
+                                      }}
+                                    >
+                                      Already in this function
+                                    </small>
+                                  ) : null}
 
                                   <small
                                     style={{
