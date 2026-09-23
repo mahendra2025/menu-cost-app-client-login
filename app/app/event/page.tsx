@@ -1490,6 +1490,184 @@ export default function EventPage() {
     );
   }
 
+  async function addNewDishToExistingFunction() {
+    if (
+      !work ||
+      !session ||
+      !addDishFunctionTarget
+    ) {
+      return;
+    }
+
+    const name =
+      manualDishSearch
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!name) {
+      setError(
+        'Enter a dish name first.',
+      );
+      return;
+    }
+
+    const key =
+      dishNameKey(
+        name,
+      );
+
+    const duplicate =
+      work.menu.some(
+        (item) =>
+          detectionGroupKeyForItem(
+            item,
+          ) ===
+            addDishFunctionTarget.key &&
+          dishNameKey(
+            item.name,
+          ) ===
+            key,
+      );
+
+    if (duplicate) {
+      setError(
+        `${name} already exists in this function.`,
+      );
+      return;
+    }
+
+    const category =
+      manualDishCategory !==
+        'ALL' &&
+      CATEGORIES.includes(
+        manualDishCategory as Category,
+      )
+        ? manualDishCategory as Category
+        : 'Other';
+
+    const newItem:
+      MenuItem = {
+        id:
+          uid('dish'),
+        name,
+        category,
+        costPerPlate:
+          0,
+        portionQuantity:
+          1,
+        portionBaseQuantity:
+          1,
+        portionUnit:
+          'serving',
+        serviceId:
+          addDishFunctionTarget.serviceId,
+        dayLabel:
+          addDishFunctionTarget.dayLabel,
+        mealLabel:
+          addDishFunctionTarget.mealLabel,
+        servicePax:
+          addDishFunctionTarget.servicePax,
+        detectionSource:
+          'manual',
+        detectionConfidence:
+          100,
+        detectionReason:
+          'User manually added a new dish to an existing function',
+        costSource:
+          'manual',
+        coverageStatus:
+          'NEW_DISH_PENDING',
+        costQualityStatus:
+          undefined,
+        costConfidence:
+          0,
+        rateCoveragePercent:
+          0,
+        coverageReason:
+          'New dish needs a confirmed cost and recipe.',
+        costApprovalStatus:
+          'PENDING',
+        costApprovalReason:
+          'A confirmed cost is required before final costing.',
+      };
+
+    const nextWork:
+      WorkState = {
+        ...work,
+        menu: [
+          ...work.menu,
+          newItem,
+        ],
+      };
+
+    persistWork(
+      nextWork,
+    );
+    flushWorkSave(
+      session.tenantId,
+    );
+    await flushDraftToServer(
+      session.tenantId,
+      nextWork,
+    );
+
+    void saveTenantDishLearning({
+      aliasName:
+        name,
+      canonicalName:
+        name,
+      category,
+      action:
+        'MAP',
+    });
+
+    void trackProductEvent(
+      'menu_saved',
+      {
+        costingKey:
+          getCostingAnalyticsKey(
+            nextWork,
+          ),
+        dishCount:
+          nextWork.menu.length,
+        importedDishCount:
+          1,
+        functionName:
+          addDishFunctionTarget.mealLabel,
+        mode:
+          'new_dish_existing_function',
+      },
+    );
+
+    setShowManualDishSelector(
+      false,
+    );
+    setAddDishFunctionTarget(
+      null,
+    );
+    setSelectedManualDishKeys(
+      new Set(),
+    );
+    setManualDishSearch('');
+    setManualDishCategory(
+      'ALL',
+    );
+    setError('');
+
+    window.setTimeout(
+      () =>
+        document
+          .getElementById(
+            'savedEventMenu',
+          )
+          ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          }),
+      40,
+    );
+  }
+
   async function addManualMenuAndContinue() {
     if (!work || !session) {
       return;
@@ -6620,6 +6798,19 @@ export default function EventPage() {
   const manualSelectedCount =
     selectedManualDishKeys.size;
 
+  const exactManualCatalogDish =
+    manualDishSearch.trim()
+      ? manualDishCatalog.find(
+          (dish) =>
+            dishNameKey(
+              dish.name,
+            ) ===
+            dishNameKey(
+              manualDishSearch,
+            ),
+        )
+      : undefined;
+
   const existingTargetDishKeys =
     new Set(
       addDishFunctionTarget
@@ -9770,6 +9961,30 @@ export default function EventPage() {
                       No matching dishes found.
                     </div>
                   )}
+
+                  {addDishFunctionTarget &&
+                  manualDishSearch.trim() &&
+                  !exactManualCatalogDish ? (
+                    <div className="event-create-dish-inline">
+                      <div>
+                        <b>
+                          New dish: {manualDishSearch.trim()}
+                        </b>
+                        <small>
+                          Add it to {addDishFunctionTarget.mealLabel} now. Its rate and recipe can be completed in Dish Cost.
+                        </small>
+                      </div>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() =>
+                          void addNewDishToExistingFunction()
+                        }
+                      >
+                        + Create New Dish
+                      </button>
+                    </div>
+                  ) : null}
 
                   <div
                     className="event-manual-selector-footer"
