@@ -467,6 +467,222 @@ a { color: inherit; text-decoration: none; }
   }
 }
 
+/* Manpower workflow refinement ----------------------------------------- */
+.manpower-meal-tab:focus-visible,
+.manpower-settings-summary:focus-visible {
+  outline: 2px solid #69a9f5;
+  outline-offset: 3px;
+}
+
+.manpower-meal-tab-icon {
+  color: #aab6c5;
+  font-weight: 900;
+}
+
+.manpower-meal-tab.is-active .manpower-meal-tab-icon {
+  color: #ddebff;
+}
+
+.manpower-settings-card {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.manpower-settings-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 17px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.manpower-settings-summary::-webkit-details-marker {
+  display: none;
+}
+
+.manpower-settings-summary > div {
+  min-width: 0;
+}
+
+.manpower-settings-summary b,
+.manpower-settings-summary small {
+  display: block;
+}
+
+.manpower-settings-summary b {
+  margin-top: 3px;
+  color: #edf2f7;
+  font-size: 14px;
+}
+
+.manpower-settings-summary small {
+  margin-top: 4px;
+  color: #7f8c9c;
+  font-size: 9px;
+}
+
+.manpower-settings-summary > span {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #303d4c;
+  border-radius: 9px;
+  color: #9dc8fa;
+  background: rgba(74, 156, 255, .055);
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.manpower-settings-card[open] .manpower-settings-summary > span {
+  color: #aab5c3;
+  background: transparent;
+}
+
+.manpower-settings-card[open] .manpower-settings-summary > span::before {
+  content: 'Close ';
+}
+
+.manpower-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 17px 18px;
+  border-top: 1px solid #283440;
+  background: rgba(8, 13, 20, .25);
+}
+
+.manpower-meal-health {
+  display: flex;
+  align-items: stretch;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.manpower-meal-health > span {
+  display: grid;
+  align-content: center;
+  min-width: 86px;
+  padding: 9px 11px;
+  border: 1px solid #2d3947;
+  border-radius: 11px;
+  color: #7f8d9e;
+  background: rgba(255, 255, 255, .018);
+  font-size: 8px;
+  line-height: 1.3;
+}
+
+.manpower-meal-health b {
+  display: block;
+  margin-bottom: 2px;
+  color: #dce5ef;
+  font-size: 11px;
+}
+
+.manpower-meal-health > span.is-complete {
+  color: #83cfa2;
+  border-color: rgba(88, 215, 142, .23);
+  background: rgba(88, 215, 142, .055);
+}
+
+.manpower-meal-health > span.is-complete b {
+  color: #a5e5be;
+}
+
+.manpower-menu-board-heading > span.is-complete {
+  color: #9fe0b8;
+  border-color: rgba(88, 215, 142, .25);
+  background: rgba(88, 215, 142, .065);
+}
+
+.manpower-roster-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 20px 16px 0;
+  padding-top: 16px;
+  border-top: 1px solid #293541;
+}
+
+.manpower-roster-heading h3 {
+  margin: 0;
+  color: #edf2f7;
+  font-size: 15px;
+}
+
+.manpower-roster-heading p {
+  margin: 4px 0 0;
+  color: #7e8b9b;
+  font-size: 9px;
+}
+
+.manpower-roster-heading > span {
+  flex: 0 0 auto;
+  color: #8fc0f9;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .manpower-settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .manpower-planner-heading {
+    align-items: stretch;
+  }
+
+  .manpower-meal-health {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .manpower-meal-health > span {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .manpower-meal-selector {
+    margin: 0;
+  }
+
+  .manpower-meal-tab {
+    min-width: 210px;
+  }
+
+  .manpower-settings-summary {
+    align-items: flex-start;
+    padding: 13px;
+  }
+
+  .manpower-settings-summary > span {
+    padding: 6px 8px;
+  }
+
+  .manpower-settings-grid {
+    grid-template-columns: 1fr;
+    padding: 13px;
+  }
+
+  .manpower-meal-health {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .manpower-meal-health > span {
+    padding: 8px;
+  }
+
+  .manpower-roster-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    margin: 18px 12px 0;
+  }
+}
+
 @media (max-width: 700px) {
   .client-theme .menu-source-workspace {
     gap: 18px;

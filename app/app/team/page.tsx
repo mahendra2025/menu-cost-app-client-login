@@ -329,6 +329,13 @@ function DishManpowerBoard({
   }
 
   const kitchenRows = rows.filter(canAssignDishes);
+  const staffedDishCount = dishes.filter((dish) =>
+    kitchenRows.some(
+      (row) =>
+        Math.max(0, Number(row.quantity) || 0) > 0 &&
+        (row.assignedDishIds ?? []).includes(dish.id),
+    ),
+  ).length;
 
   return (
     <section className="manpower-menu-board" aria-label="Dish-wise kitchen manpower">
@@ -337,7 +344,9 @@ function DishManpowerBoard({
           <h3>Menu &amp; kitchen manpower</h3>
           <p>Open a dish and add the cooks or helpers responsible for it.</p>
         </div>
-        <span>{dishes.length} dishes</span>
+        <span className={staffedDishCount === dishes.length ? 'is-complete' : ''}>
+          {staffedDishCount}/{dishes.length} staffed
+        </span>
       </div>
 
       <div className="manpower-dish-grid">
@@ -428,6 +437,7 @@ export default function ManpowerPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
+  const [selectedMealKey, setSelectedMealKey] = useState('');
   const [newRoleDrafts, setNewRoleDrafts] = useState<Record<string, NewRoleDraft>>({});
   const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
   const [manpowerRules, setManpowerRules] = useState<ManpowerRuleConfig>({
@@ -548,6 +558,11 @@ export default function ManpowerPage() {
       ) ?? 0,
     [work],
   );
+
+  const activeMealKey =
+    meals.some((meal) => meal.key === selectedMealKey)
+      ? selectedMealKey
+      : meals[0]?.key || '';
 
   function rowsForMeal(meal: MealPlan) {
     return work?.manpower.filter((row) => rowBelongsToMeal(row, meal)) ?? [];
@@ -801,18 +816,62 @@ export default function ManpowerPage() {
           </div>
         </div>
 
-        <div className="glass-card">
-          <div className="section-head">
+        <section className="manpower-meal-selector" aria-label="Choose a meal to staff">
+          <div className="manpower-meal-selector-head">
             <div>
-              <div className="section-kicker">Automatic manpower settings</div>
-              <h2>Service & Utility Rules</h2>
-              <p className="muted">
-                These settings recalculate only Auto rows. Manual overrides stay unchanged.
-              </p>
+              <div className="section-kicker">Plan one meal at a time</div>
+              <h3>Choose a meal</h3>
             </div>
+            <span className="manpower-meal-selector-count">
+              {meals.length} meal{meals.length === 1 ? '' : 's'}
+            </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+          <div className="manpower-meal-tabs">
+            {meals.map((meal, index) => {
+              const tabRows = rowsForMeal(meal);
+              const staffedDishes = meal.dishIds.filter((dishId) =>
+                tabRows.some(
+                  (row) =>
+                    canAssignDishes(row) &&
+                    Math.max(0, Number(row.quantity) || 0) > 0 &&
+                    (row.assignedDishIds ?? []).includes(dishId),
+                ),
+              ).length;
+
+              return (
+                <button
+                  className={`manpower-meal-tab ${meal.key === activeMealKey ? 'is-active' : ''}`}
+                  type="button"
+                  key={meal.key}
+                  onClick={() => setSelectedMealKey(meal.key)}
+                  aria-pressed={meal.key === activeMealKey}
+                >
+                  <span className="manpower-meal-tab-icon">{index + 1}</span>
+                  <span className="manpower-meal-tab-copy">
+                    <small>{meal.dayLabel || `Meal ${index + 1}`}</small>
+                    <b>{meal.mealLabel}</b>
+                    <em>
+                      {meal.pax.toLocaleString('en-IN')} guests · {staffedDishes}/{meal.dishIds.length} dishes staffed
+                    </em>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <details className="glass-card manpower-settings-card">
+          <summary className="manpower-settings-summary">
+            <div>
+              <div className="section-kicker">Automatic recommendations</div>
+              <b>Service &amp; utility settings</b>
+              <small>Venue, service level, water service and crockery</small>
+            </div>
+            <span>Settings</span>
+          </summary>
+
+          <div className="manpower-settings-grid">
             <label className="field">
               <span>Service Level</span>
               <select
@@ -865,9 +924,10 @@ export default function ManpowerPage() {
               </select>
             </label>
           </div>
-        </div>
+        </details>
 
-        {meals.map((meal, mealIndex) => {
+        {meals.filter((meal) => meal.key === activeMealKey).map((meal) => {
+          const mealIndex = meals.findIndex((item) => item.key === meal.key);
           const mealRows = rowsForMeal(meal);
           const mealDishes = work.menu.filter((dish) =>
             meal.dishIds.includes(dish.id),
@@ -881,6 +941,14 @@ export default function ManpowerPage() {
           const mealTitle = [meal.dayLabel, meal.mealLabel]
             .filter(Boolean)
             .join(' · ');
+          const staffedDishCount = mealDishes.filter((dish) =>
+            mealRows.some(
+              (row) =>
+                canAssignDishes(row) &&
+                Math.max(0, Number(row.quantity) || 0) > 0 &&
+                (row.assignedDishIds ?? []).includes(dish.id),
+            ),
+          ).length;
 
           return (
             <div className="glass-card manpower-planner-card" key={meal.key}>
@@ -894,6 +962,20 @@ export default function ManpowerPage() {
                     Enter manpower only for this meal. Meal manpower total: {money(mealTotal)} · {mealPeople} people
                   </p>
                 </div>
+                <div className="manpower-meal-health">
+                  <span className={mealDishes.length > 0 && staffedDishCount === mealDishes.length ? 'is-complete' : ''}>
+                    <b>{staffedDishCount}/{mealDishes.length}</b>
+                    dishes staffed
+                  </span>
+                  <span>
+                    <b>{mealPeople}</b>
+                    people
+                  </span>
+                  <span>
+                    <b>{money(mealTotal)}</b>
+                    meal cost
+                  </span>
+                </div>
               </div>
 
               <DishManpowerBoard
@@ -902,6 +984,14 @@ export default function ManpowerPage() {
                 onToggle={toggleDishManpower}
                 onQuantityChange={updateDishManpowerQuantity}
               />
+
+              <div className="manpower-roster-heading">
+                <div>
+                  <h3>Meal team &amp; rates</h3>
+                  <p>Review service, kitchen and utility quantities for this meal.</p>
+                </div>
+                <span>{mealRows.filter((row) => Number(row.quantity) > 0).length} active roles</span>
+              </div>
 
               <div className="table-wrap manpower-table-wrap">
                 <table className="manpower-table">
