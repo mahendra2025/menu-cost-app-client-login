@@ -296,6 +296,88 @@ function countChefRole(
   ).length;
 }
 
+const LIVE_CHEF_ROLES = new Set<ChefRoleId>([
+  'chaat_cook',
+  'chinese_cook',
+  'italian_cook',
+  'south_indian_cook',
+  'live_counter_cook',
+  'starter_cook',
+  'soup_cook',
+]);
+
+function automaticDishIdsForRole(
+  roleId: string,
+  menu: MenuItem[],
+) {
+  const idsForChefRoles = (
+    roles: Set<ChefRoleId>,
+  ) =>
+    menu
+      .filter((item) => {
+        const role =
+          chefRoleForItem(item);
+
+        return (
+          role !== null &&
+          roles.has(role)
+        );
+      })
+      .map((item) => item.id);
+
+  const productionDishIds =
+    menu
+      .filter(
+        (item) =>
+          chefRoleForItem(item) !== null,
+      )
+      .map((item) => item.id);
+
+  switch (roleId) {
+    case 'chaat_cook':
+    case 'chinese_cook':
+    case 'italian_cook':
+    case 'south_indian_cook':
+    case 'live_counter_cook':
+    case 'starter_cook':
+    case 'soup_cook':
+    case 'bread_cook':
+    case 'main_course_cook':
+    case 'farsan_cook':
+    case 'sweet_halwai':
+      return menu
+        .filter(
+          (item) =>
+            chefRoleForItem(item) ===
+            roleId,
+        )
+        .map((item) => item.id);
+
+    case 'live_counter_helper':
+      return idsForChefRoles(
+        LIVE_CHEF_ROLES,
+      );
+
+    case 'bread_helper':
+      return menu
+        .filter(
+          (item) =>
+            chefRoleForItem(item) ===
+            'bread_cook',
+        )
+        .map((item) => item.id);
+
+    case 'head_chef':
+    case 'assistant_cook':
+    case 'kitchen_supervisor':
+    case 'prep_helper':
+      return productionDishIds;
+
+    default:
+      return [];
+  }
+}
+
 function rowBelongsToMeal(
   row: ManpowerRow,
   input: MealManpowerEngineInput,
@@ -853,12 +935,27 @@ export function generateMealManpowerRows(
       dayLabel: input.dayLabel || undefined,
       mealLabel: input.mealLabel,
       servicePax: Math.max(0, Number(input.guests) || 0),
-      assignedDishIds: existing?.assignedDishIds === undefined
-        ? input.menu.map((item) => item.id)
-        : existing.assignedDishIds.filter((dishId) =>
-            input.menu.some((item) => item.id === dishId),
-          ),
-      autoDishAssignment: master.department === 'LIVE_COUNTER' || master.department === 'BREAD',
+      assignedDishIds:
+        manualOverride &&
+        existing?.assignedDishIds !==
+          undefined
+          ? existing.assignedDishIds.filter(
+              (dishId) =>
+                input.menu.some(
+                  (item) =>
+                    item.id === dishId,
+                ),
+            )
+          : automaticDishIdsForRole(
+              master.id,
+              input.menu,
+            ),
+      autoDishAssignment: [
+        'LIVE_COUNTER',
+        'BREAD',
+        'KITCHEN',
+        'PREPARATION',
+      ].includes(master.department),
       autoStationHelper: master.id === 'live_counter_helper' || master.id === 'bread_helper',
     } satisfies ManpowerRow];
   });
