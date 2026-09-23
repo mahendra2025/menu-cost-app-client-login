@@ -138,7 +138,7 @@ export default function CostPage() {
   const [dishQuery, setDishQuery] = useState('');
   const [dishServiceFilter, setDishServiceFilter] = useState('ALL');
   const [dishCategoryFilter, setDishCategoryFilter] = useState('ALL');
-  const [showOnlyManualRates, setShowOnlyManualRates] = useState(false);
+  const [dishStatusFilter, setDishStatusFilter] = useState<'ALL' | 'MISSING' | 'COSTED'>('ALL');
   const deferredDishQuery = useDeferredValue(dishQuery);
 
   const [
@@ -363,7 +363,15 @@ export default function CostPage() {
     needsManualRate,
   ).length;
   const manualRateFilterActive =
-    showOnlyManualRates && missingRateCount > 0;
+    dishStatusFilter === 'MISSING' &&
+    missingRateCount > 0;
+
+  const costedDishCount =
+    Math.max(
+      0,
+      work.menu.length -
+        missingRateCount,
+    );
   const normalizedDishQuery = deferredDishQuery.trim().toLocaleLowerCase('en-IN');
   const filteredDishCosts = result.menuBreakdown.filter((item) => {
     const matchesSearch = !normalizedDishQuery ||
@@ -371,7 +379,12 @@ export default function CostPage() {
       item.category.toLocaleLowerCase('en-IN').includes(normalizedDishQuery);
     const matchesService = dishServiceFilter === 'ALL' || item.serviceKey === dishServiceFilter;
     const matchesCategory = dishCategoryFilter === 'ALL' || item.category === dishCategoryFilter;
-    const matchesRateStatus = !manualRateFilterActive || needsManualRate(item);
+    const matchesRateStatus =
+      dishStatusFilter === 'ALL'
+        ? true
+        : dishStatusFilter === 'MISSING'
+          ? needsManualRate(item)
+          : !needsManualRate(item);
     return matchesSearch && matchesService && matchesCategory && matchesRateStatus;
   });
   const hasWeddingServices =
@@ -889,7 +902,7 @@ export default function CostPage() {
       : 0;
 
   return (
-    <AppShell title="Cost" subtitle="Know what this event costs before you price it">
+    <AppShell title="Dish Cost" subtitle="Review food cost, portions and dish rates before grocery planning">
       <section className="content-grid cost-command-page">
         <section className="cost-command-sheet" aria-labelledby="cost-command-title">
           <div className="cost-command-main">
@@ -936,13 +949,13 @@ export default function CostPage() {
             </div>
             {missingRateCount > 0 ? (
               <button type="button" className="cost-command-fix" onClick={() => {
-                setShowOnlyManualRates(true);
+                setDishStatusFilter('MISSING');
                 document.querySelector('.dish-cost-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}>Fix missing rates</button>
             ) : null}
+            <button type="button" onClick={() => router.push('/app/grocery')}>Open grocery <span aria-hidden="true">›</span></button>
             <button type="button" onClick={() => router.push('/app/team')}>Review manpower <span aria-hidden="true">›</span></button>
             <button type="button" onClick={() => router.push('/app/operations')}>Add expenses <span aria-hidden="true">›</span></button>
-            <button type="button" onClick={() => router.push('/app/final-costing')}>Open pricing <span aria-hidden="true">›</span></button>
           </aside>
         </section>
 
@@ -993,7 +1006,8 @@ export default function CostPage() {
           </div>
         </section>
 
-        <div className="glass-card dish-cost-panel">
+        <div className="cost-desktop-workspace">
+          <div className="glass-card dish-cost-panel">
           <div className="dish-cost-heading">
             <div>
               <span className="page-eyebrow">Food costing</span>
@@ -1351,9 +1365,41 @@ export default function CostPage() {
                 className="ghost-button"
                 type="button"
                 aria-pressed={manualRateFilterActive}
-                onClick={() => setShowOnlyManualRates((current) => !current)}
+                onClick={() => setDishStatusFilter(manualRateFilterActive ? 'ALL' : 'MISSING')}
               >
                 {manualRateFilterActive ? 'Show all dishes' : 'Add manual rates'}
+              </button>
+            </div>
+          ) : null}
+
+          {work.menu.length > 0 ? (
+            <div className="dish-cost-status-tabs no-print" aria-label="Dish cost status filters">
+              <button
+                type="button"
+                className={dishStatusFilter === 'ALL' ? 'active' : ''}
+                aria-pressed={dishStatusFilter === 'ALL'}
+                onClick={() => setDishStatusFilter('ALL')}
+              >
+                <span>All dishes</span>
+                <b>{work.menu.length}</b>
+              </button>
+              <button
+                type="button"
+                className={dishStatusFilter === 'MISSING' ? 'active attention' : 'attention'}
+                aria-pressed={dishStatusFilter === 'MISSING'}
+                onClick={() => setDishStatusFilter('MISSING')}
+              >
+                <span>Missing rate</span>
+                <b>{missingRateCount}</b>
+              </button>
+              <button
+                type="button"
+                className={dishStatusFilter === 'COSTED' ? 'active ready' : 'ready'}
+                aria-pressed={dishStatusFilter === 'COSTED'}
+                onClick={() => setDishStatusFilter('COSTED')}
+              >
+                <span>Costed</span>
+                <b>{costedDishCount}</b>
               </button>
             </div>
           ) : null}
@@ -1413,7 +1459,7 @@ export default function CostPage() {
                       setDishQuery('');
                       setDishServiceFilter('ALL');
                       setDishCategoryFilter('ALL');
-                      setShowOnlyManualRates(false);
+                      setDishStatusFilter('ALL');
                     }}
                   >
                     Clear filters
@@ -1866,13 +1912,114 @@ export default function CostPage() {
           )}
         </div>
 
+          <aside className="cost-desktop-summary no-print" aria-label="Food costing summary">
+            <div className="cost-desktop-summary-head">
+              <span>Food cost</span>
+              <strong>{money(result.menuFoodTotal)}</strong>
+              <small>{money(result.menuCostPerPlate)} average per cover</small>
+            </div>
+
+            <div className="cost-desktop-summary-grid">
+              <div>
+                <span>Dishes</span>
+                <b>{work.menu.length}</b>
+              </div>
+              <div>
+                <span>Costed</span>
+                <b>{costedDishCount}</b>
+              </div>
+              <div>
+                <span>Missing</span>
+                <b className={missingRateCount > 0 ? 'needs-attention' : ''}>{missingRateCount}</b>
+              </div>
+              <div>
+                <span>Covers</span>
+                <b>{result.totalCovers.toLocaleString('en-IN')}</b>
+              </div>
+            </div>
+
+            <div className="cost-desktop-summary-progress">
+              <div>
+                <span
+                  style={{
+                    width: `${work.menu.length > 0
+                      ? Math.round((costedDishCount / work.menu.length) * 100)
+                      : 0}%`,
+                  }}
+                />
+              </div>
+              <small>
+                {work.menu.length > 0
+                  ? `${Math.round((costedDishCount / work.menu.length) * 100)}% dish rates ready`
+                  : 'Add menu dishes to begin'}
+              </small>
+            </div>
+
+            <div className="cost-desktop-summary-list">
+              <div>
+                <span>Showing</span>
+                <b>{filteredDishCosts.length} dishes</b>
+              </div>
+              <div>
+                <span>Functions</span>
+                <b>{result.serviceSummaries.length}</b>
+              </div>
+              <div>
+                <span>Food share</span>
+                <b>{Math.round(foodShare)}%</b>
+              </div>
+            </div>
+
+            {missingRateCount > 0 ? (
+              <button
+                type="button"
+                className="cost-desktop-review-rates"
+                onClick={() => {
+                  setDishStatusFilter('MISSING');
+                  document
+                    .querySelector('.dish-cost-panel')
+                    ?.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start',
+                    });
+                }}
+              >
+                Review {missingRateCount} missing {missingRateCount === 1 ? 'rate' : 'rates'}
+              </button>
+            ) : (
+              <div className="cost-desktop-ready-note">
+                <span aria-hidden="true">✓</span>
+                All dish rates are ready
+              </div>
+            )}
+
+            <button
+              className="primary-button cost-desktop-next"
+              type="button"
+              disabled={work.menu.length === 0}
+              onClick={() => router.push('/app/grocery')}
+            >
+              Continue to Grocery
+              <span aria-hidden="true">→</span>
+            </button>
+
+            <button
+              className="cost-desktop-back"
+              type="button"
+              onClick={() => router.push('/app/event?resume=1')}
+            >
+              Back to Event & Menu
+            </button>
+          </aside>
+        </div>
+
         <div className="action-row page-actions">
           <button
             className="primary-button"
             type="button"
-            onClick={() => window.location.assign('/app/team')}
+            onClick={() => window.location.assign('/app/grocery')}
           >
-            Next: Manpower
+            Next: Grocery
           </button>
           <button
             className="ghost-button"
