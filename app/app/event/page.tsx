@@ -9429,7 +9429,9 @@ export default function EventPage() {
                   >
                     <div>
                       <strong>
-                        Manual Menu Selection
+                        {addDishFunctionTarget
+                          ? `Add dishes to ${addDishFunctionTarget.mealLabel}`
+                          : 'Manual Menu Selection'}
                       </strong>
 
                       <div
@@ -9442,11 +9444,17 @@ export default function EventPage() {
                             '11px',
                         }}
                       >
-                        Select existing Dish Master items for{' '}
-                        <b>
-                          {importFunctionName ||
-                            'this function'}
-                        </b>
+                        {addDishFunctionTarget
+                          ? `Select Dish Master items for ${addDishFunctionTarget.servicePax.toLocaleString('en-IN')} guests. Existing dishes are disabled.`
+                          : (
+                            <>
+                              Select existing Dish Master items for{' '}
+                              <b>
+                                {importFunctionName ||
+                                  'this function'}
+                              </b>
+                            </>
+                          )}
                       </div>
                     </div>
 
