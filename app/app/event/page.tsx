@@ -1037,6 +1037,13 @@ export default function EventPage() {
   ] = useState('ALL');
 
   const [
+    manualSelectionView,
+    setManualSelectionView,
+  ] = useState<
+    'ALL' | 'SELECTED'
+  >('ALL');
+
+  const [
     selectedManualDishKeys,
     setSelectedManualDishKeys,
   ] = useState<Set<string>>(
@@ -1417,6 +1424,9 @@ export default function EventPage() {
       setManualDishCategory(
         'ALL',
       );
+      setManualSelectionView(
+        'ALL',
+      );
     } else {
       setAddDishFunctionTarget(
         null,
@@ -1650,6 +1660,9 @@ export default function EventPage() {
     );
     setManualDishSearch('');
     setManualDishCategory(
+      'ALL',
+    );
+    setManualSelectionView(
       'ALL',
     );
     setError('');
@@ -2017,6 +2030,9 @@ export default function EventPage() {
 
     setManualDishSearch('');
     setManualDishCategory(
+      'ALL',
+    );
+    setManualSelectionView(
       'ALL',
     );
 
@@ -6695,6 +6711,15 @@ export default function EventPage() {
           dish.category ===
             manualDishCategory;
 
+        const matchesView =
+          manualSelectionView ===
+            'ALL' ||
+          selectedManualDishKeys.has(
+            dishNameKey(
+              dish.name,
+            ),
+          );
+
         const searchable =
           [
             dish.name,
@@ -6707,6 +6732,7 @@ export default function EventPage() {
 
         return (
           matchesCategory &&
+          matchesView &&
           (
             !normalizedManualDishSearch ||
             searchable.includes(
