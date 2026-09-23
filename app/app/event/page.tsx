@@ -8501,8 +8501,75 @@ export default function EventPage() {
           </aside>
 
           <div className="form-grid">
+            {work.menu.length > 0 &&
+            savedMenuFunctionGroups.length > 0 ? (
+              <section
+                className="event-add-dish-functions no-print"
+                aria-label="Add dishes to an existing function"
+              >
+                <div className="event-add-dish-functions-copy">
+                  <span className="section-kicker">
+                    Add dish
+                  </span>
+                  <div>
+                    <h2>
+                      Add a dish to any function
+                    </h2>
+                    <p>
+                      Choose the meal first. The dish will inherit that function's guest count and stay separate from other meals.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="event-add-dish-function-list">
+                  {savedMenuFunctionGroups.map(
+                    (group) => (
+                      <button
+                        className="event-add-dish-function-button"
+                        type="button"
+                        key={group.key}
+                        onClick={() =>
+                          void openManualDishSelector({
+                            key:
+                              group.key,
+                            serviceId:
+                              group.serviceId,
+                            dayLabel:
+                              group.dayLabel,
+                            mealLabel:
+                              group.mealLabel,
+                            servicePax:
+                              group.servicePax,
+                          })
+                        }
+                      >
+                        <span>
+                          <b>
+                            {group.mealLabel}
+                          </b>
+                          <small>
+                            {group.dayLabel
+                              ? `${group.dayLabel} · `
+                              : ''}
+                            {group.servicePax.toLocaleString('en-IN')} guests · {group.dishCount} dishes
+                          </small>
+                        </span>
+                        <strong>
+                          + Add Dish
+                        </strong>
+                      </button>
+                    ),
+                  )}
+                </div>
+              </section>
+            ) : null}
+
             {work.menu.length > 0 ? (
-              <section className="event-desktop-saved-menu no-print" aria-label="Saved event menu">
+              <section
+                id="savedEventMenu"
+                className="event-desktop-saved-menu no-print"
+                aria-label="Saved event menu"
+              >
                 <div className="event-desktop-saved-menu-head">
                   <div>
                     <span>Saved menu</span>
