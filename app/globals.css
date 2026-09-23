@@ -8211,6 +8211,295 @@ td:last-child {
   }
 }
 
+/* Menu-first manpower assignment --------------------------------------- */
+.manpower-menu-board {
+  margin: 16px;
+  padding: 16px;
+  border: 1px solid #2b3745;
+  border-radius: 16px;
+  background: #0d141d;
+}
+
+.manpower-menu-board-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 13px;
+}
+
+.manpower-menu-board-heading h3 {
+  margin: 0;
+  color: #f1f5f9;
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+
+.manpower-menu-board-heading p {
+  margin: 4px 0 0;
+  color: #8492a3;
+  font-size: 10px;
+}
+
+.manpower-menu-board-heading > span {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid rgba(74, 156, 255, .25);
+  border-radius: 999px;
+  color: #a9cfff;
+  background: rgba(74, 156, 255, .07);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.manpower-dish-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.manpower-dish-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #283441;
+  border-radius: 13px 13px 13px 4px;
+  background: #111923;
+}
+
+.manpower-dish-card-head {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+}
+
+.manpower-dish-number {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 8px 8px 8px 2px;
+  color: #07111e;
+  background: #64a9ff;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.manpower-dish-card-head small,
+.manpower-dish-card-head h4 {
+  display: block;
+}
+
+.manpower-dish-card-head small {
+  margin-bottom: 2px;
+  color: #7f8d9d;
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.manpower-dish-card-head h4 {
+  margin: 0;
+  overflow: hidden;
+  color: #eef3f8;
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manpower-dish-team {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 12px 10px;
+}
+
+.manpower-dish-team > span {
+  padding: 5px 7px;
+  border: 1px solid rgba(88, 215, 142, .2);
+  border-radius: 8px;
+  color: #a8dfbf;
+  background: rgba(88, 215, 142, .055);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.manpower-dish-team > span.is-empty {
+  color: #788697;
+  border-color: #283441;
+  background: transparent;
+  font-weight: 650;
+}
+
+.manpower-dish-add {
+  border-top: 1px solid #283441;
+}
+
+.manpower-dish-add > summary {
+  padding: 10px 12px;
+  color: #9bc7fc;
+  cursor: pointer;
+  list-style: none;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.manpower-dish-add > summary::-webkit-details-marker {
+  display: none;
+}
+
+.manpower-dish-add > summary:focus-visible {
+  outline: 2px solid #69a9f5;
+  outline-offset: -3px;
+}
+
+.manpower-dish-add[open] > summary {
+  color: #fff;
+  background: rgba(74, 156, 255, .07);
+}
+
+.manpower-dish-add-panel {
+  display: grid;
+  max-height: 330px;
+  overflow-y: auto;
+  border-top: 1px solid #283441;
+}
+
+.manpower-dish-role {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(139, 157, 178, .09);
+}
+
+.manpower-dish-role:last-child {
+  border-bottom: 0;
+}
+
+.manpower-dish-role.is-assigned {
+  background: rgba(74, 156, 255, .055);
+}
+
+.manpower-dish-role > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.manpower-dish-role > label input {
+  accent-color: #4a9cff;
+}
+
+.manpower-dish-role > label b,
+.manpower-dish-role > label small {
+  display: block;
+}
+
+.manpower-dish-role > label b {
+  overflow: hidden;
+  color: #dce5ef;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manpower-dish-role > label small {
+  margin-top: 2px;
+  color: #748293;
+  font-size: 8px;
+}
+
+.manpower-dish-role-quantity {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.manpower-dish-role-quantity > small {
+  color: #768495;
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.manpower-dish-role-quantity .manpower-quantity-control {
+  grid-template-columns: 28px 36px 28px;
+  min-height: 34px;
+}
+
+.manpower-dish-role-quantity .manpower-quantity-control input {
+  width: 36px;
+  font-size: 11px;
+}
+
+.manpower-dish-role-quantity .manpower-quantity-control button {
+  font-size: 14px;
+}
+
+.manpower-menu-empty {
+  display: grid;
+  gap: 4px;
+  padding: 24px;
+  border: 1px dashed #324152;
+  border-radius: 13px;
+  text-align: center;
+}
+
+.manpower-menu-empty b {
+  color: #dbe5ef;
+  font-size: 12px;
+}
+
+.manpower-menu-empty span {
+  color: #7f8c9d;
+  font-size: 9px;
+}
+
+@media (max-width: 820px) {
+  .manpower-dish-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .manpower-menu-board {
+    margin: 12px;
+    padding: 12px;
+  }
+
+  .manpower-menu-board-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .manpower-dish-role {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .manpower-dish-role-quantity {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .manpower-dish-role-quantity .manpower-quantity-control {
+    grid-template-columns: 40px minmax(40px, 1fr) 40px;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .manpower-dish-role-quantity .manpower-quantity-control input {
+    width: 100%;
+    font-size: 15px;
+  }
+}
+
 
 .used-ingredient-body {
   display: grid;
