@@ -232,16 +232,103 @@ export default function FinalCostingPage() {
   ).length;
 
   async function downloadInternalCostingPdf() {
-    const {
-      downloadInternalEventCostingPdf,
-    } =
-      await import(
-        '../../../lib/internalEventCostingPdf'
-      );
+    const [
+      pdfModule,
+      groceryModule,
+    ] =
+      await Promise.all([
+        import(
+          '../../../lib/internalEventCostingPdf'
+        ),
+        import(
+          '../../../lib/functionGrocery'
+        ),
+      ]);
 
-    downloadInternalEventCostingPdf(
+    let groceryPlan = null;
+
+    try {
+      const dishNames =
+        Array.from(
+          new Set(
+            work.menu
+              .filter(
+                (item) =>
+                  item.coverageStatus !==
+                  'REJECTED',
+              )
+              .map(
+                (item) =>
+                  item.name,
+              )
+              .filter(Boolean),
+          ),
+        );
+
+      const [
+        recipeResponse,
+        rateResponse,
+      ] =
+        await Promise.all([
+          fetch(
+            '/api/recipe-ingredients',
+            {
+              method:
+                'POST',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body:
+                JSON.stringify({
+                  dishNames,
+                }),
+            },
+          ),
+          fetch(
+            '/api/client/ingredients',
+            {
+              cache:
+                'no-store',
+            },
+          ),
+        ]);
+
+      const [
+        recipeData,
+        rateData,
+      ] =
+        await Promise.all([
+          recipeResponse.json(),
+          rateResponse.json(),
+        ]);
+
+      if (
+        recipeResponse.ok &&
+        rateResponse.ok
+      ) {
+        groceryPlan =
+          groceryModule.buildFunctionGroceryPlan(
+            work,
+            Array.isArray(
+              recipeData.recipes,
+            )
+              ? recipeData.recipes
+              : [],
+            Array.isArray(
+              rateData.rates,
+            )
+              ? rateData.rates
+              : [],
+          );
+      }
+    } catch {
+      // PDF still downloads with the saved costing data if grocery APIs are unavailable.
+    }
+
+    pdfModule.downloadInternalEventCostingPdf(
       work,
-      null,
+      groceryPlan,
       gasBreakdown,
     );
   }
