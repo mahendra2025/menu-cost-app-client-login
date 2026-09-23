@@ -844,6 +844,7 @@ export default function GroceryPage() {
 
   async function downloadPdf() {
     if (
+      !work ||
       !plan ||
       !plan.combinedItems
         .length
