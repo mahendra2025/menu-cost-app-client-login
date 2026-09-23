@@ -13,34 +13,75 @@ type ClientNavIcon = 'event' | 'cost' | 'grocery' | 'team' | 'expenses' | 'prici
 type ClientFlowStep = {
   step: number;
   label: string;
+  desktopStep: number;
+  desktopLabel: string;
 };
 
 function clientFlowForPath(pathname: string): ClientFlowStep | null {
-  if (
-    pathname === '/app/event' ||
-    pathname === '/app/cost' ||
-    pathname === '/app/grocery'
-  ) {
-    return { step: 1, label: 'Event & Menu' };
+  if (pathname === '/app/event') {
+    return {
+      step: 1,
+      label: 'Event',
+      desktopStep: 1,
+      desktopLabel: 'Event & Menu',
+    };
+  }
+
+  if (pathname === '/app/cost') {
+    return {
+      step: 1,
+      label: 'Event',
+      desktopStep: 2,
+      desktopLabel: 'Dish Cost',
+    };
+  }
+
+  if (pathname === '/app/grocery') {
+    return {
+      step: 1,
+      label: 'Event',
+      desktopStep: 3,
+      desktopLabel: 'Grocery',
+    };
   }
 
   if (pathname === '/app/team') {
-    return { step: 2, label: 'Team' };
+    return {
+      step: 2,
+      label: 'Team',
+      desktopStep: 4,
+      desktopLabel: 'Manpower',
+    };
   }
 
   if (
     pathname === '/app/operations' ||
     pathname === '/app/disposable'
   ) {
-    return { step: 3, label: 'Expenses' };
+    return {
+      step: 3,
+      label: 'Expenses',
+      desktopStep: 5,
+      desktopLabel: 'Operations',
+    };
   }
 
   if (pathname === '/app/final-costing') {
-    return { step: 4, label: 'Pricing' };
+    return {
+      step: 4,
+      label: 'Pricing',
+      desktopStep: 6,
+      desktopLabel: 'Final Cost',
+    };
   }
 
   if (pathname === '/app/quotation') {
-    return { step: 5, label: 'Quotation' };
+    return {
+      step: 5,
+      label: 'Quotation',
+      desktopStep: 7,
+      desktopLabel: 'Quotation',
+    };
   }
 
   return null;
@@ -551,8 +592,8 @@ export default function AppShell({
               {clientFlow ? (
                 <div className="client-desktop-page-step">
                   <span>{t('Workflow')}</span>
-                  <b>{t(clientFlow.label)}</b>
-                  <small>{t(`Step ${clientFlow.step} of 5`)}</small>
+                  <b>{t(clientFlow.desktopLabel)}</b>
+                  <small>{t(`Step ${clientFlow.desktopStep} of 7`)}</small>
                 </div>
               ) : null}
             </section>
