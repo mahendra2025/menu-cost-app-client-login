@@ -138,6 +138,14 @@ type NewEventDraft = {
   pax: string;
 };
 
+type ExistingFunctionDishTarget = {
+  key: string;
+  serviceId?: string;
+  dayLabel?: string;
+  mealLabel: string;
+  servicePax: number;
+};
+
 type AiMenuExtraction = {
   eventDetails?: Partial<
     Record<
@@ -1036,6 +1044,13 @@ export default function EventPage() {
   );
 
   const [
+    addDishFunctionTarget,
+    setAddDishFunctionTarget,
+  ] = useState<ExistingFunctionDishTarget | null>(
+    null,
+  );
+
+  const [
     savingDishMasterIds,
     setSavingDishMasterIds,
   ] = useState<Set<string>>(
@@ -1380,29 +1395,56 @@ export default function EventPage() {
     }
   }
 
-  async function openManualDishSelector() {
-    const functionName =
-      importFunctionName.trim() ||
-      work?.event.functionType ||
-      'Event Menu';
-
-    if (!importFunctionName.trim()) {
-      setImportFunctionName(
-        functionName,
+  async function openManualDishSelector(
+    target?: ExistingFunctionDishTarget,
+  ) {
+    if (target) {
+      setAddDishFunctionTarget(
+        target,
       );
-    }
-
-    if (
-      !importFunctionPax.trim() &&
-      Number(
-        work?.event.pax,
-      ) > 0
-    ) {
+      setImportFunctionName(
+        target.mealLabel,
+      );
       setImportFunctionPax(
         String(
-          work?.event.pax,
+          target.servicePax,
         ),
       );
+      setSelectedManualDishKeys(
+        new Set(),
+      );
+      setManualDishSearch('');
+      setManualDishCategory(
+        'ALL',
+      );
+    } else {
+      setAddDishFunctionTarget(
+        null,
+      );
+
+      const functionName =
+        importFunctionName.trim() ||
+        work?.event.functionType ||
+        'Event Menu';
+
+      if (!importFunctionName.trim()) {
+        setImportFunctionName(
+          functionName,
+        );
+      }
+
+      if (
+        !importFunctionPax.trim() &&
+        Number(
+          work?.event.pax,
+        ) > 0
+      ) {
+        setImportFunctionPax(
+          String(
+            work?.event.pax,
+          ),
+        );
+      }
     }
 
     setError('');
@@ -1600,6 +1642,127 @@ export default function EventPage() {
           };
         },
       );
+
+    if (addDishFunctionTarget) {
+      const existingDishKeys =
+        new Set(
+          work.menu
+            .filter(
+              (item) =>
+                detectionGroupKeyForItem(
+                  item,
+                ) ===
+                addDishFunctionTarget.key,
+            )
+            .map(
+              (item) =>
+                dishNameKey(
+                  item.name,
+                ),
+            ),
+        );
+
+      const newItems =
+        manualMenu
+          .filter(
+            (item) =>
+              !existingDishKeys.has(
+                dishNameKey(
+                  item.name,
+                ),
+              ),
+          )
+          .map(
+            (item) => ({
+              ...item,
+              serviceId:
+                addDishFunctionTarget.serviceId,
+              dayLabel:
+                addDishFunctionTarget.dayLabel,
+              mealLabel:
+                addDishFunctionTarget.mealLabel,
+              servicePax:
+                addDishFunctionTarget.servicePax,
+            }),
+          );
+
+      if (!newItems.length) {
+        setError(
+          'Selected dishes already exist in this function.',
+        );
+        return;
+      }
+
+      const nextWork:
+        WorkState = {
+          ...work,
+          menu: [
+            ...work.menu,
+            ...newItems,
+          ],
+        };
+
+      persistWork(
+        nextWork,
+      );
+
+      flushWorkSave(
+        session.tenantId,
+      );
+
+      await flushDraftToServer(
+        session.tenantId,
+        nextWork,
+      );
+
+      void trackProductEvent(
+        'menu_saved',
+        {
+          costingKey:
+            getCostingAnalyticsKey(
+              nextWork,
+            ),
+          dishCount:
+            nextWork.menu.length,
+          importedDishCount:
+            newItems.length,
+          functionName:
+            addDishFunctionTarget.mealLabel,
+          mode:
+            'add_dish_to_existing_function',
+        },
+      );
+
+      setShowManualDishSelector(
+        false,
+      );
+      setAddDishFunctionTarget(
+        null,
+      );
+      setSelectedManualDishKeys(
+        new Set(),
+      );
+      setManualDishSearch('');
+      setManualDishCategory(
+        'ALL',
+      );
+      setError('');
+
+      window.setTimeout(
+        () =>
+          document
+            .getElementById(
+              'savedEventMenu',
+            )
+            ?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            }),
+        40,
+      );
+
+      return;
+    }
 
     const {
       menu: mergedMenu,
@@ -9143,10 +9306,13 @@ export default function EventPage() {
                     <button
                       className="ghost-button"
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
                         setShowManualDishSelector(
                           false,
-                        )
+                        );
+                        setAddDishFunctionTarget(
+                          null,
+                        );
                       }
                     >
                       Close
@@ -9160,6 +9326,9 @@ export default function EventPage() {
                         id="manualFunctionName"
                         className="input"
                         value={importFunctionName}
+                        readOnly={Boolean(
+                          addDishFunctionTarget,
+                        )}
                         onChange={(event) => {
                           setImportFunctionName(
                             event.target.value,
@@ -9180,6 +9349,9 @@ export default function EventPage() {
                         step="1"
                         inputMode="numeric"
                         value={importFunctionPax}
+                        readOnly={Boolean(
+                          addDishFunctionTarget,
+                        )}
                         onChange={(event) => {
                           setImportFunctionPax(
                             event.target.value,
@@ -9454,7 +9626,9 @@ export default function EventPage() {
                         void addManualMenuAndContinue()
                       }
                     >
-                      Add Selected & Continue
+                      {addDishFunctionTarget
+                        ? `Add Selected to ${addDishFunctionTarget.mealLabel}`
+                        : 'Add Selected & Continue'}
                     </button>
                   </div>
                 </div>
