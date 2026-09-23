@@ -7594,6 +7594,66 @@ export default function EventPage() {
         'REJECTED',
     ).length;
 
+  const savedMenuDishCount =
+    work.menu.length;
+
+  const savedMenuPricedCount =
+    work.menu.filter(
+      (item) =>
+        Number(
+          item.costPerPlate,
+        ) > 0,
+    ).length;
+
+  const savedMenuMissingRateCount =
+    Math.max(
+      0,
+      savedMenuDishCount -
+        savedMenuPricedCount,
+    );
+
+  const savedMenuCostPerPlate =
+    work.menu.reduce(
+      (sum, item) =>
+        sum +
+        Math.max(
+          0,
+          Number(
+            item.costPerPlate,
+          ) || 0,
+        ),
+      0,
+    );
+
+  const savedMenuFoodEstimate =
+    work.menu.reduce(
+      (sum, item) => {
+        const guests =
+          Math.max(
+            0,
+            Number(
+              item.servicePax,
+            ) ||
+              Number(
+                work.event.pax,
+              ) ||
+              0,
+          );
+
+        return (
+          sum +
+          Math.max(
+            0,
+            Number(
+              item.costPerPlate,
+            ) || 0,
+          ) *
+            guests
+        );
+      },
+      0,
+    );
+
   return (
     <AppShell
       title="Create Event"
@@ -8090,7 +8150,188 @@ export default function EventPage() {
             </button>
           </div>
 
+          <aside className="event-desktop-summary no-print" aria-label="Event costing status">
+            <div className="event-desktop-summary-head">
+              <span>Event status</span>
+              <b>
+                {savedMenuDishCount > 0
+                  ? 'Menu saved'
+                  : 'Menu not added'}
+              </b>
+              <small>
+                {savedMenuDishCount > 0
+                  ? `${savedMenuPricedCount}/${savedMenuDishCount} dish rates ready`
+                  : 'Upload or select dishes to begin costing.'}
+              </small>
+            </div>
+
+            <div className="event-desktop-summary-stats">
+              <div>
+                <span>Dishes</span>
+                <b>{savedMenuDishCount}</b>
+              </div>
+              <div>
+                <span>Guests</span>
+                <b>
+                  {Number(work.event.pax) > 0
+                    ? Number(work.event.pax).toLocaleString('en-IN')
+                    : '—'}
+                </b>
+              </div>
+              <div>
+                <span>Missing rates</span>
+                <b className={savedMenuMissingRateCount > 0 ? 'needs-attention' : ''}>
+                  {savedMenuMissingRateCount}
+                </b>
+              </div>
+            </div>
+
+            <div className="event-desktop-cost-card">
+              <span>Current food estimate</span>
+              <strong>
+                ₹{Math.round(savedMenuFoodEstimate).toLocaleString('en-IN')}
+              </strong>
+              <small>
+                Sum of saved dish rates: ₹{savedMenuCostPerPlate.toFixed(2)}
+              </small>
+            </div>
+
+            <div className="event-desktop-summary-checklist">
+              <div className={work.event.clientName ? 'is-complete' : ''}>
+                <i aria-hidden="true">{work.event.clientName ? '✓' : '1'}</i>
+                <span>
+                  <b>Event details</b>
+                  <small>{work.event.clientName ? 'Client added' : 'Add client and event details'}</small>
+                </span>
+              </div>
+              <div className={savedMenuDishCount > 0 ? 'is-complete' : ''}>
+                <i aria-hidden="true">{savedMenuDishCount > 0 ? '✓' : '2'}</i>
+                <span>
+                  <b>Menu</b>
+                  <small>{savedMenuDishCount > 0 ? `${savedMenuDishCount} dishes saved` : 'Upload or select dishes'}</small>
+                </span>
+              </div>
+              <div className={savedMenuDishCount > 0 && savedMenuMissingRateCount === 0 ? 'is-complete' : ''}>
+                <i aria-hidden="true">{savedMenuDishCount > 0 && savedMenuMissingRateCount === 0 ? '✓' : '3'}</i>
+                <span>
+                  <b>Dish rates</b>
+                  <small>
+                    {savedMenuDishCount > 0 && savedMenuMissingRateCount === 0
+                      ? 'Ready for cost review'
+                      : savedMenuDishCount > 0
+                        ? `${savedMenuMissingRateCount} rates need attention`
+                        : 'Complete menu first'}
+                  </small>
+                </span>
+              </div>
+            </div>
+
+            {savedMenuDishCount > 0 ? (
+              <a className="primary-button event-desktop-continue" href="/app/cost">
+                Continue to Dish Cost
+                <span aria-hidden="true">→</span>
+              </a>
+            ) : (
+              <button
+                className="primary-button event-desktop-continue"
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById(
+                      'simpleMenuFileUpload',
+                    )
+                    ?.click()
+                }
+              >
+                Upload Menu
+                <span aria-hidden="true">↑</span>
+              </button>
+            )}
+
+            <button
+              className="event-desktop-edit-details"
+              type="button"
+              onClick={openNewEventForm}
+            >
+              Edit event details
+            </button>
+          </aside>
+
           <div className="form-grid">
+            {work.menu.length > 0 ? (
+              <section className="event-desktop-saved-menu no-print" aria-label="Saved event menu">
+                <div className="event-desktop-saved-menu-head">
+                  <div>
+                    <span>Saved menu</span>
+                    <h2>{work.menu.length} dishes in this event</h2>
+                    <p>Review the current menu before adding another function or continuing to costing.</p>
+                  </div>
+                  <a href="/app/cost">
+                    Review dish cost
+                    <span aria-hidden="true">→</span>
+                  </a>
+                </div>
+
+                <div className="event-desktop-menu-table-wrap">
+                  <table className="event-desktop-menu-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Dish</th>
+                        <th>Category</th>
+                        <th>Function</th>
+                        <th>Guests</th>
+                        <th>₹ / Plate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {work.menu.map((item, index) => {
+                        const guests =
+                          Math.max(
+                            0,
+                            Number(
+                              item.servicePax,
+                            ) ||
+                              Number(
+                                work.event.pax,
+                              ) ||
+                              0,
+                          );
+
+                        const rate =
+                          Math.max(
+                            0,
+                            Number(
+                              item.costPerPlate,
+                            ) || 0,
+                          );
+
+                        return (
+                          <tr key={item.id}>
+                            <td>{index + 1}</td>
+                            <td>
+                              <b>{item.name}</b>
+                              <small>{item.dayLabel || 'Event menu'}</small>
+                            </td>
+                            <td>{item.category || 'Other'}</td>
+                            <td>{item.mealLabel || work.event.functionType || 'Event Menu'}</td>
+                            <td>{guests > 0 ? guests.toLocaleString('en-IN') : '—'}</td>
+                            <td>
+                              {rate > 0 ? (
+                                <strong>₹{rate.toFixed(2)}</strong>
+                              ) : (
+                                <span className="event-desktop-rate-missing">Rate needed</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ) : null}
+
             <div className={`menu-source-workspace${detectionPreview ? ' is-detected' : ''}${showManualDishSelector ? ' is-manual-selection' : ''}`}>
               <div className="event-upload-simple">
                 {!detectionPreview ? (
