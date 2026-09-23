@@ -82,6 +82,59 @@ test('chef manpower uses one dish = one chef by category', () => {
   assert.equal(result.find((row) => row.role === 'Main Course Cook')?.quantity, 4);
 });
 
+test('automatic dish assignment maps each kitchen role only to matching dishes', () => {
+  const result = rows();
+
+  assert.deepEqual(
+    result.find((row) => row.role === 'Bread Cook')?.assignedDishIds,
+    ['bread_1', 'bread_2', 'bread_3'],
+  );
+  assert.deepEqual(
+    result.find((row) => row.role === 'Chaat Cook')?.assignedDishIds,
+    ['chaat_1'],
+  );
+  assert.deepEqual(
+    result.find((row) => row.role === 'Sweet / Halwai Cook')?.assignedDishIds,
+    ['sweet_1', 'sweet_2'],
+  );
+  assert.deepEqual(
+    result.find((row) => row.role === 'Farsan Cook')?.assignedDishIds,
+    ['farsan_1'],
+  );
+  assert.deepEqual(
+    result.find((row) => row.role === 'Main Course Cook')?.assignedDishIds,
+    ['sabji_1', 'sabji_2', 'dal_1', 'rice_1'],
+  );
+  assert.deepEqual(
+    result.find((row) => row.role === 'Waiter')?.assignedDishIds,
+    [],
+  );
+});
+
+test('stale automatic all-dish assignments are recalculated by category', () => {
+  const result = rows({
+    existingRows: [
+      {
+        id: 'saved_auto_bread',
+        role: 'Bread Cook',
+        quantity: 3,
+        rate: 2500,
+        recommendedQuantity: 3,
+        manualOverride: false,
+        calculationSource: 'AUTO',
+        serviceId: 'lunch',
+        mealLabel: 'Lunch',
+        assignedDishIds: sampleMenu.map((item) => item.id),
+      },
+    ],
+  });
+
+  assert.deepEqual(
+    result.find((row) => row.role === 'Bread Cook')?.assignedDishIds,
+    ['bread_1', 'bread_2', 'bread_3'],
+  );
+});
+
 test('manual quantity override survives automatic recalculation', () => {
   const result = rows({
     existingRows: [

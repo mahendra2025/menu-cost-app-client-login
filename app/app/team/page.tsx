@@ -342,7 +342,7 @@ function DishManpowerBoard({
       <div className="manpower-menu-board-heading">
         <div>
           <h3>Menu &amp; kitchen manpower</h3>
-          <p>Open a dish and add the cooks or helpers responsible for it.</p>
+          <p>Cooks and helpers are auto-selected from each dish category. Open a dish only if you want to adjust the assignment.</p>
         </div>
         <span className={staffedDishCount === dishes.length ? 'is-complete' : ''}>
           {staffedDishCount}/{dishes.length} staffed
@@ -375,12 +375,12 @@ function DishManpowerBoard({
                     </span>
                   ))
                 ) : (
-                  <span className="is-empty">No kitchen manpower assigned</span>
+                  <span className="is-empty">No automatic kitchen manpower detected</span>
                 )}
               </div>
 
               <details className="manpower-dish-add">
-                <summary>+ Add manpower</summary>
+                <summary>Adjust manpower</summary>
                 <div className="manpower-dish-add-panel">
                   {kitchenRows.map((row) => {
                     const quantity = Math.max(0, Number(row.quantity) || 0);
@@ -405,7 +405,7 @@ function DishManpowerBoard({
                             <b>{row.role}</b>
                             <small>
                               {row.recommendedQuantity !== undefined
-                                ? `Auto recommendation: ${row.recommendedQuantity}`
+                                ? `Auto selected: ${row.recommendedQuantity}`
                                 : 'Manual kitchen role'}
                             </small>
                           </span>
@@ -625,11 +625,11 @@ export default function ManpowerPage() {
 
     updateRow(row.id, {
       assignedDishIds: Array.from(currentIds),
+      manualOverride: true,
+      calculationSource: 'MANUAL',
       ...(assigned && quantity === 0
         ? {
             quantity: 1,
-            manualOverride: true,
-            calculationSource: 'MANUAL' as const,
           }
         : {}),
     });
@@ -788,7 +788,7 @@ export default function ManpowerPage() {
   return (
     <AppShell
       title="Team"
-      subtitle="Open each menu dish and add its cooks and helpers"
+      subtitle="Manpower is auto-selected from the menu and guest count. Adjust only if needed."
     >
       <section className="content-grid manpower-page">
         <div className="manpower-overview manpower-overview-v2">
@@ -796,7 +796,7 @@ export default function ManpowerPage() {
             <span className="page-eyebrow">Meal-wise manpower costing</span>
             <h2>Build the team from the menu</h2>
             <p>
-              Review each meal's dishes and add the cooks or helpers responsible for preparing them. Service and utility roles remain available below.
+              The system auto-selects cooks, helpers, service and utility manpower from the menu, categories and guest count. Review or override only when your event needs something different.
             </p>
           </div>
 
