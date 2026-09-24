@@ -26,8 +26,11 @@ import { getSession, uid } from '../../../lib/store';
 
 import {
   DEFAULT_GAS_CATEGORY_RATES,
+  DEFAULT_LPG_SETTING,
   categoryGasKgPer100,
+  lpgRatePerKg,
   type GasCategoryRateValue,
+  type LpgCostSetting,
 } from '../../../lib/gasCost';
 
 type ParsedDishItem = DishCostItem & {
@@ -49,6 +52,7 @@ type DishRowErrors = {
   servingQuantity?: string;
   servingUnit?: string;
   aliases?: string;
+  gasProfile?: string;
 };
 
 const DISHES_PER_PAGE = 24;
@@ -132,6 +136,51 @@ function parseDishItems(items: unknown): ParsedDishItem[] {
               Number(row.gasKgPer100) || 0,
             );
 
+      const optionalGasNumber = (value: unknown) =>
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ''
+          ? undefined
+          : Math.max(
+              0,
+              Number(value) || 0,
+            );
+
+      const gasBurnerKgPerHour =
+        optionalGasNumber(
+          row.gasBurnerKgPerHour,
+        );
+      const gasCookingMinutes =
+        optionalGasNumber(
+          row.gasCookingMinutes,
+        );
+      const gasBurnerCountRaw =
+        optionalGasNumber(
+          row.gasBurnerCount,
+        );
+      const gasBatchPaxRaw =
+        optionalGasNumber(
+          row.gasBatchPax,
+        );
+      const gasBurnerCount =
+        gasBurnerCountRaw === undefined
+          ? undefined
+          : Math.max(
+              1,
+              Math.round(
+                gasBurnerCountRaw,
+              ),
+            );
+      const gasBatchPax =
+        gasBatchPaxRaw === undefined
+          ? undefined
+          : Math.max(
+              1,
+              Math.round(
+                gasBatchPaxRaw,
+              ),
+            );
+
       const pieceWeightGrams =
         servingUnit.toLowerCase() === 'piece'
           ? (
@@ -162,6 +211,10 @@ function parseDishItems(items: unknown): ParsedDishItem[] {
         servingQuantity,
         servingUnit,
         gasKgPer100,
+        gasBurnerKgPerHour,
+        gasCookingMinutes,
+        gasBurnerCount,
+        gasBatchPax,
         pieceWeightGrams,
         aliases,
       };
@@ -184,6 +237,39 @@ function toDishCostItem(item: EditableDish): DishCostItem {
         : Math.max(
             0,
             Number(item.gasKgPer100) || 0,
+          ),
+
+    gasBurnerKgPerHour:
+      item.gasBurnerKgPerHour === undefined
+        ? undefined
+        : Math.max(
+            0,
+            Number(item.gasBurnerKgPerHour) || 0,
+          ),
+    gasCookingMinutes:
+      item.gasCookingMinutes === undefined
+        ? undefined
+        : Math.max(
+            0,
+            Number(item.gasCookingMinutes) || 0,
+          ),
+    gasBurnerCount:
+      item.gasBurnerCount === undefined
+        ? undefined
+        : Math.max(
+            1,
+            Math.round(
+              Number(item.gasBurnerCount) || 1,
+            ),
+          ),
+    gasBatchPax:
+      item.gasBatchPax === undefined
+        ? undefined
+        : Math.max(
+            1,
+            Math.round(
+              Number(item.gasBatchPax) || 1,
+            ),
           ),
 
     pieceWeightGrams:
@@ -234,6 +320,31 @@ function validateRows(rows: EditableDish[]) {
     if (!(Number(row.servingQuantity) > 0)) rowErrors.servingQuantity = 'Quantity must be greater than 0.';
     if (!String(row.servingUnit || '').trim()) rowErrors.servingUnit = 'Unit is required.';
 
+    const realGasValues = [
+      row.gasBurnerKgPerHour,
+      row.gasCookingMinutes,
+      row.gasBurnerCount,
+      row.gasBatchPax,
+    ];
+    const hasAnyRealGas = realGasValues.some((value) => value !== undefined);
+
+    if (hasAnyRealGas) {
+      const hasCompleteRealGas = realGasValues.every(
+        (value) => value !== undefined && Number.isFinite(Number(value)),
+      );
+
+      if (
+        !hasCompleteRealGas ||
+        !(Number(row.gasBurnerKgPerHour) > 0) ||
+        !(Number(row.gasCookingMinutes) > 0) ||
+        !(Number(row.gasBurnerCount) > 0) ||
+        !(Number(row.gasBatchPax) > 0)
+      ) {
+        rowErrors.gasProfile =
+          'Real gas profile needs burner kg/hour > 0, cooking minutes > 0, burners ≥ 1 and batch guests ≥ 1.';
+      }
+    }
+
     const duplicateAliasesInRow = aliases.filter((alias, index) => aliases.findIndex((item) => normalizeToken(item) === normalizeToken(alias)) !== index);
     if (duplicateAliasesInRow.length) rowErrors.aliases = 'Aliases in the same row must be unique.';
 
@@ -275,6 +386,12 @@ export default function AdminDishesPage() {
         }),
       ),
   );
+  const [
+    gasLpgSetting,
+    setGasLpgSetting,
+  ] = useState<LpgCostSetting>({
+    ...DEFAULT_LPG_SETTING,
+  });
   const [categoryQuery, setCategoryQuery] = useState('');
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
@@ -428,6 +545,31 @@ export default function AdminDishesPage() {
             setGasCategoryRates(
               gasData.categoryRates,
             );
+          }
+
+          if (
+            gasData.setting &&
+            typeof gasData.setting ===
+              'object'
+          ) {
+            setGasLpgSetting({
+              cylinderPrice:
+                Math.max(
+                  0,
+                  Number(
+                    gasData.setting.cylinderPrice,
+                  ) ||
+                  DEFAULT_LPG_SETTING.cylinderPrice,
+                ),
+              cylinderWeightKg:
+                Math.max(
+                  0.01,
+                  Number(
+                    gasData.setting.cylinderWeightKg,
+                  ) ||
+                  DEFAULT_LPG_SETTING.cylinderWeightKg,
+                ),
+            });
           }
         }
 
@@ -1387,6 +1529,18 @@ export default function AdminDishesPage() {
               gasKgPer100:
                 item.gasKgPer100 ??
                 null,
+              gasBurnerKgPerHour:
+                item.gasBurnerKgPerHour ??
+                null,
+              gasCookingMinutes:
+                item.gasCookingMinutes ??
+                null,
+              gasBurnerCount:
+                item.gasBurnerCount ??
+                null,
+              gasBatchPax:
+                item.gasBatchPax ??
+                null,
             }),
         },
       );
@@ -2219,9 +2373,66 @@ async function handleCsvImport(
                     gasCategoryRates,
                   );
 
+                const hasRealGasProfile =
+                  row.gasBurnerKgPerHour !== undefined &&
+                  row.gasCookingMinutes !== undefined &&
+                  row.gasBurnerCount !== undefined &&
+                  row.gasBatchPax !== undefined;
+
                 const hasGasOverride =
+                  !hasRealGasProfile &&
                   row.gasKgPer100 !==
-                  undefined;
+                    undefined;
+
+                const realGasBatchesPer100 =
+                  hasRealGasProfile
+                    ? Math.max(
+                        1,
+                        Math.ceil(
+                          100 /
+                          Math.max(
+                            1,
+                            Number(
+                              row.gasBatchPax,
+                            ) || 1,
+                          ),
+                        ),
+                      )
+                    : 0;
+
+                const realGasKgPer100 =
+                  hasRealGasProfile
+                    ? (
+                        Math.max(
+                          0,
+                          Number(
+                            row.gasBurnerKgPerHour,
+                          ) || 0,
+                        ) *
+                        Math.max(
+                          1,
+                          Number(
+                            row.gasBurnerCount,
+                          ) || 1,
+                        ) *
+                        (
+                          Math.max(
+                            0,
+                            Number(
+                              row.gasCookingMinutes,
+                            ) || 0,
+                          ) /
+                          60
+                        ) *
+                        realGasBatchesPer100
+                      )
+                    : 0;
+
+                const realGasCostPer100 =
+                  realGasKgPer100 *
+                  lpgRatePerKg(
+                    gasLpgSetting,
+                  );
 
                 return (
                   <div
@@ -2320,9 +2531,9 @@ async function handleCsvImport(
                     <div className="dish-gas-section-heading">
                       <div>
                         <span className="section-kicker">Gas Calculation</span>
-                        <h3>LPG usage for this dish</h3>
+                        <h3>Real LPG usage for this dish</h3>
                         <p>
-                          Category Default: <b>{categoryGasDefault.toFixed(2)} kg / 100 pax</b>
+                          Preferred: cooking profile. Fallback: measured kg / 100, then category default.
                         </p>
                       </div>
                     </div>
@@ -2334,18 +2545,21 @@ async function handleCsvImport(
                     >
                       <button
                         type="button"
-                        className={!hasGasOverride ? 'primary-button' : 'ghost-button'}
+                        className={!hasRealGasProfile && !hasGasOverride ? 'primary-button' : 'ghost-button'}
                         onClick={() =>
                           updateRow(
                             row.id,
                             {
-                              gasKgPer100:
-                                undefined,
+                              gasKgPer100: undefined,
+                              gasBurnerKgPerHour: undefined,
+                              gasCookingMinutes: undefined,
+                              gasBurnerCount: undefined,
+                              gasBatchPax: undefined,
                             },
                           )
                         }
                       >
-                        Auto from Category
+                        Category Default
                       </button>
 
                       <button
@@ -2356,22 +2570,191 @@ async function handleCsvImport(
                             row.id,
                             {
                               gasKgPer100:
-                                hasGasOverride
-                                  ? row.gasKgPer100
-                                  : categoryGasDefault,
+                                row.gasKgPer100 ??
+                                categoryGasDefault,
+                              gasBurnerKgPerHour: undefined,
+                              gasCookingMinutes: undefined,
+                              gasBurnerCount: undefined,
+                              gasBatchPax: undefined,
                             },
                           )
                         }
                       >
-                        Manual Override
+                        Measured kg / 100
+                      </button>
+
+                      <button
+                        type="button"
+                        className={hasRealGasProfile ? 'primary-button' : 'ghost-button'}
+                        onClick={() =>
+                          updateRow(
+                            row.id,
+                            {
+                              gasKgPer100: undefined,
+                              gasBurnerKgPerHour:
+                                row.gasBurnerKgPerHour ??
+                                0,
+                              gasCookingMinutes:
+                                row.gasCookingMinutes ??
+                                0,
+                              gasBurnerCount:
+                                row.gasBurnerCount ??
+                                1,
+                              gasBatchPax:
+                                row.gasBatchPax ??
+                                100,
+                            },
+                          )
+                        }
+                      >
+                        Real Cooking Profile
                       </button>
                     </div>
 
-                    {hasGasOverride ? (
+                    {hasRealGasProfile ? (
+                      <>
+                        <div className="admin-serving-grid dish-real-gas-grid">
+                          <div className="field">
+                            <label>Burner LPG kg / hour</label>
+                            <input
+                              className="input input-large"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={row.gasBurnerKgPerHour ?? 0}
+                              onChange={(event) =>
+                                updateRow(
+                                  row.id,
+                                  {
+                                    gasBurnerKgPerHour:
+                                      Math.max(
+                                        0,
+                                        Number(event.target.value) || 0,
+                                      ),
+                                  },
+                                )
+                              }
+                            />
+                            <small className="dish-field-hint">
+                              Measure your actual burner consumption. Do not guess if accuracy matters.
+                            </small>
+                          </div>
+
+                          <div className="field">
+                            <label>Cooking minutes / batch</label>
+                            <input
+                              className="input input-large"
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={row.gasCookingMinutes ?? 0}
+                              onChange={(event) =>
+                                updateRow(
+                                  row.id,
+                                  {
+                                    gasCookingMinutes:
+                                      Math.max(
+                                        0,
+                                        Number(event.target.value) || 0,
+                                      ),
+                                  },
+                                )
+                              }
+                            />
+                            <small className="dish-field-hint">
+                              Active burner time for one production batch.
+                            </small>
+                          </div>
+
+                          <div className="field">
+                            <label>Burners used</label>
+                            <input
+                              className="input input-large"
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={row.gasBurnerCount ?? 1}
+                              onChange={(event) =>
+                                updateRow(
+                                  row.id,
+                                  {
+                                    gasBurnerCount:
+                                      Math.max(
+                                        1,
+                                        Math.round(
+                                          Number(event.target.value) || 1,
+                                        ),
+                                      ),
+                                  },
+                                )
+                              }
+                            />
+                            <small className="dish-field-hint">
+                              Number of burners running for this dish at the same time.
+                            </small>
+                          </div>
+
+                          <div className="field">
+                            <label>Batch capacity (guests)</label>
+                            <input
+                              className="input input-large"
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={row.gasBatchPax ?? 100}
+                              onChange={(event) =>
+                                updateRow(
+                                  row.id,
+                                  {
+                                    gasBatchPax:
+                                      Math.max(
+                                        1,
+                                        Math.round(
+                                          Number(event.target.value) || 1,
+                                        ),
+                                      ),
+                                  },
+                                )
+                              }
+                            />
+                            <small className="dish-field-hint">
+                              How many guests one batch of this dish serves.
+                            </small>
+                          </div>
+                        </div>
+
+                        {rowErrors.get(row.id)?.gasProfile ? (
+                          <span className="field-error">
+                            {rowErrors.get(row.id)?.gasProfile}
+                          </span>
+                        ) : null}
+
+                        <div className="dish-real-gas-preview">
+                          <span>
+                            <small>100-guest batches</small>
+                            <b>{realGasBatchesPer100}</b>
+                          </span>
+                          <span>
+                            <small>LPG / 100 guests</small>
+                            <b>{realGasKgPer100.toFixed(3)} kg</b>
+                          </span>
+                          <span>
+                            <small>Gas cost / 100</small>
+                            <b>₹{realGasCostPer100.toFixed(2)}</b>
+                          </span>
+                          <span>
+                            <small>LPG rate</small>
+                            <b>₹{lpgRatePerKg(gasLpgSetting).toFixed(2)} / kg</b>
+                          </span>
+                        </div>
+
+                        <small className="dish-field-hint">
+                          Formula: burner kg/hour × burners × cooking hours × ceil(guests ÷ batch capacity).
+                        </small>
+                      </>
+                    ) : hasGasOverride ? (
                       <div className="field dish-gas-manual-field">
-                        <label>
-                          Gas LPG kg / 100 pax
-                        </label>
+                        <label>Measured LPG kg / 100 guests</label>
 
                         <input
                           className="input input-large"
@@ -2386,9 +2769,7 @@ async function handleCsvImport(
                                 gasKgPer100:
                                   Math.max(
                                     0,
-                                    Number(
-                                      event.target.value,
-                                    ) || 0,
+                                    Number(event.target.value) || 0,
                                   ),
                               },
                             )
@@ -2396,16 +2777,15 @@ async function handleCsvImport(
                         />
 
                         <small className="dish-field-hint">
-                          This overrides the {row.category || 'category'} default only for this dish.
+                          Use this when you have measured total gas for 100 guests but do not yet have burner/time/batch data.
                         </small>
                       </div>
                     ) : (
                       <small className="dish-field-hint">
-                        Auto mode uses {categoryGasDefault.toFixed(2)} kg LPG per 100 guests from the Gas Category Master.
+                        Category fallback: {categoryGasDefault.toFixed(2)} kg LPG / 100 guests for {row.category || 'this category'}.
                       </small>
                     )}
                   </section>
-
                   <details className="admin-alias-section" open={Boolean(rowErrors.get(row.id)?.aliases) || undefined}>
                     <summary>
                       <span>Aliases &amp; search names</span>

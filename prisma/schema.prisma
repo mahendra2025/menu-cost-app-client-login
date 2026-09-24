@@ -109,8 +109,12 @@ model DishMasterItem {
   rate            Float
   servingQuantity Float    @default(1)
   servingUnit     String   @default("serving")
-  gasKgPer100     Float?
-  aliases         Json
+  gasKgPer100          Float?
+  gasBurnerKgPerHour   Float?
+  gasCookingMinutes    Float?
+  gasBurnerCount       Int?
+  gasBatchPax          Int?
+  aliases              Json
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

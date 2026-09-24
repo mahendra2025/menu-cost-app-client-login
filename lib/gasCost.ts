@@ -18,7 +18,11 @@ export type GasCategoryRateValue = {
 export type DishGasOverrideValue = {
   name: string;
   category?: string;
-  gasKgPer100: number;
+  gasKgPer100?: number;
+  gasBurnerKgPerHour?: number;
+  gasCookingMinutes?: number;
+  gasBurnerCount?: number;
+  gasBatchPax?: number;
 };
 
 export type GasCostMaster = {
@@ -41,7 +45,13 @@ export type GasDishCostRow = {
   gasKg: number;
   lpgRatePerKg: number;
   gasCost: number;
+  gasBurnerKgPerHour?: number;
+  gasCookingMinutes?: number;
+  gasBurnerCount?: number;
+  gasBatchPax?: number;
+  gasBatches?: number;
   source:
+    | 'REAL_DISH_PROFILE'
     | 'DISH_OVERRIDE'
     | 'CATEGORY'
     | 'ZERO_FALLBACK';
@@ -322,6 +332,106 @@ function directDishOverride(
     : undefined;
 }
 
+type RealDishGasProfile = {
+  gasBurnerKgPerHour: number;
+  gasCookingMinutes: number;
+  gasBurnerCount: number;
+  gasBatchPax: number;
+};
+
+function realDishGasProfile(
+  override:
+    | DishGasOverrideValue
+    | undefined,
+): RealDishGasProfile | null {
+  if (!override) return null;
+
+  const gasBurnerKgPerHour =
+    Number(
+      override.gasBurnerKgPerHour,
+    );
+  const gasCookingMinutes =
+    Number(
+      override.gasCookingMinutes,
+    );
+  const gasBurnerCount =
+    Number(
+      override.gasBurnerCount,
+    );
+  const gasBatchPax =
+    Number(
+      override.gasBatchPax,
+    );
+
+  if (
+    !Number.isFinite(gasBurnerKgPerHour) ||
+    gasBurnerKgPerHour <= 0 ||
+    !Number.isFinite(gasCookingMinutes) ||
+    gasCookingMinutes <= 0 ||
+    !Number.isFinite(gasBurnerCount) ||
+    gasBurnerCount <= 0 ||
+    !Number.isFinite(gasBatchPax) ||
+    gasBatchPax <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    gasBurnerKgPerHour,
+    gasCookingMinutes,
+    gasBurnerCount:
+      Math.max(
+        1,
+        Math.round(
+          gasBurnerCount,
+        ),
+      ),
+    gasBatchPax:
+      Math.max(
+        1,
+        Math.round(
+          gasBatchPax,
+        ),
+      ),
+  };
+}
+
+function realDishGasKg(
+  guests: number,
+  profile: RealDishGasProfile,
+) {
+  if (!(guests > 0)) {
+    return {
+      gasKg: 0,
+      batches: 0,
+    };
+  }
+
+  const batches =
+    Math.max(
+      1,
+      Math.ceil(
+        guests /
+        profile.gasBatchPax,
+      ),
+    );
+
+  const gasKgPerBatch =
+    profile.gasBurnerKgPerHour *
+    profile.gasBurnerCount *
+    (
+      profile.gasCookingMinutes /
+      60
+    );
+
+  return {
+    gasKg:
+      gasKgPerBatch *
+      batches,
+    batches,
+  };
+}
+
 export function calculateEventGas(
   work: WorkState,
   master?:
@@ -515,6 +625,11 @@ export function calculateEventGas(
           dishKey,
         );
 
+      const realProfile =
+        realDishGasProfile(
+          masterOverride,
+        );
+
       const hasOverride =
         directOverride !==
           undefined ||
@@ -528,10 +643,13 @@ export function calculateEventGas(
           )
         );
 
-      const gasKgPer100 =
+      const fallbackGasKgPer100 =
         directOverride ??
         (
+          masterOverride &&
           masterOverride
+            .gasKgPer100 !==
+              undefined
             ? safe(
                 masterOverride
                   .gasKgPer100,
@@ -542,10 +660,28 @@ export function calculateEventGas(
               )
         );
 
+      const realGas =
+        realProfile
+          ? realDishGasKg(
+              guests,
+              realProfile,
+            )
+          : null;
+
       const gasKg =
-        gasKgPer100 *
-        guests /
-        100;
+        realGas
+          ? realGas.gasKg
+          : fallbackGasKgPer100 *
+            guests /
+            100;
+
+      const gasKgPer100 =
+        realProfile
+          ? realDishGasKg(
+              100,
+              realProfile,
+            ).gasKg
+          : fallbackGasKgPer100;
 
       const gasCost =
         gasKg *
@@ -580,12 +716,29 @@ export function calculateEventGas(
         lpgRatePerKg:
           ratePerKg,
         gasCost,
+        gasBurnerKgPerHour:
+          realProfile
+            ?.gasBurnerKgPerHour,
+        gasCookingMinutes:
+          realProfile
+            ?.gasCookingMinutes,
+        gasBurnerCount:
+          realProfile
+            ?.gasBurnerCount,
+        gasBatchPax:
+          realProfile
+            ?.gasBatchPax,
+        gasBatches:
+          realGas
+            ?.batches,
         source:
-          hasOverride
-            ? 'DISH_OVERRIDE'
-            : gasKgPer100 > 0
-              ? 'CATEGORY'
-              : 'ZERO_FALLBACK',
+          realProfile
+            ? 'REAL_DISH_PROFILE'
+            : hasOverride
+              ? 'DISH_OVERRIDE'
+              : gasKgPer100 > 0
+                ? 'CATEGORY'
+                : 'ZERO_FALLBACK',
       });
     },
   );

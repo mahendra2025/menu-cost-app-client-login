@@ -218,6 +218,27 @@ export default function OperationsCostPage() {
     ],
   );
 
+  const realGasDishCount =
+    gasBreakdown?.rows.filter(
+      (row) =>
+        row.source ===
+        'REAL_DISH_PROFILE',
+    ).length || 0;
+
+  const measuredGasDishCount =
+    gasBreakdown?.rows.filter(
+      (row) =>
+        row.source ===
+        'DISH_OVERRIDE',
+    ).length || 0;
+
+  const categoryFallbackDishCount =
+    gasBreakdown?.rows.filter(
+      (row) =>
+        row.source ===
+        'CATEGORY',
+    ).length || 0;
+
   function persist(nextOperations: OperationsCostState, nextMessage = '') {
     if (!work || !session) return;
 
@@ -342,7 +363,7 @@ export default function OperationsCostPage() {
           <div>
             <span className="page-eyebrow">Operations cost control</span>
             <h2>Gas, transport and disposable readiness</h2>
-            <p>Gas is calculated from dish/category LPG usage. Transport stays editable, and Plastic & Disposable is the next Operations sub-step.</p>
+            <p>Gas uses each dish's real burner/time/batch profile when available, then measured kg/100, then category fallback. Transport stays editable.</p>
           </div>
           <div className="final-costing-overview-total">
             <span>Gas + transport</span>
@@ -398,6 +419,27 @@ export default function OperationsCostPage() {
                 item.serviceKey === row.id,
             ) || [];
 
+          const realGasDishCount =
+            gasRows.filter(
+              (dish) =>
+                dish.source ===
+                'REAL_DISH_PROFILE',
+            ).length;
+
+          const measuredGasDishCount =
+            gasRows.filter(
+              (dish) =>
+                dish.source ===
+                'DISH_OVERRIDE',
+            ).length;
+
+          const fallbackGasDishCount =
+            gasRows.filter(
+              (dish) =>
+                dish.source ===
+                'CATEGORY',
+            ).length;
+
           const gasTotal =
             gasFunction?.gasCost || 0;
 
@@ -423,46 +465,90 @@ export default function OperationsCostPage() {
               <div className="operations-section-title">
                 <div>
                   <strong>LPG / Gas</strong>
-                  <small>Automatic from Dish Master override or Gas Category Master.</small>
+                  <small>Real dish profile first · measured kg/100 second · category fallback last.</small>
                 </div>
                 <b>{money(gasTotal)}</b>
               </div>
 
               <div className="operations-total-box gas-auto-summary">
-                <span>Automatic LPG used</span>
+                <span>Calculated LPG used</span>
                 <strong>
                   {(gasFunction?.gasKg || 0).toFixed(2)} kg
                 </strong>
                 <small>
                   ₹{(gasBreakdown?.lpgRatePerKg || 0).toFixed(2)} / kg · {row.pax.toLocaleString('en-IN')} guests
                 </small>
+                <small>
+                  {realGasDishCount} real profile · {measuredGasDishCount} measured · {fallbackGasDishCount} category fallback
+                </small>
               </div>
 
               {gasRows.length ? (
-                <div className="gas-mini-table">
+                <div className="gas-mini-table gas-real-table">
                   {gasRows.map(
-                    (dish) => (
-                      <div key={dish.key}>
-                        <span>
-                          <b>{dish.dish}</b>
-                          <small>{dish.category}</small>
-                        </span>
-                        <span>
-                          {dish.gasKgPer100.toFixed(2)} kg / 100
-                        </span>
-                        <span>
-                          {dish.gasKg.toFixed(2)} kg
-                        </span>
-                        <b>
-                          {money(dish.gasCost)}
-                        </b>
-                      </div>
-                    ),
+                    (dish) => {
+                      const sourceLabel =
+                        dish.source === 'REAL_DISH_PROFILE'
+                          ? 'REAL PROFILE'
+                          : dish.source === 'DISH_OVERRIDE'
+                            ? 'MEASURED'
+                            : dish.source === 'CATEGORY'
+                              ? 'CATEGORY'
+                              : 'NO GAS';
+
+                      return (
+                        <div key={dish.key}>
+                          <span>
+                            <b>{dish.dish}</b>
+                            <small>
+                              {dish.category} · {sourceLabel}
+                            </small>
+                          </span>
+
+                          <span>
+                            {dish.source === 'REAL_DISH_PROFILE' ? (
+                              <>
+                                <b>
+                                  {(dish.gasBurnerCount || 1)} burner{(dish.gasBurnerCount || 1) === 1 ? '' : 's'} × {(dish.gasBurnerKgPerHour || 0).toFixed(2)} kg/h
+                                </b>
+                                <small>
+                                  {(dish.gasCookingMinutes || 0).toFixed(0)} min/batch · {dish.gasBatches || 0} batch{(dish.gasBatches || 0) === 1 ? '' : 'es'} · {dish.gasBatchPax || 0} pax/batch
+                                </small>
+                              </>
+                            ) : (
+                              <>
+                                <b>
+                                  {dish.gasKgPer100.toFixed(2)} kg / 100
+                                </b>
+                                <small>
+                                  {dish.source === 'DISH_OVERRIDE'
+                                    ? 'Dish-specific measured rate'
+                                    : dish.source === 'CATEGORY'
+                                      ? 'Category fallback rate'
+                                      : 'Zero gas'}
+                                </small>
+                              </>
+                            )}
+                          </span>
+
+                          <span>
+                            <b>{dish.gasKg.toFixed(3)} kg</b>
+                            <small>
+                              actual for {dish.guests.toLocaleString('en-IN')} guests
+                            </small>
+                          </span>
+
+                          <b>
+                            {money(dish.gasCost)}
+                          </b>
+                        </div>
+                      );
+                    },
                   )}
                 </div>
               ) : (
                 <p className="muted">
-                  No menu dishes are available for automatic gas calculation.
+                  No menu dishes are available for gas calculation.
                 </p>
               )}
 
@@ -537,6 +623,18 @@ export default function OperationsCostPage() {
                 <b>{(gasBreakdown?.totalGasKg || 0).toFixed(2)} kg</b>
               </div>
               <div>
+                <span>Real gas profiles</span>
+                <b>{realGasDishCount}/{gasBreakdown?.rows.length || 0}</b>
+              </div>
+              <div>
+                <span>Measured kg / 100</span>
+                <b>{measuredGasDishCount}</b>
+              </div>
+              <div>
+                <span>Category fallback</span>
+                <b>{categoryFallbackDishCount}</b>
+              </div>
+              <div>
                 <span>Transport mode</span>
                 <b>{operations.transportMode === 'EVENT_SHARED' ? 'Shared' : 'Function-wise'}</b>
               </div>
@@ -547,10 +645,14 @@ export default function OperationsCostPage() {
             </div>
 
             <div className="operations-substep-status">
-              <span className="is-complete">1</span>
+              <span className={categoryFallbackDishCount === 0 ? 'is-complete' : ''}>1</span>
               <div>
                 <b>Gas & Transport</b>
-                <small>Current screen</small>
+                <small>
+                  {categoryFallbackDishCount > 0
+                    ? `${categoryFallbackDishCount} dish${categoryFallbackDishCount === 1 ? '' : 'es'} still use category fallback`
+                    : 'All gas dishes use dish-specific data'}
+                </small>
               </div>
             </div>
 
@@ -591,7 +693,7 @@ export default function OperationsCostPage() {
         </div>
 
         <style>{`
-          .operations-page{padding-bottom:28px}.operations-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.operations-fields{margin-top:16px}.operations-total-box{min-height:78px;padding:13px 15px;border:1px solid rgba(148,163,184,.2);border-radius:14px;background:rgba(148,163,184,.06);display:grid;gap:2px}.operations-total-box span,.operations-total-box small{color:var(--muted);font-size:11px}.operations-total-box strong{font-size:21px}.operations-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 6px;padding-top:18px;border-top:1px solid rgba(148,163,184,.14)}.operations-section-title>div{display:grid;gap:3px}.operations-section-title small{color:var(--muted)}.operations-section-title>b{font-size:18px}.operations-mode-row{margin-top:10px}.operations-function-card{overflow:hidden}.gas-auto-summary{margin-top:12px}.gas-mini-table{display:grid;margin-top:12px;border:1px solid rgba(148,163,184,.14);border-radius:12px;overflow:hidden}.gas-mini-table>div{display:grid;grid-template-columns:minmax(160px,1.4fr) minmax(90px,.7fr) minmax(80px,.6fr) minmax(80px,.6fr);gap:10px;align-items:center;padding:9px 11px;border-top:1px solid rgba(148,163,184,.1);font-size:11px}.gas-mini-table>div:first-child{border-top:0}.gas-mini-table span{display:grid;gap:2px}.gas-mini-table small{color:var(--muted)}@media(max-width:900px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.operations-grid{grid-template-columns:1fr}.gas-mini-table>div{grid-template-columns:1fr 1fr}.gas-mini-table>div>span:first-child{grid-column:1/-1}.operations-mode-row{display:grid;grid-template-columns:1fr}.operations-mode-row button{width:100%}}
+          .operations-page{padding-bottom:28px}.operations-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.operations-fields{margin-top:16px}.operations-total-box{min-height:78px;padding:13px 15px;border:1px solid rgba(148,163,184,.2);border-radius:14px;background:rgba(148,163,184,.06);display:grid;gap:2px}.operations-total-box span,.operations-total-box small{color:var(--muted);font-size:11px}.operations-total-box strong{font-size:21px}.operations-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 6px;padding-top:18px;border-top:1px solid rgba(148,163,184,.14)}.operations-section-title>div{display:grid;gap:3px}.operations-section-title small{color:var(--muted)}.operations-section-title>b{font-size:18px}.operations-mode-row{margin-top:10px}.operations-function-card{overflow:hidden}.gas-auto-summary{margin-top:12px}.gas-mini-table{display:grid;margin-top:12px;border:1px solid rgba(148,163,184,.14);border-radius:12px;overflow:hidden}.gas-mini-table>div{display:grid;grid-template-columns:minmax(160px,1.25fr) minmax(190px,1.15fr) minmax(110px,.7fr) minmax(80px,.5fr);gap:10px;align-items:center;padding:10px 11px;border-top:1px solid rgba(148,163,184,.1);font-size:11px}.gas-mini-table>div:first-child{border-top:0}.gas-mini-table span{display:grid;gap:2px}.gas-mini-table span>b{font-size:10px}.gas-mini-table small{color:var(--muted);font-size:9px;line-height:1.35}@media(max-width:900px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.operations-grid{grid-template-columns:1fr}.gas-mini-table>div{grid-template-columns:1fr 1fr}.gas-mini-table>div>span:first-child{grid-column:1/-1}.operations-mode-row{display:grid;grid-template-columns:1fr}.operations-mode-row button{width:100%}}
         `}</style>
       </section>
     </AppShell>
