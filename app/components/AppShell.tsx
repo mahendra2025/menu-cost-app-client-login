@@ -87,15 +87,44 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
   return null;
 }
 
-const adminNav = [
-  { href: '/admin/users', label: 'Clients', mobileLabel: 'Clients', description: 'Accounts and access', icon: 'clients' as NavIcon },
-  { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish catalog and rates', icon: 'dishes' as NavIcon },
-  { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients and recipe costing', icon: 'dishes' as NavIcon },
-  { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Categories and rates', icon: 'ingredients' as NavIcon },
-  { href: '/admin/gas', label: 'Gas Cost', mobileLabel: 'Gas', description: 'Dish profiles and LPG rates', icon: 'ingredients' as NavIcon },
-  { href: '/admin/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Automatic manpower rules', icon: 'clients' as NavIcon },
-  { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Workspace settings', icon: 'profile' as NavIcon },
+const adminNavGroups = [
+  {
+    label: 'Business',
+    items: [
+      { href: '/admin/users', label: 'Clients', mobileLabel: 'Clients', description: 'Accounts, plans and access', icon: 'clients' as NavIcon },
+    ],
+  },
+  {
+    label: 'Catalog',
+    items: [
+      { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish master and selling rates', icon: 'dishes' as NavIcon },
+      { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients, portions and costing', icon: 'dishes' as NavIcon },
+      { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Ingredient rates and categories', icon: 'ingredients' as NavIcon },
+    ],
+  },
+  {
+    label: 'Cost Masters',
+    items: [
+      { href: '/admin/gas', label: 'Gas Cost', mobileLabel: 'Gas', description: 'LPG rates and dish gas profiles', icon: 'ingredients' as NavIcon },
+      { href: '/admin/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Automatic staffing rules', icon: 'clients' as NavIcon },
+    ],
+  },
+  {
+    label: 'Workspace',
+    items: [
+      { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Business and workspace settings', icon: 'profile' as NavIcon },
+    ],
+  },
 ];
+
+const adminNav =
+  adminNavGroups.flatMap(
+    (group) =>
+      group.items.map((item) => ({
+        ...item,
+        section: group.label,
+      })),
+  );
 
 const clientWorkflowNav = [
   { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Upload and review menu', icon: 'event' as ClientNavIcon },
@@ -290,6 +319,20 @@ export default function AppShell({
     (href === '/admin/ingredients' && isIngredientWorkspace) ||
     (href === '/admin/gas' && isGasWorkspace);
 
+  const activeAdminItem =
+    isAdmin
+      ? adminNav.find(
+          (item) =>
+            isAdminNavItemActive(
+              item.href,
+            ),
+        )
+      : undefined;
+
+  const activeAdminSection =
+    activeAdminItem?.section ||
+    'Admin';
+
   const clientFlow =
     !isAdmin
       ? clientFlowForPath(pathname)
@@ -366,32 +409,56 @@ export default function AppShell({
 
       <div className="app-layout">
         {isAdmin ? (
-          <aside className="app-sidebar no-print">
-            <div className="sidebar-heading">
-              <span>Admin workspace</span>
-              <b>Manage your catalog</b>
+          <aside className="app-sidebar admin-desktop-sidebar no-print">
+            <div className="sidebar-heading admin-sidebar-heading">
+              <span>Admin console</span>
+              <b>Control Center</b>
+              <small>Masters, pricing and access</small>
             </div>
 
-            <nav className="sidebar-nav" aria-label="Admin navigation">
-              {adminNav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={isAdminNavItemActive(item.href) ? 'active' : ''}
-                  aria-current={isAdminNavItemActive(item.href) ? 'page' : undefined}
+            <nav className="sidebar-nav admin-sidebar-nav" aria-label="Admin navigation">
+              {adminNavGroups.map((group) => (
+                <div
+                  className="admin-nav-group"
+                  key={group.label}
                 >
-                  <NavIconMark icon={item.icon} />
-                  <span className="nav-copy">
-                    <b>{item.label}</b>
-                    <small>{item.description}</small>
+                  <span className="admin-nav-group-label">
+                    {group.label}
                   </span>
-                </Link>
+
+                  <div className="admin-nav-group-links">
+                    {group.items.map((item) => {
+                      const active =
+                        isAdminNavItemActive(
+                          item.href,
+                        );
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={active ? 'active' : ''}
+                          aria-current={active ? 'page' : undefined}
+                        >
+                          <NavIconMark icon={item.icon} />
+                          <span className="nav-copy">
+                            <b>{item.label}</b>
+                            <small>{item.description}</small>
+                          </span>
+                          <span className="admin-nav-chevron" aria-hidden="true">
+                            ›
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </nav>
 
-            <div className="sidebar-support">
-              <span>Catalog workspace</span>
-              <p>Review dish names, categories and rates before saving changes.</p>
+            <div className="sidebar-support admin-sidebar-support">
+              <span>Shared master data</span>
+              <p>Changes here affect future costing across every client workspace.</p>
             </div>
           </aside>
         ) : null}
@@ -465,30 +532,30 @@ export default function AppShell({
           ) : null}
 
           {isAdmin && !hidePageTitle ? (
-            <section className="page-title no-print">
-              <div>
-                <span className="page-eyebrow">Menu Costing Admin</span>
+            <section className="page-title admin-page-head no-print">
+              <div className="admin-page-head-copy">
+                <div className="admin-breadcrumb" aria-label="Admin location">
+                  <span>Admin</span>
+                  <i aria-hidden="true">/</i>
+                  <b>{activeAdminSection}</b>
+                </div>
+
                 <h1>{title}</h1>
-                <p>{subtitle ?? 'Plan, price and present every event with confidence.'}</p>
+                <p>{subtitle ?? 'Manage shared master data for every costing workspace.'}</p>
               </div>
 
-              <div className="page-progress" aria-label="Admin workspace">
-                <span>Workspace</span>
-                <div><i style={{ width: '100%' }} /></div>
+              <div className="admin-page-context">
+                <span>Desktop workspace</span>
+                <b>{activeAdminItem?.label || title}</b>
+                <small>Shared master data</small>
               </div>
             </section>
           ) : null}
 
           {isAdmin && isDishWorkspace ? (
             <nav
-              className="action-row no-print"
+              className="action-row admin-section-tabs no-print"
               aria-label="Dish management"
-              style={{
-                justifyContent: 'flex-start',
-                gap: '10px',
-                marginBottom: '18px',
-                flexWrap: 'wrap',
-              }}
             >
               <Link
                 href="/admin/dishes"
@@ -540,14 +607,8 @@ export default function AppShell({
 
           {isAdmin && isIngredientWorkspace ? (
             <nav
-              className="action-row no-print"
+              className="action-row admin-section-tabs no-print"
               aria-label="Ingredient management"
-              style={{
-                justifyContent: 'flex-start',
-                gap: '10px',
-                marginBottom: '18px',
-                flexWrap: 'wrap',
-              }}
             >
               <Link
                 href="/admin/ingredients"
@@ -584,14 +645,8 @@ export default function AppShell({
 
           {isAdmin && isGasWorkspace ? (
             <nav
-              className="action-row no-print"
+              className="action-row admin-section-tabs no-print"
               aria-label="Gas cost management"
-              style={{
-                justifyContent: 'flex-start',
-                gap: '10px',
-                marginBottom: '18px',
-                flexWrap: 'wrap',
-              }}
             >
               <Link
                 href="/admin/gas"
