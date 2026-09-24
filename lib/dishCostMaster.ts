@@ -1808,6 +1808,9 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
               Number(item.gasBatchPax) || 1,
             ),
           ),
+    gasNoGas:
+      item.gasNoGas ===
+      true,
 
     pieceWeightGrams:
       Math.max(
