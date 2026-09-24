@@ -6,9 +6,9 @@ import {
   useMemo,
   useState,
 } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SESSION_KEY } from '../../../lib/store';
+import AppShell from '../../components/AppShell';
 
 type ClientPlan = 'FREE' | 'PRO' | 'WHITE_LABEL' | string;
 type ClientStatus = 'ACTIVE' | 'INACTIVE' | 'EXPIRED' | string;
@@ -526,7 +526,11 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <main className="mc-admin-page">
+    <AppShell
+      title="Clients"
+      subtitle="Manage client accounts, plans and access from one desktop workspace"
+    >
+      <section className="mc-admin-page mc-admin-clients-embedded">
       <style>{`
         .mc-admin-page {
           --mc-admin-bg:#07090d;
@@ -1307,6 +1311,69 @@ export default function AdminUsersPage() {
           color:#81baff;
         }
 
+        .mc-admin-clients-embedded {
+          min-height:0;
+          padding:0;
+          background:transparent;
+        }
+
+        .mc-admin-clients-embedded .mc-admin-container {
+          width:100%;
+          max-width:none;
+        }
+
+        .mc-admin-clients-embedded .mc-admin-hero {
+          justify-content:flex-end;
+          min-height:0;
+          padding:0 0 12px;
+        }
+
+        .mc-admin-clients-embedded .mc-admin-hero > div:first-child {
+          display:none;
+        }
+
+        .mc-admin-clients-embedded .mc-admin-stats {
+          gap:8px;
+          margin-bottom:14px;
+        }
+
+        .mc-admin-clients-embedded .mc-admin-stat {
+          min-height:88px;
+          padding:13px;
+          border-radius:12px;
+        }
+
+        .mc-admin-clients-embedded .mc-admin-stat-icon {
+          width:34px;
+          height:34px;
+          flex-basis:34px;
+          border-radius:9px;
+        }
+
+        .mc-admin-clients-embedded .mc-admin-stat strong {
+          font-size:20px;
+        }
+
+        .mc-admin-clients-embedded .mc-admin-main-grid {
+          gap:14px;
+        }
+
+        .mc-admin-clients-embedded .mc-admin-directory,
+        .mc-admin-clients-embedded .mc-admin-create {
+          border-radius:14px;
+        }
+
+        @media (min-width:1181px) {
+          .mc-admin-clients-embedded .mc-admin-main-grid {
+            grid-template-columns:minmax(0,1fr) 320px;
+            align-items:start;
+          }
+
+          .mc-admin-clients-embedded .mc-admin-create {
+            top:82px;
+          }
+        }
+
         @media (max-width:1180px) {
           .mc-admin-stats {
             grid-template-columns:repeat(3,minmax(0,1fr));
@@ -1450,60 +1517,6 @@ export default function AdminUsersPage() {
           }
         }
       `}</style>
-
-      <header className="mc-admin-topbar">
-        <Link
-          className="mc-admin-brand"
-          href="/admin/users"
-        >
-          <span className="mc-admin-brand-mark">
-            MC
-          </span>
-
-          <span className="mc-admin-brand-copy">
-            <strong>
-              Menu Costing
-            </strong>
-            <small>
-              Control Center
-            </small>
-          </span>
-        </Link>
-
-        <nav
-          className="mc-admin-nav"
-          aria-label="Super admin navigation"
-        >
-          <Link
-            className="active"
-            href="/admin/users"
-          >
-            Clients
-          </Link>
-          <Link href="/admin/analytics">
-            Analytics
-          </Link>
-
-          <Link href="/admin/dishes">
-            Dishes
-          </Link>
-
-          <Link href="/admin/recipes">
-            Recipe Studio
-          </Link>
-        </nav>
-
-        <button
-          className="mc-admin-logout"
-          onClick={logout}
-          type="button"
-        >
-          <Icon name="logout" />
-          <span>
-            Sign out
-          </span>
-        </button>
-      </header>
 
       <div className="mc-admin-container">
         <section className="mc-admin-hero">
@@ -2085,6 +2098,7 @@ export default function AdminUsersPage() {
           </aside>
         </section>
       </div>
-    </main>
+      </section>
+    </AppShell>
   );
 }
