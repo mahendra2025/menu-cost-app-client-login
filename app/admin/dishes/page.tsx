@@ -26,8 +26,11 @@ import { getSession, uid } from '../../../lib/store';
 
 import {
   DEFAULT_GAS_CATEGORY_RATES,
+  DEFAULT_LPG_SETTING,
   categoryGasKgPer100,
+  lpgRatePerKg,
   type GasCategoryRateValue,
+  type LpgCostSetting,
 } from '../../../lib/gasCost';
 
 type ParsedDishItem = DishCostItem & {
@@ -132,6 +135,51 @@ function parseDishItems(items: unknown): ParsedDishItem[] {
               Number(row.gasKgPer100) || 0,
             );
 
+      const optionalGasNumber = (value: unknown) =>
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ''
+          ? undefined
+          : Math.max(
+              0,
+              Number(value) || 0,
+            );
+
+      const gasBurnerKgPerHour =
+        optionalGasNumber(
+          row.gasBurnerKgPerHour,
+        );
+      const gasCookingMinutes =
+        optionalGasNumber(
+          row.gasCookingMinutes,
+        );
+      const gasBurnerCountRaw =
+        optionalGasNumber(
+          row.gasBurnerCount,
+        );
+      const gasBatchPaxRaw =
+        optionalGasNumber(
+          row.gasBatchPax,
+        );
+      const gasBurnerCount =
+        gasBurnerCountRaw === undefined
+          ? undefined
+          : Math.max(
+              1,
+              Math.round(
+                gasBurnerCountRaw,
+              ),
+            );
+      const gasBatchPax =
+        gasBatchPaxRaw === undefined
+          ? undefined
+          : Math.max(
+              1,
+              Math.round(
+                gasBatchPaxRaw,
+              ),
+            );
+
       const pieceWeightGrams =
         servingUnit.toLowerCase() === 'piece'
           ? (
@@ -162,6 +210,10 @@ function parseDishItems(items: unknown): ParsedDishItem[] {
         servingQuantity,
         servingUnit,
         gasKgPer100,
+        gasBurnerKgPerHour,
+        gasCookingMinutes,
+        gasBurnerCount,
+        gasBatchPax,
         pieceWeightGrams,
         aliases,
       };
@@ -184,6 +236,39 @@ function toDishCostItem(item: EditableDish): DishCostItem {
         : Math.max(
             0,
             Number(item.gasKgPer100) || 0,
+          ),
+
+    gasBurnerKgPerHour:
+      item.gasBurnerKgPerHour === undefined
+        ? undefined
+        : Math.max(
+            0,
+            Number(item.gasBurnerKgPerHour) || 0,
+          ),
+    gasCookingMinutes:
+      item.gasCookingMinutes === undefined
+        ? undefined
+        : Math.max(
+            0,
+            Number(item.gasCookingMinutes) || 0,
+          ),
+    gasBurnerCount:
+      item.gasBurnerCount === undefined
+        ? undefined
+        : Math.max(
+            1,
+            Math.round(
+              Number(item.gasBurnerCount) || 1,
+            ),
+          ),
+    gasBatchPax:
+      item.gasBatchPax === undefined
+        ? undefined
+        : Math.max(
+            1,
+            Math.round(
+              Number(item.gasBatchPax) || 1,
+            ),
           ),
 
     pieceWeightGrams:
@@ -275,6 +360,12 @@ export default function AdminDishesPage() {
         }),
       ),
   );
+  const [
+    gasLpgSetting,
+    setGasLpgSetting,
+  ] = useState<LpgCostSetting>({
+    ...DEFAULT_LPG_SETTING,
+  });
   const [categoryQuery, setCategoryQuery] = useState('');
   const [query, setQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
@@ -428,6 +519,31 @@ export default function AdminDishesPage() {
             setGasCategoryRates(
               gasData.categoryRates,
             );
+          }
+
+          if (
+            gasData.setting &&
+            typeof gasData.setting ===
+              'object'
+          ) {
+            setGasLpgSetting({
+              cylinderPrice:
+                Math.max(
+                  0,
+                  Number(
+                    gasData.setting.cylinderPrice,
+                  ) ||
+                  DEFAULT_LPG_SETTING.cylinderPrice,
+                ),
+              cylinderWeightKg:
+                Math.max(
+                  0.01,
+                  Number(
+                    gasData.setting.cylinderWeightKg,
+                  ) ||
+                  DEFAULT_LPG_SETTING.cylinderWeightKg,
+                ),
+            });
           }
         }
 
@@ -1387,6 +1503,18 @@ export default function AdminDishesPage() {
               gasKgPer100:
                 item.gasKgPer100 ??
                 null,
+              gasBurnerKgPerHour:
+                item.gasBurnerKgPerHour ??
+                null,
+              gasCookingMinutes:
+                item.gasCookingMinutes ??
+                null,
+              gasBurnerCount:
+                item.gasBurnerCount ??
+                null,
+              gasBatchPax:
+                item.gasBatchPax ??
+                null,
             }),
         },
       );
@@ -2219,9 +2347,66 @@ async function handleCsvImport(
                     gasCategoryRates,
                   );
 
+                const hasRealGasProfile =
+                  row.gasBurnerKgPerHour !== undefined &&
+                  row.gasCookingMinutes !== undefined &&
+                  row.gasBurnerCount !== undefined &&
+                  row.gasBatchPax !== undefined;
+
                 const hasGasOverride =
+                  !hasRealGasProfile &&
                   row.gasKgPer100 !==
-                  undefined;
+                    undefined;
+
+                const realGasBatchesPer100 =
+                  hasRealGasProfile
+                    ? Math.max(
+                        1,
+                        Math.ceil(
+                          100 /
+                          Math.max(
+                            1,
+                            Number(
+                              row.gasBatchPax,
+                            ) || 1,
+                          ),
+                        ),
+                      )
+                    : 0;
+
+                const realGasKgPer100 =
+                  hasRealGasProfile
+                    ? (
+                        Math.max(
+                          0,
+                          Number(
+                            row.gasBurnerKgPerHour,
+                          ) || 0,
+                        ) *
+                        Math.max(
+                          1,
+                          Number(
+                            row.gasBurnerCount,
+                          ) || 1,
+                        ) *
+                        (
+                          Math.max(
+                            0,
+                            Number(
+                              row.gasCookingMinutes,
+                            ) || 0,
+                          ) /
+                          60
+                        ) *
+                        realGasBatchesPer100
+                      )
+                    : 0;
+
+                const realGasCostPer100 =
+                  realGasKgPer100 *
+                  lpgRatePerKg(
+                    gasLpgSetting,
+                  );
 
                 return (
                   <div
