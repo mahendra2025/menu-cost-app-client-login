@@ -244,7 +244,7 @@ export default function AdminGasCostPage() {
   return (
     <AppShell
       title="Gas Cost"
-      subtitle="Manage category LPG usage per 100 guests"
+      subtitle="Manage LPG price and category fallback rates"
     >
       <section className="content-grid gas-master-page">
         <div className="final-costing-overview is-ready">
@@ -253,10 +253,10 @@ export default function AdminGasCostPage() {
               Gas Category Master
             </span>
             <h2>
-              Automatic LPG usage by food category
+              Category LPG fallback rates
             </h2>
             <p>
-              Every dish uses its category rate unless that dish has a manual LPG override.
+              Real dish cooking profiles are preferred. These category rates are used only when a dish has no real profile or measured dish rate.
             </p>
           </div>
 
@@ -290,7 +290,7 @@ export default function AdminGasCostPage() {
                 LPG kg per 100 guests
               </h2>
               <p>
-                These rates are used automatically in every event. Zero is valid for no-gas categories.
+                These rates are the last fallback when a dish has no real cooking profile and no measured kg / 100 value. Zero is valid for no-gas categories.
               </p>
             </div>
 
