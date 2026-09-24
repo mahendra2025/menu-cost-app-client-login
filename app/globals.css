@@ -26566,3 +26566,116 @@ body.client-sheet-open {
     margin-left: 0;
   }
 }
+
+
+/* Manpower: one person / role can handle multiple dishes ---------------- */
+.manpower-dish-selector > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.manpower-dish-selector > summary span,
+.manpower-dish-selector > summary small {
+  display: block;
+}
+
+.manpower-dish-selector > summary span {
+  color: #d6e5f6;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.manpower-dish-selector > summary small {
+  color: #6f9ed6;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.manpower-dish-selector-note {
+  padding: 8px 9px;
+  border: 1px solid rgba(74, 156, 255, .14);
+  border-radius: 8px;
+  background: rgba(74, 156, 255, .045);
+}
+
+.manpower-dish-selector-note b,
+.manpower-dish-selector-note small {
+  display: block;
+}
+
+.manpower-dish-selector-note b {
+  color: #cfe3fb;
+  font-size: 9px;
+}
+
+.manpower-dish-selector-note small {
+  margin-top: 3px;
+  color: #8090a3;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.manpower-dish-selector-actions button:disabled {
+  opacity: .42;
+  cursor: not-allowed;
+}
+
+.manpower-dish-role-quantity {
+  min-width: 96px;
+}
+
+.manpower-dish-role-quantity > b {
+  display: block;
+  margin-top: 2px;
+  color: #e6edf5;
+  font-size: 13px;
+  text-align: right;
+}
+
+.manpower-dish-role-quantity > span {
+  display: block;
+  max-width: 120px;
+  margin-top: 2px;
+  color: #69798d;
+  font-size: 7px;
+  line-height: 1.25;
+  text-align: right;
+}
+
+.manpower-dish-team span small {
+  color: #d0a85f;
+  font-size: 8px;
+}
+
+.manpower-mobile-dish-field > label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+@media (min-width: 821px) {
+  .manpower-desktop-workspace .manpower-table:has(.manpower-dish-selector) {
+    min-width: 980px;
+  }
+}
+
+@media (max-width: 720px) {
+  .manpower-dish-selector > summary {
+    min-height: 42px;
+  }
+
+  .manpower-dish-selector-panel {
+    padding: 10px;
+  }
+
+  .manpower-dish-selector-actions button {
+    min-height: 34px;
+    flex: 1;
+  }
+}
