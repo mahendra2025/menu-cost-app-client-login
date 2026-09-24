@@ -365,9 +365,9 @@ function realDishGasProfile(
 
   if (
     !Number.isFinite(gasBurnerKgPerHour) ||
-    gasBurnerKgPerHour < 0 ||
+    gasBurnerKgPerHour <= 0 ||
     !Number.isFinite(gasCookingMinutes) ||
-    gasCookingMinutes < 0 ||
+    gasCookingMinutes <= 0 ||
     !Number.isFinite(gasBurnerCount) ||
     gasBurnerCount <= 0 ||
     !Number.isFinite(gasBatchPax) ||
