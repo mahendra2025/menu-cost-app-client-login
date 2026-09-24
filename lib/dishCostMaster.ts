@@ -1767,6 +1767,47 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
             Number(item.gasKgPer100) || 0,
           ),
 
+    gasBurnerKgPerHour:
+      item.gasBurnerKgPerHour === undefined ||
+      item.gasBurnerKgPerHour === null ||
+      String(item.gasBurnerKgPerHour).trim() === ''
+        ? undefined
+        : Math.max(
+            0,
+            Number(item.gasBurnerKgPerHour) || 0,
+          ),
+    gasCookingMinutes:
+      item.gasCookingMinutes === undefined ||
+      item.gasCookingMinutes === null ||
+      String(item.gasCookingMinutes).trim() === ''
+        ? undefined
+        : Math.max(
+            0,
+            Number(item.gasCookingMinutes) || 0,
+          ),
+    gasBurnerCount:
+      item.gasBurnerCount === undefined ||
+      item.gasBurnerCount === null ||
+      String(item.gasBurnerCount).trim() === ''
+        ? undefined
+        : Math.max(
+            1,
+            Math.round(
+              Number(item.gasBurnerCount) || 1,
+            ),
+          ),
+    gasBatchPax:
+      item.gasBatchPax === undefined ||
+      item.gasBatchPax === null ||
+      String(item.gasBatchPax).trim() === ''
+        ? undefined
+        : Math.max(
+            1,
+            Math.round(
+              Number(item.gasBatchPax) || 1,
+            ),
+          ),
+
     pieceWeightGrams:
       Math.max(
         0,
