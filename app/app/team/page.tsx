@@ -1283,6 +1283,7 @@ export default function ManpowerPage() {
                     <tr>
                       <th>#</th>
                       <th>Manpower</th>
+                      <th>Dishes</th>
                       <th>Quantity</th>
                       <th>Rate / person</th>
                       <th>Total</th>
@@ -1316,6 +1317,24 @@ export default function ManpowerPage() {
                               </button>
                             ) : null}
                           </div>
+                        </td>
+                        <td>
+                          {canAssignDishes(row) ? (
+                            <ManpowerMultiDishSelector
+                              row={row}
+                              dishes={mealDishes}
+                              onChange={(dishIds) =>
+                                setRowDishAssignments(
+                                  row,
+                                  dishIds,
+                                )
+                              }
+                            />
+                          ) : (
+                            <span className="manpower-dish-not-applicable">
+                              —
+                            </span>
+                          )}
                         </td>
                         <td>
                           <QuantityControl
@@ -1374,6 +1393,24 @@ export default function ManpowerPage() {
                         </button>
                       ) : null}
                     </div>
+
+                    {canAssignDishes(row) ? (
+                      <div className="manpower-mobile-dish-field">
+                        <label>
+                          Dishes handled
+                        </label>
+                        <ManpowerMultiDishSelector
+                          row={row}
+                          dishes={mealDishes}
+                          onChange={(dishIds) =>
+                            setRowDishAssignments(
+                              row,
+                              dishIds,
+                            )
+                          }
+                        />
+                      </div>
+                    ) : null}
 
                     <div className="manpower-role-card-fields">
                       <div className="field">
