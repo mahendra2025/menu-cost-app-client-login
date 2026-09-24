@@ -329,3 +329,106 @@ test('same dish duplicated inside the same function is not double-counted', () =
     1.2,
   );
 });
+
+
+test('real dish gas profile uses burner time and full production batches', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Paneer Tikka',
+      category: 'Paneer',
+      gasKgPer100: 9,
+      gasBurnerKgPerHour: 0.4,
+      gasCookingMinutes: 45,
+      gasBurnerCount: 2,
+      gasBatchPax: 80,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'p1',
+        'Paneer Tikka',
+        'Paneer',
+        'dinner',
+        'Dinner',
+        250,
+      ),
+    ]),
+    master,
+  );
+
+  const row = result.rows[0];
+
+  // 0.4 kg/h × 2 burners × 0.75 h = 0.6 kg per batch.
+  // ceil(250 / 80) = 4 batches, so actual gas = 2.4 kg.
+  assert.equal(
+    row.source,
+    'REAL_DISH_PROFILE',
+  );
+  assert.equal(
+    row.gasBatches,
+    4,
+  );
+  assert.equal(
+    row.gasKg,
+    2.4,
+  );
+  assert.equal(
+    result.totalGasKg,
+    2.4,
+  );
+
+  // Equivalent 100-guest view uses ceil(100 / 80) = 2 batches.
+  assert.equal(
+    row.gasKgPer100,
+    1.2,
+  );
+
+  // Real profile must win over the legacy 9 kg / 100 manual fallback.
+  assert.ok(
+    row.gasKg < 9,
+  );
+});
+
+test('real dish gas profile rounds batches up instead of scaling linearly', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Dal Fry',
+      category: 'Dal / Kadhi',
+      gasBurnerKgPerHour: 0.5,
+      gasCookingMinutes: 60,
+      gasBurnerCount: 1,
+      gasBatchPax: 100,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'd1',
+        'Dal Fry',
+        'Dal / Kadhi',
+        'lunch',
+        'Lunch',
+        101,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].gasBatches,
+    2,
+  );
+  assert.equal(
+    result.totalGasKg,
+    1,
+  );
+});
