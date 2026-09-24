@@ -78,7 +78,11 @@ function normalizeItems(items: unknown) {
           (value) =>
             value !== null &&
             Number.isFinite(value),
-        );
+        ) &&
+        Number(gasBurnerKgPerHour) > 0 &&
+        Number(gasCookingMinutes) > 0 &&
+        Number(gasBurnerCount) > 0 &&
+        Number(gasBatchPax) > 0;
 
       const pieceWeightGrams =
         servingUnit.toLowerCase() === 'piece'
