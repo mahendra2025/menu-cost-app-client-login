@@ -236,7 +236,7 @@ test('category default is used when a dish has no manual override', () => {
   );
 });
 
-test('zero-gas category safely returns zero', () => {
+test('approved no-gas category safely returns zero', () => {
   const result = calculateEventGas(
     makeWork([
       dish(
@@ -259,24 +259,21 @@ test('zero-gas category safely returns zero', () => {
     result.totalGasCost,
     0,
   );
+  assert.equal(
+    result.rows[0].source,
+    'NO_GAS_CATEGORY',
+  );
 });
 
-test('missing category rate safely falls back to zero', () => {
+test('missing cooking category rate uses positive safety fallback', () => {
   const master =
     defaultGasCostMaster();
-
-  master.categoryRates =
-    master.categoryRates.filter(
-      (rate) =>
-        rate.categoryName !==
-        'Paneer',
-    );
 
   const result = calculateEventGas(
     makeWork([
       dish(
         'p1',
-        'Paneer Tikka',
+        'New Cooking Dish',
         'Unknown Custom Category',
         'lunch',
         'Lunch',
@@ -289,11 +286,54 @@ test('missing category rate safely falls back to zero', () => {
   assert.equal(
     result.rows[0]
       .gasKgPer100,
-    0,
+    0.5,
   );
   assert.equal(
-    result.totalGasCost,
-    0,
+    result.rows[0].source,
+    'SAFE_COOKING_FALLBACK',
+  );
+  assert.ok(
+    result.totalGasCost > 0,
+  );
+});
+
+test('zero override on a cooking dish cannot silently remove gas cost', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Dal Fry',
+      category: 'Dal / Kadhi',
+      gasKgPer100: 0,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'd1',
+        'Dal Fry',
+        'Dal / Kadhi',
+        'lunch',
+        'Lunch',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0]
+      .gasKgPer100,
+    1,
+  );
+  assert.equal(
+    result.rows[0].source,
+    'CATEGORY',
+  );
+  assert.ok(
+    result.totalGasCost > 0,
   );
 });
 

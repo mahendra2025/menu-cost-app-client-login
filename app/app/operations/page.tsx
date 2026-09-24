@@ -232,11 +232,20 @@ export default function OperationsCostPage() {
         'DISH_OVERRIDE',
     ).length || 0;
 
-  const categoryFallbackDishCount =
+  const fallbackGasDishCount =
     gasBreakdown?.rows.filter(
       (row) =>
         row.source ===
-        'CATEGORY',
+          'CATEGORY' ||
+        row.source ===
+          'SAFE_COOKING_FALLBACK',
+    ).length || 0;
+
+  const noGasDishCount =
+    gasBreakdown?.rows.filter(
+      (row) =>
+        row.source ===
+        'NO_GAS_CATEGORY',
     ).length || 0;
 
   function persist(nextOperations: OperationsCostState, nextMessage = '') {
@@ -363,7 +372,7 @@ export default function OperationsCostPage() {
           <div>
             <span className="page-eyebrow">Operations cost control</span>
             <h2>Gas, transport and disposable readiness</h2>
-            <p>Gas uses each dish's real burner/time/batch profile when available, then measured kg/100, then category fallback. Transport stays editable.</p>
+            <p>Gas uses each dish's real burner/time/batch profile when available, then measured kg/100, then category rate. Missing cooking rates get a safe positive fallback; approved no-gas categories stay at zero.</p>
           </div>
           <div className="final-costing-overview-total">
             <span>Gas + transport</span>
@@ -437,7 +446,9 @@ export default function OperationsCostPage() {
             gasRows.filter(
               (dish) =>
                 dish.source ===
-                'CATEGORY',
+                  'CATEGORY' ||
+                dish.source ===
+                  'SAFE_COOKING_FALLBACK',
             ).length;
 
           const gasTotal =
@@ -465,7 +476,7 @@ export default function OperationsCostPage() {
               <div className="operations-section-title">
                 <div>
                   <strong>LPG / Gas</strong>
-                  <small>Real dish profile first · measured kg/100 second · category fallback last.</small>
+                  <small>Real profile first · measured kg/100 second · category rate third · safe cooking fallback last.</small>
                 </div>
                 <b>{money(gasTotal)}</b>
               </div>
@@ -479,7 +490,7 @@ export default function OperationsCostPage() {
                   ₹{(gasBreakdown?.lpgRatePerKg || 0).toFixed(2)} / kg · {row.pax.toLocaleString('en-IN')} guests
                 </small>
                 <small>
-                  {realGasDishCount} real profile · {measuredGasDishCount} measured · {fallbackGasDishCount} category fallback
+                  {realGasDishCount} real profile · {measuredGasDishCount} measured · {fallbackGasDishCount} fallback estimate
                 </small>
               </div>
 
@@ -494,7 +505,9 @@ export default function OperationsCostPage() {
                             ? 'MEASURED'
                             : dish.source === 'CATEGORY'
                               ? 'CATEGORY'
-                              : 'NO GAS';
+                              : dish.source === 'SAFE_COOKING_FALLBACK'
+                                ? 'SAFE DEFAULT'
+                                : 'NO GAS';
 
                       return (
                         <div key={dish.key}>
@@ -525,7 +538,9 @@ export default function OperationsCostPage() {
                                     ? 'Dish-specific measured rate'
                                     : dish.source === 'CATEGORY'
                                       ? 'Category fallback rate'
-                                      : 'Zero gas'}
+                                      : dish.source === 'SAFE_COOKING_FALLBACK'
+                                        ? 'Safe positive cooking fallback'
+                                        : 'Approved no-gas category'}
                                 </small>
                               </>
                             )}
@@ -631,8 +646,12 @@ export default function OperationsCostPage() {
                 <b>{measuredGasDishCount}</b>
               </div>
               <div>
-                <span>Category fallback</span>
-                <b>{categoryFallbackDishCount}</b>
+                <span>Fallback estimates</span>
+                <b>{fallbackGasDishCount}</b>
+              </div>
+              <div>
+                <span>Approved no-gas dishes</span>
+                <b>{noGasDishCount}</b>
               </div>
               <div>
                 <span>Transport mode</span>
@@ -645,13 +664,13 @@ export default function OperationsCostPage() {
             </div>
 
             <div className="operations-substep-status">
-              <span className={categoryFallbackDishCount === 0 ? 'is-complete' : ''}>1</span>
+              <span className={fallbackGasDishCount === 0 ? 'is-complete' : ''}>1</span>
               <div>
                 <b>Gas & Transport</b>
                 <small>
-                  {categoryFallbackDishCount > 0
-                    ? `${categoryFallbackDishCount} dish${categoryFallbackDishCount === 1 ? '' : 'es'} still use category fallback`
-                    : 'All gas dishes use dish-specific data'}
+                  {fallbackGasDishCount > 0
+                    ? `${fallbackGasDishCount} cooking dish${fallbackGasDishCount === 1 ? '' : 'es'} still use fallback gas estimates`
+                    : 'All cooking dishes use dish-specific gas data'}
                 </small>
               </div>
             </div>
