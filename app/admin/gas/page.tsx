@@ -408,7 +408,7 @@ export default function AdminGasCostPage() {
               className="ghost-button"
               href="/admin/dishes"
             >
-              Edit Dish Overrides
+              Edit Dish Gas Profiles
             </Link>
           </div>
         </div>
