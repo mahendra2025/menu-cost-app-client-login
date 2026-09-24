@@ -670,7 +670,7 @@ export default function OperationsCostPage() {
                 <small>
                   {fallbackGasDishCount > 0
                     ? `${fallbackGasDishCount} cooking dish${fallbackGasDishCount === 1 ? '' : 'es'} still use fallback gas estimates`
-                    : 'All cooking dishes use dish-specific gas data'}}
+                    : 'All cooking dishes use dish-specific gas data'}
                 </small>
               </div>
             </div>
