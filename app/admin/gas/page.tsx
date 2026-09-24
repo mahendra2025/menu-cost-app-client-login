@@ -410,6 +410,13 @@ export default function AdminGasCostPage() {
             >
               Open Dish Gas Profiles
             </Link>
+
+            <Link
+              className="ghost-button"
+              href="/admin/gas/sweets"
+            >
+              Open Sweet Gas Master
+            </Link>
           </div>
         </div>
       </section>

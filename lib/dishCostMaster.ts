@@ -37,6 +37,7 @@ export type DishCostItem = {
   gasCookingMinutes?: number;
   gasBurnerCount?: number;
   gasBatchPax?: number;
+  gasNoGas?: boolean;
 
   /*
    * Physical weight of one piece.
@@ -1807,6 +1808,9 @@ function sanitizeDishItem(item: Partial<DishCostItem> | null | undefined): DishC
               Number(item.gasBatchPax) || 1,
             ),
           ),
+    gasNoGas:
+      item.gasNoGas ===
+      true,
 
     pieceWeightGrams:
       Math.max(

@@ -28,6 +28,7 @@ type GasProfileRow = {
   gasCookingMinutes: number | null;
   gasBurnerCount: number | null;
   gasBatchPax: number | null;
+  gasNoGas: boolean;
 };
 
 type GasProfileSummary = {
@@ -41,7 +42,8 @@ type GasProfileStatus =
   | 'ALL'
   | 'REAL'
   | 'MEASURED'
-  | 'FALLBACK';
+  | 'FALLBACK'
+  | 'NO_GAS';
 
 function inputNumber(
   value: string,
@@ -67,6 +69,7 @@ function hasRealProfile(
   row: GasProfileRow,
 ) {
   return (
+    !row.gasNoGas &&
     Number(row.gasBurnerKgPerHour) > 0 &&
     Number(row.gasCookingMinutes) > 0 &&
     Number(row.gasBurnerCount) > 0 &&
@@ -78,6 +81,10 @@ function statusLabel(
   row: GasProfileRow,
   rates: GasCategoryRateValue[],
 ) {
+  if (row.gasNoGas) {
+    return 'NO GAS';
+  }
+
   if (hasRealProfile(row)) {
     return 'REAL PROFILE';
   }
@@ -111,6 +118,10 @@ function gasKgFor100(
   row: GasProfileRow,
   rates: GasCategoryRateValue[],
 ) {
+  if (row.gasNoGas) {
+    return 0;
+  }
+
   if (
     hasRealProfile(
       row,
@@ -610,6 +621,8 @@ export default function AdminGasProfilesPage() {
                   row.gasBurnerCount,
                 gasBatchPax:
                   row.gasBatchPax,
+                gasNoGas:
+                  row.gasNoGas,
               }),
           },
         );
@@ -858,6 +871,9 @@ export default function AdminGasProfilesPage() {
                 <option value="FALLBACK">
                   Fallback only
                 </option>
+                <option value="NO_GAS">
+                  No Gas dishes
+                </option>
               </select>
             </label>
           </div>
@@ -930,6 +946,35 @@ export default function AdminGasProfilesPage() {
                         {label}
                       </span>
                     </div>
+
+                    <label className="gas-profile-no-gas">
+                      <input
+                        type="checkbox"
+                        checked={row.gasNoGas}
+                        onChange={(event) =>
+                          updateRow(
+                            row.id,
+                            event.target.checked
+                              ? {
+                                  gasNoGas: true,
+                                  gasKgPer100: 0,
+                                  gasBurnerKgPerHour: null,
+                                  gasCookingMinutes: null,
+                                  gasBurnerCount: null,
+                                  gasBatchPax: null,
+                                }
+                              : {
+                                  gasNoGas: false,
+                                  gasKgPer100: null,
+                                },
+                          )
+                        }
+                      />
+                      <span>
+                        No Gas dish
+                        <small>Use only when this dish genuinely needs no LPG.</small>
+                      </span>
+                    </label>
 
                     <div className="gas-profile-fields">
                       <label>
@@ -1250,6 +1295,34 @@ export default function AdminGasProfilesPage() {
             color: #9a5a0a;
             border-color: rgba(255, 149, 0, .28);
             background: rgba(255, 149, 0, .09);
+          }
+
+          .gas-profile-no-gas {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            background: rgba(148, 163, 184, .045);
+          }
+
+          .gas-profile-no-gas input {
+            width: 18px;
+            height: 18px;
+          }
+
+          .gas-profile-no-gas > span {
+            display: grid;
+            gap: 2px;
+            font-size: 11px;
+            font-weight: 850;
+          }
+
+          .gas-profile-no-gas small {
+            color: var(--muted);
+            font-size: 9px;
+            font-weight: 650;
           }
 
           .gas-profile-fields {

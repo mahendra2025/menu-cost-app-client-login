@@ -624,6 +624,21 @@ export default function AppShell({
                 Dish Gas Profiles
               </Link>
               <Link
+                href="/admin/gas/sweets"
+                className={
+                  pathname === '/admin/gas/sweets'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/gas/sweets'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Sweet Gas Master
+              </Link>
+              <Link
                 href="/admin/settings/cost-masters/lpg"
                 className={
                   pathname === '/admin/settings/cost-masters/lpg'

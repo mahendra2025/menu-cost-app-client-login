@@ -337,6 +337,88 @@ test('zero override on a cooking dish cannot silently remove gas cost', () => {
   );
 });
 
+test('explicit no-gas Sweet profile returns zero without weakening cooking fallback safety', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Shrikhand',
+      category: 'Sweet',
+      gasKgPer100: 0,
+      gasNoGas: true,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        's1',
+        'Shrikhand',
+        'Sweet',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_NO_GAS',
+  );
+  assert.equal(
+    result.rows[0].gasKg,
+    0,
+  );
+  assert.equal(
+    result.rows[0].gasCost,
+    0,
+  );
+});
+
+test('explicit no-gas flag wins over stale real profile data', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Shrikhand',
+      category: 'Sweet',
+      gasKgPer100: 0,
+      gasNoGas: true,
+      gasBurnerKgPerHour: 0.5,
+      gasCookingMinutes: 60,
+      gasBurnerCount: 1,
+      gasBatchPax: 100,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        's2',
+        'Shrikhand',
+        'Sweet',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_NO_GAS',
+  );
+  assert.equal(
+    result.totalGasKg,
+    0,
+  );
+});
+
 test('same dish duplicated inside the same function is not double-counted', () => {
   const result = calculateEventGas(
     makeWork([

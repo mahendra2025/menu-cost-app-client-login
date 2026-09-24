@@ -7,6 +7,7 @@ import {
   isValidAdminSessionToken,
 } from '../../../../lib/adminAuth';
 import { prisma } from '../../../../lib/prisma';
+import { suggestSweetGas } from '../../../../lib/sweetGas';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -24,6 +25,7 @@ async function requireAdmin() {
 
 const realProfileWhere: Prisma.DishMasterItemWhereInput = {
   AND: [
+    { gasNoGas: false },
     { gasBurnerKgPerHour: { not: null } },
     { gasCookingMinutes: { not: null } },
     { gasBurnerCount: { not: null } },
@@ -32,13 +34,19 @@ const realProfileWhere: Prisma.DishMasterItemWhereInput = {
 };
 
 const measuredOnlyWhere: Prisma.DishMasterItemWhereInput = {
+  gasNoGas: false,
   gasKgPer100: { not: null },
   gasBurnerKgPerHour: null,
 };
 
 const fallbackWhere: Prisma.DishMasterItemWhereInput = {
+  gasNoGas: false,
   gasKgPer100: null,
   gasBurnerKgPerHour: null,
+};
+
+const noGasWhere: Prisma.DishMasterItemWhereInput = {
+  gasNoGas: true,
 };
 
 function profileFilter(
@@ -47,6 +55,7 @@ function profileFilter(
   if (status === 'REAL') return realProfileWhere;
   if (status === 'MEASURED') return measuredOnlyWhere;
   if (status === 'FALLBACK') return fallbackWhere;
+  if (status === 'NO_GAS') return noGasWhere;
   return undefined;
 }
 
@@ -76,6 +85,7 @@ function updateRecipeGasFields(
     gasCookingMinutes: number | null;
     gasBurnerCount: number | null;
     gasBatchPax: number | null;
+    gasNoGas: boolean;
   },
 ) {
   if (!Array.isArray(value)) return value;
@@ -150,11 +160,11 @@ export async function GET(
       ),
     );
 
-    const filters:
+    const scopeFilters:
       Prisma.DishMasterItemWhereInput[] = [];
 
     if (q) {
-      filters.push({
+      scopeFilters.push({
         OR: [
           {
             name: {
@@ -173,17 +183,27 @@ export async function GET(
     }
 
     if (category && category !== 'ALL') {
-      filters.push({
+      scopeFilters.push({
         category,
       });
     }
 
+    const summaryWhere:
+      Prisma.DishMasterItemWhereInput =
+      scopeFilters.length
+        ? { AND: scopeFilters }
+        : {};
+
     const statusWhere =
       profileFilter(status);
 
-    if (statusWhere) {
-      filters.push(statusWhere);
-    }
+    const filters =
+      statusWhere
+        ? [
+            ...scopeFilters,
+            statusWhere,
+          ]
+        : scopeFilters;
 
     const where:
       Prisma.DishMasterItemWhereInput =
@@ -199,6 +219,7 @@ export async function GET(
       realCount,
       measuredCount,
       fallbackCount,
+      noGasCount,
     ] = await Promise.all([
       prisma.dishMasterItem.count({
         where,
@@ -221,6 +242,7 @@ export async function GET(
           gasCookingMinutes: true,
           gasBurnerCount: true,
           gasBatchPax: true,
+          gasNoGas: true,
         },
       }),
       prisma.dishMasterItem.findMany({
@@ -232,15 +254,40 @@ export async function GET(
           category: true,
         },
       }),
-      prisma.dishMasterItem.count(),
       prisma.dishMasterItem.count({
-        where: realProfileWhere,
+        where: summaryWhere,
       }),
       prisma.dishMasterItem.count({
-        where: measuredOnlyWhere,
+        where: {
+          AND: [
+            summaryWhere,
+            realProfileWhere,
+          ],
+        },
       }),
       prisma.dishMasterItem.count({
-        where: fallbackWhere,
+        where: {
+          AND: [
+            summaryWhere,
+            measuredOnlyWhere,
+          ],
+        },
+      }),
+      prisma.dishMasterItem.count({
+        where: {
+          AND: [
+            summaryWhere,
+            fallbackWhere,
+          ],
+        },
+      }),
+      prisma.dishMasterItem.count({
+        where: {
+          AND: [
+            summaryWhere,
+            noGasWhere,
+          ],
+        },
       }),
     ]);
 
@@ -257,6 +304,7 @@ export async function GET(
         real: realCount,
         measured: measuredCount,
         fallback: fallbackCount,
+        noGas: noGasCount,
       },
       pagination: {
         page,
@@ -282,6 +330,204 @@ export async function GET(
       {
         error:
           'Failed to load dish gas profiles.',
+      },
+      {
+        status: 500,
+      },
+    );
+  }
+}
+
+export async function POST(
+  request: Request,
+) {
+  try {
+    const authError = await requireAdmin();
+    if (authError) return authError;
+
+    const body =
+      await request.json().catch(
+        () => ({}),
+      ) as Record<string, unknown>;
+
+    if (
+      body.action !==
+      'APPLY_SWEET_DEFAULTS'
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Unsupported gas profile action.',
+        },
+        {
+          status: 400,
+        },
+      );
+    }
+
+    const result =
+      await prisma.$transaction(
+        async (tx) => {
+          const sweets =
+            await tx
+              .dishMasterItem
+              .findMany({
+                where: {
+                  category: {
+                    equals:
+                      'Sweet',
+                    mode:
+                      'insensitive',
+                  },
+                  gasNoGas:
+                    false,
+                  gasKgPer100:
+                    null,
+                  gasBurnerKgPerHour:
+                    null,
+                },
+                select: {
+                  id: true,
+                  name: true,
+                },
+              });
+
+          const applied:
+            Array<{
+              name: string;
+              gasKgPer100: number;
+              gasNoGas: boolean;
+            }> = [];
+
+          for (
+            const sweet
+            of sweets
+          ) {
+            const suggestion =
+              suggestSweetGas(
+                sweet.name,
+              );
+
+            await tx
+              .dishMasterItem
+              .update({
+                where: {
+                  id:
+                    sweet.id,
+                },
+                data: {
+                  gasKgPer100:
+                    suggestion
+                      .kgPer100,
+                  gasNoGas:
+                    suggestion
+                      .noGas,
+                  gasBurnerKgPerHour:
+                    null,
+                  gasCookingMinutes:
+                    null,
+                  gasBurnerCount:
+                    null,
+                  gasBatchPax:
+                    null,
+                },
+              });
+
+            applied.push({
+              name:
+                sweet.name,
+              gasKgPer100:
+                suggestion
+                  .kgPer100,
+              gasNoGas:
+                suggestion
+                  .noGas,
+            });
+          }
+
+          const recipeCatalog =
+            await tx
+              .recipeCatalog
+              .findUnique({
+                where: {
+                  id: 'global',
+                },
+                select: {
+                  dishes: true,
+                },
+              });
+
+          if (
+            recipeCatalog &&
+            applied.length
+          ) {
+            let dishes:
+              unknown =
+              recipeCatalog.dishes;
+
+            for (
+              const sweet
+              of applied
+            ) {
+              dishes =
+                updateRecipeGasFields(
+                  dishes,
+                  sweet.name,
+                  {
+                    gasKgPer100:
+                      sweet
+                        .gasKgPer100,
+                    gasBurnerKgPerHour:
+                      null,
+                    gasCookingMinutes:
+                      null,
+                    gasBurnerCount:
+                      null,
+                    gasBatchPax:
+                      null,
+                    gasNoGas:
+                      sweet
+                        .gasNoGas,
+                  },
+                );
+            }
+
+            await tx
+              .recipeCatalog
+              .update({
+                where: {
+                  id:
+                    'global',
+                },
+                data: {
+                  dishes:
+                    dishes as
+                      Prisma.InputJsonValue,
+                },
+              });
+          }
+
+          return {
+            updated:
+              applied.length,
+          };
+        },
+      );
+
+    return NextResponse.json({
+      ok: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error(
+      'Admin Sweet Gas Defaults POST:',
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          'Failed to apply Sweet gas defaults.',
       },
       {
         status: 500,
@@ -338,6 +584,10 @@ export async function PATCH(
       optionalNumber(
         body.gasBatchPax,
       );
+
+    const gasNoGas =
+      body.gasNoGas ===
+      true;
 
     const submitted = [
       gasKgPer100,
@@ -404,55 +654,65 @@ export async function PATCH(
       );
     }
 
-    const gas = {
-      gasKgPer100:
-        gasKgPer100 === null
-          ? null
-          : Math.max(
-              0,
-              gasKgPer100,
-            ),
-      gasBurnerKgPerHour:
-        hasCompleteReal
-          ? Math.max(
-              0,
-              Number(
-                gasBurnerKgPerHour,
-              ),
-            )
-          : null,
-      gasCookingMinutes:
-        hasCompleteReal
-          ? Math.max(
-              0,
-              Number(
-                gasCookingMinutes,
-              ),
-            )
-          : null,
-      gasBurnerCount:
-        hasCompleteReal
-          ? Math.max(
-              1,
-              Math.round(
-                Number(
-                  gasBurnerCountRaw,
+    const gas = gasNoGas
+      ? {
+          gasKgPer100: 0,
+          gasBurnerKgPerHour: null,
+          gasCookingMinutes: null,
+          gasBurnerCount: null,
+          gasBatchPax: null,
+          gasNoGas: true,
+        }
+      : {
+          gasKgPer100:
+            gasKgPer100 === null
+              ? null
+              : Math.max(
+                  0,
+                  gasKgPer100,
                 ),
-              ),
-            )
-          : null,
-      gasBatchPax:
-        hasCompleteReal
-          ? Math.max(
-              1,
-              Math.round(
-                Number(
-                  gasBatchPaxRaw,
-                ),
-              ),
-            )
-          : null,
-    };
+          gasBurnerKgPerHour:
+            hasCompleteReal
+              ? Math.max(
+                  0,
+                  Number(
+                    gasBurnerKgPerHour,
+                  ),
+                )
+              : null,
+          gasCookingMinutes:
+            hasCompleteReal
+              ? Math.max(
+                  0,
+                  Number(
+                    gasCookingMinutes,
+                  ),
+                )
+              : null,
+          gasBurnerCount:
+            hasCompleteReal
+              ? Math.max(
+                  1,
+                  Math.round(
+                    Number(
+                      gasBurnerCountRaw,
+                    ),
+                  ),
+                )
+              : null,
+          gasBatchPax:
+            hasCompleteReal
+              ? Math.max(
+                  1,
+                  Math.round(
+                    Number(
+                      gasBatchPaxRaw,
+                    ),
+                  ),
+                )
+              : null,
+          gasNoGas: false,
+        };
 
     const saved =
       await prisma.$transaction(
@@ -491,6 +751,7 @@ export async function PATCH(
                   gasCookingMinutes: true,
                   gasBurnerCount: true,
                   gasBatchPax: true,
+                  gasNoGas: true,
                 },
               });
 

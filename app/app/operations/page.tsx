@@ -245,7 +245,9 @@ export default function OperationsCostPage() {
     gasBreakdown?.rows.filter(
       (row) =>
         row.source ===
-        'NO_GAS_CATEGORY',
+          'NO_GAS_CATEGORY' ||
+        row.source ===
+          'DISH_NO_GAS',
     ).length || 0;
 
   function persist(nextOperations: OperationsCostState, nextMessage = '') {
@@ -507,7 +509,9 @@ export default function OperationsCostPage() {
                               ? 'CATEGORY'
                               : dish.source === 'SAFE_COOKING_FALLBACK'
                                 ? 'SAFE DEFAULT'
-                                : 'NO GAS';
+                                : dish.source === 'DISH_NO_GAS'
+                                  ? 'DISH NO GAS'
+                                  : 'NO GAS';
 
                       return (
                         <div key={dish.key}>

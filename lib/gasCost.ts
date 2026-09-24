@@ -23,6 +23,7 @@ export type DishGasOverrideValue = {
   gasCookingMinutes?: number;
   gasBurnerCount?: number;
   gasBatchPax?: number;
+  gasNoGas?: boolean;
 };
 
 export type GasCostMaster = {
@@ -55,7 +56,8 @@ export type GasDishCostRow = {
     | 'DISH_OVERRIDE'
     | 'CATEGORY'
     | 'SAFE_COOKING_FALLBACK'
-    | 'NO_GAS_CATEGORY';
+    | 'NO_GAS_CATEGORY'
+    | 'DISH_NO_GAS';
 };
 
 export type GasFunctionSubtotal = {
@@ -651,10 +653,17 @@ export function calculateEventGas(
           dishKey,
         );
 
+      const noGasDish =
+        masterOverride
+          ?.gasNoGas ===
+        true;
+
       const realProfile =
-        realDishGasProfile(
-          masterOverride,
-        );
+        noGasDish
+          ? null
+          : realDishGasProfile(
+              masterOverride,
+            );
 
       const masterMeasuredGas =
         masterOverride &&
@@ -683,24 +692,29 @@ export function calculateEventGas(
         );
 
       const hasUsableOverride =
-        configuredDishGas !==
-          undefined &&
+        noGasDish ||
         (
-          configuredDishGas > 0 ||
-          noGasCategory
+          configuredDishGas !==
+            undefined &&
+          (
+            configuredDishGas > 0 ||
+            noGasCategory
+          )
         );
 
       const fallbackGasKgPer100 =
-        hasUsableOverride
-          ? (
-              configuredDishGas ??
-              0
-            )
-          : noGasCategory
-            ? 0
-            : categoryGas > 0
-              ? categoryGas
-              : DEFAULT_COOKING_GAS_KG_PER_100;
+        noGasDish
+          ? 0
+          : hasUsableOverride
+            ? (
+                configuredDishGas ??
+                0
+              )
+            : noGasCategory
+              ? 0
+              : categoryGas > 0
+                ? categoryGas
+                : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -776,13 +790,15 @@ export function calculateEventGas(
         source:
           realProfile
             ? 'REAL_DISH_PROFILE'
-            : hasUsableOverride
-              ? 'DISH_OVERRIDE'
-              : noGasCategory
-                ? 'NO_GAS_CATEGORY'
-                : categoryGas > 0
-                  ? 'CATEGORY'
-                  : 'SAFE_COOKING_FALLBACK',
+            : noGasDish
+              ? 'DISH_NO_GAS'
+              : hasUsableOverride
+                ? 'DISH_OVERRIDE'
+                : noGasCategory
+                  ? 'NO_GAS_CATEGORY'
+                  : categoryGas > 0
+                    ? 'CATEGORY'
+                    : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
