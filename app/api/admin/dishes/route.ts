@@ -65,6 +65,9 @@ function normalizeItems(items: unknown) {
         optionalGasNumber(row.gasBurnerCount);
       const gasBatchPax =
         optionalGasNumber(row.gasBatchPax);
+      const gasNoGas =
+        row.gasNoGas ===
+        true;
 
       const realGasValues = [
         gasBurnerKgPerHour,
@@ -126,6 +129,7 @@ function normalizeItems(items: unknown) {
           hasCompleteRealGas
             ? Math.max(1, Math.round(Number(gasBatchPax)))
             : null,
+        gasNoGas,
         pieceWeightGrams,
         aliases,
         originalName,
@@ -324,6 +328,7 @@ function syncRecipeCatalogWithDishes(
       gasCookingMinutes: item.gasCookingMinutes,
       gasBurnerCount: item.gasBurnerCount,
       gasBatchPax: item.gasBatchPax,
+      gasNoGas: item.gasNoGas,
 
       pieceWeightGrams:
         item.servingUnit
@@ -407,6 +412,7 @@ export async function GET(request: Request) {
           gasCookingMinutes: true,
           gasBurnerCount: true,
           gasBatchPax: true,
+          gasNoGas: true,
           aliases: true,
         },
       }),
@@ -444,6 +450,9 @@ export async function GET(request: Request) {
         gasBatchPax:
           item.gasBatchPax ??
           undefined,
+        gasNoGas:
+          item.gasNoGas ===
+          true,
         aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
       })))
       : [];
@@ -723,6 +732,9 @@ export async function PUT(request: Request) {
               item!.gasBurnerCount,
             gasBatchPax:
               item!.gasBatchPax,
+            gasNoGas:
+              item!.gasNoGas ===
+              true,
             aliases: item!.aliases,
           },
         })
