@@ -104,7 +104,7 @@ export default function AdminGasCostPage() {
             },
           ),
           fetch(
-            '/api/admin/gas-cost/lpg',
+            '/api/admin/gas-cost',
             {
               cache:
                 'no-store',
@@ -228,7 +228,7 @@ export default function AdminGasCostPage() {
       !(setting.cylinderPrice > 0) ||
       !(setting.cylinderWeightKg > 0)
     ) {
-      setError(
+      setSettingError(
         'Cylinder price and cylinder weight must be greater than 0.',
       );
       return;
@@ -241,7 +241,7 @@ export default function AdminGasCostPage() {
     try {
       const response =
         await fetch(
-          '/api/admin/gas-cost',
+          '/api/admin/gas-cost/lpg',
           {
             method: 'PUT',
             headers: {
