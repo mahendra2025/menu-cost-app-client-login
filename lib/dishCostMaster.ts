@@ -28,6 +28,17 @@ export type DishCostItem = {
   gasKgPer100?: number;
 
   /*
+   * Optional real LPG profile.
+   * When all fields are present, event gas uses
+   * batch-based burner consumption instead of
+   * category or kg/100 fallback.
+   */
+  gasBurnerKgPerHour?: number;
+  gasCookingMinutes?: number;
+  gasBurnerCount?: number;
+  gasBatchPax?: number;
+
+  /*
    * Physical weight of one piece.
    * Example: Gulab Jamun = 35 g / piece.
    */
