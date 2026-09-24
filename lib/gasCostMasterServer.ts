@@ -126,6 +126,10 @@ export async function readGasCostMaster(
                       null,
                   },
                 },
+                {
+                  gasNoGas:
+                    true,
+                },
               ],
             },
             select: {
@@ -141,6 +145,8 @@ export async function readGasCostMaster(
               gasBurnerCount:
                 true,
               gasBatchPax:
+                true,
+              gasNoGas:
                 true,
             },
           }),
@@ -188,7 +194,9 @@ export async function readGasCostMaster(
             dish.gasKgPer100 !==
               null ||
             dish.gasBurnerKgPerHour !==
-              null,
+              null ||
+            dish.gasNoGas ===
+              true,
         )
         .map(
           (dish) => ({
@@ -241,6 +249,9 @@ export async function readGasCostMaster(
                       dish.gasBatchPax,
                     ) || 1,
                   ),
+            gasNoGas:
+              dish.gasNoGas ===
+              true,
           }),
         ),
   };
