@@ -3021,22 +3021,36 @@ export default function RecipesPage() {
             font-size:9px;
           }
 
-          .recipe-fast-row-gas {
+          .recipe-fast-row-metrics {
             flex:0 0 auto;
-            min-width:78px;
+            display:grid;
+            grid-template-columns:repeat(2,minmax(68px,1fr));
+            gap:5px;
+          }
+
+          .recipe-fast-row-metric {
+            min-width:68px;
             padding:5px 7px;
-            border:1px solid rgba(64,156,255,.23);
+            border:1px solid #2a3540;
             border-radius:9px;
-            background:rgba(64,156,255,.07);
+            background:#111820;
             text-align:right;
           }
 
-          .recipe-fast-row-gas b {
-            color:#9dcbff;
+          .recipe-fast-row-metric.gas {
+            border-color:rgba(64,156,255,.23);
+            background:rgba(64,156,255,.07);
+          }
+
+          .recipe-fast-row-metric b {
             font-size:10px;
           }
 
-          .recipe-fast-row-gas span {
+          .recipe-fast-row-metric.gas b {
+            color:#9dcbff;
+          }
+
+          .recipe-fast-row-metric span {
             margin-top:1px;
             color:#718398;
             font-size:7px;
@@ -3538,6 +3552,19 @@ export default function RecipesPage() {
             .recipe-toolbar-count {
               text-align:left;
             }
+
+            .recipe-fast-row-main {
+              align-items:stretch;
+              flex-direction:column;
+            }
+
+            .recipe-fast-row-metrics {
+              grid-template-columns:1fr 1fr;
+            }
+
+            .recipe-fast-row-metric {
+              text-align:left;
+            }
           }
         `}</style>
 
@@ -3844,6 +3871,23 @@ I | Tomato | 4 | kg | 35 | kg`}
                       ) ||
                       'Other';
 
+                    const rowGuests =
+                      Math.max(
+                        1,
+                        numberValue(
+                          dish.baseGuests,
+                          100,
+                        ),
+                      );
+
+                    const rowFoodPerPerson =
+                      applyRecipeWastage(
+                        recipeTotal(
+                          dish,
+                        ) /
+                        rowGuests,
+                      );
+
                     const rowGas =
                       recipeGasPreview(
                         dish,
@@ -3862,7 +3906,7 @@ I | Tomato | 4 | kg | 35 | kg`}
                         }`}
                         key={`${recipeName(dish)}-${index}`}
                         type="button"
-                        title="Open recipe and edit gas cost"
+                        title="Open recipe costing"
                         onClick={() =>
                           setSelectedIndex(
                             index,
@@ -3889,15 +3933,28 @@ I | Tomato | 4 | kg | 35 | kg`}
                             </span>
                           </div>
 
-                          <div className="recipe-fast-row-gas">
-                            <b>
-                              {money(
-                                rowGas.gasCost,
-                              )}
-                            </b>
-                            <span>
-                              Gas / 100
-                            </span>
+                          <div className="recipe-fast-row-metrics">
+                            <div className="recipe-fast-row-metric">
+                              <b>
+                                {money(
+                                  rowFoodPerPerson,
+                                )}
+                              </b>
+                              <span>
+                                Food / pax
+                              </span>
+                            </div>
+
+                            <div className="recipe-fast-row-metric gas">
+                              <b>
+                                {money(
+                                  rowGas.gasCost,
+                                )}
+                              </b>
+                              <span>
+                                Gas / 100
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </button>
