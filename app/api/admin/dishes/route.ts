@@ -361,6 +361,7 @@ function syncRecipeCatalogWithDishes(
       gasCookingMinutes: item.gasCookingMinutes,
       gasBurnerCount: item.gasBurnerCount,
       gasBatchPax: item.gasBatchPax,
+      gasNoGas: item.gasNoGas,
 
       pieceWeightGrams:
         item.servingUnit
