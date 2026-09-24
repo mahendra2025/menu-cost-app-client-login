@@ -260,6 +260,12 @@ function normalizeRecipeDishes(
     servingQuantity: number;
     servingUnit: string;
     aliases: string[];
+    gasKgPer100: number | null;
+    gasBurnerKgPerHour: number | null;
+    gasCookingMinutes: number | null;
+    gasBurnerCount: number | null;
+    gasBatchPax: number | null;
+    gasNoGas: boolean;
   }>();
 
   for (const value of dishes) {
@@ -305,6 +311,99 @@ function normalizeRecipeDishes(
       ).values())
       : [];
 
+    const optionalGasNumber = (value: unknown) => {
+      if (
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ''
+      ) {
+        return null;
+      }
+
+      const number = Number(value);
+      return Number.isFinite(number)
+        ? Math.max(0, number)
+        : null;
+    };
+
+    const gasNoGas =
+      row.gasNoGas === true;
+
+    const gasKgPer100 =
+      gasNoGas
+        ? 0
+        : optionalGasNumber(
+            row.gasKgPer100,
+          );
+
+    const gasBurnerKgPerHour =
+      gasNoGas
+        ? null
+        : optionalGasNumber(
+            row.gasBurnerKgPerHour,
+          );
+    const gasCookingMinutes =
+      gasNoGas
+        ? null
+        : optionalGasNumber(
+            row.gasCookingMinutes,
+          );
+    const gasBurnerCountRaw =
+      gasNoGas
+        ? null
+        : optionalGasNumber(
+            row.gasBurnerCount,
+          );
+    const gasBatchPaxRaw =
+      gasNoGas
+        ? null
+        : optionalGasNumber(
+            row.gasBatchPax,
+          );
+
+    const realGasValues = [
+      gasBurnerKgPerHour,
+      gasCookingMinutes,
+      gasBurnerCountRaw,
+      gasBatchPaxRaw,
+    ];
+
+    const hasAnyRealGas =
+      realGasValues.some(
+        (value) => value !== null,
+      );
+
+    const hasCompleteRealGas =
+      realGasValues.every(
+        (value) =>
+          value !== null &&
+          Number(value) > 0,
+      );
+
+    const gasBurnerCount =
+      hasCompleteRealGas
+        ? Math.max(
+            1,
+            Math.round(
+              Number(
+                gasBurnerCountRaw,
+              ),
+            ),
+          )
+        : null;
+
+    const gasBatchPax =
+      hasCompleteRealGas
+        ? Math.max(
+            1,
+            Math.round(
+              Number(
+                gasBatchPaxRaw,
+              ),
+            ),
+          )
+        : null;
+
     normalized.set(name.toLowerCase(), {
       name,
       category,
@@ -313,6 +412,18 @@ function normalizeRecipeDishes(
       servingQuantity: Math.max(0.01, Number(row.servingSize) || 1),
       servingUnit: cleanText(row.servingUnit, 30) || 'serving',
       aliases,
+      gasKgPer100,
+      gasBurnerKgPerHour:
+        hasCompleteRealGas
+          ? gasBurnerKgPerHour
+          : null,
+      gasCookingMinutes:
+        hasCompleteRealGas
+          ? gasCookingMinutes
+          : null,
+      gasBurnerCount,
+      gasBatchPax,
+      gasNoGas,
     });
   }
 
@@ -338,6 +449,12 @@ async function syncRecipesToDishCatalog(
         rate: true,
         servingQuantity: true,
         servingUnit: true,
+        gasKgPer100: true,
+        gasBurnerKgPerHour: true,
+        gasCookingMinutes: true,
+        gasBurnerCount: true,
+        gasBatchPax: true,
+        gasNoGas: true,
         aliases: true,
       },
     }),
@@ -366,6 +483,12 @@ async function syncRecipesToDishCatalog(
         Math.abs(existing.rate - dish.rate) < 0.001 &&
         Math.abs(existing.servingQuantity - dish.servingQuantity) < 0.001 &&
         existing.servingUnit === dish.servingUnit &&
+        (existing.gasKgPer100 ?? null) === dish.gasKgPer100 &&
+        (existing.gasBurnerKgPerHour ?? null) === dish.gasBurnerKgPerHour &&
+        (existing.gasCookingMinutes ?? null) === dish.gasCookingMinutes &&
+        (existing.gasBurnerCount ?? null) === dish.gasBurnerCount &&
+        (existing.gasBatchPax ?? null) === dish.gasBatchPax &&
+        existing.gasNoGas === dish.gasNoGas &&
         JSON.stringify(existingAliases) === JSON.stringify(nextAliases);
       if (unchanged) continue;
 
