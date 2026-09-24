@@ -52,6 +52,7 @@ type DishRowErrors = {
   servingQuantity?: string;
   servingUnit?: string;
   aliases?: string;
+  gasProfile?: string;
 };
 
 const DISHES_PER_PAGE = 24;
@@ -318,6 +319,31 @@ function validateRows(rows: EditableDish[]) {
     if (!(Number(row.rate) > 0)) rowErrors.rate = 'Rate must be greater than 0.';
     if (!(Number(row.servingQuantity) > 0)) rowErrors.servingQuantity = 'Quantity must be greater than 0.';
     if (!String(row.servingUnit || '').trim()) rowErrors.servingUnit = 'Unit is required.';
+
+    const realGasValues = [
+      row.gasBurnerKgPerHour,
+      row.gasCookingMinutes,
+      row.gasBurnerCount,
+      row.gasBatchPax,
+    ];
+    const hasAnyRealGas = realGasValues.some((value) => value !== undefined);
+
+    if (hasAnyRealGas) {
+      const hasCompleteRealGas = realGasValues.every(
+        (value) => value !== undefined && Number.isFinite(Number(value)),
+      );
+
+      if (
+        !hasCompleteRealGas ||
+        !(Number(row.gasBurnerKgPerHour) > 0) ||
+        !(Number(row.gasCookingMinutes) > 0) ||
+        !(Number(row.gasBurnerCount) > 0) ||
+        !(Number(row.gasBatchPax) > 0)
+      ) {
+        rowErrors.gasProfile =
+          'Real gas profile needs burner kg/hour > 0, cooking minutes > 0, burners ≥ 1 and batch guests ≥ 1.';
+      }
+    }
 
     const duplicateAliasesInRow = aliases.filter((alias, index) => aliases.findIndex((item) => normalizeToken(item) === normalizeToken(alias)) !== index);
     if (duplicateAliasesInRow.length) rowErrors.aliases = 'Aliases in the same row must be unique.';
@@ -2696,6 +2722,12 @@ async function handleCsvImport(
                             </small>
                           </div>
                         </div>
+
+                        {rowErrors.get(row.id)?.gasProfile ? (
+                          <span className="field-error">
+                            {rowErrors.get(row.id)?.gasProfile}
+                          </span>
+                        ) : null}
 
                         <div className="dish-real-gas-preview">
                           <span>
