@@ -1730,6 +1730,18 @@ export default function ManpowerPage() {
                 <span>Dishes staffed</span>
                 <b>{staffedMenuDishCount}/{work.menu.length}</b>
               </div>
+              <div>
+                <span>Unassigned dishes</span>
+                <b className={unassignedMenuDishCount > 0 ? 'needs-attention' : ''}>
+                  {unassignedMenuDishCount}
+                </b>
+              </div>
+              <div>
+                <span>Roles need qty</span>
+                <b className={zeroQuantityAssignedRoleCount > 0 ? 'needs-attention' : ''}>
+                  {zeroQuantityAssignedRoleCount}
+                </b>
+              </div>
             </div>
 
             <div className="manpower-desktop-team-split">
@@ -1754,6 +1766,30 @@ export default function ManpowerPage() {
                 <small>No role quantity is selected automatically.</small>
               </div>
             </div>
+
+            {unassignedMenuDishCount > 0 ||
+            zeroQuantityAssignedRoleCount > 0 ? (
+              <div className="manpower-review-warning">
+                <b>Review before Operations</b>
+                <small>
+                  {unassignedMenuDishCount > 0
+                    ? `${unassignedMenuDishCount} dish${unassignedMenuDishCount === 1 ? '' : 'es'} unassigned`
+                    : 'All dishes assigned'}
+                  {' · '}
+                  {zeroQuantityAssignedRoleCount > 0
+                    ? `${zeroQuantityAssignedRoleCount} role${zeroQuantityAssignedRoleCount === 1 ? '' : 's'} need quantity`
+                    : 'All assigned roles have quantity'}
+                </small>
+              </div>
+            ) : (
+              <div className="manpower-review-ready">
+                <span aria-hidden="true">✓</span>
+                <div>
+                  <b>Coverage ready</b>
+                  <small>All dishes are assigned and every assigned role has quantity.</small>
+                </div>
+              </div>
+            )}
 
             <button
               className="primary-button manpower-desktop-next"
