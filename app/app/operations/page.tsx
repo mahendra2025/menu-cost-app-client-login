@@ -20,6 +20,7 @@ import {
   calculateEventGas,
   defaultGasCostMaster,
   type GasCostMaster,
+  type GasDishCostRow,
 } from '../../../lib/gasCost';
 
 function money(value: number) {
@@ -203,6 +204,27 @@ export default function OperationsCostPage() {
       ],
     );
 
+  const eventGasOverrideMap =
+    useMemo(
+      () =>
+        new Map(
+          (
+            work
+              ?.gasEventOverrides ||
+            []
+          ).map(
+            (override) => [
+              override.key,
+              override,
+            ] as const,
+          ),
+        ),
+      [
+        work
+          ?.gasEventOverrides,
+      ],
+    );
+
   const totals = useMemo(
     () =>
       operations &&
@@ -217,6 +239,13 @@ export default function OperationsCostPage() {
       gasBreakdown,
     ],
   );
+
+  const eventGasDishCount =
+    gasBreakdown?.rows.filter(
+      (row) =>
+        row.source ===
+        'EVENT_OVERRIDE',
+    ).length || 0;
 
   const realGasDishCount =
     gasBreakdown?.rows.filter(
@@ -276,6 +305,153 @@ export default function OperationsCostPage() {
     setWork(nextWork);
     saveWork(session.tenantId, nextWork as WorkState);
     setMessage(nextMessage);
+  }
+
+  function saveEventGasOverrides(
+    nextOverrides:
+      NonNullable<
+        WorkState[
+          'gasEventOverrides'
+        ]
+      >,
+    nextMessage: string,
+  ) {
+    if (!work || !session) {
+      return;
+    }
+
+    const baseWork:
+      WorkWithOperations = {
+        ...work,
+        gasEventOverrides:
+          nextOverrides,
+        sellingPricePerPlate:
+          0,
+        updatedAt:
+          new Date()
+            .toISOString(),
+      };
+
+    const nextGas =
+      calculateEventGas(
+        baseWork,
+        gasMaster,
+      );
+
+    const nextWork:
+      WorkWithOperations = {
+        ...baseWork,
+        extras: {
+          ...baseWork.extras,
+          gasFuel:
+            nextGas
+              .totalGasCost,
+        },
+      };
+
+    setWork(nextWork);
+    saveWork(
+      session.tenantId,
+      nextWork as WorkState,
+    );
+    setMessage(
+      nextMessage,
+    );
+  }
+
+  function updateEventGasOverride(
+    dish: GasDishCostRow,
+    rawValue: string,
+  ) {
+    if (!work) {
+      return;
+    }
+
+    const trimmed =
+      rawValue.trim();
+
+    if (!trimmed) {
+      clearEventGasOverride(
+        dish,
+      );
+      return;
+    }
+
+    const value =
+      Number(trimmed);
+
+    if (
+      !Number.isFinite(
+        value,
+      ) ||
+      value < 0
+    ) {
+      setMessage(
+        'Event gas override must be 0 or more.',
+      );
+      return;
+    }
+
+    const current =
+      work
+        .gasEventOverrides ||
+      [];
+
+    const nextOverrides = [
+      ...current.filter(
+        (item) =>
+          item.key !==
+          dish.key,
+      ),
+      {
+        key: dish.key,
+        serviceKey:
+          dish.serviceKey,
+        serviceId:
+          dish.serviceId,
+        dishId:
+          dish.dishId,
+        dishName:
+          dish.dish,
+        gasKgPer100:
+          value,
+        noGas:
+          value === 0,
+        updatedAt:
+          new Date()
+            .toISOString(),
+      },
+    ];
+
+    saveEventGasOverrides(
+      nextOverrides,
+      `${dish.dish}: event-only gas set to ${value.toFixed(2)} kg / 100.`,
+    );
+  }
+
+  function clearEventGasOverride(
+    dish: GasDishCostRow,
+  ) {
+    if (!work) {
+      return;
+    }
+
+    const current =
+      work
+        .gasEventOverrides ||
+      [];
+
+    const nextOverrides =
+      current.filter(
+        (item) =>
+          item.key !==
+          dish.key,
+      );
+
+    saveEventGasOverrides(
+      nextOverrides,
+      `${dish.dish}: event gas reset to Recipe / Gas Master.`,
+    );
   }
 
   function updateFunctionTransport(
