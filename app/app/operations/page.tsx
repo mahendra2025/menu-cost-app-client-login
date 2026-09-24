@@ -550,7 +550,7 @@ export default function OperationsCostPage() {
           <div>
             <span className="page-eyebrow">Operations cost control</span>
             <h2>Gas, transport and disposable readiness</h2>
-            <p>Gas uses each dish's real burner/time/batch profile when available, then measured kg/100, then category rate. Missing cooking rates get a safe positive fallback; approved no-gas categories stay at zero.</p>
+            <p>Gas uses an event-only override first, then the dish's real burner/time/batch profile, measured kg/100 and category rate. Missing cooking rates get a safe positive fallback; approved no-gas categories stay at zero.</p>
           </div>
           <div className="final-costing-overview-total">
             <span>Gas + transport</span>
@@ -661,7 +661,7 @@ export default function OperationsCostPage() {
               <div className="operations-section-title">
                 <div>
                   <strong>LPG / Gas</strong>
-                  <small>Real profile first · measured kg/100 second · category rate third · safe cooking fallback last.</small>
+                  <small>Event override first · real profile second · measured kg/100 third · category rate next · safe cooking fallback last.</small>
                 </div>
                 <b>{money(gasTotal)}</b>
               </div>
