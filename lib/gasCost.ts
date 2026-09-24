@@ -653,10 +653,17 @@ export function calculateEventGas(
           dishKey,
         );
 
+      const noGasDish =
+        masterOverride
+          ?.gasNoGas ===
+        true;
+
       const realProfile =
-        realDishGasProfile(
-          masterOverride,
-        );
+        noGasDish
+          ? null
+          : realDishGasProfile(
+              masterOverride,
+            );
 
       const masterMeasuredGas =
         masterOverride &&
@@ -677,11 +684,6 @@ export function calculateEventGas(
         isNoGasCategory(
           item.category,
         );
-
-      const noGasDish =
-        masterOverride
-          ?.gasNoGas ===
-        true;
 
       const categoryGas =
         categoryGasKgPer100(
