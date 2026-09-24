@@ -43,6 +43,11 @@ type ManpowerFilterGroup =
   | 'LOGISTICS'
   | 'MANAGEMENT';
 
+type DishCoverageFilter =
+  | 'ALL'
+  | 'UNASSIGNED'
+  | 'NEEDS_QTY';
+
 const MANPOWER_FILTERS: Array<{
   key: ManpowerFilterGroup;
   label: string;
@@ -527,16 +532,20 @@ function DishManpowerBoard({
   dishes,
   rows,
   onToggle,
+  emptyTitle = 'No menu dishes found',
+  emptyText = 'Add dishes to this meal before assigning cooks and helpers.',
 }: {
   dishes: MenuItem[];
   rows: ManpowerRow[];
   onToggle: (row: ManpowerRow, dishId: string, assigned: boolean) => void;
+  emptyTitle?: string;
+  emptyText?: string;
 }) {
   if (dishes.length === 0) {
     return (
       <div className="manpower-menu-empty">
-        <b>No menu dishes found</b>
-        <span>Add dishes to this meal before assigning cooks and helpers.</span>
+        <b>{emptyTitle}</b>
+        <span>{emptyText}</span>
       </div>
     );
   }
@@ -655,6 +664,8 @@ export default function ManpowerPage() {
   const [selectedMealKey, setSelectedMealKey] = useState('');
   const [departmentFilter, setDepartmentFilter] =
     useState<ManpowerFilterGroup>('ALL');
+  const [dishCoverageFilter, setDishCoverageFilter] =
+    useState<DishCoverageFilter>('ALL');
   const [newRoleDrafts, setNewRoleDrafts] = useState<Record<string, NewRoleDraft>>({});
   const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
 
@@ -838,6 +849,41 @@ export default function ManpowerPage() {
             ),
         ),
     ).length ?? 0;
+
+  const assignedMenuDishIds =
+    new Set(
+      (work?.manpower ?? [])
+        .filter(
+          canAssignDishes,
+        )
+        .flatMap(
+          (row) =>
+            row.assignedDishIds ??
+            [],
+        ),
+    );
+
+  const unassignedMenuDishCount =
+    work?.menu.filter(
+      (dish) =>
+        !assignedMenuDishIds.has(
+          dish.id,
+        ),
+    ).length ?? 0;
+
+  const zeroQuantityAssignedRoleCount =
+    (work?.manpower ?? []).filter(
+      (row) =>
+        canAssignDishes(row) &&
+        Math.max(
+          0,
+          Number(row.quantity) || 0,
+        ) === 0 &&
+        (
+          row.assignedDishIds ??
+          []
+        ).length > 0,
+    ).length;
 
   function rowsForMeal(meal: MealPlan) {
     return work?.manpower.filter((row) => rowBelongsToMeal(row, meal)) ?? [];
@@ -1111,7 +1157,10 @@ export default function ManpowerPage() {
                   className={`manpower-meal-tab ${meal.key === activeMealKey ? 'is-active' : ''}`}
                   type="button"
                   key={meal.key}
-                  onClick={() => setSelectedMealKey(meal.key)}
+                  onClick={() => {
+                      setSelectedMealKey(meal.key);
+                      setDishCoverageFilter('ALL');
+                    }}
                   aria-pressed={meal.key === activeMealKey}
                 >
                   <span className="manpower-meal-tab-icon">{index + 1}</span>
@@ -1160,6 +1209,84 @@ export default function ManpowerPage() {
                 (row.assignedDishIds ?? []).includes(dish.id),
             ),
           ).length;
+
+          const mealAssignedDishIds =
+            new Set(
+              mealRows
+                .filter(
+                  canAssignDishes,
+                )
+                .flatMap(
+                  (row) =>
+                    row.assignedDishIds ??
+                    [],
+                ),
+            );
+
+          const mealUnassignedDishes =
+            mealDishes.filter(
+              (dish) =>
+                !mealAssignedDishIds.has(
+                  dish.id,
+                ),
+            );
+
+          const zeroQuantityAssignedRows =
+            mealRows.filter(
+              (row) =>
+                canAssignDishes(row) &&
+                Math.max(
+                  0,
+                  Number(row.quantity) || 0,
+                ) === 0 &&
+                (
+                  row.assignedDishIds ??
+                  []
+                ).some(
+                  (dishId) =>
+                    meal.dishIds.includes(
+                      dishId,
+                    ),
+                ),
+            );
+
+          const zeroQuantityDishIds =
+            new Set(
+              zeroQuantityAssignedRows.flatMap(
+                (row) =>
+                  row.assignedDishIds ??
+                  [],
+              ),
+            );
+
+          const coverageDishes =
+            dishCoverageFilter ===
+              'UNASSIGNED'
+              ? mealUnassignedDishes
+              : dishCoverageFilter ===
+                  'NEEDS_QTY'
+                ? mealDishes.filter(
+                    (dish) =>
+                      zeroQuantityDishIds.has(
+                        dish.id,
+                      ),
+                  )
+                : mealDishes;
+
+          const assignedKitchenRows =
+            mealRows.filter(
+              (row) =>
+                canAssignDishes(row) &&
+                (
+                  row.assignedDishIds ??
+                  []
+                ).some(
+                  (dishId) =>
+                    meal.dishIds.includes(
+                      dishId,
+                    ),
+                ),
+            );
 
           return (
             <div className="glass-card manpower-planner-card" key={meal.key}>
@@ -1233,10 +1360,91 @@ export default function ManpowerPage() {
                 </div>
               </section>
 
+              <section className="manpower-coverage-review no-print" aria-label="Kitchen coverage review">
+                <div className="manpower-coverage-review-head">
+                  <div>
+                    <span>Kitchen coverage</span>
+                    <h3>Check every dish before Operations</h3>
+                    <p>Assignments stay manual. This review only shows what still needs attention.</p>
+                  </div>
+                  <strong className={staffedDishCount === mealDishes.length ? 'is-ready' : ''}>
+                    {staffedDishCount}/{mealDishes.length} staffed
+                  </strong>
+                </div>
+
+                <div className="manpower-coverage-metrics">
+                  <button
+                    type="button"
+                    className={dishCoverageFilter === 'ALL' ? 'active' : ''}
+                    onClick={() => setDishCoverageFilter('ALL')}
+                  >
+                    <b>{mealDishes.length}</b>
+                    <span>All dishes</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${dishCoverageFilter === 'UNASSIGNED' ? 'active ' : ''}${mealUnassignedDishes.length > 0 ? 'needs-attention' : ''}`}
+                    onClick={() => setDishCoverageFilter('UNASSIGNED')}
+                  >
+                    <b>{mealUnassignedDishes.length}</b>
+                    <span>Unassigned</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${dishCoverageFilter === 'NEEDS_QTY' ? 'active ' : ''}${zeroQuantityAssignedRows.length > 0 ? 'needs-attention' : ''}`}
+                    onClick={() => setDishCoverageFilter('NEEDS_QTY')}
+                  >
+                    <b>{zeroQuantityAssignedRows.length}</b>
+                    <span>Roles need qty</span>
+                  </button>
+                </div>
+
+                {assignedKitchenRows.length > 0 ? (
+                  <div className="manpower-coverage-role-list">
+                    {assignedKitchenRows.map((row) => {
+                      const assignedCount =
+                        (row.assignedDishIds ?? []).filter(
+                          (dishId) =>
+                            meal.dishIds.includes(dishId),
+                        ).length;
+                      const quantity = Math.max(0, Number(row.quantity) || 0);
+
+                      return (
+                        <div className={quantity === 0 ? 'needs-attention' : ''} key={row.id}>
+                          <span>
+                            <b>{row.role}</b>
+                            <small>{assignedCount} dish{assignedCount === 1 ? '' : 'es'}</small>
+                          </span>
+                          <strong>
+                            {quantity > 0
+                              ? `${quantity} person${quantity === 1 ? '' : 's'} · ${money(manpowerRawCost(row))}`
+                              : 'Set quantity'}
+                          </strong>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </section>
+
               <DishManpowerBoard
-                dishes={mealDishes}
+                dishes={coverageDishes}
                 rows={mealRows}
                 onToggle={toggleDishManpower}
+                emptyTitle={
+                  dishCoverageFilter === 'UNASSIGNED'
+                    ? 'No unassigned dishes'
+                    : dishCoverageFilter === 'NEEDS_QTY'
+                      ? 'No dishes linked to zero-quantity roles'
+                      : 'No menu dishes found'
+                }
+                emptyText={
+                  dishCoverageFilter === 'UNASSIGNED'
+                    ? 'Every dish has at least one manpower assignment.'
+                    : dishCoverageFilter === 'NEEDS_QTY'
+                      ? 'All dish-assigned roles have a manpower quantity.'
+                      : 'Add dishes to this meal before assigning cooks and helpers.'
+                }
               />
 
               <div className="manpower-roster-heading">
@@ -1522,6 +1730,18 @@ export default function ManpowerPage() {
                 <span>Dishes staffed</span>
                 <b>{staffedMenuDishCount}/{work.menu.length}</b>
               </div>
+              <div>
+                <span>Unassigned dishes</span>
+                <b className={unassignedMenuDishCount > 0 ? 'needs-attention' : ''}>
+                  {unassignedMenuDishCount}
+                </b>
+              </div>
+              <div>
+                <span>Roles need qty</span>
+                <b className={zeroQuantityAssignedRoleCount > 0 ? 'needs-attention' : ''}>
+                  {zeroQuantityAssignedRoleCount}
+                </b>
+              </div>
             </div>
 
             <div className="manpower-desktop-team-split">
@@ -1546,6 +1766,30 @@ export default function ManpowerPage() {
                 <small>No role quantity is selected automatically.</small>
               </div>
             </div>
+
+            {unassignedMenuDishCount > 0 ||
+            zeroQuantityAssignedRoleCount > 0 ? (
+              <div className="manpower-review-warning">
+                <b>Review before Operations</b>
+                <small>
+                  {unassignedMenuDishCount > 0
+                    ? `${unassignedMenuDishCount} dish${unassignedMenuDishCount === 1 ? '' : 'es'} unassigned`
+                    : 'All dishes assigned'}
+                  {' · '}
+                  {zeroQuantityAssignedRoleCount > 0
+                    ? `${zeroQuantityAssignedRoleCount} role${zeroQuantityAssignedRoleCount === 1 ? '' : 's'} need quantity`
+                    : 'All assigned roles have quantity'}
+                </small>
+              </div>
+            ) : (
+              <div className="manpower-review-ready">
+                <span aria-hidden="true">✓</span>
+                <div>
+                  <b>Coverage ready</b>
+                  <small>All dishes are assigned and every assigned role has quantity.</small>
+                </div>
+              </div>
+            )}
 
             <button
               className="primary-button manpower-desktop-next"
