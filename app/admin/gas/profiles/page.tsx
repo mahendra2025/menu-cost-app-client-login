@@ -1169,6 +1169,182 @@ export default function AdminGasProfilesPage() {
             Next
           </button>
         </div>
+
+        <style jsx>{`
+          .gas-profile-stats {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+          }
+
+          .gas-profile-filter-card {
+            display: grid;
+            gap: 16px;
+          }
+
+          .gas-profile-filters {
+            display: grid;
+            grid-template-columns:
+              minmax(260px, 1.4fr)
+              minmax(180px, .8fr)
+              minmax(180px, .8fr);
+            gap: 12px;
+            align-items: end;
+          }
+
+          .gas-profile-filters .field {
+            margin: 0;
+          }
+
+          .gas-profile-list {
+            display: grid;
+            gap: 12px;
+          }
+
+          .gas-profile-card {
+            display: grid;
+            gap: 14px;
+          }
+
+          .gas-profile-card-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+          }
+
+          .gas-profile-card-head h3 {
+            margin: 4px 0 3px;
+            font-size: 20px;
+            letter-spacing: -.025em;
+          }
+
+          .gas-profile-card-head small {
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+          }
+
+          .gas-profile-status {
+            flex: 0 0 auto;
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: rgba(148, 163, 184, .08);
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: .04em;
+          }
+
+          .status-real-profile {
+            color: #14733a;
+            border-color: rgba(45, 164, 78, .24);
+            background: rgba(45, 164, 78, .08);
+          }
+
+          .status-measured {
+            color: #075db7;
+            border-color: rgba(0, 122, 255, .22);
+            background: rgba(0, 122, 255, .08);
+          }
+
+          .status-safe-default {
+            color: #9a5a0a;
+            border-color: rgba(255, 149, 0, .28);
+            background: rgba(255, 149, 0, .09);
+          }
+
+          .gas-profile-fields {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(120px, 1fr));
+            gap: 10px;
+          }
+
+          .gas-profile-fields label {
+            display: grid;
+            gap: 6px;
+          }
+
+          .gas-profile-fields label > span {
+            color: var(--muted);
+            font-size: 9px;
+            font-weight: 850;
+            letter-spacing: .025em;
+            text-transform: uppercase;
+          }
+
+          .gas-profile-fields input {
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 10px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            background: var(--surface);
+            font-size: 12px;
+            font-weight: 800;
+          }
+
+          .gas-profile-fields input:focus {
+            outline: none;
+            border-color: rgba(0, 122, 255, .52);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, .09);
+          }
+
+          .gas-profile-actions {
+            margin: 0;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+          }
+
+          .gas-profile-pagination {
+            justify-content: center;
+            align-items: center;
+            margin: 4px 0 24px;
+          }
+
+          .gas-profile-pagination > span {
+            min-width: 120px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 800;
+          }
+
+          @media (max-width: 1050px) {
+            .gas-profile-fields {
+              grid-template-columns: repeat(3, minmax(120px, 1fr));
+            }
+          }
+
+          @media (max-width: 760px) {
+            .gas-profile-stats {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .gas-profile-filters {
+              grid-template-columns: 1fr;
+            }
+
+            .gas-profile-card-head {
+              flex-direction: column;
+              gap: 9px;
+            }
+
+            .gas-profile-fields {
+              grid-template-columns: 1fr 1fr;
+            }
+
+            .gas-profile-actions {
+              display: grid;
+              grid-template-columns: 1fr;
+            }
+          }
+
+          @media (max-width: 460px) {
+            .gas-profile-fields {
+              grid-template-columns: 1fr;
+            }
+          }
+        `}</style>
       </section>
     </AppShell>
   );
