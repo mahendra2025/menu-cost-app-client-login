@@ -2272,6 +2272,58 @@ export default function RecipesPage() {
       return;
     }
 
+    const invalidGasRecipe =
+      catalog.dishes.find(
+        (dish) => {
+          if (
+            dish.gasNoGas ===
+            true
+          ) {
+            return false;
+          }
+
+          const realValues = [
+            optionalRecipeGasNumber(
+              dish.gasBurnerKgPerHour,
+            ),
+            optionalRecipeGasNumber(
+              dish.gasCookingMinutes,
+            ),
+            optionalRecipeGasNumber(
+              dish.gasBurnerCount,
+            ),
+            optionalRecipeGasNumber(
+              dish.gasBatchPax,
+            ),
+          ];
+
+          const hasAny =
+            realValues.some(
+              (value) =>
+                value !== null,
+            );
+
+          const complete =
+            realValues.every(
+              (value) =>
+                value !== null &&
+                value > 0,
+            );
+
+          return (
+            hasAny &&
+            !complete
+          );
+        },
+      );
+
+    if (invalidGasRecipe) {
+      setError(
+        `${recipeName(invalidGasRecipe)}: Real gas profile needs Burner kg/hour, Cooking minutes, Burners and Gas batch guests. Fill all 4 or clear all 4.`,
+      );
+      return;
+    }
+
     setSaving(true);
     setSyncStatus(
       'syncing',
@@ -2891,6 +2943,120 @@ export default function RecipesPage() {
             font-size:14px;
           }
 
+          .recipe-gas-panel {
+            display:grid;
+            gap:11px;
+            margin:12px 0 14px;
+            padding:13px;
+            border:1px solid rgba(64,156,255,.26);
+            border-radius:12px;
+            background:rgba(64,156,255,.055);
+          }
+
+          .recipe-gas-head {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:12px;
+          }
+
+          .recipe-gas-head > div:first-child {
+            display:grid;
+            gap:3px;
+          }
+
+          .recipe-gas-head strong {
+            font-size:13px;
+          }
+
+          .recipe-gas-head small {
+            color:#8190a0;
+            font-size:9px;
+          }
+
+          .recipe-gas-source {
+            flex:0 0 auto;
+            padding:5px 8px;
+            border:1px solid rgba(64,156,255,.28);
+            border-radius:999px;
+            color:#8cc5ff;
+            background:rgba(64,156,255,.08);
+            font-size:8px;
+            font-weight:900;
+            letter-spacing:.04em;
+          }
+
+          .recipe-gas-stats {
+            display:grid;
+            grid-template-columns:repeat(4,minmax(0,1fr));
+            gap:7px;
+          }
+
+          .recipe-gas-stat {
+            padding:9px 10px;
+            border:1px solid #29323d;
+            border-radius:10px;
+            background:#111820;
+          }
+
+          .recipe-gas-stat span,
+          .recipe-gas-stat b,
+          .recipe-gas-stat small {
+            display:block;
+          }
+
+          .recipe-gas-stat span {
+            color:#788593;
+            font-size:8px;
+            text-transform:uppercase;
+          }
+
+          .recipe-gas-stat b {
+            margin-top:4px;
+            font-size:13px;
+          }
+
+          .recipe-gas-stat small {
+            margin-top:2px;
+            color:#788593;
+            font-size:8px;
+          }
+
+          .recipe-gas-fields {
+            display:grid;
+            grid-template-columns:repeat(5,minmax(110px,1fr));
+            gap:7px;
+          }
+
+          .recipe-gas-no-gas {
+            display:flex;
+            align-items:center;
+            gap:9px;
+            padding:9px 10px;
+            border:1px solid #303944;
+            border-radius:10px;
+            background:#10161e;
+          }
+
+          .recipe-gas-no-gas input {
+            width:17px;
+            height:17px;
+            flex:0 0 auto;
+          }
+
+          .recipe-gas-no-gas > span {
+            display:grid;
+            gap:2px;
+            font-size:10px;
+            font-weight:850;
+          }
+
+          .recipe-gas-no-gas small {
+            color:#7f8b99;
+            font-size:8px;
+            font-weight:650;
+          }
+
           .recipe-fast-quality {
             display:none;
             gap:9px;
@@ -3028,7 +3194,17 @@ export default function RecipesPage() {
             font-size:11px;
           }
 
+          @media(max-width:1100px) {
+            .recipe-gas-fields {
+              grid-template-columns:repeat(3,minmax(110px,1fr));
+            }
+          }
+
           @media(max-width:900px) {
+            .recipe-gas-stats {
+              grid-template-columns:1fr 1fr;
+            }
+
             .recipe-fast-workspace {
               grid-template-columns:1fr;
             }
@@ -3051,6 +3227,14 @@ export default function RecipesPage() {
           }
 
           @media(max-width:620px) {
+            .recipe-gas-head {
+              flex-direction:column;
+            }
+
+            .recipe-gas-fields {
+              grid-template-columns:1fr;
+            }
+
             .recipe-fast-hero {
               align-items:stretch;
               flex-direction:column;
@@ -3835,6 +4019,347 @@ I | Tomato | 4 | kg | 35 | kg`}
                         )}
                       </b>
                     </div>
+                  </div>
+
+                  <div className="recipe-gas-panel">
+                    <div className="recipe-gas-head">
+                      <div>
+                        <strong>
+                          Gas Cost (LPG)
+                        </strong>
+                        <small>
+                          Saved with this recipe and synced to Dish Master.
+                        </small>
+                      </div>
+
+                      <span className="recipe-gas-source">
+                        {gasPreview.source}
+                      </span>
+                    </div>
+
+                    <div className="recipe-gas-stats">
+                      <div className="recipe-gas-stat">
+                        <span>
+                          LPG / 100
+                        </span>
+                        <b>
+                          {gasPreview.gasKgPer100.toFixed(2)} kg
+                        </b>
+                        <small>
+                          Effective recipe gas
+                        </small>
+                      </div>
+
+                      <div className="recipe-gas-stat">
+                        <span>
+                          LPG / Recipe Batch
+                        </span>
+                        <b>
+                          {gasPreview.gasKg.toFixed(3)} kg
+                        </b>
+                        <small>
+                          {guests.toLocaleString('en-IN')} guests
+                        </small>
+                      </div>
+
+                      <div className="recipe-gas-stat">
+                        <span>
+                          Gas Cost / Batch
+                        </span>
+                        <b>
+                          {money(
+                            gasPreview.gasCost,
+                          )}
+                        </b>
+                        <small>
+                          ₹{gasPreview.lpgRate.toFixed(2)} / kg LPG
+                        </small>
+                      </div>
+
+                      <div className="recipe-gas-stat">
+                        <span>
+                          Food + Gas / Person
+                        </span>
+                        <b>
+                          {money(
+                            finalPerPerson +
+                            gasPreview.gasCostPerPerson,
+                          )}
+                        </b>
+                        <small>
+                          Gas {money(gasPreview.gasCostPerPerson)} / person
+                        </small>
+                      </div>
+                    </div>
+
+                    <label className="recipe-gas-no-gas">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedDish.gasNoGas ===
+                          true
+                        }
+                        onChange={(event) =>
+                          updateDish(
+                            selectedIndex,
+                            event.target.checked
+                              ? {
+                                  gasNoGas: true,
+                                  gasKgPer100: 0,
+                                  gasBurnerKgPerHour: null,
+                                  gasCookingMinutes: null,
+                                  gasBurnerCount: null,
+                                  gasBatchPax: null,
+                                }
+                              : {
+                                  gasNoGas: false,
+                                  gasKgPer100: null,
+                                },
+                          )
+                        }
+                      />
+                      <span>
+                        No Gas Recipe
+                        <small>
+                          Use only when this recipe genuinely needs no LPG.
+                        </small>
+                      </span>
+                    </label>
+
+                    <div className="recipe-gas-fields">
+                      <div className="recipe-fast-field">
+                        <label>
+                          Measured LPG kg / 100
+                        </label>
+                        <input
+                          className="recipe-fast-input"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          disabled={
+                            selectedDish.gasNoGas ===
+                            true
+                          }
+                          value={
+                            selectedDish.gasKgPer100 ===
+                              null ||
+                            selectedDish.gasKgPer100 ===
+                              undefined
+                              ? ''
+                              : numberValue(
+                                  selectedDish.gasKgPer100,
+                                )
+                          }
+                          placeholder={gasPreview.gasKgPer100.toFixed(2)}
+                          onChange={(event) =>
+                            updateDish(
+                              selectedIndex,
+                              {
+                                gasNoGas: false,
+                                gasKgPer100:
+                                  event.target.value.trim()
+                                    ? Math.max(
+                                        0,
+                                        Number(
+                                          event.target.value,
+                                        ) || 0,
+                                      )
+                                    : null,
+                              },
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="recipe-fast-field">
+                        <label>
+                          Burner kg / hour
+                        </label>
+                        <input
+                          className="recipe-fast-input"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          disabled={
+                            selectedDish.gasNoGas ===
+                            true
+                          }
+                          value={
+                            selectedDish.gasBurnerKgPerHour ===
+                              null ||
+                            selectedDish.gasBurnerKgPerHour ===
+                              undefined
+                              ? ''
+                              : numberValue(
+                                  selectedDish.gasBurnerKgPerHour,
+                                )
+                          }
+                          placeholder="0.50"
+                          onChange={(event) =>
+                            updateDish(
+                              selectedIndex,
+                              {
+                                gasNoGas: false,
+                                gasBurnerKgPerHour:
+                                  event.target.value.trim()
+                                    ? Math.max(
+                                        0,
+                                        Number(
+                                          event.target.value,
+                                        ) || 0,
+                                      )
+                                    : null,
+                              },
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="recipe-fast-field">
+                        <label>
+                          Cooking min / batch
+                        </label>
+                        <input
+                          className="recipe-fast-input"
+                          type="number"
+                          min="0"
+                          step="1"
+                          disabled={
+                            selectedDish.gasNoGas ===
+                            true
+                          }
+                          value={
+                            selectedDish.gasCookingMinutes ===
+                              null ||
+                            selectedDish.gasCookingMinutes ===
+                              undefined
+                              ? ''
+                              : numberValue(
+                                  selectedDish.gasCookingMinutes,
+                                )
+                          }
+                          placeholder="60"
+                          onChange={(event) =>
+                            updateDish(
+                              selectedIndex,
+                              {
+                                gasNoGas: false,
+                                gasCookingMinutes:
+                                  event.target.value.trim()
+                                    ? Math.max(
+                                        0,
+                                        Number(
+                                          event.target.value,
+                                        ) || 0,
+                                      )
+                                    : null,
+                              },
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="recipe-fast-field">
+                        <label>
+                          Burners used
+                        </label>
+                        <input
+                          className="recipe-fast-input"
+                          type="number"
+                          min="1"
+                          step="1"
+                          disabled={
+                            selectedDish.gasNoGas ===
+                            true
+                          }
+                          value={
+                            selectedDish.gasBurnerCount ===
+                              null ||
+                            selectedDish.gasBurnerCount ===
+                              undefined
+                              ? ''
+                              : numberValue(
+                                  selectedDish.gasBurnerCount,
+                                )
+                          }
+                          placeholder="1"
+                          onChange={(event) =>
+                            updateDish(
+                              selectedIndex,
+                              {
+                                gasNoGas: false,
+                                gasBurnerCount:
+                                  event.target.value.trim()
+                                    ? Math.max(
+                                        1,
+                                        Math.round(
+                                          Number(
+                                            event.target.value,
+                                          ) || 1,
+                                        ),
+                                      )
+                                    : null,
+                              },
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="recipe-fast-field">
+                        <label>
+                          Gas Batch Guests
+                        </label>
+                        <input
+                          className="recipe-fast-input"
+                          type="number"
+                          min="1"
+                          step="1"
+                          disabled={
+                            selectedDish.gasNoGas ===
+                            true
+                          }
+                          value={
+                            selectedDish.gasBatchPax ===
+                              null ||
+                            selectedDish.gasBatchPax ===
+                              undefined
+                              ? ''
+                              : numberValue(
+                                  selectedDish.gasBatchPax,
+                                )
+                          }
+                          placeholder={String(guests)}
+                          onChange={(event) =>
+                            updateDish(
+                              selectedIndex,
+                              {
+                                gasNoGas: false,
+                                gasBatchPax:
+                                  event.target.value.trim()
+                                    ? Math.max(
+                                        1,
+                                        Math.round(
+                                          Number(
+                                            event.target.value,
+                                          ) || 1,
+                                        ),
+                                      )
+                                    : null,
+                              },
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <small
+                      style={{
+                        color: '#7f8b99',
+                        fontSize: '9px',
+                      }}
+                    >
+                      Priority: No Gas → Real burner profile → Measured kg/100 → Category fallback → Safe default.
+                    </small>
                   </div>
 
                   <div
