@@ -20,6 +20,7 @@ import {
   calculateEventGas,
   defaultGasCostMaster,
   type GasCostMaster,
+  type GasDishCostRow,
 } from '../../../lib/gasCost';
 
 function money(value: number) {
@@ -203,6 +204,27 @@ export default function OperationsCostPage() {
       ],
     );
 
+  const eventGasOverrideMap =
+    useMemo(
+      () =>
+        new Map(
+          (
+            work
+              ?.gasEventOverrides ||
+            []
+          ).map(
+            (override) => [
+              override.key,
+              override,
+            ] as const,
+          ),
+        ),
+      [
+        work
+          ?.gasEventOverrides,
+      ],
+    );
+
   const totals = useMemo(
     () =>
       operations &&
@@ -217,6 +239,13 @@ export default function OperationsCostPage() {
       gasBreakdown,
     ],
   );
+
+  const eventGasDishCount =
+    gasBreakdown?.rows.filter(
+      (row) =>
+        row.source ===
+        'EVENT_OVERRIDE',
+    ).length || 0;
 
   const realGasDishCount =
     gasBreakdown?.rows.filter(
@@ -276,6 +305,153 @@ export default function OperationsCostPage() {
     setWork(nextWork);
     saveWork(session.tenantId, nextWork as WorkState);
     setMessage(nextMessage);
+  }
+
+  function saveEventGasOverrides(
+    nextOverrides:
+      NonNullable<
+        WorkState[
+          'gasEventOverrides'
+        ]
+      >,
+    nextMessage: string,
+  ) {
+    if (!work || !session) {
+      return;
+    }
+
+    const baseWork:
+      WorkWithOperations = {
+        ...work,
+        gasEventOverrides:
+          nextOverrides,
+        sellingPricePerPlate:
+          0,
+        updatedAt:
+          new Date()
+            .toISOString(),
+      };
+
+    const nextGas =
+      calculateEventGas(
+        baseWork,
+        gasMaster,
+      );
+
+    const nextWork:
+      WorkWithOperations = {
+        ...baseWork,
+        extras: {
+          ...baseWork.extras,
+          gasFuel:
+            nextGas
+              .totalGasCost,
+        },
+      };
+
+    setWork(nextWork);
+    saveWork(
+      session.tenantId,
+      nextWork as WorkState,
+    );
+    setMessage(
+      nextMessage,
+    );
+  }
+
+  function updateEventGasOverride(
+    dish: GasDishCostRow,
+    rawValue: string,
+  ) {
+    if (!work) {
+      return;
+    }
+
+    const trimmed =
+      rawValue.trim();
+
+    if (!trimmed) {
+      clearEventGasOverride(
+        dish,
+      );
+      return;
+    }
+
+    const value =
+      Number(trimmed);
+
+    if (
+      !Number.isFinite(
+        value,
+      ) ||
+      value < 0
+    ) {
+      setMessage(
+        'Event gas override must be 0 or more.',
+      );
+      return;
+    }
+
+    const current =
+      work
+        .gasEventOverrides ||
+      [];
+
+    const nextOverrides = [
+      ...current.filter(
+        (item) =>
+          item.key !==
+          dish.key,
+      ),
+      {
+        key: dish.key,
+        serviceKey:
+          dish.serviceKey,
+        serviceId:
+          dish.serviceId,
+        dishId:
+          dish.dishId,
+        dishName:
+          dish.dish,
+        gasKgPer100:
+          value,
+        noGas:
+          value === 0,
+        updatedAt:
+          new Date()
+            .toISOString(),
+      },
+    ];
+
+    saveEventGasOverrides(
+      nextOverrides,
+      `${dish.dish}: event-only gas set to ${value.toFixed(2)} kg / 100.`,
+    );
+  }
+
+  function clearEventGasOverride(
+    dish: GasDishCostRow,
+  ) {
+    if (!work) {
+      return;
+    }
+
+    const current =
+      work
+        .gasEventOverrides ||
+      [];
+
+    const nextOverrides =
+      current.filter(
+        (item) =>
+          item.key !==
+          dish.key,
+      );
+
+    saveEventGasOverrides(
+      nextOverrides,
+      `${dish.dish}: event gas reset to Recipe / Gas Master.`,
+    );
   }
 
   function updateFunctionTransport(
@@ -374,7 +550,7 @@ export default function OperationsCostPage() {
           <div>
             <span className="page-eyebrow">Operations cost control</span>
             <h2>Gas, transport and disposable readiness</h2>
-            <p>Gas uses each dish's real burner/time/batch profile when available, then measured kg/100, then category rate. Missing cooking rates get a safe positive fallback; approved no-gas categories stay at zero.</p>
+            <p>Gas uses an event-only override first, then the dish's real burner/time/batch profile, measured kg/100 and category rate. Missing cooking rates get a safe positive fallback; approved no-gas categories stay at zero.</p>
           </div>
           <div className="final-costing-overview-total">
             <span>Gas + transport</span>
@@ -430,6 +606,13 @@ export default function OperationsCostPage() {
                 item.serviceKey === row.id,
             ) || [];
 
+          const eventGasDishCount =
+            gasRows.filter(
+              (dish) =>
+                dish.source ===
+                'EVENT_OVERRIDE',
+            ).length;
+
           const realGasDishCount =
             gasRows.filter(
               (dish) =>
@@ -478,7 +661,7 @@ export default function OperationsCostPage() {
               <div className="operations-section-title">
                 <div>
                   <strong>LPG / Gas</strong>
-                  <small>Real profile first · measured kg/100 second · category rate third · safe cooking fallback last.</small>
+                  <small>Event override first · real profile second · measured kg/100 third · category rate next · safe cooking fallback last.</small>
                 </div>
                 <b>{money(gasTotal)}</b>
               </div>
@@ -492,7 +675,7 @@ export default function OperationsCostPage() {
                   ₹{(gasBreakdown?.lpgRatePerKg || 0).toFixed(2)} / kg · {row.pax.toLocaleString('en-IN')} guests
                 </small>
                 <small>
-                  {realGasDishCount} real profile · {measuredGasDishCount} measured · {fallbackGasDishCount} fallback estimate
+                  {eventGasDishCount} event override · {realGasDishCount} real profile · {measuredGasDishCount} measured · {fallbackGasDishCount} fallback estimate
                 </small>
               </div>
 
@@ -501,8 +684,10 @@ export default function OperationsCostPage() {
                   {gasRows.map(
                     (dish) => {
                       const sourceLabel =
-                        dish.source === 'REAL_DISH_PROFILE'
-                          ? 'REAL PROFILE'
+                        dish.source === 'EVENT_OVERRIDE'
+                          ? 'EVENT OVERRIDE'
+                          : dish.source === 'REAL_DISH_PROFILE'
+                            ? 'REAL PROFILE'
                           : dish.source === 'DISH_OVERRIDE'
                             ? 'MEASURED'
                             : dish.source === 'CATEGORY'
@@ -512,6 +697,11 @@ export default function OperationsCostPage() {
                                 : dish.source === 'DISH_NO_GAS'
                                   ? 'DISH NO GAS'
                                   : 'NO GAS';
+
+                      const eventOverride =
+                        eventGasOverrideMap.get(
+                          dish.key,
+                        );
 
                       return (
                         <div key={dish.key}>
@@ -538,16 +728,73 @@ export default function OperationsCostPage() {
                                   {dish.gasKgPer100.toFixed(2)} kg / 100
                                 </b>
                                 <small>
-                                  {dish.source === 'DISH_OVERRIDE'
-                                    ? 'Dish-specific measured rate'
-                                    : dish.source === 'CATEGORY'
-                                      ? 'Category fallback rate'
-                                      : dish.source === 'SAFE_COOKING_FALLBACK'
-                                        ? 'Safe positive cooking fallback'
-                                        : 'Approved no-gas category'}
+                                  {dish.source === 'EVENT_OVERRIDE'
+                                    ? 'Event-only manual rate'
+                                    : dish.source === 'DISH_OVERRIDE'
+                                      ? 'Dish-specific measured rate'
+                                      : dish.source === 'CATEGORY'
+                                        ? 'Category fallback rate'
+                                        : dish.source === 'SAFE_COOKING_FALLBACK'
+                                          ? 'Safe positive cooking fallback'
+                                          : 'Approved no-gas category'}
                                 </small>
                               </>
                             )}
+
+                            <span className="gas-event-override">
+                              <label>
+                                Event kg / 100
+                              </label>
+                              <span className="gas-event-override-control">
+                                <input
+                                  key={`event-gas-${dish.key}-${eventOverride?.updatedAt || 'master'}`}
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  defaultValue={
+                                    eventOverride
+                                      ? eventOverride.gasKgPer100
+                                      : ''
+                                  }
+                                  placeholder={dish.gasKgPer100.toFixed(2)}
+                                  title="Overrides gas for this event only. Recipe Master is not changed."
+                                  onBlur={(event) =>
+                                    updateEventGasOverride(
+                                      dish,
+                                      event.currentTarget.value,
+                                    )
+                                  }
+                                  onKeyDown={(event) => {
+                                    if (
+                                      event.key ===
+                                      'Enter'
+                                    ) {
+                                      event.preventDefault();
+                                      event.currentTarget.blur();
+                                    }
+                                  }}
+                                />
+                                {eventOverride ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      clearEventGasOverride(
+                                        dish,
+                                      )
+                                    }
+                                  >
+                                    Reset
+                                  </button>
+                                ) : (
+                                  <small>
+                                    Master
+                                  </small>
+                                )}
+                              </span>
+                              <small>
+                                0 = no gas · only this event
+                              </small>
+                            </span>
                           </span>
 
                           <span>
@@ -642,6 +889,10 @@ export default function OperationsCostPage() {
                 <b>{(gasBreakdown?.totalGasKg || 0).toFixed(2)} kg</b>
               </div>
               <div>
+                <span>Event gas overrides</span>
+                <b>{eventGasDishCount}</b>
+              </div>
+              <div>
                 <span>Real gas profiles</span>
                 <b>{realGasDishCount}/{gasBreakdown?.rows.length || 0}</b>
               </div>
@@ -716,7 +967,7 @@ export default function OperationsCostPage() {
         </div>
 
         <style>{`
-          .operations-page{padding-bottom:28px}.operations-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.operations-fields{margin-top:16px}.operations-total-box{min-height:78px;padding:13px 15px;border:1px solid rgba(148,163,184,.2);border-radius:14px;background:rgba(148,163,184,.06);display:grid;gap:2px}.operations-total-box span,.operations-total-box small{color:var(--muted);font-size:11px}.operations-total-box strong{font-size:21px}.operations-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 6px;padding-top:18px;border-top:1px solid rgba(148,163,184,.14)}.operations-section-title>div{display:grid;gap:3px}.operations-section-title small{color:var(--muted)}.operations-section-title>b{font-size:18px}.operations-mode-row{margin-top:10px}.operations-function-card{overflow:hidden}.gas-auto-summary{margin-top:12px}.gas-mini-table{display:grid;margin-top:12px;border:1px solid rgba(148,163,184,.14);border-radius:12px;overflow:hidden}.gas-mini-table>div{display:grid;grid-template-columns:minmax(160px,1.25fr) minmax(190px,1.15fr) minmax(110px,.7fr) minmax(80px,.5fr);gap:10px;align-items:center;padding:10px 11px;border-top:1px solid rgba(148,163,184,.1);font-size:11px}.gas-mini-table>div:first-child{border-top:0}.gas-mini-table span{display:grid;gap:2px}.gas-mini-table span>b{font-size:10px}.gas-mini-table small{color:var(--muted);font-size:9px;line-height:1.35}@media(max-width:900px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.operations-grid{grid-template-columns:1fr}.gas-mini-table>div{grid-template-columns:1fr 1fr}.gas-mini-table>div>span:first-child{grid-column:1/-1}.operations-mode-row{display:grid;grid-template-columns:1fr}.operations-mode-row button{width:100%}}
+          .operations-page{padding-bottom:28px}.operations-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}.operations-fields{margin-top:16px}.operations-total-box{min-height:78px;padding:13px 15px;border:1px solid rgba(148,163,184,.2);border-radius:14px;background:rgba(148,163,184,.06);display:grid;gap:2px}.operations-total-box span,.operations-total-box small{color:var(--muted);font-size:11px}.operations-total-box strong{font-size:21px}.operations-section-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:20px 0 6px;padding-top:18px;border-top:1px solid rgba(148,163,184,.14)}.operations-section-title>div{display:grid;gap:3px}.operations-section-title small{color:var(--muted)}.operations-section-title>b{font-size:18px}.operations-mode-row{margin-top:10px}.operations-function-card{overflow:hidden}.gas-auto-summary{margin-top:12px}.gas-mini-table{display:grid;margin-top:12px;border:1px solid rgba(148,163,184,.14);border-radius:12px;overflow:hidden}.gas-mini-table>div{display:grid;grid-template-columns:minmax(160px,1.25fr) minmax(190px,1.15fr) minmax(110px,.7fr) minmax(80px,.5fr);gap:10px;align-items:center;padding:10px 11px;border-top:1px solid rgba(148,163,184,.1);font-size:11px}.gas-mini-table>div:first-child{border-top:0}.gas-mini-table span{display:grid;gap:2px}.gas-mini-table span>b{font-size:10px}.gas-mini-table small{color:var(--muted);font-size:9px;line-height:1.35}.gas-event-override{display:grid!important;gap:4px!important;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.12)}.gas-event-override>label{color:var(--muted);font-size:8px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}.gas-event-override-control{display:grid!important;grid-template-columns:minmax(70px,105px) auto;gap:6px!important;align-items:center}.gas-event-override-control input{width:100%;min-height:30px;padding:0 8px;border:1px solid rgba(148,163,184,.25);border-radius:8px;outline:none;color:inherit;background:rgba(15,23,42,.45);font:inherit;font-size:10px;font-weight:850}.gas-event-override-control input:focus{border-color:#4a9cff;box-shadow:0 0 0 3px rgba(74,156,255,.11)}.gas-event-override-control button{min-height:30px;padding:0 8px;border:1px solid rgba(148,163,184,.18);border-radius:8px;color:inherit;background:rgba(148,163,184,.06);font:inherit;font-size:8px;font-weight:850;cursor:pointer}.gas-event-override-control>small,.gas-event-override>small{font-size:7px}@media(max-width:900px){.operations-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.operations-grid{grid-template-columns:1fr}.gas-mini-table>div{grid-template-columns:1fr 1fr}.gas-mini-table>div>span:first-child{grid-column:1/-1}.operations-mode-row{display:grid;grid-template-columns:1fr}.operations-mode-row button{width:100%}}
         `}</style>
       </section>
     </AppShell>

@@ -594,3 +594,105 @@ test('zero real profile values do not produce false zero gas and fall back safel
     1,
   );
 });
+
+
+test('event gas override wins over real recipe profile and scales by event guests', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Paneer Tikka',
+      category: 'Paneer',
+      gasBurnerKgPerHour: 0.4,
+      gasCookingMinutes: 45,
+      gasBurnerCount: 2,
+      gasBatchPax: 80,
+    },
+  ];
+
+  const work = makeWork([
+    dish(
+      'p1',
+      'Paneer Tikka',
+      'Paneer',
+      'dinner',
+      'Dinner',
+      250,
+    ),
+  ]);
+
+  work.gasEventOverrides = [
+    {
+      key: 'service:dinner::paneer tikka',
+      serviceKey: 'service:dinner',
+      serviceId: 'dinner',
+      dishId: 'p1',
+      dishName: 'Paneer Tikka',
+      gasKgPer100: 0.8,
+    },
+  ];
+
+  const result =
+    calculateEventGas(
+      work,
+      master,
+    );
+
+  assert.equal(
+    result.rows[0].source,
+    'EVENT_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.8,
+  );
+  assert.equal(
+    result.rows[0].gasKg,
+    2,
+  );
+});
+
+test('event override can explicitly set a cooking dish to no gas', () => {
+  const work = makeWork([
+    dish(
+      'd1',
+      'Dal Fry',
+      'Dal / Kadhi',
+      'lunch',
+      'Lunch',
+      100,
+    ),
+  ]);
+
+  work.gasEventOverrides = [
+    {
+      key: 'service:lunch::dal fry',
+      serviceKey: 'service:lunch',
+      serviceId: 'lunch',
+      dishId: 'd1',
+      dishName: 'Dal Fry',
+      gasKgPer100: 0,
+      noGas: true,
+    },
+  ];
+
+  const result =
+    calculateEventGas(
+      work,
+      defaultGasCostMaster(),
+    );
+
+  assert.equal(
+    result.rows[0].source,
+    'EVENT_OVERRIDE',
+  );
+  assert.equal(
+    result.totalGasKg,
+    0,
+  );
+  assert.equal(
+    result.totalGasCost,
+    0,
+  );
+});

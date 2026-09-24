@@ -1158,6 +1158,7 @@ export function downloadInternalEventCostingPdf(
 
   sectionHeading(
     'Gas Cost Details',
+    'Dish-wise LPG calculation uses event override first, then Recipe / Gas Master, and scales to the function guest count.',
   );
 
   const automaticGasRows:
@@ -1189,7 +1190,11 @@ export function downloadInternalEventCostingPdf(
               automaticGasRows.push([
                 label,
                 row.dish,
-                row.category,
+                row.source ===
+                  'EVENT_OVERRIDE'
+                  ? row.category +
+                    ' · EVENT OVERRIDE'
+                  : row.category,
                 String(
                   row.guests,
                 ),
