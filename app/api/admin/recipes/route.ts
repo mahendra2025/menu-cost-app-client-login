@@ -266,6 +266,7 @@ function normalizeRecipeDishes(
     gasBurnerCount: number | null;
     gasBatchPax: number | null;
     gasNoGas: boolean;
+    gasProfileConfigured: boolean;
   }>();
 
   for (const value of dishes) {
@@ -325,6 +326,22 @@ function normalizeRecipeDishes(
         ? Math.max(0, number)
         : null;
     };
+
+    const gasProfileConfigured =
+      [
+        'gasKgPer100',
+        'gasBurnerKgPerHour',
+        'gasCookingMinutes',
+        'gasBurnerCount',
+        'gasBatchPax',
+        'gasNoGas',
+      ].some(
+        (key) =>
+          Object.prototype.hasOwnProperty.call(
+            row,
+            key,
+          ),
+      );
 
     const gasNoGas =
       row.gasNoGas === true;
@@ -424,6 +441,7 @@ function normalizeRecipeDishes(
       gasBurnerCount,
       gasBatchPax,
       gasNoGas,
+      gasProfileConfigured,
     });
   }
 
@@ -471,11 +489,55 @@ async function syncRecipesToDishCatalog(
 
   for (const dish of recipeDishes) {
     const existing = existingByName.get(dish.name.toLowerCase());
+
+    const baseData = {
+      name: dish.name,
+      category: dish.category,
+      subcategory: dish.subcategory,
+      rate: dish.rate,
+      servingQuantity:
+        dish.servingQuantity,
+      servingUnit:
+        dish.servingUnit,
+      aliases:
+        dish.aliases,
+    };
+
+    const gasData =
+      dish.gasProfileConfigured
+        ? {
+            gasKgPer100:
+              dish.gasKgPer100,
+            gasBurnerKgPerHour:
+              dish.gasBurnerKgPerHour,
+            gasCookingMinutes:
+              dish.gasCookingMinutes,
+            gasBurnerCount:
+              dish.gasBurnerCount,
+            gasBatchPax:
+              dish.gasBatchPax,
+            gasNoGas:
+              dish.gasNoGas,
+          }
+        : {};
+
     if (existing) {
       const existingAliases = Array.isArray(existing.aliases)
         ? existing.aliases.map(String).map((alias) => alias.toLowerCase()).sort()
         : [];
       const nextAliases = dish.aliases.map((alias) => alias.toLowerCase()).sort();
+
+      const gasUnchanged =
+        !dish.gasProfileConfigured ||
+        (
+          (existing.gasKgPer100 ?? null) === dish.gasKgPer100 &&
+          (existing.gasBurnerKgPerHour ?? null) === dish.gasBurnerKgPerHour &&
+          (existing.gasCookingMinutes ?? null) === dish.gasCookingMinutes &&
+          (existing.gasBurnerCount ?? null) === dish.gasBurnerCount &&
+          (existing.gasBatchPax ?? null) === dish.gasBatchPax &&
+          existing.gasNoGas === dish.gasNoGas
+        );
+
       const unchanged =
         existing.name === dish.name &&
         existing.category === dish.category &&
@@ -483,21 +545,22 @@ async function syncRecipesToDishCatalog(
         Math.abs(existing.rate - dish.rate) < 0.001 &&
         Math.abs(existing.servingQuantity - dish.servingQuantity) < 0.001 &&
         existing.servingUnit === dish.servingUnit &&
-        (existing.gasKgPer100 ?? null) === dish.gasKgPer100 &&
-        (existing.gasBurnerKgPerHour ?? null) === dish.gasBurnerKgPerHour &&
-        (existing.gasCookingMinutes ?? null) === dish.gasCookingMinutes &&
-        (existing.gasBurnerCount ?? null) === dish.gasBurnerCount &&
-        (existing.gasBatchPax ?? null) === dish.gasBatchPax &&
-        existing.gasNoGas === dish.gasNoGas &&
+        gasUnchanged &&
         JSON.stringify(existingAliases) === JSON.stringify(nextAliases);
       if (unchanged) continue;
 
       updates.push(tx.dishMasterItem.update({
         where: { id: existing.id },
-        data: dish,
+        data: {
+          ...baseData,
+          ...gasData,
+        },
       }));
     } else {
-      creates.push(dish);
+      creates.push({
+        ...baseData,
+        ...gasData,
+      });
     }
   }
 
