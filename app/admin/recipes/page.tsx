@@ -3024,7 +3024,7 @@ export default function RecipesPage() {
           .recipe-fast-row-metrics {
             flex:0 0 auto;
             display:grid;
-            grid-template-columns:repeat(2,minmax(68px,1fr));
+            grid-template-columns:repeat(3,minmax(64px,1fr));
             gap:5px;
           }
 
@@ -3037,9 +3037,15 @@ export default function RecipesPage() {
             text-align:right;
           }
 
-          .recipe-fast-row-metric.gas {
+          .recipe-fast-row-metric.gas,
+          .recipe-fast-row-metric.lpg {
             border-color:rgba(64,156,255,.23);
             background:rgba(64,156,255,.07);
+          }
+
+          .recipe-fast-row-metric.lpg {
+            border-color:rgba(90,187,132,.22);
+            background:rgba(90,187,132,.06);
           }
 
           .recipe-fast-row-metric b {
@@ -3048,6 +3054,10 @@ export default function RecipesPage() {
 
           .recipe-fast-row-metric.gas b {
             color:#9dcbff;
+          }
+
+          .recipe-fast-row-metric.lpg b {
+            color:#a7dfbd;
           }
 
           .recipe-fast-row-metric span {
@@ -3562,6 +3572,10 @@ export default function RecipesPage() {
               grid-template-columns:1fr 1fr;
             }
 
+            .recipe-fast-row-metric.lpg {
+              grid-column:1 / -1;
+            }
+
             .recipe-fast-row-metric {
               text-align:left;
             }
@@ -3948,11 +3962,20 @@ I | Tomato | 4 | kg | 35 | kg`}
                             <div className="recipe-fast-row-metric gas">
                               <b>
                                 {money(
-                                  rowGas.gasCost,
+                                  rowGas.gasCostPerPerson,
                                 )}
                               </b>
                               <span>
-                                Gas / 100
+                                Gas / pax
+                              </span>
+                            </div>
+
+                            <div className="recipe-fast-row-metric lpg">
+                              <b>
+                                {rowGas.gasKgPer100.toFixed(2)} kg
+                              </b>
+                              <span>
+                                LPG / 100
                               </span>
                             </div>
                           </div>
