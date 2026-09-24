@@ -8645,44 +8645,6 @@ export default function EventPage() {
           className="glass-card event-menu-card"
           style={{ order: 1 }}
         >
-          <div className="event-brief-strip" aria-label="Current event details">
-            <div className="event-brief-intro">
-              <span className="event-brief-mark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 4.5h14v15H5zM8 2.5v4M16 2.5v4M5 9h14" />
-                  <path d="M8.5 13h3M8.5 16h6" />
-                </svg>
-              </span>
-              <div>
-                <b>{work.event.eventName || 'Event brief'}</b>
-                <small>{work.event.clientName || 'Add a client to begin'}</small>
-              </div>
-            </div>
-
-            <dl className="event-brief-facts">
-              <div>
-                <dt>Date</dt>
-                <dd>{work.event.eventDate || 'Not set'}</dd>
-              </div>
-              <div>
-                <dt>Guests</dt>
-                <dd>{Number(work.event.pax) > 0 ? Number(work.event.pax).toLocaleString('en-IN') : 'Not set'}</dd>
-              </div>
-              <div>
-                <dt>Function</dt>
-                <dd>{work.event.functionType || 'Not set'}</dd>
-              </div>
-              <div>
-                <dt>Venue</dt>
-                <dd>{[work.event.venue, work.event.city].filter(Boolean).join(', ') || 'Not set'}</dd>
-              </div>
-            </dl>
-
-            <button className="event-brief-edit" type="button" onClick={openNewEventForm}>
-              {work.event.clientName ? 'Start another event' : 'Add event details'}
-            </button>
-          </div>
-
           <aside className="event-desktop-summary no-print" aria-label="Event costing status">
             <div className="event-desktop-summary-head">
               <span>Event status</span>
