@@ -43,6 +43,11 @@ type ManpowerFilterGroup =
   | 'LOGISTICS'
   | 'MANAGEMENT';
 
+type DishCoverageFilter =
+  | 'ALL'
+  | 'UNASSIGNED'
+  | 'NEEDS_QTY';
+
 const MANPOWER_FILTERS: Array<{
   key: ManpowerFilterGroup;
   label: string;
@@ -655,6 +660,8 @@ export default function ManpowerPage() {
   const [selectedMealKey, setSelectedMealKey] = useState('');
   const [departmentFilter, setDepartmentFilter] =
     useState<ManpowerFilterGroup>('ALL');
+  const [dishCoverageFilter, setDishCoverageFilter] =
+    useState<DishCoverageFilter>('ALL');
   const [newRoleDrafts, setNewRoleDrafts] = useState<Record<string, NewRoleDraft>>({});
   const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
 
@@ -838,6 +845,41 @@ export default function ManpowerPage() {
             ),
         ),
     ).length ?? 0;
+
+  const assignedMenuDishIds =
+    new Set(
+      (work?.manpower ?? [])
+        .filter(
+          canAssignDishes,
+        )
+        .flatMap(
+          (row) =>
+            row.assignedDishIds ??
+            [],
+        ),
+    );
+
+  const unassignedMenuDishCount =
+    work?.menu.filter(
+      (dish) =>
+        !assignedMenuDishIds.has(
+          dish.id,
+        ),
+    ).length ?? 0;
+
+  const zeroQuantityAssignedRoleCount =
+    (work?.manpower ?? []).filter(
+      (row) =>
+        canAssignDishes(row) &&
+        Math.max(
+          0,
+          Number(row.quantity) || 0,
+        ) === 0 &&
+        (
+          row.assignedDishIds ??
+          []
+        ).length > 0,
+    ).length;
 
   function rowsForMeal(meal: MealPlan) {
     return work?.manpower.filter((row) => rowBelongsToMeal(row, meal)) ?? [];
@@ -1111,7 +1153,10 @@ export default function ManpowerPage() {
                   className={`manpower-meal-tab ${meal.key === activeMealKey ? 'is-active' : ''}`}
                   type="button"
                   key={meal.key}
-                  onClick={() => setSelectedMealKey(meal.key)}
+                  onClick={() => {
+                      setSelectedMealKey(meal.key);
+                      setDishCoverageFilter('ALL');
+                    }}
                   aria-pressed={meal.key === activeMealKey}
                 >
                   <span className="manpower-meal-tab-icon">{index + 1}</span>
