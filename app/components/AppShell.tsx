@@ -92,7 +92,7 @@ const adminNav = [
   { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish catalog and rates', icon: 'dishes' as NavIcon },
   { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients and recipe costing', icon: 'dishes' as NavIcon },
   { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Categories and rates', icon: 'ingredients' as NavIcon },
-  { href: '/admin/gas', label: 'Gas Cost', mobileLabel: 'Gas', description: 'LPG settings and category usage', icon: 'ingredients' as NavIcon },
+  { href: '/admin/gas', label: 'Gas Cost', mobileLabel: 'Gas', description: 'Dish profiles and LPG rates', icon: 'ingredients' as NavIcon },
   { href: '/admin/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Automatic manpower rules', icon: 'clients' as NavIcon },
   { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Workspace settings', icon: 'profile' as NavIcon },
 ];
@@ -578,6 +578,65 @@ export default function AppShell({
                 }
               >
                 Rate Health
+              </Link>
+            </nav>
+          ) : null}
+
+          {isAdmin && isGasWorkspace ? (
+            <nav
+              className="action-row no-print"
+              aria-label="Gas cost management"
+              style={{
+                justifyContent: 'flex-start',
+                gap: '10px',
+                marginBottom: '18px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <Link
+                href="/admin/gas"
+                className={
+                  pathname === '/admin/gas'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/gas'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Category Rates
+              </Link>
+              <Link
+                href="/admin/gas/profiles"
+                className={
+                  pathname === '/admin/gas/profiles'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/gas/profiles'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Dish Gas Profiles
+              </Link>
+              <Link
+                href="/admin/settings/cost-masters/lpg"
+                className={
+                  pathname === '/admin/settings/cost-masters/lpg'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/settings/cost-masters/lpg'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                LPG Settings
               </Link>
             </nav>
           ) : null}
