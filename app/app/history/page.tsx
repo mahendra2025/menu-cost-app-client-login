@@ -405,8 +405,28 @@ export default function HistoryPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not duplicate costing');
 
+      const duplicatedWork = data.work as WorkState;
+      const result = calculate(duplicatedWork);
+
+      const draftResponse = await fetch('/api/client/drafts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          work: duplicatedWork,
+          totalCovers: result.totalCovers,
+          totalCost: result.totalCost,
+          totalSelling: result.totalSelling,
+          totalProfit: result.totalProfit,
+        }),
+      });
+
+      if (!draftResponse.ok) {
+        const draftData = await draftResponse.json().catch(() => ({}));
+        throw new Error(draftData.error || 'Duplicate was created but its recalculated draft could not be saved');
+      }
+
       setDuplicateDraft(null);
-      await loadIntoWorkspace(data.work as WorkState, '/app/event?duplicated=1');
+      await loadIntoWorkspace(duplicatedWork, '/app/event?duplicated=1');
     } catch (e) {
       setDuplicateError(e instanceof Error ? e.message : 'Could not duplicate costing.');
       setBusy('');
