@@ -69,6 +69,18 @@ export default function AdminGasCostPage() {
   ] =
     useState('');
 
+  const [
+    settingMessage,
+    setSettingMessage,
+  ] =
+    useState('');
+
+  const [
+    settingError,
+    setSettingError,
+  ] =
+    useState('');
+
   useEffect(() => {
     void load();
   }, []);
@@ -76,39 +88,52 @@ export default function AdminGasCostPage() {
   async function load() {
     setLoading(true);
     setError('');
+    setSettingError('');
 
     try {
-      const response =
-        await fetch(
-          '/api/admin/gas-cost',
-          {
-            cache:
-              'no-store',
-          },
-        );
+      const [
+        lpgResponse,
+        masterResponse,
+      ] =
+        await Promise.all([
+          fetch(
+            '/api/admin/gas-cost/lpg',
+            {
+              cache:
+                'no-store',
+            },
+          ),
+          fetch(
+            '/api/admin/gas-cost/lpg',
+            {
+              cache:
+                'no-store',
+            },
+          ),
+        ]);
 
-      const data =
-        await response.json();
+      const lpgData =
+        await lpgResponse.json();
 
-      if (!response.ok) {
+      if (!lpgResponse.ok) {
         throw new Error(
-          data.error ||
-            'Could not load gas cost master.',
+          lpgData.error ||
+            'Could not load LPG settings.',
         );
       }
 
-      if (data.setting) {
+      if (lpgData.setting) {
         setSetting({
           cylinderPrice:
             Number(
-              data.setting
+              lpgData.setting
                 .cylinderPrice,
             ) ||
             DEFAULT_LPG_SETTING
               .cylinderPrice,
           cylinderWeightKg:
             Number(
-              data.setting
+              lpgData.setting
                 .cylinderWeightKg,
             ) ||
             DEFAULT_LPG_SETTING
@@ -116,20 +141,30 @@ export default function AdminGasCostPage() {
         });
       }
 
-      if (
-        Array.isArray(
-          data.categoryRates,
-        )
-      ) {
-        setRates(
-          data.categoryRates,
+      const masterData =
+        await masterResponse.json();
+
+      if (masterResponse.ok) {
+        if (
+          Array.isArray(
+            masterData.categoryRates,
+          )
+        ) {
+          setRates(
+            masterData.categoryRates,
+          );
+        }
+      } else {
+        setError(
+          masterData.error ||
+            'Cylinder settings loaded, but category gas rates could not be loaded.',
         );
       }
     } catch (loadError) {
-      setError(
+      setSettingError(
         loadError instanceof Error
           ? loadError.message
-          : 'Could not load gas cost master.',
+          : 'Could not load LPG settings.',
       );
     } finally {
       setLoading(false);
@@ -155,8 +190,8 @@ export default function AdminGasCostPage() {
     patch:
       Partial<LpgCostSetting>,
   ) {
-    setMessage('');
-    setError('');
+    setSettingMessage('');
+    setSettingError('');
 
     setSetting(
       (current) => ({
@@ -200,8 +235,8 @@ export default function AdminGasCostPage() {
     }
 
     setSavingSetting(true);
-    setMessage('');
-    setError('');
+    setSettingMessage('');
+    setSettingError('');
 
     try {
       const response =
@@ -254,11 +289,11 @@ export default function AdminGasCostPage() {
         savedSetting,
       );
 
-      setMessage(
+      setSettingMessage(
         `Cylinder price saved. LPG rate is ₹${lpgRatePerKg(savedSetting).toFixed(2)} / kg.`,
       );
     } catch (saveError) {
-      setError(
+      setSettingError(
         saveError instanceof Error
           ? saveError.message
           : 'Could not save cylinder price.',
@@ -533,6 +568,18 @@ export default function AdminGasCostPage() {
                 : 'Save Cylinder Price'}
             </button>
           </div>
+
+          {settingMessage ? (
+            <div className="admin-message success">
+              {settingMessage}
+            </div>
+          ) : null}
+
+          {settingError ? (
+            <div className="admin-message error">
+              {settingError}
+            </div>
+          ) : null}
         </div>
 
         <div className="glass-card">
