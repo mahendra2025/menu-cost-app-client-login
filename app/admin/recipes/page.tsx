@@ -16,6 +16,17 @@ import {
   readCostableRecipe,
 } from '../../../lib/recipeCosting';
 
+import {
+  DEFAULT_COOKING_GAS_KG_PER_100,
+  DEFAULT_GAS_CATEGORY_RATES,
+  DEFAULT_LPG_SETTING,
+  categoryGasKgPer100,
+  isNoGasCategory,
+  lpgRatePerKg,
+  type GasCategoryRateValue,
+  type LpgCostSetting,
+} from '../../../lib/gasCost';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -263,6 +274,211 @@ function money(value: number) {
   )}`;
 }
 
+function optionalRecipeGasNumber(
+  value: unknown,
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    String(value).trim() === ''
+  ) {
+    return null;
+  }
+
+  const number =
+    Number(value);
+
+  return Number.isFinite(number)
+    ? Math.max(0, number)
+    : null;
+}
+
+function hasRealRecipeGas(
+  dish: RawRow | null,
+) {
+  if (!dish || dish.gasNoGas === true) {
+    return false;
+  }
+
+  return (
+    Number(dish.gasBurnerKgPerHour) > 0 &&
+    Number(dish.gasCookingMinutes) > 0 &&
+    Number(dish.gasBurnerCount) > 0 &&
+    Number(dish.gasBatchPax) > 0
+  );
+}
+
+function recipeGasPreview(
+  dish: RawRow | null,
+  category: string,
+  guests: number,
+  setting: LpgCostSetting,
+  rates: GasCategoryRateValue[],
+) {
+  const lpgRate =
+    lpgRatePerKg(
+      setting,
+    );
+
+  if (!dish) {
+    return {
+      source: 'CATEGORY',
+      gasKgPer100: 0,
+      gasKg: 0,
+      gasCost: 0,
+      gasCostPerPerson: 0,
+      lpgRate,
+    };
+  }
+
+  if (dish.gasNoGas === true) {
+    return {
+      source: 'NO GAS',
+      gasKgPer100: 0,
+      gasKg: 0,
+      gasCost: 0,
+      gasCostPerPerson: 0,
+      lpgRate,
+    };
+  }
+
+  if (hasRealRecipeGas(dish)) {
+    const burnerKgPerHour =
+      Number(
+        dish.gasBurnerKgPerHour,
+      );
+    const cookingMinutes =
+      Number(
+        dish.gasCookingMinutes,
+      );
+    const burnerCount =
+      Math.max(
+        1,
+        Math.round(
+          Number(
+            dish.gasBurnerCount,
+          ),
+        ),
+      );
+    const batchPax =
+      Math.max(
+        1,
+        Math.round(
+          Number(
+            dish.gasBatchPax,
+          ),
+        ),
+      );
+    const batches =
+      Math.max(
+        1,
+        Math.ceil(
+          guests /
+          batchPax,
+        ),
+      );
+    const gasKgPerBatch =
+      burnerKgPerHour *
+      burnerCount *
+      (
+        cookingMinutes /
+        60
+      );
+    const gasKg =
+      gasKgPerBatch *
+      batches;
+    const gasKgPer100 =
+      gasKgPerBatch *
+      Math.max(
+        1,
+        Math.ceil(
+          100 /
+          batchPax,
+        ),
+      );
+    const gasCost =
+      gasKg *
+      lpgRate;
+
+    return {
+      source: 'REAL PROFILE',
+      gasKgPer100,
+      gasKg,
+      gasCost,
+      gasCostPerPerson:
+        guests > 0
+          ? gasCost /
+            guests
+          : 0,
+      lpgRate,
+    };
+  }
+
+  const measured =
+    optionalRecipeGasNumber(
+      dish.gasKgPer100,
+    );
+
+  const noGasCategory =
+    isNoGasCategory(
+      category,
+    );
+
+  const categoryGas =
+    categoryGasKgPer100(
+      category,
+      rates,
+    );
+
+  const gasKgPer100 =
+    measured !== null &&
+    (
+      measured > 0 ||
+      noGasCategory
+    )
+      ? measured
+      : noGasCategory
+        ? 0
+        : categoryGas > 0
+          ? categoryGas
+          : DEFAULT_COOKING_GAS_KG_PER_100;
+
+  const source =
+    measured !== null &&
+    (
+      measured > 0 ||
+      noGasCategory
+    )
+      ? 'DISH RATE'
+      : noGasCategory
+        ? 'NO GAS CATEGORY'
+        : categoryGas > 0
+          ? 'CATEGORY'
+          : 'SAFE DEFAULT';
+
+  const gasKg =
+    gasKgPer100 *
+    guests /
+    100;
+
+  const gasCost =
+    gasKg *
+    lpgRate;
+
+  return {
+    source,
+    gasKgPer100,
+    gasKg,
+    gasCost,
+    gasCostPerPerson:
+      guests > 0
+        ? gasCost /
+          guests
+        : 0,
+    lpgRate,
+  };
+}
+
 export default function RecipesPage() {
   const [
     catalog,
@@ -360,6 +576,27 @@ export default function RecipesPage() {
     showBulkRecipes,
     setShowBulkRecipes,
   ] = useState(false);
+
+  const [
+    gasSetting,
+    setGasSetting,
+  ] =
+    useState<LpgCostSetting>({
+      ...DEFAULT_LPG_SETTING,
+    });
+
+  const [
+    gasCategoryRates,
+    setGasCategoryRates,
+  ] =
+    useState<GasCategoryRateValue[]>(
+      () =>
+        DEFAULT_GAS_CATEGORY_RATES.map(
+          (rate) => ({
+            ...rate,
+          }),
+        ),
+    );
 
   async function loadRecipes(background = false) {
     if (!background) setLoading(true);
@@ -515,6 +752,71 @@ export default function RecipesPage() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    async function loadGasMaster() {
+      try {
+        const response =
+          await fetch(
+            '/api/admin/gas-cost',
+            {
+              cache:
+                'no-store',
+            },
+          );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data =
+          await response.json();
+
+        if (
+          data.setting &&
+          typeof data.setting ===
+            'object'
+        ) {
+          setGasSetting({
+            cylinderPrice:
+              Math.max(
+                0,
+                Number(
+                  data.setting
+                    .cylinderPrice,
+                ) ||
+                DEFAULT_LPG_SETTING
+                  .cylinderPrice,
+              ),
+            cylinderWeightKg:
+              Math.max(
+                0.01,
+                Number(
+                  data.setting
+                    .cylinderWeightKg,
+                ) ||
+                DEFAULT_LPG_SETTING
+                  .cylinderWeightKg,
+              ),
+          });
+        }
+
+        if (
+          Array.isArray(
+            data.categoryRates,
+          )
+        ) {
+          setGasCategoryRates(
+            data.categoryRates,
+          );
+        }
+      } catch {
+        // Recipes can still use the built-in gas defaults.
+      }
+    }
+
+    void loadGasMaster();
+  }, []);
 
   useEffect(() => {
     if (memoryRecipeCatalog) {
@@ -2212,6 +2514,15 @@ export default function RecipesPage() {
     text(
       selectedDish
         ?.subcategory,
+    );
+
+  const gasPreview =
+    recipeGasPreview(
+      selectedDish,
+      selectedCategory,
+      guests,
+      gasSetting,
+      gasCategoryRates,
     );
 
   const selectedSubcategories =
