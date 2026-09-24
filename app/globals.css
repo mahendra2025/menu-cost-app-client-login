@@ -19939,10 +19939,10 @@ body.client-sheet-open {
 }
 
 .new-event-modal {
-  width: min(720px, 100%);
-  max-height: min(86vh, 820px);
+  width: min(680px, 100%);
+  max-height: min(90dvh, 900px);
   overflow: auto;
-  padding: 20px;
+  padding: 28px;
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 18px;
   background: #10151c;
@@ -19958,7 +19958,7 @@ body.client-sheet-open {
 
 .new-event-modal-heading h2 {
   margin: 4px 0 5px;
-  font-size: 22px;
+  font-size: 26px;
   letter-spacing: -0.035em;
 }
 
@@ -19966,7 +19966,7 @@ body.client-sheet-open {
   max-width: 560px;
   margin: 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -19982,8 +19982,8 @@ body.client-sheet-open {
 .new-event-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 18px;
+  gap: 16px;
+  margin-top: 14px;
 }
 
 .new-event-client-field {
@@ -19997,9 +19997,9 @@ body.client-sheet-open {
 }
 
 .new-event-form-grid .field > span {
-  color: #aeb8c5;
-  font-size: 10px;
-  font-weight: 850;
+  color: #c6cfda;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .new-event-form-grid .input {
@@ -20013,7 +20013,7 @@ body.client-sheet-open {
   border-radius: 10px;
   color: #fca5a5;
   background: rgba(127, 29, 29, 0.12);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .new-event-modal-actions {
@@ -20040,7 +20040,7 @@ body.client-sheet-open {
 
   .new-event-modal {
     width: 100%;
-    max-height: 92vh;
+    max-height: 92dvh;
     padding: 16px;
     border-radius: 20px 20px 0 0;
   }
@@ -20065,6 +20065,75 @@ body.client-sheet-open {
 
   .new-event-modal-actions button {
     min-height: 46px;
+  }
+}
+
+/* Group the brief by the decisions a caterer needs to make. */
+.new-event-fields {
+  min-width: 0;
+  margin: 24px 0 0;
+  padding: 18px 0 0;
+  border: 0;
+  border-top: 1px solid #303946;
+}
+.new-event-fields legend {
+  padding: 0 12px 0 0;
+  color: #f0f4f9;
+  font-size: 15px;
+  font-weight: 650;
+}
+.new-event-section-note {
+  margin: 0;
+  color: #a2adbc;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.new-event-modal .new-event-client-field { grid-column: auto; }
+.new-event-schedule-grid { grid-template-columns: 1fr 1.25fr .7fr; }
+.new-event-fields .input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 11px 12px;
+  border: 1px solid #3c4756;
+  border-radius: 9px;
+  background: #171e28;
+  color: #f0f4f9;
+  font-size: 14px;
+  color-scheme: dark;
+}
+.new-event-fields .input::placeholder { color: #929eaf; }
+.new-event-modal :is(input, button):focus-visible {
+  outline: 2px solid #74b7ff;
+  outline-offset: 3px;
+}
+.new-event-save-note {
+  margin: 20px 0 0;
+  padding: 12px 14px;
+  border-left: 2px solid #4a9cff;
+  border-radius: 0 6px 6px 0;
+  color: #bac8d9;
+  background: #192534;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.new-event-modal-actions {
+  position: sticky;
+  bottom: -28px;
+  margin: 20px -28px -28px;
+  padding: 16px 28px;
+  border-top: 1px solid #303946;
+  background: #10151c;
+}
+.new-event-modal-actions button { min-height: 44px; }
+@media (max-width: 650px) {
+  .new-event-fields { margin-top: 22px; }
+  .new-event-schedule-grid { grid-template-columns: 1fr; }
+  .new-event-fields .input { font-size: 16px; }
+  .new-event-modal-actions {
+    bottom: -16px;
+    margin: 20px -16px -16px;
+    padding: 14px 16px max(14px, env(safe-area-inset-bottom));
   }
 }
 
