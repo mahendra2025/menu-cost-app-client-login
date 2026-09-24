@@ -52,6 +52,7 @@ export type GasDishCostRow = {
   gasBatchPax?: number;
   gasBatches?: number;
   source:
+    | 'EVENT_OVERRIDE'
     | 'REAL_DISH_PROFILE'
     | 'DISH_OVERRIDE'
     | 'CATEGORY'
@@ -520,6 +521,31 @@ export function calculateEventGas(
     },
   );
 
+  const eventOverrideByKey =
+    new Map(
+      (
+        work.gasEventOverrides ||
+        []
+      )
+        .filter(
+          (override) =>
+            Boolean(
+              String(
+                override.key ||
+                '',
+              ).trim(),
+            ),
+        )
+        .map(
+          (override) => [
+            String(
+              override.key,
+            ).trim(),
+            override,
+          ] as const,
+        ),
+    );
+
   const fallbackPax =
     safe(
       work.event.pax,
@@ -653,12 +679,46 @@ export function calculateEventGas(
           dishKey,
         );
 
+      const eventOverride =
+        eventOverrideByKey.get(
+          dedupeKey,
+        );
+
+      const eventNoGas =
+        eventOverride?.noGas ===
+        true;
+
+      const eventGasKgPer100 =
+        eventNoGas
+          ? 0
+          : eventOverride &&
+              Number.isFinite(
+                Number(
+                  eventOverride
+                    .gasKgPer100,
+                ),
+              )
+            ? safe(
+                eventOverride
+                  .gasKgPer100,
+              )
+            : undefined;
+
+      const hasEventOverride =
+        eventNoGas ||
+        (
+          eventGasKgPer100 !==
+            undefined &&
+          eventGasKgPer100 > 0
+        );
+
       const noGasDish =
         masterOverride
           ?.gasNoGas ===
         true;
 
       const realProfile =
+        hasEventOverride ||
         noGasDish
           ? null
           : realDishGasProfile(
@@ -725,19 +785,31 @@ export function calculateEventGas(
           : null;
 
       const gasKg =
-        realGas
-          ? realGas.gasKg
-          : fallbackGasKgPer100 *
+        hasEventOverride
+          ? (
+              eventGasKgPer100 ??
+              0
+            ) *
             guests /
-            100;
+            100
+          : realGas
+            ? realGas.gasKg
+            : fallbackGasKgPer100 *
+              guests /
+              100;
 
       const gasKgPer100 =
-        realProfile
-          ? realDishGasKg(
-              100,
-              realProfile,
-            ).gasKg
-          : fallbackGasKgPer100;
+        hasEventOverride
+          ? (
+              eventGasKgPer100 ??
+              0
+            )
+          : realProfile
+            ? realDishGasKg(
+                100,
+                realProfile,
+              ).gasKg
+            : fallbackGasKgPer100;
 
       const gasCost =
         gasKg *
@@ -788,8 +860,10 @@ export function calculateEventGas(
           realGas
             ?.batches,
         source:
-          realProfile
-            ? 'REAL_DISH_PROFILE'
+          hasEventOverride
+            ? 'EVENT_OVERRIDE'
+            : realProfile
+              ? 'REAL_DISH_PROFILE'
             : noGasDish
               ? 'DISH_NO_GAS'
               : hasUsableOverride
