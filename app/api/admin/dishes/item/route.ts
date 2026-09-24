@@ -332,8 +332,8 @@ function normalizeDish(
       hasAnyRealGas &&
       (
         !hasCompleteRealGas ||
-        Number(gasBurnerKgPerHour) < 0 ||
-        Number(gasCookingMinutes) < 0 ||
+        Number(gasBurnerKgPerHour) <= 0 ||
+        Number(gasCookingMinutes) <= 0 ||
         Number(gasBurnerCount) <= 0 ||
         Number(gasBatchPax) <= 0
       )
