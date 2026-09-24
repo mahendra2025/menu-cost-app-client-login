@@ -54,7 +54,8 @@ export type GasDishCostRow = {
     | 'REAL_DISH_PROFILE'
     | 'DISH_OVERRIDE'
     | 'CATEGORY'
-    | 'ZERO_FALLBACK';
+    | 'SAFE_COOKING_FALLBACK'
+    | 'NO_GAS_CATEGORY';
 };
 
 export type GasFunctionSubtotal = {
@@ -80,6 +81,12 @@ export const DEFAULT_LPG_SETTING: LpgCostSetting = {
   cylinderPrice: 1800,
   cylinderWeightKg: 19,
 };
+
+// Safety net for a cooking dish whose category rate is missing, disabled,
+// or accidentally configured as zero. This guarantees that cooking dishes
+// never silently disappear from gas costing while a real dish profile is
+// still being collected.
+export const DEFAULT_COOKING_GAS_KG_PER_100 = 0.5;
 
 export const DEFAULT_GAS_CATEGORY_RATES:
   readonly GasCategoryRateValue[] = [
@@ -151,6 +158,25 @@ export function normalizeGasCategoryKey(
       /[^a-z0-9]+/g,
       '',
     );
+}
+
+const NO_GAS_CATEGORY_KEYS =
+  new Set([
+    'welcomedrink',
+    'mocktail',
+    'icecream',
+    'salad',
+    'fruit',
+  ]);
+
+export function isNoGasCategory(
+  category: string,
+) {
+  return NO_GAS_CATEGORY_KEYS.has(
+    normalizeGasCategoryKey(
+      category,
+    ),
+  );
 }
 
 function normalizeDishKey(
@@ -630,35 +656,51 @@ export function calculateEventGas(
           masterOverride,
         );
 
-      const hasOverride =
-        directOverride !==
-          undefined ||
-        (
-          masterOverride &&
-          Number.isFinite(
-            Number(
+      const masterMeasuredGas =
+        masterOverride &&
+        masterOverride
+          .gasKgPer100 !==
+          undefined
+          ? safe(
               masterOverride
                 .gasKgPer100,
-            ),
-          )
+            )
+          : undefined;
+
+      const configuredDishGas =
+        directOverride ??
+        masterMeasuredGas;
+
+      const noGasCategory =
+        isNoGasCategory(
+          item.category,
+        );
+
+      const categoryGas =
+        categoryGasKgPer100(
+          item.category,
+          categoryRates,
+        );
+
+      const hasUsableOverride =
+        configuredDishGas !==
+          undefined &&
+        (
+          configuredDishGas > 0 ||
+          noGasCategory
         );
 
       const fallbackGasKgPer100 =
-        directOverride ??
-        (
-          masterOverride &&
-          masterOverride
-            .gasKgPer100 !==
-              undefined
-            ? safe(
-                masterOverride
-                  .gasKgPer100,
-              )
-            : categoryGasKgPer100(
-                item.category,
-                categoryRates,
-              )
-        );
+        hasUsableOverride
+          ? (
+              configuredDishGas ??
+              0
+            )
+          : noGasCategory
+            ? 0
+            : categoryGas > 0
+              ? categoryGas
+              : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -734,11 +776,13 @@ export function calculateEventGas(
         source:
           realProfile
             ? 'REAL_DISH_PROFILE'
-            : hasOverride
+            : hasUsableOverride
               ? 'DISH_OVERRIDE'
-              : gasKgPer100 > 0
-                ? 'CATEGORY'
-                : 'ZERO_FALLBACK',
+              : noGasCategory
+                ? 'NO_GAS_CATEGORY'
+                : categoryGas > 0
+                  ? 'CATEGORY'
+                  : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
