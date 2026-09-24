@@ -37,6 +37,7 @@ export type DishCostItem = {
   gasCookingMinutes?: number;
   gasBurnerCount?: number;
   gasBatchPax?: number;
+  gasNoGas?: boolean;
 
   /*
    * Physical weight of one piece.
