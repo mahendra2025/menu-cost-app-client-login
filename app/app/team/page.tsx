@@ -358,16 +358,179 @@ function QuantityControl({
   );
 }
 
+function ManpowerMultiDishSelector({
+  row,
+  dishes,
+  onChange,
+}: {
+  row: ManpowerRow;
+  dishes: MenuItem[];
+  onChange: (dishIds: string[]) => void;
+}) {
+  const assignedIds =
+    new Set(
+      row.assignedDishIds ??
+      [],
+    );
+
+  const assignedCount =
+    dishes.filter(
+      (dish) =>
+        assignedIds.has(
+          dish.id,
+        ),
+    ).length;
+
+  if (!canAssignDishes(row)) {
+    return (
+      <span className="manpower-dish-not-applicable">
+        Not applicable
+      </span>
+    );
+  }
+
+  return (
+    <details className="manpower-dish-selector">
+      <summary>
+        <span>
+          {assignedCount > 0
+            ? `${assignedCount} dish${assignedCount === 1 ? '' : 'es'}`
+            : 'Assign dishes'}
+        </span>
+        <small>
+          Multi-dish
+        </small>
+      </summary>
+
+      <div className="manpower-dish-selector-panel">
+        <div className="manpower-dish-selector-note">
+          <b>
+            One person can cover multiple dishes
+          </b>
+          <small>
+            Dish assignment does not change this role&apos;s quantity or cost.
+          </small>
+        </div>
+
+        <div className="manpower-dish-selector-actions">
+          <button
+            type="button"
+            disabled={
+              dishes.length === 0 ||
+              assignedCount ===
+                dishes.length
+            }
+            onClick={() =>
+              onChange(
+                dishes.map(
+                  (dish) =>
+                    dish.id,
+                ),
+              )
+            }
+          >
+            Select all
+          </button>
+
+          <button
+            type="button"
+            disabled={
+              assignedCount === 0
+            }
+            onClick={() =>
+              onChange(
+                [],
+              )
+            }
+          >
+            Clear
+          </button>
+        </div>
+
+        <div className="manpower-dish-selector-list">
+          {dishes.map(
+            (dish) => {
+              const checked =
+                assignedIds.has(
+                  dish.id,
+                );
+
+              return (
+                <label
+                  key={
+                    dish.id
+                  }
+                  className={
+                    checked
+                      ? 'is-selected'
+                      : ''
+                  }
+                >
+                  <input
+                    type="checkbox"
+                    checked={
+                      checked
+                    }
+                    onChange={(
+                      event,
+                    ) => {
+                      const next =
+                        new Set(
+                          assignedIds,
+                        );
+
+                      if (
+                        event.target
+                          .checked
+                      ) {
+                        next.add(
+                          dish.id,
+                        );
+                      } else {
+                        next.delete(
+                          dish.id,
+                        );
+                      }
+
+                      onChange(
+                        Array.from(
+                          next,
+                        ),
+                      );
+                    }}
+                  />
+
+                  <span>
+                    <b>
+                      {
+                        dish.name
+                      }
+                    </b>
+                    <small>
+                      {
+                        dish.category ||
+                        'Other'
+                      }
+                    </small>
+                  </span>
+                </label>
+              );
+            },
+          )}
+        </div>
+      </div>
+    </details>
+  );
+}
+
 function DishManpowerBoard({
   dishes,
   rows,
   onToggle,
-  onQuantityChange,
 }: {
   dishes: MenuItem[];
   rows: ManpowerRow[];
   onToggle: (row: ManpowerRow, dishId: string, assigned: boolean) => void;
-  onQuantityChange: (row: ManpowerRow, dishId: string, quantity: number) => void;
 }) {
   if (dishes.length === 0) {
     return (
@@ -392,7 +555,7 @@ function DishManpowerBoard({
       <div className="manpower-menu-board-heading">
         <div>
           <h3>Menu &amp; kitchen manpower</h3>
-          <p>Select cooks and helpers manually for each dish.</p>
+          <p>One cook or helper can cover multiple dishes. Set quantity once, then assign as many dishes as needed.</p>
         </div>
         <span className={staffedDishCount === dishes.length ? 'is-complete' : ''}>
           {staffedDishCount}/{dishes.length} staffed
@@ -403,7 +566,6 @@ function DishManpowerBoard({
         {dishes.map((dish, dishIndex) => {
           const assignedRows = kitchenRows.filter(
             (row) =>
-              Math.max(0, Number(row.quantity) || 0) > 0 &&
               (row.assignedDishIds ?? []).includes(dish.id),
           );
 
@@ -421,7 +583,15 @@ function DishManpowerBoard({
                 {assignedRows.length > 0 ? (
                   assignedRows.map((row) => (
                     <span key={row.id}>
-                      <b>{row.quantity}</b> {row.role}
+                      {Math.max(0, Number(row.quantity) || 0) > 0 ? (
+                        <>
+                          <b>{row.quantity}</b> {row.role}
+                        </>
+                      ) : (
+                        <>
+                          {row.role} · <small>set qty</small>
+                        </>
+                      )}
                     </span>
                   ))
                 ) : (
@@ -435,7 +605,6 @@ function DishManpowerBoard({
                   {kitchenRows.map((row) => {
                     const quantity = Math.max(0, Number(row.quantity) || 0);
                     const assigned =
-                      quantity > 0 &&
                       (row.assignedDishIds ?? []).includes(dish.id);
 
                     return (
@@ -461,12 +630,10 @@ function DishManpowerBoard({
 
                         <div className="manpower-dish-role-quantity">
                           <small>Meal qty</small>
-                          <QuantityControl
-                            row={row}
-                            onChange={(nextQuantity) =>
-                              onQuantityChange(row, dish.id, nextQuantity)
-                            }
-                          />
+                          <b>{quantity}</b>
+                          <span>
+                            Set once in Meal team &amp; rates
+                          </span>
                         </div>
                       </div>
                     );
@@ -719,13 +886,9 @@ export default function ManpowerPage() {
     dishId: string,
     assigned: boolean,
   ) {
-    const quantity = Math.max(0, Number(row.quantity) || 0);
     const currentIds = new Set(row.assignedDishIds ?? []);
 
     if (assigned) {
-      if (quantity === 0) {
-        currentIds.clear();
-      }
       currentIds.add(dishId);
     } else {
       currentIds.delete(dishId);
@@ -735,28 +898,15 @@ export default function ManpowerPage() {
       assignedDishIds: Array.from(currentIds),
       manualOverride: true,
       calculationSource: 'MANUAL',
-      ...(assigned && quantity === 0
-        ? {
-            quantity: 1,
-          }
-        : {}),
     });
   }
 
-  function updateDishManpowerQuantity(
+  function setRowDishAssignments(
     row: ManpowerRow,
-    dishId: string,
-    quantity: number,
+    dishIds: string[],
   ) {
-    const assignedDishIds = new Set(row.assignedDishIds ?? []);
-
-    if (quantity > 0) {
-      assignedDishIds.add(dishId);
-    }
-
     updateRow(row.id, {
-      quantity,
-      assignedDishIds: Array.from(assignedDishIds),
+      assignedDishIds: dishIds,
       manualOverride: true,
       calculationSource: 'MANUAL',
     });
@@ -1087,7 +1237,6 @@ export default function ManpowerPage() {
                 dishes={mealDishes}
                 rows={mealRows}
                 onToggle={toggleDishManpower}
-                onQuantityChange={updateDishManpowerQuantity}
               />
 
               <div className="manpower-roster-heading">
@@ -1134,6 +1283,7 @@ export default function ManpowerPage() {
                     <tr>
                       <th>#</th>
                       <th>Manpower</th>
+                      <th>Dishes</th>
                       <th>Quantity</th>
                       <th>Rate / person</th>
                       <th>Total</th>
@@ -1167,6 +1317,24 @@ export default function ManpowerPage() {
                               </button>
                             ) : null}
                           </div>
+                        </td>
+                        <td>
+                          {canAssignDishes(row) ? (
+                            <ManpowerMultiDishSelector
+                              row={row}
+                              dishes={mealDishes}
+                              onChange={(dishIds) =>
+                                setRowDishAssignments(
+                                  row,
+                                  dishIds,
+                                )
+                              }
+                            />
+                          ) : (
+                            <span className="manpower-dish-not-applicable">
+                              —
+                            </span>
+                          )}
                         </td>
                         <td>
                           <QuantityControl
@@ -1225,6 +1393,24 @@ export default function ManpowerPage() {
                         </button>
                       ) : null}
                     </div>
+
+                    {canAssignDishes(row) ? (
+                      <div className="manpower-mobile-dish-field">
+                        <label>
+                          Dishes handled
+                        </label>
+                        <ManpowerMultiDishSelector
+                          row={row}
+                          dishes={mealDishes}
+                          onChange={(dishIds) =>
+                            setRowDishAssignments(
+                              row,
+                              dishIds,
+                            )
+                          }
+                        />
+                      </div>
+                    ) : null}
 
                     <div className="manpower-role-card-fields">
                       <div className="field">
