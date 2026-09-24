@@ -555,7 +555,7 @@ function DishManpowerBoard({
       <div className="manpower-menu-board-heading">
         <div>
           <h3>Menu &amp; kitchen manpower</h3>
-          <p>Select cooks and helpers manually for each dish.</p>
+          <p>One cook or helper can cover multiple dishes. Set quantity once, then assign as many dishes as needed.</p>
         </div>
         <span className={staffedDishCount === dishes.length ? 'is-complete' : ''}>
           {staffedDishCount}/{dishes.length} staffed
@@ -566,7 +566,6 @@ function DishManpowerBoard({
         {dishes.map((dish, dishIndex) => {
           const assignedRows = kitchenRows.filter(
             (row) =>
-              Math.max(0, Number(row.quantity) || 0) > 0 &&
               (row.assignedDishIds ?? []).includes(dish.id),
           );
 
@@ -584,7 +583,15 @@ function DishManpowerBoard({
                 {assignedRows.length > 0 ? (
                   assignedRows.map((row) => (
                     <span key={row.id}>
-                      <b>{row.quantity}</b> {row.role}
+                      {Math.max(0, Number(row.quantity) || 0) > 0 ? (
+                        <>
+                          <b>{row.quantity}</b> {row.role}
+                        </>
+                      ) : (
+                        <>
+                          {row.role} · <small>set qty</small>
+                        </>
+                      )}
                     </span>
                   ))
                 ) : (
@@ -598,7 +605,6 @@ function DishManpowerBoard({
                   {kitchenRows.map((row) => {
                     const quantity = Math.max(0, Number(row.quantity) || 0);
                     const assigned =
-                      quantity > 0 &&
                       (row.assignedDishIds ?? []).includes(dish.id);
 
                     return (
@@ -624,12 +630,10 @@ function DishManpowerBoard({
 
                         <div className="manpower-dish-role-quantity">
                           <small>Meal qty</small>
-                          <QuantityControl
-                            row={row}
-                            onChange={(nextQuantity) =>
-                              onQuantityChange(row, dish.id, nextQuantity)
-                            }
-                          />
+                          <b>{quantity}</b>
+                          <span>
+                            Set once in Meal team &amp; rates
+                          </span>
                         </div>
                       </div>
                     );
@@ -882,13 +886,9 @@ export default function ManpowerPage() {
     dishId: string,
     assigned: boolean,
   ) {
-    const quantity = Math.max(0, Number(row.quantity) || 0);
     const currentIds = new Set(row.assignedDishIds ?? []);
 
     if (assigned) {
-      if (quantity === 0) {
-        currentIds.clear();
-      }
       currentIds.add(dishId);
     } else {
       currentIds.delete(dishId);
@@ -898,28 +898,15 @@ export default function ManpowerPage() {
       assignedDishIds: Array.from(currentIds),
       manualOverride: true,
       calculationSource: 'MANUAL',
-      ...(assigned && quantity === 0
-        ? {
-            quantity: 1,
-          }
-        : {}),
     });
   }
 
-  function updateDishManpowerQuantity(
+  function setRowDishAssignments(
     row: ManpowerRow,
-    dishId: string,
-    quantity: number,
+    dishIds: string[],
   ) {
-    const assignedDishIds = new Set(row.assignedDishIds ?? []);
-
-    if (quantity > 0) {
-      assignedDishIds.add(dishId);
-    }
-
     updateRow(row.id, {
-      quantity,
-      assignedDishIds: Array.from(assignedDishIds),
+      assignedDishIds: dishIds,
       manualOverride: true,
       calculationSource: 'MANUAL',
     });
@@ -1250,7 +1237,6 @@ export default function ManpowerPage() {
                 dishes={mealDishes}
                 rows={mealRows}
                 onToggle={toggleDishManpower}
-                onQuantityChange={updateDishManpowerQuantity}
               />
 
               <div className="manpower-roster-heading">
