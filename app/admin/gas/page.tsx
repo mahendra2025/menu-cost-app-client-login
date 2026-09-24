@@ -52,6 +52,12 @@ export default function AdminGasCostPage() {
     useState(false);
 
   const [
+    savingSetting,
+    setSavingSetting,
+  ] =
+    useState(false);
+
+  const [
     message,
     setMessage,
   ] =
@@ -182,6 +188,86 @@ export default function AdminGasCostPage() {
     );
   }
 
+  async function saveSetting() {
+    if (
+      !(setting.cylinderPrice > 0) ||
+      !(setting.cylinderWeightKg > 0)
+    ) {
+      setError(
+        'Cylinder price and cylinder weight must be greater than 0.',
+      );
+      return;
+    }
+
+    setSavingSetting(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const response =
+        await fetch(
+          '/api/admin/gas-cost',
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+            body:
+              JSON.stringify({
+                setting: {
+                  cylinderPrice:
+                    setting.cylinderPrice,
+                  cylinderWeightKg:
+                    setting.cylinderWeightKg,
+                },
+              }),
+          },
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not save cylinder price.',
+        );
+      }
+
+      const savedSetting = {
+        cylinderPrice:
+          Number(
+            data.setting
+              ?.cylinderPrice,
+          ) ||
+          setting.cylinderPrice,
+        cylinderWeightKg:
+          Number(
+            data.setting
+              ?.cylinderWeightKg,
+          ) ||
+          setting.cylinderWeightKg,
+      };
+
+      setSetting(
+        savedSetting,
+      );
+
+      setMessage(
+        `Cylinder price saved. LPG rate is ₹${lpgRatePerKg(savedSetting).toFixed(2)} / kg.`,
+      );
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Could not save cylinder price.',
+      );
+    } finally {
+      setSavingSetting(false);
+    }
+  }
+
   async function save() {
     if (
       !(setting.cylinderPrice > 0) ||
@@ -282,7 +368,7 @@ export default function AdminGasCostPage() {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : 'Could not save gas category rates.',
+          : 'Could not save gas cost master.',
       );
     } finally {
       setSaving(false);
@@ -363,7 +449,8 @@ export default function AdminGasCostPage() {
                 }
                 disabled={
                   loading ||
-                  saving
+                  saving ||
+                  savingSetting
                 }
                 onChange={(event) =>
                   updateSetting({
@@ -394,7 +481,8 @@ export default function AdminGasCostPage() {
                 }
                 disabled={
                   loading ||
-                  saving
+                  saving ||
+                  savingSetting
                 }
                 onChange={(event) =>
                   updateSetting({
@@ -426,6 +514,25 @@ export default function AdminGasCostPage() {
           <small className="muted">
             Example: ₹1,900 ÷ 19 kg = ₹100 / kg. All event gas costs use the saved LPG rate.
           </small>
+
+          <div className="action-row page-actions">
+            <button
+              className="primary-button"
+              type="button"
+              disabled={
+                loading ||
+                saving ||
+                savingSetting
+              }
+              onClick={() =>
+                void saveSetting()
+              }
+            >
+              {savingSetting
+                ? 'Saving Cylinder Price…'
+                : 'Save Cylinder Price'}
+            </button>
+          </div>
         </div>
 
         <div className="glass-card">
@@ -549,7 +656,7 @@ export default function AdminGasCostPage() {
             >
               {saving
                 ? 'Saving…'
-                : 'Save Cylinder Price + Gas Rates'}
+                : 'Save All Gas Settings'}
             </button>
 
             <Link
