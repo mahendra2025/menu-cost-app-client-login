@@ -22011,6 +22011,40 @@ body.client-sheet-open {
   max-width: 300px;
 }
 
+.dish-real-gas-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.dish-real-gas-preview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dish-real-gas-preview > span {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(74, 156, 255, .14);
+  border-radius: 10px;
+  background: rgba(74, 156, 255, .045);
+}
+
+.dish-real-gas-preview small,
+.dish-real-gas-preview b {
+  display: block;
+}
+
+.dish-real-gas-preview small {
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.dish-real-gas-preview b {
+  margin-top: 3px;
+  color: #cfe4fb;
+  font-size: 11px;
+}
+
 .gas-master-page {
   padding-bottom: 28px;
 }
@@ -22092,6 +22126,11 @@ body.client-sheet-open {
     grid-template-columns: 1fr;
   }
 
+  .dish-real-gas-grid,
+  .dish-real-gas-preview {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .dish-gas-mode button {
     width: 100%;
   }
@@ -22108,6 +22147,11 @@ body.client-sheet-open {
 
 @media (max-width: 520px) {
   .gas-category-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dish-real-gas-grid,
+  .dish-real-gas-preview {
     grid-template-columns: 1fr;
   }
 
