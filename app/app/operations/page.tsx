@@ -218,6 +218,27 @@ export default function OperationsCostPage() {
     ],
   );
 
+  const realGasDishCount =
+    gasBreakdown?.rows.filter(
+      (row) =>
+        row.source ===
+        'REAL_DISH_PROFILE',
+    ).length || 0;
+
+  const measuredGasDishCount =
+    gasBreakdown?.rows.filter(
+      (row) =>
+        row.source ===
+        'DISH_OVERRIDE',
+    ).length || 0;
+
+  const categoryFallbackDishCount =
+    gasBreakdown?.rows.filter(
+      (row) =>
+        row.source ===
+        'CATEGORY',
+    ).length || 0;
+
   function persist(nextOperations: OperationsCostState, nextMessage = '') {
     if (!work || !session) return;
 
@@ -602,6 +623,18 @@ export default function OperationsCostPage() {
                 <b>{(gasBreakdown?.totalGasKg || 0).toFixed(2)} kg</b>
               </div>
               <div>
+                <span>Real gas profiles</span>
+                <b>{realGasDishCount}/{gasBreakdown?.rows.length || 0}</b>
+              </div>
+              <div>
+                <span>Measured kg / 100</span>
+                <b>{measuredGasDishCount}</b>
+              </div>
+              <div>
+                <span>Category fallback</span>
+                <b>{categoryFallbackDishCount}</b>
+              </div>
+              <div>
                 <span>Transport mode</span>
                 <b>{operations.transportMode === 'EVENT_SHARED' ? 'Shared' : 'Function-wise'}</b>
               </div>
@@ -612,10 +645,14 @@ export default function OperationsCostPage() {
             </div>
 
             <div className="operations-substep-status">
-              <span className="is-complete">1</span>
+              <span className={categoryFallbackDishCount === 0 ? 'is-complete' : ''}>1</span>
               <div>
                 <b>Gas & Transport</b>
-                <small>Current screen</small>
+                <small>
+                  {categoryFallbackDishCount > 0
+                    ? `${categoryFallbackDishCount} dish${categoryFallbackDishCount === 1 ? '' : 'es'} still use category fallback`
+                    : 'All gas dishes use dish-specific data'}
+                </small>
               </div>
             </div>
 
