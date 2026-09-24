@@ -54,6 +54,7 @@ const RECIPE_MEMORY_FRESH_MS =
   20 * 1000;
 
 const RECIPES_PER_PAGE = 30;
+const GAS_QUICK_ROWS_PER_PAGE = 100;
 
 function recipePageForIndex(
   index: number | null,
@@ -576,6 +577,32 @@ export default function RecipesPage() {
     showBulkRecipes,
     setShowBulkRecipes,
   ] = useState(false);
+
+  const [
+    showGasQuickEntry,
+    setShowGasQuickEntry,
+  ] = useState(false);
+
+  const [
+    gasQuickUnsetOnly,
+    setGasQuickUnsetOnly,
+  ] = useState(false);
+
+  const [
+    gasQuickBulkValue,
+    setGasQuickBulkValue,
+  ] = useState('');
+
+  const [
+    gasQuickPage,
+    setGasQuickPage,
+  ] = useState(1);
+
+  const gasQuickInputRefs =
+    useRef<Record<
+      number,
+      HTMLInputElement | null
+    >>({});
 
   const [
     gasSetting,
@@ -1117,6 +1144,52 @@ export default function RecipesPage() {
       deferredQuery,
     ]);
 
+  const gasQuickRows =
+    useMemo(
+      () =>
+        visibleRecipes.filter(
+          ({ dish }) => {
+            if (
+              !gasQuickUnsetOnly
+            ) {
+              return true;
+            }
+
+            return !(
+              dish.gasNoGas ===
+                true ||
+              hasRealRecipeGas(
+                dish,
+              ) ||
+              optionalRecipeGasNumber(
+                dish.gasKgPer100,
+              ) !== null
+            );
+          },
+        ),
+      [
+        visibleRecipes,
+        gasQuickUnsetOnly,
+      ],
+    );
+
+  const gasQuickPageCount =
+    Math.max(
+      1,
+      Math.ceil(
+        gasQuickRows.length /
+          GAS_QUICK_ROWS_PER_PAGE,
+      ),
+    );
+
+  const paginatedGasQuickRows =
+    gasQuickRows.slice(
+      (gasQuickPage - 1) *
+        GAS_QUICK_ROWS_PER_PAGE,
+      gasQuickPage *
+        GAS_QUICK_ROWS_PER_PAGE,
+    );
+
   const recipePageCount =
     Math.max(
       1,
@@ -1136,9 +1209,11 @@ export default function RecipesPage() {
 
   useEffect(() => {
     setRecipePage(1);
+    setGasQuickPage(1);
   }, [
     category,
     deferredQuery,
+    gasQuickUnsetOnly,
   ]);
 
   useEffect(() => {
@@ -1153,6 +1228,20 @@ export default function RecipesPage() {
   }, [
     recipePage,
     recipePageCount,
+  ]);
+
+  useEffect(() => {
+    if (
+      gasQuickPage >
+      gasQuickPageCount
+    ) {
+      setGasQuickPage(
+        gasQuickPageCount,
+      );
+    }
+  }, [
+    gasQuickPage,
+    gasQuickPageCount,
   ]);
 
   const selectedDish =
@@ -1196,6 +1285,203 @@ export default function RecipesPage() {
             ),
         };
       },
+    );
+  }
+
+  function quickGasPatch(
+    rawValue: string,
+  ): RawRow | null {
+    const trimmed =
+      rawValue.trim();
+
+    if (!trimmed) {
+      return {
+        gasKgPer100: '',
+        gasNoGas: false,
+      };
+    }
+
+    const value =
+      Number(trimmed);
+
+    if (
+      !Number.isFinite(value) ||
+      value < 0
+    ) {
+      return null;
+    }
+
+    return {
+      gasKgPer100:
+        rawValue,
+      gasNoGas:
+        value === 0,
+      gasBurnerKgPerHour: '',
+      gasCookingMinutes: '',
+      gasBurnerCount: '',
+      gasBatchPax: '',
+    };
+  }
+
+  function setQuickGasValue(
+    dishIndex: number,
+    rawValue: string,
+  ) {
+    const patch =
+      quickGasPatch(
+        rawValue,
+      );
+
+    if (!patch) {
+      return;
+    }
+
+    updateDish(
+      dishIndex,
+      patch,
+    );
+  }
+
+  function applyQuickGasSequence(
+    startPosition: number,
+    values: string[],
+  ) {
+    const targets =
+      paginatedGasQuickRows
+        .slice(
+          startPosition,
+          startPosition +
+            values.length,
+        )
+        .map(
+          (
+            { index },
+            offset,
+          ) => ({
+            index,
+            patch:
+              quickGasPatch(
+                values[offset],
+              ),
+          }),
+        )
+        .filter(
+          (
+            item,
+          ): item is {
+            index: number;
+            patch: RawRow;
+          } =>
+            Boolean(item.patch),
+        );
+
+    if (!targets.length) {
+      return;
+    }
+
+    const patchByIndex =
+      new Map(
+        targets.map(
+          ({
+            index,
+            patch,
+          }) => [
+            index,
+            patch,
+          ],
+        ),
+      );
+
+    setCatalog(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          dishes:
+            current.dishes.map(
+              (
+                dish,
+                index,
+              ) => {
+                const patch =
+                  patchByIndex.get(
+                    index,
+                  );
+
+                return patch
+                  ? {
+                      ...dish,
+                      ...patch,
+                    }
+                  : dish;
+              },
+            ),
+        };
+      },
+    );
+
+    setMessage(
+      `${targets.length} gas value${targets.length === 1 ? '' : 's'} pasted. Save & Sync once when finished.`,
+    );
+  }
+
+  function applyQuickGasToVisible() {
+    const patch =
+      quickGasPatch(
+        gasQuickBulkValue,
+      );
+
+    if (
+      !patch ||
+      !gasQuickRows.length
+    ) {
+      setError(
+        'Enter a valid gas kg / 100 value first.',
+      );
+      return;
+    }
+
+    const targetIndexes =
+      new Set(
+        gasQuickRows.map(
+          ({ index }) =>
+            index,
+        ),
+      );
+
+    setCatalog(
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          dishes:
+            current.dishes.map(
+              (
+                dish,
+                index,
+              ) =>
+                targetIndexes.has(
+                  index,
+                )
+                  ? {
+                      ...dish,
+                      ...patch,
+                    }
+                  : dish,
+            ),
+        };
+      },
+    );
+
+    setError('');
+    setMessage(
+      `Gas ${gasQuickBulkValue} kg / 100 applied to ${targetIndexes.size} visible recipe${targetIndexes.size === 1 ? '' : 's'}. Save & Sync once when finished.`,
     );
   }
 
@@ -2924,6 +3210,144 @@ export default function RecipesPage() {
             border-color:#428de8;
           }
 
+          .recipe-gas-quick {
+            display:grid;
+            gap:10px;
+            padding:12px;
+            border:1px solid rgba(64,156,255,.3);
+            border-radius:14px;
+            background:linear-gradient(180deg,rgba(64,156,255,.07),#0e141b 36%);
+            box-shadow:0 12px 34px rgba(0,0,0,.15);
+          }
+
+          .recipe-gas-quick-head {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:16px;
+          }
+
+          .recipe-gas-quick-head h2 {
+            margin:0 0 3px;
+            font-size:18px;
+            letter-spacing:-.03em;
+          }
+
+          .recipe-gas-quick-head p {
+            margin:0;
+            color:#7f8b99;
+            font-size:9px;
+          }
+
+          .recipe-gas-quick-tools {
+            display:grid;
+            grid-template-columns:minmax(110px,150px) auto auto;
+            gap:7px;
+            align-items:center;
+          }
+
+          .recipe-gas-quick-table {
+            overflow:auto;
+            max-height:calc(100vh - 330px);
+            border:1px solid #27313b;
+            border-radius:11px;
+            background:#0d1319;
+          }
+
+          .recipe-gas-quick-row {
+            display:grid;
+            grid-template-columns:minmax(220px,1.7fr) minmax(120px,.6fr) minmax(130px,.65fr) minmax(90px,.5fr);
+            gap:8px;
+            align-items:center;
+            min-height:46px;
+            padding:6px 9px;
+            border-bottom:1px solid #202a34;
+          }
+
+          .recipe-gas-quick-row.header {
+            position:sticky;
+            top:0;
+            z-index:2;
+            min-height:36px;
+            background:#111923;
+            color:#758495;
+            font-size:8px;
+            font-weight:900;
+            text-transform:uppercase;
+            letter-spacing:.05em;
+          }
+
+          .recipe-gas-quick-name b,
+          .recipe-gas-quick-name span {
+            display:block;
+          }
+
+          .recipe-gas-quick-name b {
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+            font-size:10px;
+          }
+
+          .recipe-gas-quick-name span {
+            margin-top:2px;
+            color:#718091;
+            font-size:8px;
+          }
+
+          .recipe-gas-quick-input {
+            width:100%;
+            min-height:34px;
+            padding:0 10px;
+            border:1px solid #33404c;
+            border-radius:8px;
+            outline:none;
+            background:#0a1016;
+            color:#eef5ff;
+            font:inherit;
+            font-size:12px;
+            font-weight:800;
+            text-align:right;
+          }
+
+          .recipe-gas-quick-input:focus {
+            border-color:#409cff;
+            box-shadow:0 0 0 3px rgba(64,156,255,.12);
+          }
+
+          .recipe-gas-quick-cost {
+            text-align:right;
+          }
+
+          .recipe-gas-quick-cost b,
+          .recipe-gas-quick-cost span {
+            display:block;
+          }
+
+          .recipe-gas-quick-cost b {
+            font-size:10px;
+          }
+
+          .recipe-gas-quick-cost span {
+            margin-top:2px;
+            color:#718091;
+            font-size:7px;
+          }
+
+          .recipe-gas-quick-pager {
+            display:grid;
+            grid-template-columns:1fr auto 1fr;
+            gap:7px;
+            align-items:center;
+          }
+
+          .recipe-gas-quick-pager span {
+            color:#7f8b99;
+            font-size:9px;
+            font-weight:800;
+            text-align:center;
+          }
+
           .recipe-fast-workspace {
             display:grid;
             grid-template-columns:350px minmax(0,1fr);
@@ -3502,6 +3926,28 @@ export default function RecipesPage() {
           }
 
           @media(max-width:620px) {
+            .recipe-gas-quick-head {
+              flex-direction:column;
+            }
+
+            .recipe-gas-quick-tools {
+              width:100%;
+              grid-template-columns:1fr;
+            }
+
+            .recipe-gas-quick-table {
+              max-height:none;
+            }
+
+            .recipe-gas-quick-row {
+              grid-template-columns:minmax(155px,1.4fr) minmax(100px,.8fr) minmax(105px,.8fr);
+              min-width:520px;
+            }
+
+            .recipe-gas-quick-row > :nth-child(4) {
+              display:none;
+            }
+
             .recipe-fast-page {
               padding-bottom:40px;
             }
@@ -3596,6 +4042,22 @@ export default function RecipesPage() {
                 ← Back to Dishes
               </button>
             ) : null}
+
+            <button
+              className={`recipe-fast-button ${showGasQuickEntry ? 'primary' : ''}`}
+              type="button"
+              onClick={() =>
+                setShowGasQuickEntry(
+                  (current) =>
+                    !current,
+                )
+              }
+              disabled={
+                !catalog
+              }
+            >
+              ⚡ Fast Gas Entry
+            </button>
 
             <button
               className="recipe-fast-button"
@@ -3847,6 +4309,349 @@ I | Tomato | 4 | kg | 35 | kg`}
           <div className="recipe-fast-empty">
             Loading recipes…
           </div>
+        ) : showGasQuickEntry ? (
+          <section className="recipe-gas-quick">
+            <div className="recipe-gas-quick-head">
+              <div>
+                <h2>
+                  Fast Gas Entry
+                </h2>
+                <p>
+                  Type kg LPG / 100 guests and press Enter. Paste many rows from Excel. Save once after finishing.
+                </p>
+              </div>
+
+              <div className="recipe-gas-quick-tools">
+                <input
+                  className="recipe-fast-input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={gasQuickBulkValue}
+                  onChange={(event) =>
+                    setGasQuickBulkValue(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="kg / 100"
+                />
+
+                <button
+                  className="recipe-fast-button"
+                  type="button"
+                  disabled={
+                    !gasQuickRows.length
+                  }
+                  onClick={
+                    applyQuickGasToVisible
+                  }
+                >
+                  Apply to visible
+                </button>
+
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    color: '#9ba7b5',
+                    fontSize: '9px',
+                    fontWeight: 800,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={
+                      gasQuickUnsetOnly
+                    }
+                    onChange={(event) =>
+                      setGasQuickUnsetOnly(
+                        event.target.checked,
+                      )
+                    }
+                  />
+                  Only not set
+                </label>
+              </div>
+            </div>
+
+            <div className="recipe-gas-quick-table">
+              <div className="recipe-gas-quick-row header">
+                <span>
+                  Dish
+                </span>
+                <span>
+                  Gas kg / 100
+                </span>
+                <span>
+                  Gas cost / 100
+                </span>
+                <span>
+                  Source
+                </span>
+              </div>
+
+              {paginatedGasQuickRows.length ? (
+                paginatedGasQuickRows.map(
+                  (
+                    {
+                      dish,
+                      index,
+                    },
+                    rowPosition,
+                  ) => {
+                    const dishCategory =
+                      text(
+                        dish.category,
+                      ) ||
+                      'Other';
+
+                    const preview =
+                      recipeGasPreview(
+                        dish,
+                        dishCategory,
+                        100,
+                        gasSetting,
+                        gasCategoryRates,
+                      );
+
+                    const explicitValue =
+                      dish.gasNoGas ===
+                        true
+                        ? '0'
+                        : optionalRecipeGasNumber(
+                            dish.gasKgPer100,
+                          ) !== null
+                          ? String(
+                              dish.gasKgPer100,
+                            )
+                          : '';
+
+                    return (
+                      <div
+                        className="recipe-gas-quick-row"
+                        key={`quick-gas-${recipeName(dish)}-${index}`}
+                      >
+                        <div className="recipe-gas-quick-name">
+                          <b>
+                            {recipeName(
+                              dish,
+                            )}
+                          </b>
+                          <span>
+                            {dishCategory}
+                          </span>
+                        </div>
+
+                        <input
+                          className="recipe-gas-quick-input"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={
+                            explicitValue
+                          }
+                          ref={(node) => {
+                            gasQuickInputRefs.current[
+                              index
+                            ] = node;
+                          }}
+                          placeholder={
+                            preview.gasKgPer100.toFixed(
+                              2,
+                            )
+                          }
+                          title="Manual LPG kg for 100 guests. Enter 0 for no gas."
+                          onChange={(event) =>
+                            setQuickGasValue(
+                              index,
+                              event.target.value,
+                            )
+                          }
+                          onPaste={(event) => {
+                            const clipboard =
+                              event.clipboardData.getData(
+                                'text',
+                              );
+
+                            const lines =
+                              clipboard
+                                .split(
+                                  /\r?\n/,
+                                )
+                                .map(
+                                  (line) =>
+                                    line.trim(),
+                                )
+                                .filter(Boolean);
+
+                            if (
+                              lines.length <= 1
+                            ) {
+                              return;
+                            }
+
+                            const values =
+                              lines
+                                .map(
+                                  (line) => {
+                                    const parts =
+                                      line
+                                        .split(
+                                          /\t|\||,/,
+                                        )
+                                        .map(
+                                          (part) =>
+                                            part.trim(),
+                                        )
+                                        .filter(Boolean);
+
+                                    return (
+                                      [...parts]
+                                        .reverse()
+                                        .find(
+                                          (part) =>
+                                            Number.isFinite(
+                                              Number(
+                                                part,
+                                              ),
+                                            ),
+                                        ) ||
+                                      ''
+                                    );
+                                  },
+                                )
+                                .filter(Boolean);
+
+                            if (
+                              !values.length
+                            ) {
+                              return;
+                            }
+
+                            event.preventDefault();
+
+                            applyQuickGasSequence(
+                              rowPosition,
+                              values,
+                            );
+                          }}
+                          onKeyDown={(event) => {
+                            if (
+                              event.key !==
+                              'Enter'
+                            ) {
+                              return;
+                            }
+
+                            event.preventDefault();
+
+                            const next =
+                              paginatedGasQuickRows[
+                                rowPosition +
+                                  1
+                              ];
+
+                            if (next) {
+                              requestAnimationFrame(
+                                () =>
+                                  gasQuickInputRefs.current[
+                                    next.index
+                                  ]?.focus(),
+                              );
+                            }
+                          }}
+                        />
+
+                        <div className="recipe-gas-quick-cost">
+                          <b>
+                            {money(
+                              preview.gasCost,
+                            )}
+                          </b>
+                          <span>
+                            {preview.gasKgPer100.toFixed(
+                              2,
+                            )}
+                            {' kg used'}
+                          </span>
+                        </div>
+
+                        <div className="recipe-gas-quick-cost">
+                          <b>
+                            {preview.source}
+                          </b>
+                          <span>
+                            {dish.gasNoGas ===
+                            true
+                              ? 'Explicit no gas'
+                              : explicitValue
+                                ? 'Manual dish rate'
+                                : 'Fallback shown'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  },
+                )
+              ) : (
+                <div className="recipe-fast-empty">
+                  No matching gas rows
+                </div>
+              )}
+            </div>
+
+            <div className="recipe-gas-quick-pager">
+              <button
+                className="recipe-fast-button"
+                type="button"
+                disabled={
+                  gasQuickPage <= 1
+                }
+                onClick={() =>
+                  setGasQuickPage(
+                    (current) =>
+                      Math.max(
+                        1,
+                        current - 1,
+                      ),
+                  )
+                }
+              >
+                ← Previous 100
+              </button>
+
+              <span>
+                {gasQuickRows.length.toLocaleString(
+                  'en-IN',
+                )}
+                {' dishes · Page '}
+                {gasQuickPage}
+                {' / '}
+                {gasQuickPageCount}
+              </span>
+
+              <button
+                className="recipe-fast-button"
+                type="button"
+                disabled={
+                  gasQuickPage >=
+                  gasQuickPageCount
+                }
+                onClick={() =>
+                  setGasQuickPage(
+                    (current) =>
+                      Math.min(
+                        gasQuickPageCount,
+                        current + 1,
+                      ),
+                  )
+                }
+              >
+                Next 100 →
+              </button>
+            </div>
+          </section>
         ) : (
           <div className="recipe-fast-workspace">
             <aside className="recipe-fast-list">
