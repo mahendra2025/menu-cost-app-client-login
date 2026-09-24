@@ -2577,6 +2577,46 @@ export default function RecipesPage() {
       gasCategoryRates,
     );
 
+  const explicitGasProfileCount =
+    useMemo(
+      () =>
+        (
+          catalog
+            ?.dishes ||
+          []
+        ).filter(
+          (dish) =>
+            dish.gasNoGas ===
+              true ||
+            hasRealRecipeGas(
+              dish,
+            ) ||
+            (
+              optionalRecipeGasNumber(
+                dish.gasKgPer100,
+              ) !== null &&
+              Number(
+                dish.gasKgPer100,
+              ) > 0
+            ),
+        ).length,
+      [catalog],
+    );
+
+  const selectedIngredientRateCoverage =
+    ingredients.length
+      ? Math.round(
+          (
+            (
+              ingredients.length -
+              missingRateCount
+            ) /
+            ingredients.length
+          ) *
+          100,
+        )
+      : 100;
+
   const selectedSubcategories =
     Array.from(
       new Set([
@@ -2613,15 +2653,26 @@ export default function RecipesPage() {
         <style>{`
           .recipe-fast-page {
             display:grid;
-            gap:12px;
+            gap:14px;
+            max-width:1480px;
+            margin:0 auto;
+            padding-bottom:88px;
           }
 
           .recipe-fast-hero {
+            position:sticky;
+            top:0;
+            z-index:8;
             display:flex;
-            align-items:flex-end;
+            align-items:center;
             justify-content:space-between;
-            gap:16px;
-            padding:16px 2px 6px;
+            gap:18px;
+            padding:12px 14px;
+            border:1px solid #27313d;
+            border-radius:16px;
+            background:rgba(13,18,24,.94);
+            backdrop-filter:blur(18px);
+            box-shadow:0 12px 34px rgba(0,0,0,.18);
           }
 
           .recipe-fast-kicker {
@@ -2633,33 +2684,44 @@ export default function RecipesPage() {
           }
 
           .recipe-fast-hero h1 {
-            margin:6px 0 5px;
-            font-size:34px;
-            letter-spacing:-.045em;
+            margin:3px 0 2px;
+            font-size:24px;
+            letter-spacing:-.04em;
           }
 
           .recipe-fast-hero p {
             margin:0;
             color:#8995a4;
-            font-size:12px;
+            font-size:10px;
           }
 
           .recipe-fast-actions {
             display:flex;
             gap:7px;
+            align-items:center;
           }
 
           .recipe-fast-button {
-            min-height:40px;
-            padding:0 13px;
+            min-height:38px;
+            padding:0 12px;
             border:1px solid #303944;
             border-radius:10px;
             background:#151b23;
             color:#dce5ef;
             font:inherit;
-            font-size:11px;
-            font-weight:900;
+            font-size:10px;
+            font-weight:850;
             cursor:pointer;
+            transition:border-color .16s ease, background .16s ease, transform .16s ease;
+          }
+
+          .recipe-fast-button:hover:not(:disabled) {
+            border-color:#4b5b6d;
+            background:#1b232d;
+          }
+
+          .recipe-fast-button:active:not(:disabled) {
+            transform:translateY(1px);
           }
 
           .recipe-fast-button.primary {
@@ -2739,12 +2801,12 @@ export default function RecipesPage() {
           }
 
           .recipe-fast-sync {
-            padding:9px 11px;
-            border:1px solid #303944;
+            padding:8px 11px;
+            border:1px solid #29333e;
             border-radius:10px;
-            background:#111820;
+            background:#0f151c;
             color:#8794a3;
-            font-size:10px;
+            font-size:9px;
             font-weight:800;
           }
 
@@ -2786,15 +2848,26 @@ export default function RecipesPage() {
 
           .recipe-fast-stats {
             display:grid;
-            grid-template-columns:repeat(4,1fr);
+            grid-template-columns:repeat(4,minmax(0,1fr));
             gap:8px;
           }
 
           .recipe-fast-stat {
-            padding:12px;
-            border:1px solid #282f39;
-            border-radius:12px;
-            background:#10151c;
+            position:relative;
+            overflow:hidden;
+            padding:12px 13px;
+            border:1px solid #28323d;
+            border-radius:13px;
+            background:linear-gradient(180deg,#111820,#0e141b);
+          }
+
+          .recipe-fast-stat::after {
+            content:'';
+            position:absolute;
+            inset:auto 0 0;
+            height:2px;
+            background:linear-gradient(90deg,rgba(64,156,255,.7),transparent);
+            opacity:.55;
           }
 
           .recipe-fast-stat small,
@@ -2816,8 +2889,21 @@ export default function RecipesPage() {
 
           .recipe-fast-toolbar {
             display:grid;
-            grid-template-columns:1fr 210px;
-            gap:7px;
+            grid-template-columns:minmax(260px,1fr) 220px auto;
+            gap:8px;
+            align-items:center;
+            padding:9px;
+            border:1px solid #27313b;
+            border-radius:13px;
+            background:#0f151c;
+          }
+
+          .recipe-toolbar-count {
+            min-width:120px;
+            text-align:right;
+            color:#7f8b99;
+            font-size:9px;
+            font-weight:800;
           }
 
           .recipe-fast-input {
@@ -2840,22 +2926,49 @@ export default function RecipesPage() {
 
           .recipe-fast-workspace {
             display:grid;
-            grid-template-columns:300px minmax(0,1fr);
-            gap:10px;
-            min-height:560px;
+            grid-template-columns:350px minmax(0,1fr);
+            gap:12px;
+            min-height:620px;
+            align-items:start;
           }
 
           .recipe-fast-list,
           .recipe-fast-editor {
-            border:1px solid #282f39;
-            border-radius:14px;
+            border:1px solid #28323d;
+            border-radius:15px;
             background:#0f141b;
             overflow:hidden;
+            box-shadow:0 10px 30px rgba(0,0,0,.12);
           }
 
           .recipe-fast-list {
-            max-height:680px;
+            position:sticky;
+            top:84px;
+            max-height:calc(100vh - 110px);
             overflow:auto;
+          }
+
+          .recipe-list-head {
+            position:sticky;
+            top:0;
+            z-index:2;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+            padding:10px 12px;
+            border-bottom:1px solid #26303a;
+            background:rgba(15,20,27,.96);
+            backdrop-filter:blur(12px);
+          }
+
+          .recipe-list-head strong {
+            font-size:10px;
+          }
+
+          .recipe-list-head span {
+            color:#738191;
+            font-size:8px;
           }
 
           .recipe-fast-row {
@@ -2863,16 +2976,22 @@ export default function RecipesPage() {
             display:block;
             padding:11px 12px;
             border:0;
+            border-left:3px solid transparent;
             border-bottom:1px solid #222a33;
             background:transparent;
             color:#dce4ed;
             text-align:left;
             cursor:pointer;
+            transition:background .15s ease,border-color .15s ease;
           }
 
-          .recipe-fast-row:hover,
+          .recipe-fast-row:hover {
+            background:#141d27;
+          }
+
           .recipe-fast-row.active {
-            background:#17212d;
+            border-left-color:#409cff;
+            background:linear-gradient(90deg,rgba(64,156,255,.12),#17212d 42%);
           }
 
           .recipe-fast-row b,
@@ -2926,14 +3045,103 @@ export default function RecipesPage() {
           }
 
           .recipe-fast-editor {
-            padding:14px;
-            overflow:auto;
+            padding:16px;
+            overflow:visible;
+          }
+
+          .recipe-editor-summary {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:16px;
+            margin:-2px 0 14px;
+            padding:13px 14px;
+            border:1px solid #293440;
+            border-radius:13px;
+            background:linear-gradient(135deg,#121a23,#0f151c);
+          }
+
+          .recipe-editor-summary-copy {
+            min-width:0;
+          }
+
+          .recipe-editor-summary-copy span {
+            color:#6eabff;
+            font-size:8px;
+            font-weight:900;
+            letter-spacing:.08em;
+            text-transform:uppercase;
+          }
+
+          .recipe-editor-summary-copy h2 {
+            margin:4px 0 3px;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+            font-size:20px;
+            letter-spacing:-.035em;
+          }
+
+          .recipe-editor-summary-copy p {
+            margin:0;
+            color:#7f8b99;
+            font-size:9px;
+          }
+
+          .recipe-editor-summary-kpis {
+            display:grid;
+            grid-template-columns:repeat(3,minmax(90px,1fr));
+            gap:6px;
+          }
+
+          .recipe-editor-summary-kpis div {
+            padding:8px 9px;
+            border:1px solid #2c3742;
+            border-radius:9px;
+            background:#0d1319;
+          }
+
+          .recipe-editor-summary-kpis span,
+          .recipe-editor-summary-kpis b {
+            display:block;
+          }
+
+          .recipe-editor-summary-kpis span {
+            color:#748292;
+            font-size:7px;
+            text-transform:uppercase;
+          }
+
+          .recipe-editor-summary-kpis b {
+            margin-top:3px;
+            font-size:11px;
+          }
+
+          .recipe-section-title {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+            margin:14px 0 8px;
+          }
+
+          .recipe-section-title strong {
+            font-size:11px;
+          }
+
+          .recipe-section-title span {
+            color:#718091;
+            font-size:8px;
           }
 
           .recipe-fast-grid {
             display:grid;
             grid-template-columns:2fr 1fr 1fr 1fr;
             gap:8px;
+            padding:12px;
+            border:1px solid #28323d;
+            border-radius:12px;
+            background:#10161d;
           }
 
           .recipe-fast-field {
@@ -2952,14 +3160,19 @@ export default function RecipesPage() {
             display:grid;
             grid-template-columns:repeat(4,1fr);
             gap:7px;
-            margin:12px 0;
+            margin:10px 0 12px;
           }
 
           .recipe-fast-cost {
-            padding:10px;
-            border:1px solid #29323d;
+            padding:11px;
+            border:1px solid #293540;
             border-radius:10px;
-            background:#141a22;
+            background:linear-gradient(180deg,#141b23,#11171e);
+          }
+
+          .recipe-fast-cost.primary-cost {
+            border-color:rgba(52,199,89,.3);
+            background:rgba(52,199,89,.065);
           }
 
           .recipe-fast-cost span,
@@ -2981,11 +3194,11 @@ export default function RecipesPage() {
           .recipe-gas-panel {
             display:grid;
             gap:11px;
-            margin:12px 0 14px;
+            margin:10px 0 14px;
             padding:13px;
-            border:1px solid rgba(64,156,255,.26);
+            border:1px solid rgba(64,156,255,.24);
             border-radius:12px;
-            background:rgba(64,156,255,.055);
+            background:linear-gradient(180deg,rgba(64,156,255,.065),rgba(64,156,255,.025));
           }
 
           .recipe-gas-head {
@@ -3194,7 +3407,8 @@ export default function RecipesPage() {
             align-items:center;
             justify-content:space-between;
             gap:10px;
-            margin:15px 0 8px;
+            margin:18px 0 8px;
+            padding-top:2px;
           }
 
           .recipe-fast-heading h2 {
@@ -3207,8 +3421,11 @@ export default function RecipesPage() {
             grid-template-columns:2fr .7fr .7fr .8fr .7fr auto;
             gap:6px;
             align-items:end;
-            padding:8px 0;
-            border-top:1px solid #222a33;
+            padding:9px;
+            margin-bottom:6px;
+            border:1px solid #252f39;
+            border-radius:10px;
+            background:#0d1319;
           }
 
           .recipe-fast-remove {
@@ -3245,7 +3462,16 @@ export default function RecipesPage() {
             }
 
             .recipe-fast-list {
-              max-height:260px;
+              position:static;
+              max-height:300px;
+            }
+
+            .recipe-editor-summary {
+              flex-direction:column;
+            }
+
+            .recipe-editor-summary-kpis {
+              width:100%;
             }
 
             .recipe-fast-stats {
@@ -3262,6 +3488,19 @@ export default function RecipesPage() {
           }
 
           @media(max-width:620px) {
+            .recipe-fast-page {
+              padding-bottom:40px;
+            }
+
+            .recipe-fast-hero {
+              position:static;
+              padding:12px;
+            }
+
+            .recipe-editor-summary-kpis {
+              grid-template-columns:1fr;
+            }
+
             .recipe-gas-head {
               flex-direction:column;
             }
@@ -3285,7 +3524,19 @@ export default function RecipesPage() {
             }
 
             .recipe-fast-costs {
-              grid-template-columns:1fr;
+              grid-template-columns:1fr 1fr;
+            }
+
+            .recipe-fast-stats {
+              grid-template-columns:1fr 1fr;
+            }
+
+            .recipe-fast-toolbar {
+              padding:8px;
+            }
+
+            .recipe-toolbar-count {
+              text-align:left;
             }
           }
         `}</style>
@@ -3293,7 +3544,7 @@ export default function RecipesPage() {
         <div className="recipe-fast-hero">
           <div>
             <span className="recipe-fast-kicker">
-              Recipe Library
+              Recipe Costing Workspace
             </span>
 
             <h1>
@@ -3301,7 +3552,7 @@ export default function RecipesPage() {
             </h1>
 
             <p>
-              Direct recipe loading — no Dish page and no iframe.
+              Ingredients, food cost and LPG cost in one place.
             </p>
           </div>
 
@@ -3504,11 +3755,21 @@ I | Tomato | 4 | kg | 35 | kg`}
 
           <div className="recipe-fast-stat">
             <small>
-              Market Rates
+              Gas Profiles
             </small>
             <strong>
-              {catalog?.rates.length ?? 0}
+              {explicitGasProfileCount}
             </strong>
+            <span
+              style={{
+                display: 'block',
+                marginTop: '3px',
+                color: '#738191',
+                fontSize: '8px',
+              }}
+            >
+              explicit dish gas setup
+            </span>
           </div>
         </div>
 
@@ -3549,6 +3810,10 @@ I | Tomato | 4 | kg | 35 | kg`}
               ),
             )}
           </select>
+
+          <div className="recipe-toolbar-count">
+            {visibleRecipes.length.toLocaleString('en-IN')} matching recipe{visibleRecipes.length === 1 ? '' : 's'}
+          </div>
         </div>
 
         {loading ? (
@@ -3558,6 +3823,15 @@ I | Tomato | 4 | kg | 35 | kg`}
         ) : (
           <div className="recipe-fast-workspace">
             <aside className="recipe-fast-list">
+              <div className="recipe-list-head">
+                <strong>
+                  Recipe Library
+                </strong>
+                <span>
+                  Click a dish to edit
+                </span>
+              </div>
+
               {paginatedRecipes.length ? (
                 paginatedRecipes.map(
                   ({
@@ -3713,6 +3987,61 @@ I | Tomato | 4 | kg | 35 | kg`}
               selectedIndex !==
                 null ? (
                 <>
+                  <div className="recipe-editor-summary">
+                    <div className="recipe-editor-summary-copy">
+                      <span>
+                        Selected Recipe
+                      </span>
+                      <h2>
+                        {recipeName(selectedDish)}
+                      </h2>
+                      <p>
+                        {selectedCategory}
+                        {selectedSubcategory
+                          ? ` · ${selectedSubcategory}`
+                          : ''}
+                        {' · '}
+                        {guests.toLocaleString('en-IN')} batch guests
+                      </p>
+                    </div>
+
+                    <div className="recipe-editor-summary-kpis">
+                      <div>
+                        <span>
+                          Food / Person
+                        </span>
+                        <b>
+                          {money(finalPerPerson)}
+                        </b>
+                      </div>
+                      <div>
+                        <span>
+                          Gas / Person
+                        </span>
+                        <b>
+                          {money(gasPreview.gasCostPerPerson)}
+                        </b>
+                      </div>
+                      <div>
+                        <span>
+                          Rate Coverage
+                        </span>
+                        <b>
+                          {selectedIngredientRateCoverage}%
+                        </b>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="recipe-section-title">
+                    <strong>
+                      Recipe Setup
+                    </strong>
+                    <span>
+                      Identity, serving and batch size
+                    </span>
+                  </div>
+
                   <div className="recipe-fast-grid">
                     <div className="recipe-fast-field">
                       <label>
@@ -4037,6 +4366,15 @@ I | Tomato | 4 | kg | 35 | kg`}
                     ) : null}
                   </div>
 
+                  <div className="recipe-section-title">
+                    <strong>
+                      Food Cost Summary
+                    </strong>
+                    <span>
+                      Includes 8% wastage
+                    </span>
+                  </div>
+
                   <div className="recipe-fast-costs">
                     <div className="recipe-fast-cost">
                       <span>
@@ -4075,7 +4413,7 @@ I | Tomato | 4 | kg | 35 | kg`}
                       </b>
                     </div>
 
-                    <div className="recipe-fast-cost">
+                    <div className="recipe-fast-cost primary-cost">
                       <span>
                         Final / Person
                       </span>
@@ -4503,9 +4841,21 @@ I | Tomato | 4 | kg | 35 | kg`}
                   </div>
 
                   <div className="recipe-fast-heading">
-                    <h2>
-                      Ingredients
-                    </h2>
+                    <div>
+                      <h2>
+                        Ingredients
+                      </h2>
+                      <span
+                        style={{
+                          display: 'block',
+                          marginTop: '3px',
+                          color: '#738191',
+                          fontSize: '8px',
+                        }}
+                      >
+                        {ingredients.length} items · {selectedIngredientRateCoverage}% rate coverage
+                      </span>
+                    </div>
 
                     <div
                       style={{
