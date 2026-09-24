@@ -5,8 +5,8 @@ import { Prisma } from '@prisma/client';
 import {
   getAdminCookieName,
   isValidAdminSessionToken,
-} from '../../../../../lib/adminAuth';
-import { prisma } from '../../../../../lib/prisma';
+} from '../../../../lib/adminAuth';
+import { prisma } from '../../../../lib/prisma';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
