@@ -181,6 +181,10 @@ function parseDishItems(items: unknown): ParsedDishItem[] {
               ),
             );
 
+      const gasNoGas =
+        row.gasNoGas ===
+        true;
+
       const pieceWeightGrams =
         servingUnit.toLowerCase() === 'piece'
           ? (
@@ -215,6 +219,7 @@ function parseDishItems(items: unknown): ParsedDishItem[] {
         gasCookingMinutes,
         gasBurnerCount,
         gasBatchPax,
+        gasNoGas,
         pieceWeightGrams,
         aliases,
       };
@@ -271,6 +276,9 @@ function toDishCostItem(item: EditableDish): DishCostItem {
               Number(item.gasBatchPax) || 1,
             ),
           ),
+    gasNoGas:
+      item.gasNoGas ===
+      true,
 
     pieceWeightGrams:
       String(
