@@ -598,6 +598,13 @@ export default function RecipesPage() {
     setGasQuickPage,
   ] = useState(1);
 
+  const [
+    gasQuickStickyIndexes,
+    setGasQuickStickyIndexes,
+  ] = useState<Set<number>>(
+    () => new Set(),
+  );
+
   const gasQuickInputRefs =
     useRef<Record<
       number,
@@ -1148,9 +1155,15 @@ export default function RecipesPage() {
     useMemo(
       () =>
         visibleRecipes.filter(
-          ({ dish }) => {
+          ({
+            dish,
+            index,
+          }) => {
             if (
-              !gasQuickUnsetOnly
+              !gasQuickUnsetOnly ||
+              gasQuickStickyIndexes.has(
+                index,
+              )
             ) {
               return true;
             }
@@ -1170,6 +1183,7 @@ export default function RecipesPage() {
       [
         visibleRecipes,
         gasQuickUnsetOnly,
+        gasQuickStickyIndexes,
       ],
     );
 
@@ -1336,6 +1350,27 @@ export default function RecipesPage() {
       return;
     }
 
+    setGasQuickStickyIndexes(
+      (current) => {
+        if (
+          current.has(
+            dishIndex,
+          )
+        ) {
+          return current;
+        }
+
+        const next =
+          new Set(current);
+
+        next.add(
+          dishIndex,
+        );
+
+        return next;
+      },
+    );
+
     updateDish(
       dishIndex,
       patch,
@@ -1378,6 +1413,20 @@ export default function RecipesPage() {
     if (!targets.length) {
       return;
     }
+
+    setGasQuickStickyIndexes(
+      (current) => {
+        const next =
+          new Set(current);
+
+        targets.forEach(
+          ({ index }) =>
+            next.add(index),
+        );
+
+        return next;
+      },
+    );
 
     const patchByIndex =
       new Map(
@@ -4364,11 +4413,14 @@ I | Tomato | 4 | kg | 35 | kg`}
                     checked={
                       gasQuickUnsetOnly
                     }
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      setGasQuickStickyIndexes(
+                        new Set(),
+                      );
                       setGasQuickUnsetOnly(
                         event.target.checked,
-                      )
-                    }
+                      );
+                    }}
                   />
                   Only not set
                 </label>
