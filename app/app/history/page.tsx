@@ -67,6 +67,17 @@ type Item = {
   timestamp: string;
 };
 
+type DuplicateDraft = {
+  sourceCostingId: string;
+  eventName: string;
+  clientName: string;
+  eventDate: string;
+  pax: string;
+  menuCount: number;
+  functionCount: number;
+  totalCost: number;
+};
+
 const money = (value: number) =>
   `₹${Math.round(Number(value) || 0).toLocaleString('en-IN')}`;
 
@@ -105,6 +116,8 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
+  const [duplicateDraft, setDuplicateDraft] = useState<DuplicateDraft | null>(null);
+  const [duplicateError, setDuplicateError] = useState('');
 
   useEffect(() => {
     const current = getSession();
@@ -308,23 +321,94 @@ export default function HistoryPage() {
     }
   }
 
-  async function duplicate(costingId: string) {
+  async function prepareDuplicate(item: Item) {
     if (!session) return;
-    setBusy(`dup:${costingId}`);
+
+    setBusy(`dup-load:${item.costingId}`);
+    setDuplicateError('');
+    setError('');
+    await syncCurrent(session);
+
+    try {
+      const response = await fetch(
+        `/api/client/costings?costingId=${encodeURIComponent(item.costingId)}`,
+        { cache: 'no-store' },
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not load event to duplicate');
+
+      const work = data.costing.snapshot as WorkState;
+      const sourcePax = Math.max(
+        Number(work.event.pax) || 0,
+        ...work.menu.map((dish) => Number(dish.servicePax) || 0),
+      );
+      const functionKeys = new Set(
+        work.menu.map((dish) =>
+          dish.serviceId ||
+          `${dish.dayLabel || ''}::${dish.mealLabel || 'Event Menu'}`
+        ),
+      );
+
+      setDuplicateDraft({
+        sourceCostingId: item.costingId,
+        eventName: work.event.eventName || item.eventName || 'Event',
+        clientName: work.event.clientName || item.clientName || '',
+        eventDate: '',
+        pax: sourcePax > 0 ? String(sourcePax) : '',
+        menuCount: work.menu.length,
+        functionCount: Math.max(1, functionKeys.size),
+        totalCost: item.totalCost,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not prepare duplicate event.');
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function duplicate() {
+    if (!session || !duplicateDraft) return;
+
+    const clientName = duplicateDraft.clientName.trim();
+    const eventDate = duplicateDraft.eventDate.trim();
+    const pax = Math.max(0, Math.round(Number(duplicateDraft.pax) || 0));
+
+    if (!clientName) {
+      setDuplicateError('Enter the client name for the new booking.');
+      return;
+    }
+    if (!eventDate) {
+      setDuplicateError('Choose the date for the new booking.');
+      return;
+    }
+    if (pax <= 0) {
+      setDuplicateError('Enter a guest count greater than 0.');
+      return;
+    }
+
+    setBusy(`dup:${duplicateDraft.sourceCostingId}`);
+    setDuplicateError('');
     await syncCurrent(session);
 
     try {
       const response = await fetch('/api/client/costings/duplicate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sourceCostingId: costingId }),
+        body: JSON.stringify({
+          sourceCostingId: duplicateDraft.sourceCostingId,
+          clientName,
+          eventDate,
+          pax,
+        }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not duplicate costing');
+
+      setDuplicateDraft(null);
       await loadIntoWorkspace(data.work as WorkState, '/app/event?duplicated=1');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not duplicate costing.');
+      setDuplicateError(e instanceof Error ? e.message : 'Could not duplicate costing.');
       setBusy('');
     }
   }
@@ -445,6 +529,36 @@ export default function HistoryPage() {
           .hist-action:disabled { opacity: .5; cursor: wait; }
           .hist-empty { display: grid; min-height: 250px; place-items: center; align-content: center; gap: 6px; border: 1px dashed #303844; border-radius: 15px; color: #8793a2; background: #0d1117; font-size: 11px; text-align: center; }
           .hist-empty b { color: #d3dbe5; font-size: 14px; }
+          .hist-modal-backdrop { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 20px; background: rgba(4,8,13,.76); backdrop-filter: blur(10px); }
+          .hist-modal { width: min(620px, 100%); max-height: min(760px, calc(100vh - 32px)); overflow: auto; padding: 18px; border: 1px solid #303a47; border-radius: 18px; background: #10161e; box-shadow: 0 28px 80px rgba(0,0,0,.42); }
+          .hist-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+          .hist-modal-head small, .hist-modal-head h2, .hist-modal-head p { display: block; }
+          .hist-modal-head small { color: #78b5ff; font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+          .hist-modal-head h2 { margin: 4px 0; color: #eef4fb; font-size: 22px; letter-spacing: -.03em; }
+          .hist-modal-head p { margin: 0; color: #8492a3; font-size: 11px; line-height: 1.5; }
+          .hist-modal-close { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid #303844; border-radius: 10px; color: #9ba8b7; background: #161e27; font: inherit; font-size: 19px; cursor: pointer; }
+          .hist-duplicate-source { margin-top: 14px; padding: 11px 12px; border: 1px solid rgba(74,156,255,.16); border-radius: 11px; background: rgba(74,156,255,.045); }
+          .hist-duplicate-source b, .hist-duplicate-source span { display: block; }
+          .hist-duplicate-source b { color: #d8e9fc; font-size: 12px; }
+          .hist-duplicate-source span { margin-top: 3px; color: #7e90a5; font-size: 9px; line-height: 1.45; }
+          .hist-duplicate-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+          .hist-duplicate-field { display: grid; gap: 6px; }
+          .hist-duplicate-field:first-child { grid-column: 1 / -1; }
+          .hist-duplicate-field > span { color: #8998aa; font-size: 9px; font-weight: 850; }
+          .hist-duplicate-field input { width: 100%; min-height: 44px; padding: 0 11px; border: 1px solid #34404e; border-radius: 10px; outline: 0; color: #edf3f9; background: #151d27; font: inherit; font-size: 13px; color-scheme: dark; }
+          .hist-duplicate-field input:focus { border-color: rgba(74,156,255,.58); box-shadow: 0 0 0 3px rgba(74,156,255,.09); }
+          .hist-duplicate-help { grid-column: 1 / -1; margin: -2px 0 0; color: #738297; font-size: 9px; line-height: 1.45; }
+          .hist-duplicate-reuse { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 14px; }
+          .hist-duplicate-reuse > div { padding: 9px; border: 1px solid rgba(148,163,184,.10); border-radius: 10px; background: rgba(255,255,255,.018); }
+          .hist-duplicate-reuse b, .hist-duplicate-reuse span { display: block; }
+          .hist-duplicate-reuse b { color: #dbe5f0; font-size: 10px; }
+          .hist-duplicate-reuse span { margin-top: 2px; color: #718095; font-size: 8px; }
+          .hist-modal-error { margin-top: 12px; padding: 9px 10px; border: 1px solid rgba(255,98,89,.18); border-radius: 9px; color: #ff9d97; background: rgba(255,98,89,.05); font-size: 10px; }
+          .hist-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 13px; border-top: 1px solid rgba(148,163,184,.10); }
+          .hist-modal-actions button { min-height: 40px; padding: 0 14px; border-radius: 10px; font: inherit; font-size: 10px; font-weight: 900; cursor: pointer; }
+          .hist-modal-cancel { border: 1px solid #303844; color: #aeb9c6; background: #151b23; }
+          .hist-modal-confirm { min-width: 160px; border: 0; color: #fff; background: #1478f2; }
+          .hist-modal-actions button:disabled { opacity: .5; cursor: wait; }
           @media (max-width: 1050px) {
             .hist-row { grid-template-columns: 1fr 1fr 1fr; }
             .hist-main { grid-column: 1 / -1; }
@@ -464,6 +578,13 @@ export default function HistoryPage() {
             .hist-actions { display: grid; grid-template-columns: 1fr 1fr; }
             .hist-action { width: 100%; min-height: 40px; font-size: 11px; }
             .hist-alert { flex-direction: column; }
+            .hist-modal-backdrop { padding: 8px; align-items: end; }
+            .hist-modal { max-height: calc(100vh - 16px); padding: 14px; border-radius: 17px 17px 10px 10px; }
+            .hist-duplicate-fields, .hist-duplicate-reuse { grid-template-columns: 1fr; }
+            .hist-duplicate-field:first-child, .hist-duplicate-help { grid-column: auto; }
+            .hist-duplicate-field input { font-size: 16px; }
+            .hist-modal-actions { display: grid; grid-template-columns: 1fr 1.5fr; }
+            .hist-modal-actions button { width: 100%; }
           }
         `}</style>
 
@@ -540,7 +661,7 @@ export default function HistoryPage() {
                     ) : (
                       <>
                         <button className="hist-action primary" disabled={isBusy} onClick={() => void openCompleted(item.costingId)}>Open</button>
-                        <button className="hist-action" disabled={isBusy} onClick={() => void duplicate(item.costingId)}>Duplicate</button>
+                        <button className="hist-action" disabled={isBusy} onClick={() => void prepareDuplicate(item)}>{busy === `dup-load:${item.costingId}` ? 'Loading…' : 'Duplicate'}</button>
                         <button className="hist-action" disabled={isBusy} onClick={() => void pdf(item.costingId)}>PDF</button>
                         <Link className="hist-action" href={`/app/quotation?costingId=${encodeURIComponent(item.costingId)}`}>Quotation</Link>
                         <button className="hist-action" disabled={isBusy} onClick={() => void archiveCosting(item.costingId, item.kind !== 'ARCHIVED')}>{item.kind === 'ARCHIVED' ? 'Restore' : 'Archive'}</button>
@@ -552,6 +673,139 @@ export default function HistoryPage() {
             })}
           </div>
         )}
+
+        {duplicateDraft ? (
+          <div
+            className="hist-modal-backdrop"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && !busy) {
+                setDuplicateDraft(null);
+                setDuplicateError('');
+              }
+            }}
+          >
+            <section
+              className="hist-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="duplicate-event-title"
+            >
+              <div className="hist-modal-head">
+                <div>
+                  <small>Repeat booking</small>
+                  <h2 id="duplicate-event-title">Duplicate past event</h2>
+                  <p>Keep the menu and costing setup. Change the booking details that are different.</p>
+                </div>
+                <button
+                  className="hist-modal-close"
+                  type="button"
+                  aria-label="Close duplicate event"
+                  disabled={Boolean(busy)}
+                  onClick={() => {
+                    setDuplicateDraft(null);
+                    setDuplicateError('');
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="hist-duplicate-source">
+                <b>{duplicateDraft.eventName}</b>
+                <span>
+                  Reusing {duplicateDraft.menuCount} dishes · {duplicateDraft.functionCount} function{duplicateDraft.functionCount === 1 ? '' : 's'} · previous cost {money(duplicateDraft.totalCost)}
+                </span>
+              </div>
+
+              <div className="hist-duplicate-fields">
+                <label className="hist-duplicate-field">
+                  <span>Client name</span>
+                  <input
+                    autoFocus
+                    value={duplicateDraft.clientName}
+                    onChange={(event) => {
+                      setDuplicateDraft((current) =>
+                        current ? { ...current, clientName: event.target.value } : current
+                      );
+                      setDuplicateError('');
+                    }}
+                    placeholder="New client name"
+                  />
+                </label>
+
+                <label className="hist-duplicate-field">
+                  <span>New event date</span>
+                  <input
+                    type="date"
+                    value={duplicateDraft.eventDate}
+                    onChange={(event) => {
+                      setDuplicateDraft((current) =>
+                        current ? { ...current, eventDate: event.target.value } : current
+                      );
+                      setDuplicateError('');
+                    }}
+                  />
+                </label>
+
+                <label className="hist-duplicate-field">
+                  <span>Guest count</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputMode="numeric"
+                    value={duplicateDraft.pax}
+                    onChange={(event) => {
+                      setDuplicateDraft((current) =>
+                        current ? { ...current, pax: event.target.value } : current
+                      );
+                      setDuplicateError('');
+                    }}
+                    placeholder="e.g. 300"
+                  />
+                </label>
+
+                <p className="hist-duplicate-help">
+                  The guest count is applied to every copied function. You can fine-tune individual function counts later on Event &amp; Menu.
+                </p>
+              </div>
+
+              <div className="hist-duplicate-reuse">
+                <div><b>Menu</b><span>Same dishes &amp; portions</span></div>
+                <div><b>Manpower</b><span>Same roles, rates &amp; dish links</span></div>
+                <div><b>Operations</b><span>Gas, transport &amp; disposable setup</span></div>
+                <div><b>Pricing</b><span>Selling price setup retained</span></div>
+              </div>
+
+              {duplicateError ? (
+                <div className="hist-modal-error" role="alert">{duplicateError}</div>
+              ) : null}
+
+              <div className="hist-modal-actions">
+                <button
+                  className="hist-modal-cancel"
+                  type="button"
+                  disabled={Boolean(busy)}
+                  onClick={() => {
+                    setDuplicateDraft(null);
+                    setDuplicateError('');
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="hist-modal-confirm"
+                  type="button"
+                  disabled={Boolean(busy)}
+                  onClick={() => void duplicate()}
+                >
+                  {busy ? 'Duplicating…' : 'Duplicate & Open'}
+                </button>
+              </div>
+            </section>
+          </div>
+        ) : null}
       </section>
     </AppShell>
   );
