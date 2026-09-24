@@ -864,15 +864,15 @@ export function calculateEventGas(
             ? 'EVENT_OVERRIDE'
             : realProfile
               ? 'REAL_DISH_PROFILE'
-            : noGasDish
-              ? 'DISH_NO_GAS'
-              : hasUsableOverride
-                ? 'DISH_OVERRIDE'
-                : noGasCategory
-                  ? 'NO_GAS_CATEGORY'
-                  : categoryGas > 0
-                    ? 'CATEGORY'
-                    : 'SAFE_COOKING_FALLBACK',
+              : noGasDish
+                ? 'DISH_NO_GAS'
+                : hasUsableOverride
+                  ? 'DISH_OVERRIDE'
+                  : noGasCategory
+                    ? 'NO_GAS_CATEGORY'
+                    : categoryGas > 0
+                      ? 'CATEGORY'
+                      : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
