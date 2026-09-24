@@ -55,6 +55,7 @@ function profileFilter(
   if (status === 'REAL') return realProfileWhere;
   if (status === 'MEASURED') return measuredOnlyWhere;
   if (status === 'FALLBACK') return fallbackWhere;
+  if (status === 'NO_GAS') return noGasWhere;
   return undefined;
 }
 
@@ -159,11 +160,11 @@ export async function GET(
       ),
     );
 
-    const filters:
+    const scopeFilters:
       Prisma.DishMasterItemWhereInput[] = [];
 
     if (q) {
-      filters.push({
+      scopeFilters.push({
         OR: [
           {
             name: {
@@ -182,17 +183,27 @@ export async function GET(
     }
 
     if (category && category !== 'ALL') {
-      filters.push({
+      scopeFilters.push({
         category,
       });
     }
 
+    const summaryWhere:
+      Prisma.DishMasterItemWhereInput =
+      scopeFilters.length
+        ? { AND: scopeFilters }
+        : {};
+
     const statusWhere =
       profileFilter(status);
 
-    if (statusWhere) {
-      filters.push(statusWhere);
-    }
+    const filters =
+      statusWhere
+        ? [
+            ...scopeFilters,
+            statusWhere,
+          ]
+        : scopeFilters;
 
     const where:
       Prisma.DishMasterItemWhereInput =
@@ -243,18 +254,40 @@ export async function GET(
           category: true,
         },
       }),
-      prisma.dishMasterItem.count(),
       prisma.dishMasterItem.count({
-        where: realProfileWhere,
+        where: summaryWhere,
       }),
       prisma.dishMasterItem.count({
-        where: measuredOnlyWhere,
+        where: {
+          AND: [
+            summaryWhere,
+            realProfileWhere,
+          ],
+        },
       }),
       prisma.dishMasterItem.count({
-        where: fallbackWhere,
+        where: {
+          AND: [
+            summaryWhere,
+            measuredOnlyWhere,
+          ],
+        },
       }),
       prisma.dishMasterItem.count({
-        where: noGasWhere,
+        where: {
+          AND: [
+            summaryWhere,
+            fallbackWhere,
+          ],
+        },
+      }),
+      prisma.dishMasterItem.count({
+        where: {
+          AND: [
+            summaryWhere,
+            noGasWhere,
+          ],
+        },
       }),
     ]);
 
