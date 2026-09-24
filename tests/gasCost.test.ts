@@ -432,3 +432,43 @@ test('real dish gas profile rounds batches up instead of scaling linearly', () =
     1,
   );
 });
+
+
+test('zero real profile values do not produce false zero gas and fall back safely', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Dal Fry',
+      category: 'Dal / Kadhi',
+      gasBurnerKgPerHour: 0,
+      gasCookingMinutes: 0,
+      gasBurnerCount: 1,
+      gasBatchPax: 100,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'd1',
+        'Dal Fry',
+        'Dal / Kadhi',
+        'lunch',
+        'Lunch',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'CATEGORY',
+  );
+  assert.equal(
+    result.rows[0].gasKg,
+    1,
+  );
+});
