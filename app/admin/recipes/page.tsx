@@ -2880,6 +2880,18 @@ export default function RecipesPage() {
             display:block;
           }
 
+          .recipe-fast-row-main {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:10px;
+          }
+
+          .recipe-fast-row-copy {
+            min-width:0;
+            flex:1 1 auto;
+          }
+
           .recipe-fast-row b {
             font-size:11px;
           }
@@ -2888,6 +2900,29 @@ export default function RecipesPage() {
             margin-top:3px;
             color:#7f8b99;
             font-size:9px;
+          }
+
+          .recipe-fast-row-gas {
+            flex:0 0 auto;
+            min-width:78px;
+            padding:5px 7px;
+            border:1px solid rgba(64,156,255,.23);
+            border-radius:9px;
+            background:rgba(64,156,255,.07);
+            text-align:right;
+          }
+
+          .recipe-fast-row-gas b {
+            color:#9dcbff;
+            font-size:10px;
+          }
+
+          .recipe-fast-row-gas span {
+            margin-top:1px;
+            color:#718398;
+            font-size:7px;
+            font-weight:800;
+            text-transform:uppercase;
           }
 
           .recipe-fast-editor {
@@ -3528,40 +3563,72 @@ I | Tomato | 4 | kg | 35 | kg`}
                   ({
                     dish,
                     index,
-                  }) => (
-                    <button
-                      className={`recipe-fast-row ${
-                        selectedIndex === index
-                          ? 'active'
-                          : ''
-                      }`}
-                      key={`${recipeName(dish)}-${index}`}
-                      type="button"
-                      onClick={() =>
-                        setSelectedIndex(
-                          index,
-                        )
-                      }
-                    >
-                      <b>
-                        {recipeName(
-                          dish,
-                        )}
-                      </b>
+                  }) => {
+                    const dishCategory =
+                      text(
+                        dish.category,
+                      ) ||
+                      'Other';
 
-                      <span>
-                        {text(
-                          dish.category,
-                        ) ||
-                          'Other'}
-                        {' · '}
-                        {recipeIngredients(
-                          dish,
-                        ).length}
-                        {' ingredients'}
-                      </span>
-                    </button>
-                  ),
+                    const rowGas =
+                      recipeGasPreview(
+                        dish,
+                        dishCategory,
+                        100,
+                        gasSetting,
+                        gasCategoryRates,
+                      );
+
+                    return (
+                      <button
+                        className={`recipe-fast-row ${
+                          selectedIndex === index
+                            ? 'active'
+                            : ''
+                        }`}
+                        key={`${recipeName(dish)}-${index}`}
+                        type="button"
+                        title="Open recipe and edit gas cost"
+                        onClick={() =>
+                          setSelectedIndex(
+                            index,
+                          )
+                        }
+                      >
+                        <div className="recipe-fast-row-main">
+                          <div className="recipe-fast-row-copy">
+                            <b>
+                              {recipeName(
+                                dish,
+                              )}
+                            </b>
+
+                            <span>
+                              {dishCategory}
+                              {' · '}
+                              {recipeIngredients(
+                                dish,
+                              ).length}
+                              {' ingredients'}
+                              {' · '}
+                              {rowGas.source}
+                            </span>
+                          </div>
+
+                          <div className="recipe-fast-row-gas">
+                            <b>
+                              {money(
+                                rowGas.gasCost,
+                              )}
+                            </b>
+                            <span>
+                              Gas / 100
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  },
                 )
               ) : (
                 <div className="recipe-fast-empty">
