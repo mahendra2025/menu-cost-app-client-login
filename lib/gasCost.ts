@@ -19,6 +19,10 @@ import {
   suggestChineseGas,
 } from './chineseGas';
 
+import {
+  suggestDalKadhiGas,
+} from './dalKadhiGas';
+
 export type LpgCostSetting = {
   cylinderPrice: number;
   cylinderWeightKg: number;
@@ -75,6 +79,7 @@ export type GasDishCostRow = {
     | 'SABJI_STARTER'
     | 'CHAAT_STARTER'
     | 'CHINESE_STARTER'
+    | 'DAL_KADHI_STARTER'
     | 'CATEGORY'
     | 'SAFE_COOKING_FALLBACK'
     | 'NO_GAS_CATEGORY'
@@ -804,6 +809,13 @@ export function calculateEventGas(
             )
           : null;
 
+      const dalKadhiStarter =
+        categoryKey === 'dalkadhi'
+          ? suggestDalKadhiGas(
+              item.name,
+            )
+          : null;
+
       const hasUsableOverride =
         noGasDish ||
         (
@@ -837,9 +849,12 @@ export function calculateEventGas(
                     : chineseStarter
                       ? chineseStarter
                           .kgPer100
-                      : categoryGas > 0
-                        ? categoryGas
-                        : DEFAULT_COOKING_GAS_KG_PER_100;
+                      : dalKadhiStarter
+                        ? dalKadhiStarter
+                            .kgPer100
+                        : categoryGas > 0
+                          ? categoryGas
+                          : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -943,9 +958,11 @@ export function calculateEventGas(
                           ? 'CHAAT_STARTER'
                           : chineseStarter
                             ? 'CHINESE_STARTER'
-                            : categoryGas > 0
-                              ? 'CATEGORY'
-                              : 'SAFE_COOKING_FALLBACK',
+                            : dalKadhiStarter
+                              ? 'DAL_KADHI_STARTER'
+                              : categoryGas > 0
+                                ? 'CATEGORY'
+                                : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
