@@ -52,6 +52,10 @@ import {
   suggestFarsanGas,
 } from '../../../lib/farsanGas';
 
+import {
+  suggestIndianBreadGas,
+} from '../../../lib/indianBreadGas';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -503,6 +507,14 @@ function recipeGasPreview(
         )
       : null;
 
+  const indianBreadStarter =
+    categoryKey === 'indianbread' ||
+    categoryKey === 'bread'
+      ? suggestIndianBreadGas(
+          recipeName(dish),
+        )
+      : null;
+
   const gasKgPer100 =
     measured !== null &&
     (
@@ -530,9 +542,12 @@ function recipeGasPreview(
                   : farsanStarter
                     ? farsanStarter
                         .kgPer100
-                    : categoryGas > 0
-                      ? categoryGas
-                      : DEFAULT_COOKING_GAS_KG_PER_100;
+                    : indianBreadStarter
+                      ? indianBreadStarter
+                          .kgPer100
+                      : categoryGas > 0
+                        ? categoryGas
+                        : DEFAULT_COOKING_GAS_KG_PER_100;
 
   const source =
     measured !== null &&
@@ -555,9 +570,11 @@ function recipeGasPreview(
                   ? 'DAL/KADHI STARTER'
                   : farsanStarter
                     ? 'FARSAN STARTER'
-                    : categoryGas > 0
-                      ? 'CATEGORY'
-                      : 'SAFE DEFAULT';
+                    : indianBreadStarter
+                      ? 'INDIAN BREAD STARTER'
+                      : categoryGas > 0
+                        ? 'CATEGORY'
+                        : 'SAFE DEFAULT';
 
   const gasKg =
     gasKgPer100 *
@@ -4752,7 +4769,9 @@ I | Tomato | 4 | kg | 35 | kg`}
                                     preview.source ===
                                       'DAL/KADHI STARTER' ||
                                     preview.source ===
-                                      'FARSAN STARTER'
+                                      'FARSAN STARTER' ||
+                                    preview.source ===
+                                      'INDIAN BREAD STARTER'
                                   ? 'Starter estimate'
                                   : 'Fallback shown'}
                           </span>
