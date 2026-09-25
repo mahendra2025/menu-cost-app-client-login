@@ -773,3 +773,104 @@ test('cold Sweet starter can return zero gas without a saved dish profile', () =
     0,
   );
 });
+
+
+test('Sabji without a saved override uses dish-specific Sabji starter instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'sb1',
+        'Aloo Jeera',
+        'Sabji',
+        'lunch',
+        'Lunch',
+        100,
+      ),
+      dish(
+        'sb2',
+        'Paneer Tikka Masala',
+        'Sabji',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'sb3',
+        'Banana Kofta Curry',
+        'Sabji',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Aloo Jeera',
+        0.65,
+        'SABJI_STARTER',
+      ],
+      [
+        'Paneer Tikka Masala',
+        1.3,
+        'SABJI_STARTER',
+      ],
+      [
+        'Banana Kofta Curry',
+        1.45,
+        'SABJI_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    3.4,
+  );
+});
+
+test('saved Sabji dish gas still wins over Sabji starter', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Aloo Jeera',
+      category: 'Sabji',
+      gasKgPer100: 0.5,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'sb4',
+        'Aloo Jeera',
+        'Sabji',
+        'lunch',
+        'Lunch',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.5,
+  );
+});
