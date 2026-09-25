@@ -1177,3 +1177,104 @@ test('saved Dal/Kadhi dish gas still wins over starter gas', () => {
     0.75,
   );
 });
+
+
+test('Farsan without a saved override uses dish-specific starter gas instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'fs1',
+        'Khaman',
+        'Farsan',
+        'snacks',
+        'Snacks',
+        100,
+      ),
+      dish(
+        'fs2',
+        'Samosa',
+        'Farsan',
+        'snacks',
+        'Snacks',
+        100,
+      ),
+      dish(
+        'fs3',
+        'Khakhra',
+        'Farsan',
+        'snacks',
+        'Snacks',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Khaman',
+        0.75,
+        'FARSAN_STARTER',
+      ],
+      [
+        'Samosa',
+        1.25,
+        'FARSAN_STARTER',
+      ],
+      [
+        'Khakhra',
+        0.65,
+        'FARSAN_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    2.65,
+  );
+});
+
+test('saved Farsan dish gas still wins over Farsan starter', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Khaman',
+      category: 'Farsan',
+      gasKgPer100: 0.6,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'fs4',
+        'Khaman',
+        'Farsan',
+        'snacks',
+        'Snacks',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.6,
+  );
+});
