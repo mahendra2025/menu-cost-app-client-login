@@ -31,6 +31,10 @@ import {
   suggestIndianBreadGas,
 } from './indianBreadGas';
 
+import {
+  suggestItalianGas,
+} from './italianGas';
+
 export type LpgCostSetting = {
   cylinderPrice: number;
   cylinderWeightKg: number;
@@ -90,6 +94,7 @@ export type GasDishCostRow = {
     | 'DAL_KADHI_STARTER'
     | 'FARSAN_STARTER'
     | 'INDIAN_BREAD_STARTER'
+    | 'ITALIAN_STARTER'
     | 'CATEGORY'
     | 'SAFE_COOKING_FALLBACK'
     | 'NO_GAS_CATEGORY'
@@ -841,6 +846,13 @@ export function calculateEventGas(
             )
           : null;
 
+      const italianStarter =
+        categoryKey === 'italian'
+          ? suggestItalianGas(
+              item.name,
+            )
+          : null;
+
       const hasUsableOverride =
         noGasDish ||
         (
@@ -883,9 +895,12 @@ export function calculateEventGas(
                           : indianBreadStarter
                             ? indianBreadStarter
                                 .kgPer100
-                            : categoryGas > 0
-                              ? categoryGas
-                              : DEFAULT_COOKING_GAS_KG_PER_100;
+                            : italianStarter
+                              ? italianStarter
+                                  .kgPer100
+                              : categoryGas > 0
+                                ? categoryGas
+                                : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -995,9 +1010,11 @@ export function calculateEventGas(
                                 ? 'FARSAN_STARTER'
                                 : indianBreadStarter
                                   ? 'INDIAN_BREAD_STARTER'
-                                  : categoryGas > 0
-                                    ? 'CATEGORY'
-                                    : 'SAFE_COOKING_FALLBACK',
+                                  : italianStarter
+                                    ? 'ITALIAN_STARTER'
+                                    : categoryGas > 0
+                                      ? 'CATEGORY'
+                                      : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
