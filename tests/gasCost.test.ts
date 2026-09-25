@@ -1897,3 +1897,65 @@ test('saved Starter dish gas still wins over starter estimate', () => {
     1.05,
   );
 });
+
+
+test('Thai Noodles uses Thai starter gas instead of category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'th1',
+        'Thai Noodles',
+        'Thai',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'THAI_STARTER',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    1,
+  );
+});
+
+test('saved Thai dish gas still wins over Thai starter', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Thai Noodles',
+      category: 'Thai',
+      gasKgPer100: 0.8,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'th2',
+        'Thai Noodles',
+        'Thai',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.8,
+  );
+});
