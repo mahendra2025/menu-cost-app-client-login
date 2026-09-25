@@ -44,6 +44,10 @@ import {
   suggestChineseGas,
 } from '../../../lib/chineseGas';
 
+import {
+  suggestDalKadhiGas,
+} from '../../../lib/dalKadhiGas';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -481,6 +485,13 @@ function recipeGasPreview(
         )
       : null;
 
+  const dalKadhiStarter =
+    categoryKey === 'dalkadhi'
+      ? suggestDalKadhiGas(
+          recipeName(dish),
+        )
+      : null;
+
   const gasKgPer100 =
     measured !== null &&
     (
@@ -502,9 +513,12 @@ function recipeGasPreview(
               : chineseStarter
                 ? chineseStarter
                     .kgPer100
-                : categoryGas > 0
-                  ? categoryGas
-                  : DEFAULT_COOKING_GAS_KG_PER_100;
+                : dalKadhiStarter
+                  ? dalKadhiStarter
+                      .kgPer100
+                  : categoryGas > 0
+                    ? categoryGas
+                    : DEFAULT_COOKING_GAS_KG_PER_100;
 
   const source =
     measured !== null &&
@@ -523,9 +537,11 @@ function recipeGasPreview(
               ? 'CHAAT STARTER'
               : chineseStarter
                 ? 'CHINESE STARTER'
-                : categoryGas > 0
-                  ? 'CATEGORY'
-                  : 'SAFE DEFAULT';
+                : dalKadhiStarter
+                  ? 'DAL/KADHI STARTER'
+                  : categoryGas > 0
+                    ? 'CATEGORY'
+                    : 'SAFE DEFAULT';
 
   const gasKg =
     gasKgPer100 *
@@ -4716,7 +4732,9 @@ I | Tomato | 4 | kg | 35 | kg`}
                                     preview.source ===
                                       'CHAAT STARTER' ||
                                     preview.source ===
-                                      'CHINESE STARTER'
+                                      'CHINESE STARTER' ||
+                                    preview.source ===
+                                      'DAL/KADHI STARTER'
                                   ? 'Starter estimate'
                                   : 'Fallback shown'}
                           </span>
