@@ -1076,3 +1076,104 @@ test('saved Chinese dish gas still wins over Chinese starter', () => {
     0.8,
   );
 });
+
+
+test('Dal/Kadhi without a saved override uses dish-specific starter gas instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'dk1',
+        'Dal Makhani',
+        'Dal/Kadhi',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'dk2',
+        'Gujarati Kadhi',
+        'Dal/Kadhi',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'dk3',
+        'Punjabi Kadhi Pakora',
+        'Dal/Kadhi',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Dal Makhani',
+        1.4,
+        'DAL_KADHI_STARTER',
+      ],
+      [
+        'Gujarati Kadhi',
+        0.8,
+        'DAL_KADHI_STARTER',
+      ],
+      [
+        'Punjabi Kadhi Pakora',
+        1.35,
+        'DAL_KADHI_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    3.55,
+  );
+});
+
+test('saved Dal/Kadhi dish gas still wins over starter gas', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Dal Fry',
+      category: 'Dal/Kadhi',
+      gasKgPer100: 0.75,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'dk4',
+        'Dal Fry',
+        'Dal/Kadhi',
+        'lunch',
+        'Lunch',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.75,
+  );
+});
