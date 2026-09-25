@@ -1480,3 +1480,104 @@ test('saved Italian dish gas still wins over Italian starter', () => {
     0.9,
   );
 });
+
+
+test('Moving Starter uses dish-specific starter gas instead of safe default', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'ms1',
+        'Paneer Malai Tikka',
+        'Moving Starter',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'ms2',
+        'Crispy Corn',
+        'Moving Starter',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'ms3',
+        'Mini Pizza Bite',
+        'Moving Starter',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Paneer Malai Tikka',
+        1.25,
+        'MOVING_STARTER',
+      ],
+      [
+        'Crispy Corn',
+        1.1,
+        'MOVING_STARTER',
+      ],
+      [
+        'Mini Pizza Bite',
+        0.9,
+        'MOVING_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    3.25,
+  );
+});
+
+test('saved Moving Starter dish gas still wins over starter gas', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Paneer Malai Tikka',
+      category: 'Moving Starter',
+      gasKgPer100: 0.95,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'ms4',
+        'Paneer Malai Tikka',
+        'Moving Starter',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.95,
+  );
+});
