@@ -874,3 +874,104 @@ test('saved Sabji dish gas still wins over Sabji starter', () => {
     0.5,
   );
 });
+
+
+test('Chaat without a saved override uses dish-specific Chaat starter instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'ch1',
+        'Pani Puri',
+        'Chaat',
+        'snacks',
+        'Snacks',
+        100,
+      ),
+      dish(
+        'ch2',
+        'Aloo Tikki Chaat',
+        'Chaat',
+        'snacks',
+        'Snacks',
+        100,
+      ),
+      dish(
+        'ch3',
+        'Ragda Pattice',
+        'Chaat',
+        'snacks',
+        'Snacks',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Pani Puri',
+        0.25,
+        'CHAAT_STARTER',
+      ],
+      [
+        'Aloo Tikki Chaat',
+        0.75,
+        'CHAAT_STARTER',
+      ],
+      [
+        'Ragda Pattice',
+        0.9,
+        'CHAAT_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    1.9,
+  );
+});
+
+test('saved Chaat dish gas still wins over Chaat starter', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Pani Puri',
+      category: 'Chaat',
+      gasKgPer100: 0.4,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'ch4',
+        'Pani Puri',
+        'Chaat',
+        'snacks',
+        'Snacks',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.4,
+  );
+});
