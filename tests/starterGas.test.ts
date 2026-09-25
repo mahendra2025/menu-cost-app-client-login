@@ -57,3 +57,60 @@ test('unknown Starter keeps generic starter estimate', () => {
     },
   );
 });
+
+
+test('remaining Starter dishes have explicit LPG estimates', () => {
+  assert.deepEqual(
+    [
+      suggestStarterGas('Peri Peri Paneer Tikka').kgPer100,
+      suggestStarterGas('Potato Wedges').kgPer100,
+      suggestStarterGas('Punjabi Samosa').kgPer100,
+      suggestStarterGas('Pyaz Kachori').kgPer100,
+      suggestStarterGas('Sandwich Dhokla').kgPer100,
+      suggestStarterGas('Schezwan Paneer').kgPer100,
+      suggestStarterGas('Tandoori Veg Momos').kgPer100,
+      suggestStarterGas('Veg Quesadilla').kgPer100,
+      suggestStarterGas('Veg Tacos').kgPer100,
+      suggestStarterGas('White Dhokla').kgPer100,
+    ],
+    [
+      1.25,
+      1.05,
+      1.20,
+      1.25,
+      0.80,
+      1.20,
+      0.95,
+      0.85,
+      0.75,
+      0.75,
+    ],
+  );
+});
+
+test('Starter heuristics cover future samosa, vada, dhokla, quesadilla and taco names', () => {
+  assert.equal(
+    suggestStarterGas('House Special Samosa').kgPer100,
+    1.15,
+  );
+
+  assert.equal(
+    suggestStarterGas('House Special Vada').kgPer100,
+    1.15,
+  );
+
+  assert.equal(
+    suggestStarterGas('House Special Dhokla').kgPer100,
+    0.75,
+  );
+
+  assert.equal(
+    suggestStarterGas('House Special Quesadilla').kgPer100,
+    0.85,
+  );
+
+  assert.equal(
+    suggestStarterGas('House Special Tacos').kgPer100,
+    0.75,
+  );
+});
