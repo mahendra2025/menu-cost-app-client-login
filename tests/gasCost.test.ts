@@ -1379,3 +1379,104 @@ test('saved Indian Bread dish gas still wins over starter gas', () => {
     0.8,
   );
 });
+
+
+test('Italian without a saved override uses dish-specific starter gas instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'it1',
+        'Pesto Risotto',
+        'Italian',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'it2',
+        'Veg Pizza',
+        'Italian',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'it3',
+        'Roasted Vegetable Salad',
+        'Italian',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Pesto Risotto',
+        1.05,
+        'ITALIAN_STARTER',
+      ],
+      [
+        'Veg Pizza',
+        1.15,
+        'ITALIAN_STARTER',
+      ],
+      [
+        'Roasted Vegetable Salad',
+        0.45,
+        'ITALIAN_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    2.65,
+  );
+});
+
+test('saved Italian dish gas still wins over Italian starter', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Veg Pizza',
+      category: 'Italian',
+      gasKgPer100: 0.9,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'it4',
+        'Veg Pizza',
+        'Italian',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.9,
+  );
+});
