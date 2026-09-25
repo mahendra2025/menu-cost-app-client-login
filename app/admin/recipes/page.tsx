@@ -32,6 +32,10 @@ import {
   suggestSweetGas,
 } from '../../../lib/sweetGas';
 
+import {
+  suggestSabjiGas,
+} from '../../../lib/sabjiGas';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -436,11 +440,21 @@ function recipeGasPreview(
       rates,
     );
 
-  const sweetStarter =
+  const categoryKey =
     normalizeGasCategoryKey(
       category,
-    ) === 'sweet'
+    );
+
+  const sweetStarter =
+    categoryKey === 'sweet'
       ? suggestSweetGas(
+          recipeName(dish),
+        )
+      : null;
+
+  const sabjiStarter =
+    categoryKey === 'sabji'
+      ? suggestSabjiGas(
           recipeName(dish),
         )
       : null;
@@ -457,9 +471,12 @@ function recipeGasPreview(
         : sweetStarter
           ? sweetStarter
               .kgPer100
-          : categoryGas > 0
-            ? categoryGas
-            : DEFAULT_COOKING_GAS_KG_PER_100;
+          : sabjiStarter
+            ? sabjiStarter
+                .kgPer100
+            : categoryGas > 0
+              ? categoryGas
+              : DEFAULT_COOKING_GAS_KG_PER_100;
 
   const source =
     measured !== null &&
@@ -472,9 +489,11 @@ function recipeGasPreview(
         ? 'NO GAS CATEGORY'
         : sweetStarter
           ? 'SWEET STARTER'
-          : categoryGas > 0
-            ? 'CATEGORY'
-            : 'SAFE DEFAULT';
+          : sabjiStarter
+            ? 'SABJI STARTER'
+            : categoryGas > 0
+              ? 'CATEGORY'
+              : 'SAFE DEFAULT';
 
   const gasKg =
     gasKgPer100 *
@@ -4659,7 +4678,9 @@ I | Tomato | 4 | kg | 35 | kg`}
                               : explicitValue
                                 ? 'Manual dish rate'
                                 : preview.source ===
-                                    'SWEET STARTER'
+                                      'SWEET STARTER' ||
+                                    preview.source ===
+                                      'SABJI STARTER'
                                   ? 'Starter estimate'
                                   : 'Fallback shown'}
                           </span>
@@ -5699,7 +5720,7 @@ I | Tomato | 4 | kg | 35 | kg`}
                         fontSize: '9px',
                       }}
                     >
-                      Priority: No Gas → Real burner profile → Measured kg/100 → Category fallback → Safe default.
+                      Priority: No Gas → Real burner profile → Measured kg/100 → Dish starter → Category fallback → Safe default.
                     </small>
                   </div>
 
