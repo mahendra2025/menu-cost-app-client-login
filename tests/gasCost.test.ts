@@ -1796,3 +1796,104 @@ test('saved South Indian dish gas still wins over South Indian starter', () => {
     0.95,
   );
 });
+
+
+test('Starter without a saved override uses dish-specific estimate instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'st1',
+        'Paneer Tikka',
+        'Starter',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'st2',
+        'French Fries',
+        'Starter',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'st3',
+        'Bruschetta',
+        'Starter',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Paneer Tikka',
+        1.25,
+        'STARTER_ESTIMATE',
+      ],
+      [
+        'French Fries',
+        1.1,
+        'STARTER_ESTIMATE',
+      ],
+      [
+        'Bruschetta',
+        0.55,
+        'STARTER_ESTIMATE',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    2.9,
+  );
+});
+
+test('saved Starter dish gas still wins over starter estimate', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Paneer Tikka',
+      category: 'Starter',
+      gasKgPer100: 1.05,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'st4',
+        'Paneer Tikka',
+        'Starter',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    1.05,
+  );
+});
