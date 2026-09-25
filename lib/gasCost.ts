@@ -7,6 +7,10 @@ import {
   suggestSweetGas,
 } from './sweetGas';
 
+import {
+  suggestSabjiGas,
+} from './sabjiGas';
+
 export type LpgCostSetting = {
   cylinderPrice: number;
   cylinderWeightKg: number;
@@ -60,6 +64,7 @@ export type GasDishCostRow = {
     | 'REAL_DISH_PROFILE'
     | 'DISH_OVERRIDE'
     | 'SWEET_STARTER'
+    | 'SABJI_STARTER'
     | 'CATEGORY'
     | 'SAFE_COOKING_FALLBACK'
     | 'NO_GAS_CATEGORY'
@@ -756,11 +761,21 @@ export function calculateEventGas(
           categoryRates,
         );
 
-      const sweetStarter =
+      const categoryKey =
         normalizeGasCategoryKey(
           item.category,
-        ) === 'sweet'
+        );
+
+      const sweetStarter =
+        categoryKey === 'sweet'
           ? suggestSweetGas(
+              item.name,
+            )
+          : null;
+
+      const sabjiStarter =
+        categoryKey === 'sabji'
+          ? suggestSabjiGas(
               item.name,
             )
           : null;
@@ -789,9 +804,12 @@ export function calculateEventGas(
               : sweetStarter
                 ? sweetStarter
                     .kgPer100
-                : categoryGas > 0
-                  ? categoryGas
-                  : DEFAULT_COOKING_GAS_KG_PER_100;
+                : sabjiStarter
+                  ? sabjiStarter
+                      .kgPer100
+                  : categoryGas > 0
+                    ? categoryGas
+                    : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -889,9 +907,11 @@ export function calculateEventGas(
                     ? 'NO_GAS_CATEGORY'
                     : sweetStarter
                       ? 'SWEET_STARTER'
-                      : categoryGas > 0
-                        ? 'CATEGORY'
-                        : 'SAFE_COOKING_FALLBACK',
+                      : sabjiStarter
+                        ? 'SABJI_STARTER'
+                        : categoryGas > 0
+                          ? 'CATEGORY'
+                          : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
