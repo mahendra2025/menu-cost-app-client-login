@@ -696,3 +696,80 @@ test('event override can explicitly set a cooking dish to no gas', () => {
     0,
   );
 });
+
+
+test('Sweet without a saved override uses dish-specific Sweet starter instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'sw1',
+        'Gulab Jamun',
+        'Sweet',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'sw2',
+        'Rabdi',
+        'Sweet',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Gulab Jamun',
+        1,
+        'SWEET_STARTER',
+      ],
+      [
+        'Rabdi',
+        3,
+        'SWEET_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    4,
+  );
+});
+
+test('cold Sweet starter can return zero gas without a saved dish profile', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'sw3',
+        'Shrikhand',
+        'Sweet',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'SWEET_STARTER',
+  );
+  assert.equal(
+    result.totalGasKg,
+    0,
+  );
+});
