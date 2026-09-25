@@ -975,3 +975,104 @@ test('saved Chaat dish gas still wins over Chaat starter', () => {
     0.4,
   );
 });
+
+
+test('Chinese without a saved override uses dish-specific Chinese starter instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'cn1',
+        'Veg Fried Rice',
+        'Chinese',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'cn2',
+        'Hakka Noodles',
+        'Chinese',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'cn3',
+        'Veg Manchurian Gravy',
+        'Chinese',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Veg Fried Rice',
+        0.85,
+        'CHINESE_STARTER',
+      ],
+      [
+        'Hakka Noodles',
+        0.95,
+        'CHINESE_STARTER',
+      ],
+      [
+        'Veg Manchurian Gravy',
+        1.3,
+        'CHINESE_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    3.1,
+  );
+});
+
+test('saved Chinese dish gas still wins over Chinese starter', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Hakka Noodles',
+      category: 'Chinese',
+      gasKgPer100: 0.8,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'cn4',
+        'Hakka Noodles',
+        'Chinese',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.8,
+  );
+});
