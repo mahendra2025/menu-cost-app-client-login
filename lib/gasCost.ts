@@ -39,6 +39,10 @@ import {
   suggestMovingStarterGas,
 } from './movingStarterGas';
 
+import {
+  suggestRiceGas,
+} from './riceGas';
+
 export type LpgCostSetting = {
   cylinderPrice: number;
   cylinderWeightKg: number;
@@ -100,6 +104,7 @@ export type GasDishCostRow = {
     | 'INDIAN_BREAD_STARTER'
     | 'ITALIAN_STARTER'
     | 'MOVING_STARTER'
+    | 'RICE_STARTER'
     | 'CATEGORY'
     | 'SAFE_COOKING_FALLBACK'
     | 'NO_GAS_CATEGORY'
@@ -865,6 +870,13 @@ export function calculateEventGas(
             )
           : null;
 
+      const riceStarter =
+        categoryKey === 'rice'
+          ? suggestRiceGas(
+              item.name,
+            )
+          : null;
+
       const hasUsableOverride =
         noGasDish ||
         (
@@ -913,9 +925,12 @@ export function calculateEventGas(
                               : movingStarter
                                 ? movingStarter
                                     .kgPer100
-                                : categoryGas > 0
-                                  ? categoryGas
-                                  : DEFAULT_COOKING_GAS_KG_PER_100;
+                                : riceStarter
+                                  ? riceStarter
+                                      .kgPer100
+                                  : categoryGas > 0
+                                    ? categoryGas
+                                    : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -1029,9 +1044,11 @@ export function calculateEventGas(
                                     ? 'ITALIAN_STARTER'
                                     : movingStarter
                                       ? 'MOVING_STARTER'
-                                      : categoryGas > 0
-                                        ? 'CATEGORY'
-                                        : 'SAFE_COOKING_FALLBACK',
+                                      : riceStarter
+                                        ? 'RICE_STARTER'
+                                        : categoryGas > 0
+                                          ? 'CATEGORY'
+                                          : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
