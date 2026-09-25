@@ -48,6 +48,10 @@ import {
   suggestDalKadhiGas,
 } from '../../../lib/dalKadhiGas';
 
+import {
+  suggestFarsanGas,
+} from '../../../lib/farsanGas';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -492,6 +496,13 @@ function recipeGasPreview(
         )
       : null;
 
+  const farsanStarter =
+    categoryKey === 'farsan'
+      ? suggestFarsanGas(
+          recipeName(dish),
+        )
+      : null;
+
   const gasKgPer100 =
     measured !== null &&
     (
@@ -516,9 +527,12 @@ function recipeGasPreview(
                 : dalKadhiStarter
                   ? dalKadhiStarter
                       .kgPer100
-                  : categoryGas > 0
-                    ? categoryGas
-                    : DEFAULT_COOKING_GAS_KG_PER_100;
+                  : farsanStarter
+                    ? farsanStarter
+                        .kgPer100
+                    : categoryGas > 0
+                      ? categoryGas
+                      : DEFAULT_COOKING_GAS_KG_PER_100;
 
   const source =
     measured !== null &&
@@ -539,9 +553,11 @@ function recipeGasPreview(
                 ? 'CHINESE STARTER'
                 : dalKadhiStarter
                   ? 'DAL/KADHI STARTER'
-                  : categoryGas > 0
-                    ? 'CATEGORY'
-                    : 'SAFE DEFAULT';
+                  : farsanStarter
+                    ? 'FARSAN STARTER'
+                    : categoryGas > 0
+                      ? 'CATEGORY'
+                      : 'SAFE DEFAULT';
 
   const gasKg =
     gasKgPer100 *
@@ -4734,7 +4750,9 @@ I | Tomato | 4 | kg | 35 | kg`}
                                     preview.source ===
                                       'CHINESE STARTER' ||
                                     preview.source ===
-                                      'DAL/KADHI STARTER'
+                                      'DAL/KADHI STARTER' ||
+                                    preview.source ===
+                                      'FARSAN STARTER'
                                   ? 'Starter estimate'
                                   : 'Fallback shown'}
                           </span>
