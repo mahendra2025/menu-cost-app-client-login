@@ -23,9 +23,14 @@ import {
   categoryGasKgPer100,
   isNoGasCategory,
   lpgRatePerKg,
+  normalizeGasCategoryKey,
   type GasCategoryRateValue,
   type LpgCostSetting,
 } from '../../../lib/gasCost';
+
+import {
+  suggestSweetGas,
+} from '../../../lib/sweetGas';
 
 type RawRow = Record<string, unknown>;
 
@@ -431,6 +436,15 @@ function recipeGasPreview(
       rates,
     );
 
+  const sweetStarter =
+    normalizeGasCategoryKey(
+      category,
+    ) === 'sweet'
+      ? suggestSweetGas(
+          recipeName(dish),
+        )
+      : null;
+
   const gasKgPer100 =
     measured !== null &&
     (
@@ -440,9 +454,12 @@ function recipeGasPreview(
       ? measured
       : noGasCategory
         ? 0
-        : categoryGas > 0
-          ? categoryGas
-          : DEFAULT_COOKING_GAS_KG_PER_100;
+        : sweetStarter
+          ? sweetStarter
+              .kgPer100
+          : categoryGas > 0
+            ? categoryGas
+            : DEFAULT_COOKING_GAS_KG_PER_100;
 
   const source =
     measured !== null &&
@@ -453,9 +470,11 @@ function recipeGasPreview(
       ? 'DISH RATE'
       : noGasCategory
         ? 'NO GAS CATEGORY'
-        : categoryGas > 0
-          ? 'CATEGORY'
-          : 'SAFE DEFAULT';
+        : sweetStarter
+          ? 'SWEET STARTER'
+          : categoryGas > 0
+            ? 'CATEGORY'
+            : 'SAFE DEFAULT';
 
   const gasKg =
     gasKgPer100 *
@@ -4639,7 +4658,10 @@ I | Tomato | 4 | kg | 35 | kg`}
                               ? 'Explicit no gas'
                               : explicitValue
                                 ? 'Manual dish rate'
-                                : 'Fallback shown'}
+                                : preview.source ===
+                                    'SWEET STARTER'
+                                  ? 'Starter estimate'
+                                  : 'Fallback shown'}
                           </span>
                         </div>
                       </div>
