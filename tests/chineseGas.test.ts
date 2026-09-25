@@ -65,3 +65,27 @@ test('unknown Chinese dish keeps the generic Chinese starter estimate', () => {
     },
   );
 });
+
+
+test('remaining Chinese dishes use specific momos, chow mein and vegetable sauce starters', () => {
+  assert.deepEqual(
+    [
+      suggestChineseGas('Veg Schezwan Momos').kgPer100,
+      suggestChineseGas('Veg Steamed Momos').kgPer100,
+      suggestChineseGas('Vegetable Chow Mein').kgPer100,
+      suggestChineseGas('Vegetable in Black Bean Sauce').kgPer100,
+      suggestChineseGas('Vegetable in Hot Garlic Sauce').kgPer100,
+      suggestChineseGas('Vegetable Salt and Pepper').kgPer100,
+      suggestChineseGas('Veg Momos').kgPer100,
+    ],
+    [
+      0.80,
+      0.70,
+      1.00,
+      1.05,
+      1.10,
+      1.10,
+      0.70,
+    ],
+  );
+});
