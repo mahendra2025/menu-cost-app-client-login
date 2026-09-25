@@ -43,6 +43,10 @@ import {
   suggestRiceGas,
 } from './riceGas';
 
+import {
+  suggestSouthIndianGas,
+} from './southIndianGas';
+
 export type LpgCostSetting = {
   cylinderPrice: number;
   cylinderWeightKg: number;
@@ -105,6 +109,7 @@ export type GasDishCostRow = {
     | 'ITALIAN_STARTER'
     | 'MOVING_STARTER'
     | 'RICE_STARTER'
+    | 'SOUTH_INDIAN_STARTER'
     | 'CATEGORY'
     | 'SAFE_COOKING_FALLBACK'
     | 'NO_GAS_CATEGORY'
@@ -877,6 +882,13 @@ export function calculateEventGas(
             )
           : null;
 
+      const southIndianStarter =
+        categoryKey === 'southindian'
+          ? suggestSouthIndianGas(
+              item.name,
+            )
+          : null;
+
       const hasUsableOverride =
         noGasDish ||
         (
@@ -928,9 +940,12 @@ export function calculateEventGas(
                                 : riceStarter
                                   ? riceStarter
                                       .kgPer100
-                                  : categoryGas > 0
-                                    ? categoryGas
-                                    : DEFAULT_COOKING_GAS_KG_PER_100;
+                                  : southIndianStarter
+                                    ? southIndianStarter
+                                        .kgPer100
+                                    : categoryGas > 0
+                                      ? categoryGas
+                                      : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -1046,9 +1061,11 @@ export function calculateEventGas(
                                       ? 'MOVING_STARTER'
                                       : riceStarter
                                         ? 'RICE_STARTER'
-                                        : categoryGas > 0
-                                          ? 'CATEGORY'
-                                          : 'SAFE_COOKING_FALLBACK',
+                                        : southIndianStarter
+                                          ? 'SOUTH_INDIAN_STARTER'
+                                          : categoryGas > 0
+                                            ? 'CATEGORY'
+                                            : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
