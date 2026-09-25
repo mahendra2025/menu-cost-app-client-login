@@ -47,6 +47,10 @@ import {
   suggestSouthIndianGas,
 } from './southIndianGas';
 
+import {
+  suggestStarterGas,
+} from './starterGas';
+
 export type LpgCostSetting = {
   cylinderPrice: number;
   cylinderWeightKg: number;
@@ -110,6 +114,7 @@ export type GasDishCostRow = {
     | 'MOVING_STARTER'
     | 'RICE_STARTER'
     | 'SOUTH_INDIAN_STARTER'
+    | 'STARTER_ESTIMATE'
     | 'CATEGORY'
     | 'SAFE_COOKING_FALLBACK'
     | 'NO_GAS_CATEGORY'
@@ -889,6 +894,13 @@ export function calculateEventGas(
             )
           : null;
 
+      const starterEstimate =
+        categoryKey === 'starter'
+          ? suggestStarterGas(
+              item.name,
+            )
+          : null;
+
       const hasUsableOverride =
         noGasDish ||
         (
@@ -943,9 +955,12 @@ export function calculateEventGas(
                                   : southIndianStarter
                                     ? southIndianStarter
                                         .kgPer100
-                                    : categoryGas > 0
-                                      ? categoryGas
-                                      : DEFAULT_COOKING_GAS_KG_PER_100;
+                                    : starterEstimate
+                                      ? starterEstimate
+                                          .kgPer100
+                                      : categoryGas > 0
+                                        ? categoryGas
+                                        : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -1063,9 +1078,11 @@ export function calculateEventGas(
                                         ? 'RICE_STARTER'
                                         : southIndianStarter
                                           ? 'SOUTH_INDIAN_STARTER'
-                                          : categoryGas > 0
-                                            ? 'CATEGORY'
-                                            : 'SAFE_COOKING_FALLBACK',
+                                          : starterEstimate
+                                            ? 'STARTER_ESTIMATE'
+                                            : categoryGas > 0
+                                              ? 'CATEGORY'
+                                              : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
