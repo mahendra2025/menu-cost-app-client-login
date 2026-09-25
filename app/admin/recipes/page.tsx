@@ -64,6 +64,10 @@ import {
   suggestMovingStarterGas,
 } from '../../../lib/movingStarterGas';
 
+import {
+  suggestRiceGas,
+} from '../../../lib/riceGas';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -537,6 +541,13 @@ function recipeGasPreview(
         )
       : null;
 
+  const riceStarter =
+    categoryKey === 'rice'
+      ? suggestRiceGas(
+          recipeName(dish),
+        )
+      : null;
+
   const gasKgPer100 =
     measured !== null &&
     (
@@ -573,9 +584,12 @@ function recipeGasPreview(
                         : movingStarter
                           ? movingStarter
                               .kgPer100
-                          : categoryGas > 0
-                            ? categoryGas
-                            : DEFAULT_COOKING_GAS_KG_PER_100;
+                          : riceStarter
+                            ? riceStarter
+                                .kgPer100
+                            : categoryGas > 0
+                              ? categoryGas
+                              : DEFAULT_COOKING_GAS_KG_PER_100;
 
   const source =
     measured !== null &&
@@ -604,9 +618,11 @@ function recipeGasPreview(
                         ? 'ITALIAN STARTER'
                         : movingStarter
                           ? 'MOVING STARTER'
-                          : categoryGas > 0
-                            ? 'CATEGORY'
-                            : 'SAFE DEFAULT';
+                          : riceStarter
+                            ? 'RICE STARTER'
+                            : categoryGas > 0
+                              ? 'CATEGORY'
+                              : 'SAFE DEFAULT';
 
   const gasKg =
     gasKgPer100 *
@@ -4807,7 +4823,9 @@ I | Tomato | 4 | kg | 35 | kg`}
                                     preview.source ===
                                       'ITALIAN STARTER' ||
                                     preview.source ===
-                                      'MOVING STARTER'
+                                      'MOVING STARTER' ||
+                                    preview.source ===
+                                      'RICE STARTER'
                                   ? 'Starter estimate'
                                   : 'Fallback shown'}
                           </span>
