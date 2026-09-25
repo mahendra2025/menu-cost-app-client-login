@@ -1682,3 +1682,117 @@ test('saved Rice dish gas still wins over Rice starter', () => {
     0.55,
   );
 });
+
+
+test('South Indian without a saved override uses dish-specific starter gas instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'si1',
+        'Plain Idli',
+        'South Indian',
+        'breakfast',
+        'Breakfast',
+        100,
+      ),
+      dish(
+        'si2',
+        'Paneer Masala Dosa',
+        'South Indian',
+        'breakfast',
+        'Breakfast',
+        100,
+      ),
+      dish(
+        'si3',
+        'Peanut Chutney',
+        'South Indian',
+        'breakfast',
+        'Breakfast',
+        100,
+      ),
+      dish(
+        'si4',
+        'Sambhar Vada',
+        'South Indian',
+        'breakfast',
+        'Breakfast',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Plain Idli',
+        0.7,
+        'SOUTH_INDIAN_STARTER',
+      ],
+      [
+        'Paneer Masala Dosa',
+        1.35,
+        'SOUTH_INDIAN_STARTER',
+      ],
+      [
+        'Peanut Chutney',
+        0.2,
+        'SOUTH_INDIAN_STARTER',
+      ],
+      [
+        'Sambhar Vada',
+        1.35,
+        'SOUTH_INDIAN_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    3.6,
+  );
+});
+
+test('saved South Indian dish gas still wins over South Indian starter', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Plain Dosa',
+      category: 'South Indian',
+      gasKgPer100: 0.95,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'si5',
+        'Plain Dosa',
+        'South Indian',
+        'breakfast',
+        'Breakfast',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.95,
+  );
+});
