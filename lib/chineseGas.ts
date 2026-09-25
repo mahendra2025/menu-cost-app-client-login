@@ -125,7 +125,20 @@ const EXACT_CHINESE_GAS:
     'tofu noodles': suggestion(1.00, 'Wok Noodles'),
     'tofu salt and pepper': suggestion(1.05, 'Fried + Toss'),
     'veg fried momos': suggestion(1.05, 'Fried Momos'),
+    'veg schezwan momos': suggestion(0.80, 'Steamed Momos + Sauce'),
+    'veg steamed momos': suggestion(0.70, 'Steamed Momos'),
+    'veg momos': suggestion(0.70, 'Steamed Momos'),
     'veg hakka noodles': suggestion(0.95, 'Wok Noodles'),
+    'vegetable chow mein': suggestion(1.00, 'Wok Noodles'),
+    'vegetable in black bean sauce': suggestion(1.05, 'Wok Gravy'),
+    'vegetable in burnt garlic sauce': suggestion(1.05, 'Wok Gravy'),
+    'vegetable in chilli basil sauce': suggestion(1.05, 'Wok Gravy'),
+    'vegetable in garlic sauce': suggestion(1.05, 'Wok Gravy'),
+    'vegetable in hot garlic sauce': suggestion(1.10, 'Wok Gravy'),
+    'vegetable in oyster style sauce': suggestion(1.05, 'Wok Gravy'),
+    'vegetable in schezwan sauce': suggestion(1.10, 'Wok Gravy'),
+    'vegetable in sweet and sour sauce': suggestion(1.05, 'Wok Gravy'),
+    'vegetable salt and pepper': suggestion(1.10, 'Fried + Toss'),
   };
 
 /**
