@@ -76,6 +76,10 @@ import {
   suggestStarterGas,
 } from '../../../lib/starterGas';
 
+import {
+  suggestThaiGas,
+} from '../../../lib/thaiGas';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -570,6 +574,13 @@ function recipeGasPreview(
         )
       : null;
 
+  const thaiStarter =
+    categoryKey === 'thai'
+      ? suggestThaiGas(
+          recipeName(dish),
+        )
+      : null;
+
   const gasKgPer100 =
     measured !== null &&
     (
@@ -615,9 +626,12 @@ function recipeGasPreview(
                               : starterEstimate
                                 ? starterEstimate
                                     .kgPer100
-                                : categoryGas > 0
-                                  ? categoryGas
-                                  : DEFAULT_COOKING_GAS_KG_PER_100;
+                                : thaiStarter
+                                  ? thaiStarter
+                                      .kgPer100
+                                  : categoryGas > 0
+                                    ? categoryGas
+                                    : DEFAULT_COOKING_GAS_KG_PER_100;
 
   const source =
     measured !== null &&
@@ -652,9 +666,11 @@ function recipeGasPreview(
                               ? 'SOUTH INDIAN STARTER'
                               : starterEstimate
                                 ? 'STARTER ESTIMATE'
-                                : categoryGas > 0
-                                  ? 'CATEGORY'
-                                  : 'SAFE DEFAULT';
+                                : thaiStarter
+                                  ? 'THAI STARTER'
+                                  : categoryGas > 0
+                                    ? 'CATEGORY'
+                                    : 'SAFE DEFAULT';
 
   const gasKg =
     gasKgPer100 *
@@ -4861,7 +4877,9 @@ I | Tomato | 4 | kg | 35 | kg`}
                                     preview.source ===
                                       'SOUTH INDIAN STARTER' ||
                                     preview.source ===
-                                      'STARTER ESTIMATE'
+                                      'STARTER ESTIMATE' ||
+                                    preview.source ===
+                                      'THAI STARTER'
                                   ? 'Starter estimate'
                                   : 'Fallback shown'}
                           </span>
