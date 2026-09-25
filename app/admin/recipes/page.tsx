@@ -40,6 +40,10 @@ import {
   suggestChaatGas,
 } from '../../../lib/chaatGas';
 
+import {
+  suggestChineseGas,
+} from '../../../lib/chineseGas';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -470,6 +474,13 @@ function recipeGasPreview(
         )
       : null;
 
+  const chineseStarter =
+    categoryKey === 'chinese'
+      ? suggestChineseGas(
+          recipeName(dish),
+        )
+      : null;
+
   const gasKgPer100 =
     measured !== null &&
     (
@@ -488,9 +499,12 @@ function recipeGasPreview(
             : chaatStarter
               ? chaatStarter
                   .kgPer100
-              : categoryGas > 0
-                ? categoryGas
-                : DEFAULT_COOKING_GAS_KG_PER_100;
+              : chineseStarter
+                ? chineseStarter
+                    .kgPer100
+                : categoryGas > 0
+                  ? categoryGas
+                  : DEFAULT_COOKING_GAS_KG_PER_100;
 
   const source =
     measured !== null &&
@@ -507,9 +521,11 @@ function recipeGasPreview(
             ? 'SABJI STARTER'
             : chaatStarter
               ? 'CHAAT STARTER'
-              : categoryGas > 0
-                ? 'CATEGORY'
-                : 'SAFE DEFAULT';
+              : chineseStarter
+                ? 'CHINESE STARTER'
+                : categoryGas > 0
+                  ? 'CATEGORY'
+                  : 'SAFE DEFAULT';
 
   const gasKg =
     gasKgPer100 *
@@ -4698,7 +4714,9 @@ I | Tomato | 4 | kg | 35 | kg`}
                                     preview.source ===
                                       'SABJI STARTER' ||
                                     preview.source ===
-                                      'CHAAT STARTER'
+                                      'CHAAT STARTER' ||
+                                    preview.source ===
+                                      'CHINESE STARTER'
                                   ? 'Starter estimate'
                                   : 'Fallback shown'}
                           </span>
