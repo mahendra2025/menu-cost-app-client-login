@@ -3,6 +3,10 @@ import type {
   WorkState,
 } from './types';
 
+import {
+  suggestSweetGas,
+} from './sweetGas';
+
 export type LpgCostSetting = {
   cylinderPrice: number;
   cylinderWeightKg: number;
@@ -55,6 +59,7 @@ export type GasDishCostRow = {
     | 'EVENT_OVERRIDE'
     | 'REAL_DISH_PROFILE'
     | 'DISH_OVERRIDE'
+    | 'SWEET_STARTER'
     | 'CATEGORY'
     | 'SAFE_COOKING_FALLBACK'
     | 'NO_GAS_CATEGORY'
@@ -751,6 +756,15 @@ export function calculateEventGas(
           categoryRates,
         );
 
+      const sweetStarter =
+        normalizeGasCategoryKey(
+          item.category,
+        ) === 'sweet'
+          ? suggestSweetGas(
+              item.name,
+            )
+          : null;
+
       const hasUsableOverride =
         noGasDish ||
         (
@@ -772,9 +786,12 @@ export function calculateEventGas(
               )
             : noGasCategory
               ? 0
-              : categoryGas > 0
-                ? categoryGas
-                : DEFAULT_COOKING_GAS_KG_PER_100;
+              : sweetStarter
+                ? sweetStarter
+                    .kgPer100
+                : categoryGas > 0
+                  ? categoryGas
+                  : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -870,9 +887,11 @@ export function calculateEventGas(
                   ? 'DISH_OVERRIDE'
                   : noGasCategory
                     ? 'NO_GAS_CATEGORY'
-                    : categoryGas > 0
-                      ? 'CATEGORY'
-                      : 'SAFE_COOKING_FALLBACK',
+                    : sweetStarter
+                      ? 'SWEET_STARTER'
+                      : categoryGas > 0
+                        ? 'CATEGORY'
+                        : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
