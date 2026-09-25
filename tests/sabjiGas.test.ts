@@ -60,3 +60,29 @@ test('unknown Sabji keeps the generic Sabji starter estimate', () => {
     },
   );
 });
+
+
+test('expanded Sabji starters cover previously generic dishes', () => {
+  assert.deepEqual(
+    [
+      suggestSabjiGas('Gobi Matar').kgPer100,
+      suggestSabjiGas('Kaddu Ki Sabji').kgPer100,
+      suggestSabjiGas('Kadai Mushroom').kgPer100,
+      suggestSabjiGas('Sarson Ka Saag').kgPer100,
+      suggestSabjiGas('Tawa Sabji').kgPer100,
+      suggestSabjiGas('Veg Makhanwala').kgPer100,
+      suggestSabjiGas('Chole Masala').kgPer100,
+      suggestSabjiGas('Paneer Cheese Butter Masala').kgPer100,
+    ],
+    [
+      0.82,
+      0.78,
+      1.00,
+      1.20,
+      1.10,
+      1.15,
+      1.15,
+      1.25,
+    ],
+  );
+});
