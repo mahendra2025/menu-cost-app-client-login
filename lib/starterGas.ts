@@ -122,6 +122,40 @@ const EXACT_STARTER_GAS:
     'paneer shashlik': suggestion(1.20, 'Grill / Skewer'),
     'paneer spring roll': suggestion(1.15, 'Deep Fried'),
     'peri peri fries': suggestion(1.10, 'Deep Fried'),
+    'peri peri paneer tikka': suggestion(1.25, 'Tandoor / Tikka'),
+    'peri peri potato wedges': suggestion(1.05, 'Fried / Roasted Potato'),
+    'potato cheese balls': suggestion(1.15, 'Deep Fried'),
+    'potato wedges': suggestion(1.05, 'Fried / Roasted Potato'),
+    'punjabi samosa': suggestion(1.20, 'Stuffed Deep Fried'),
+    'pyaz kachori': suggestion(1.25, 'Stuffed Deep Fried'),
+    'rajasthani mirchi vada': suggestion(1.15, 'Stuffed Deep Fried'),
+    'rajma kebab': suggestion(1.00, 'Tawa / Grill Kebab'),
+    'sabudana vada': suggestion(1.10, 'Deep Fried'),
+    'sandwich dhokla': suggestion(0.80, 'Steamed Farsan'),
+    'schezwan paneer': suggestion(1.20, 'Fry + Toss'),
+    'schezwan potato': suggestion(1.15, 'Fry + Toss'),
+    'schezwan spring roll': suggestion(1.15, 'Deep Fried'),
+    'soya chaap tikka': suggestion(1.20, 'Tandoor / Chaap'),
+    'soya seekh kebab': suggestion(1.10, 'Tandoor / Grill'),
+    'spinach cheese balls': suggestion(1.15, 'Deep Fried'),
+    'spring roll': suggestion(1.15, 'Deep Fried'),
+    'stuffed cheese jalapeno': suggestion(1.15, 'Deep Fried'),
+    'stuffed tandoori mushroom': suggestion(1.15, 'Stuffed Tandoor'),
+    'subz seekh kebab': suggestion(1.05, 'Tandoor / Grill'),
+    'tandoori gobhi': suggestion(1.10, 'Tandoor / Grill'),
+    'tandoori paneer tikka': suggestion(1.25, 'Tandoor / Tikka'),
+    'tandoori soya chaap': suggestion(1.20, 'Tandoor / Chaap'),
+    'tandoori veg momos': suggestion(0.95, 'Tandoor Momos'),
+    'veg canape': suggestion(0.45, 'Light Toast / Assembly'),
+    'veg cheese balls': suggestion(1.15, 'Deep Fried'),
+    'veg crispy': suggestion(1.15, 'Deep Fried'),
+    'veg croquette': suggestion(1.15, 'Deep Fried'),
+    'veg cutlet': suggestion(1.00, 'Tawa / Fry'),
+    'veg lollipop': suggestion(1.15, 'Deep Fried'),
+    'veg quesadilla': suggestion(0.85, 'Tawa / Griddle'),
+    'veg samosa': suggestion(1.20, 'Stuffed Deep Fried'),
+    'veg tacos': suggestion(0.75, 'Tawa / Assembly'),
+    'white dhokla': suggestion(0.75, 'Steamed Farsan'),
   };
 
 /**
@@ -176,6 +210,9 @@ export function suggestStarterGas(
     name.includes('pakora') ||
     name.includes('bhajiya') ||
     name.includes('fries') ||
+    name.includes('wedges') ||
+    name.includes('samosa') ||
+    name.includes('vada') ||
     name.includes('kachori') ||
     name.includes('spring roll') ||
     name.includes('croquette') ||
@@ -199,6 +236,33 @@ export function suggestStarterGas(
     return suggestion(
       1.00,
       'Tawa / Grill Kebab',
+    );
+  }
+
+  if (
+    name.includes('dhokla')
+  ) {
+    return suggestion(
+      0.75,
+      'Steamed Farsan',
+    );
+  }
+
+  if (
+    name.includes('quesadilla')
+  ) {
+    return suggestion(
+      0.85,
+      'Tawa / Griddle',
+    );
+  }
+
+  if (
+    name.includes('tacos')
+  ) {
+    return suggestion(
+      0.75,
+      'Tawa / Assembly',
     );
   }
 
