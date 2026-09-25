@@ -1278,3 +1278,104 @@ test('saved Farsan dish gas still wins over Farsan starter', () => {
     0.6,
   );
 });
+
+
+test('Indian Bread uses dish-specific starter gas instead of safe default', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'ib1',
+        'Chapati',
+        'Indian Bread',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'ib2',
+        'Garlic Naan',
+        'Indian Bread',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'ib3',
+        'Plain Puri',
+        'Indian Bread',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Chapati',
+        1,
+        'INDIAN_BREAD_STARTER',
+      ],
+      [
+        'Garlic Naan',
+        1.5,
+        'INDIAN_BREAD_STARTER',
+      ],
+      [
+        'Plain Puri',
+        1.2,
+        'INDIAN_BREAD_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    3.7,
+  );
+});
+
+test('saved Indian Bread dish gas still wins over starter gas', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Chapati',
+      category: 'Indian Bread',
+      gasKgPer100: 0.8,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'ib4',
+        'Chapati',
+        'Indian Bread',
+        'lunch',
+        'Lunch',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.8,
+  );
+});
