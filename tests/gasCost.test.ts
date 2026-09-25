@@ -1581,3 +1581,104 @@ test('saved Moving Starter dish gas still wins over starter gas', () => {
     0.95,
   );
 });
+
+
+test('Rice without a saved override uses dish-specific starter gas instead of one category fallback', () => {
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'rc1',
+        'Steamed Rice',
+        'Rice',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'rc2',
+        'Veg Dum Biryani',
+        'Rice',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+      dish(
+        'rc3',
+        'Kashmiri Pulao',
+        'Rice',
+        'dinner',
+        'Dinner',
+        100,
+      ),
+    ]),
+    defaultGasCostMaster(),
+  );
+
+  assert.deepEqual(
+    result.rows.map(
+      (row) => [
+        row.dish,
+        row.gasKgPer100,
+        row.source,
+      ],
+    ),
+    [
+      [
+        'Steamed Rice',
+        0.65,
+        'RICE_STARTER',
+      ],
+      [
+        'Veg Dum Biryani',
+        1.1,
+        'RICE_STARTER',
+      ],
+      [
+        'Kashmiri Pulao',
+        0.9,
+        'RICE_STARTER',
+      ],
+    ],
+  );
+
+  assert.equal(
+    result.totalGasKg,
+    2.65,
+  );
+});
+
+test('saved Rice dish gas still wins over Rice starter', () => {
+  const master =
+    defaultGasCostMaster();
+
+  master.dishOverrides = [
+    {
+      name: 'Steamed Rice',
+      category: 'Rice',
+      gasKgPer100: 0.55,
+    },
+  ];
+
+  const result = calculateEventGas(
+    makeWork([
+      dish(
+        'rc4',
+        'Steamed Rice',
+        'Rice',
+        'lunch',
+        'Lunch',
+        100,
+      ),
+    ]),
+    master,
+  );
+
+  assert.equal(
+    result.rows[0].source,
+    'DISH_OVERRIDE',
+  );
+  assert.equal(
+    result.rows[0].gasKgPer100,
+    0.55,
+  );
+});
