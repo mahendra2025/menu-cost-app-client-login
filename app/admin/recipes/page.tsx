@@ -36,6 +36,10 @@ import {
   suggestSabjiGas,
 } from '../../../lib/sabjiGas';
 
+import {
+  suggestChaatGas,
+} from '../../../lib/chaatGas';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -459,6 +463,13 @@ function recipeGasPreview(
         )
       : null;
 
+  const chaatStarter =
+    categoryKey === 'chaat'
+      ? suggestChaatGas(
+          recipeName(dish),
+        )
+      : null;
+
   const gasKgPer100 =
     measured !== null &&
     (
@@ -474,9 +485,12 @@ function recipeGasPreview(
           : sabjiStarter
             ? sabjiStarter
                 .kgPer100
-            : categoryGas > 0
-              ? categoryGas
-              : DEFAULT_COOKING_GAS_KG_PER_100;
+            : chaatStarter
+              ? chaatStarter
+                  .kgPer100
+              : categoryGas > 0
+                ? categoryGas
+                : DEFAULT_COOKING_GAS_KG_PER_100;
 
   const source =
     measured !== null &&
@@ -491,9 +505,11 @@ function recipeGasPreview(
           ? 'SWEET STARTER'
           : sabjiStarter
             ? 'SABJI STARTER'
-            : categoryGas > 0
-              ? 'CATEGORY'
-              : 'SAFE DEFAULT';
+            : chaatStarter
+              ? 'CHAAT STARTER'
+              : categoryGas > 0
+                ? 'CATEGORY'
+                : 'SAFE DEFAULT';
 
   const gasKg =
     gasKgPer100 *
@@ -4680,7 +4696,9 @@ I | Tomato | 4 | kg | 35 | kg`}
                                 : preview.source ===
                                       'SWEET STARTER' ||
                                     preview.source ===
-                                      'SABJI STARTER'
+                                      'SABJI STARTER' ||
+                                    preview.source ===
+                                      'CHAAT STARTER'
                                   ? 'Starter estimate'
                                   : 'Fallback shown'}
                           </span>
