@@ -51,6 +51,10 @@ import {
   suggestStarterGas,
 } from './starterGas';
 
+import {
+  suggestThaiGas,
+} from './thaiGas';
+
 export type LpgCostSetting = {
   cylinderPrice: number;
   cylinderWeightKg: number;
@@ -115,6 +119,7 @@ export type GasDishCostRow = {
     | 'RICE_STARTER'
     | 'SOUTH_INDIAN_STARTER'
     | 'STARTER_ESTIMATE'
+    | 'THAI_STARTER'
     | 'CATEGORY'
     | 'SAFE_COOKING_FALLBACK'
     | 'NO_GAS_CATEGORY'
@@ -901,6 +906,13 @@ export function calculateEventGas(
             )
           : null;
 
+      const thaiStarter =
+        categoryKey === 'thai'
+          ? suggestThaiGas(
+              item.name,
+            )
+          : null;
+
       const hasUsableOverride =
         noGasDish ||
         (
@@ -958,9 +970,12 @@ export function calculateEventGas(
                                     : starterEstimate
                                       ? starterEstimate
                                           .kgPer100
-                                      : categoryGas > 0
-                                        ? categoryGas
-                                        : DEFAULT_COOKING_GAS_KG_PER_100;
+                                      : thaiStarter
+                                        ? thaiStarter
+                                            .kgPer100
+                                        : categoryGas > 0
+                                          ? categoryGas
+                                          : DEFAULT_COOKING_GAS_KG_PER_100;
 
       const realGas =
         realProfile
@@ -1080,9 +1095,11 @@ export function calculateEventGas(
                                           ? 'SOUTH_INDIAN_STARTER'
                                           : starterEstimate
                                             ? 'STARTER_ESTIMATE'
-                                            : categoryGas > 0
-                                              ? 'CATEGORY'
-                                              : 'SAFE_COOKING_FALLBACK',
+                                            : thaiStarter
+                                              ? 'THAI_STARTER'
+                                              : categoryGas > 0
+                                                ? 'CATEGORY'
+                                                : 'SAFE_COOKING_FALLBACK',
       });
     },
   );
