@@ -262,6 +262,21 @@ export default function IngredientRatesPage() {
   const [bulkText, setBulkText] =
     useState('');
 
+  const [
+    showCityManager,
+    setShowCityManager,
+  ] = useState(false);
+
+  const [
+    newCityName,
+    setNewCityName,
+  ] = useState('');
+
+  const [
+    citySaving,
+    setCitySaving,
+  ] = useState(false);
+
   async function loadIngredients(
     requestedCity = '',
   ) {
@@ -993,6 +1008,194 @@ export default function IngredientRatesPage() {
     );
   }
 
+  async function addCity() {
+    const nextCity =
+      newCityName
+        .trim()
+        .replace(/\s+/g, ' ');
+
+    if (!nextCity) {
+      setError(
+        'Enter a city name.',
+      );
+      return;
+    }
+
+    setCitySaving(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const response =
+        await fetch(
+          '/api/admin/ingredient-cities',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+            body:
+              JSON.stringify({
+                city: nextCity,
+              }),
+          },
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not add city.',
+        );
+      }
+
+      const createdCity =
+        String(
+          data.city?.city ||
+            nextCity,
+        );
+
+      const createdKey =
+        String(
+          data.city?.cityKey ||
+            normalize(
+              createdCity,
+            ),
+        );
+
+      setKnownCities(
+        (current) =>
+          [
+            ...current.filter(
+              (item) =>
+                item.cityKey !==
+                createdKey,
+            ),
+            {
+              city:
+                createdCity,
+              cityKey:
+                createdKey,
+            },
+          ].sort(
+            (left, right) =>
+              left.city.localeCompare(
+                right.city,
+                'en-IN',
+                {
+                  sensitivity:
+                    'base',
+                },
+              ),
+          ),
+      );
+
+      setNewCityName('');
+      setShowCityManager(
+        false,
+      );
+
+      setMessage(
+        `${createdCity} added to City Master. Add its ingredient rates when ready.`,
+      );
+
+      openCity(
+        createdCity,
+      );
+    } catch (cityError) {
+      setError(
+        cityError instanceof Error
+          ? cityError.message
+          : 'Could not add city.',
+      );
+    } finally {
+      setCitySaving(false);
+    }
+  }
+
+  async function removeCity(
+    cityItem: KnownCity,
+  ) {
+    if (
+      normalize(
+        cityItem.city,
+      ) ===
+      normalize(
+        loadedCity,
+      )
+    ) {
+      setError(
+        'Load another city before removing the currently open city.',
+      );
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Remove ${cityItem.city} from City Master?`,
+      )
+    ) {
+      return;
+    }
+
+    setCitySaving(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const response =
+        await fetch(
+          '/api/admin/ingredient-cities',
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+            body:
+              JSON.stringify({
+                cityKey:
+                  cityItem.cityKey,
+              }),
+          },
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not remove city.',
+        );
+      }
+
+      setKnownCities(
+        (current) =>
+          current.filter(
+            (item) =>
+              item.cityKey !==
+              cityItem.cityKey,
+          ),
+      );
+
+      setMessage(
+        `${cityItem.city} removed from City Master.`,
+      );
+    } catch (cityError) {
+      setError(
+        cityError instanceof Error
+          ? cityError.message
+          : 'Could not remove city.',
+      );
+    } finally {
+      setCitySaving(false);
+    }
+  }
+
   async function copyFromCity() {
     if (!loadedCity) return;
 
@@ -1491,7 +1694,159 @@ export default function IngredientRatesPage() {
                 </button>
               ),
             )}
+
+            <button
+              type="button"
+              className="ingredient-city-add-button"
+              onClick={() =>
+                setShowCityManager(
+                  (value) => !value,
+                )
+              }
+            >
+              <span>＋ Add City</span>
+              <small>City Master</small>
+            </button>
           </div>
+
+          {showCityManager ? (
+            <div className="ingredient-city-manager">
+              <div className="ingredient-city-manager-heading">
+                <div>
+                  <strong>
+                    City Master
+                  </strong>
+                  <small>
+                    Add a city once. The same Ingredient Master list will be available for it automatically.
+                  </small>
+                </div>
+
+                <button
+                  type="button"
+                  aria-label="Close City Master"
+                  onClick={() =>
+                    setShowCityManager(
+                      false,
+                    )
+                  }
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="ingredient-city-manager-add">
+                <label className="field">
+                  <span>
+                    New city
+                  </span>
+                  <input
+                    className="input"
+                    value={
+                      newCityName
+                    }
+                    placeholder="e.g. Surat"
+                    onChange={(
+                      event,
+                    ) =>
+                      setNewCityName(
+                        event.target.value,
+                      )
+                    }
+                    onKeyDown={(
+                      event,
+                    ) => {
+                      if (
+                        event.key ===
+                        'Enter'
+                      ) {
+                        void addCity();
+                      }
+                    }}
+                  />
+                </label>
+
+                <button
+                  className="primary-button"
+                  type="button"
+                  disabled={
+                    citySaving ||
+                    !newCityName.trim()
+                  }
+                  onClick={() =>
+                    void addCity()
+                  }
+                >
+                  {citySaving
+                    ? 'Adding…'
+                    : 'Add City'}
+                </button>
+              </div>
+
+              <div className="ingredient-city-master-list">
+                {knownCities.map(
+                  (item) => (
+                    <div
+                      key={
+                        item.cityKey
+                      }
+                    >
+                      <button
+                        type="button"
+                        className="ingredient-city-master-open"
+                        onClick={() =>
+                          openCity(
+                            item.city,
+                          )
+                        }
+                      >
+                        <strong>
+                          {item.city}
+                        </strong>
+                        <small>
+                          Open rates
+                        </small>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="ingredient-city-master-remove"
+                        disabled={
+                          citySaving ||
+                          normalize(
+                            item.city,
+                          ) ===
+                            normalize(
+                              loadedCity,
+                            )
+                        }
+                        title={
+                          normalize(
+                            item.city,
+                          ) ===
+                          normalize(
+                            loadedCity,
+                          )
+                            ? 'Load another city before removing this one'
+                            : 'Remove city'
+                        }
+                        onClick={() =>
+                          void removeCity(
+                            item,
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ),
+                )}
+              </div>
+
+              <p className="ingredient-city-manager-note">
+                Duplicate names such as “Surat” / “surat” are blocked. Very-close spellings are also flagged before saving.
+              </p>
+            </div>
+          ) : null}
 
           <div className="ingredient-rate-search-row">
             <label className="ingredient-rate-search">
@@ -2290,6 +2645,131 @@ export default function IngredientRatesPage() {
             font-weight:850;
           }
 
+          .ingredient-city-quick-switch .ingredient-city-add-button {
+            border-style:dashed;
+            border-color:rgba(98,217,149,.18);
+            color:#9fd2af;
+            background:rgba(98,217,149,.025);
+          }
+
+          .ingredient-city-quick-switch .ingredient-city-add-button:hover {
+            border-color:rgba(98,217,149,.34);
+            background:rgba(98,217,149,.06);
+          }
+
+          .ingredient-city-manager {
+            margin-top:9px;
+            padding:12px;
+            border:1px solid rgba(98,217,149,.12);
+            border-radius:12px;
+            background:rgba(11,18,15,.84);
+          }
+
+          .ingredient-city-manager-heading {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:12px;
+          }
+
+          .ingredient-city-manager-heading strong,
+          .ingredient-city-manager-heading small {
+            display:block;
+          }
+
+          .ingredient-city-manager-heading strong {
+            color:#d8eadf;
+            font-size:10px;
+          }
+
+          .ingredient-city-manager-heading small {
+            margin-top:3px;
+            color:#708279;
+            font-size:8px;
+          }
+
+          .ingredient-city-manager-heading > button {
+            width:28px;
+            height:28px;
+            border:1px solid rgba(148,163,184,.10);
+            border-radius:8px;
+            color:#809186;
+            background:transparent;
+            cursor:pointer;
+          }
+
+          .ingredient-city-manager-add {
+            display:grid;
+            grid-template-columns:minmax(200px,1fr) auto;
+            gap:8px;
+            align-items:end;
+            margin-top:12px;
+          }
+
+          .ingredient-city-master-list {
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            gap:7px;
+            margin-top:10px;
+          }
+
+          .ingredient-city-master-list > div {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) auto;
+            align-items:center;
+            gap:5px;
+            padding:5px;
+            border:1px solid rgba(148,163,184,.08);
+            border-radius:9px;
+            background:rgba(255,255,255,.018);
+          }
+
+          .ingredient-city-master-open {
+            display:grid;
+            gap:2px;
+            min-width:0;
+            padding:4px 5px;
+            border:0;
+            color:#b8c9bd;
+            background:transparent;
+            text-align:left;
+            cursor:pointer;
+          }
+
+          .ingredient-city-master-open strong {
+            overflow:hidden;
+            font-size:9px;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+          }
+
+          .ingredient-city-master-open small {
+            color:#617368;
+            font-size:7px;
+          }
+
+          .ingredient-city-master-remove {
+            padding:5px 7px;
+            border:0;
+            border-radius:6px;
+            color:#a27575;
+            background:transparent;
+            font:inherit;
+            font-size:7px;
+            cursor:pointer;
+          }
+
+          .ingredient-city-master-remove:disabled {
+            opacity:.35;
+            cursor:not-allowed;
+          }
+
+          .ingredient-city-manager-note {
+            margin:9px 0 0;
+            color:#5f7166;
+            font-size:7px;
+          }
+
           .ingredient-city-quick-switch small {
             color:#6f85a0;
             font-size:7px;
@@ -2887,6 +3367,10 @@ export default function IngredientRatesPage() {
             }
 
             .ingredient-rate-search-row {
+              grid-template-columns:1fr;
+            }
+
+            .ingredient-city-manager-add {
               grid-template-columns:1fr;
             }
 
