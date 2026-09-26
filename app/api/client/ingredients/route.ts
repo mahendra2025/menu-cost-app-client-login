@@ -10,6 +10,7 @@ import {
   normalizeIngredientRate,
 } from '../../../../lib/ingredientCatalog';
 import {
+  ingredientCityOptions,
   normalizeCityKey,
   normalizeCityName,
   resolveIngredientRate,
@@ -189,7 +190,9 @@ export async function GET(
 
     const [
       cityRates,
-      cities,
+      cities: ingredientCityOptions(
+        cities,
+      ),
     ] = await Promise.all([
       cityKey
         ? prisma.ingredientCityRate.findMany({
