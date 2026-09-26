@@ -877,6 +877,10 @@ export default function EventPage() {
 
   const newEventDialogRef = useRef<HTMLElement>(null);
   const creatingEventRef = useRef(false);
+  const cityRecostTimerRef =
+    useRef<number | null>(null);
+  const cityRecostSequenceRef =
+    useRef(0);
   const [creatingEvent, setCreatingEvent] = useState(false);
 
   useEffect(() => {
@@ -2083,6 +2087,322 @@ export default function EventPage() {
     );
   }
 
+  async function recostMenuForCity(
+    cityRaw: string,
+  ) {
+    if (!session) return;
+
+    const city =
+      cityRaw
+        .trim()
+        .replace(/\s+/g, ' ');
+
+    if (!city) return;
+
+    const startingWork =
+      loadWork(
+        session.tenantId,
+      );
+
+    const candidates =
+      startingWork.menu.filter(
+        (item) =>
+          item.coverageStatus !==
+            'REJECTED' &&
+          item.costSource !==
+            'catalog' &&
+          item.costSource !==
+            'manual' &&
+          item.costSource !==
+            'category_estimate',
+      );
+
+    if (!candidates.length) {
+      setUploadStatus(
+        `${city} selected. No recipe-based dish costs need recalculation.`,
+      );
+      return;
+    }
+
+    const sequence =
+      ++cityRecostSequenceRef.current;
+
+    setUploadStatus(
+      `Updating recipe costs for ${city}…`,
+    );
+
+    try {
+      const response =
+        await fetch(
+          '/api/client/auto-recipe-costs',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+            body:
+              JSON.stringify({
+                city,
+                dishes:
+                  candidates.map(
+                    (item) => ({
+                      name:
+                        item.name,
+                      category:
+                        item.category,
+                    }),
+                  ),
+              }),
+          },
+        );
+
+      const payload =
+        await response.json() as {
+          results?: unknown[];
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          (
+            payload as {
+              error?: string;
+            }
+          ).error ||
+            'Could not update recipe costs for this city.',
+        );
+      }
+
+      if (
+        sequence !==
+        cityRecostSequenceRef.current
+      ) {
+        return;
+      }
+
+      const latestWork =
+        loadWork(
+          session.tenantId,
+        );
+
+      if (
+        String(
+          latestWork.event.city ||
+            '',
+        )
+          .trim()
+          .toLocaleLowerCase(
+            'en-IN',
+          ) !==
+        city.toLocaleLowerCase(
+          'en-IN',
+        )
+      ) {
+        return;
+      }
+
+      const resultMap =
+        new Map<
+          string,
+          unknown
+        >(
+          (
+            Array.isArray(
+              payload.results,
+            )
+              ? payload.results
+              : []
+          ).flatMap(
+            (value) => {
+              if (
+                !value ||
+                typeof value !==
+                  'object' ||
+                Array.isArray(
+                  value,
+                )
+              ) {
+                return [];
+              }
+
+              const row =
+                value as Record<
+                  string,
+                  unknown
+                >;
+
+              const key =
+                dishNameKey(
+                  String(
+                    row.requestedName ||
+                      '',
+                  ),
+                );
+
+              return key
+                ? [[
+                    key,
+                    value,
+                  ] as const]
+                : [];
+            },
+          ),
+        );
+
+      let changedDishes = 0;
+      let previousFoodCost = 0;
+      let nextFoodCost = 0;
+
+      const menu =
+        latestWork.menu.map(
+          (item) => {
+            const pax =
+              Math.max(
+                0,
+                Number(
+                  item.servicePax ||
+                    latestWork.event.pax,
+                ) || 0,
+              );
+
+            const previousRate =
+              Math.max(
+                0,
+                Number(
+                  item.costPerPlate,
+                ) || 0,
+              );
+
+            previousFoodCost +=
+              previousRate * pax;
+
+            if (
+              item.coverageStatus ===
+                'REJECTED' ||
+              item.costSource ===
+                'catalog' ||
+              item.costSource ===
+                'manual' ||
+              item.costSource ===
+                'category_estimate'
+            ) {
+              nextFoodCost +=
+                previousRate * pax;
+              return item;
+            }
+
+            const result =
+              resultMap.get(
+                dishNameKey(
+                  item.name,
+                ),
+              );
+
+            if (!result) {
+              nextFoodCost +=
+                previousRate * pax;
+              return item;
+            }
+
+            const refresh =
+              buildAutoRecipeCostRefresh(
+                result,
+              );
+
+            if (!refresh.usable) {
+              nextFoodCost +=
+                previousRate * pax;
+              return item;
+            }
+
+            const updatedRate =
+              Math.max(
+                0,
+                Number(
+                  refresh.patch
+                    .costPerPlate,
+                ) || 0,
+              );
+
+            if (
+              Math.abs(
+                updatedRate -
+                  previousRate,
+              ) >= 0.01
+            ) {
+              changedDishes += 1;
+            }
+
+            nextFoodCost +=
+              updatedRate * pax;
+
+            return {
+              ...item,
+              ...refresh.patch,
+            };
+          },
+        );
+
+      if (changedDishes > 0) {
+        const nextWork:
+          WorkState = {
+            ...latestWork,
+            menu,
+            updatedAt:
+              new Date()
+                .toISOString(),
+          };
+
+        persistWork(
+          nextWork,
+        );
+
+        flushWorkSave(
+          session.tenantId,
+        );
+      }
+
+      const difference =
+        Math.round(
+          (
+            nextFoodCost -
+            previousFoodCost
+          ) * 100,
+        ) / 100;
+
+      const differenceText =
+        Math.abs(
+          difference,
+        ) >= 0.01
+          ? ` · Food cost ${difference > 0 ? '+' : '-'}₹${Math.abs(
+              difference,
+            ).toLocaleString(
+              'en-IN',
+              {
+                maximumFractionDigits:
+                  2,
+              },
+            )}`
+          : '';
+
+      setUploadStatus(
+        `${city} rates applied · ${changedDishes} recipe dish${changedDishes === 1 ? '' : 'es'} updated${differenceText}`,
+      );
+    } catch (cityCostError) {
+      console.warn(
+        'Event city recipe recost failed:',
+        cityCostError,
+      );
+
+      setUploadStatus(
+        cityCostError instanceof
+        Error
+          ? cityCostError.message
+          : 'City rates could not be applied to recipe costs.',
+      );
+    }
+  }
+
   function updateEvent(
     key: keyof WorkState['event'],
     value: string | number,
@@ -2099,6 +2419,37 @@ export default function EventPage() {
     };
 
     persistWork(nextWork);
+
+    if (
+      key === 'city' &&
+      session
+    ) {
+      if (
+        cityRecostTimerRef.current !==
+        null
+      ) {
+        window.clearTimeout(
+          cityRecostTimerRef.current,
+        );
+      }
+
+      const cityValue =
+        String(
+          value || '',
+        ).trim();
+
+      if (cityValue) {
+        cityRecostTimerRef.current =
+          window.setTimeout(
+            () => {
+              void recostMenuForCity(
+                cityValue,
+              );
+            },
+            650,
+          );
+      }
+    }
   }
 
   function detectionGroupKeyForItem(
@@ -2368,6 +2719,10 @@ export default function EventPage() {
 
               body:
                 JSON.stringify({
+                  city:
+                    work?.event.city ||
+                    work?.profile.city ||
+                    '',
                   dishes: [
                     {
                       name,
@@ -5164,6 +5519,11 @@ export default function EventPage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+              city:
+                detectedEventDetails.city ||
+                work.event.city ||
+                work.profile.city ||
+                '',
               dishes: detectedMenu
                 .filter(
                   (item) =>
