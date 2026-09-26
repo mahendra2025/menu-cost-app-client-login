@@ -537,10 +537,10 @@ export default function ProfilePage() {
             </Link>
 
             <Link
-              href="/admin/ingredient-city-rates"
+              href="/app/ingredients"
               className="ghost-button"
             >
-              City Rates
+              Ingredient Rates
             </Link>
 
             <Link
