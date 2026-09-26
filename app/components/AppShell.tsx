@@ -928,9 +928,9 @@ export default function AppShell({
 export function LockedCard() {
   return (
     <div className="locked-card">
-      <h2>App locked</h2>
-      <p>Your plan is expired. Only Profile and Logout are available until renewal.</p>
-      <Link href="/app/profile" className="primary-button">Open Profile</Link>
+      <h2>Workspace unavailable</h2>
+      <p>Sign in again to continue using the business workspace.</p>
+      <Link href="/login" className="primary-button">Sign In</Link>
     </div>
   );
 }
