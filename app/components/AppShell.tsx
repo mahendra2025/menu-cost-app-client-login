@@ -100,6 +100,7 @@ const adminNavGroups = [
       { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish master and selling rates', icon: 'dishes' as NavIcon },
       { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients, portions and costing', icon: 'dishes' as NavIcon },
       { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Ingredient rates and categories', icon: 'ingredients' as NavIcon },
+      { href: '/admin/ingredient-city-rates', label: 'City Rates', mobileLabel: 'City Rates', description: 'Local ingredient market rates by city', icon: 'ingredients' as NavIcon },
     ],
   },
   {
