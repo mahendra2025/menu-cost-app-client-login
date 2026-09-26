@@ -190,7 +190,8 @@ export async function GET(
 
     const [
       cityRates,
-      cities,
+      cityMaster,
+      legacyCities,
     ] = await Promise.all([
       cityKey
         ? prisma.ingredientCityRate.findMany({
@@ -207,6 +208,19 @@ export async function GET(
             },
           })
         : Promise.resolve([]),
+
+      prisma.ingredientCity.findMany({
+        where: {
+          active: true,
+        },
+        orderBy: {
+          city: 'asc',
+        },
+        select: {
+          city: true,
+          cityKey: true,
+        },
+      }),
 
       prisma.ingredientCityRate.findMany({
         distinct: ['cityKey'],
@@ -350,9 +364,10 @@ export async function GET(
       ],
 
       cities:
-        ingredientCityOptions(
-          cities,
-        ),
+        ingredientCityOptions([
+          ...cityMaster,
+          ...legacyCities,
+        ]),
 
       usage: Object.fromEntries(
         recipeIngredientUsage(
