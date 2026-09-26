@@ -427,7 +427,7 @@ export default function ClientIngredientIndexPage() {
 
     if (invalid) {
       setMessage(
-        'Every personal rate must be greater than ₹0.',
+        'Every business purchase rate must be greater than ₹0.',
       );
 
       return;
@@ -476,7 +476,7 @@ export default function ClientIngredientIndexPage() {
       await loadIngredients();
 
       setMessage(
-        'Your ingredient rates are saved. Your current and future dish costing now uses your personal rates.',
+        'Ingredient purchase rates saved. Current and future event costing now uses these business rates.',
       );
     } catch (error) {
       setMessage(
@@ -502,7 +502,7 @@ export default function ClientIngredientIndexPage() {
   return (
     <AppShell
       title="Ingredient Index"
-      subtitle="Set your own ingredient purchase rates without changing any other user's rates"
+      subtitle="Maintain this business's ingredient purchase rates"
     >
       <section className="content-grid">
 
@@ -521,19 +521,19 @@ export default function ClientIngredientIndexPage() {
 
           <div className="stat-card">
             <small>
-              My custom rates
+              Business rates
             </small>
             <strong>
               {customCount}
             </strong>
             <span>
-              Only your account
+              This business
             </span>
           </div>
 
           <div className="stat-card">
             <small>
-              Admin defaults
+              City / Global defaults
             </small>
             <strong>
               {
@@ -592,7 +592,7 @@ export default function ClientIngredientIndexPage() {
               >
                 {saving
                   ? 'Saving…'
-                  : `Save My Rates${
+                  : `Save Business Rates${
                       unsavedCount
                         ? ` (${unsavedCount})`
                         : ''
@@ -743,7 +743,7 @@ export default function ClientIngredientIndexPage() {
 
                             <small>
                               {row.isCustomRate
-                                ? 'My custom rate'
+                                ? 'Business purchase rate'
                                 : row.isCityRate
                                   ? `${row.city || 'City'} market rate`
                                   : 'Global master rate'}

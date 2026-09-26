@@ -496,7 +496,7 @@ export default function AdminDishesPage() {
 
   useEffect(() => {
     const session = getSession();
-    if (session?.role !== 'ADMIN') return;
+    if (!session) return;
 
     async function loadRows() {
       try {

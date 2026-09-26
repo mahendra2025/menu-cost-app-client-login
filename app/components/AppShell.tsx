@@ -89,12 +89,6 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
 
 const adminNavGroups = [
   {
-    label: 'Business',
-    items: [
-      { href: '/admin/users', label: 'Clients', mobileLabel: 'Clients', description: 'Accounts, plans and access', icon: 'clients' as NavIcon },
-    ],
-  },
-  {
     label: 'Catalog',
     items: [
       { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish master and selling rates', icon: 'dishes' as NavIcon },
@@ -139,7 +133,8 @@ const clientWorkflowNav = [
 
 const clientWorkspaceNav = [
   { href: '/app/history', match: '/app/history', label: 'History', description: 'Saved events', icon: 'history' as ClientNavIcon },
-  { href: '/app/ingredients', match: '/app/ingredients', label: 'My Ingredients', description: 'Custom ingredient rates', icon: 'ingredients' as ClientNavIcon },
+  { href: '/app/ingredients', match: '/app/ingredients', label: 'Ingredient Rates', description: 'Business purchase rates', icon: 'ingredients' as ClientNavIcon },
+  { href: '/admin/dishes', match: '/admin/dishes', label: 'Master Data', description: 'Dishes, recipes and cost masters', icon: 'ingredients' as ClientNavIcon },
   { href: '/app/profile', match: '/app/profile', label: 'Profile', description: 'Business settings', icon: 'profile' as ClientNavIcon },
 ];
 
@@ -279,6 +274,31 @@ export default function AppShell({
     cachedShellSession = current;
     setSession(current);
     setReady(true);
+
+    /*
+     * Existing browsers from the former SaaS model may not yet
+     * have the owner/master-data cookie. Upgrade only the retained
+     * workspace; reject stale secondary-account sessions.
+     */
+    void fetch(
+      '/api/client/session',
+      {
+        method: 'POST',
+      },
+    )
+      .then((response) => {
+        if (
+          response.status === 401 ||
+          response.status === 403
+        ) {
+          cachedShellSession = null;
+          logout();
+          router.replace('/login');
+        }
+      })
+      .catch(() => {
+        // Keep the local workspace available during a temporary network issue.
+      });
   }, [router]);
 
   useEffect(() => {
@@ -303,7 +323,12 @@ export default function AppShell({
     };
   }, [moreOpen]);
 
-  const isAdmin = session?.role === 'ADMIN';
+  // Single-business mode: the same owner session uses both
+  // event pages and master-data pages. Admin styling is route-based,
+  // not a separate account/role.
+  const isAdmin =
+    pathname === '/admin' ||
+    pathname.startsWith('/admin/');
   const isDishWorkspace =
     pathname === '/admin/dishes' ||
     pathname.startsWith('/admin/dishes/');
@@ -332,7 +357,7 @@ export default function AppShell({
 
   const activeAdminSection =
     activeAdminItem?.section ||
-    'Admin';
+    'Master Data';
 
   const clientFlow =
     !isAdmin
@@ -349,9 +374,16 @@ export default function AppShell({
   const signOut = () => {
     cachedShellSession = null;
     logout();
-    void fetch('/api/client/session', {
-      method: 'DELETE',
-    });
+
+    void Promise.all([
+      fetch('/api/client/session', {
+        method: 'DELETE',
+      }),
+      fetch('/api/admin/session', {
+        method: 'DELETE',
+      }),
+    ]);
+
     router.replace('/login');
   };
 
@@ -366,7 +398,7 @@ export default function AppShell({
   return (
     <main className={`page-shell app-frame admin-theme ${isAdmin ? 'admin-workspace-shell' : 'client-theme'}`}>
       <header className="topbar no-print">
-        <Link href={isAdmin ? '/admin/users' : '/app/event?resume=1'} className="brand-chip">
+        <Link href="/app/event?resume=1" className="brand-chip">
           <span className="brand-logo">MC</span>
           <span className="brand-copy">
             <b>Menu Costing</b>
@@ -389,9 +421,9 @@ export default function AppShell({
             </label>
           ) : null}
 
-          <span className={`account-status ${session?.status === 'ACTIVE' ? 'active' : ''}`}>
+          <span className="account-status active">
             <i aria-hidden="true" />
-            {isAdmin ? 'Admin' : session?.status === 'ACTIVE' ? t('Active') : session?.status}
+            Owner Workspace
           </span>
 
           <button
@@ -412,9 +444,9 @@ export default function AppShell({
         {isAdmin ? (
           <aside className="app-sidebar admin-desktop-sidebar no-print">
             <div className="sidebar-heading admin-sidebar-heading">
-              <span>Admin console</span>
-              <b>Control Center</b>
-              <small>Masters, pricing and access</small>
+              <span>Business controls</span>
+              <b>Master Data</b>
+              <small>Dishes, ingredients, gas and manpower</small>
             </div>
 
             <nav className="sidebar-nav admin-sidebar-nav" aria-label="Admin navigation">
@@ -458,8 +490,8 @@ export default function AppShell({
             </nav>
 
             <div className="sidebar-support admin-sidebar-support">
-              <span>Shared master data</span>
-              <p>Changes here affect future costing across every client workspace.</p>
+              <span>Single business workspace</span>
+              <p>Changes here apply to this catering business and future event costings.</p>
             </div>
           </aside>
         ) : null}
@@ -526,29 +558,23 @@ export default function AppShell({
         ) : null}
 
         <div className="app-workspace">
-          {session?.status === 'EXPIRED' && session.role === 'CLIENT' ? (
-            <div className="alert-card no-print">
-              <b>Plan expired.</b> Upload, cost and final costing are locked. Renew ₹999/month from admin to continue.
-            </div>
-          ) : null}
-
           {isAdmin && !hidePageTitle ? (
             <section className="page-title admin-page-head no-print">
               <div className="admin-page-head-copy">
                 <div className="admin-breadcrumb" aria-label="Admin location">
-                  <span>Admin</span>
+                  <span>Business</span>
                   <i aria-hidden="true">/</i>
                   <b>{activeAdminSection}</b>
                 </div>
 
                 <h1>{title}</h1>
-                <p>{subtitle ?? 'Manage shared master data for every costing workspace.'}</p>
+                <p>{subtitle ?? 'Manage master data for this catering business.'}</p>
               </div>
 
               <div className="admin-page-context">
-                <span>Desktop workspace</span>
+                <span>Owner workspace</span>
                 <b>{activeAdminItem?.label || title}</b>
-                <small>Shared master data</small>
+                <small>Single-business master data</small>
               </div>
             </section>
           ) : null}
@@ -927,9 +953,9 @@ export default function AppShell({
 export function LockedCard() {
   return (
     <div className="locked-card">
-      <h2>App locked</h2>
-      <p>Your plan is expired. Only Profile and Logout are available until renewal.</p>
-      <Link href="/app/profile" className="primary-button">Open Profile</Link>
+      <h2>Workspace unavailable</h2>
+      <p>Sign in again to continue using the business workspace.</p>
+      <Link href="/login" className="primary-button">Sign In</Link>
     </div>
   );
 }

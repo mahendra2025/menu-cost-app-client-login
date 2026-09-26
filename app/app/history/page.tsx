@@ -45,14 +45,6 @@ type Draft = {
   updatedAt: string;
 };
 
-type Usage = {
-  hasProAccess: boolean;
-  limit: number;
-  used: number;
-  remaining: number | null;
-  canStartNew: boolean;
-};
-
 type Item = {
   key: string;
   kind: 'DRAFT' | 'COMPLETED' | 'ARCHIVED';
@@ -108,7 +100,6 @@ export default function HistoryPage() {
   const [completed, setCompleted] = useState<Completed[]>([]);
   const [archived, setArchived] = useState<Completed[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [usage, setUsage] = useState<Usage | null>(null);
   const [tab, setTab] = useState<'ALL' | 'DRAFTS' | 'COMPLETED' | 'ARCHIVED'>('ALL');
   const [query, setQuery] = useState('');
   const [days, setDays] = useState('ALL');
@@ -161,17 +152,15 @@ export default function HistoryPage() {
     setError('');
 
     try {
-      const [a, b, c, d] = await Promise.all([
+      const [a, b, c] = await Promise.all([
         fetch('/api/client/costings?limit=100', { cache: 'no-store' }),
         fetch('/api/client/costings?limit=100&archived=1', { cache: 'no-store' }),
         fetch('/api/client/drafts?limit=100', { cache: 'no-store' }),
-        fetch('/api/client/free-usage', { cache: 'no-store' }),
       ]);
 
       if (a.ok) setCompleted((await a.json()).costings || []);
       if (b.ok) setArchived((await b.json()).costings || []);
       if (c.ok) setDrafts((await c.json()).drafts || []);
-      if (d.ok) setUsage(await d.json());
 
       if (!a.ok || !b.ok || !c.ok) {
         setError('Some history data could not be loaded.');
@@ -252,15 +241,6 @@ export default function HistoryPage() {
   async function startNew() {
     if (!session) return;
     await syncCurrent(session);
-
-    const response = await fetch('/api/client/free-usage', { cache: 'no-store' });
-    const data = await response.json();
-
-    if (!response.ok || !data.canStartNew) {
-      setUsage(data);
-      setError(data.error || 'Your free costing limit is reached. Upgrade to Pro to start another costing.');
-      return;
-    }
 
     clearWork(session.tenantId);
     window.location.assign('/app/event?new=1');
@@ -621,13 +601,12 @@ export default function HistoryPage() {
           <div className="hist-stat"><small>Drafts</small><strong>{drafts.length}</strong><span>Server auto-saved</span></div>
           <div className="hist-stat"><small>Completed</small><strong>{completed.length}</strong><span>Active records</span></div>
           <div className="hist-stat"><small>Costed value</small><strong>{money(totalValue)}</strong><span>Active completed total</span></div>
-          <div className="hist-stat"><small>Free usage</small><strong>{usage?.hasProAccess ? 'Unlimited' : `${usage?.used ?? 0}/${usage?.limit ?? 5}`}</strong><span>{usage?.hasProAccess ? 'Pro account' : `${usage?.remaining ?? 5} remaining`}</span></div>
+          <div className="hist-stat"><small>Workspace</small><strong>Unlimited</strong><span>Single business</span></div>
         </div>
 
         {error ? (
           <div className="hist-alert">
             <span>{error}</span>
-            {usage && !usage.hasProAccess && !usage.canStartNew ? <Link href="/app/profile?upgrade=1">Upgrade Pro · ₹999</Link> : null}
           </div>
         ) : null}
 

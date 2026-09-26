@@ -1,128 +1,150 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import {
+  useEffect,
+  useState,
+} from 'react';
+import {
+  useRouter,
+} from 'next/navigation';
+
 import AppShell from '../../components/AppShell';
 import CostingHistoryCard from '../../components/CostingHistoryCard';
-import { useLanguage } from '../../components/LanguageProvider';
-import { clearWork, getClients, getSession, loadWork, logout, saveWork, upsertClient } from '../../../lib/store';
-import type { ClientUser, Session, WorkState } from '../../../lib/types';
-
-type BillingStatus = {
-  configured: boolean;
-  plan: string;
-  status: string;
-  subscriptionStatus: string | null;
-  currentPeriodEnd: string | null;
-  cancelAtPeriodEnd: boolean;
-  razorpaySubscriptionId: string | null;
-};
-
-type RazorpayCheckout = new (options: Record<string, unknown>) => { open: () => void };
-
-declare global {
-  interface Window { Razorpay?: RazorpayCheckout }
-}
+import {
+  useLanguage,
+} from '../../components/LanguageProvider';
+import {
+  clearWork,
+  getSession,
+  loadWork,
+  saveWork,
+} from '../../../lib/store';
+import type {
+  Session,
+  WorkState,
+} from '../../../lib/types';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { language, setLanguage, t } = useLanguage();
-  const [session, setSession] = useState<Session | null>(null);
-  const [work, setWork] = useState<WorkState | null>(null);
-  const [client, setClient] = useState<ClientUser | null>(null);
-  const [message, setMessage] = useState('');
-  const [billing, setBilling] = useState<BillingStatus | null>(null);
-  const [billingBusy, setBillingBusy] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordBusy, setPasswordBusy] = useState(false);
-  const [passwordMessage, setPasswordMessage] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
+  const {
+    language,
+    setLanguage,
+    t,
+  } = useLanguage();
+
+  const [session, setSession] =
+    useState<Session | null>(
+      null,
+    );
+  const [work, setWork] =
+    useState<WorkState | null>(
+      null,
+    );
+  const [message, setMessage] =
+    useState('');
+
+  const [
+    currentPassword,
+    setCurrentPassword,
+  ] = useState('');
+  const [
+    newPassword,
+    setNewPassword,
+  ] = useState('');
+  const [
+    confirmPassword,
+    setConfirmPassword,
+  ] = useState('');
+  const [
+    passwordBusy,
+    setPasswordBusy,
+  ] = useState(false);
+  const [
+    passwordMessage,
+    setPasswordMessage,
+  ] = useState('');
+  const [
+    passwordError,
+    setPasswordError,
+  ] = useState(false);
 
   useEffect(() => {
-    const current = getSession();
+    const current =
+      getSession();
+
+    if (!current) {
+      router.replace(
+        '/login',
+      );
+      return;
+    }
+
     setSession(current);
-    if (current) {
-      setWork(loadWork(current.tenantId));
-      if (current.role === 'CLIENT') setClient(getClients().find((item) => item.id === current.tenantId) ?? null);
-      if (current.role === 'CLIENT') void loadBilling();
-    }
-  }, []);
+    setWork(
+      loadWork(
+        current.tenantId,
+      ),
+    );
+  }, [router]);
 
-  async function loadBilling() {
-    try {
-      const response = await fetch('/api/billing/status', { cache: 'no-store' });
-      if (response.ok) setBilling(await response.json());
-    } catch {
-      setMessage('Could not load subscription status.');
-    }
+  if (!work || !session) {
+    return (
+      <AppShell title="Profile">
+        <div className="content-grid">
+          <div className="glass-card">
+            Loading...
+          </div>
+        </div>
+      </AppShell>
+    );
   }
 
-  function loadRazorpayCheckout() {
-    return new Promise<boolean>((resolve) => {
-      if (window.Razorpay) return resolve(true);
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.head.appendChild(script);
+  function persist(
+    next: WorkState,
+  ) {
+    setWork(next);
+
+    saveWork(
+      session.tenantId,
+      next,
+    );
+  }
+
+  function saveProfile() {
+    persist({
+      ...work,
+      updatedAt:
+        new Date().toISOString(),
     });
+
+    setMessage(
+      'Business profile saved.',
+    );
   }
 
-  async function subscribe() {
-    setBillingBusy(true);
-    setMessage('');
-    try {
-      const response = await fetch('/api/billing/create-subscription', { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Could not start subscription');
-      if (!(await loadRazorpayCheckout()) || !window.Razorpay) throw new Error('Could not load Razorpay Checkout');
-      const checkout = new window.Razorpay({
-        key: data.keyId,
-        subscription_id: data.subscriptionId,
-        name: 'Menu Costing',
-        description: 'Monthly Pro · ₹999',
-        prefill: { email: session?.userId || '' },
-        theme: { color: '#007aff' },
-        handler: async (result: Record<string, string>) => {
-          const verify = await fetch('/api/billing/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(result),
-          });
-          const verified = await verify.json();
-          if (!verify.ok) {
-            setMessage(verified.error || 'Payment verification failed.');
-            return;
-          }
-          setMessage('Payment verified. Your subscription will activate shortly.');
-          await loadBilling();
-        },
-      });
-      checkout.open();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not start subscription');
-    } finally {
-      setBillingBusy(false);
+  function resetWorkspaceData() {
+    if (
+      !confirm(
+        'Clear the current event, menu, costs and local business profile from this browser?',
+      )
+    ) {
+      return;
     }
-  }
 
-  async function cancelSubscription() {
-    if (!confirm('Cancel renewal at the end of the current billing cycle?')) return;
-    setBillingBusy(true);
-    try {
-      const response = await fetch('/api/billing/cancel', { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Could not cancel subscription');
-      setMessage('Subscription will cancel at the end of the current billing cycle.');
-      await loadBilling();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Could not cancel subscription');
-    } finally {
-      setBillingBusy(false);
-    }
+    clearWork(
+      session.tenantId,
+    );
+
+    const fresh =
+      loadWork(
+        session.tenantId,
+      );
+
+    setWork(fresh);
+    setMessage(
+      'Local workspace data cleared.',
+    );
   }
 
   async function changeMyPassword() {
@@ -130,21 +152,11 @@ export default function ProfilePage() {
     setPasswordError(false);
 
     if (
-      !currentPassword ||
-      !newPassword ||
-      !confirmPassword
+      newPassword.length < 8
     ) {
       setPasswordError(true);
       setPasswordMessage(
-        'Complete all password fields.',
-      );
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      setPasswordError(true);
-      setPasswordMessage(
-        'New password must contain at least 8 characters.',
+        'New password must be at least 8 characters.',
       );
       return;
     }
@@ -168,12 +180,10 @@ export default function ProfilePage() {
           '/api/client/change-password',
           {
             method: 'PUT',
-
             headers: {
               'Content-Type':
                 'application/json',
             },
-
             body:
               JSON.stringify({
                 currentPassword,
@@ -196,14 +206,11 @@ export default function ProfilePage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-
-      setPasswordError(false);
       setPasswordMessage(
         'Password changed successfully.',
       );
     } catch (error) {
       setPasswordError(true);
-
       setPasswordMessage(
         error instanceof Error
           ? error.message
@@ -214,284 +221,488 @@ export default function ProfilePage() {
     }
   }
 
-  if (!work || !session) return <AppShell title="Profile"><div className="content-grid"><div className="glass-card">Loading...</div></div></AppShell>;
-
-  function persist(next: WorkState) {
-    if (!session) return;
-    setWork(next);
-    saveWork(session.tenantId, next);
-  }
-
-  function saveProfile() {
-    if (!work) return;
-    const current = work;
-    persist(current);
-    if (client) {
-      const updated = {
-        ...client,
-        businessName: current.profile.businessName || client.businessName,
-        ownerName: current.profile.ownerName,
-        phone: current.profile.phone,
-        city: current.profile.city,
-      };
-      upsertClient(updated);
-      setClient(updated);
-    }
-    setMessage('Profile saved.');
-  }
-
-  function resetMyData() {
-    if (!session) return;
-    if (!confirm('Clear event, menu, cost and profile data from this browser?')) return;
-    clearWork(session.tenantId);
-    const fresh = loadWork(session.tenantId);
-    setWork(fresh);
-    setMessage('Your saved app data was cleared.');
-  }
-
   return (
-    <AppShell title="Profile" subtitle="Step 6 of 6: business profile, plan status and logout">
+    <AppShell
+      title="Profile"
+      subtitle="Single-business settings, security and master-data access"
+    >
       <section className="content-grid">
-        {session.role === 'CLIENT' ? (
-          <div className="glass-card language-preference-card">
-            <div>
-              <div className="section-kicker">{t('Language preference')}</div>
-              <h2>{t('App language')}</h2>
-              <p className="muted">{t('Choose the language used for navigation and key workflow instructions.')}</p>
-              <small>{t('Saved on this device and applied immediately.')}</small>
-            </div>
-            <div className="language-choice" role="group" aria-label={t('App language')}>
-              <button
-                type="button"
-                className={language === 'en' ? 'is-active' : ''}
-                aria-pressed={language === 'en'}
-                onClick={() => setLanguage('en')}
-              >
-                <span>EN</span>
-                <b>English</b>
-              </button>
-              <button
-                type="button"
-                className={language === 'hi' ? 'is-active' : ''}
-                aria-pressed={language === 'hi'}
-                onClick={() => setLanguage('hi')}
-              >
-                <span>हिं</span>
-                <b>हिन्दी</b>
-              </button>
-            </div>
-          </div>
-        ) : null}
-
         <div className="stat-grid">
-          <div className="stat-card"><small>Role</small><strong>{session.role}</strong><span>{session.userId}</span></div>
           <div className="stat-card">
-            <small>Plan</small>
+            <small>
+              Workspace
+            </small>
             <strong>
-              {session.role === 'CLIENT'
-                ? billing?.plan === 'FREE'
-                  ? 'Free'
-                  : '₹999'
-                : 'Admin'}
+              Single Business
             </strong>
             <span>
-              {session.role === 'CLIENT'
-                ? billing?.plan === 'FREE'
-                  ? '5 free completed costings'
-                  : 'Monthly Pro'
-                : 'Workspace'}
+              No multi-account mode
             </span>
           </div>
-          <div className="stat-card"><small>Status</small><strong>{session.status}</strong><span>{client?.expiryDate ? `Expiry ${client.expiryDate}` : 'No expiry'}</span></div>
-          <div className="stat-card"><small>Saving</small><strong>Auto-saved</strong><span>Stored on this device</span></div>
+
+          <div className="stat-card">
+            <small>
+              Access
+            </small>
+            <strong>
+              Owner
+            </strong>
+            <span>
+              {session.userId}
+            </span>
+          </div>
+
+          <div className="stat-card">
+            <small>
+              Costings
+            </small>
+            <strong>
+              Unlimited
+            </strong>
+            <span>
+              No plan limits
+            </span>
+          </div>
+
+          <div className="stat-card">
+            <small>
+              Saving
+            </small>
+            <strong>
+              Auto-saved
+            </strong>
+            <span>
+              Browser + server history
+            </span>
+          </div>
         </div>
 
-        {session.role === 'CLIENT' ? (
-          <div className="glass-card billing-card">
-            <div className="billing-heading">
-              <div><div className="section-kicker">Razorpay Subscription</div><h2>Monthly Pro</h2><p className="muted">Full Menu Costing access with secure recurring billing.</p></div>
-              <div className="billing-price"><strong>₹999</strong><span>/ month</span></div>
-            </div>
-            <div className="billing-details">
-              <div><small>Billing status</small><strong>{billing?.subscriptionStatus || 'Not subscribed'}</strong></div>
-              <div><small>Next billing date</small><strong>{billing?.currentPeriodEnd ? new Date(billing.currentPeriodEnd).toLocaleDateString('en-IN') : '—'}</strong></div>
-              <div><small>Renewal</small><strong>{billing?.cancelAtPeriodEnd ? 'Cancels after cycle' : billing?.razorpaySubscriptionId ? 'Automatic' : 'Not started'}</strong></div>
-            </div>
-            {!billing?.configured ? <div className="admin-message">Online subscription is not available yet. Contact your account administrator to activate or renew your plan.</div> : null}
-            <div className="action-row">
-              {billing?.configured && !['active', 'authenticated', 'pending'].includes(billing?.subscriptionStatus || '') ? <button className="primary-button" disabled={billingBusy} onClick={subscribe}>{billingBusy ? 'Opening…' : 'Subscribe ₹999/month'}</button> : null}
-              {billing?.razorpaySubscriptionId && !billing.cancelAtPeriodEnd ? <button className="danger-button" disabled={billingBusy} onClick={cancelSubscription}>Cancel renewal</button> : null}
-              <button className="ghost-button" disabled={billingBusy} onClick={loadBilling}>Refresh status</button>
-            </div>
-          </div>
-        ) : null}
-
-        {session.role === 'CLIENT' ? (
-          <div className="glass-card">
+        <div className="glass-card language-preference-card">
+          <div>
             <div className="section-kicker">
-              Account security
+              {t(
+                'Language preference',
+              )}
             </div>
 
             <h2>
-              Change Password
+              {t(
+                'App language',
+              )}
             </h2>
 
             <p className="muted">
-              Change the password for only your account.
-              Your current password is required.
+              {t(
+                'Choose the language used for navigation and key workflow instructions.',
+              )}
             </p>
 
-            <div className="form-grid">
+            <small>
+              {t(
+                'Saved on this device and applied immediately.',
+              )}
+            </small>
+          </div>
+
+          <div
+            className="language-choice"
+            role="group"
+            aria-label={t(
+              'App language',
+            )}
+          >
+            <button
+              type="button"
+              className={
+                language === 'en'
+                  ? 'is-active'
+                  : ''
+              }
+              aria-pressed={
+                language === 'en'
+              }
+              onClick={() =>
+                setLanguage(
+                  'en',
+                )
+              }
+            >
+              <span>EN</span>
+              <b>English</b>
+            </button>
+
+            <button
+              type="button"
+              className={
+                language === 'hi'
+                  ? 'is-active'
+                  : ''
+              }
+              aria-pressed={
+                language === 'hi'
+              }
+              onClick={() =>
+                setLanguage(
+                  'hi',
+                )
+              }
+            >
+              <span>हिं</span>
+              <b>हिन्दी</b>
+            </button>
+          </div>
+        </div>
+
+        <div className="glass-card">
+          <div className="section-kicker">
+            Business profile
+          </div>
+
+          <h2>
+            Catering Business
+          </h2>
+
+          <div className="form-grid">
+            <div className="two-grid">
               <div className="field">
-                <label
-                  htmlFor="current-password"
-                >
-                  Current Password
+                <label>
+                  Business Name
                 </label>
 
                 <input
-                  id="current-password"
                   className="input"
-                  type="password"
-                  autoComplete="current-password"
-                  value={currentPassword}
-                  onChange={(event) =>
-                    setCurrentPassword(
-                      event.target.value,
-                    )
+                  value={
+                    work.profile
+                      .businessName
                   }
-                  placeholder="Enter current password"
+                  onChange={(
+                    event,
+                  ) =>
+                    persist({
+                      ...work,
+                      profile: {
+                        ...work.profile,
+                        businessName:
+                          event
+                            .target
+                            .value,
+                      },
+                    })
+                  }
                 />
               </div>
 
-              <div className="two-grid">
-                <div className="field">
-                  <label
-                    htmlFor="new-password"
-                  >
-                    New Password
-                  </label>
+              <div className="field">
+                <label>
+                  Owner Name
+                </label>
 
-                  <input
-                    id="new-password"
-                    className="input"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={8}
-                    value={newPassword}
-                    onChange={(event) =>
-                      setNewPassword(
-                        event.target.value,
-                      )
-                    }
-                    placeholder="Minimum 8 characters"
-                  />
-                </div>
-
-                <div className="field">
-                  <label
-                    htmlFor="confirm-password"
-                  >
-                    Confirm New Password
-                  </label>
-
-                  <input
-                    id="confirm-password"
-                    className="input"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={8}
-                    value={confirmPassword}
-                    onChange={(event) =>
-                      setConfirmPassword(
-                        event.target.value,
-                      )
-                    }
-                    placeholder="Enter new password again"
-                  />
-                </div>
-              </div>
-
-              {passwordMessage ? (
-                <div
-                  className={`admin-message ${
-                    passwordError
-                      ? 'error'
-                      : 'success'
-                  }`}
-                >
-                  {passwordMessage}
-                </div>
-              ) : null}
-
-              <div className="action-row">
-                <button
-                  className="primary-button"
-                  type="button"
-                  disabled={
-                    passwordBusy ||
-                    !currentPassword ||
-                    !newPassword ||
-                    !confirmPassword
+                <input
+                  className="input"
+                  value={
+                    work.profile
+                      .ownerName
                   }
-                  onClick={() =>
-                    void changeMyPassword()
+                  onChange={(
+                    event,
+                  ) =>
+                    persist({
+                      ...work,
+                      profile: {
+                        ...work.profile,
+                        ownerName:
+                          event
+                            .target
+                            .value,
+                      },
+                    })
                   }
-                >
-                  {passwordBusy
-                    ? 'Changing…'
-                    : 'Change Password'}
-                </button>
+                />
               </div>
             </div>
-          </div>
-        ) : null}
 
-        {session.role === 'CLIENT' ? <CostingHistoryCard /> : null}
+            <div className="two-grid">
+              <div className="field">
+                <label>
+                  Phone
+                </label>
+
+                <input
+                  className="input"
+                  value={
+                    work.profile.phone
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    persist({
+                      ...work,
+                      profile: {
+                        ...work.profile,
+                        phone:
+                          event
+                            .target
+                            .value,
+                      },
+                    })
+                  }
+                />
+              </div>
+
+              <div className="field">
+                <label>
+                  Base City
+                </label>
+
+                <input
+                  className="input"
+                  value={
+                    work.profile.city
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    persist({
+                      ...work,
+                      profile: {
+                        ...work.profile,
+                        city:
+                          event
+                            .target
+                            .value,
+                      },
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="action-row">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={saveProfile}
+              >
+                Save Business Profile
+              </button>
+            </div>
+
+            {message ? (
+              <div className="admin-message">
+                {message}
+              </div>
+            ) : null}
+          </div>
+        </div>
 
         <div className="glass-card">
-          <h2>Business Profile</h2>
+          <div className="section-kicker">
+            Master data
+          </div>
+
+          <h2>
+            Costing Masters
+          </h2>
+
+          <p className="muted">
+            The same owner account manages all business master data.
+          </p>
+
+          <div className="action-row">
+            <Link
+              href="/admin/dishes"
+              className="ghost-button"
+            >
+              Dish Master
+            </Link>
+
+            <Link
+              href="/admin/recipes"
+              className="ghost-button"
+            >
+              Recipes
+            </Link>
+
+            <Link
+              href="/admin/ingredients"
+              className="ghost-button"
+            >
+              Ingredients
+            </Link>
+
+            <Link
+              href="/admin/ingredient-city-rates"
+              className="ghost-button"
+            >
+              City Rates
+            </Link>
+
+            <Link
+              href="/admin/gas"
+              className="ghost-button"
+            >
+              Gas Cost
+            </Link>
+
+            <Link
+              href="/admin/manpower"
+              className="ghost-button"
+            >
+              Manpower
+            </Link>
+          </div>
+        </div>
+
+        <div className="glass-card">
+          <div className="section-kicker">
+            Owner security
+          </div>
+
+          <h2>
+            Change Password
+          </h2>
+
+          <p className="muted">
+            Change the password for the single owner login.
+          </p>
+
           <div className="form-grid">
-            <div className="three-grid">
-              <div className="field"><label>Business Name</label><input className="input" value={work.profile.businessName} onChange={(e) => persist({ ...work, profile: { ...work.profile, businessName: e.target.value } })} /></div>
-              <div className="field"><label>Owner Name</label><input className="input" value={work.profile.ownerName} onChange={(e) => persist({ ...work, profile: { ...work.profile, ownerName: e.target.value } })} /></div>
-              <div className="field"><label>Mobile Number</label><input className="input" value={work.profile.phone} onChange={(e) => persist({ ...work, profile: { ...work.profile, phone: e.target.value } })} /></div>
+            <div className="field">
+              <label
+                htmlFor="current-password"
+              >
+                Current Password
+              </label>
+
+              <input
+                id="current-password"
+                className="input"
+                type="password"
+                autoComplete="current-password"
+                value={
+                  currentPassword
+                }
+                onChange={(
+                  event,
+                ) =>
+                  setCurrentPassword(
+                    event.target.value,
+                  )
+                }
+                placeholder="Enter current password"
+              />
             </div>
+
             <div className="two-grid">
-              <div className="field"><label>City</label><input className="input" value={work.profile.city} onChange={(e) => persist({ ...work, profile: { ...work.profile, city: e.target.value } })} /></div>
-              <div className="field"><label>Logo Text</label><input className="input" value={work.profile.logoText} onChange={(e) => persist({ ...work, profile: { ...work.profile, logoText: e.target.value.toUpperCase().slice(0, 4) } })} placeholder="KC" /></div>
+              <div className="field">
+                <label
+                  htmlFor="new-password"
+                >
+                  New Password
+                </label>
+
+                <input
+                  id="new-password"
+                  className="input"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  value={
+                    newPassword
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setNewPassword(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Minimum 8 characters"
+                />
+              </div>
+
+              <div className="field">
+                <label
+                  htmlFor="confirm-password"
+                >
+                  Confirm New Password
+                </label>
+
+                <input
+                  id="confirm-password"
+                  className="input"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  value={
+                    confirmPassword
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setConfirmPassword(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Enter new password again"
+                />
+              </div>
             </div>
-            {message ? <p className="muted"><b>{message}</b></p> : null}
+
+            {passwordMessage ? (
+              <div
+                className={`admin-message ${passwordError ? 'error' : 'success'}`}
+              >
+                {passwordMessage}
+              </div>
+            ) : null}
+
             <div className="action-row">
-              <button className="primary-button" onClick={saveProfile}>Save Profile</button>
-              <button className="ghost-button" onClick={() => { logout(); void fetch('/api/client/session', { method: 'DELETE' }); router.replace('/login'); }}>Logout</button>
-              <button className="danger-button" onClick={resetMyData}>Remove My Saved Data</button>
+              <button
+                className="primary-button"
+                type="button"
+                disabled={
+                  passwordBusy ||
+                  !currentPassword ||
+                  !newPassword ||
+                  !confirmPassword
+                }
+                onClick={() =>
+                  void changeMyPassword()
+                }
+              >
+                {passwordBusy
+                  ? 'Changing…'
+                  : 'Change Password'}
+              </button>
             </div>
           </div>
         </div>
 
-        {session.role === 'CLIENT' ? (
-          <div className="glass-card">
-            <div className="section-kicker">Costing data</div>
-            <h2>Ingredient Index</h2>
-            <p className="muted">
-              View Ingredient Master data and set your own purchase rates.
-              Your rate changes affect only your account.
-            </p>
-            <div className="action-row">
-              <Link
-                href="/app/ingredients"
-                className="primary-button"
-              >
-                Open Ingredient Index
-              </Link>
-            </div>
-          </div>
-        ) : null}
+        <CostingHistoryCard />
 
         <div className="glass-card">
-          <h2>Your Data & Access</h2>
-          <p className="muted">Your event, menu, manpower and costing changes save automatically on this device. Your account administrator manages login access and subscription status.</p>
+          <div className="section-kicker">
+            Local data
+          </div>
+
+          <h2>
+            Reset Current Browser Workspace
+          </h2>
+
+          <p className="muted">
+            Clears the current local event workspace. Saved server history is not deleted.
+          </p>
+
+          <button
+            className="danger-button"
+            type="button"
+            onClick={
+              resetWorkspaceData
+            }
+          >
+            Clear Local Workspace
+          </button>
         </div>
       </section>
     </AppShell>

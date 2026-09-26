@@ -4,16 +4,10 @@ import { NextResponse } from 'next/server';
 import { requireClientTenantId } from '../../../../../lib/billingAuth';
 import { prisma } from '../../../../../lib/prisma';
 
-const FREE_LIMIT = 5;
-
 function clean(value: unknown, max = 120) {
   return String(value || '').trim().slice(0, max);
 }
 
-function hasProAccess(tenant: { plan: string; subscriptionStatus: string | null }) {
-  const status = String(tenant.subscriptionStatus || '').toLowerCase();
-  return tenant.plan !== 'FREE' && !['halted', 'cancelled', 'completed', 'paused', 'expired'].includes(status);
-}
 
 function record(value: unknown) {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -24,7 +18,7 @@ function record(value: unknown) {
 export async function POST(request: Request) {
   try {
     const tenantId = await requireClientTenantId();
-    if (!tenantId) return NextResponse.json({ error: 'Client login required' }, { status: 401 });
+    if (!tenantId) return NextResponse.json({ error: 'Owner login required' }, { status: 401 });
 
     const body = await request.json();
     const sourceCostingId = clean(body.sourceCostingId);
@@ -37,28 +31,25 @@ export async function POST(request: Request) {
     if (!eventDate) return NextResponse.json({ error: 'Event date required for the duplicate' }, { status: 400 });
     if (pax <= 0) return NextResponse.json({ error: 'Guest count must be greater than 0' }, { status: 400 });
 
-    const [tenant, used, source] = await Promise.all([
-      prisma.tenant.findUnique({
-        where: { id: tenantId },
-        select: { plan: true, subscriptionStatus: true },
-      }),
-      prisma.tenantFreeCosting.count({ where: { tenantId } }),
-      prisma.tenantCostingHistory.findUnique({
-        where: { tenantId_costingId: { tenantId, costingId: sourceCostingId } },
-      }),
-    ]);
+    const source =
+      await prisma.tenantCostingHistory.findUnique({
+        where: {
+          tenantId_costingId: {
+            tenantId,
+            costingId:
+              sourceCostingId,
+          },
+        },
+      });
 
-    if (!tenant) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-    if (!source) return NextResponse.json({ error: 'Completed costing not found' }, { status: 404 });
-
-    const pro = hasProAccess(tenant);
-    if (!pro && used >= FREE_LIMIT) {
-      return NextResponse.json({
-        error: 'Your 5 free costings are used. Upgrade to Pro to duplicate this costing.',
-        code: 'FREE_LIMIT_REACHED',
-        used,
-        limit: FREE_LIMIT,
-      }, { status: 402 });
+    if (!source) {
+      return NextResponse.json(
+        {
+          error:
+            'Completed costing not found',
+        },
+        { status: 404 },
+      );
     }
 
     const snapshot = record(source.snapshot);
@@ -138,10 +129,12 @@ export async function POST(request: Request) {
       newCostingId,
       copiedFunctionCount,
       work,
-      hasProAccess: pro,
-      used,
-      limit: FREE_LIMIT,
-      remaining: pro ? null : Math.max(0, FREE_LIMIT - used),
+      workspaceMode: 'SINGLE_BUSINESS',
+      unlimited: true,
+      hasProAccess: true,
+      used: 0,
+      limit: 0,
+      remaining: null,
     });
   } catch (error) {
     console.error('Duplicate costing error:', error);

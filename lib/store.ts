@@ -273,30 +273,24 @@ export function refreshSessionFromClient():
 
   const session = getSession();
 
-  if (
-    !session ||
-    session.role !== 'CLIENT'
-  ) {
-    return session;
+  if (!session) {
+    return null;
   }
 
-  const client = getClients().find(
-    (item) =>
-      item.id === session.tenantId,
-  );
-
-  if (!client) {
-    return session;
-  }
-
+  /*
+   * Single-business mode no longer refreshes session state
+   * from the legacy local client-account list. In particular,
+   * an old EXPIRED client record must not re-lock the owner
+   * workspace after login.
+   */
   const nextSession: Session = {
     ...session,
-    businessName: client.businessName,
-    status: client.status,
+    role: 'CLIENT',
+    status: 'ACTIVE',
   };
 
   if (
-    nextSession.businessName !== session.businessName ||
+    nextSession.role !== session.role ||
     nextSession.status !== session.status
   ) {
     window.localStorage.setItem(
