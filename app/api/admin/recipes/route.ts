@@ -878,26 +878,51 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Invalid recipe catalog' }, { status: 400 });
     }
 
-    const saved = await prisma.$transaction(async (tx) => {
-      const recipeCatalog = await tx.recipeCatalog.upsert({
-        where: { id: CATALOG_ID },
-        create: { id: CATALOG_ID, ...catalog },
-        update: catalog,
-        select: { updatedAt: true },
-      });
-      const syncedDishes = await syncRecipesToDishCatalog(tx, catalog);
-      return {
-        updatedAt: recipeCatalog.updatedAt,
-        syncedDishes,
-      };
+    // Persist the recipe catalog first. Dish Master sync is intentionally
+    // best-effort so a sync problem can never roll back ingredient changes.
+    const recipeCatalog = await prisma.recipeCatalog.upsert({
+      where: { id: CATALOG_ID },
+      create: { id: CATALOG_ID, ...catalog },
+      update: catalog,
+      select: { updatedAt: true },
     });
+
+    let syncedDishes = 0;
+    let syncWarning = '';
+
+    try {
+      syncedDishes = await prisma.$transaction(
+        async (tx) =>
+          syncRecipesToDishCatalog(
+            tx,
+            catalog,
+          ),
+      );
+    } catch (syncError) {
+      console.error(
+        'Recipe catalog saved but Dish Master sync failed:',
+        syncError,
+      );
+
+      syncWarning =
+        'Recipes saved, but Dish Master sync could not finish.';
+    }
 
     return NextResponse.json({
       ok: true,
-      updatedAt: saved.updatedAt,
-      syncedDishes: saved.syncedDishes,
+      updatedAt: recipeCatalog.updatedAt,
+      syncedDishes,
+      syncWarning: syncWarning || null,
     });
-  } catch {
-    return NextResponse.json({ error: 'Failed to save recipes' }, { status: 500 });
+  } catch (error) {
+    console.error(
+      'Failed to save recipe catalog:',
+      error,
+    );
+
+    return NextResponse.json(
+      { error: 'Failed to save recipes' },
+      { status: 500 },
+    );
   }
 }
