@@ -50,6 +50,7 @@ async function retainedWorkspace() {
    * workspace is stamped SINGLE and can safely renew its
    * master-data cookie on later browser sessions.
    */
+  // Tenant has createdAt (no Tenant.updatedAt); use the newest retained SINGLE workspace.
   return prisma.tenant.findFirst({
     where: {
       plan: 'SINGLE',
