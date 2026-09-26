@@ -201,7 +201,7 @@ export default function IngredientRatesPage() {
     useState<UsageMap>({});
 
   const [city, setCity] =
-    useState('');
+    useState('Silvassa');
 
   const [
     loadedCity,
@@ -423,8 +423,10 @@ export default function IngredientRatesPage() {
   }
 
   useEffect(() => {
-    void loadIngredients();
-    // Load the business/profile city when available.
+    void loadIngredients(
+      'Silvassa',
+    );
+    // Start with the business's primary operating market.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -541,13 +543,20 @@ export default function IngredientRatesPage() {
       const afterMeta =
         `${row.cityRateSource || ''}|${row.cityRateEffectiveDate || ''}`;
 
+      const metadataMatters =
+        beforeRate > 0 ||
+        afterRate > 0;
+
       return (
         Math.abs(
           beforeRate -
             afterRate,
         ) > 0.000001 ||
-        beforeMeta !==
-          afterMeta
+        (
+          metadataMatters &&
+          beforeMeta !==
+            afterMeta
+        )
       );
     }).length;
 
@@ -652,6 +661,10 @@ export default function IngredientRatesPage() {
     const currentMeta =
       `${row.cityRateSource || ''}|${row.cityRateEffectiveDate || ''}`;
 
+    const metadataMatters =
+      initialCityRate > 0 ||
+      currentCityRate > 0;
+
     return (
       Math.abs(
         initialCityRate -
@@ -661,8 +674,11 @@ export default function IngredientRatesPage() {
         initialBusinessRate -
           currentBusinessRate,
       ) > 0.000001 ||
-      initialMeta !==
-        currentMeta
+      (
+        metadataMatters &&
+        initialMeta !==
+          currentMeta
+      )
     );
   }
 
@@ -1739,6 +1755,10 @@ export default function IngredientRatesPage() {
                                       {
                                         cityRate:
                                           null,
+                                        cityRateSource:
+                                          '',
+                                        cityRateEffectiveDate:
+                                          '',
                                       },
                                     )
                                   }
@@ -1853,6 +1873,11 @@ export default function IngredientRatesPage() {
                             <div className="ingredient-market-fields">
                               <input
                                 className="input"
+                                disabled={
+                                  !(Number(
+                                    row.cityRate,
+                                  ) > 0)
+                                }
                                 value={
                                   row.cityRateSource ||
                                   ''
@@ -1877,6 +1902,11 @@ export default function IngredientRatesPage() {
                               <input
                                 className="input"
                                 type="date"
+                                disabled={
+                                  !(Number(
+                                    row.cityRate,
+                                  ) > 0)
+                                }
                                 value={
                                   row.cityRateEffectiveDate ||
                                   ''
@@ -2576,6 +2606,11 @@ export default function IngredientRatesPage() {
             min-height:34px;
             padding:6px 8px;
             font-size:9px;
+          }
+
+          .ingredient-market-fields .input:disabled {
+            opacity:.42;
+            cursor:not-allowed;
           }
 
           .ingredient-recipe-count {
