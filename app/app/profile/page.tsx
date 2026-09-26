@@ -103,6 +103,8 @@ export default function ProfilePage() {
   function persist(
     next: WorkState,
   ) {
+    if (!session) return;
+
     setWork(next);
 
     saveWork(
@@ -124,6 +126,8 @@ export default function ProfilePage() {
   }
 
   function resetWorkspaceData() {
+    if (!session) return;
+
     if (
       !confirm(
         'Clear the current event, menu, costs and local business profile from this browser?',
