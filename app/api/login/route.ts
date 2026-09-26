@@ -326,6 +326,11 @@ export async function POST(
     const bootstrapPasswordValid =
       Boolean(
         owner.bootstrapPassword &&
+        (
+          !existingWorkspace ||
+          existingWorkspace.plan !==
+            'SINGLE'
+        ) &&
         safeMatch(
           password,
           owner.bootstrapPassword,
