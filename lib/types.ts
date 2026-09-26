@@ -243,6 +243,8 @@ export type ExtraCost = {
 export type DisposableCostItem = {
   id: string;
   name: string;
+  /** Purchase / usage unit, for example pcs, pack, roll, kg or litre. */
+  unit?: string;
   quantity: number;
   unitCost: number;
 };

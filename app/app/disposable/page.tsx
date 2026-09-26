@@ -31,6 +31,22 @@ function numberValue(value: string) {
   return Number.isFinite(number) ? Math.max(0, number) : 0;
 }
 
+const DISPOSABLE_UNITS = [
+  'pcs',
+  'pair',
+  'pack',
+  'box',
+  'roll',
+  'kg',
+  'g',
+  'litre',
+  'ml',
+  'set',
+  'dozen',
+  'bundle',
+  'event',
+];
+
 export default function DisposableCostPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
@@ -166,6 +182,7 @@ export default function DisposableCostPage() {
       {
         id: uid('disposable_custom'),
         name: 'Custom item',
+        unit: 'pcs',
         quantity: 0,
         unitCost: 0,
       },
@@ -252,13 +269,20 @@ export default function DisposableCostPage() {
             </div>
           </div>
 
+          <datalist id="disposable-unit-options">
+            {DISPOSABLE_UNITS.map((unit) => (
+              <option value={unit} key={unit} />
+            ))}
+          </datalist>
+
           <div className="table-wrap disposable-table-wrap">
             <table className="disposable-table">
               <thead>
                 <tr>
                   <th>Item</th>
                   <th>Quantity</th>
-                  <th>Rate / item</th>
+                  <th>Unit</th>
+                  <th>Rate / unit</th>
                   <th>Total</th>
                   <th />
                 </tr>
@@ -289,12 +313,23 @@ export default function DisposableCostPage() {
                           className="input disposable-number"
                           type="number"
                           min="0"
-                          step="1"
+                          step="0.01"
                           inputMode="decimal"
                           value={item.quantity || ''}
                           placeholder="0"
                           onChange={(event) =>
                             updateItem(item.id, { quantity: numberValue(event.target.value) })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="input disposable-unit"
+                          list="disposable-unit-options"
+                          value={item.unit || 'pcs'}
+                          placeholder="pcs"
+                          onChange={(event) =>
+                            updateItem(item.id, { unit: event.target.value })
                           }
                         />
                       </td>
@@ -385,7 +420,7 @@ export default function DisposableCostPage() {
                         className="input"
                         type="number"
                         min="0"
-                        step="1"
+                        step="0.01"
                         inputMode="decimal"
                         value={item.quantity || ''}
                         placeholder="0"
@@ -399,7 +434,22 @@ export default function DisposableCostPage() {
                     </label>
 
                     <label className="field">
-                      <span>Rate / item</span>
+                      <span>Unit</span>
+                      <input
+                        className="input"
+                        list="disposable-unit-options"
+                        value={item.unit || 'pcs'}
+                        placeholder="pcs"
+                        onChange={(event) =>
+                          updateItem(item.id, {
+                            unit: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label className="field">
+                      <span>Rate / {item.unit || 'unit'}</span>
                       <input
                         className="input"
                         type="number"
@@ -420,7 +470,7 @@ export default function DisposableCostPage() {
 
                   <div className="disposable-mobile-total">
                     <span>
-                      {item.quantity || 0}
+                      {item.quantity || 0} {item.unit || 'pcs'}
                       {' × '}
                       {money(item.unitCost || 0)}
                     </span>
@@ -560,7 +610,7 @@ export default function DisposableCostPage() {
         </div>
 
         <style>{`
-          .disposable-page{padding-bottom:28px}.disposable-heading-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.auto-assign-summary{display:block;margin-top:8px;color:var(--muted);font-size:11px}.disposable-table{width:100%;border-collapse:collapse}.disposable-table th,.disposable-table td{padding:11px 10px;border-bottom:1px solid rgba(148,163,184,.14);text-align:left;vertical-align:middle}.disposable-table th{color:var(--muted);font-size:11px;font-weight:700}.disposable-table td:nth-child(2),.disposable-table td:nth-child(3),.disposable-table td:nth-child(4){width:150px}.disposable-number{min-width:110px}.disposable-name{display:grid;gap:2px}.disposable-name small{color:#f59e0b;font-size:10px}.disposable-remove{padding:7px 10px}.disposable-table tr.is-active{background:rgba(59,130,246,.04)}.disposable-card-list{display:none}@media(max-width:720px){.disposable-heading-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.disposable-heading-actions button{width:100%}.disposable-table-wrap{display:none}.disposable-card-list{display:grid;gap:10px;margin-top:14px}.disposable-mobile-card{display:grid;gap:12px;padding:14px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(148,163,184,.025)}.disposable-mobile-card.is-active{border-color:rgba(59,130,246,.28);background:rgba(59,130,246,.055)}.disposable-mobile-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.disposable-mobile-card-heading>div{display:grid;gap:3px;min-width:0}.disposable-mobile-card-heading strong{font-size:14px}.disposable-mobile-card-heading small{color:#f59e0b;font-size:10px}.disposable-mobile-card-heading>b{font-size:16px;white-space:nowrap}.disposable-mobile-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.disposable-mobile-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,.12)}.disposable-mobile-total span{color:var(--muted);font-size:11px}.disposable-mobile-total strong{font-size:15px}.disposable-page .final-costing-section-heading{align-items:flex-start;gap:14px}}@media(max-width:420px){.disposable-mobile-fields{grid-template-columns:1fr}}
+          .disposable-page{padding-bottom:28px}.disposable-heading-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.auto-assign-summary{display:block;margin-top:8px;color:var(--muted);font-size:11px}.disposable-table{width:100%;border-collapse:collapse}.disposable-table th,.disposable-table td{padding:11px 10px;border-bottom:1px solid rgba(148,163,184,.14);text-align:left;vertical-align:middle}.disposable-table th{color:var(--muted);font-size:11px;font-weight:700}.disposable-table td:nth-child(2),.disposable-table td:nth-child(3),.disposable-table td:nth-child(4){width:150px}.disposable-number{min-width:110px}.disposable-unit{min-width:88px}.disposable-name{display:grid;gap:2px}.disposable-name small{color:#f59e0b;font-size:10px}.disposable-remove{padding:7px 10px}.disposable-table tr.is-active{background:rgba(59,130,246,.04)}.disposable-card-list{display:none}@media(max-width:720px){.disposable-heading-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.disposable-heading-actions button{width:100%}.disposable-table-wrap{display:none}.disposable-card-list{display:grid;gap:10px;margin-top:14px}.disposable-mobile-card{display:grid;gap:12px;padding:14px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(148,163,184,.025)}.disposable-mobile-card.is-active{border-color:rgba(59,130,246,.28);background:rgba(59,130,246,.055)}.disposable-mobile-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.disposable-mobile-card-heading>div{display:grid;gap:3px;min-width:0}.disposable-mobile-card-heading strong{font-size:14px}.disposable-mobile-card-heading small{color:#f59e0b;font-size:10px}.disposable-mobile-card-heading>b{font-size:16px;white-space:nowrap}.disposable-mobile-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.disposable-mobile-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,.12)}.disposable-mobile-total span{color:var(--muted);font-size:11px}.disposable-mobile-total strong{font-size:15px}.disposable-page .final-costing-section-heading{align-items:flex-start;gap:14px}}@media(max-width:420px){.disposable-mobile-fields{grid-template-columns:1fr}}
         `}</style>
       </section>
     </AppShell>
