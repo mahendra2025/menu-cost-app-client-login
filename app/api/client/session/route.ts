@@ -55,7 +55,7 @@ async function retainedWorkspace() {
       plan: 'SINGLE',
     },
     orderBy: {
-      updatedAt: 'desc',
+      createdAt: 'desc',
     },
     select: {
       id: true,
