@@ -187,9 +187,12 @@ export async function GET(
         effectiveCity,
       );
 
-    const cityRates =
+    const [
+      cityRates,
+      cities,
+    ] = await Promise.all([
       cityKey
-        ? await prisma.ingredientCityRate.findMany({
+        ? prisma.ingredientCityRate.findMany({
             where: {
               cityKey,
             },
@@ -202,7 +205,19 @@ export async function GET(
               updatedAt: true,
             },
           })
-        : [];
+        : Promise.resolve([]),
+
+      prisma.ingredientCityRate.findMany({
+        distinct: ['cityKey'],
+        orderBy: {
+          city: 'asc',
+        },
+        select: {
+          city: true,
+          cityKey: true,
+        },
+      }),
+    ]);
 
     if (!catalog) {
       return NextResponse.json({
@@ -332,6 +347,8 @@ export async function GET(
         'CITY',
         'GLOBAL',
       ],
+
+      cities,
 
       usage: Object.fromEntries(
         recipeIngredientUsage(
