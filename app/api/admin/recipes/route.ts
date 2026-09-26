@@ -67,6 +67,31 @@ function normalizeRecipeIngredientUnit(
     : null;
 }
 
+function dishSyncWarning(error: unknown) {
+  const row =
+    error &&
+    typeof error === 'object'
+      ? error as Record<string, unknown>
+      : {};
+
+  const code =
+    String(row.code || '').trim();
+
+  if (code === 'P2022') {
+    return 'Recipes saved. Dish Master database schema is behind; pending Prisma migrations must be applied.';
+  }
+
+  if (code === 'P2028') {
+    return 'Recipes saved. Dish Master sync timed out; retry the sync after deployment.';
+  }
+
+  if (code === 'P1001' || code === 'P1002') {
+    return 'Recipes saved. Dish Master sync could not reach the database.';
+  }
+
+  return 'Recipes saved, but Dish Master sync could not finish.';
+}
+
 async function requireAdmin() {
   const cookieStore = await cookies();
   const token = cookieStore.get(getAdminCookieName())?.value;
@@ -847,6 +872,10 @@ export async function POST() {
             tx,
             catalog,
           ),
+        {
+          maxWait: 10_000,
+          timeout: 30_000,
+        },
       );
 
     return NextResponse.json({
@@ -897,6 +926,10 @@ export async function PUT(request: Request) {
             tx,
             catalog,
           ),
+        {
+          maxWait: 10_000,
+          timeout: 30_000,
+        },
       );
     } catch (syncError) {
       console.error(
@@ -905,7 +938,9 @@ export async function PUT(request: Request) {
       );
 
       syncWarning =
-        'Recipes saved, but Dish Master sync could not finish.';
+        dishSyncWarning(
+          syncError,
+        );
     }
 
     return NextResponse.json({
