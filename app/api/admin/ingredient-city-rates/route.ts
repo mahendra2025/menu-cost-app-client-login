@@ -64,7 +64,12 @@ export async function GET(request: Request) {
       );
     }
 
-    const [catalog, cityRates, cities] =
+    const [
+      catalog,
+      cityRates,
+      cityMaster,
+      legacyCities,
+    ] =
       await Promise.all([
         prisma.recipeCatalog.findUnique({
           where: { id: CATALOG_ID },
@@ -83,6 +88,18 @@ export async function GET(request: Request) {
             source: true,
             effectiveDate: true,
             updatedAt: true,
+          },
+        }),
+        prisma.ingredientCity.findMany({
+          where: {
+            active: true,
+          },
+          orderBy: {
+            city: 'asc',
+          },
+          select: {
+            city: true,
+            cityKey: true,
           },
         }),
         prisma.ingredientCityRate.findMany({
@@ -120,9 +137,10 @@ export async function GET(request: Request) {
       city,
       cityKey,
       cities:
-        ingredientCityOptions(
-          cities,
-        ),
+        ingredientCityOptions([
+          ...cityMaster,
+          ...legacyCities,
+        ]),
       rates: masterRates.map((master) => {
         const local =
           cityMap.get(master.id);
@@ -294,6 +312,21 @@ export async function PUT(request: Request) {
 
     await prisma.$transaction(
       async (tx) => {
+        await tx.ingredientCity.upsert({
+          where: {
+            cityKey,
+          },
+          create: {
+            city,
+            cityKey,
+            active: true,
+          },
+          update: {
+            city,
+            active: true,
+          },
+        });
+
         if (
           copyFromCityKey &&
           copyFromCityKey !== cityKey
