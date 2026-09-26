@@ -190,9 +190,7 @@ export async function GET(
 
     const [
       cityRates,
-      cities: ingredientCityOptions(
-        cities,
-      ),
+      cities,
     ] = await Promise.all([
       cityKey
         ? prisma.ingredientCityRate.findMany({
@@ -351,7 +349,10 @@ export async function GET(
         'GLOBAL',
       ],
 
-      cities,
+      cities:
+        ingredientCityOptions(
+          cities,
+        ),
 
       usage: Object.fromEntries(
         recipeIngredientUsage(
