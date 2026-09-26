@@ -29,3 +29,48 @@ export function ingredientRateSourceLabel(
   }
   return 'Global master rate';
 }
+
+
+export function resolveIngredientRate(input: {
+  tenantRate?: number | null;
+  cityRate?: number | null;
+  globalRate?: number | null;
+}) {
+  const tenantRate =
+    Math.max(
+      0,
+      Number(input.tenantRate) || 0,
+    );
+  const cityRate =
+    Math.max(
+      0,
+      Number(input.cityRate) || 0,
+    );
+  const globalRate =
+    Math.max(
+      0,
+      Number(input.globalRate) || 0,
+    );
+
+  if (tenantRate > 0) {
+    return {
+      rate: tenantRate,
+      source:
+        'TENANT' as const,
+    };
+  }
+
+  if (cityRate > 0) {
+    return {
+      rate: cityRate,
+      source:
+        'CITY' as const,
+    };
+  }
+
+  return {
+    rate: globalRate,
+    source:
+      'GLOBAL' as const,
+  };
+}
