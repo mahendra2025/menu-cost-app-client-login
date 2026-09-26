@@ -1,5 +1,9 @@
-import { timingSafeEqual } from 'crypto';
-import { NextResponse } from 'next/server';
+import {
+  timingSafeEqual,
+} from 'crypto';
+import {
+  NextResponse,
+} from 'next/server';
 
 import {
   createAdminSessionToken,
@@ -9,10 +13,15 @@ import {
   createClientSessionToken,
   getClientCookieName,
 } from '../../../lib/clientAuth';
-import { hashPassword } from '../../../lib/passwords';
-import { prisma } from '../../../lib/prisma';
+import {
+  hashPassword,
+  verifyPassword,
+} from '../../../lib/passwords';
+import {
+  prisma,
+} from '../../../lib/prisma';
 
-function credentialsMatch(
+function safeMatch(
   received: string,
   expected: string,
 ) {
@@ -42,7 +51,7 @@ function configuredOwner() {
       .trim()
       .toLowerCase();
 
-  const password =
+  const bootstrapPassword =
     (
       process.env.SINGLE_USER_PASSWORD ||
       process.env.ADMIN_PASSWORD ||
@@ -52,64 +61,103 @@ function configuredOwner() {
   const businessName =
     (
       process.env.SINGLE_USER_BUSINESS_NAME ||
-      'My Catering Business'
-    ).trim() ||
-    'My Catering Business';
+      ''
+    ).trim();
 
   return {
     userId,
-    password,
+    bootstrapPassword,
     businessName,
   };
 }
 
-async function ensureSingleWorkspace(input: {
+async function currentWorkspace(
+  preferredUserId: string,
+) {
+  if (preferredUserId) {
+    const matching =
+      await prisma.tenant.findUnique({
+        where: {
+          email:
+            preferredUserId,
+        },
+      });
+
+    if (matching) {
+      return matching;
+    }
+  }
+
+  /*
+   * Migration-safe fallback:
+   * when an older SaaS database already has rows, the oldest
+   * workspace becomes the one retained single-business workspace.
+   */
+  return prisma.tenant.findFirst({
+    orderBy: {
+      createdAt: 'asc',
+    },
+  });
+}
+
+async function prepareWorkspace(input: {
+  workspace:
+    Awaited<
+      ReturnType<
+        typeof currentWorkspace
+      >
+    >;
   userId: string;
   password: string;
   businessName: string;
+  usedBootstrapPassword: boolean;
 }) {
-  const matching =
-    await prisma.tenant.findUnique({
-      where: {
-        email: input.userId,
-      },
-    });
+  const {
+    workspace,
+    userId,
+    password,
+    businessName,
+    usedBootstrapPassword,
+  } = input;
 
-  const existing =
-    matching ||
-    (await prisma.tenant.findFirst({
-      orderBy: {
-        createdAt: 'asc',
-      },
-    }));
-
-  const passwordHash =
-    hashPassword(input.password);
-
-  if (existing) {
+  if (workspace) {
     return prisma.tenant.update({
       where: {
-        id: existing.id,
+        id:
+          workspace.id,
       },
       data: {
         name:
-          input.businessName,
+          businessName ||
+          workspace.name ||
+          'My Catering Business',
         email:
-          input.userId,
+          userId,
         password:
-          passwordHash,
+          usedBootstrapPassword
+            ? hashPassword(
+                password,
+              )
+            : workspace.password,
 
-        // Legacy SaaS columns are retained only for
-        // database compatibility. The product no longer
-        // exposes plans, subscriptions or account states.
+        /*
+         * These columns are legacy database compatibility only.
+         * No plan, subscription, expiry or client-account UI uses them.
+         */
         plan: 'SINGLE',
         status: 'ACTIVE',
-        onboardingCompleted: true,
-        razorpayCustomerId: null,
-        razorpaySubscriptionId: null,
-        subscriptionStatus: null,
-        currentPeriodEnd: null,
-        cancelAtPeriodEnd: false,
+        onboardingCompleted:
+          true,
+        razorpayCustomerId:
+          null,
+        razorpaySubscriptionId:
+          null,
+        subscriptionStatus:
+          null,
+        currentPeriodEnd:
+          null,
+        cancelAtPeriodEnd:
+          false,
       },
     });
   }
@@ -117,14 +165,18 @@ async function ensureSingleWorkspace(input: {
   return prisma.tenant.create({
     data: {
       name:
-        input.businessName,
+        businessName ||
+        'My Catering Business',
       email:
-        input.userId,
+        userId,
       password:
-        passwordHash,
+        hashPassword(
+          password,
+        ),
       plan: 'SINGLE',
       status: 'ACTIVE',
-      onboardingCompleted: true,
+      onboardingCompleted:
+        true,
     },
   });
 }
@@ -154,13 +206,6 @@ function ownerLoginResponse(
       },
     });
 
-  /*
-   * One owner login receives both cookies:
-   * - client cookie for event/costing APIs
-   * - admin cookie for master-data APIs
-   *
-   * There is no separate SaaS admin/client-account login.
-   */
   response.cookies.set({
     name:
       getClientCookieName(),
@@ -176,6 +221,10 @@ function ownerLoginResponse(
     path: '/',
   });
 
+  /*
+   * The same owner session can use admin master-data routes.
+   * This replaces the old separate SaaS admin/client account split.
+   */
   response.cookies.set({
     name:
       getAdminCookieName(),
@@ -226,27 +275,34 @@ export async function POST(
     const owner =
       configuredOwner();
 
-    if (
-      !owner.userId ||
-      !owner.password
-    ) {
+    const existingWorkspace =
+      await currentWorkspace(
+        owner.userId,
+      );
+
+    const allowedUserId =
+      (
+        owner.userId ||
+        existingWorkspace?.email ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+
+    if (!allowedUserId) {
       return NextResponse.json(
         {
           error:
-            'Single-business login is not configured. Set SINGLE_USER_ID and SINGLE_USER_PASSWORD.',
+            'Single-business owner login is not configured.',
         },
         { status: 500 },
       );
     }
 
     if (
-      !credentialsMatch(
+      !safeMatch(
         userId,
-        owner.userId,
-      ) ||
-      !credentialsMatch(
-        password,
-        owner.password,
+        allowedUserId,
       )
     ) {
       return NextResponse.json(
@@ -258,10 +314,63 @@ export async function POST(
       );
     }
 
-    const workspace =
-      await ensureSingleWorkspace(
-        owner,
+    const databasePasswordValid =
+      Boolean(
+        existingWorkspace &&
+        verifyPassword(
+          password,
+          existingWorkspace.password,
+        ),
       );
+
+    const bootstrapPasswordValid =
+      Boolean(
+        owner.bootstrapPassword &&
+        safeMatch(
+          password,
+          owner.bootstrapPassword,
+        ),
+      );
+
+    if (
+      !databasePasswordValid &&
+      !bootstrapPasswordValid
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Wrong user ID or password.',
+        },
+        { status: 401 },
+      );
+    }
+
+    if (
+      !existingWorkspace &&
+      !bootstrapPasswordValid
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Single-business owner password is not configured.',
+        },
+        { status: 500 },
+      );
+    }
+
+    const workspace =
+      await prepareWorkspace({
+        workspace:
+          existingWorkspace,
+        userId:
+          allowedUserId,
+        password,
+        businessName:
+          owner.businessName,
+        usedBootstrapPassword:
+          !databasePasswordValid &&
+          bootstrapPasswordValid,
+      });
 
     return ownerLoginResponse(
       workspace,
