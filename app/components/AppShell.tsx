@@ -274,6 +274,31 @@ export default function AppShell({
     cachedShellSession = current;
     setSession(current);
     setReady(true);
+
+    /*
+     * Existing browsers from the former SaaS model may not yet
+     * have the owner/master-data cookie. Upgrade only the retained
+     * workspace; reject stale secondary-account sessions.
+     */
+    void fetch(
+      '/api/client/session',
+      {
+        method: 'POST',
+      },
+    )
+      .then((response) => {
+        if (
+          response.status === 401 ||
+          response.status === 403
+        ) {
+          cachedShellSession = null;
+          logout();
+          router.replace('/login');
+        }
+      })
+      .catch(() => {
+        // Keep the local workspace available during a temporary network issue.
+      });
   }, [router]);
 
   useEffect(() => {
