@@ -172,11 +172,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className={styles.newAccount}>
-            <span>New to Menu Costing?</span>
-            <Link href="/signup">Create a free account</Link>
-          </div>
-
           <p className={styles.privacy}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 2.8 8.4 7 10 4.2-1.6 7-5.6 7-10V6l-7-3Z" /><path d="m9 12 2 2 4-4" /></svg>
             Your recipes and ingredient rates stay private to your business.
