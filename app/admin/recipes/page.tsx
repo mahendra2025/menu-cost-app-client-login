@@ -3014,31 +3014,52 @@ export default function RecipesPage() {
             )
           : 0;
 
-      setSyncStatus(
-        'synced',
-      );
+      const syncWarning =
+        text(
+          data.syncWarning,
+        );
 
-      setSyncMessage(
-        `✓ ${syncedDishes} recipe${
-          syncedDishes === 1
-            ? ''
-            : 's'
-        } synced to Dish Master`,
-      );
+      if (syncWarning) {
+        setSyncStatus(
+          'error',
+        );
 
-      setMessage(
-        syncedDishes > 0
-          ? `Saved · Synced to Dish Master: ${syncedDishes} recipe${
-              syncedDishes === 1
-                ? ''
-                : 's'
-            }${
-              activeDish
-                ? ` · ${recipeName(activeDish)} ${money(activeRate)}/plate`
-                : ''
-            }.`
-          : 'Saved successfully.',
-      );
+        setSyncMessage(
+          '✓ Recipes saved · Dish Master sync needs retry',
+        );
+
+        setMessage(
+          activeDish
+            ? `Saved successfully · ${recipeName(activeDish)} ${money(activeRate)}/plate. Dish Master sync did not finish.`
+            : 'Saved successfully. Dish Master sync did not finish.',
+        );
+      } else {
+        setSyncStatus(
+          'synced',
+        );
+
+        setSyncMessage(
+          `✓ ${syncedDishes} recipe${
+            syncedDishes === 1
+              ? ''
+              : 's'
+          } synced to Dish Master`,
+        );
+
+        setMessage(
+          syncedDishes > 0
+            ? `Saved · Synced to Dish Master: ${syncedDishes} recipe${
+                syncedDishes === 1
+                  ? ''
+                  : 's'
+              }${
+                activeDish
+                  ? ` · ${recipeName(activeDish)} ${money(activeRate)}/plate`
+                  : ''
+              }.`
+            : 'Saved successfully.',
+        );
+      }
 
       return true;
     } catch (
