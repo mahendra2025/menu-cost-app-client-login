@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "prisma db push && next dev",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "prisma migrate deploy && next start",
     "db:push": "prisma db push",
     "lint": "next lint",
     "test:menu-detection": "rm -rf .tmp-menu-tests && tsc -p tsconfig.menu-tests.json && node --test .tmp-menu-tests/tests/*.test.js; status=$?; rm -rf .tmp-menu-tests; exit $status"
