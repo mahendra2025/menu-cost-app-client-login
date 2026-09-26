@@ -11,11 +11,10 @@ import {
 } from '../../../../lib/clientAuth';
 import { prisma } from '../../../../lib/prisma';
 
-function configuredOwnerId() {
+function configuredSingleOwnerId() {
   return (
     process.env.SINGLE_USER_ID ||
     process.env.SINGLE_USER_EMAIL ||
-    process.env.ADMIN_USER_ID ||
     ''
   )
     .trim()
@@ -24,8 +23,12 @@ function configuredOwnerId() {
 
 async function retainedWorkspace() {
   const ownerId =
-    configuredOwnerId();
+    configuredSingleOwnerId();
 
+  /*
+   * Only an explicitly selected legacy workspace may be
+   * auto-upgraded before the first new owner login.
+   */
   if (ownerId) {
     const matching =
       await prisma.tenant.findUnique({
@@ -42,9 +45,17 @@ async function retainedWorkspace() {
     }
   }
 
+  /*
+   * After the first single-business login, the retained
+   * workspace is stamped SINGLE and can safely renew its
+   * master-data cookie on later browser sessions.
+   */
   return prisma.tenant.findFirst({
+    where: {
+      plan: 'SINGLE',
+    },
     orderBy: {
-      createdAt: 'asc',
+      updatedAt: 'desc',
     },
     select: {
       id: true,
