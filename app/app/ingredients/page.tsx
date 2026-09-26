@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-
 import {
   useEffect,
   useMemo,
@@ -20,16 +18,21 @@ import {
   type IngredientRate,
 } from '../../../lib/ingredientCatalog';
 
-type ClientIngredientRate =
+type UnifiedIngredientRate =
   IngredientRate & {
-    defaultRate: number;
-    globalRate?: number;
-    cityRate?: number | null;
-    city?: string;
-    rateSource?: 'TENANT' | 'CITY' | 'GLOBAL';
+    globalRate: number;
+    cityRate: number | null;
+    city: string;
+    cityRateSource?: string;
+    cityRateEffectiveDate?: string | null;
+    rateSource?:
+      | 'TENANT'
+      | 'CITY'
+      | 'GLOBAL';
     isCustomRate: boolean;
     isCityRate?: boolean;
     customUpdatedAt?: string | null;
+    businessRate: number | null;
   };
 
 type RecipeUsage = {
@@ -43,20 +46,104 @@ type UsageMap =
     RecipeUsage[]
   >;
 
-export default function ClientIngredientIndexPage() {
-  const [rates, setRates] =
+type KnownCity = {
+  city: string;
+  cityKey: string;
+};
+
+function money(
+  value:
+    | number
+    | null
+    | undefined,
+) {
+  if (!(Number(value) > 0)) {
+    return '—';
+  }
+
+  return `₹${Number(
+    value,
+  ).toLocaleString(
+    'en-IN',
+    {
+      maximumFractionDigits: 2,
+    },
+  )}`;
+}
+
+function dateValue(
+  value:
+    | string
+    | null
+    | undefined,
+) {
+  if (!value) return '';
+
+  const parsed =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      parsed.getTime(),
+    )
+  ) {
+    return '';
+  }
+
+  return parsed
+    .toISOString()
+    .slice(0, 10);
+}
+
+function normalize(
+  value: unknown,
+) {
+  return String(value || '')
+    .normalize('NFKC')
+    .trim()
+    .toLocaleLowerCase(
+      'en-IN',
+    )
+    .replace(/\s+/g, ' ');
+}
+
+export default function IngredientRatesPage() {
+  const [rows, setRows] =
     useState<
-      ClientIngredientRate[]
+      UnifiedIngredientRate[]
     >([]);
 
   const [usage, setUsage] =
     useState<UsageMap>({});
+
+  const [city, setCity] =
+    useState('Silvassa');
+
+  const [
+    loadedCity,
+    setLoadedCity,
+  ] = useState('');
+
+  const [
+    knownCities,
+    setKnownCities,
+  ] = useState<KnownCity[]>(
+    [],
+  );
 
   const [query, setQuery] =
     useState('');
 
   const [category, setCategory] =
     useState('ALL');
+
+  const [filter, setFilter] =
+    useState<
+      | 'ALL'
+      | 'BUSINESS'
+      | 'CITY'
+      | 'GLOBAL'
+    >('ALL');
 
   const [ready, setReady] =
     useState(false);
@@ -67,27 +154,45 @@ export default function ClientIngredientIndexPage() {
   const [message, setMessage] =
     useState('');
 
-  const [changedIds, setChangedIds] =
-    useState<Set<string>>(
-      new Set(),
-    );
+  const [error, setError] =
+    useState('');
 
-  const [resetIds, setResetIds] =
-    useState<Set<string>>(
-      new Set(),
-    );
+  const [
+    initialCityRates,
+    setInitialCityRates,
+  ] = useState<
+    Map<string, number>
+  >(() => new Map());
 
-  useEffect(() => {
-    void loadIngredients();
-  }, []);
+  const [
+    initialBusinessRates,
+    setInitialBusinessRates,
+  ] = useState<
+    Map<string, number>
+  >(() => new Map());
 
-  async function loadIngredients() {
+  const [bulkText, setBulkText] =
+    useState('');
+
+  async function loadIngredients(
+    requestedCity = city,
+  ) {
+    const cleanCity =
+      requestedCity
+        .trim()
+        .replace(/\s+/g, ' ') ||
+      'Silvassa';
+
     setReady(false);
+    setMessage('');
+    setError('');
 
     try {
       const response =
         await fetch(
-          '/api/client/ingredients',
+          `/api/client/ingredients?city=${encodeURIComponent(
+            cleanCity,
+          )}`,
           {
             cache: 'no-store',
           },
@@ -99,17 +204,43 @@ export default function ClientIngredientIndexPage() {
       if (!response.ok) {
         throw new Error(
           data.error ||
-            'Could not load ingredients.',
+            'Could not load ingredient rates.',
         );
       }
 
-      setRates(
-        Array.isArray(
-          data.rates,
-        )
-          ? data.rates
-          : [],
-      );
+      const loadedRows =
+        Array.isArray(data.rates)
+          ? data.rates.map(
+              (
+                rate: Omit<
+                  UnifiedIngredientRate,
+                  'businessRate'
+                >,
+              ) => ({
+                ...rate,
+                cityRate:
+                  Number(
+                    rate.cityRate,
+                  ) > 0
+                    ? Number(
+                        rate.cityRate,
+                      )
+                    : null,
+                cityRateEffectiveDate:
+                  dateValue(
+                    rate.cityRateEffectiveDate,
+                  ),
+                businessRate:
+                  rate.isCustomRate
+                    ? Number(
+                        rate.rate,
+                      )
+                    : null,
+              }),
+            )
+          : [];
+
+      setRows(loadedRows);
 
       setUsage(
         data.usage &&
@@ -119,67 +250,157 @@ export default function ClientIngredientIndexPage() {
           : {},
       );
 
-      setChangedIds(
-        new Set(),
+      setKnownCities(
+        Array.isArray(
+          data.cities,
+        )
+          ? data.cities
+          : [],
       );
 
-      setResetIds(
-        new Set(),
+      const effectiveCity =
+        String(
+          data.city ||
+            cleanCity,
+        );
+
+      setCity(effectiveCity);
+      setLoadedCity(
+        effectiveCity,
       );
-    } catch (error) {
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Could not load ingredients.',
+
+      setInitialCityRates(
+        new Map(
+          loadedRows
+            .filter(
+              (
+                row:
+                  UnifiedIngredientRate,
+              ) =>
+                Number(
+                  row.cityRate,
+                ) > 0,
+            )
+            .map(
+              (
+                row:
+                  UnifiedIngredientRate,
+              ) => [
+                row.id,
+                Number(
+                  row.cityRate,
+                ),
+              ],
+            ),
+        ),
+      );
+
+      setInitialBusinessRates(
+        new Map(
+          loadedRows
+            .filter(
+              (
+                row:
+                  UnifiedIngredientRate,
+              ) =>
+                Number(
+                  row.businessRate,
+                ) > 0,
+            )
+            .map(
+              (
+                row:
+                  UnifiedIngredientRate,
+              ) => [
+                row.id,
+                Number(
+                  row.businessRate,
+                ),
+              ],
+            ),
+        ),
+      );
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : 'Could not load ingredient rates.',
       );
     } finally {
       setReady(true);
     }
   }
 
+  useEffect(() => {
+    void loadIngredients(
+      'Silvassa',
+    );
+    // Initial business city.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const categories =
     useMemo(
       () =>
         Array.from(
           new Set(
-            rates.map(
-              (rate) =>
-                rate.category,
+            rows.map(
+              (row) =>
+                row.category,
             ),
           ),
         ).sort(),
-      [rates],
+      [rows],
     );
 
-  const filteredRates =
+  const filteredRows =
     useMemo(() => {
       const search =
-        query
-          .trim()
-          .toLowerCase();
+        normalize(query);
 
-      return rates
-        .filter((rate) => {
+      return rows
+        .filter((row) => {
+          const activeSource =
+            Number(
+              row.businessRate,
+            ) > 0
+              ? 'BUSINESS'
+              : Number(
+                    row.cityRate,
+                  ) > 0
+                ? 'CITY'
+                : 'GLOBAL';
+
+          const matchesFilter =
+            filter === 'ALL' ||
+            filter ===
+              activeSource;
+
+          const matchesCategory =
+            category === 'ALL' ||
+            row.category ===
+              category;
+
+          const matchesSearch =
+            !search ||
+            normalize(
+              row.name,
+            ).includes(search) ||
+            normalize(
+              row.category,
+            ).includes(
+              search,
+            ) ||
+            normalize(
+              row.unit,
+            ).includes(
+              search,
+            );
+
           return (
-            (
-              category ===
-                'ALL' ||
-              rate.category ===
-                category
-            ) &&
-            (
-              !search ||
-              rate.name
-                .toLowerCase()
-                .includes(
-                  search,
-                ) ||
-              rate.category
-                .toLowerCase()
-                .includes(
-                  search,
-                )
-            )
+            matchesFilter &&
+            matchesCategory &&
+            matchesSearch
           );
         })
         .sort((a, b) =>
@@ -193,115 +414,100 @@ export default function ClientIngredientIndexPage() {
           ),
         );
     }, [
-      rates,
+      rows,
       query,
       category,
+      filter,
     ]);
 
-  function updateRate(
+  const businessRateCount =
+    rows.filter(
+      (row) =>
+        Number(
+          row.businessRate,
+        ) > 0,
+    ).length;
+
+  const cityRateCount =
+    rows.filter(
+      (row) =>
+        !(
+          Number(
+            row.businessRate,
+          ) > 0
+        ) &&
+        Number(
+          row.cityRate,
+        ) > 0,
+    ).length;
+
+  const globalRateCount =
+    rows.length -
+    businessRateCount -
+    cityRateCount;
+
+  const changedCityCount =
+    rows.filter((row) => {
+      const before =
+        initialCityRates.get(
+          row.id,
+        ) || 0;
+
+      const after =
+        Number(
+          row.cityRate,
+        ) || 0;
+
+      return (
+        Math.abs(
+          before - after,
+        ) > 0.000001
+      );
+    }).length;
+
+  const changedBusinessCount =
+    rows.filter((row) => {
+      const before =
+        initialBusinessRates.get(
+          row.id,
+        ) || 0;
+
+      const after =
+        Number(
+          row.businessRate,
+        ) || 0;
+
+      return (
+        Math.abs(
+          before - after,
+        ) > 0.000001
+      );
+    }).length;
+
+  const changedCount =
+    changedCityCount +
+    changedBusinessCount;
+
+  function updateRow(
     id: string,
-    value: number,
+    patch:
+      Partial<
+        UnifiedIngredientRate
+      >,
   ) {
-    setRates(
-      (current) =>
-        current.map(
-          (rate) =>
-            rate.id === id
-              ? {
-                  ...rate,
-                  rate: value,
-                  rateSource:
-                    'TENANT',
-                  isCustomRate:
-                    true,
-                  isCityRate:
-                    false,
-                }
-              : rate,
-        ),
+    setRows((current) =>
+      current.map((row) =>
+        row.id === id
+          ? {
+              ...row,
+              ...patch,
+            }
+          : row,
+      ),
     );
 
-    setChangedIds(
-      (current) => {
-        const next =
-          new Set(current);
-
-        next.add(id);
-
-        return next;
-      },
-    );
-
-    setResetIds(
-      (current) => {
-        const next =
-          new Set(current);
-
-        next.delete(id);
-
-        return next;
-      },
-    );
-  }
-
-  function useFallbackRate(
-    row: ClientIngredientRate,
-  ) {
-    setRates(
-      (current) =>
-        current.map(
-          (rate) =>
-            rate.id === row.id
-              ? {
-                  ...rate,
-                  rate:
-                    row.defaultRate,
-                  rateSource:
-                    row.cityRate &&
-                    Number(
-                      row.cityRate,
-                    ) > 0
-                      ? 'CITY'
-                      : 'GLOBAL',
-                  isCustomRate:
-                    false,
-                  isCityRate:
-                    Boolean(
-                      row.cityRate &&
-                      Number(
-                        row.cityRate,
-                      ) > 0,
-                    ),
-                }
-              : rate,
-        ),
-    );
-
-    setChangedIds(
-      (current) => {
-        const next =
-          new Set(current);
-
-        next.delete(
-          row.id,
-        );
-
-        return next;
-      },
-    );
-
-    setResetIds(
-      (current) => {
-        const next =
-          new Set(current);
-
-        next.add(
-          row.id,
-        );
-
-        return next;
-      },
-    );
+    setMessage('');
+    setError('');
   }
 
   async function refreshCurrentMenuCosts() {
@@ -392,71 +598,248 @@ export default function ClientIngredientIndexPage() {
     );
   }
 
-  async function saveMyRates() {
-    if (
-      !changedIds.size &&
-      !resetIds.size
-    ) return;
+  async function saveAllRates() {
+    if (!loadedCity) {
+      setError(
+        'Load a city before saving.',
+      );
+      return;
+    }
 
-    const changedRates =
-      rates
+    const cityRates =
+      rows
         .filter(
-          (rate) =>
-            changedIds.has(
-              rate.id,
-            ),
+          (row) =>
+            Number(
+              row.cityRate,
+            ) > 0,
         )
-        .map((rate) => ({
+        .map((row) => ({
           ingredientId:
-            rate.id,
-
+            row.id,
           rate:
             Number(
-              rate.rate,
+              row.cityRate,
+            ),
+          source:
+            row.cityRateSource ||
+            '',
+          effectiveDate:
+            row.cityRateEffectiveDate ||
+            '',
+        }));
+
+    const resetCityIds =
+      rows
+        .filter(
+          (row) =>
+            initialCityRates.has(
+              row.id,
+            ) &&
+            !(
+              Number(
+                row.cityRate,
+              ) > 0
+            ),
+        )
+        .map(
+          (row) => row.id,
+        );
+
+    const businessRates =
+      rows
+        .filter(
+          (row) =>
+            Number(
+              row.businessRate,
+            ) > 0,
+        )
+        .map((row) => ({
+          ingredientId:
+            row.id,
+          rate:
+            Number(
+              row.businessRate,
             ),
         }));
 
-    const invalid =
-      changedRates.find(
-        (item) =>
-          !Number.isFinite(
-            item.rate,
-          ) ||
-          item.rate <= 0,
+    const resetBusinessIds =
+      rows
+        .filter(
+          (row) =>
+            initialBusinessRates.has(
+              row.id,
+            ) &&
+            !(
+              Number(
+                row.businessRate,
+              ) > 0
+            ),
+        )
+        .map(
+          (row) => row.id,
+        );
+
+    setSaving(true);
+    setMessage('');
+    setError('');
+
+    try {
+      const [
+        cityResponse,
+        businessResponse,
+      ] =
+        await Promise.all([
+          fetch(
+            '/api/admin/ingredient-city-rates',
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body:
+                JSON.stringify({
+                  city:
+                    loadedCity,
+                  rates:
+                    cityRates,
+                  resetIngredientIds:
+                    resetCityIds,
+                }),
+            },
+          ),
+
+          fetch(
+            '/api/client/ingredients',
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body:
+                JSON.stringify({
+                  rates:
+                    businessRates,
+                  resetIngredientIds:
+                    resetBusinessIds,
+                }),
+            },
+          ),
+        ]);
+
+      const [
+        cityData,
+        businessData,
+      ] =
+        await Promise.all([
+          cityResponse.json(),
+          businessResponse.json(),
+        ]);
+
+      if (!cityResponse.ok) {
+        throw new Error(
+          cityData.error ||
+            'Could not save city rates.',
+        );
+      }
+
+      if (
+        !businessResponse.ok
+      ) {
+        throw new Error(
+          businessData.error ||
+            'Could not save business rates.',
+        );
+      }
+
+      await refreshCurrentMenuCosts();
+
+      await loadIngredients(
+        loadedCity,
       );
 
-    if (invalid) {
       setMessage(
-        'Every business purchase rate must be greater than ₹0.',
+        `Saved ${loadedCity} city rates and business purchase rates. Active priority: Business → City → Global.`,
+      );
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Could not save ingredient rates.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function copyFromCity() {
+    if (!loadedCity) return;
+
+    const sourceCity =
+      window.prompt(
+        `Copy city rates into ${loadedCity} from which city?`,
+        knownCities.find(
+          (item) =>
+            normalize(
+              item.city,
+            ) !==
+            normalize(
+              loadedCity,
+            ),
+        )?.city || '',
       );
 
+    if (
+      sourceCity === null
+    ) {
+      return;
+    }
+
+    const cleanSource =
+      sourceCity
+        .trim()
+        .replace(
+          /\s+/g,
+          ' ',
+        );
+
+    if (
+      !cleanSource ||
+      normalize(
+        cleanSource,
+      ) ===
+        normalize(
+          loadedCity,
+        )
+    ) {
+      setError(
+        'Choose a different source city.',
+      );
       return;
     }
 
     setSaving(true);
     setMessage('');
+    setError('');
 
     try {
       const response =
         await fetch(
-          '/api/client/ingredients',
+          '/api/admin/ingredient-city-rates',
           {
             method: 'PUT',
-
             headers: {
               'Content-Type':
                 'application/json',
             },
-
             body:
               JSON.stringify({
-                rates:
-                  changedRates,
-
-                resetIngredientIds:
-                  Array.from(
-                    resetIds,
-                  ),
+                city:
+                  loadedCity,
+                copyFromCity:
+                  cleanSource,
               }),
           },
         );
@@ -467,177 +850,358 @@ export default function ClientIngredientIndexPage() {
       if (!response.ok) {
         throw new Error(
           data.error ||
-            'Could not save your rates.',
+            'Could not copy city rates.',
         );
       }
 
-      await refreshCurrentMenuCosts();
-
-      await loadIngredients();
-
-      setMessage(
-        'Ingredient purchase rates saved. Current and future event costing now uses these business rates.',
+      await loadIngredients(
+        loadedCity,
       );
-    } catch (error) {
+
       setMessage(
-        error instanceof Error
-          ? error.message
-          : 'Could not save your rates.',
+        `Copied available rates from ${cleanSource} to ${loadedCity}.`,
+      );
+    } catch (copyError) {
+      setError(
+        copyError instanceof Error
+          ? copyError.message
+          : 'Could not copy city rates.',
       );
     } finally {
       setSaving(false);
     }
   }
 
-  const customCount =
-    rates.filter(
-      (rate) =>
-        rate.isCustomRate,
-    ).length;
+  function applyBulkCityRates() {
+    const lines =
+      bulkText
+        .split(/\r?\n/)
+        .map((line) =>
+          line.trim(),
+        )
+        .filter(Boolean);
 
-  const unsavedCount =
-    changedIds.size +
-    resetIds.size;
+    if (!lines.length) {
+      setError(
+        'Paste ingredient rates first.',
+      );
+      return;
+    }
+
+    const byName =
+      new Map<
+        string,
+        UnifiedIngredientRate[]
+      >();
+
+    rows.forEach((row) => {
+      const key =
+        normalize(
+          row.name,
+        );
+
+      byName.set(
+        key,
+        [
+          ...(byName.get(
+            key,
+          ) || []),
+          row,
+        ],
+      );
+    });
+
+    const patches =
+      new Map<
+        string,
+        Partial<
+          UnifiedIngredientRate
+        >
+      >();
+
+    let updated = 0;
+    let skipped = 0;
+
+    lines.forEach((line) => {
+      const parts =
+        line
+          .split(/\t|\|/)
+          .map((part) =>
+            part.trim(),
+          );
+
+      const name =
+        parts[0];
+
+      const rate =
+        Number(
+          String(
+            parts[1] || '',
+          )
+            .replace(
+              /₹/g,
+              '',
+            )
+            .replace(
+              /,/g,
+              '',
+            ),
+        );
+
+      if (
+        !name ||
+        !Number.isFinite(
+          rate,
+        ) ||
+        !(rate > 0)
+      ) {
+        skipped += 1;
+        return;
+      }
+
+      const candidates =
+        byName.get(
+          normalize(name),
+        ) || [];
+
+      if (
+        !candidates.length
+      ) {
+        skipped += 1;
+        return;
+      }
+
+      const unitHint =
+        normalize(
+          parts[2],
+        );
+
+      const target =
+        unitHint
+          ? candidates.find(
+              (row) =>
+                normalize(
+                  row.unit,
+                ) ===
+                unitHint,
+            ) ||
+            candidates[0]
+          : candidates[0];
+
+      patches.set(
+        target.id,
+        {
+          cityRate: rate,
+          cityRateSource:
+            parts[3] ||
+            target.cityRateSource ||
+            '',
+          cityRateEffectiveDate:
+            parts[4] ||
+            target.cityRateEffectiveDate ||
+            '',
+        },
+      );
+
+      updated += 1;
+    });
+
+    setRows((current) =>
+      current.map(
+        (row) => ({
+          ...row,
+          ...(patches.get(
+            row.id,
+          ) || {}),
+        }),
+      ),
+    );
+
+    setMessage(
+      `Applied ${updated} city rate${updated === 1 ? '' : 's'}${skipped ? ` · ${skipped} skipped` : ''}. Click Save All Rates to publish.`,
+    );
+    setError('');
+  }
 
   return (
     <AppShell
-      title="Ingredient Index"
-      subtitle="Maintain this business's ingredient purchase rates"
+      title="Ingredient Rates"
+      subtitle="Global, city and business purchase rates in one place"
     >
       <section className="content-grid">
-
         <div className="stat-grid">
           <div className="stat-card">
             <small>
               Ingredients
             </small>
             <strong>
-              {rates.length}
+              {rows.length}
             </strong>
             <span>
-              Admin master
+              Master items
             </span>
           </div>
 
           <div className="stat-card">
             <small>
-              Business rates
+              Business Rate
             </small>
             <strong>
-              {customCount}
+              {businessRateCount}
             </strong>
             <span>
-              This business
+              Highest priority
             </span>
           </div>
 
           <div className="stat-card">
             <small>
-              City / Global defaults
+              {loadedCity ||
+                'City'}{' '}
+              Rate
             </small>
             <strong>
-              {
-                rates.length -
-                customCount
-              }
+              {cityRateCount}
             </strong>
             <span>
-              Using master rate
+              Used when no business rate
             </span>
           </div>
 
           <div className="stat-card">
             <small>
-              Unsaved
+              Global Rate
             </small>
             <strong>
-              {unsavedCount}
+              {globalRateCount}
             </strong>
             <span>
-              Rate changes
+              Final fallback
             </span>
           </div>
         </div>
 
         <div className="glass-card">
-          <div className="dish-list-heading">
+          <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">
-                Personal costing
+                One Ingredient Rate Page
               </span>
-
               <h2>
-                My Ingredient Rates
+                Business + City + Global Rates
               </h2>
-
               <p className="muted">
-                You can edit only the rate.
-                Ingredient name, category and
-                purchase unit are controlled by
-                the Admin Ingredient Master.
+                Active costing priority is Business Purchase Rate → Event City Rate → Global Master Rate.
               </p>
             </div>
 
             <div className="action-row">
               <button
+                className="ghost-button"
+                type="button"
+                disabled={
+                  saving ||
+                  !loadedCity
+                }
+                onClick={() =>
+                  void copyFromCity()
+                }
+              >
+                Copy From City
+              </button>
+
+              <button
                 className="primary-button"
                 type="button"
                 disabled={
                   saving ||
-                  unsavedCount === 0
+                  !ready
                 }
                 onClick={() =>
-                  void saveMyRates()
+                  void saveAllRates()
                 }
               >
                 {saving
                   ? 'Saving…'
-                  : `Save Business Rates${
-                      unsavedCount
-                        ? ` (${unsavedCount})`
-                        : ''
-                    }`}
+                  : `Save All Rates${changedCount ? ` (${changedCount})` : ''}`}
               </button>
-
-              <Link
-                href="/app/profile"
-                className="ghost-button"
-              >
-                Profile
-              </Link>
             </div>
           </div>
 
-          {message ? (
-            <div className="admin-message">
-              {message}
-            </div>
-          ) : null}
-        </div>
+          <div className="ingredient-rate-controls">
+            <label className="field">
+              <span>
+                City
+              </span>
 
-        <div className="glass-card">
-          <div className="ingredient-filter-grid">
-            <div className="field">
-              <label>
+              <input
+                className="input"
+                value={city}
+                list="ingredient-city-options"
+                placeholder="Silvassa"
+                onChange={(event) =>
+                  setCity(
+                    event.target.value,
+                  )
+                }
+                onKeyDown={(event) => {
+                  if (
+                    event.key ===
+                    'Enter'
+                  ) {
+                    void loadIngredients();
+                  }
+                }}
+              />
+
+              <datalist id="ingredient-city-options">
+                {knownCities.map(
+                  (item) => (
+                    <option
+                      key={
+                        item.cityKey
+                      }
+                      value={
+                        item.city
+                      }
+                    />
+                  ),
+                )}
+              </datalist>
+            </label>
+
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={!ready}
+              onClick={() =>
+                void loadIngredients()
+              }
+            >
+              Load City
+            </button>
+
+            <label className="field">
+              <span>
                 Search
-              </label>
+              </span>
 
               <input
                 className="input"
                 value={query}
-                placeholder="Search ingredient..."
+                placeholder="Paneer, Tomato, Oil..."
                 onChange={(event) =>
                   setQuery(
                     event.target.value,
                   )
                 }
               />
-            </div>
+            </label>
 
-            <div className="field">
-              <label>
+            <label className="field">
+              <span>
                 Category
-              </label>
+              </span>
 
               <select
                 className="select"
@@ -663,25 +1227,125 @@ export default function ClientIngredientIndexPage() {
                   ),
                 )}
               </select>
-            </div>
+            </label>
           </div>
+
+          <div className="ingredient-rate-filters">
+            {(
+              [
+                ['ALL', 'All'],
+                [
+                  'BUSINESS',
+                  'Business Active',
+                ],
+                [
+                  'CITY',
+                  'City Active',
+                ],
+                [
+                  'GLOBAL',
+                  'Global Active',
+                ],
+              ] as const
+            ).map(
+              ([value, label]) => (
+                <button
+                  key={value}
+                  className={
+                    filter ===
+                    value
+                      ? 'primary-button'
+                      : 'ghost-button'
+                  }
+                  type="button"
+                  onClick={() =>
+                    setFilter(
+                      value,
+                    )
+                  }
+                >
+                  {label}
+                </button>
+              ),
+            )}
+          </div>
+
+          {message ? (
+            <div className="admin-message">
+              {message}
+            </div>
+          ) : null}
+
+          {error ? (
+            <div className="admin-message error">
+              {error}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="glass-card">
+          <div className="final-costing-section-heading">
+            <div>
+              <span className="section-kicker">
+                Fast City Update
+              </span>
+              <h2>
+                Paste rates from Excel / WhatsApp
+              </h2>
+              <p className="muted">
+                Format: Ingredient | Rate | Unit | Vendor | Effective Date
+              </p>
+            </div>
+
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={
+                applyBulkCityRates
+              }
+            >
+              Apply to {loadedCity || 'City'}
+            </button>
+          </div>
+
+          <textarea
+            className="input"
+            style={{
+              minHeight: 92,
+              marginTop: 12,
+              resize: 'vertical',
+            }}
+            value={bulkText}
+            onChange={(event) =>
+              setBulkText(
+                event.target.value,
+              )
+            }
+            placeholder={
+              'Tomato | 38 | kg | Local Market | 2026-09-26\nPaneer | 330 | kg | Dairy Vendor | 2026-09-26'
+            }
+          />
         </div>
 
         <div className="glass-card ingredient-list-card">
           <div className="dish-list-heading">
             <div>
               <span className="section-kicker">
-                Tenant rates
+                Ingredient Rate Control
               </span>
-
               <h2>
-                Ingredient Index
+                {loadedCity ||
+                  'City'}{' '}
+                Ingredient Rates
               </h2>
+              <p className="muted">
+                Leave Business Rate blank to use City Rate. Leave City Rate blank to use Global Rate.
+              </p>
             </div>
 
             <span className="badge">
               {
-                filteredRates.length
+                filteredRows.length
               }{' '}
               ingredients
             </span>
@@ -693,111 +1357,255 @@ export default function ClientIngredientIndexPage() {
             </div>
           ) : (
             <div className="table-wrap">
-              <table>
+              <table className="disposable-table unified-rate-table">
                 <thead>
                   <tr>
                     <th>
                       Ingredient
                     </th>
-
-                    <th>
-                      Category
-                    </th>
-
-                    <th>
-                      City / Global Rate
-                    </th>
-
-                    <th>
-                      My Rate
-                    </th>
-
                     <th>
                       Unit
                     </th>
-
+                    <th>
+                      Global
+                    </th>
+                    <th>
+                      {loadedCity ||
+                        'City'}
+                    </th>
+                    <th>
+                      Business
+                    </th>
+                    <th>
+                      Active Rate
+                    </th>
+                    <th>
+                      Source
+                    </th>
+                    <th>
+                      Vendor / Date
+                    </th>
                     <th>
                       Recipes
-                    </th>
-
-                    <th>
-                      Action
                     </th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {filteredRates.map(
+                  {filteredRows.map(
                     (row) => {
+                      const hasBusiness =
+                        Number(
+                          row.businessRate,
+                        ) > 0;
+
+                      const hasCity =
+                        Number(
+                          row.cityRate,
+                        ) > 0;
+
+                      const activeRate =
+                        hasBusiness
+                          ? Number(
+                              row.businessRate,
+                            )
+                          : hasCity
+                            ? Number(
+                                row.cityRate,
+                              )
+                            : Number(
+                                row.globalRate,
+                              );
+
+                      const activeSource =
+                        hasBusiness
+                          ? 'Business'
+                          : hasCity
+                            ? loadedCity ||
+                              'City'
+                            : 'Global';
+
                       const recipes =
                         usage[
                           row.id
                         ] || [];
 
                       return (
-                        <tr key={row.id}>
+                        <tr
+                          key={
+                            row.id
+                          }
+                        >
                           <td>
                             <strong>
-                              {row.name}
+                              {
+                                row.name
+                              }
                             </strong>
-
-                            <small>
-                              {row.isCustomRate
-                                ? 'Business purchase rate'
-                                : row.isCityRate
-                                  ? `${row.city || 'City'} market rate`
-                                  : 'Global master rate'}
+                            <small className="muted">
+                              {
+                                row.category
+                              }
                             </small>
                           </td>
 
                           <td>
-                            {
-                              row.category
-                            }
+                            {row.unit}
                           </td>
 
                           <td>
-                            ₹
-                            {Number(
-                              row.defaultRate,
-                            ).toLocaleString(
-                              'en-IN',
-                            )}
+                            <strong>
+                              {money(
+                                row.globalRate,
+                              )}
+                            </strong>
                           </td>
 
                           <td>
-                            <label className="dish-rate-input">
-                              <span>
-                                ₹
-                              </span>
+                            <input
+                              className="input rate-cell-input"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={
+                                row.cityRate ??
+                                ''
+                              }
+                              placeholder={String(
+                                row.globalRate,
+                              )}
+                              onChange={(
+                                event,
+                              ) =>
+                                updateRow(
+                                  row.id,
+                                  {
+                                    cityRate:
+                                      event
+                                        .target
+                                        .value ===
+                                      ''
+                                        ? null
+                                        : Math.max(
+                                            0,
+                                            Number(
+                                              event
+                                                .target
+                                                .value,
+                                            ) ||
+                                              0,
+                                          ),
+                                  },
+                                )
+                              }
+                            />
+                          </td>
 
-                              <input
-                                type="number"
-                                min="0.01"
-                                step="0.01"
-                                value={
-                                  row.rate
-                                }
-                                onChange={(
-                                  event,
-                                ) =>
-                                  updateRate(
-                                    row.id,
-                                    Number(
+                          <td>
+                            <input
+                              className="input rate-cell-input"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={
+                                row.businessRate ??
+                                ''
+                              }
+                              placeholder="Optional"
+                              onChange={(
+                                event,
+                              ) =>
+                                updateRow(
+                                  row.id,
+                                  {
+                                    businessRate:
+                                      event
+                                        .target
+                                        .value ===
+                                      ''
+                                        ? null
+                                        : Math.max(
+                                            0,
+                                            Number(
+                                              event
+                                                .target
+                                                .value,
+                                            ) ||
+                                              0,
+                                          ),
+                                  },
+                                )
+                              }
+                            />
+                          </td>
+
+                          <td>
+                            <strong>
+                              {money(
+                                activeRate,
+                              )}
+                            </strong>
+                            <small className="muted">
+                              {activeSource}
+                            </small>
+                          </td>
+
+                          <td>
+                            <span className={
+                              hasBusiness
+                                ? 'badge'
+                                : hasCity
+                                  ? 'badge'
+                                  : 'muted'
+                            }>
+                              {activeSource}
+                            </span>
+                          </td>
+
+                          <td>
+                            <input
+                              className="input source-cell-input"
+                              value={
+                                row.cityRateSource ||
+                                ''
+                              }
+                              placeholder="Vendor / market"
+                              onChange={(
+                                event,
+                              ) =>
+                                updateRow(
+                                  row.id,
+                                  {
+                                    cityRateSource:
                                       event
                                         .target
                                         .value,
-                                    ),
-                                  )
-                                }
-                              />
-                            </label>
-                          </td>
+                                  },
+                                )
+                              }
+                            />
 
-                          <td>
-                            {
-                              row.unit
-                            }
+                            <input
+                              className="input source-cell-input"
+                              type="date"
+                              value={
+                                row.cityRateEffectiveDate ||
+                                ''
+                              }
+                              onChange={(
+                                event,
+                              ) =>
+                                updateRow(
+                                  row.id,
+                                  {
+                                    cityRateEffectiveDate:
+                                      event
+                                        .target
+                                        .value,
+                                  },
+                                )
+                              }
+                            />
                           </td>
 
                           <td>
@@ -807,38 +1615,73 @@ export default function ClientIngredientIndexPage() {
                               }
                             </span>
                           </td>
-
-                          <td>
-                            <button
-                              className="ghost-button"
-                              type="button"
-                              disabled={
-                                !row.isCustomRate &&
-                                !changedIds.has(
-                                  row.id,
-                                )
-                              }
-                              onClick={() =>
-                                useFallbackRate(
-                                  row,
-                                )
-                              }
-                            >
-                              {row.cityRate && Number(row.cityRate) > 0
-                                ? `Use ${row.city || 'City'} Rate`
-                                : 'Use Global Rate'}
-                            </button>
-                          </td>
                         </tr>
                       );
                     },
                   )}
+
+                  {!filteredRows.length ? (
+                    <tr>
+                      <td
+                        colSpan={9}
+                        className="muted"
+                      >
+                        No ingredients match this filter.
+                      </td>
+                    </tr>
+                  ) : null}
                 </tbody>
               </table>
             </div>
           )}
         </div>
 
+        <style>{`
+          .ingredient-rate-controls {
+            display:grid;
+            grid-template-columns:minmax(180px,.7fr) auto minmax(220px,1fr) minmax(180px,.7fr);
+            gap:9px;
+            align-items:end;
+            margin-top:16px;
+          }
+
+          .ingredient-rate-filters {
+            display:flex;
+            gap:7px;
+            flex-wrap:wrap;
+            margin-top:11px;
+          }
+
+          .unified-rate-table td small {
+            display:block;
+            margin-top:4px;
+          }
+
+          .rate-cell-input {
+            min-width:105px;
+          }
+
+          .source-cell-input {
+            min-width:145px;
+            margin-bottom:5px;
+          }
+
+          .source-cell-input:last-child {
+            margin-bottom:0;
+          }
+
+          @media(max-width:1000px) {
+            .ingredient-rate-controls {
+              grid-template-columns:1fr 1fr;
+            }
+          }
+
+          @media(max-width:650px) {
+            .ingredient-rate-controls {
+              grid-template-columns:1fr;
+            }
+          }
+        `}</style>
       </section>
     </AppShell>
   );
