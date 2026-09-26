@@ -94,7 +94,6 @@ const adminNavGroups = [
       { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish master and selling rates', icon: 'dishes' as NavIcon },
       { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients, portions and costing', icon: 'dishes' as NavIcon },
       { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Ingredient rates and categories', icon: 'ingredients' as NavIcon },
-      { href: '/admin/ingredient-city-rates', label: 'City Rates', mobileLabel: 'City Rates', description: 'Local ingredient market rates by city', icon: 'ingredients' as NavIcon },
     ],
   },
   {
@@ -133,7 +132,7 @@ const clientWorkflowNav = [
 
 const clientWorkspaceNav = [
   { href: '/app/history', match: '/app/history', label: 'History', description: 'Saved events', icon: 'history' as ClientNavIcon },
-  { href: '/app/ingredients', match: '/app/ingredients', label: 'Ingredient Rates', description: 'Business purchase rates', icon: 'ingredients' as ClientNavIcon },
+  { href: '/app/ingredients', match: '/app/ingredients', label: 'Ingredient Rates', description: 'Business + city + global rates', icon: 'ingredients' as ClientNavIcon },
   { href: '/admin/dishes', match: '/admin/dishes', label: 'Master Data', description: 'Dishes, recipes and cost masters', icon: 'ingredients' as ClientNavIcon },
   { href: '/app/profile', match: '/app/profile', label: 'Profile', description: 'Business settings', icon: 'profile' as ClientNavIcon },
 ];
@@ -890,7 +889,7 @@ export default function AppShell({
                   </Link>
                   <Link href="/app/ingredients">
                     <b>{t('Ingredients')}</b>
-                    <small>{t('My custom rates')}</small>
+                    <small>{t('Business + city rates')}</small>
                   </Link>
                   <Link href="/app/profile">
                     <b>{t('Profile')}</b>
