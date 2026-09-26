@@ -327,6 +327,17 @@ model TenantIngredientRate {
 }
 
 
+model IngredientCity {
+  id        String   @id @default(cuid())
+  city      String
+  cityKey   String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active, city])
+}
+
 model IngredientCityRate {
   id           String   @id @default(cuid())
   ingredientId String
