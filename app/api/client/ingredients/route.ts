@@ -12,6 +12,7 @@ import {
 import {
   normalizeCityKey,
   normalizeCityName,
+  resolveIngredientRate,
 } from '../../../../lib/cityIngredientRates';
 
 import { prisma } from '../../../../lib/prisma';
@@ -253,9 +254,23 @@ export async function GET(
             master.id,
           );
 
-        const fallbackRate =
-          cityRate?.rate ??
-          master.rate;
+        const resolved =
+          resolveIngredientRate({
+            tenantRate:
+              custom?.rate,
+            cityRate:
+              cityRate?.rate,
+            globalRate:
+              master.rate,
+          });
+
+        const fallback =
+          resolveIngredientRate({
+            cityRate:
+              cityRate?.rate,
+            globalRate:
+              master.rate,
+          });
 
         return {
           ...master,
@@ -287,18 +302,13 @@ export async function GET(
           // Resetting a personal rate should fall back to
           // the event/tenant city rate before the global master.
           defaultRate:
-            fallbackRate,
+            fallback.rate,
 
           rate:
-            custom?.rate ??
-            fallbackRate,
+            resolved.rate,
 
           rateSource:
-            custom
-              ? 'TENANT'
-              : cityRate
-                ? 'CITY'
-                : 'GLOBAL',
+            resolved.source,
 
           isCustomRate:
             Boolean(custom),
