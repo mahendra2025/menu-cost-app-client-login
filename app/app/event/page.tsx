@@ -5521,8 +5521,8 @@ export default function EventPage() {
             body: JSON.stringify({
               city:
                 detectedEventDetails.city ||
-                work.event.city ||
-                work.profile.city ||
+                work?.event.city ||
+                work?.profile.city ||
                 '',
               dishes: detectedMenu
                 .filter(
