@@ -210,8 +210,12 @@ export default function ClientIngredientIndexPage() {
               ? {
                   ...rate,
                   rate: value,
+                  rateSource:
+                    'TENANT',
                   isCustomRate:
                     true,
+                  isCityRate:
+                    false,
                 }
               : rate,
         ),
@@ -252,8 +256,22 @@ export default function ClientIngredientIndexPage() {
                   ...rate,
                   rate:
                     row.defaultRate,
+                  rateSource:
+                    row.cityRate &&
+                    Number(
+                      row.cityRate,
+                    ) > 0
+                      ? 'CITY'
+                      : 'GLOBAL',
                   isCustomRate:
                     false,
+                  isCityRate:
+                    Boolean(
+                      row.cityRate &&
+                      Number(
+                        row.cityRate,
+                      ) > 0,
+                    ),
                 }
               : rate,
         ),
