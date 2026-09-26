@@ -294,6 +294,7 @@ export function fillRecipeIngredientRates(
   masterRatesRaw: unknown,
   historicalRecipes: unknown[],
   overrides = new Map<string, number>(),
+  overrideSources = new Map<string, string>(),
 ) {
   const masterRates = Array.isArray(masterRatesRaw)
     ? masterRatesRaw
@@ -334,7 +335,12 @@ export function fillRecipeIngredientRates(
         ...ingredient,
         rate: masterRate,
         rateUnit: master?.unit || ingredient.unit,
-        rateSource: customRate !== undefined ? 'tenant' : 'ingredient_master',
+        rateSource:
+          customRate !== undefined
+            ? overrideSources.get(
+                master?.id || directId,
+              ) || 'tenant'
+            : 'ingredient_master',
       };
     }
 
