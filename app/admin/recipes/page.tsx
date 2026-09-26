@@ -3025,7 +3025,7 @@ export default function RecipesPage() {
         );
 
         setSyncMessage(
-          '✓ Recipes saved · Dish Master sync needs retry',
+          `✓ Recipes saved · ${syncWarning}`,
         );
 
         setMessage(
