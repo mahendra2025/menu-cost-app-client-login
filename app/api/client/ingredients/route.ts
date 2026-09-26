@@ -9,6 +9,10 @@ import {
 import {
   normalizeIngredientRate,
 } from '../../../../lib/ingredientCatalog';
+import {
+  normalizeCityKey,
+  normalizeCityName,
+} from '../../../../lib/cityIngredientRates';
 
 import { prisma } from '../../../../lib/prisma';
 
@@ -108,7 +112,9 @@ function recipeIngredientUsage(dishes: unknown) {
   return usage;
 }
 
-export async function GET() {
+export async function GET(
+  request: Request,
+) {
   try {
     const tenantId =
       await getTenantId();
@@ -123,7 +129,11 @@ export async function GET() {
       );
     }
 
-    const [catalog, overrides] =
+    const [
+      catalog,
+      overrides,
+      tenant,
+    ] =
       await Promise.all([
         prisma.recipeCatalog.findUnique({
           where: {
@@ -146,7 +156,52 @@ export async function GET() {
             updatedAt: true,
           },
         }),
+
+        prisma.tenant.findUnique({
+          where: {
+            id: tenantId,
+          },
+          select: {
+            city: true,
+          },
+        }),
       ]);
+
+    const url =
+      new URL(request.url);
+
+    const requestedCity =
+      normalizeCityName(
+        url.searchParams.get('city'),
+      );
+
+    const effectiveCity =
+      requestedCity ||
+      normalizeCityName(
+        tenant?.city,
+      );
+
+    const cityKey =
+      normalizeCityKey(
+        effectiveCity,
+      );
+
+    const cityRates =
+      cityKey
+        ? await prisma.ingredientCityRate.findMany({
+            where: {
+              cityKey,
+            },
+            select: {
+              ingredientId: true,
+              city: true,
+              rate: true,
+              source: true,
+              effectiveDate: true,
+              updatedAt: true,
+            },
+          })
+        : [];
 
     if (!catalog) {
       return NextResponse.json({
@@ -158,6 +213,16 @@ export async function GET() {
     const overrideMap =
       new Map(
         overrides.map(
+          (item) => [
+            item.ingredientId,
+            item,
+          ],
+        ),
+      );
+
+    const cityRateMap =
+      new Map(
+        cityRates.map(
           (item) => [
             item.ingredientId,
             item,
@@ -183,18 +248,64 @@ export async function GET() {
         const custom =
           overrideMap.get(master.id);
 
+        const cityRate =
+          cityRateMap.get(
+            master.id,
+          );
+
+        const fallbackRate =
+          cityRate?.rate ??
+          master.rate;
+
         return {
           ...master,
 
-          defaultRate:
+          globalRate:
             master.rate,
+
+          cityRate:
+            cityRate?.rate ??
+            null,
+
+          city:
+            cityRate?.city ||
+            effectiveCity ||
+            '',
+
+          cityRateSource:
+            cityRate?.source ||
+            '',
+
+          cityRateEffectiveDate:
+            cityRate?.effectiveDate ??
+            null,
+
+          cityRateUpdatedAt:
+            cityRate?.updatedAt ??
+            null,
+
+          // Resetting a personal rate should fall back to
+          // the event/tenant city rate before the global master.
+          defaultRate:
+            fallbackRate,
 
           rate:
             custom?.rate ??
-            master.rate,
+            fallbackRate,
+
+          rateSource:
+            custom
+              ? 'TENANT'
+              : cityRate
+                ? 'CITY'
+                : 'GLOBAL',
 
           isCustomRate:
             Boolean(custom),
+
+          isCityRate:
+            !custom &&
+            Boolean(cityRate),
 
           customUpdatedAt:
             custom?.updatedAt ??
@@ -204,6 +315,13 @@ export async function GET() {
 
     return NextResponse.json({
       rates,
+      city:
+        effectiveCity || '',
+      ratePriority: [
+        'TENANT',
+        'CITY',
+        'GLOBAL',
+      ],
 
       usage: Object.fromEntries(
         recipeIngredientUsage(
