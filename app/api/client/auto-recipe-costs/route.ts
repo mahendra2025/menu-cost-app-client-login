@@ -4,6 +4,10 @@ import { NextResponse } from 'next/server';
 import defaultRecipesData from '../../../../lib/defaultRecipes.json';
 import { requireClientTenantId } from '../../../../lib/billingAuth';
 import { normalizeIngredientRate } from '../../../../lib/ingredientCatalog';
+import {
+  normalizeCityKey,
+  normalizeCityName,
+} from '../../../../lib/cityIngredientRates';
 
 import {
   assessCostAccuracy,
@@ -251,6 +255,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json() as Record<string, unknown>;
+    const requestedCity =
+      normalizeCityName(
+        body.city,
+      );
+
     const unique = new Map<string, RequestedDish>();
     (
       Array.isArray(body.dishes)
@@ -276,6 +285,7 @@ export async function POST(request: Request) {
       overrides,
       savedRecipes,
       masterDishes,
+      tenant,
     ] = await Promise.all([
       prisma.recipeCatalog.findUnique({
         where: { id: 'global' },
@@ -297,7 +307,40 @@ export async function POST(request: Request) {
           rate: true,
         },
       }),
+
+      prisma.tenant.findUnique({
+        where: {
+          id: tenantId,
+        },
+        select: {
+          city: true,
+        },
+      }),
     ]);
+
+    const effectiveCity =
+      requestedCity ||
+      normalizeCityName(
+        tenant?.city,
+      );
+
+    const cityKey =
+      normalizeCityKey(
+        effectiveCity,
+      );
+
+    const cityRates =
+      cityKey
+        ? await prisma.ingredientCityRate.findMany({
+            where: {
+              cityKey,
+            },
+            select: {
+              ingredientId: true,
+              rate: true,
+            },
+          })
+        : [];
 
     let tenantDishMaster:
       Array<{
@@ -424,6 +467,76 @@ export async function POST(request: Request) {
     const overrideMap = new Map(
       overrides.map((item) => [item.ingredientId, item.rate]),
     );
+    const cityRateMap =
+      new Map(
+        cityRates.map(
+          (item) => [
+            item.ingredientId,
+            item.rate,
+          ],
+        ),
+      );
+    const effectiveRateMap =
+      new Map<string, number>();
+    const effectiveRateSourceMap =
+      new Map<string, string>();
+
+    for (const rate of masterRates
+      .map(normalizeIngredientRate)
+      .filter(
+        (
+          item,
+        ): item is NonNullable<
+          typeof item
+        > => Boolean(item),
+      )) {
+      const businessRate =
+        overrideMap.get(
+          rate.id,
+        );
+
+      if (
+        Number(
+          businessRate,
+        ) > 0
+      ) {
+        effectiveRateMap.set(
+          rate.id,
+          Number(
+            businessRate,
+          ),
+        );
+        effectiveRateSourceMap.set(
+          rate.id,
+          'business',
+        );
+        continue;
+      }
+
+      const cityRate =
+        cityRateMap.get(
+          rate.id,
+        );
+
+      if (
+        Number(
+          cityRate,
+        ) > 0
+      ) {
+        effectiveRateMap.set(
+          rate.id,
+          Number(
+            cityRate,
+          ),
+        );
+        effectiveRateSourceMap.set(
+          rate.id,
+          effectiveCity
+            ? `${effectiveCity} city`
+            : 'city',
+        );
+      }
+    }
     const catalogMap = buildRecipeMap([
       ...(Array.isArray(defaultRecipesData) ? defaultRecipesData : []),
       ...(Array.isArray(catalog?.dishes) ? catalog.dishes : []),
@@ -454,7 +567,7 @@ export async function POST(request: Request) {
     const ingredientCatalog = masterRates
       .map(normalizeIngredientRate)
       .filter((rate): rate is NonNullable<typeof rate> => Boolean(rate))
-      .filter((rate) => (overrideMap.get(rate.id) ?? rate.rate) > 0)
+      .filter((rate) => (effectiveRateMap.get(rate.id) ?? rate.rate) > 0)
       .slice(0, 120)
       .map((rate) => ({ name: rate.name, unit: rate.unit }));
     /*
@@ -527,12 +640,14 @@ export async function POST(request: Request) {
         recipe,
         masterRates,
         historicalRecipes,
-        overrideMap,
+        effectiveRateMap,
+        effectiveRateSourceMap,
       );
       const costing = calculateRecipeCost(
         priced.recipe,
         masterRates,
-        overrideMap,
+        effectiveRateMap,
+        effectiveRateSourceMap,
       );
       await prisma.tenantAutoRecipe.upsert({
         where: { tenantId_normalizedName: { tenantId, normalizedName: key } },
@@ -735,6 +850,13 @@ export async function POST(request: Request) {
     return NextResponse.json({
       results,
       generated: generated.length,
+      city:
+        effectiveCity || '',
+      ratePriority: [
+        'BUSINESS',
+        'CITY',
+        'GLOBAL',
+      ],
     });
   } catch (error) {
     console.error('Automatic recipe costing failed:', error);
