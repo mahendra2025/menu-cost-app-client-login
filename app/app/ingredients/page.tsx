@@ -687,7 +687,7 @@ export default function ClientIngredientIndexPage() {
                     </th>
 
                     <th>
-                      Admin Rate
+                      City / Global Rate
                     </th>
 
                     <th>
