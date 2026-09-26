@@ -425,7 +425,7 @@ export default function QuotationPage() {
             },
           ),
           fetch(
-            `/api/client/ingredients?city=${encodeURIComponent(work.event.city || work.profile.city || '')}`,
+            `/api/client/ingredients?city=${encodeURIComponent(currentWork.event.city || currentWork.profile.city || '')}`,
             {
               cache: 'no-store',
             },
