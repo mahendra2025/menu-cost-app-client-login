@@ -516,6 +516,14 @@ export default function IngredientRatesPage() {
         'CITY',
     ).length;
 
+  const cityRateCoverageCount =
+    rows.filter(
+      (row) =>
+        Number(
+          row.cityRate,
+        ) > 0,
+    ).length;
+
   const globalRateCount =
     rows.filter(
       (row) =>
@@ -964,6 +972,24 @@ export default function IngredientRatesPage() {
 
     void loadIngredients(
       city,
+    );
+  }
+
+  function openCity(
+    nextCity: string,
+  ) {
+    if (
+      changedCount &&
+      !window.confirm(
+        'You have unsaved ingredient-rate changes. Load another city and discard them?',
+      )
+    ) {
+      return;
+    }
+
+    setCity(nextCity);
+    void loadIngredients(
+      nextCity,
     );
   }
 
@@ -1425,6 +1451,46 @@ export default function IngredientRatesPage() {
                   : 'Save Rates'}
               </button>
             </div>
+          </div>
+
+          <div className="ingredient-city-quick-switch" aria-label="Ingredient rate cities">
+            {knownCities.map(
+              (item) => (
+                <button
+                  key={item.cityKey}
+                  type="button"
+                  className={
+                    normalize(
+                      loadedCity,
+                    ) ===
+                    normalize(
+                      item.city,
+                    )
+                      ? 'active'
+                      : ''
+                  }
+                  onClick={() =>
+                    openCity(
+                      item.city,
+                    )
+                  }
+                >
+                  <span>
+                    {item.city}
+                  </span>
+                  {normalize(
+                    loadedCity,
+                  ) ===
+                  normalize(
+                    item.city,
+                  ) ? (
+                    <small>
+                      {cityRateCoverageCount}/{rows.length} city rates
+                    </small>
+                  ) : null}
+                </button>
+              ),
+            )}
           </div>
 
           <div className="ingredient-rate-search-row">
@@ -2187,6 +2253,46 @@ export default function IngredientRatesPage() {
             color:#718196;
             font-size:9px;
             white-space:nowrap;
+          }
+
+          .ingredient-city-quick-switch {
+            display:flex;
+            gap:6px;
+            flex-wrap:wrap;
+            margin-top:11px;
+            padding-top:11px;
+            border-top:1px solid rgba(148,163,184,.07);
+          }
+
+          .ingredient-city-quick-switch button {
+            display:grid;
+            gap:1px;
+            min-width:82px;
+            padding:7px 10px;
+            border:1px solid rgba(148,163,184,.10);
+            border-radius:9px;
+            color:#8191a5;
+            background:rgba(255,255,255,.018);
+            font:inherit;
+            text-align:left;
+            cursor:pointer;
+          }
+
+          .ingredient-city-quick-switch button:hover,
+          .ingredient-city-quick-switch button.active {
+            border-color:rgba(74,156,255,.28);
+            color:#dcecff;
+            background:rgba(74,156,255,.065);
+          }
+
+          .ingredient-city-quick-switch span {
+            font-size:9px;
+            font-weight:850;
+          }
+
+          .ingredient-city-quick-switch small {
+            color:#6f85a0;
+            font-size:7px;
           }
 
           .ingredient-rate-search-row {
