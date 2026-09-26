@@ -9,6 +9,7 @@ import {
   normalizeIngredientRate,
 } from '../../../../lib/ingredientCatalog';
 import {
+  ingredientCityOptions,
   normalizeCityKey,
   normalizeCityName,
 } from '../../../../lib/cityIngredientRates';
@@ -118,7 +119,10 @@ export async function GET(request: Request) {
     return NextResponse.json({
       city,
       cityKey,
-      cities,
+      cities:
+        ingredientCityOptions(
+          cities,
+        ),
       rates: masterRates.map((master) => {
         const local =
           cityMap.get(master.id);
