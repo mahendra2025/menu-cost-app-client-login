@@ -1789,8 +1789,9 @@ export default function RecipesPage() {
     );
   }
 
-  function addBulkIngredients() {
+  async function addBulkIngredients() {
     if (
+      !catalog ||
       selectedIndex === null ||
       !selectedDish
     ) {
@@ -1899,21 +1900,34 @@ export default function RecipesPage() {
       return;
     }
 
-    updateDish(
-      selectedIndex,
-      {
-        ingredients: [
-          ...recipeIngredients(
-            selectedDish,
+    const previousCatalog =
+      catalog;
+
+    const nextCatalog:
+      RecipeCatalog = {
+        ...catalog,
+        dishes:
+          catalog.dishes.map(
+            (dish, index) =>
+              index ===
+              selectedIndex
+                ? {
+                    ...dish,
+                    ingredients: [
+                      ...recipeIngredients(
+                        selectedDish,
+                      ),
+                      ...added,
+                    ],
+                  }
+                : dish,
           ),
-          ...added,
-        ],
-      },
+      };
+
+    setCatalog(
+      nextCatalog,
     );
-
-    setBulkIngredients('');
     setError('');
-
     setMessage(
       `${added.length} ingredient${
         added.length === 1
@@ -1923,8 +1937,32 @@ export default function RecipesPage() {
         skipped
           ? ` · ${skipped} skipped`
           : ''
-      }.`,
+      } · Saving…`,
     );
+
+    const saved =
+      await saveRecipes(
+        nextCatalog,
+      );
+
+    if (saved) {
+      setBulkIngredients('');
+      setMessage(
+        `${added.length} ingredient${
+          added.length === 1
+            ? ''
+            : 's'
+        } added and saved${
+          skipped
+            ? ` · ${skipped} skipped`
+            : ''
+        }.`,
+      );
+    } else {
+      setCatalog(
+        previousCatalog,
+      );
+    }
   }
 
   function changeServingQuantity(
@@ -2817,13 +2855,19 @@ export default function RecipesPage() {
     }
   }
 
-  async function saveRecipes() {
-    if (!catalog) {
-      return;
+  async function saveRecipes(
+    catalogOverride?: RecipeCatalog,
+  ): Promise<boolean> {
+    const catalogToSave =
+      catalogOverride ??
+      catalog;
+
+    if (!catalogToSave) {
+      return false;
     }
 
     const invalidGasRecipe =
-      catalog.dishes.find(
+      catalogToSave.dishes.find(
         (dish) => {
           if (
             dish.gasNoGas ===
@@ -2871,7 +2915,7 @@ export default function RecipesPage() {
       setError(
         `${recipeName(invalidGasRecipe)}: Real gas profile needs Burner kg/hour, Cooking minutes, Burners and Gas batch guests. Fill all 4 or clear all 4.`,
       );
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -2899,7 +2943,7 @@ export default function RecipesPage() {
 
             body:
               JSON.stringify(
-                catalog,
+                catalogToSave,
               ),
           },
         );
@@ -2917,7 +2961,7 @@ export default function RecipesPage() {
       try {
         localStorage.setItem(
           RECIPE_CACHE_KEY,
-          JSON.stringify(catalog),
+          JSON.stringify(catalogToSave),
         );
 
         if (
@@ -2945,7 +2989,7 @@ export default function RecipesPage() {
       const activeDish =
         selectedIndex === null
           ? null
-          : catalog.dishes[
+          : catalogToSave.dishes[
               selectedIndex
             ] || null;
 
@@ -2995,6 +3039,8 @@ export default function RecipesPage() {
             }.`
           : 'Saved successfully.',
       );
+
+      return true;
     } catch (
       saveError
     ) {
@@ -3012,6 +3058,8 @@ export default function RecipesPage() {
           ? saveError.message
           : 'Could not save recipes.',
       );
+
+      return false;
     } finally {
       setSaving(false);
     }
@@ -6105,13 +6153,16 @@ Cream,0.8,kg,220`}
                         className="recipe-fast-button primary"
                         type="button"
                         disabled={
+                          saving ||
                           !bulkIngredients.trim()
                         }
-                        onClick={
-                          addBulkIngredients
+                        onClick={() =>
+                          void addBulkIngredients()
                         }
                       >
-                        + Add Bulk Ingredients
+                        {saving
+                          ? 'Saving…'
+                          : '+ Add & Save Bulk Ingredients'}
                       </button>
                     </div>
                   </div>
