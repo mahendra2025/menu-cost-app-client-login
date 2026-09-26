@@ -325,3 +325,19 @@ model TenantIngredientRate {
   @@unique([tenantId, ingredientId])
   @@index([tenantId])
 }
+
+
+model IngredientCityRate {
+  id           String   @id @default(cuid())
+  ingredientId String
+  city         String
+  cityKey      String
+  rate         Float
+  source       String   @default("")
+  effectiveDate DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([ingredientId, cityKey])
+  @@index([cityKey, ingredientId])
+}

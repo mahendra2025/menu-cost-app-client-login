@@ -23,7 +23,12 @@ import {
 type ClientIngredientRate =
   IngredientRate & {
     defaultRate: number;
+    globalRate?: number;
+    cityRate?: number | null;
+    city?: string;
+    rateSource?: 'TENANT' | 'CITY' | 'GLOBAL';
     isCustomRate: boolean;
+    isCityRate?: boolean;
     customUpdatedAt?: string | null;
   };
 
@@ -205,8 +210,12 @@ export default function ClientIngredientIndexPage() {
               ? {
                   ...rate,
                   rate: value,
+                  rateSource:
+                    'TENANT',
                   isCustomRate:
                     true,
+                  isCityRate:
+                    false,
                 }
               : rate,
         ),
@@ -235,7 +244,7 @@ export default function ClientIngredientIndexPage() {
     );
   }
 
-  function useAdminRate(
+  function useFallbackRate(
     row: ClientIngredientRate,
   ) {
     setRates(
@@ -247,8 +256,22 @@ export default function ClientIngredientIndexPage() {
                   ...rate,
                   rate:
                     row.defaultRate,
+                  rateSource:
+                    row.cityRate &&
+                    Number(
+                      row.cityRate,
+                    ) > 0
+                      ? 'CITY'
+                      : 'GLOBAL',
                   isCustomRate:
                     false,
+                  isCityRate:
+                    Boolean(
+                      row.cityRate &&
+                      Number(
+                        row.cityRate,
+                      ) > 0,
+                    ),
                 }
               : rate,
         ),
@@ -682,7 +705,7 @@ export default function ClientIngredientIndexPage() {
                     </th>
 
                     <th>
-                      Admin Rate
+                      City / Global Rate
                     </th>
 
                     <th>
@@ -718,11 +741,13 @@ export default function ClientIngredientIndexPage() {
                               {row.name}
                             </strong>
 
-                            {row.isCustomRate ? (
-                              <small>
-                                My custom rate
-                              </small>
-                            ) : null}
+                            <small>
+                              {row.isCustomRate
+                                ? 'My custom rate'
+                                : row.isCityRate
+                                  ? `${row.city || 'City'} market rate`
+                                  : 'Global master rate'}
+                            </small>
                           </td>
 
                           <td>
@@ -794,12 +819,14 @@ export default function ClientIngredientIndexPage() {
                                 )
                               }
                               onClick={() =>
-                                useAdminRate(
+                                useFallbackRate(
                                   row,
                                 )
                               }
                             >
-                              Use Admin Rate
+                              {row.cityRate && Number(row.cityRate) > 0
+                                ? `Use ${row.city || 'City'} Rate`
+                                : 'Use Global Rate'}
                             </button>
                           </td>
                         </tr>
