@@ -114,6 +114,8 @@ export default function ProfilePage() {
   }
 
   function saveProfile() {
+    if (!work) return;
+
     persist({
       ...work,
       updatedAt:
