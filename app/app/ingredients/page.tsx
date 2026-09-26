@@ -51,6 +51,12 @@ type KnownCity = {
   cityKey: string;
 };
 
+type RateFilter =
+  | 'ALL'
+  | 'BUSINESS'
+  | 'CITY'
+  | 'GLOBAL';
+
 function money(
   value:
     | number
@@ -107,6 +113,84 @@ function normalize(
     .replace(/\s+/g, ' ');
 }
 
+function activeSource(
+  row: UnifiedIngredientRate,
+): Exclude<
+  RateFilter,
+  'ALL'
+> {
+  if (
+    Number(
+      row.businessRate,
+    ) > 0
+  ) {
+    return 'BUSINESS';
+  }
+
+  if (
+    Number(
+      row.cityRate,
+    ) > 0
+  ) {
+    return 'CITY';
+  }
+
+  return 'GLOBAL';
+}
+
+function activeRate(
+  row: UnifiedIngredientRate,
+) {
+  const source =
+    activeSource(row);
+
+  if (
+    source === 'BUSINESS'
+  ) {
+    return Number(
+      row.businessRate,
+    );
+  }
+
+  if (source === 'CITY') {
+    return Number(
+      row.cityRate,
+    );
+  }
+
+  return Number(
+    row.globalRate,
+  );
+}
+
+function rateDifference(
+  rate: number,
+  base: number,
+) {
+  if (
+    !(rate > 0) ||
+    !(base > 0)
+  ) {
+    return null;
+  }
+
+  const percent =
+    ((rate - base) /
+      base) *
+    100;
+
+  if (
+    Math.abs(percent) <
+    0.05
+  ) {
+    return 'Same as global';
+  }
+
+  return `${percent > 0 ? '+' : ''}${percent.toFixed(
+    1,
+  )}% vs global`;
+}
+
 export default function IngredientRatesPage() {
   const [rows, setRows] =
     useState<
@@ -117,7 +201,7 @@ export default function IngredientRatesPage() {
     useState<UsageMap>({});
 
   const [city, setCity] =
-    useState('Silvassa');
+    useState('');
 
   const [
     loadedCity,
@@ -138,12 +222,9 @@ export default function IngredientRatesPage() {
     useState('ALL');
 
   const [filter, setFilter] =
-    useState<
-      | 'ALL'
-      | 'BUSINESS'
-      | 'CITY'
-      | 'GLOBAL'
-    >('ALL');
+    useState<RateFilter>(
+      'ALL',
+    );
 
   const [ready, setReady] =
     useState(false);
@@ -165,6 +246,13 @@ export default function IngredientRatesPage() {
   >(() => new Map());
 
   const [
+    initialCityMeta,
+    setInitialCityMeta,
+  ] = useState<
+    Map<string, string>
+  >(() => new Map());
+
+  const [
     initialBusinessRates,
     setInitialBusinessRates,
   ] = useState<
@@ -175,24 +263,28 @@ export default function IngredientRatesPage() {
     useState('');
 
   async function loadIngredients(
-    requestedCity = city,
+    requestedCity = '',
   ) {
     const cleanCity =
       requestedCity
         .trim()
-        .replace(/\s+/g, ' ') ||
-      'Silvassa';
+        .replace(/\s+/g, ' ');
 
     setReady(false);
     setMessage('');
     setError('');
 
     try {
+      const queryString =
+        cleanCity
+          ? `?city=${encodeURIComponent(
+              cleanCity,
+            )}`
+          : '';
+
       const response =
         await fetch(
-          `/api/client/ingredients?city=${encodeURIComponent(
-            cleanCity,
-          )}`,
+          `/api/client/ingredients${queryString}`,
           {
             cache: 'no-store',
           },
@@ -208,8 +300,11 @@ export default function IngredientRatesPage() {
         );
       }
 
-      const loadedRows =
-        Array.isArray(data.rates)
+      const loadedRows:
+        UnifiedIngredientRate[] =
+        Array.isArray(
+          data.rates,
+        )
           ? data.rates.map(
               (
                 rate: Omit<
@@ -261,7 +356,8 @@ export default function IngredientRatesPage() {
       const effectiveCity =
         String(
           data.city ||
-            cleanCity,
+            cleanCity ||
+            'Silvassa',
         );
 
       setCity(effectiveCity);
@@ -273,25 +369,28 @@ export default function IngredientRatesPage() {
         new Map(
           loadedRows
             .filter(
-              (
-                row:
-                  UnifiedIngredientRate,
-              ) =>
+              (row) =>
                 Number(
                   row.cityRate,
                 ) > 0,
             )
-            .map(
-              (
-                row:
-                  UnifiedIngredientRate,
-              ) => [
-                row.id,
-                Number(
-                  row.cityRate,
-                ),
-              ],
-            ),
+            .map((row) => [
+              row.id,
+              Number(
+                row.cityRate,
+              ),
+            ]),
+        ),
+      );
+
+      setInitialCityMeta(
+        new Map(
+          loadedRows.map(
+            (row) => [
+              row.id,
+              `${row.cityRateSource || ''}|${row.cityRateEffectiveDate || ''}`,
+            ],
+          ),
         ),
       );
 
@@ -299,25 +398,17 @@ export default function IngredientRatesPage() {
         new Map(
           loadedRows
             .filter(
-              (
-                row:
-                  UnifiedIngredientRate,
-              ) =>
+              (row) =>
                 Number(
                   row.businessRate,
                 ) > 0,
             )
-            .map(
-              (
-                row:
-                  UnifiedIngredientRate,
-              ) => [
-                row.id,
-                Number(
-                  row.businessRate,
-                ),
-              ],
-            ),
+            .map((row) => [
+              row.id,
+              Number(
+                row.businessRate,
+              ),
+            ]),
         ),
       );
     } catch (loadError) {
@@ -332,10 +423,8 @@ export default function IngredientRatesPage() {
   }
 
   useEffect(() => {
-    void loadIngredients(
-      'Silvassa',
-    );
-    // Initial business city.
+    void loadIngredients();
+    // Load the business/profile city when available.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -360,21 +449,12 @@ export default function IngredientRatesPage() {
 
       return rows
         .filter((row) => {
-          const activeSource =
-            Number(
-              row.businessRate,
-            ) > 0
-              ? 'BUSINESS'
-              : Number(
-                    row.cityRate,
-                  ) > 0
-                ? 'CITY'
-                : 'GLOBAL';
+          const source =
+            activeSource(row);
 
           const matchesFilter =
             filter === 'ALL' ||
-            filter ===
-              activeSource;
+            filter === source;
 
           const matchesCategory =
             category === 'ALL' ||
@@ -423,45 +503,51 @@ export default function IngredientRatesPage() {
   const businessRateCount =
     rows.filter(
       (row) =>
-        Number(
-          row.businessRate,
-        ) > 0,
+        activeSource(row) ===
+        'BUSINESS',
     ).length;
 
   const cityRateCount =
     rows.filter(
       (row) =>
-        !(
-          Number(
-            row.businessRate,
-          ) > 0
-        ) &&
-        Number(
-          row.cityRate,
-        ) > 0,
+        activeSource(row) ===
+        'CITY',
     ).length;
 
   const globalRateCount =
-    rows.length -
-    businessRateCount -
-    cityRateCount;
+    rows.filter(
+      (row) =>
+        activeSource(row) ===
+        'GLOBAL',
+    ).length;
 
   const changedCityCount =
     rows.filter((row) => {
-      const before =
+      const beforeRate =
         initialCityRates.get(
           row.id,
         ) || 0;
 
-      const after =
+      const afterRate =
         Number(
           row.cityRate,
         ) || 0;
 
+      const beforeMeta =
+        initialCityMeta.get(
+          row.id,
+        ) || '|';
+
+      const afterMeta =
+        `${row.cityRateSource || ''}|${row.cityRateEffectiveDate || ''}`;
+
       return (
         Math.abs(
-          before - after,
-        ) > 0.000001
+          beforeRate -
+            afterRate,
+        ) > 0.000001 ||
+        beforeMeta !==
+          afterMeta
       );
     }).length;
 
@@ -488,6 +574,31 @@ export default function IngredientRatesPage() {
     changedCityCount +
     changedBusinessCount;
 
+  useEffect(() => {
+    if (!changedCount) {
+      return;
+    }
+
+    const warnBeforeLeave = (
+      event: BeforeUnloadEvent,
+    ) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener(
+      'beforeunload',
+      warnBeforeLeave,
+    );
+
+    return () => {
+      window.removeEventListener(
+        'beforeunload',
+        warnBeforeLeave,
+      );
+    };
+  }, [changedCount]);
+
   function updateRow(
     id: string,
     patch:
@@ -508,6 +619,57 @@ export default function IngredientRatesPage() {
 
     setMessage('');
     setError('');
+  }
+
+  function rowHasChanges(
+    row: UnifiedIngredientRate,
+  ) {
+    const initialCityRate =
+      initialCityRates.get(
+        row.id,
+      ) || 0;
+
+    const currentCityRate =
+      Number(
+        row.cityRate,
+      ) || 0;
+
+    const initialBusinessRate =
+      initialBusinessRates.get(
+        row.id,
+      ) || 0;
+
+    const currentBusinessRate =
+      Number(
+        row.businessRate,
+      ) || 0;
+
+    const initialMeta =
+      initialCityMeta.get(
+        row.id,
+      ) || '|';
+
+    const currentMeta =
+      `${row.cityRateSource || ''}|${row.cityRateEffectiveDate || ''}`;
+
+    return (
+      Math.abs(
+        initialCityRate -
+          currentCityRate,
+      ) > 0.000001 ||
+      Math.abs(
+        initialBusinessRate -
+          currentBusinessRate,
+      ) > 0.000001 ||
+      initialMeta !==
+        currentMeta
+    );
+  }
+
+  function clearFilters() {
+    setQuery('');
+    setCategory('ALL');
+    setFilter('ALL');
   }
 
   async function refreshCurrentMenuCosts() {
@@ -599,10 +761,10 @@ export default function IngredientRatesPage() {
   }
 
   async function saveAllRates() {
-    if (!loadedCity) {
-      setError(
-        'Load a city before saving.',
-      );
+    if (
+      !loadedCity ||
+      !changedCount
+    ) {
       return;
     }
 
@@ -761,7 +923,7 @@ export default function IngredientRatesPage() {
       );
 
       setMessage(
-        `Saved ${loadedCity} city rates and business purchase rates. Active priority: Business → City → Global.`,
+        `Saved ${loadedCity} rates. Costing priority is Business → City → Global.`,
       );
     } catch (saveError) {
       setError(
@@ -774,8 +936,32 @@ export default function IngredientRatesPage() {
     }
   }
 
+  function loadSelectedCity() {
+    if (
+      changedCount &&
+      !window.confirm(
+        'You have unsaved ingredient-rate changes. Load another city and discard them?',
+      )
+    ) {
+      return;
+    }
+
+    void loadIngredients(
+      city,
+    );
+  }
+
   async function copyFromCity() {
     if (!loadedCity) return;
+
+    if (
+      changedCount &&
+      !window.confirm(
+        'Copying another city will discard your unsaved changes. Continue?',
+      )
+    ) {
+      return;
+    }
 
     const sourceCity =
       window.prompt(
@@ -1018,84 +1204,172 @@ export default function IngredientRatesPage() {
     );
 
     setMessage(
-      `Applied ${updated} city rate${updated === 1 ? '' : 's'}${skipped ? ` · ${skipped} skipped` : ''}. Click Save All Rates to publish.`,
+      `Applied ${updated} city rate${updated === 1 ? '' : 's'}${skipped ? ` · ${skipped} skipped` : ''}. Review and save the changes.`,
     );
     setError('');
   }
 
+  const hasFilters =
+    Boolean(query) ||
+    category !== 'ALL' ||
+    filter !== 'ALL';
+
   return (
     <AppShell
       title="Ingredient Rates"
-      subtitle="Global, city and business purchase rates in one place"
+      subtitle="Control the exact ingredient rate used in every event costing"
     >
-      <section className="content-grid">
-        <div className="stat-grid">
-          <div className="stat-card">
-            <small>
-              Ingredients
-            </small>
-            <strong>
-              {rows.length}
-            </strong>
-            <span>
-              Master items
+      <section className="content-grid ingredient-rates-page">
+        <div className="ingredient-rate-hero">
+          <div>
+            <span className="ingredient-rate-eyebrow">
+              Cost master · {loadedCity || 'Business city'}
             </span>
+
+            <h2>
+              One place for every ingredient rate
+            </h2>
+
+            <p>
+              Set a business purchase rate when you know your actual buying price. Otherwise Menu Cost uses the selected city rate, then the global master rate.
+            </p>
           </div>
 
-          <div className="stat-card">
-            <small>
-              Business Rate
-            </small>
-            <strong>
-              {businessRateCount}
-            </strong>
+          <div className="ingredient-rate-priority" aria-label="Rate priority">
             <span>
-              Highest priority
+              <b>1</b>
+              Business
             </span>
-          </div>
-
-          <div className="stat-card">
-            <small>
-              {loadedCity ||
-                'City'}{' '}
-              Rate
-            </small>
-            <strong>
-              {cityRateCount}
-            </strong>
+            <i>→</i>
             <span>
-              Used when no business rate
+              <b>2</b>
+              {loadedCity || 'City'}
             </span>
-          </div>
-
-          <div className="stat-card">
-            <small>
-              Global Rate
-            </small>
-            <strong>
-              {globalRateCount}
-            </strong>
+            <i>→</i>
             <span>
-              Final fallback
+              <b>3</b>
+              Global
             </span>
           </div>
         </div>
 
-        <div className="glass-card">
-          <div className="final-costing-section-heading">
-            <div>
-              <span className="section-kicker">
-                One Ingredient Rate Page
-              </span>
-              <h2>
-                Business + City + Global Rates
-              </h2>
-              <p className="muted">
-                Active costing priority is Business Purchase Rate → Event City Rate → Global Master Rate.
-              </p>
-            </div>
+        <div className="ingredient-rate-stats">
+          <button
+            type="button"
+            className={filter === 'BUSINESS' ? 'active' : ''}
+            onClick={() =>
+              setFilter(
+                filter === 'BUSINESS'
+                  ? 'ALL'
+                  : 'BUSINESS',
+              )
+            }
+          >
+            <small>Business active</small>
+            <strong>{businessRateCount}</strong>
+            <span>your purchase price</span>
+          </button>
 
-            <div className="action-row">
+          <button
+            type="button"
+            className={filter === 'CITY' ? 'active' : ''}
+            onClick={() =>
+              setFilter(
+                filter === 'CITY'
+                  ? 'ALL'
+                  : 'CITY',
+              )
+            }
+          >
+            <small>{loadedCity || 'City'} active</small>
+            <strong>{cityRateCount}</strong>
+            <span>local market rate</span>
+          </button>
+
+          <button
+            type="button"
+            className={filter === 'GLOBAL' ? 'active' : ''}
+            onClick={() =>
+              setFilter(
+                filter === 'GLOBAL'
+                  ? 'ALL'
+                  : 'GLOBAL',
+              )
+            }
+          >
+            <small>Global fallback</small>
+            <strong>{globalRateCount}</strong>
+            <span>master rate</span>
+          </button>
+
+          <div className={changedCount ? 'has-changes' : ''}>
+            <small>Unsaved</small>
+            <strong>{changedCount}</strong>
+            <span>
+              {changedCount
+                ? 'changes waiting'
+                : 'everything saved'}
+            </span>
+          </div>
+        </div>
+
+        <div className="glass-card ingredient-rate-toolbar">
+          <div className="ingredient-rate-toolbar-top">
+            <div className="ingredient-rate-city-control">
+              <label className="field">
+                <span>
+                  Market city
+                </span>
+
+                <input
+                  className="input"
+                  value={city}
+                  list="ingredient-city-options"
+                  placeholder="Silvassa"
+                  onChange={(event) =>
+                    setCity(
+                      event.target.value,
+                    )
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      event.key ===
+                      'Enter'
+                    ) {
+                      loadSelectedCity();
+                    }
+                  }}
+                />
+
+                <datalist id="ingredient-city-options">
+                  {knownCities.map(
+                    (item) => (
+                      <option
+                        key={
+                          item.cityKey
+                        }
+                        value={
+                          item.city
+                        }
+                      />
+                    ),
+                  )}
+                </datalist>
+              </label>
+
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={!ready}
+                onClick={
+                  loadSelectedCity
+                }
+              >
+                {ready
+                  ? 'Load City'
+                  : 'Loading…'}
+              </button>
+
               <button
                 className="ghost-button"
                 type="button"
@@ -1107,15 +1381,24 @@ export default function IngredientRatesPage() {
                   void copyFromCity()
                 }
               >
-                Copy From City
+                Copy Rates
               </button>
+            </div>
+
+            <div className="ingredient-rate-primary-action">
+              <span>
+                {changedCount
+                  ? `${changedCount} unsaved change${changedCount === 1 ? '' : 's'}`
+                  : 'All rates saved'}
+              </span>
 
               <button
                 className="primary-button"
                 type="button"
                 disabled={
                   saving ||
-                  !ready
+                  !ready ||
+                  changedCount === 0
                 }
                 onClick={() =>
                   void saveAllRates()
@@ -1123,73 +1406,19 @@ export default function IngredientRatesPage() {
               >
                 {saving
                   ? 'Saving…'
-                  : `Save All Rates${changedCount ? ` (${changedCount})` : ''}`}
+                  : 'Save Rates'}
               </button>
             </div>
           </div>
 
-          <div className="ingredient-rate-controls">
-            <label className="field">
-              <span>
-                City
+          <div className="ingredient-rate-search-row">
+            <label className="ingredient-rate-search">
+              <span aria-hidden="true">
+                ⌕
               </span>
-
               <input
-                className="input"
-                value={city}
-                list="ingredient-city-options"
-                placeholder="Silvassa"
-                onChange={(event) =>
-                  setCity(
-                    event.target.value,
-                  )
-                }
-                onKeyDown={(event) => {
-                  if (
-                    event.key ===
-                    'Enter'
-                  ) {
-                    void loadIngredients();
-                  }
-                }}
-              />
-
-              <datalist id="ingredient-city-options">
-                {knownCities.map(
-                  (item) => (
-                    <option
-                      key={
-                        item.cityKey
-                      }
-                      value={
-                        item.city
-                      }
-                    />
-                  ),
-                )}
-              </datalist>
-            </label>
-
-            <button
-              className="secondary-button"
-              type="button"
-              disabled={!ready}
-              onClick={() =>
-                void loadIngredients()
-              }
-            >
-              Load City
-            </button>
-
-            <label className="field">
-              <span>
-                Search
-              </span>
-
-              <input
-                className="input"
                 value={query}
-                placeholder="Paneer, Tomato, Oil..."
+                placeholder="Search ingredient, category or unit…"
                 onChange={(event) =>
                   setQuery(
                     event.target.value,
@@ -1198,104 +1427,129 @@ export default function IngredientRatesPage() {
               />
             </label>
 
-            <label className="field">
-              <span>
-                Category
-              </span>
+            <select
+              className="select"
+              value={category}
+              aria-label="Ingredient category"
+              onChange={(event) =>
+                setCategory(
+                  event.target.value,
+                )
+              }
+            >
+              <option value="ALL">
+                All categories
+              </option>
 
-              <select
-                className="select"
-                value={category}
-                onChange={(event) =>
-                  setCategory(
-                    event.target.value,
-                  )
+              {categories.map(
+                (item) => (
+                  <option
+                    key={item}
+                    value={item}
+                  >
+                    {item}
+                  </option>
+                ),
+              )}
+            </select>
+
+            <div className="ingredient-rate-filter-chips">
+              {(
+                [
+                  ['ALL', 'All'],
+                  ['BUSINESS', 'Business'],
+                  ['CITY', 'City'],
+                  ['GLOBAL', 'Global'],
+                ] as const
+              ).map(
+                ([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={
+                      filter ===
+                      value
+                        ? 'active'
+                        : ''
+                    }
+                    onClick={() =>
+                      setFilter(
+                        value,
+                      )
+                    }
+                  >
+                    {label}
+                  </button>
+                ),
+              )}
+            </div>
+
+            {hasFilters ? (
+              <button
+                className="ingredient-rate-clear"
+                type="button"
+                onClick={
+                  clearFilters
                 }
               >
-                <option value="ALL">
-                  All categories
-                </option>
-
-                {categories.map(
-                  (item) => (
-                    <option
-                      key={item}
-                      value={item}
-                    >
-                      {item}
-                    </option>
-                  ),
-                )}
-              </select>
-            </label>
+                Clear
+              </button>
+            ) : null}
           </div>
 
-          <div className="ingredient-rate-filters">
-            {(
-              [
-                ['ALL', 'All'],
-                [
-                  'BUSINESS',
-                  'Business Active',
-                ],
-                [
-                  'CITY',
-                  'City Active',
-                ],
-                [
-                  'GLOBAL',
-                  'Global Active',
-                ],
-              ] as const
-            ).map(
-              ([value, label]) => (
-                <button
-                  key={value}
-                  className={
-                    filter ===
-                    value
-                      ? 'primary-button'
-                      : 'ghost-button'
-                  }
-                  type="button"
-                  onClick={() =>
-                    setFilter(
-                      value,
-                    )
-                  }
-                >
-                  {label}
-                </button>
-              ),
-            )}
+          <div className="ingredient-rate-result-line">
+            <span>
+              Showing <b>{filteredRows.length}</b> of <b>{rows.length}</b> ingredients
+            </span>
+            <span>
+              City: <b>{loadedCity || '—'}</b>
+            </span>
           </div>
 
           {message ? (
-            <div className="admin-message">
+            <div className="admin-message ingredient-rate-feedback">
               {message}
             </div>
           ) : null}
 
           {error ? (
-            <div className="admin-message error">
+            <div className="admin-message error ingredient-rate-feedback">
               {error}
             </div>
           ) : null}
         </div>
 
-        <div className="glass-card">
-          <div className="final-costing-section-heading">
+        <details className="glass-card ingredient-rate-bulk">
+          <summary>
             <div>
               <span className="section-kicker">
-                Fast City Update
+                Fast update
               </span>
-              <h2>
-                Paste rates from Excel / WhatsApp
-              </h2>
-              <p className="muted">
-                Format: Ingredient | Rate | Unit | Vendor | Effective Date
-              </p>
+              <b>
+                Paste {loadedCity || 'city'} rates from Excel / WhatsApp
+              </b>
+              <small>
+                Ingredient | Rate | Unit | Vendor | Effective Date
+              </small>
             </div>
+            <span aria-hidden="true">
+              +
+            </span>
+          </summary>
+
+          <div className="ingredient-rate-bulk-body">
+            <textarea
+              className="input"
+              value={bulkText}
+              onChange={(event) =>
+                setBulkText(
+                  event.target.value,
+                )
+              }
+              placeholder={
+                'Tomato | 38 | kg | Local Market | 2026-09-26\nPaneer | 330 | kg | Dairy Vendor | 2026-09-26'
+              }
+            />
 
             <button
               className="secondary-button"
@@ -1307,83 +1561,53 @@ export default function IngredientRatesPage() {
               Apply to {loadedCity || 'City'}
             </button>
           </div>
+        </details>
 
-          <textarea
-            className="input"
-            style={{
-              minHeight: 92,
-              marginTop: 12,
-              resize: 'vertical',
-            }}
-            value={bulkText}
-            onChange={(event) =>
-              setBulkText(
-                event.target.value,
-              )
-            }
-            placeholder={
-              'Tomato | 38 | kg | Local Market | 2026-09-26\nPaneer | 330 | kg | Dairy Vendor | 2026-09-26'
-            }
-          />
-        </div>
-
-        <div className="glass-card ingredient-list-card">
-          <div className="dish-list-heading">
+        <div className="glass-card ingredient-rate-table-card">
+          <div className="ingredient-rate-table-head">
             <div>
               <span className="section-kicker">
-                Ingredient Rate Control
+                Active costing rates
               </span>
               <h2>
-                {loadedCity ||
-                  'City'}{' '}
-                Ingredient Rates
+                Ingredient price control
               </h2>
-              <p className="muted">
-                Leave Business Rate blank to use City Rate. Leave City Rate blank to use Global Rate.
+              <p>
+                The highlighted Active Rate is the price Menu Cost will use.
               </p>
             </div>
 
             <span className="badge">
-              {
-                filteredRows.length
-              }{' '}
-              ingredients
+              {filteredRows.length} ingredients
             </span>
           </div>
 
           {!ready ? (
-            <div className="admin-empty">
-              Loading…
+            <div className="ingredient-rate-loading">
+              Loading ingredient rates…
             </div>
           ) : (
-            <div className="table-wrap">
-              <table className="disposable-table unified-rate-table">
+            <div className="table-wrap ingredient-rate-table-wrap">
+              <table className="ingredient-rate-table">
                 <thead>
                   <tr>
                     <th>
                       Ingredient
                     </th>
                     <th>
-                      Unit
-                    </th>
-                    <th>
                       Global
                     </th>
                     <th>
-                      {loadedCity ||
-                        'City'}
+                      {loadedCity || 'City'} Rate
                     </th>
                     <th>
-                      Business
+                      Business Rate
                     </th>
                     <th>
                       Active Rate
                     </th>
                     <th>
-                      Source
-                    </th>
-                    <th>
-                      Vendor / Date
+                      Market details
                     </th>
                     <th>
                       Recipes
@@ -1394,226 +1618,296 @@ export default function IngredientRatesPage() {
                 <tbody>
                   {filteredRows.map(
                     (row) => {
-                      const hasBusiness =
-                        Number(
-                          row.businessRate,
-                        ) > 0;
+                      const source =
+                        activeSource(
+                          row,
+                        );
 
-                      const hasCity =
-                        Number(
-                          row.cityRate,
-                        ) > 0;
+                      const currentRate =
+                        activeRate(
+                          row,
+                        );
 
-                      const activeRate =
-                        hasBusiness
-                          ? Number(
-                              row.businessRate,
-                            )
-                          : hasCity
-                            ? Number(
-                                row.cityRate,
-                              )
-                            : Number(
-                                row.globalRate,
-                              );
-
-                      const activeSource =
-                        hasBusiness
-                          ? 'Business'
-                          : hasCity
-                            ? loadedCity ||
-                              'City'
-                            : 'Global';
+                      const diff =
+                        rateDifference(
+                          currentRate,
+                          Number(
+                            row.globalRate,
+                          ),
+                        );
 
                       const recipes =
                         usage[
                           row.id
                         ] || [];
 
+                      const changed =
+                        rowHasChanges(
+                          row,
+                        );
+
                       return (
                         <tr
-                          key={
-                            row.id
+                          key={row.id}
+                          className={
+                            changed
+                              ? 'is-edited'
+                              : ''
                           }
                         >
-                          <td>
-                            <strong>
-                              {
-                                row.name
-                              }
-                            </strong>
-                            <small className="muted">
-                              {
-                                row.category
-                              }
+                          <td className="ingredient-rate-name-cell">
+                            <div className="ingredient-rate-name">
+                              <strong>
+                                {row.name}
+                              </strong>
+                              {changed ? (
+                                <span>
+                                  Edited
+                                </span>
+                              ) : null}
+                            </div>
+                            <small>
+                              {row.category} · {row.unit}
                             </small>
                           </td>
 
                           <td>
-                            {row.unit}
+                            <div className="ingredient-static-rate">
+                              <strong>
+                                {money(
+                                  row.globalRate,
+                                )}
+                              </strong>
+                              <small>
+                                master
+                              </small>
+                            </div>
                           </td>
 
                           <td>
-                            <strong>
-                              {money(
-                                row.globalRate,
+                            <div className="ingredient-rate-edit">
+                              <label>
+                                <span>
+                                  ₹
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={
+                                    row.cityRate ??
+                                    ''
+                                  }
+                                  placeholder={String(
+                                    row.globalRate,
+                                  )}
+                                  onChange={(
+                                    event,
+                                  ) =>
+                                    updateRow(
+                                      row.id,
+                                      {
+                                        cityRate:
+                                          event
+                                            .target
+                                            .value ===
+                                          ''
+                                            ? null
+                                            : Math.max(
+                                                0,
+                                                Number(
+                                                  event
+                                                    .target
+                                                    .value,
+                                                ) ||
+                                                  0,
+                                              ),
+                                      },
+                                    )
+                                  }
+                                />
+                              </label>
+
+                              {Number(
+                                row.cityRate,
+                              ) > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateRow(
+                                      row.id,
+                                      {
+                                        cityRate:
+                                          null,
+                                      },
+                                    )
+                                  }
+                                >
+                                  Use global
+                                </button>
+                              ) : (
+                                <small>
+                                  falls back to global
+                                </small>
                               )}
-                            </strong>
+                            </div>
                           </td>
 
                           <td>
-                            <input
-                              className="input rate-cell-input"
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={
-                                row.cityRate ??
-                                ''
-                              }
-                              placeholder={String(
-                                row.globalRate,
+                            <div className="ingredient-rate-edit">
+                              <label className="business-rate-input">
+                                <span>
+                                  ₹
+                                </span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={
+                                    row.businessRate ??
+                                    ''
+                                  }
+                                  placeholder="Optional"
+                                  onChange={(
+                                    event,
+                                  ) =>
+                                    updateRow(
+                                      row.id,
+                                      {
+                                        businessRate:
+                                          event
+                                            .target
+                                            .value ===
+                                          ''
+                                            ? null
+                                            : Math.max(
+                                                0,
+                                                Number(
+                                                  event
+                                                    .target
+                                                    .value,
+                                                ) ||
+                                                  0,
+                                              ),
+                                      },
+                                    )
+                                  }
+                                />
+                              </label>
+
+                              {Number(
+                                row.businessRate,
+                              ) > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateRow(
+                                      row.id,
+                                      {
+                                        businessRate:
+                                          null,
+                                      },
+                                    )
+                                  }
+                                >
+                                  Use city
+                                </button>
+                              ) : (
+                                <small>
+                                  optional override
+                                </small>
                               )}
-                              onChange={(
-                                event,
-                              ) =>
-                                updateRow(
-                                  row.id,
-                                  {
-                                    cityRate:
-                                      event
-                                        .target
-                                        .value ===
-                                      ''
-                                        ? null
-                                        : Math.max(
-                                            0,
-                                            Number(
-                                              event
-                                                .target
-                                                .value,
-                                            ) ||
-                                              0,
-                                          ),
-                                  },
-                                )
-                              }
-                            />
+                            </div>
                           </td>
 
                           <td>
-                            <input
-                              className="input rate-cell-input"
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={
-                                row.businessRate ??
-                                ''
+                            <div
+                              className="ingredient-active-rate"
+                              data-source={
+                                source
                               }
-                              placeholder="Optional"
-                              onChange={(
-                                event,
-                              ) =>
-                                updateRow(
-                                  row.id,
-                                  {
-                                    businessRate:
-                                      event
-                                        .target
-                                        .value ===
-                                      ''
-                                        ? null
-                                        : Math.max(
-                                            0,
-                                            Number(
-                                              event
-                                                .target
-                                                .value,
-                                            ) ||
-                                              0,
-                                          ),
-                                  },
-                                )
-                              }
-                            />
+                            >
+                              <span>
+                                {source ===
+                                'BUSINESS'
+                                  ? 'Business'
+                                  : source ===
+                                      'CITY'
+                                    ? loadedCity ||
+                                      'City'
+                                    : 'Global'}
+                              </span>
+                              <strong>
+                                {money(
+                                  currentRate,
+                                )}
+                              </strong>
+                              <small>
+                                {diff ||
+                                  'active'}
+                              </small>
+                            </div>
                           </td>
 
                           <td>
-                            <strong>
-                              {money(
-                                activeRate,
-                              )}
-                            </strong>
-                            <small className="muted">
-                              {activeSource}
-                            </small>
+                            <div className="ingredient-market-fields">
+                              <input
+                                className="input"
+                                value={
+                                  row.cityRateSource ||
+                                  ''
+                                }
+                                placeholder="Vendor / market"
+                                aria-label={`${row.name} city rate source`}
+                                onChange={(
+                                  event,
+                                ) =>
+                                  updateRow(
+                                    row.id,
+                                    {
+                                      cityRateSource:
+                                        event
+                                          .target
+                                          .value,
+                                    },
+                                  )
+                                }
+                              />
+
+                              <input
+                                className="input"
+                                type="date"
+                                value={
+                                  row.cityRateEffectiveDate ||
+                                  ''
+                                }
+                                aria-label={`${row.name} city rate date`}
+                                onChange={(
+                                  event,
+                                ) =>
+                                  updateRow(
+                                    row.id,
+                                    {
+                                      cityRateEffectiveDate:
+                                        event
+                                          .target
+                                          .value,
+                                    },
+                                  )
+                                }
+                              />
+                            </div>
                           </td>
 
                           <td>
-                            <span className={
-                              hasBusiness
-                                ? 'badge'
-                                : hasCity
-                                  ? 'badge'
-                                  : 'muted'
-                            }>
-                              {activeSource}
-                            </span>
-                          </td>
-
-                          <td>
-                            <input
-                              className="input source-cell-input"
-                              value={
-                                row.cityRateSource ||
-                                ''
-                              }
-                              placeholder="Vendor / market"
-                              onChange={(
-                                event,
-                              ) =>
-                                updateRow(
-                                  row.id,
-                                  {
-                                    cityRateSource:
-                                      event
-                                        .target
-                                        .value,
-                                  },
-                                )
-                              }
-                            />
-
-                            <input
-                              className="input source-cell-input"
-                              type="date"
-                              value={
-                                row.cityRateEffectiveDate ||
-                                ''
-                              }
-                              onChange={(
-                                event,
-                              ) =>
-                                updateRow(
-                                  row.id,
-                                  {
-                                    cityRateEffectiveDate:
-                                      event
-                                        .target
-                                        .value,
-                                  },
-                                )
-                              }
-                            />
-                          </td>
-
-                          <td>
-                            <span className="badge">
-                              {
-                                recipes.length
-                              }
-                            </span>
+                            <div className="ingredient-recipe-count">
+                              <strong>
+                                {recipes.length}
+                              </strong>
+                              <span>
+                                recipe{recipes.length === 1 ? '' : 's'}
+                              </span>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1623,10 +1917,24 @@ export default function IngredientRatesPage() {
                   {!filteredRows.length ? (
                     <tr>
                       <td
-                        colSpan={9}
-                        className="muted"
+                        colSpan={7}
                       >
-                        No ingredients match this filter.
+                        <div className="ingredient-rate-empty">
+                          <b>
+                            No ingredients found
+                          </b>
+                          <span>
+                            Try another search, category or rate source.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={
+                              clearFilters
+                            }
+                          >
+                            Clear filters
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ) : null}
@@ -1636,49 +1944,834 @@ export default function IngredientRatesPage() {
           )}
         </div>
 
+        <div className={`ingredient-save-dock ${changedCount ? 'is-visible' : ''}`}>
+          <div>
+            <strong>
+              {changedCount
+                ? `${changedCount} unsaved change${changedCount === 1 ? '' : 's'}`
+                : 'Rates are up to date'}
+            </strong>
+            <span>
+              Saving updates city rates and business purchase rates together.
+            </span>
+          </div>
+
+          <button
+            className="primary-button"
+            type="button"
+            disabled={
+              saving ||
+              changedCount === 0
+            }
+            onClick={() =>
+              void saveAllRates()
+            }
+          >
+            {saving
+              ? 'Saving…'
+              : 'Save Rates'}
+          </button>
+        </div>
+
         <style>{`
-          .ingredient-rate-controls {
-            display:grid;
-            grid-template-columns:minmax(180px,.7fr) auto minmax(220px,1fr) minmax(180px,.7fr);
-            gap:9px;
-            align-items:end;
-            margin-top:16px;
+          .ingredient-rates-page {
+            --rate-border: rgba(148,163,184,.12);
+            --rate-muted: #7e8da1;
           }
 
-          .ingredient-rate-filters {
+          .ingredient-rate-hero {
             display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:22px;
+            padding:20px 22px;
+            border:1px solid rgba(74,156,255,.14);
+            border-radius:16px;
+            background:
+              radial-gradient(circle at 92% 0%, rgba(74,156,255,.13), transparent 18rem),
+              linear-gradient(135deg, rgba(20,30,44,.94), rgba(10,14,20,.98));
+            box-shadow:0 14px 36px rgba(0,0,0,.22);
+          }
+
+          .ingredient-rate-eyebrow {
+            display:block;
+            margin-bottom:6px;
+            color:#73adf3;
+            font-size:9px;
+            font-weight:900;
+            letter-spacing:.09em;
+            text-transform:uppercase;
+          }
+
+          .ingredient-rate-hero h2 {
+            margin:0 0 6px;
+            color:#f5f8fc;
+            font-size:22px;
+            letter-spacing:-.025em;
+          }
+
+          .ingredient-rate-hero p {
+            max-width:720px;
+            margin:0;
+            color:#8291a5;
+            font-size:11px;
+            line-height:1.55;
+          }
+
+          .ingredient-rate-priority {
+            display:flex;
+            align-items:center;
+            gap:8px;
+            flex:0 0 auto;
+          }
+
+          .ingredient-rate-priority span {
+            display:grid;
+            gap:2px;
+            min-width:86px;
+            padding:9px 10px;
+            border:1px solid rgba(148,163,184,.11);
+            border-radius:11px;
+            color:#c9d5e4;
+            background:rgba(255,255,255,.025);
+            font-size:9px;
+            font-weight:850;
+          }
+
+          .ingredient-rate-priority span:first-child {
+            border-color:rgba(98,217,149,.18);
+            background:rgba(98,217,149,.045);
+          }
+
+          .ingredient-rate-priority b {
+            color:#6f9fd8;
+            font-size:8px;
+          }
+
+          .ingredient-rate-priority i {
+            color:#47566a;
+            font-style:normal;
+          }
+
+          .ingredient-rate-stats {
+            display:grid;
+            grid-template-columns:repeat(4,minmax(0,1fr));
+            gap:10px;
+          }
+
+          .ingredient-rate-stats > button,
+          .ingredient-rate-stats > div {
+            min-width:0;
+            padding:13px 14px;
+            border:1px solid var(--rate-border);
+            border-radius:13px;
+            color:#8998aa;
+            background:rgba(255,255,255,.02);
+            text-align:left;
+          }
+
+          .ingredient-rate-stats > button {
+            font:inherit;
+            cursor:pointer;
+            transition:border-color .16s ease, background .16s ease, transform .16s ease;
+          }
+
+          .ingredient-rate-stats > button:hover,
+          .ingredient-rate-stats > button.active {
+            border-color:rgba(74,156,255,.28);
+            background:rgba(74,156,255,.055);
+            transform:translateY(-1px);
+          }
+
+          .ingredient-rate-stats small,
+          .ingredient-rate-stats strong,
+          .ingredient-rate-stats span {
+            display:block;
+          }
+
+          .ingredient-rate-stats small {
+            color:#78879a;
+            font-size:8px;
+            font-weight:850;
+            text-transform:uppercase;
+            letter-spacing:.045em;
+          }
+
+          .ingredient-rate-stats strong {
+            margin:3px 0 1px;
+            color:#edf3fa;
+            font-size:21px;
+            letter-spacing:-.03em;
+          }
+
+          .ingredient-rate-stats span {
+            color:#657589;
+            font-size:8px;
+          }
+
+          .ingredient-rate-stats .has-changes {
+            border-color:rgba(244,182,74,.24);
+            background:rgba(244,182,74,.04);
+          }
+
+          .ingredient-rate-stats .has-changes strong {
+            color:#e8c47e;
+          }
+
+          .ingredient-rate-toolbar {
+            position:sticky;
+            top:64px;
+            z-index:11;
+            padding:14px 16px;
+            border-color:rgba(74,156,255,.11);
+            background:rgba(10,14,20,.94);
+            backdrop-filter:blur(18px);
+            -webkit-backdrop-filter:blur(18px);
+          }
+
+          .ingredient-rate-toolbar-top {
+            display:flex;
+            align-items:end;
+            justify-content:space-between;
+            gap:16px;
+          }
+
+          .ingredient-rate-city-control {
+            display:flex;
+            align-items:end;
             gap:7px;
             flex-wrap:wrap;
-            margin-top:11px;
           }
 
-          .unified-rate-table td small {
+          .ingredient-rate-city-control .field {
+            width:min(260px,42vw);
+          }
+
+          .ingredient-rate-primary-action {
+            display:flex;
+            align-items:center;
+            gap:10px;
+          }
+
+          .ingredient-rate-primary-action > span {
+            color:#718196;
+            font-size:9px;
+            white-space:nowrap;
+          }
+
+          .ingredient-rate-search-row {
+            display:grid;
+            grid-template-columns:minmax(240px,1fr) 190px auto auto;
+            gap:8px;
+            align-items:center;
+            margin-top:12px;
+            padding-top:12px;
+            border-top:1px solid rgba(148,163,184,.08);
+          }
+
+          .ingredient-rate-search {
+            display:grid;
+            grid-template-columns:28px minmax(0,1fr);
+            align-items:center;
+            min-height:38px;
+            padding:0 8px;
+            border:1px solid rgba(148,163,184,.13);
+            border-radius:10px;
+            background:rgba(255,255,255,.025);
+          }
+
+          .ingredient-rate-search > span {
+            color:#63748a;
+            font-size:18px;
+            text-align:center;
+          }
+
+          .ingredient-rate-search input {
+            min-width:0;
+            border:0;
+            outline:0;
+            color:#e7eef7;
+            background:transparent;
+            font:inherit;
+            font-size:11px;
+          }
+
+          .ingredient-rate-search input::placeholder {
+            color:#59697d;
+          }
+
+          .ingredient-rate-filter-chips {
+            display:flex;
+            gap:4px;
+            padding:3px;
+            border:1px solid rgba(148,163,184,.09);
+            border-radius:10px;
+            background:rgba(255,255,255,.018);
+          }
+
+          .ingredient-rate-filter-chips button,
+          .ingredient-rate-clear {
+            min-height:30px;
+            padding:5px 9px;
+            border:0;
+            border-radius:7px;
+            color:#738398;
+            background:transparent;
+            font:inherit;
+            font-size:9px;
+            font-weight:800;
+            cursor:pointer;
+          }
+
+          .ingredient-rate-filter-chips button:hover,
+          .ingredient-rate-filter-chips button.active {
+            color:#eaf3ff;
+            background:rgba(74,156,255,.13);
+          }
+
+          .ingredient-rate-clear {
+            color:#9aabba;
+          }
+
+          .ingredient-rate-result-line {
+            display:flex;
+            justify-content:space-between;
+            gap:14px;
+            margin-top:9px;
+            color:#5f7085;
+            font-size:8px;
+          }
+
+          .ingredient-rate-result-line b {
+            color:#99a9bb;
+          }
+
+          .ingredient-rate-feedback {
+            margin-top:10px!important;
+          }
+
+          .ingredient-rate-bulk {
+            padding:0!important;
+            overflow:hidden;
+          }
+
+          .ingredient-rate-bulk summary {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:16px;
+            padding:14px 16px;
+            cursor:pointer;
+            list-style:none;
+          }
+
+          .ingredient-rate-bulk summary::-webkit-details-marker {
+            display:none;
+          }
+
+          .ingredient-rate-bulk summary b,
+          .ingredient-rate-bulk summary small {
             display:block;
-            margin-top:4px;
           }
 
-          .rate-cell-input {
-            min-width:105px;
+          .ingredient-rate-bulk summary b {
+            color:#dce6f1;
+            font-size:11px;
           }
 
-          .source-cell-input {
-            min-width:145px;
-            margin-bottom:5px;
+          .ingredient-rate-bulk summary small {
+            margin-top:3px;
+            color:#6e7e92;
+            font-size:8px;
           }
 
-          .source-cell-input:last-child {
-            margin-bottom:0;
+          .ingredient-rate-bulk summary > span {
+            display:grid;
+            width:28px;
+            height:28px;
+            place-items:center;
+            border:1px solid rgba(148,163,184,.11);
+            border-radius:8px;
+            color:#8da0b7;
+            transition:transform .18s ease;
           }
 
-          @media(max-width:1000px) {
-            .ingredient-rate-controls {
-              grid-template-columns:1fr 1fr;
+          .ingredient-rate-bulk[open] summary > span {
+            transform:rotate(45deg);
+          }
+
+          .ingredient-rate-bulk-body {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) auto;
+            gap:10px;
+            align-items:end;
+            padding:0 16px 16px;
+            border-top:1px solid rgba(148,163,184,.07);
+          }
+
+          .ingredient-rate-bulk-body textarea {
+            min-height:92px;
+            margin-top:12px;
+            resize:vertical;
+          }
+
+          .ingredient-rate-table-card {
+            padding:0!important;
+            overflow:hidden;
+          }
+
+          .ingredient-rate-table-head {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:14px;
+            padding:16px 18px 12px;
+            border-bottom:1px solid rgba(148,163,184,.08);
+          }
+
+          .ingredient-rate-table-head h2 {
+            margin:3px 0 3px;
+            color:#edf3fa;
+            font-size:17px;
+          }
+
+          .ingredient-rate-table-head p {
+            margin:0;
+            color:#718196;
+            font-size:9px;
+          }
+
+          .ingredient-rate-table-wrap {
+            max-height:calc(100vh - 250px);
+            min-height:280px;
+            overflow:auto;
+          }
+
+          .ingredient-rate-table {
+            min-width:1050px;
+            width:100%;
+            border-collapse:separate;
+            border-spacing:0;
+          }
+
+          .ingredient-rate-table thead th {
+            position:sticky;
+            top:0;
+            z-index:4;
+            padding:10px 12px;
+            border-bottom:1px solid rgba(148,163,184,.11);
+            color:#74849a;
+            background:#0d1219;
+            font-size:8px;
+            font-weight:900;
+            letter-spacing:.045em;
+            text-align:left;
+            text-transform:uppercase;
+          }
+
+          .ingredient-rate-table thead th:first-child {
+            left:0;
+            z-index:6;
+          }
+
+          .ingredient-rate-table tbody td {
+            padding:10px 12px;
+            border-bottom:1px solid rgba(148,163,184,.065);
+            vertical-align:middle;
+          }
+
+          .ingredient-rate-table tbody tr {
+            transition:background .14s ease;
+          }
+
+          .ingredient-rate-table tbody tr:hover {
+            background:rgba(74,156,255,.028);
+          }
+
+          .ingredient-rate-table tbody tr.is-edited {
+            background:rgba(244,182,74,.025);
+          }
+
+          .ingredient-rate-name-cell {
+            position:sticky;
+            left:0;
+            z-index:2;
+            min-width:210px;
+            background:#0d1219;
+            box-shadow:10px 0 20px rgba(0,0,0,.10);
+          }
+
+          .ingredient-rate-table tbody tr:hover .ingredient-rate-name-cell {
+            background:#101720;
+          }
+
+          .ingredient-rate-table tbody tr.is-edited .ingredient-rate-name-cell {
+            background:#151714;
+          }
+
+          .ingredient-rate-name {
+            display:flex;
+            align-items:center;
+            gap:7px;
+          }
+
+          .ingredient-rate-name strong {
+            color:#dfe7f1;
+            font-size:10px;
+          }
+
+          .ingredient-rate-name > span {
+            padding:2px 5px;
+            border-radius:5px;
+            color:#d5ad65;
+            background:rgba(244,182,74,.075);
+            font-size:7px;
+            font-weight:900;
+            text-transform:uppercase;
+          }
+
+          .ingredient-rate-name-cell > small {
+            display:block;
+            margin-top:3px;
+            color:#627287;
+            font-size:8px;
+          }
+
+          .ingredient-static-rate {
+            display:grid;
+            gap:2px;
+            min-width:92px;
+          }
+
+          .ingredient-static-rate strong {
+            color:#aebbc9;
+            font-size:11px;
+          }
+
+          .ingredient-static-rate small {
+            color:#58687d;
+            font-size:7px;
+          }
+
+          .ingredient-rate-edit {
+            display:grid;
+            gap:4px;
+            min-width:125px;
+          }
+
+          .ingredient-rate-edit label {
+            display:grid;
+            grid-template-columns:24px minmax(0,1fr);
+            align-items:center;
+            min-height:36px;
+            border:1px solid rgba(148,163,184,.13);
+            border-radius:9px;
+            background:rgba(255,255,255,.025);
+            overflow:hidden;
+          }
+
+          .ingredient-rate-edit label:focus-within {
+            border-color:rgba(74,156,255,.46);
+            box-shadow:0 0 0 3px rgba(74,156,255,.08);
+          }
+
+          .ingredient-rate-edit label > span {
+            color:#6f8094;
+            font-size:10px;
+            text-align:center;
+          }
+
+          .ingredient-rate-edit input {
+            width:100%;
+            min-width:0;
+            min-height:34px;
+            padding:6px 8px 6px 0;
+            border:0;
+            outline:0;
+            color:#dfe9f5;
+            background:transparent;
+            font:inherit;
+            font-size:10px;
+          }
+
+          .ingredient-rate-edit button {
+            justify-self:start;
+            padding:0;
+            border:0;
+            color:#6e9fd7;
+            background:transparent;
+            font:inherit;
+            font-size:7px;
+            font-weight:800;
+            cursor:pointer;
+          }
+
+          .ingredient-rate-edit small {
+            color:#536378;
+            font-size:7px;
+          }
+
+          .business-rate-input {
+            border-color:rgba(98,217,149,.12)!important;
+            background:rgba(98,217,149,.022)!important;
+          }
+
+          .ingredient-active-rate {
+            display:grid;
+            gap:2px;
+            min-width:120px;
+            padding:9px 10px;
+            border:1px solid rgba(148,163,184,.12);
+            border-radius:10px;
+            background:rgba(255,255,255,.025);
+          }
+
+          .ingredient-active-rate > span {
+            color:#7c8ca1;
+            font-size:7px;
+            font-weight:900;
+            letter-spacing:.04em;
+            text-transform:uppercase;
+          }
+
+          .ingredient-active-rate strong {
+            color:#eef5fc;
+            font-size:14px;
+            letter-spacing:-.02em;
+          }
+
+          .ingredient-active-rate small {
+            color:#627287;
+            font-size:7px;
+          }
+
+          .ingredient-active-rate[data-source="BUSINESS"] {
+            border-color:rgba(98,217,149,.18);
+            background:rgba(98,217,149,.04);
+          }
+
+          .ingredient-active-rate[data-source="BUSINESS"] > span,
+          .ingredient-active-rate[data-source="BUSINESS"] strong {
+            color:#b7e3c6;
+          }
+
+          .ingredient-active-rate[data-source="CITY"] {
+            border-color:rgba(74,156,255,.20);
+            background:rgba(74,156,255,.045);
+          }
+
+          .ingredient-active-rate[data-source="CITY"] > span,
+          .ingredient-active-rate[data-source="CITY"] strong {
+            color:#b9d8ff;
+          }
+
+          .ingredient-market-fields {
+            display:grid;
+            grid-template-columns:minmax(130px,1fr) 132px;
+            gap:6px;
+            min-width:280px;
+          }
+
+          .ingredient-market-fields .input {
+            min-height:34px;
+            padding:6px 8px;
+            font-size:9px;
+          }
+
+          .ingredient-recipe-count {
+            display:grid;
+            min-width:64px;
+            gap:1px;
+            text-align:center;
+          }
+
+          .ingredient-recipe-count strong {
+            color:#c9d6e5;
+            font-size:13px;
+          }
+
+          .ingredient-recipe-count span {
+            color:#5e6e82;
+            font-size:7px;
+          }
+
+          .ingredient-rate-empty {
+            display:grid;
+            justify-items:center;
+            gap:4px;
+            padding:36px 20px;
+            text-align:center;
+          }
+
+          .ingredient-rate-empty b {
+            color:#cbd7e5;
+            font-size:12px;
+          }
+
+          .ingredient-rate-empty span {
+            color:#68798e;
+            font-size:9px;
+          }
+
+          .ingredient-rate-empty button {
+            margin-top:5px;
+            padding:6px 9px;
+            border:1px solid rgba(148,163,184,.12);
+            border-radius:7px;
+            color:#9bacc0;
+            background:rgba(255,255,255,.025);
+            font:inherit;
+            font-size:8px;
+            cursor:pointer;
+          }
+
+          .ingredient-rate-loading {
+            min-height:280px;
+            display:grid;
+            place-items:center;
+            color:#6e7f93;
+            font-size:10px;
+          }
+
+          .ingredient-save-dock {
+            position:sticky;
+            bottom:14px;
+            z-index:10;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:16px;
+            margin:0 auto;
+            width:min(680px,calc(100% - 24px));
+            padding:10px 11px 10px 14px;
+            border:1px solid rgba(98,217,149,.16);
+            border-radius:13px;
+            background:rgba(10,16,14,.94);
+            box-shadow:0 14px 36px rgba(0,0,0,.32);
+            backdrop-filter:blur(18px);
+            -webkit-backdrop-filter:blur(18px);
+            opacity:0;
+            pointer-events:none;
+            transform:translateY(10px);
+            transition:opacity .16s ease, transform .16s ease;
+          }
+
+          .ingredient-save-dock.is-visible {
+            opacity:1;
+            pointer-events:auto;
+            transform:translateY(0);
+          }
+
+          .ingredient-save-dock strong,
+          .ingredient-save-dock span {
+            display:block;
+          }
+
+          .ingredient-save-dock strong {
+            color:#d8eadf;
+            font-size:10px;
+          }
+
+          .ingredient-save-dock span {
+            margin-top:2px;
+            color:#708279;
+            font-size:8px;
+          }
+
+          @media(max-width:1100px) {
+            .ingredient-rate-hero {
+              display:grid;
+            }
+
+            .ingredient-rate-priority {
+              justify-content:start;
+            }
+
+            .ingredient-rate-search-row {
+              grid-template-columns:minmax(220px,1fr) 180px;
+            }
+
+            .ingredient-rate-filter-chips {
+              justify-self:start;
+            }
+
+            .ingredient-rate-clear {
+              justify-self:end;
             }
           }
 
-          @media(max-width:650px) {
-            .ingredient-rate-controls {
+          @media(max-width:760px) {
+            .ingredient-rate-hero {
+              padding:16px;
+            }
+
+            .ingredient-rate-priority {
+              display:grid;
               grid-template-columns:1fr;
+              width:100%;
+            }
+
+            .ingredient-rate-priority i {
+              display:none;
+            }
+
+            .ingredient-rate-stats {
+              grid-template-columns:repeat(2,minmax(0,1fr));
+            }
+
+            .ingredient-rate-toolbar {
+              position:static;
+            }
+
+            .ingredient-rate-toolbar-top,
+            .ingredient-rate-primary-action {
+              display:grid;
+              width:100%;
+            }
+
+            .ingredient-rate-city-control {
+              display:grid;
+              grid-template-columns:1fr 1fr;
+              width:100%;
+            }
+
+            .ingredient-rate-city-control .field {
+              grid-column:1 / -1;
+              width:100%;
+            }
+
+            .ingredient-rate-primary-action {
+              grid-template-columns:1fr auto;
+              align-items:center;
+            }
+
+            .ingredient-rate-search-row {
+              grid-template-columns:1fr;
+            }
+
+            .ingredient-rate-filter-chips {
+              width:100%;
+              overflow:auto;
+            }
+
+            .ingredient-rate-filter-chips button {
+              flex:1 0 auto;
+            }
+
+            .ingredient-rate-result-line {
+              display:grid;
+            }
+
+            .ingredient-rate-bulk-body {
+              grid-template-columns:1fr;
+            }
+
+            .ingredient-rate-table-wrap {
+              max-height:none;
+            }
+
+            .ingredient-save-dock {
+              bottom:76px;
             }
           }
         `}</style>
