@@ -647,7 +647,6 @@ export async function POST(request: Request) {
         priced.recipe,
         masterRates,
         effectiveRateMap,
-        effectiveRateSourceMap,
       );
       await prisma.tenantAutoRecipe.upsert({
         where: { tenantId_normalizedName: { tenantId, normalizedName: key } },
@@ -679,12 +678,17 @@ export async function POST(request: Request) {
             storedRecipe,
             masterRates,
             historicalRecipes,
-            overrideMap,
+            effectiveRateMap,
+            effectiveRateSourceMap,
           )
         : null;
       const recipe = priced?.recipe;
       const costing = recipe
-        ? calculateRecipeCost(recipe, masterRates, overrideMap)
+        ? calculateRecipeCost(
+            recipe,
+            masterRates,
+            effectiveRateMap,
+          )
         : { costPerPlate: 0, missingRates: 0 };
 
       const previousTenantCost =
