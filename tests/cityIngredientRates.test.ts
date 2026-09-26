@@ -5,6 +5,7 @@ import {
   ingredientRateSourceLabel,
   normalizeCityKey,
   normalizeCityName,
+  resolveIngredientRate,
 } from '../lib/cityIngredientRates';
 
 test('normalizes city display names without changing readable casing', () => {
@@ -41,5 +42,41 @@ test('labels city rate sources clearly', () => {
   assert.equal(
     ingredientRateSourceLabel('GLOBAL', 'Silvassa'),
     'Global master rate',
+  );
+});
+
+
+test('rate priority is tenant then city then global', () => {
+  assert.deepEqual(
+    resolveIngredientRate({
+      tenantRate: 120,
+      cityRate: 100,
+      globalRate: 80,
+    }),
+    {
+      rate: 120,
+      source: 'TENANT',
+    },
+  );
+
+  assert.deepEqual(
+    resolveIngredientRate({
+      cityRate: 100,
+      globalRate: 80,
+    }),
+    {
+      rate: 100,
+      source: 'CITY',
+    },
+  );
+
+  assert.deepEqual(
+    resolveIngredientRate({
+      globalRate: 80,
+    }),
+    {
+      rate: 80,
+      source: 'GLOBAL',
+    },
   );
 });
