@@ -824,6 +824,8 @@ export default function QuotationPage() {
                           item.name,
                         quantity:
                           item.quantity,
+                        unit:
+                          item.unit || 'pcs',
                       }),
                     ),
                   operations:
@@ -1694,7 +1696,7 @@ export default function QuotationPage() {
                 <div className="quote-detail-table compact">
                   <div className="quote-detail-row disposable is-head">
                     <b>Item</b>
-                    <b>Quantity</b>
+                    <b>Quantity / Unit</b>
                   </div>
 
                   {activeDisposable.map(
@@ -1710,7 +1712,8 @@ export default function QuotationPage() {
                             Number(
                               item.quantity,
                             ) || 0,
-                          )}
+                          )}{' '}
+                          {item.unit || 'pcs'}
                         </b>
                       </div>
                     ),
