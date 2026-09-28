@@ -21344,9 +21344,10 @@ body.client-sheet-open {
 .event-review-category,
 .simple-detected-category {
   overflow: hidden;
-  border: 1px solid rgba(16, 76, 61, 0.12);
+  border: 1px solid rgba(79, 151, 124, .2);
   border-radius: 14px;
-  background: rgba(250, 253, 251, 0.78);
+  background: #101b1a;
+  box-shadow: inset 3px 0 0 rgba(209, 158, 56, .72);
 }
 
 .event-review-category-head,
@@ -21356,23 +21357,28 @@ body.client-sheet-open {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 14px;
-  border-bottom: 1px solid rgba(16, 76, 61, 0.1);
-  background: rgba(225, 241, 234, 0.72);
+  border-bottom: 1px solid rgba(79, 151, 124, .18);
+  background: #17352e;
 }
 
 .event-review-category-head h4,
 .simple-detected-category-head h4 {
   margin: 0;
-  color: #174f42;
+  color: #f5ead1;
   font-size: 0.9rem;
-  font-weight: 800;
+  font-weight: 850;
+  letter-spacing: -.01em;
 }
 
 .event-review-category-head span,
 .simple-detected-category-head span {
-  color: #5d756e;
+  padding: 3px 8px;
+  border: 1px solid rgba(221, 174, 75, .2);
+  border-radius: 999px;
+  color: #e4bd67;
+  background: rgba(221, 174, 75, .07);
   font-size: 0.76rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .event-review-category .event-review-dishes,
@@ -21388,7 +21394,12 @@ body.client-sheet-open {
   gap: 10px;
   min-height: 66px;
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(157, 178, 204, .09);
+  border-bottom: 1px solid rgba(134, 175, 158, .1);
+  background: rgba(255, 255, 255, .012);
+}
+
+.event-review-dish:nth-child(even) {
+  background: rgba(120, 181, 151, .025);
 }
 
 .event-review-dish:last-child {
@@ -21396,7 +21407,8 @@ body.client-sheet-open {
 }
 
 .event-review-dish.needs-rate {
-  background: rgba(244, 182, 74, .035);
+  box-shadow: inset 3px 0 0 #d8a43e;
+  background: rgba(216, 164, 62, .065);
 }
 
 .event-review-dish-number {
@@ -21405,8 +21417,8 @@ body.client-sheet-open {
   height: 28px;
   place-items: center;
   border-radius: 9px;
-  color: #8290a2;
-  background: rgba(157, 178, 204, .07);
+  color: #d9b55f;
+  background: rgba(216, 164, 62, .1);
   font-size: 9px;
   font-weight: 850;
 }
@@ -21423,21 +21435,30 @@ body.client-sheet-open {
 
 .event-review-dish-copy b {
   overflow: hidden;
-  color: #edf2f8;
-  font-size: 12px;
+  color: #fff8e8;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: -.01em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .event-review-dish-copy span {
-  margin-top: 4px;
-  color: #78879a;
-  font-size: 9px;
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 5px;
+  padding: 3px 7px;
+  border: 1px solid rgba(99, 181, 143, .2);
+  border-radius: 999px;
+  color: #9dd6bb;
+  background: rgba(72, 145, 111, .08);
+  font-size: 8px;
+  font-weight: 800;
 }
 
 .event-review-dish-copy small {
   margin-top: 4px;
-  color: #8abcf8;
+  color: #e7bd62;
   font-size: 9px;
 }
 
@@ -21450,8 +21471,8 @@ body.client-sheet-open {
   padding: 0 9px;
   border: 1px solid rgba(244, 182, 74, .26);
   border-radius: 10px;
-  color: #f5c66f;
-  background: rgba(244, 182, 74, .06);
+  color: #ffd276;
+  background: rgba(216, 164, 62, .09);
 }
 
 .event-review-rate input {
@@ -21476,8 +21497,9 @@ body.client-sheet-open {
   height: 28px;
   place-items: center;
   border-radius: 50%;
-  color: #8ce4b1;
-  background: rgba(71, 205, 128, .09);
+  color: #07180f;
+  background: #65d795;
+  box-shadow: 0 0 0 4px rgba(101, 215, 149, .08);
   font-size: 11px;
   font-weight: 900;
 }
