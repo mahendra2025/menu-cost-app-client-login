@@ -1266,6 +1266,11 @@ export default function EventPage() {
   ] = useState(false);
 
   const [
+    showPasteMenu,
+    setShowPasteMenu,
+  ] = useState(false);
+
+  const [
     manualDishLoading,
     setManualDishLoading,
   ] = useState(false);
@@ -10021,6 +10026,56 @@ export default function EventPage() {
                     </label>
 
                     <div className="event-menu-choice" aria-hidden="true"><span>or</span></div>
+
+                    <button
+                      className="event-manual-entry event-paste-entry"
+                      type="button"
+                      disabled={Boolean(uploading) || detecting}
+                      aria-expanded={showPasteMenu}
+                      aria-controls="pasteMenuPanel"
+                      onClick={() => setShowPasteMenu((current) => !current)}
+                    >
+                      <span className="event-manual-entry-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 5.5h6M9 3h6v5H9z" />
+                          <path d="M7 6H5.5A1.5 1.5 0 0 0 4 7.5v12A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 18.5 6H17" />
+                        </svg>
+                      </span>
+                      <span className="event-manual-entry-copy">
+                        <b>Paste menu text</b>
+                        <small>Copy a WhatsApp, email or document menu</small>
+                      </span>
+                      <span className="event-manual-entry-arrow" aria-hidden="true">{showPasteMenu ? '⌃' : '›'}</span>
+                    </button>
+
+                    {showPasteMenu ? (
+                      <div className="event-paste-panel" id="pasteMenuPanel">
+                        <label htmlFor="pastedMenuText">Paste your complete menu</label>
+                        <textarea
+                          id="pastedMenuText"
+                          className="textarea event-paste-textarea"
+                          value={work.event.rawMenuText}
+                          onChange={(event) => {
+                            updateEvent('rawMenuText', event.target.value);
+                            setError('');
+                          }}
+                          placeholder={SAMPLE_MENU}
+                          rows={10}
+                          autoFocus
+                        />
+                        <div className="event-paste-actions">
+                          <small>{work.event.rawMenuText.trim() ? `${work.event.rawMenuText.trim().split(/\n+/).length} menu lines ready` : 'Paste dish names and category headings.'}</small>
+                          <button
+                            className="primary-button"
+                            type="button"
+                            disabled={!work.event.rawMenuText.trim() || detecting}
+                            onClick={() => void detectAndNext()}
+                          >
+                            {detecting ? 'Detecting dishes…' : 'Detect pasted menu'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
 
                     <button
                       className="event-manual-entry"
