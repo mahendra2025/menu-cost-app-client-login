@@ -1278,6 +1278,17 @@ export default function EventPage() {
   );
 
   const [
+    availableDishCategories,
+    setAvailableDishCategories,
+  ] = useState<string[]>([]);
+
+  const defaultDishCategory = (
+    availableDishCategories.includes('Other')
+      ? 'Other'
+      : availableDishCategories[0] || 'Other'
+  ) as Category;
+
+  const [
     manualDishSearch,
     setManualDishSearch,
   ] = useState('');
@@ -1526,6 +1537,19 @@ export default function EventPage() {
           ? data.items
           : [];
 
+      const loadedCategories =
+        Array.isArray(data.categories)
+          ? Array.from(
+              new Set(
+                data.categories
+                  .map((category: unknown) =>
+                    String(category || '').trim(),
+                  )
+                  .filter(Boolean),
+              ),
+            ) as string[]
+          : [];
+
       const cleaned:
         ManualDishOption[] =
         items.flatMap(
@@ -1619,6 +1643,34 @@ export default function EventPage() {
       setManualDishCatalog(
         cleaned,
       );
+
+      const nextCategories =
+        loadedCategories.length
+          ? loadedCategories
+          : Array.from(
+              new Set(
+                cleaned
+                  .map((dish) => dish.category)
+                  .filter(Boolean),
+              ),
+            );
+
+      setAvailableDishCategories(nextCategories);
+
+      if (nextCategories.length) {
+        const fallbackCategory = (
+          nextCategories.includes('Other')
+            ? 'Other'
+            : nextCategories[0]
+        ) as Category;
+
+        setEditDetectionCategory((current) =>
+          nextCategories.includes(current) ? current : fallbackCategory,
+        );
+        setNewDetectionDishCategory((current) =>
+          nextCategories.includes(current) ? current : fallbackCategory,
+        );
+      }
 
       setSavedPersonalDishKeys(
         new Set(
@@ -1800,11 +1852,11 @@ export default function EventPage() {
     const category =
       manualDishCategory !==
         'ALL' &&
-      CATEGORIES.includes(
-        manualDishCategory as Category,
+      availableDishCategories.includes(
+        manualDishCategory,
       )
         ? manualDishCategory as Category
-        : 'Other';
+        : defaultDishCategory;
 
     const newItem:
       MenuItem = {
@@ -3360,9 +3412,8 @@ export default function EventPage() {
 
     if (
       categoryHint &&
-      CATEGORIES.includes(
-        categoryHint as
-          Category,
+      availableDishCategories.includes(
+        categoryHint,
       )
     ) {
       setNewDetectionDishCategory(
@@ -3371,7 +3422,7 @@ export default function EventPage() {
       );
     } else {
       setNewDetectionDishCategory(
-        'Other',
+        defaultDishCategory,
       );
     }
 
@@ -3713,13 +3764,13 @@ export default function EventPage() {
     );
 
     setEditDetectionCategory(
-      CATEGORIES.includes(
-        item.category as Category,
+      availableDishCategories.includes(
+        item.category,
       )
         ? (
             item.category as Category
           )
-        : 'Other',
+        : defaultDishCategory,
     );
   }
 
@@ -4293,15 +4344,14 @@ export default function EventPage() {
     ) {
       const restoreCategory:
         Category =
-          CATEGORIES.includes(
-            item.category as
-              Category,
+          availableDishCategories.includes(
+            item.category,
           )
             ? (
                 item.category as
                   Category
               )
-            : 'Other';
+            : defaultDishCategory;
 
       void recostReviewedDish(
         item.id,
@@ -4377,15 +4427,14 @@ export default function EventPage() {
 
     const category:
       Category =
-        CATEGORIES.includes(
-          candidate.categoryHint as
-            Category,
+        availableDishCategories.includes(
+          candidate.categoryHint,
         )
           ? (
               candidate.categoryHint as
                 Category
             )
-          : 'Other';
+          : defaultDishCategory;
 
     const newItem:
       MenuItem = {
@@ -4686,8 +4735,8 @@ export default function EventPage() {
 
     const catalogCategory =
       catalogDish &&
-      CATEGORIES.includes(
-        catalogDish.category as Category,
+      availableDishCategories.includes(
+        catalogDish.category,
       )
         ? catalogDish.category as Category
         : newDetectionDishCategory;
@@ -4961,6 +5010,30 @@ export default function EventPage() {
       );
 
       return;
+    }
+
+    let detectionCategories = availableDishCategories;
+
+    if (!detectionCategories.length) {
+      try {
+        const categoryResponse = await fetch('/api/dishes', {
+          cache: 'no-store',
+        });
+        const categoryData = await categoryResponse.json();
+
+        if (categoryResponse.ok && Array.isArray(categoryData.categories)) {
+          detectionCategories = Array.from(
+            new Set(
+              categoryData.categories
+                .map((category: unknown) => String(category || '').trim())
+                .filter(Boolean),
+            ),
+          ) as string[];
+          setAvailableDishCategories(detectionCategories);
+        }
+      } catch {
+        detectionCategories = [];
+      }
     }
 
     const functionName =
@@ -5727,6 +5800,27 @@ export default function EventPage() {
         Array.from(
           learnedDetectedByKey.values(),
         );
+
+      /*
+       * The Dishes page owns the category catalog. Detection may infer a
+       * legacy heading, but it must never reintroduce a category that was
+       * removed there.
+       */
+      if (detectionCategories.length) {
+        const allowedCategories = new Set(detectionCategories);
+        const fallbackCategory = (
+          allowedCategories.has('Other')
+            ? 'Other'
+            : detectionCategories[0]
+        ) as Category;
+
+        detectedMenu = detectedMenu.map((item) => ({
+          ...item,
+          category: allowedCategories.has(item.category)
+            ? item.category
+            : fallbackCategory,
+        }));
+      }
 
       /*
        * Source Coverage Recovery
@@ -8849,7 +8943,7 @@ export default function EventPage() {
       });
 
       const categoryOrder = new Map(
-        CATEGORIES.map((category, index) => [category, index]),
+        availableDishCategories.map((category, index) => [category, index]),
       );
 
       return {
@@ -10127,9 +10221,9 @@ export default function EventPage() {
                                     onClick={() => {
                                       setNewDetectionDishName(dish.name);
                                       setNewDetectionDishCategory(
-                                        CATEGORIES.includes(dish.category as Category)
+                                        availableDishCategories.includes(dish.category)
                                           ? dish.category as Category
-                                          : 'Other',
+                                          : defaultDishCategory,
                                       );
                                       setError('');
                                     }}
@@ -10172,7 +10266,7 @@ export default function EventPage() {
                             value={newDetectionDishCategory}
                             onChange={(event) => setNewDetectionDishCategory(event.target.value as Category)}
                           >
-                            {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                            {availableDishCategories.map((category) => <option key={category} value={category}>{category}</option>)}
                           </select>
                         </label>
                         {simpleDetectedGroups.length > 1 ? (
@@ -10300,9 +10394,9 @@ export default function EventPage() {
                                                 onClick={() => {
                                                   setEditDetectionName(dish.name);
                                                   setEditDetectionCategory(
-                                                    CATEGORIES.includes(dish.category as Category)
+                                                    availableDishCategories.includes(dish.category)
                                                       ? dish.category as Category
-                                                      : 'Other',
+                                                      : defaultDishCategory,
                                                   );
                                                   setError('');
                                                 }}
@@ -10320,7 +10414,7 @@ export default function EventPage() {
                                         onChange={(event) => setEditDetectionCategory(event.target.value as Category)}
                                         aria-label="Dish category"
                                       >
-                                        {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                                        {availableDishCategories.map((category) => <option key={category} value={category}>{category}</option>)}
                                       </select>
                                       <div>
                                         <button type="button" onClick={cancelDetectionEdit}>Cancel</button>
@@ -12106,7 +12200,7 @@ export default function EventPage() {
                                     )
                                   }
                                 >
-                                  {CATEGORIES.map(
+                                  {availableDishCategories.map(
                                     (
                                       category,
                                     ) => (
@@ -12255,7 +12349,7 @@ export default function EventPage() {
                                           )
                                         }
                                       >
-                                        {CATEGORIES.map(
+                                        {availableDishCategories.map(
                                           (
                                             category,
                                           ) => (
@@ -12338,7 +12432,7 @@ export default function EventPage() {
                                           }
                                           aria-label={`Category for ${item.name}`}
                                         >
-                                          {CATEGORIES.map(
+                                          {availableDishCategories.map(
                                             (
                                               category,
                                             ) => (
@@ -13095,7 +13189,7 @@ export default function EventPage() {
                           )
                         }
                       >
-                        {CATEGORIES.map(
+                        {availableDishCategories.map(
                           (category) => (
                             <option
                               key={
@@ -14513,9 +14607,9 @@ export default function EventPage() {
                                                 onClick={() => {
                                                   setEditDetectionName(dish.name);
                                                   setEditDetectionCategory(
-                                                    CATEGORIES.includes(dish.category as Category)
+                                                    availableDishCategories.includes(dish.category)
                                                       ? dish.category as Category
-                                                      : 'Other',
+                                                      : defaultDishCategory,
                                                   );
                                                   setError('');
                                                 }}
@@ -14540,7 +14634,7 @@ export default function EventPage() {
                                           )
                                         }
                                       >
-                                        {CATEGORIES.map(
+                                        {availableDishCategories.map(
                                           (
                                             category,
                                           ) => (
@@ -14616,7 +14710,7 @@ export default function EventPage() {
                                         }
                                         aria-label={`Category for ${item.name}`}
                                       >
-                                        {CATEGORIES.map(
+                                        {availableDishCategories.map(
                                           (
                                             category,
                                           ) => (

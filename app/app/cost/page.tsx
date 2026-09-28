@@ -11,10 +11,7 @@ import AppShell, { LockedCard } from '../../components/AppShell';
 import { calculate, getMenuServiceKey, getSession, loadWork, saveWork } from '../../../lib/store';
 import type { MenuItem, Session, WorkState } from '../../../lib/types';
 import { calculateManpowerCost } from '../../../lib/manpowerCost';
-import {
-  CATEGORIES,
-  type Category,
-} from '../../../lib/menuCategories';
+import type { Category } from '../../../lib/menuCategories';
 import {
   getCostingAnalyticsKey,
   trackProductEvent,
@@ -140,6 +137,8 @@ export default function CostPage() {
   const [dishCategoryFilter, setDishCategoryFilter] = useState('ALL');
   const [dishStatusFilter, setDishStatusFilter] = useState<'ALL' | 'MISSING' | 'COSTED'>('ALL');
   const deferredDishQuery = useDeferredValue(dishQuery);
+  const [availableDishCategories, setAvailableDishCategories] =
+    useState<string[]>([]);
 
   const [
     showAddDish,
@@ -197,6 +196,38 @@ export default function CostPage() {
     if (current) setWork(loadWork(current.tenantId));
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    void fetch('/api/dishes', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!active) return;
+        const categories = Array.isArray(data.categories)
+          ? Array.from(
+              new Set(
+                data.categories
+                  .map((category: unknown) => String(category || '').trim())
+                  .filter(Boolean),
+              ),
+            ) as string[]
+          : [];
+        setAvailableDishCategories(categories);
+        if (categories.length) {
+          setNewDishCategory((current) =>
+            categories.includes(current) ? current : categories[0] as Category,
+          );
+        }
+      })
+      .catch(() => {
+        if (active) setAvailableDishCategories([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const result = useMemo(
     () => work ? calculate(work) : null,
     [work],
@@ -242,7 +273,11 @@ export default function CostPage() {
   if (session.status === 'EXPIRED') return <AppShell title="Cost"><LockedCard /></AppShell>;
 
   const dishCategories = Array.from(
-    new Set(result.menuBreakdown.map((item) => item.category)),
+    new Set(
+      result.menuBreakdown
+        .map((item) => item.category)
+        .filter((category) => availableDishCategories.includes(category)),
+    ),
   ).sort((a, b) => a.localeCompare(b));
   const dishServices = Array.from(
     new Map(
@@ -1115,7 +1150,7 @@ export default function CostPage() {
                       )
                     }
                   >
-                    {CATEGORIES.map(
+                    {availableDishCategories.map(
                       (category) => (
                         <option
                           key={
@@ -1513,10 +1548,7 @@ export default function CostPage() {
                                   )
                                 }
                               >
-                                {!CATEGORIES.some((category) => category === item.category) ? (
-                                  <option value={item.category}>{item.category}</option>
-                                ) : null}
-                                {CATEGORIES.map((category) => (
+                                {availableDishCategories.map((category) => (
                                   <option key={category} value={category}>{category}</option>
                                 ))}
                               </select>
@@ -1772,10 +1804,7 @@ export default function CostPage() {
                               )
                             }
                           >
-                            {!CATEGORIES.some((category) => category === item.category) ? (
-                              <option value={item.category}>{item.category}</option>
-                            ) : null}
-                            {CATEGORIES.map((category) => (
+                            {availableDishCategories.map((category) => (
                               <option key={category} value={category}>{category}</option>
                             ))}
                           </select>

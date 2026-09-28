@@ -26,6 +26,11 @@ export async function GET() {
     );
     const allowed = new Set(filtered.map((item) => `${item.category}\u0000${item.name}`));
     return NextResponse.json({
+      categories: Array.isArray(categoryCatalog?.categories)
+        ? categoryCatalog.categories
+            .map((category) => String(category || '').trim())
+            .filter(Boolean)
+        : Array.from(new Set(filtered.map((item) => item.category).filter(Boolean))),
       items: items
         .filter((item) => allowed.has(`${item.category}\u0000${item.name}`))
         .map(({ id, name, category }) => ({ id, name, category })),

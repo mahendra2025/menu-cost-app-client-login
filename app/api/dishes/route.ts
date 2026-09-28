@@ -659,6 +659,23 @@ export async function GET() {
     return NextResponse.json({
       items:
         catalogItems,
+      categories: Array.isArray(
+        categoryCatalog?.categories,
+      )
+        ? categoryCatalog.categories
+            .map((category) =>
+              String(category || '').trim(),
+            )
+            .filter(Boolean)
+        : Array.from(
+            new Set(
+              catalogItems
+                .map((item) =>
+                  String(item.category || '').trim(),
+                )
+                .filter(Boolean),
+            ),
+          ),
       personalized:
         Boolean(
           tenantId &&
