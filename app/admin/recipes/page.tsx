@@ -80,6 +80,11 @@ import {
   suggestThaiGas,
 } from '../../../lib/thaiGas';
 
+import {
+  menuDishModifierLabels,
+  readMenuDishModifiers,
+} from '../../../lib/menuDishModifiers';
+
 type RawRow = Record<string, unknown>;
 
 type RecipeCatalog = {
@@ -1360,11 +1365,17 @@ export default function RecipesPage() {
                   ) ||
                 'Other';
 
+              const modifiers =
+                readMenuDishModifiers(
+                  row.modifiers,
+                );
+
               return [
                 {
                   name,
                   category:
                     requestedCategory,
+                  modifiers,
                 },
               ];
             },
@@ -1452,10 +1463,17 @@ export default function RecipesPage() {
             requested.category,
           subcategory: '',
           baseGuests: 100,
-          servingSize: 1,
+          servingSize:
+            requested.modifiers?.portionQuantity ||
+            1,
           servingUnit:
+            requested.modifiers?.portionUnit ||
             'serving',
-          pieceWeightGrams: 0,
+          pieceWeightGrams:
+            requested.modifiers?.pieceWeightGrams ||
+            0,
+          dishModifiers:
+            requested.modifiers,
           dishRate: 0,
           ingredients: [],
         });
@@ -1600,6 +1618,34 @@ export default function RecipesPage() {
         .trim()
         .slice(0, 60);
 
+    const requestedModifiers =
+      readMenuDishModifiers({
+        tags:
+          String(
+            params.get('modifierTags') ||
+            '',
+          )
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean),
+        portionQuantity:
+          Number(
+            params.get(
+              'modifierPortionQuantity',
+            ) || 0,
+          ),
+        portionUnit:
+          params.get(
+            'modifierPortionUnit',
+          ) || '',
+        pieceWeightGrams:
+          Number(
+            params.get(
+              'modifierPieceWeightGrams',
+            ) || 0,
+          ),
+      });
+
     const index =
       catalog.dishes.length;
 
@@ -1611,10 +1657,17 @@ export default function RecipesPage() {
       subcategory:
         requestedSubcategory,
       baseGuests: 100,
-      servingSize: 1,
+      servingSize:
+        requestedModifiers?.portionQuantity ||
+        1,
       servingUnit:
+        requestedModifiers?.portionUnit ||
         'serving',
-      pieceWeightGrams: 0,
+      pieceWeightGrams:
+        requestedModifiers?.pieceWeightGrams ||
+        0,
+      dishModifiers:
+        requestedModifiers,
       dishRate: 0,
       ingredients: [],
     };
@@ -2167,6 +2220,8 @@ export default function RecipesPage() {
                             dish.category,
                           ) ||
                           'Other',
+                        modifiers:
+                          dish.dishModifiers,
                       }),
                     ),
                 }),
@@ -6302,6 +6357,17 @@ I | Tomato | 4 | kg | 35 | kg`}
                           : ''}
                         {' · '}
                         {guests.toLocaleString('en-IN')} batch guests
+                        {menuDishModifierLabels(
+                          readMenuDishModifiers(
+                            selectedDish.dishModifiers,
+                          ),
+                        ).length
+                          ? ` · ${menuDishModifierLabels(
+                              readMenuDishModifiers(
+                                selectedDish.dishModifiers,
+                              ),
+                            ).join(' · ')}`
+                          : ''}
                       </p>
                     </div>
 
