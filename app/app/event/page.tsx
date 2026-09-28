@@ -4392,10 +4392,20 @@ export default function EventPage() {
           0,
 
         portionQuantity:
-          1,
+          candidate.dishModifiers?.portionUnit === 'piece'
+            ? candidate.dishModifiers.portionQuantity || 1
+            : 1,
 
         portionUnit:
-          'serving',
+          candidate.dishModifiers?.portionUnit === 'piece'
+            ? 'piece'
+            : 'serving',
+
+        dishModifiers:
+          candidate.dishModifiers,
+
+        pieceWeightGrams:
+          candidate.dishModifiers?.pieceWeightGrams,
 
         serviceId:
           candidate.serviceId,
@@ -5404,10 +5414,20 @@ export default function EventPage() {
                 costPerPlate: 0,
 
                 portionQuantity:
-                  1,
+                  candidate.dishModifiers?.portionUnit === 'piece'
+                    ? candidate.dishModifiers.portionQuantity || 1
+                    : 1,
 
                 portionUnit:
-                  'serving',
+                  candidate.dishModifiers?.portionUnit === 'piece'
+                    ? 'piece'
+                    : 'serving',
+
+                dishModifiers:
+                  candidate.dishModifiers,
+
+                pieceWeightGrams:
+                  candidate.dishModifiers?.pieceWeightGrams,
 
                 serviceId:
                   candidate.serviceId,
@@ -5577,10 +5597,20 @@ export default function EventPage() {
                   0,
 
                 portionQuantity:
-                  1,
+                  candidate.dishModifiers?.portionUnit === 'piece'
+                    ? candidate.dishModifiers.portionQuantity || 1
+                    : 1,
 
                 portionUnit:
-                  'serving',
+                  candidate.dishModifiers?.portionUnit === 'piece'
+                    ? 'piece'
+                    : 'serving',
+
+                dishModifiers:
+                  candidate.dishModifiers,
+
+                pieceWeightGrams:
+                  candidate.dishModifiers?.pieceWeightGrams,
 
                 serviceId:
                   candidate.serviceId,
@@ -10191,6 +10221,13 @@ export default function EventPage() {
                                       <div className="event-review-dish-copy">
                                         <b>{item.name}</b>
                                         <span>{item.category || 'Other'}</span>
+                                        {menuDishModifierLabels(item.dishModifiers).length ? (
+                                          <div className="event-review-modifiers">
+                                            {menuDishModifierLabels(item.dishModifiers).map((label) => (
+                                              <small key={label}>{label}</small>
+                                            ))}
+                                          </div>
+                                        ) : null}
                                         {recostingDishIds.has(item.id) ? <small>Checking rate…</small> : null}
                                       </div>
 
@@ -10217,7 +10254,11 @@ export default function EventPage() {
                                         {item.detectionSource !== 'catalog' ? (
                                           (
                                             item.costSource === 'ai_recipe' ||
-                                            smartDraftRecipeKeys.has(dishNameKey(item.name))
+                                            smartDraftRecipeKeys.has(
+                                              dishNameKey(
+                                                menuDishVariantName(item.name, item.dishModifiers),
+                                              ),
+                                            )
                                           ) ? (
                                             <button
                                               type="button"
@@ -10226,7 +10267,11 @@ export default function EventPage() {
                                             >
                                               ✦ Smart draft ready
                                             </button>
-                                          ) : availableRecipeKeys.has(dishNameKey(item.name)) ? (
+                                          ) : availableRecipeKeys.has(
+                                            dishNameKey(
+                                              menuDishVariantName(item.name, item.dishModifiers),
+                                            ),
+                                          ) ? (
                                             <span className="event-review-master-saved">
                                               <span aria-hidden="true">✓</span> Recipe available
                                             </span>
@@ -14217,12 +14262,24 @@ export default function EventPage() {
                                       }
                                     </b>
 
+                                    {menuDishModifierLabels(item.dishModifiers).length ? (
+                                      <div className="menu-detection-modifiers">
+                                        {menuDishModifierLabels(item.dishModifiers).map((label) => (
+                                          <span key={label}>{label}</span>
+                                        ))}
+                                      </div>
+                                    ) : null}
+
                                     <div className="menu-detection-item-actions">
                                       {item.detectionSource !== 'catalog' &&
                                       item.coverageStatus !== 'REJECTED' ? (
                                         (
                                           item.costSource === 'ai_recipe' ||
-                                          smartDraftRecipeKeys.has(dishNameKey(item.name))
+                                          smartDraftRecipeKeys.has(
+                                            dishNameKey(
+                                              menuDishVariantName(item.name, item.dishModifiers),
+                                            ),
+                                          )
                                         ) ? (
                                           <button
                                             type="button"
@@ -14231,7 +14288,11 @@ export default function EventPage() {
                                           >
                                             ✦ Smart draft ready
                                           </button>
-                                        ) : availableRecipeKeys.has(dishNameKey(item.name)) ? (
+                                        ) : availableRecipeKeys.has(
+                                          dishNameKey(
+                                            menuDishVariantName(item.name, item.dishModifiers),
+                                          ),
+                                        ) ? (
                                           <span className="event-review-master-saved">
                                             <span aria-hidden="true">✓</span> Recipe available
                                           </span>
