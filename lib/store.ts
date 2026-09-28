@@ -34,6 +34,7 @@ import {
 import {
   extractMenuDishModifiers,
   menuDishModifierKey,
+  menuDishModifiersRequireRecipeVariant,
   type MenuDishModifiers,
 } from './menuDishModifiers';
 
@@ -2245,13 +2246,19 @@ export async function parseMenuText(
               matchedDish.category,
 
         costPerPlate:
-          Number(
-            matchedDish.rate,
-          ) ||
-          getCategoryBaseCost(
-            matchedDish.category,
-            catalog,
-          ),
+          menuDishModifiersRequireRecipeVariant(
+            menuLine.dishModifiers,
+          )
+            ? 0
+            : (
+                Number(
+                  matchedDish.rate,
+                ) ||
+                getCategoryBaseCost(
+                  matchedDish.category,
+                  catalog,
+                )
+              ),
 
         portionQuantity:
           compatibleDetectedPortion
@@ -2291,9 +2298,13 @@ export async function parseMenuText(
           100,
 
         detectionReason:
-          menuLine.categoryHint
-            ? `Matched Dish Master/catalog under ${menuLine.categoryHint} heading`
-            : 'Matched Dish Master/catalog',
+          menuDishModifiersRequireRecipeVariant(
+            menuLine.dishModifiers,
+          )
+            ? 'Matched base Dish Master item; dietary modifier requires a separate recipe/cost'
+            : menuLine.categoryHint
+              ? `Matched Dish Master/catalog under ${menuLine.categoryHint} heading`
+              : 'Matched Dish Master/catalog',
       });
         },
       );
