@@ -386,6 +386,480 @@ export function inferMenuDishCategory(
   return undefined;
 }
 
+
+export type MenuSourceIntelligence = {
+  nonEmptyLineCount: number;
+  sectionHeadings: string[];
+  ignoredMetadataLines: string[];
+  guestCount?: number;
+  ratePerPlate?: number;
+  totalQuotation?: number;
+  commercialCheck:
+    | 'MATCH'
+    | 'MISMATCH'
+    | 'UNKNOWN';
+  expectedQuotation?: number;
+};
+
+const INTELLIGENCE_SECTION_LABELS:
+  Record<string, string> = {
+    soup: 'Soup',
+    soups: 'Soup',
+    sweet: 'Sweet',
+    sweets: 'Sweet',
+    dessert: 'Dessert',
+    desserts: 'Dessert',
+    starter: 'Starter',
+    starters: 'Starter',
+    farsan: 'Farsan',
+    'farsan starters':
+      'Farsan & Starters',
+    'farsan and starters':
+      'Farsan & Starters',
+    'indian bread':
+      'Indian Breads',
+    'indian breads':
+      'Indian Breads',
+    bread: 'Breads',
+    breads: 'Breads',
+    'main course':
+      'Main Course',
+    'main courses':
+      'Main Course',
+    'dal rice':
+      'Dal & Rice',
+    'dal and rice':
+      'Dal & Rice',
+    'rice dal':
+      'Dal & Rice',
+    'rice and dal':
+      'Dal & Rice',
+    accompaniment:
+      'Accompaniments',
+    accompaniments:
+      'Accompaniments',
+    'side accompaniments':
+      'Accompaniments',
+    beverage: 'Beverage',
+    beverages: 'Beverage',
+    'welcome drink':
+      'Welcome Drink',
+    'welcome drinks':
+      'Welcome Drink',
+    mocktail: 'Mocktail',
+    mocktails: 'Mocktail',
+    salad: 'Salad',
+    salads: 'Salad',
+    chaat: 'Chaat',
+    chinese: 'Chinese',
+    italian: 'Italian',
+    'south indian':
+      'South Indian',
+    fruit: 'Fruit',
+    fruits: 'Fruit',
+    'ice cream':
+      'Ice Cream',
+    mukhwas: 'Mukhwas',
+  };
+
+function intelligenceNumber(
+  value: string,
+) {
+  const number =
+    Number(
+      String(value || '')
+        .replace(/,/g, '')
+        .trim(),
+    );
+
+  return Number.isFinite(
+    number,
+  )
+    ? number
+    : 0;
+}
+
+function moneyValuesFromLine(
+  line: string,
+) {
+  const explicit =
+    Array.from(
+      String(line || '')
+        .matchAll(
+          /(?:₹|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)/gi,
+        ),
+    )
+      .map(
+        (match) =>
+          intelligenceNumber(
+            match[1],
+          ),
+      )
+      .filter(
+        (value) =>
+          value > 0,
+      );
+
+  return explicit;
+}
+
+export function analyzeMenuSourceIntelligence(
+  menuText: string,
+): MenuSourceIntelligence {
+  const lines =
+    String(menuText || '')
+      .normalize('NFKC')
+      .replace(
+        /[\u200B-\u200D\uFEFF]/g,
+        '',
+      )
+      .split(/\r?\n/)
+      .map(
+        (line) =>
+          line
+            .replace(
+              /^[\s•●▪►*\-–—]+/,
+              '',
+            )
+            .replace(
+              /\s+/g,
+              ' ',
+            )
+            .trim(),
+      )
+      .filter(Boolean);
+
+  const sectionHeadings =
+    Array.from(
+      new Map(
+        lines
+          .map(
+            (line) => {
+              const key =
+                dishNameKey(
+                  line
+                    .replace(
+                      /[:\-–—]+$/,
+                      '',
+                    ),
+                );
+
+              const label =
+                INTELLIGENCE_SECTION_LABELS[
+                  key
+                ];
+
+              return label
+                ? [
+                    label.toLowerCase(),
+                    label,
+                  ] as const
+                : null;
+            },
+          )
+          .filter(
+            (
+              value,
+            ): value is
+              readonly [
+                string,
+                string,
+              ] =>
+              Boolean(value),
+          ),
+      ).values(),
+    );
+
+  const ignoredMetadataLines =
+    lines.filter(
+      (line) =>
+        isQuotationMetadataLine(
+          line,
+        ),
+    );
+
+  let guestCount:
+    number | undefined;
+
+  for (const line of lines) {
+    const labeled =
+      line.match(
+        /^(?:pax|guests?|members?|persons?|people)\s*[:=-]?\s*([\d,]{1,9})\b/i,
+      );
+
+    const trailing =
+      line.match(
+        /\b([\d,]{1,9})\s*(?:pax|guests?|members?|persons?|people)\b/i,
+      );
+
+    const count =
+      intelligenceNumber(
+        labeled?.[1] ||
+        trailing?.[1] ||
+        '',
+      );
+
+    if (
+      count > 0 &&
+      (
+        !guestCount ||
+        count > guestCount
+      )
+    ) {
+      guestCount =
+        Math.round(
+          count,
+        );
+    }
+  }
+
+  let ratePerPlate:
+    number | undefined;
+
+  let totalQuotation:
+    number | undefined;
+
+  for (const line of lines) {
+    const normalized =
+      dishNameKey(
+        line,
+      );
+
+    if (
+      /\brate per plate\b/i.test(
+        normalized,
+      )
+    ) {
+      const rateMatch =
+        line.match(
+          /(?:rate per plate|per plate)\s*[:=-]?\s*(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)/i,
+        );
+
+      const value =
+        intelligenceNumber(
+          rateMatch?.[1] ||
+          '',
+        );
+
+      if (value > 0) {
+        ratePerPlate =
+          value;
+      }
+    }
+
+    if (
+      /\b(?:total quotation|quotation total|grand total|total amount)\b/i.test(
+        normalized,
+      )
+    ) {
+      const totalMatch =
+        line.match(
+          /(?:total quotation|quotation total|grand total|total amount)\s*[:=-]?\s*(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)/i,
+        );
+
+      const value =
+        intelligenceNumber(
+          totalMatch?.[1] ||
+          '',
+        );
+
+      if (value > 0) {
+        totalQuotation =
+          value;
+      }
+    }
+  }
+
+  /*
+   * Many quotation PDFs render the labels in
+   * one row and the values in another row:
+   *
+   * Rate per plate | Guest count | Total quotation
+   * Rs. 340        | 1,000       | Rs. 3,40,000
+   *
+   * When that commercial header is present,
+   * infer the smallest money value as the
+   * per-plate rate and the largest as total.
+   */
+  const hasCommercialSummary =
+    lines.some(
+      (line) => {
+        const normalized =
+          dishNameKey(
+            line,
+          );
+
+        return (
+          /\brate per plate\b/i.test(
+            normalized,
+          ) &&
+          (
+            /\bguest count\b/i.test(
+              normalized,
+            ) ||
+            /\btotal quotation\b/i.test(
+              normalized,
+            )
+          )
+        );
+      },
+    );
+
+  if (hasCommercialSummary) {
+    const moneyValues =
+      lines
+        .flatMap(
+          moneyValuesFromLine,
+        )
+        .filter(
+          (value) =>
+            value > 0,
+        )
+        .sort(
+          (left, right) =>
+            left - right,
+        );
+
+    if (
+      !ratePerPlate &&
+      moneyValues.length
+    ) {
+      ratePerPlate =
+        moneyValues[0];
+    }
+
+    if (
+      !totalQuotation &&
+      moneyValues.length >= 2
+    ) {
+      totalQuotation =
+        moneyValues[
+          moneyValues.length -
+          1
+        ];
+    }
+
+    if (!guestCount) {
+      const summaryIndex =
+        lines.findIndex(
+          (line) => {
+            const normalized =
+              dishNameKey(
+                line,
+              );
+
+            return (
+              /\brate per plate\b/i.test(
+                normalized,
+              ) &&
+              /\bguest count\b/i.test(
+                normalized,
+              )
+            );
+          },
+        );
+
+      if (summaryIndex >= 0) {
+        const nearby =
+          lines.slice(
+            summaryIndex + 1,
+            summaryIndex + 5,
+          );
+
+        const candidateCounts =
+          nearby
+            .flatMap(
+              (line) =>
+                Array.from(
+                  line.matchAll(
+                    /\b([\d,]{2,9})\b/g,
+                  ),
+                ),
+            )
+            .map(
+              (match) =>
+                intelligenceNumber(
+                  match[1],
+                ),
+            )
+            .filter(
+              (value) =>
+                Number.isInteger(
+                  value,
+                ) &&
+                value >= 10 &&
+                value <=
+                  1_000_000,
+            )
+            .filter(
+              (value) =>
+                value !==
+                ratePerPlate &&
+                value !==
+                totalQuotation,
+            );
+
+        if (
+          candidateCounts.length
+        ) {
+          guestCount =
+            candidateCounts[0];
+        }
+      }
+    }
+  }
+
+  const expectedQuotation =
+    guestCount &&
+    ratePerPlate
+      ? Math.round(
+          guestCount *
+          ratePerPlate *
+          100,
+        ) / 100
+      : undefined;
+
+  let commercialCheck:
+    MenuSourceIntelligence[
+      'commercialCheck'
+    ] =
+      'UNKNOWN';
+
+  if (
+    expectedQuotation !==
+      undefined &&
+    totalQuotation !==
+      undefined
+  ) {
+    const tolerance =
+      Math.max(
+        1,
+        expectedQuotation *
+          0.005,
+      );
+
+    commercialCheck =
+      Math.abs(
+        expectedQuotation -
+        totalQuotation,
+      ) <= tolerance
+        ? 'MATCH'
+        : 'MISMATCH';
+  }
+
+  return {
+    nonEmptyLineCount:
+      lines.length,
+    sectionHeadings,
+    ignoredMetadataLines,
+    guestCount,
+    ratePerPlate,
+    totalQuotation,
+    commercialCheck,
+    expectedQuotation,
+  };
+}
+
 export function sourceDishCoverageKey(
   item: {
     name: string;
