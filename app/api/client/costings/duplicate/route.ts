@@ -4,6 +4,10 @@ import { NextResponse } from 'next/server';
 import { requireClientTenantId } from '../../../../../lib/billingAuth';
 import { prisma } from '../../../../../lib/prisma';
 
+import { duplicateEventWork, validateDuplicateDetails } from '../../../../../lib/duplicateEvent';
+import { calculate } from '../../../../../lib/workCosting';
+import type { WorkState } from '../../../../../lib/types';
+
 const FREE_LIMIT = 5;
 
 function clean(value: unknown, max = 120) {
@@ -29,6 +33,15 @@ export async function POST(request: Request) {
     const body = await request.json();
     const sourceCostingId = clean(body.sourceCostingId);
     if (!sourceCostingId) return NextResponse.json({ error: 'Source costing id required' }, { status: 400 });
+
+    let details;
+    if (body.details !== undefined) {
+      try {
+        details = validateDuplicateDetails(body.details);
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Invalid event details' }, { status: 400 });
+      }
+    }
 
     const [tenant, used, source] = await Promise.all([
       prisma.tenant.findUnique({
@@ -57,29 +70,28 @@ export async function POST(request: Request) {
     const snapshot = record(source.snapshot);
     if (!snapshot) return NextResponse.json({ error: 'Saved costing data is unavailable' }, { status: 422 });
 
-    const event = record(snapshot.event) || {};
+    if (!record(snapshot.event) || !Array.isArray(snapshot.menu) ||
+        !Array.isArray(snapshot.manpower) || !record(snapshot.extras)) {
+      return NextResponse.json({ error: 'Saved costing data is incomplete' }, { status: 422 });
+    }
     const newCostingId = `costing_${randomUUID()}`;
-    const work = {
-      ...snapshot,
-      costingId: newCostingId,
-      event: { ...event, eventDate: '', uploadFileName: '' },
-      updatedAt: new Date().toISOString(),
-    };
+    const work = duplicateEventWork(snapshot as unknown as WorkState, newCostingId, details);
+    const totals = calculate(work);
 
     await prisma.tenantDraftCosting.create({
       data: {
         tenantId,
         costingId: newCostingId,
-        eventName: source.eventName,
-        clientName: source.clientName,
-        eventDate: '',
-        menuCount: source.menuCount,
-        totalCovers: source.totalCovers,
-        totalCost: source.totalCost,
-        sellingPricePerPlate: source.sellingPricePerPlate,
-        totalSelling: source.totalSelling,
-        totalProfit: source.totalProfit,
-        workData: work as Prisma.InputJsonValue,
+        eventName: work.event.eventName,
+        clientName: work.event.clientName,
+        eventDate: work.event.eventDate,
+        menuCount: work.menu.length,
+        totalCovers: totals.totalCovers,
+        totalCost: totals.totalCost,
+        sellingPricePerPlate: totals.sellingPricePerPlate,
+        totalSelling: totals.totalSelling,
+        totalProfit: totals.totalProfit,
+        workData: work as unknown as Prisma.InputJsonValue,
       },
     });
 

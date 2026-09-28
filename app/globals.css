@@ -21097,6 +21097,52 @@ body.client-sheet-open {
   display: grid;
 }
 
+.event-review-categories,
+.simple-detected-category-list {
+  display: grid;
+  gap: 14px;
+}
+
+.event-review-category,
+.simple-detected-category {
+  overflow: hidden;
+  border: 1px solid rgba(16, 76, 61, 0.12);
+  border-radius: 14px;
+  background: rgba(250, 253, 251, 0.78);
+}
+
+.event-review-category-head,
+.simple-detected-category-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(16, 76, 61, 0.1);
+  background: rgba(225, 241, 234, 0.72);
+}
+
+.event-review-category-head h4,
+.simple-detected-category-head h4 {
+  margin: 0;
+  color: #174f42;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.event-review-category-head span,
+.simple-detected-category-head span {
+  color: #5d756e;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.event-review-category .event-review-dishes,
+.simple-detected-category .simple-detected-dish-list {
+  border: 0;
+  border-radius: 0;
+}
+
 .event-review-dish {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) auto auto;

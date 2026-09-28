@@ -5167,9 +5167,6 @@ export default function EventPage() {
               dishes: detectedMenu
                 .filter(
                   (item) =>
-                    !pendingMenuIds.has(
-                      item.id,
-                    ) &&
                     !(
                       Number(
                         item.costPerPlate,
@@ -5561,18 +5558,19 @@ export default function EventPage() {
       );
 
       /*
-       * Keep original new-dish identity even after
-       * automatic costing.
-       *
-       * This lets Admin > New Dishes continue
-       * learning the catalog while the client
-       * can continue costing immediately.
+       * Unknown dishes are sent through automatic recipe generation above.
+       * Ask for a manual rate only when that recipe still could not produce
+       * a usable cost. Their original new-dish identity is retained on the
+       * menu item for Admin > New Dishes learning.
        */
       setManualRateIds(
         new Set(
-          Array.from(
-            pendingMenuIds,
-          ),
+          detectedMenu
+            .filter(
+              (item) =>
+                !(Number(item.costPerPlate) > 0),
+            )
+            .map((item) => item.id),
         ),
       );
       /*
@@ -7872,7 +7870,37 @@ export default function EventPage() {
   const simpleDetectedGroups =
     Array.from(
       simpleDetectedGroupMap.values(),
-    );
+    ).map((group) => {
+      const categoryMap = new Map<string, MenuItem[]>();
+
+      group.items.forEach((item) => {
+        const category = String(item.category || 'Other').trim() || 'Other';
+        const categoryItems = categoryMap.get(category);
+
+        if (categoryItems) {
+          categoryItems.push(item);
+        } else {
+          categoryMap.set(category, [item]);
+        }
+      });
+
+      const categoryOrder = new Map(
+        CATEGORIES.map((category, index) => [category, index]),
+      );
+
+      return {
+        ...group,
+        categoryGroups: Array.from(
+          categoryMap,
+          ([category, items]) => ({ category, items }),
+        ).sort(
+          (left, right) =>
+            (categoryOrder.get(left.category as Category) ?? Number.MAX_SAFE_INTEGER) -
+              (categoryOrder.get(right.category as Category) ?? Number.MAX_SAFE_INTEGER) ||
+            left.category.localeCompare(right.category),
+        ),
+      };
+    });
 
   const simpleDetectedDishCount =
     simpleDetectedGroups.reduce(
@@ -8975,7 +9003,7 @@ export default function EventPage() {
                       <div>
                         <span className="event-review-step">Review</span>
                         <h2 id="detected-dishes-title">Check the detected menu</h2>
-                        <p>Correct any dish, add what is missing, then save the menu.</p>
+                        <p>Correct any dish or category. Your corrections are remembered for future PDF uploads.</p>
                       </div>
                       <div className="event-review-count" aria-label={`${simpleDetectedDishCount} dishes detected`}>
                         <b>{simpleDetectedDishCount}</b>
@@ -9128,8 +9156,15 @@ export default function EventPage() {
                             </label>
                           </div>
 
-                          <div className="event-review-dishes">
-                            {group.items.map((item, index) => {
+                          <div className="event-review-categories">
+                            {group.categoryGroups.map((categoryGroup) => (
+                              <section className="event-review-category" key={`${group.key}::${categoryGroup.category}`}>
+                                <div className="event-review-category-head">
+                                  <h4>{categoryGroup.category}</h4>
+                                  <span>{categoryGroup.items.length} {categoryGroup.items.length === 1 ? 'dish' : 'dishes'}</span>
+                                </div>
+                                <div className="event-review-dishes">
+                            {categoryGroup.items.map((item, index) => {
                               const needsManualRate = manualRateIds.has(item.id);
                               const isEditing = editingDetectionId === item.id;
                               const personalDishKey = dishNameKey(item.name);
@@ -9222,6 +9257,9 @@ export default function EventPage() {
                                 </div>
                               );
                             })}
+                                </div>
+                              </section>
+                            ))}
                           </div>
                         </section>
                       ))}
@@ -9453,7 +9491,7 @@ export default function EventPage() {
                         {simpleDetectedDishCount}{' '}
                         {t('dishes detected')}
                       </h2>
-                      <p>{t('Check the detected dishes, then tap Done to continue.')}</p>
+                      <p>{t('Check the dishes and categories. Your corrections are remembered for future PDF uploads.')}</p>
                     </div>
 
                     <span className="simple-detected-menu-count">
@@ -9509,8 +9547,15 @@ export default function EventPage() {
                             </div>
                           </div>
 
-                          <div className="simple-detected-dish-list">
-                            {group.items.map(
+                          <div className="simple-detected-category-list">
+                            {group.categoryGroups.map((categoryGroup) => (
+                              <section className="simple-detected-category" key={`${group.key}::${categoryGroup.category}`}>
+                                <div className="simple-detected-category-head">
+                                  <h4>{categoryGroup.category}</h4>
+                                  <span>{categoryGroup.items.length} {categoryGroup.items.length === 1 ? t('dish') : t('dishes')}</span>
+                                </div>
+                                <div className="simple-detected-dish-list">
+                            {categoryGroup.items.map(
                               (item, index) => {
                                 const needsManualRate =
                                   manualRateIds.has(
@@ -9566,6 +9611,9 @@ export default function EventPage() {
                                 );
                               },
                             )}
+                                </div>
+                              </section>
+                            ))}
                           </div>
                         </section>
                       ),
