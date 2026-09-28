@@ -689,6 +689,7 @@ export async function GET(request: Request) {
     const [
       catalog,
       categoryCatalog,
+      generatedRecipes,
     ] = await Promise.all([
       prisma.recipeCatalog.findUnique({
         where: {
@@ -712,7 +713,76 @@ export async function GET(request: Request) {
           subcategories: true,
         },
       }),
+
+      prisma.tenantAutoRecipe.findMany({
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        select: {
+          normalizedName: true,
+          name: true,
+          category: true,
+          baseGuests: true,
+          ingredients: true,
+          costPerPlate: true,
+        },
+      }),
     ]);
+
+    const catalogDishes =
+      Array.isArray(catalog?.dishes)
+        ? catalog.dishes as unknown[]
+        : [];
+    const existingRecipeNames = new Set(
+      catalogDishes
+        .map((value) => {
+          if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+          const dish = value as Record<string, unknown>;
+          return String(dish.dishName || dish.name || '')
+            .normalize('NFKC')
+            .toLocaleLowerCase('en-IN')
+            .replace(/[^\p{L}\p{N}]+/gu, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        })
+        .filter(Boolean),
+    );
+    const visibleGeneratedRecipes: unknown[] = [];
+
+    for (const recipe of generatedRecipes) {
+      if (
+        !recipe.normalizedName ||
+        existingRecipeNames.has(recipe.normalizedName)
+      ) {
+        continue;
+      }
+
+      existingRecipeNames.add(recipe.normalizedName);
+      visibleGeneratedRecipes.push({
+        dishName: recipe.name,
+        category: recipe.category || 'Other',
+        subcategory: '',
+        baseGuests: Math.max(1, Number(recipe.baseGuests) || 100),
+        servingSize: 1,
+        servingUnit: 'serving',
+        dishRate: Math.max(0, Number(recipe.costPerPlate) || 0),
+        ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
+        generatedRecipe: true,
+      });
+    }
+
+    const catalogWithGenerated = {
+      dishes: [
+        ...catalogDishes,
+        ...visibleGeneratedRecipes,
+      ],
+      rates: Array.isArray(catalog?.rates) ? catalog.rates : [],
+      deletedDishIds: Array.isArray(catalog?.deletedDishIds)
+        ? catalog.deletedDishIds
+        : [],
+      catalogVersion: Math.max(1, Number(catalog?.catalogVersion) || 1),
+      updatedAt: catalog?.updatedAt ?? null,
+    };
 
     const categories =
       Array.from(
@@ -800,9 +870,10 @@ export async function GET(request: Request) {
       );
 
     return NextResponse.json({
-      catalog,
+      catalog: catalogWithGenerated,
       categories,
       subcategories,
+      generatedRecipeCount: visibleGeneratedRecipes.length,
     });
   } catch {
     return NextResponse.json({ error: 'Failed to load recipes' }, { status: 500 });

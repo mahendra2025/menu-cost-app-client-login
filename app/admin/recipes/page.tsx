@@ -5091,6 +5091,9 @@ I | Tomato | 4 | kg | 35 | kg`}
 
                             <span>
                               {dishCategory}
+                              {dish.generatedRecipe
+                                ? ' · New menu recipe'
+                                : ''}
                               {' · '}
                               {recipeIngredients(
                                 dish,
