@@ -231,6 +231,27 @@ export function extractMenuDishModifiers(value: string) {
   };
 }
 
+export function menuDishModifiersRequireRecipeVariant(
+  value: MenuDishModifiers | null | undefined,
+) {
+  if (!value) return false;
+
+  const recipeChangingTags =
+    new Set<MenuDishModifierTag>([
+      'JAIN',
+      'NO_ONION_GARLIC',
+      'SATVIK',
+      'VEGAN',
+    ]);
+
+  return value.tags.some(
+    (tag) =>
+      recipeChangingTags.has(
+        tag,
+      ),
+  );
+}
+
 export function menuDishModifierLabels(
   value: MenuDishModifiers | null | undefined,
 ) {
