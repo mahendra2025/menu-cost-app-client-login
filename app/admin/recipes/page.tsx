@@ -95,6 +95,8 @@ type RecipeCatalog = {
 const RECIPE_CACHE_KEY = 'admin_recipe_catalog_v2';
 const RECIPE_DISH_SYNC_KEY =
   'admin_recipe_dish_sync_v1';
+const BULK_RECIPE_DRAFT_KEY =
+  'menu_cost_bulk_recipe_draft_v1';
 
 let memoryRecipeCatalog:
   RecipeCatalog | null =
@@ -773,6 +775,9 @@ export default function RecipesPage() {
   const coverageCreateHandled =
     useRef(false);
 
+  const bulkCoverageCreateHandled =
+    useRef(false);
+
   const [
     recipePage,
     setRecipePage,
@@ -1138,7 +1143,6 @@ export default function RecipesPage() {
   useEffect(() => {
     if (
       !catalog ||
-      coverageCreateHandled.current ||
       typeof window === 'undefined'
     ) {
       return;
@@ -1148,6 +1152,316 @@ export default function RecipesPage() {
       new URLSearchParams(
         window.location.search,
       );
+
+    const bulkRequested =
+      params.get('bulkCreate') ===
+      '1';
+
+    if (bulkRequested) {
+      if (
+        bulkCoverageCreateHandled.current
+      ) {
+        return;
+      }
+
+      bulkCoverageCreateHandled.current =
+        true;
+
+      let draft:
+        Record<string, unknown> | null =
+        null;
+
+      try {
+        const rawDraft =
+          localStorage.getItem(
+            BULK_RECIPE_DRAFT_KEY,
+          );
+
+        if (rawDraft) {
+          const parsed =
+            JSON.parse(
+              rawDraft,
+            );
+
+          if (
+            parsed &&
+            typeof parsed ===
+              'object' &&
+            !Array.isArray(
+              parsed,
+            )
+          ) {
+            draft =
+              parsed as
+                Record<
+                  string,
+                  unknown
+                >;
+          }
+        }
+      } catch {
+        draft = null;
+      }
+
+      const createdAt =
+        Number(
+          draft?.createdAt,
+        ) || 0;
+
+      if (
+        !draft ||
+        (
+          createdAt > 0 &&
+          Date.now() -
+            createdAt >
+            60 * 60 * 1000
+        )
+      ) {
+        localStorage.removeItem(
+          BULK_RECIPE_DRAFT_KEY,
+        );
+
+        setError(
+          'Bulk recipe draft is unavailable. Return to menu detection and choose Create Missing Recipes again.',
+        );
+        return;
+      }
+
+      const requestedDishes =
+        (
+          Array.isArray(
+            draft.dishes,
+          )
+            ? draft.dishes
+            : []
+        )
+          .flatMap(
+            (value) => {
+              if (
+                !value ||
+                typeof value !==
+                  'object' ||
+                Array.isArray(
+                  value,
+                )
+              ) {
+                return [];
+              }
+
+              const row =
+                value as
+                  Record<
+                    string,
+                    unknown
+                  >;
+
+              const name =
+                String(
+                  row.name ||
+                  '',
+                )
+                  .normalize(
+                    'NFKC',
+                  )
+                  .replace(
+                    /\s+/g,
+                    ' ',
+                  )
+                  .trim()
+                  .slice(
+                    0,
+                    120,
+                  );
+
+              if (!name) {
+                return [];
+              }
+
+              const requestedCategory =
+                String(
+                  row.category ||
+                  'Other',
+                )
+                  .normalize(
+                    'NFKC',
+                  )
+                  .replace(
+                    /\s+/g,
+                    ' ',
+                  )
+                  .trim()
+                  .slice(
+                    0,
+                    60,
+                  ) ||
+                'Other';
+
+              return [
+                {
+                  name,
+                  category:
+                    requestedCategory,
+                },
+              ];
+            },
+          );
+
+      const uniqueRequestedDishes =
+        Array.from(
+          new Map(
+            requestedDishes.map(
+              (dish) => [
+                dish.name
+                  .toLocaleLowerCase(
+                    'en-IN',
+                  ),
+                dish,
+              ],
+            ),
+          ).values(),
+        );
+
+      if (
+        !uniqueRequestedDishes.length
+      ) {
+        setError(
+          'No missing dishes were found in the bulk recipe draft.',
+        );
+        return;
+      }
+
+      const nextDishes = [
+        ...catalog.dishes,
+      ];
+
+      const nextCategories =
+        new Set(
+          catalog.categories,
+        );
+
+      let createdCount = 0;
+      let existingCount = 0;
+      let firstTouchedIndex:
+        number | null =
+        null;
+
+      for (
+        const requested
+        of uniqueRequestedDishes
+      ) {
+        const existingIndex =
+          nextDishes.findIndex(
+            (dish) =>
+              recipeName(dish)
+                .toLocaleLowerCase(
+                  'en-IN',
+                ) ===
+              requested.name
+                .toLocaleLowerCase(
+                  'en-IN',
+                ),
+          );
+
+        if (
+          existingIndex >= 0
+        ) {
+          existingCount += 1;
+
+          if (
+            firstTouchedIndex ===
+            null
+          ) {
+            firstTouchedIndex =
+              existingIndex;
+          }
+
+          continue;
+        }
+
+        const newIndex =
+          nextDishes.length;
+
+        nextDishes.push({
+          dishName:
+            requested.name,
+          category:
+            requested.category,
+          subcategory: '',
+          baseGuests: 100,
+          servingSize: 1,
+          servingUnit:
+            'serving',
+          pieceWeightGrams: 0,
+          dishRate: 0,
+          ingredients: [],
+        });
+
+        nextCategories.add(
+          requested.category,
+        );
+
+        createdCount += 1;
+
+        if (
+          firstTouchedIndex ===
+          null
+        ) {
+          firstTouchedIndex =
+            newIndex;
+        }
+      }
+
+      if (createdCount > 0) {
+        const nextCatalog:
+          RecipeCatalog = {
+            ...catalog,
+            dishes:
+              nextDishes,
+            categories:
+              Array.from(
+                nextCategories,
+              ),
+          };
+
+        setCatalog(
+          nextCatalog,
+        );
+
+        memoryRecipeCatalog =
+          nextCatalog;
+      }
+
+      setQuery('');
+      setCategory('ALL');
+
+      if (
+        firstTouchedIndex !==
+        null
+      ) {
+        setSelectedIndex(
+          firstTouchedIndex,
+        );
+
+        setRecipePage(
+          recipePageForIndex(
+            firstTouchedIndex,
+          ),
+        );
+      }
+
+      setError('');
+      setMessage(
+        `${createdCount} missing recipe${createdCount === 1 ? '' : 's'} prepared${existingCount ? ` · ${existingCount} already available` : ''}. Add ingredients, serving quantity/unit and gas cost, then Save & Sync once for the full batch.`,
+      );
+
+      return;
+    }
+
+    if (
+      coverageCreateHandled.current
+    ) {
+      return;
+    }
 
     const requestedName =
       String(
@@ -2963,6 +3277,17 @@ export default function RecipesPage() {
           RECIPE_CACHE_KEY,
           JSON.stringify(catalogToSave),
         );
+
+        if (
+          new URLSearchParams(
+            window.location.search,
+          ).get('bulkCreate') ===
+          '1'
+        ) {
+          localStorage.removeItem(
+            BULK_RECIPE_DRAFT_KEY,
+          );
+        }
 
         if (
           data.updatedAt
