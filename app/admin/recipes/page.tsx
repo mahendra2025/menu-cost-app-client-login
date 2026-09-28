@@ -777,6 +777,12 @@ export default function RecipesPage() {
     useState(false);
 
   const [
+    smartDraftGenerating,
+    setSmartDraftGenerating,
+  ] =
+    useState(false);
+
+  const [
     syncStatus,
     setSyncStatus,
   ] = useState<
@@ -2047,6 +2053,388 @@ export default function RecipesPage() {
         '. Save & Sync once when finished.',
     );
   }
+  async function generateSmartDrafts(
+    targetIndexes: number[],
+    confirmReplace = false,
+  ) {
+    if (
+      !catalog ||
+      !targetIndexes.length
+    ) {
+      return;
+    }
+
+    const uniqueIndexes =
+      Array.from(
+        new Set(
+          targetIndexes.filter(
+            (index) =>
+              index >= 0 &&
+              index <
+                catalog.dishes
+                  .length,
+          ),
+        ),
+      );
+
+    if (!uniqueIndexes.length) {
+      return;
+    }
+
+    const targets =
+      uniqueIndexes.map(
+        (index) => ({
+          index,
+          dish:
+            catalog.dishes[
+              index
+            ],
+        }),
+      );
+
+    if (
+      confirmReplace &&
+      targets.some(
+        ({ dish }) =>
+          recipeIngredients(
+            dish,
+          ).length > 0,
+      )
+    ) {
+      const replace =
+        window.confirm(
+          'Replace the current ingredients with a new Smart Recipe Draft?',
+        );
+
+      if (!replace) {
+        return;
+      }
+    }
+
+    setSmartDraftGenerating(
+      true,
+    );
+    setError('');
+    setMessage(
+      `Generating ${targets.length} Smart Recipe Draft${targets.length === 1 ? '' : 's'} for 100 guests…`,
+    );
+
+    try {
+      const generatedByName =
+        new Map<
+          string,
+          RawRow
+        >();
+
+      const chunkSize = 24;
+
+      for (
+        let offset = 0;
+        offset <
+          targets.length;
+        offset += chunkSize
+      ) {
+        const chunk =
+          targets.slice(
+            offset,
+            offset +
+              chunkSize,
+          );
+
+        const response =
+          await fetch(
+            '/api/admin/recipes/smart-drafts',
+            {
+              method:
+                'POST',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body:
+                JSON.stringify({
+                  dishes:
+                    chunk.map(
+                      ({
+                        dish,
+                      }) => ({
+                        name:
+                          recipeName(
+                            dish,
+                          ),
+                        category:
+                          text(
+                            dish.category,
+                          ) ||
+                          'Other',
+                      }),
+                    ),
+                }),
+            },
+          );
+
+        const data =
+          await response
+            .json() as {
+              error?: string;
+              results?: Array<{
+                requestedName?: string;
+                recipe?: RawRow;
+              }>;
+            };
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              'Smart Recipe Draft generation failed.',
+          );
+        }
+
+        (
+          Array.isArray(
+            data.results,
+          )
+            ? data.results
+            : []
+        ).forEach(
+          (result) => {
+            const key =
+              String(
+                result.requestedName ||
+                  '',
+              )
+                .trim()
+                .toLocaleLowerCase(
+                  'en-IN',
+                );
+
+            if (
+              key &&
+              result.recipe &&
+              typeof result.recipe ===
+                'object' &&
+              !Array.isArray(
+                result.recipe,
+              )
+            ) {
+              generatedByName.set(
+                key,
+                result.recipe,
+              );
+            }
+          },
+        );
+      }
+
+      let generatedCount = 0;
+      let firstGeneratedIndex:
+        number | null =
+        null;
+
+      const targetSet =
+        new Set(
+          uniqueIndexes,
+        );
+
+      const nextDishes =
+        catalog.dishes.map(
+          (
+            dish,
+            index,
+          ) => {
+            if (
+              !targetSet.has(
+                index,
+              )
+            ) {
+              return dish;
+            }
+
+            const key =
+              recipeName(dish)
+                .trim()
+                .toLocaleLowerCase(
+                  'en-IN',
+                );
+
+            const generated =
+              generatedByName.get(
+                key,
+              );
+
+            if (!generated) {
+              return dish;
+            }
+
+            generatedCount += 1;
+
+            if (
+              firstGeneratedIndex ===
+              null
+            ) {
+              firstGeneratedIndex =
+                index;
+            }
+
+            return {
+              ...dish,
+              ...generated,
+              dishName:
+                recipeName(
+                  dish,
+                ),
+              name:
+                recipeName(
+                  dish,
+                ),
+              category:
+                text(
+                  dish.category,
+                ) ||
+                text(
+                  generated.category,
+                ) ||
+                'Other',
+              subcategory:
+                text(
+                  dish.subcategory,
+                ),
+              servingSize:
+                dish.servingSize ??
+                generated.servingSize ??
+                1,
+              servingUnit:
+                text(
+                  dish.servingUnit,
+                ) ||
+                text(
+                  generated.servingUnit,
+                ) ||
+                'serving',
+              pieceWeightGrams:
+                dish.pieceWeightGrams ??
+                generated.pieceWeightGrams ??
+                0,
+              generatedRecipe:
+                true,
+              smartDraftReviewed:
+                false,
+              smartDraftAcceptedAt:
+                '',
+            };
+          },
+        );
+
+      if (!generatedCount) {
+        throw new Error(
+          'No Smart Recipe Drafts were returned. Check the AI configuration and Ingredient Master.',
+        );
+      }
+
+      const nextCatalog:
+        RecipeCatalog = {
+          ...catalog,
+          dishes:
+            nextDishes,
+      };
+
+      setCatalog(
+        nextCatalog,
+      );
+      memoryRecipeCatalog =
+        nextCatalog;
+
+      if (
+        firstGeneratedIndex !==
+        null
+      ) {
+        setSelectedIndex(
+          firstGeneratedIndex,
+        );
+        setRecipePage(
+          recipePageForIndex(
+            firstGeneratedIndex,
+          ),
+        );
+      }
+
+      const missed =
+        targets.length -
+        generatedCount;
+
+      setMessage(
+        `${generatedCount} Smart Recipe Draft${generatedCount === 1 ? '' : 's'} generated for 100 guests${missed > 0 ? ` · ${missed} could not be generated` : ''}. Review ingredients, serving, gas and Quality Gate, then Accept and Save & Sync.`,
+      );
+    } catch (
+      generateError
+    ) {
+      setError(
+        generateError instanceof
+          Error
+          ? generateError.message
+          : 'Smart Recipe Draft generation failed.',
+      );
+    } finally {
+      setSmartDraftGenerating(
+        false,
+      );
+    }
+  }
+
+  function generateSelectedSmartDraft() {
+    if (
+      selectedIndex ===
+        null ||
+      !selectedDish
+    ) {
+      return;
+    }
+
+    void generateSmartDrafts(
+      [
+        selectedIndex,
+      ],
+      recipeIngredients(
+        selectedDish,
+      ).length > 0,
+    );
+  }
+
+  function generateAllBlankSmartDrafts() {
+    if (!catalog) {
+      return;
+    }
+
+    const blankIndexes =
+      catalog.dishes
+        .map(
+          (
+            dish,
+            index,
+          ) => ({
+            dish,
+            index,
+          }),
+        )
+        .filter(
+          ({ dish }) =>
+            recipeIngredients(
+              dish,
+            ).length === 0 &&
+            dish.generatedRecipe !==
+              true,
+        )
+        .map(
+          ({ index }) =>
+            index,
+        );
+
+    void generateSmartDrafts(
+      blankIndexes,
+      false,
+    );
+  }
+
   function quickGasPatch(
     rawValue: string,
   ): RawRow | null {
@@ -3777,6 +4165,23 @@ export default function RecipesPage() {
       [catalog],
     );
 
+  const blankSmartDraftCount =
+    useMemo(
+      () =>
+        (
+          catalog?.dishes ||
+          []
+        ).filter(
+          (dish) =>
+            recipeIngredients(
+              dish,
+            ).length === 0 &&
+            dish.generatedRecipe !==
+              true,
+        ).length,
+      [catalog],
+    );
+
   const selectedIngredientRateCoverage =
     ingredients.length
       ? Math.round(
@@ -4677,6 +5082,16 @@ export default function RecipesPage() {
             text-align:center;
           }
 
+          .recipe-smart-draft-actions {
+            display:grid;
+            gap:6px;
+            min-width:150px;
+          }
+
+          .recipe-smart-draft-actions .recipe-fast-button {
+            width:100%;
+          }
+
           .recipe-smart-draft-status b {
             font-size:10px;
           }
@@ -5032,6 +5447,24 @@ export default function RecipesPage() {
               + Bulk Recipes
             </button>
 
+            {blankSmartDraftCount > 0 ? (
+              <button
+                className="recipe-fast-button"
+                type="button"
+                onClick={
+                  generateAllBlankSmartDrafts
+                }
+                disabled={
+                  smartDraftGenerating ||
+                  saving
+                }
+              >
+                {smartDraftGenerating
+                  ? '✨ Generating drafts…'
+                  : `✨ Generate ${blankSmartDraftCount} Blank Draft${blankSmartDraftCount === 1 ? '' : 's'}`}
+              </button>
+            ) : null}
+
             {smartDraftCount > 0 ? (
               <button
                 className="recipe-fast-button"
@@ -5065,6 +5498,7 @@ export default function RecipesPage() {
               }
               disabled={
                 saving ||
+                smartDraftGenerating ||
                 !catalog
               }
             >
@@ -5922,23 +6356,84 @@ I | Tomato | 4 | kg | 35 | kg`}
                         </span>
                       </div>
 
+                      <div className="recipe-smart-draft-actions">
+                        <button
+                          type="button"
+                          className="recipe-fast-button primary"
+                          disabled={
+                            recipeQuality.status ===
+                            'BLOCKED' ||
+                            smartDraftGenerating
+                          }
+                          onClick={() =>
+                            acceptSmartDraft(
+                              selectedIndex,
+                            )
+                          }
+                        >
+                          {recipeQuality.status ===
+                          'BLOCKED'
+                            ? 'Fix blocked issues first'
+                            : '✓ Accept Smart Draft'}
+                        </button>
+
+                        <button
+                          type="button"
+                          className="recipe-fast-button"
+                          disabled={
+                            smartDraftGenerating ||
+                            saving
+                          }
+                          onClick={
+                            generateSelectedSmartDraft
+                          }
+                        >
+                          {smartDraftGenerating
+                            ? 'Generating…'
+                            : '↻ Regenerate Draft'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {selectedDish.generatedRecipe !== true &&
+                  ingredients.length === 0 ? (
+                    <div className="recipe-smart-draft">
+                      <div className="recipe-smart-draft-copy">
+                        <span>
+                          Recipe Not Built Yet
+                        </span>
+                        <h3>
+                          Generate a Smart Recipe Draft for 100 guests
+                        </h3>
+                        <p>
+                          AI will prepare the main cost-driving ingredients using your Ingredient Master rates. You stay in control: review quantities, serving and gas before saving.
+                        </p>
+                      </div>
+
+                      <div className="recipe-smart-draft-status">
+                        <b>
+                          100 PAX
+                        </b>
+                        <span>
+                          editable draft
+                        </span>
+                      </div>
+
                       <button
                         type="button"
                         className="recipe-fast-button primary"
                         disabled={
-                          recipeQuality.status ===
-                          'BLOCKED'
+                          smartDraftGenerating ||
+                          saving
                         }
-                        onClick={() =>
-                          acceptSmartDraft(
-                            selectedIndex,
-                          )
+                        onClick={
+                          generateSelectedSmartDraft
                         }
                       >
-                        {recipeQuality.status ===
-                        'BLOCKED'
-                          ? 'Fix blocked issues first'
-                          : '✓ Accept Smart Draft'}
+                        {smartDraftGenerating
+                          ? '✨ Generating…'
+                          : '✨ Generate Smart Draft'}
                       </button>
                     </div>
                   ) : null}
