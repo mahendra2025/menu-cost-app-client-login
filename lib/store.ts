@@ -927,6 +927,14 @@ const MENU_HEADINGS = new Set([
   'accompaniment',
   'accompaniments',
   'papad pickle',
+  'farsan and starters',
+  'soup counter',
+  'beverage counter',
+  'live beverage counter',
+  'main live counter',
+  'rajasthani main course',
+  'gujarati breakfast',
+  'side accompaniments',
 ]);
 
 const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
@@ -1040,6 +1048,14 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   'india bread': 'Bread',
   'dal and rice': null,
   'rice and dal': null,
+  'farsan and starters': 'Farsan',
+  'soup counter': 'Soup',
+  'beverage counter': 'Beverage',
+  'live beverage counter': 'Beverage',
+  'main live counter': 'Live Counter',
+  'rajasthani main course': 'Rajasthani',
+  'gujarati breakfast': 'Gujarati',
+  'side accompaniments': 'Condiments',
   sides: 'Condiments',
   'side items': 'Condiments',
   'snacks counter': 'Starter',
@@ -1598,6 +1614,8 @@ function normalizeOcrMenuText(value: string): string {
     .replace(/\r\n?/g, '\n')
     .replace(/[¦‖]/g, '|')
     .replace(/[·∙]/g, '•')
+    /* DEL is emitted as a bullet by several PDF generators. */
+    .replace(/\u007f/g, '•')
     .replace(/([\p{L}\p{M}])-\s*\n\s*([\p{Ll}\p{M}])/gu, '$1$2')
     .replace(/[ \t]{3,}/g, '\n')
     .replace(/[ \t]+\n/g, '\n')
