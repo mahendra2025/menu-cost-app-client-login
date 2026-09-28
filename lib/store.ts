@@ -1,9 +1,10 @@
 
 'use client';
 
-import type {
-  Category,
-  DishCostItem,
+import {
+  CATEGORIES,
+  type Category,
+  type DishCostItem,
 } from './dishCostMaster';
 
 import type {
@@ -24,6 +25,11 @@ import {
   parseMenuDayHeading,
   parseMenuServiceHeading,
 } from './menuServiceParser';
+
+import {
+  inferMenuDishCategory,
+  isQuotationMetadataLine,
+} from './menuDetectionCore';
 
 const CLIENTS_KEY = 'menu_cost_clients_v1';
 
@@ -935,6 +941,20 @@ const MENU_HEADINGS = new Set([
   'rajasthani main course',
   'gujarati breakfast',
   'side accompaniments',
+  'included menu',
+  'included menu items',
+  'catering menu',
+  'catering quotation',
+  'quotation',
+  'quotation note',
+  'quotation notes',
+  'client location',
+  'quotation summary',
+  'price summary',
+  'commercial summary',
+  'rate per plate',
+  'guest count',
+  'total quotation',
 ]);
 
 const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
@@ -1038,8 +1058,8 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   paan: 'Paan',
   pan: 'Paan',
   mukhwas: 'Mukhwas',
-  accompaniment: 'Condiments',
-  accompaniments: 'Condiments',
+  accompaniment: null,
+  accompaniments: null,
   'papad pickle': 'Pickle',
   juice: 'Welcome Drink',
   juices: 'Welcome Drink',
@@ -1048,16 +1068,16 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   'india bread': 'Bread',
   'dal and rice': null,
   'rice and dal': null,
-  'farsan and starters': 'Farsan',
+  'farsan and starters': null,
   'soup counter': 'Soup',
   'beverage counter': 'Beverage',
   'live beverage counter': 'Beverage',
   'main live counter': 'Live Counter',
   'rajasthani main course': 'Rajasthani',
   'gujarati breakfast': 'Gujarati',
-  'side accompaniments': 'Condiments',
-  sides: 'Condiments',
-  'side items': 'Condiments',
+  'side accompaniments': null,
+  sides: null,
+  'side items': null,
   'snacks counter': 'Starter',
   'snack counter': 'Starter',
   'special counter': 'Live Counter',
@@ -1110,6 +1130,20 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   'પાપડ': 'Papad',
   'फरसान': 'Farsan',
   'ફરસાણ': 'Farsan',
+  'included menu': null,
+  'included menu items': null,
+  'catering menu': null,
+  'catering quotation': null,
+  quotation: null,
+  'quotation note': null,
+  'quotation notes': null,
+  'client location': null,
+  'quotation summary': null,
+  'price summary': null,
+  'commercial summary': null,
+  'rate per plate': null,
+  'guest count': null,
+  'total quotation': null,
 };
 
 function normalizeMenuHeading(value: string): string {
@@ -1418,6 +1452,7 @@ function createDishCandidates(
 type ParsedMenuLine = {
   text: string;
   categoryHint?: Category;
+  sectionHeading?: string;
   serviceId?: string;
   dayLabel?: string;
   mealLabel?: string;
@@ -1562,6 +1597,14 @@ function isClearlyNonDishText(value: string): boolean {
   const normalized = normalizeMenuHeading(value);
 
   if (!normalized) return true;
+
+  if (
+    isQuotationMetadataLine(
+      value,
+    )
+  ) {
+    return true;
+  }
   if (
     /^(?:₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:\/-)?\s*(?:per\s+plate|\/\s*plate|plate)?$/i.test(
       value.trim(),
@@ -1668,6 +1711,7 @@ function splitMenuText(
 
   const menuLines: ParsedMenuLine[] = [];
   let activeCategory: Category | undefined;
+  let activeSectionHeading: string | undefined;
   let activeDayLabel: string | undefined;
   let activeMealLabel: string | undefined;
   let activeServicePax: number | undefined;
@@ -1693,6 +1737,7 @@ function splitMenuText(
 
     if (dayLabel) {
       activeCategory = undefined;
+      activeSectionHeading = undefined;
       activeDayLabel = dayLabel;
       activeMealLabel = undefined;
       activeServicePax = undefined;
@@ -1716,6 +1761,7 @@ function splitMenuText(
     if (serviceHeading) {
       serviceIndex += 1;
       activeCategory = undefined;
+      activeSectionHeading = undefined;
 
       if (serviceHeading.dayLabel) {
         activeDayLabel =
@@ -1743,6 +1789,8 @@ function splitMenuText(
         lineCategory =
           MENU_HEADING_CATEGORIES[headingKey] ?? undefined;
         activeCategory = lineCategory;
+        activeSectionHeading =
+          headingKey;
         segment = headingWithItems[2].trim();
 
         if (!cleanMenuLine(segment)) {
@@ -1759,6 +1807,8 @@ function splitMenuText(
     ) {
       activeCategory =
         MENU_HEADING_CATEGORIES[wholeSegmentKey] ?? undefined;
+      activeSectionHeading =
+        wholeSegmentKey;
       continue;
     }
 
@@ -1772,10 +1822,28 @@ function splitMenuText(
     ) {
       activeCategory =
         MENU_HEADING_CATEGORIES[cleanedHeadingKey] ?? undefined;
+      activeSectionHeading =
+        cleanedHeadingKey;
       continue;
     }
 
     if (isClearlyNonDishText(line)) continue;
+
+    const inferredCategory =
+      inferMenuDishCategory(
+        line,
+        activeSectionHeading,
+      );
+
+    if (
+      inferredCategory &&
+      CATEGORIES.includes(
+        inferredCategory as Category,
+      )
+    ) {
+      lineCategory =
+        inferredCategory as Category;
+    }
 
     {
       const normalized =
@@ -1820,6 +1888,8 @@ function splitMenuText(
     menuLines.push({
       text: line,
       categoryHint: lineCategory,
+      sectionHeading:
+        activeSectionHeading,
       serviceId: activeServiceId,
       dayLabel: activeDayLabel,
       mealLabel: activeMealLabel,
