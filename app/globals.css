@@ -21530,6 +21530,41 @@ body.client-sheet-open {
   cursor: progress;
 }
 
+
+.event-review-modifiers,
+.menu-detection-modifiers {
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-top:5px;
+}
+
+.event-review-modifiers small,
+.menu-detection-modifiers span {
+  display:inline-flex;
+  align-items:center;
+  min-height:22px;
+  padding:0 7px;
+  border:1px solid rgba(94,165,255,.22);
+  border-radius:999px;
+  color:#a9ccfb;
+  background:rgba(72,145,239,.075);
+  font-size:8px;
+  font-weight:850;
+  line-height:1;
+  letter-spacing:.015em;
+}
+
+.menu-detection-title-row .menu-detection-modifiers {
+  margin-top:0;
+}
+
+@media (max-width: 620px) {
+  .menu-detection-title-row .menu-detection-modifiers {
+    width:100%;
+  }
+}
+
 .event-review-master-saved {
   display: inline-flex;
   min-height: 32px;
