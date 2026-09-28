@@ -42,6 +42,127 @@ function normalizeSpaces(
     .trim();
 }
 
+export function readMenuDishModifiers(
+  value: unknown,
+): MenuDishModifiers | undefined {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value)
+  ) {
+    return undefined;
+  }
+
+  const row =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  const allowedTags =
+    new Set<
+      MenuDishModifierTag
+    >([
+      'JAIN',
+      'NO_ONION_GARLIC',
+      'SATVIK',
+      'VEGAN',
+      'LIVE',
+    ]);
+
+  const tags =
+    Array.isArray(
+      row.tags,
+    )
+      ? row.tags
+          .map(
+            (tag) =>
+              String(tag || '')
+                .trim()
+                .toUpperCase() as
+                MenuDishModifierTag,
+          )
+          .filter(
+            (tag) =>
+              allowedTags.has(
+                tag,
+              ),
+          )
+      : [];
+
+  const rawPortionUnit =
+    String(
+      row.portionUnit || '',
+    )
+      .trim()
+      .toLowerCase();
+
+  const allowedUnits =
+    new Set([
+      'ml',
+      'ltr',
+      'gram',
+      'kg',
+      'piece',
+    ]);
+
+  const portionQuantity =
+    Math.max(
+      0,
+      Number(
+        row.portionQuantity,
+      ) || 0,
+    );
+
+  const pieceWeightGrams =
+    Math.max(
+      0,
+      Number(
+        row.pieceWeightGrams,
+      ) || 0,
+    );
+
+  const result:
+    MenuDishModifiers = {
+      tags:
+        uniqueTags(tags),
+      ...(
+        portionQuantity > 0 &&
+        allowedUnits.has(
+          rawPortionUnit,
+        )
+          ? {
+              portionQuantity:
+                roundModifierNumber(
+                  portionQuantity,
+                ),
+              portionUnit:
+                rawPortionUnit as
+                  MenuDishModifiers[
+                    'portionUnit'
+                  ],
+            }
+          : {}
+      ),
+      ...(
+        pieceWeightGrams > 0
+          ? {
+              pieceWeightGrams:
+                roundModifierNumber(
+                  pieceWeightGrams,
+                ),
+            }
+          : {}
+      ),
+    };
+
+  return hasMenuDishModifiers(
+    result,
+  )
+    ? result
+    : undefined;
+}
+
 export function hasMenuDishModifiers(
   value:
     | MenuDishModifiers
