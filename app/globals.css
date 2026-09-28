@@ -21608,6 +21608,28 @@ body.client-sheet-open {
   min-height: 40px;
 }
 
+.event-review-edit-master {
+  display: grid !important;
+  grid-column: 1 / -1;
+  gap: 6px !important;
+  width: 100%;
+}
+
+.event-review-edit-master > small {
+  color: #8fa1b7;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.event-review-edit-master .event-review-dish-suggestions {
+  width: 100%;
+  max-height: 180px;
+}
+
+.menu-detection-edit-form .event-review-edit-master {
+  margin: 2px 0;
+}
+
 .event-review-edit-fields > div {
   display: flex;
   gap: 5px;

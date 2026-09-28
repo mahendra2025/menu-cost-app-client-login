@@ -145,7 +145,7 @@ export function inferMenuDishCategory(
 
   const isFarsan =
     has(
-      /\b(?:samosa|kachori|khaman|dhokla|khandvi|patra|fafda|ganthia|gathiya|muthiya|handvo|dal vada|mirchi vada|sev khamani|farsan|namkeen)\b/i,
+      /\b(?:samosa|kachori|khaman|dhokla|khandvi|patra|fafda|ganthia|gathiya|muthiya|handvo|dal vada|mirchi vada|bhajiya|bhajia|pakoda|pakora|sev khamani|farsan|namkeen)\b/i,
     );
 
   if (
@@ -190,10 +190,20 @@ export function inferMenuDishCategory(
     section ===
       'side accompaniments' ||
     section ===
+      'rice and accompaniments' ||
+    section ===
       'side items' ||
     section ===
       'sides'
   ) {
+    if (
+      has(
+        /\b(?:rice|pulao|pulav|biryani|khichdi|khichadi)\b/i,
+      )
+    ) {
+      return 'Rice';
+    }
+
     if (
       has(
         /\bpapad\b/i,

@@ -46,6 +46,8 @@ const SERVICE_LABELS: Record<string, string> = {
   snacks: 'Snacks',
   'evening snacks': 'Evening Snacks',
   'morning snacks': 'Morning Snacks',
+  'late night': 'Late Night',
+  'late night snacks': 'Late Night Snacks',
   reception: 'Reception',
   sangeet: 'Sangeet',
   'mahila sangeet': 'Mahila Sangeet',

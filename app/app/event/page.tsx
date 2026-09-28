@@ -3702,6 +3702,8 @@ export default function EventPage() {
   ) {
     setError('');
 
+    void loadManualDishCatalog();
+
     setEditingDetectionId(
       item.id,
     );
@@ -7680,6 +7682,76 @@ export default function EventPage() {
         )
       : undefined;
 
+  const normalizedEditDetectionSearch =
+    dishNameKey(
+      editDetectionName,
+    );
+
+  const editDetectionDishSuggestions =
+    editingDetectionId &&
+    normalizedEditDetectionSearch
+      ? manualDishCatalog
+          .map((dish) => {
+            const candidateKey =
+              dishNameKey(
+                dish.name,
+              );
+            const searchTokens =
+              new Set(
+                normalizedEditDetectionSearch
+                  .split(' ')
+                  .filter(Boolean),
+              );
+            const candidateTokens =
+              candidateKey
+                .split(' ')
+                .filter(Boolean);
+            const sharedTokens =
+              candidateTokens.filter(
+                (token) =>
+                  searchTokens.has(
+                    token,
+                  ),
+              ).length;
+            const score =
+              candidateKey ===
+              normalizedEditDetectionSearch
+                ? 1000
+                : normalizedEditDetectionSearch.includes(
+                      candidateKey,
+                    )
+                  ? 700 +
+                    candidateTokens.length
+                  : candidateKey.includes(
+                        normalizedEditDetectionSearch,
+                      )
+                    ? 600
+                    : sharedTokens > 0
+                      ? sharedTokens *
+                        100
+                      : 0;
+
+            return {
+              dish,
+              score,
+            };
+          })
+          .filter(
+            ({ score }) =>
+              score > 0,
+          )
+          .sort(
+            (left, right) =>
+              right.score -
+                left.score ||
+              left.dish.name.localeCompare(
+                right.dish.name,
+              ),
+          )
+          .slice(0, 6)
+          .map(({ dish }) => dish)
+      : [];
+
   const manualSelectedCount =
     selectedManualDishKeys.size;
 
@@ -10214,6 +10286,34 @@ export default function EventPage() {
                                         aria-label="Dish name"
                                         autoFocus
                                       />
+                                      {manualDishLoading ? (
+                                        <small className="event-review-picker-help">Loading Dish Master…</small>
+                                      ) : editDetectionDishSuggestions.length ? (
+                                        <div className="event-review-edit-master">
+                                          <small>Match existing Dish Master dish</small>
+                                          <div className="event-review-dish-suggestions" role="listbox" aria-label="Existing Dish Master matches">
+                                            {editDetectionDishSuggestions.map((dish) => (
+                                              <button
+                                                type="button"
+                                                key={`edit-simple-${dish.category}::${dish.name}`}
+                                                className={dishNameKey(dish.name) === dishNameKey(editDetectionName) ? 'is-selected' : ''}
+                                                onClick={() => {
+                                                  setEditDetectionName(dish.name);
+                                                  setEditDetectionCategory(
+                                                    CATEGORIES.includes(dish.category as Category)
+                                                      ? dish.category as Category
+                                                      : 'Other',
+                                                  );
+                                                  setError('');
+                                                }}
+                                              >
+                                                <span><b>{dish.name}</b><small>{dish.category}</small></span>
+                                                <strong>{dish.rate > 0 ? `₹${dish.rate.toFixed(2)} / plate` : 'Rate needed'}</strong>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : null}
                                       <select
                                         className="select"
                                         value={editDetectionCategory}
@@ -14398,6 +14498,35 @@ export default function EventPage() {
                                         }
                                         aria-label={`Correct name for ${item.name}`}
                                       />
+
+                                      {manualDishLoading ? (
+                                        <small>Loading Dish Master…</small>
+                                      ) : editDetectionDishSuggestions.length ? (
+                                        <div className="event-review-edit-master">
+                                          <small>Match existing Dish Master dish</small>
+                                          <div className="event-review-dish-suggestions" role="listbox" aria-label="Existing Dish Master matches">
+                                            {editDetectionDishSuggestions.map((dish) => (
+                                              <button
+                                                type="button"
+                                                key={`edit-detail-${dish.category}::${dish.name}`}
+                                                className={dishNameKey(dish.name) === dishNameKey(editDetectionName) ? 'is-selected' : ''}
+                                                onClick={() => {
+                                                  setEditDetectionName(dish.name);
+                                                  setEditDetectionCategory(
+                                                    CATEGORIES.includes(dish.category as Category)
+                                                      ? dish.category as Category
+                                                      : 'Other',
+                                                  );
+                                                  setError('');
+                                                }}
+                                              >
+                                                <span><b>{dish.name}</b><small>{dish.category}</small></span>
+                                                <strong>{dish.rate > 0 ? `₹${dish.rate.toFixed(2)} / plate` : 'Rate needed'}</strong>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : null}
 
                                       <select
                                         className="select"

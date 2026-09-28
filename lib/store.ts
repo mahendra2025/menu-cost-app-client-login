@@ -948,6 +948,8 @@ const MENU_HEADINGS = new Set([
   'rajasthani main course',
   'gujarati breakfast',
   'side accompaniments',
+  'rice and accompaniments',
+  'other counters and services',
   'included menu',
   'included menu items',
   'catering menu',
@@ -1083,6 +1085,8 @@ const MENU_HEADING_CATEGORIES: Record<string, Category | null> = {
   'rajasthani main course': 'Rajasthani',
   'gujarati breakfast': 'Gujarati',
   'side accompaniments': null,
+  'rice and accompaniments': 'Rice',
+  'other counters and services': 'Other',
   sides: null,
   'side items': null,
   'snacks counter': 'Starter',
@@ -1595,7 +1599,17 @@ function scorePendingDishCandidate(
 }
 
 const NON_DISH_TEXT_PATTERN =
-  /^(?:days?\s*\d+|members?|as\s+per\s+(?:selection|choice)|menu\s+for|wedding\s+menu|party\s+menu|client|customer|event|function|occasion|venue|date|time|pax|guests?|persons?|contact|phone|mobile|address|location|package|price|rate|total|amount|notes?|instructions?|services?|staff|transport|decoration|photography|music|dj|tables?|chairs?|tax|gst|terms?|ग्राहक|कार्यक्रम|स्थान|तारीख|समय|मेहमान|संपर्क|मोबाइल|पता|कुल|नोट|ગ્રાહક|કાર્યક્રમ|સ્થળ|તારીખ|સમય|મહેમાન|સંપર્ક|મોબાઇલ|સરનામું|કુલ|નોંધ)(?:\b|[\s:()–—-]|$)/i;
+  /^(?:days?\s*\d+|members?|main|late\s+night|as\s+per\s+(?:selection|choice)|menu\s+for|wedding\s+menu|party\s+menu|client|customer|event|function|occasion|venue|date|time|pax|guests?|persons?|contact|phone|mobile|address|location|package|price|rate|total|amount|notes?|instructions?|services?|staff|transport|decoration|photography|music|dj|tables?|chairs?|tax|gst|terms?|ग्राहक|कार्यक्रम|स्थान|तारीख|समय|मेहमान|संपर्क|मोबाइल|पता|कुल|नोट|ગ્રાહક|કાર્યક્રમ|સ્થળ|તારીખ|સમય|મહેમાન|સંપર્ક|મોબાઇલ|સરનામું|કુલ|નોંધ)(?:\b|[\s:()–—-]|$)/i;
+
+const AMBIGUOUS_DISH_HEADINGS = new Set([
+  'roti',
+  'salad',
+  'raita',
+  'ice cream',
+  'mukhwas',
+  'paan',
+  'pickle',
+]);
 
 const PROSE_WORD_PATTERN =
   /\b(?:please|kindly|include|included|excluding|available|required|arrange|arrangement|welcome|thank|thanks|regards|booking|advance|payment|starts?|scheduled|break|will|served|कृपया|धन्यवाद|शामिल|कुल|કૃપા|આભાર|સમાવેશ)\b/i;
@@ -1606,6 +1620,15 @@ function isClearlyNonDishText(value: string): boolean {
   const normalized = normalizeMenuHeading(value);
 
   if (!normalized) return true;
+
+  if (
+    /\bcaterers?\b/i.test(normalized) ||
+    /^(?:curated menus?|elegant service|memorable celebrations?)$/i.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
 
   if (
     isQuotationMetadataLine(
@@ -1814,11 +1837,21 @@ function splitMenuText(
     if (
       wholeSegmentKey in MENU_HEADING_CATEGORIES
     ) {
-      activeCategory =
-        MENU_HEADING_CATEGORIES[wholeSegmentKey] ?? undefined;
-      activeSectionHeading =
-        wholeSegmentKey;
-      continue;
+      const letters = segment.replace(/[^A-Za-z]/g, '');
+      const isVisuallyUppercase =
+        Boolean(letters) && letters === letters.toUpperCase();
+      const isDishUnderActiveSection =
+        Boolean(activeCategory) &&
+        AMBIGUOUS_DISH_HEADINGS.has(wholeSegmentKey) &&
+        !isVisuallyUppercase;
+
+      if (!isDishUnderActiveSection) {
+        activeCategory =
+          MENU_HEADING_CATEGORIES[wholeSegmentKey] ?? undefined;
+        activeSectionHeading =
+          wholeSegmentKey;
+        continue;
+      }
     }
 
     const modifierDetection =
@@ -1836,7 +1869,13 @@ function splitMenuText(
 
     if (
       cleanedHeadingKey in MENU_HEADING_CATEGORIES &&
-      !modifierDetection.modifiers
+      !modifierDetection.modifiers &&
+      !(
+        activeCategory &&
+        AMBIGUOUS_DISH_HEADINGS.has(cleanedHeadingKey) &&
+        line.replace(/[^A-Za-z]/g, '') !==
+          line.replace(/[^A-Za-z]/g, '').toUpperCase()
+      )
     ) {
       activeCategory =
         MENU_HEADING_CATEGORIES[cleanedHeadingKey] ?? undefined;
@@ -1876,7 +1915,13 @@ function splitMenuText(
           normalized,
         ) &&
         !isExplicitMenuItem &&
-        !modifierDetection.modifiers
+        !modifierDetection.modifiers &&
+        !(
+          activeCategory &&
+          AMBIGUOUS_DISH_HEADINGS.has(normalized) &&
+          line.replace(/[^A-Za-z]/g, '') !==
+            line.replace(/[^A-Za-z]/g, '').toUpperCase()
+        )
       ) {
         continue;
       }

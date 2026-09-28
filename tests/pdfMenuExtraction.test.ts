@@ -65,6 +65,29 @@ test('keeps a normal single-column menu in visual order', () => {
   );
 });
 
+test('keeps a full-width function band after two columns', () => {
+  const text = reconstructPdfMenuText(
+    [
+      item('WELCOME DRINKS', 40, 700),
+      item('MAIN COURSE', 330, 700),
+      item('Mojito', 50, 670),
+      item('Paneer Sabji', 340, 670),
+      item('Spring Roll', 50, 640),
+      item('Dal Fry', 340, 640),
+      item('LATE NIGHT - 150 MEMBERS', 40, 180, 190),
+      item('Mix Bhajiya', 50, 150),
+      item('Tea', 220, 150, 40),
+      item('Coffee', 340, 150, 50),
+    ],
+    { pageWidth: 600 },
+  );
+
+  assert.match(
+    text,
+    /MAIN COURSE\nPaneer Sabji\nDal Fry[\s\S]*LATE NIGHT - 150 MEMBERS\nMix Bhajiya\nTea\nCoffee/,
+  );
+});
+
 test('requests OCR for severely fragmented native PDF text', () => {
   assert.equal(
     pdfPageNeedsOcr(

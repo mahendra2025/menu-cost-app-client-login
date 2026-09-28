@@ -172,7 +172,52 @@ function reconstructColumnMajor(
   segmentsByLine: TextSegment[][],
   pageWidth: number,
 ) {
-  const multiColumnRows = segmentsByLine.filter(
+  const visualLines = segmentsByLine
+    .filter((segments) => segments.length)
+    .sort(
+      (left, right) =>
+        Math.max(...right.map((segment) => segment.y)) -
+        Math.max(...left.map((segment) => segment.y)),
+    );
+
+  /*
+   * A menu can end with a full-width function band below otherwise stable
+   * columns (for example, "Late Night" followed by three horizontal items).
+   * Keep that band out of the column assignment or its items are scattered
+   * into unrelated columns and lose their function heading.
+   */
+  let trailingBandStart: number | undefined;
+
+  for (let index = 0; index < visualLines.length - 1; index += 1) {
+    const currentY = Math.max(
+      ...visualLines[index].map((segment) => segment.y),
+    );
+    const nextY = Math.max(
+      ...visualLines[index + 1].map((segment) => segment.y),
+    );
+
+    if (
+      currentY - nextY >= 90 &&
+      visualLines.slice(index + 1).some((line) => line.length >= 2)
+    ) {
+      trailingBandStart = nextY;
+    }
+  }
+
+  const columnLines =
+    trailingBandStart === undefined
+      ? segmentsByLine
+      : segmentsByLine.map((segments) =>
+          segments.filter((segment) => segment.y > trailingBandStart!),
+        );
+  const trailingLines =
+    trailingBandStart === undefined
+      ? []
+      : visualLines.filter((segments) =>
+          segments.some((segment) => segment.y <= trailingBandStart!),
+        );
+
+  const multiColumnRows = columnLines.filter(
     (segments) => segments.length >= 2,
   );
 
@@ -228,7 +273,7 @@ function reconstructColumnMajor(
 
   const columns = anchors.map(() => [] as TextSegment[]);
 
-  segmentsByLine.flat().forEach((segment) => {
+  columnLines.flat().forEach((segment) => {
     let closestIndex = 0;
     let closestDistance = Number.POSITIVE_INFINITY;
 
@@ -245,13 +290,26 @@ function reconstructColumnMajor(
 
   if (columns.some((column) => column.length < 3)) return '';
 
-  return columns
+  const columnText = columns
     .map((column) =>
       column
         .sort((left, right) => right.y - left.y || left.x - right.x)
         .map((segment) => segment.text)
         .join('\n'),
     )
+    .join('\n\n');
+
+  const trailingText = trailingLines
+    .map((segments) =>
+      [...segments]
+        .sort((left, right) => left.x - right.x)
+        .map((segment) => segment.text)
+        .join('\n'),
+    )
+    .join('\n');
+
+  return [columnText, trailingText]
+    .filter(Boolean)
     .join('\n\n');
 }
 

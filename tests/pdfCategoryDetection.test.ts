@@ -62,3 +62,39 @@ test('treats PDF DEL control characters as explicit dish bullets', async () => {
 
   assert.ok(candidates.some((candidate) => candidate.name === 'New Celebration Dish'));
 });
+
+test('ignores PDF branding and compound headings while keeping their dishes', async () => {
+  const menuText = [
+    'KALASH CATERERS',
+    'Curated menus',
+    'Elegant service',
+    'Memorable celebrations',
+    'RICE & ACCOMPANIMENTS',
+    'Jeera Rice',
+    'Papad & Achar',
+    'OTHER COUNTERS & SERVICES',
+    'Paan Counter',
+    '200 ml Water Bottle',
+    'LATE NIGHT - 150 MEMBERS',
+    'Mix Bhajiya',
+    'Tea',
+    'Coffee',
+    'KALASH CATERERS - PREMIUM VEGETARIAN CATERERS',
+  ].join('\n');
+
+  const [knownDishes, candidates] = await Promise.all([
+    parseMenuText(menuText),
+    findPendingDishCandidates(menuText),
+  ]);
+  const names = new Set([
+    ...knownDishes.map((dish) => dish.name),
+    ...candidates.map((candidate) => candidate.name),
+  ]);
+
+  assert.equal(names.has('KALASH CATERERS'), false);
+  assert.equal(names.has('Curated menus'), false);
+  assert.equal(names.has('RICE & ACCOMPANIMENTS'), false);
+  assert.equal(names.has('OTHER COUNTERS & SERVICES'), false);
+  assert.equal(names.has('Mix Bhajiya'), true);
+  assert.equal(names.has('Paan Counter'), true);
+});
