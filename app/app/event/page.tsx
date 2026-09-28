@@ -69,6 +69,12 @@ import {
 } from '../../../lib/detectionBenchmark';
 
 import {
+  menuDishModifierKey,
+  menuDishModifierLabels,
+  menuDishVariantName,
+} from '../../../lib/menuDishModifiers';
+
+import {
   buildAutoRecipeCostRefresh,
   buildCatalogCostRefresh,
   buildCategoryEstimateCostRefresh,
@@ -2346,9 +2352,14 @@ export default function EventPage() {
                   candidates.map(
                     (item) => ({
                       name:
-                        item.name,
+                        menuDishVariantName(
+                          item.name,
+                          item.dishModifiers,
+                        ),
                       category:
                         item.category,
+                      modifiers:
+                        item.dishModifiers,
                     }),
                   ),
               }),
@@ -2754,9 +2765,23 @@ export default function EventPage() {
       | 'manual_add'
       | 'restored',
   ) {
+    const modifierContext =
+      detectionPreview
+        ?.menu.find(
+          (item) =>
+            item.id === itemId,
+        )
+        ?.dishModifiers;
+
+    const recipeVariantName =
+      menuDishVariantName(
+        name,
+        modifierContext,
+      );
+
     const normalizedName =
       dishNameKey(
-        name,
+        recipeVariantName,
       );
 
     if (!normalizedName) {
@@ -2923,8 +2948,11 @@ export default function EventPage() {
                     '',
                   dishes: [
                     {
-                      name,
+                      name:
+                        recipeVariantName,
                       category,
+                      modifiers:
+                        modifierContext,
                     },
                   ],
                 }),
@@ -5054,6 +5082,7 @@ export default function EventPage() {
           | 'name'
           | 'dayLabel'
           | 'mealLabel'
+          | 'dishModifiers'
         >,
       ) =>
         [
@@ -5065,6 +5094,9 @@ export default function EventPage() {
               'event menu',
           ),
           dishNameKey(item.name),
+          menuDishModifierKey(
+            item.dishModifiers,
+          ),
         ].join('::');
 
       try {
@@ -5854,8 +5886,14 @@ export default function EventPage() {
                     ),
                 )
                 .map((item) => ({
-                  name: item.name,
+                  name:
+                    menuDishVariantName(
+                      item.name,
+                      item.dishModifiers,
+                    ),
                   category: item.category,
+                  modifiers:
+                    item.dishModifiers,
                 })),
             }),
           },
@@ -5947,7 +5985,14 @@ export default function EventPage() {
           );
 
           detectedMenu = detectedMenu.map((item) => {
-            const result = recipeCosts.get(dishNameKey(item.name));
+            const result = recipeCosts.get(
+              dishNameKey(
+                menuDishVariantName(
+                  item.name,
+                  item.dishModifiers,
+                ),
+              ),
+            );
             const recipeCost = Math.max(
               0,
               Number(
@@ -6046,10 +6091,7 @@ export default function EventPage() {
               ...item,
 
               name:
-                String(
-                  result?.matchedName ||
-                  item.name,
-                ),
+                item.name,
 
               costPerPlate:
                 recipeCost,
