@@ -71,6 +71,7 @@ import {
 import {
   menuDishModifierKey,
   menuDishModifierLabels,
+  menuDishModifiersRequireRecipeVariant,
   menuDishVariantName,
 } from '../../../lib/menuDishModifiers';
 
@@ -3798,8 +3799,13 @@ export default function EventPage() {
               (item) =>
                 item.coverageStatus !==
                   'REJECTED' &&
-                item.detectionSource !==
-                  'catalog' &&
+                (
+                  item.detectionSource !==
+                    'catalog' ||
+                  menuDishModifiersRequireRecipeVariant(
+                    item.dishModifiers,
+                  )
+                ) &&
                 !availableRecipeKeys.has(
                   dishNameKey(
                     menuDishVariantName(
@@ -7799,8 +7805,13 @@ export default function EventPage() {
             (item) =>
               item.coverageStatus !==
                 'REJECTED' &&
-              item.detectionSource !==
-                'catalog' &&
+              (
+                item.detectionSource !==
+                  'catalog' ||
+                menuDishModifiersRequireRecipeVariant(
+                  item.dishModifiers,
+                )
+              ) &&
               item.costSource !==
                 'ai_recipe' &&
               !availableRecipeKeys.has(
@@ -10251,7 +10262,12 @@ export default function EventPage() {
                                       )}
 
                                       <div className="event-review-dish-actions">
-                                        {item.detectionSource !== 'catalog' ? (
+                                        {(
+                                          item.detectionSource !== 'catalog' ||
+                                          menuDishModifiersRequireRecipeVariant(
+                                            item.dishModifiers,
+                                          )
+                                        ) ? (
                                           (
                                             item.costSource === 'ai_recipe' ||
                                             smartDraftRecipeKeys.has(
@@ -14271,7 +14287,12 @@ export default function EventPage() {
                                     ) : null}
 
                                     <div className="menu-detection-item-actions">
-                                      {item.detectionSource !== 'catalog' &&
+                                      {(
+                                        item.detectionSource !== 'catalog' ||
+                                        menuDishModifiersRequireRecipeVariant(
+                                          item.dishModifiers,
+                                        )
+                                      ) &&
                                       item.coverageStatus !== 'REJECTED' ? (
                                         (
                                           item.costSource === 'ai_recipe' ||
