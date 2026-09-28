@@ -3706,6 +3706,8 @@ export default function EventPage() {
       );
 
     const smartDraft =
+      item.costSource ===
+        'ai_recipe' ||
       smartDraftRecipeKeys.has(
         itemKey,
       );
@@ -7655,10 +7657,14 @@ export default function EventPage() {
             (item) =>
               item.coverageStatus !==
                 'REJECTED' &&
-              smartDraftRecipeKeys.has(
-                dishNameKey(
-                  item.name,
-                ),
+              (
+                item.costSource ===
+                  'ai_recipe' ||
+                smartDraftRecipeKeys.has(
+                  dishNameKey(
+                    item.name,
+                  ),
+                )
               ),
           )
           .map(
@@ -7686,6 +7692,8 @@ export default function EventPage() {
                 'REJECTED' &&
               item.detectionSource !==
                 'catalog' &&
+              item.costSource !==
+                'ai_recipe' &&
               !availableRecipeKeys.has(
                 dishNameKey(
                   item.name,
@@ -10122,7 +10130,10 @@ export default function EventPage() {
 
                                       <div className="event-review-dish-actions">
                                         {item.detectionSource !== 'catalog' ? (
-                                          smartDraftRecipeKeys.has(dishNameKey(item.name)) ? (
+                                          (
+                                            item.costSource === 'ai_recipe' ||
+                                            smartDraftRecipeKeys.has(dishNameKey(item.name))
+                                          ) ? (
                                             <button
                                               type="button"
                                               className="make-recipe"
@@ -14124,7 +14135,10 @@ export default function EventPage() {
                                     <div className="menu-detection-item-actions">
                                       {item.detectionSource !== 'catalog' &&
                                       item.coverageStatus !== 'REJECTED' ? (
-                                        smartDraftRecipeKeys.has(dishNameKey(item.name)) ? (
+                                        (
+                                          item.costSource === 'ai_recipe' ||
+                                          smartDraftRecipeKeys.has(dishNameKey(item.name))
+                                        ) ? (
                                           <button
                                             type="button"
                                             className="make-recipe"
