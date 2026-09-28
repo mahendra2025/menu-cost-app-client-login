@@ -3723,9 +3723,15 @@ export default function EventPage() {
   function openDetectedDishRecipe(
     item: MenuItem,
   ) {
+    const recipeVariantName =
+      menuDishVariantName(
+        item.name,
+        item.dishModifiers,
+      );
+
     const itemKey =
       dishNameKey(
-        item.name,
+        recipeVariantName,
       );
 
     const recipeAvailable =
@@ -3745,7 +3751,7 @@ export default function EventPage() {
         recipeAvailable
           ? {
               recipe:
-                item.name,
+                recipeVariantName,
               ...(smartDraft
                 ? {
                     smartDraft:
@@ -3755,10 +3761,22 @@ export default function EventPage() {
             }
           : {
               create:
-                item.name,
+                recipeVariantName,
               category:
                 item.category ||
                 'Other',
+              ...(item.dishModifiers
+                ? {
+                    modifierTags:
+                      item.dishModifiers.tags.join(','),
+                    modifierPortionQuantity:
+                      String(item.dishModifiers.portionQuantity || ''),
+                    modifierPortionUnit:
+                      item.dishModifiers.portionUnit || '',
+                    modifierPieceWeightGrams:
+                      String(item.dishModifiers.pieceWeightGrams || ''),
+                  }
+                : {}),
             },
       );
 
@@ -3784,14 +3802,20 @@ export default function EventPage() {
                   'catalog' &&
                 !availableRecipeKeys.has(
                   dishNameKey(
-                    item.name,
+                    menuDishVariantName(
+                      item.name,
+                      item.dishModifiers,
+                    ),
                   ),
                 ),
             )
             .map(
               (item) => [
                 dishNameKey(
-                  item.name,
+                  menuDishVariantName(
+                    item.name,
+                    item.dishModifiers,
+                  ),
                 ),
                 item,
               ] as const,
@@ -3820,10 +3844,17 @@ export default function EventPage() {
             uniqueItems.map(
               (item) => ({
                 name:
+                  menuDishVariantName(
+                    item.name,
+                    item.dishModifiers,
+                  ),
+                baseDishName:
                   item.name,
                 category:
                   item.category ||
                   'Other',
+                modifiers:
+                  item.dishModifiers,
               }),
             ),
         }),
@@ -7704,7 +7735,10 @@ export default function EventPage() {
                   'ai_recipe' ||
                 smartDraftRecipeKeys.has(
                   dishNameKey(
-                    item.name,
+                    menuDishVariantName(
+                      item.name,
+                      item.dishModifiers,
+                    ),
                   ),
                 )
               ),
@@ -7712,7 +7746,10 @@ export default function EventPage() {
           .map(
             (item) => [
               dishNameKey(
-                item.name,
+                menuDishVariantName(
+                  item.name,
+                  item.dishModifiers,
+                ),
               ),
               item,
             ] as const,
@@ -7738,14 +7775,20 @@ export default function EventPage() {
                 'ai_recipe' &&
               !availableRecipeKeys.has(
                 dishNameKey(
-                  item.name,
+                  menuDishVariantName(
+                    item.name,
+                    item.dishModifiers,
+                  ),
                 ),
               ),
           )
           .map(
             (item) => [
               dishNameKey(
-                item.name,
+                menuDishVariantName(
+                  item.name,
+                  item.dishModifiers,
+                ),
               ),
               item,
             ] as const,
