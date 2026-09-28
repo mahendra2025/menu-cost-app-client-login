@@ -4631,6 +4631,75 @@ export default function RecipesPage() {
             font-weight:650;
           }
 
+          .recipe-smart-draft {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) auto auto;
+            align-items:center;
+            gap:12px;
+            padding:13px 14px;
+            border:1px solid rgba(64,156,255,.28);
+            border-radius:14px;
+            background:linear-gradient(135deg,rgba(64,156,255,.10),rgba(14,20,27,.96));
+          }
+
+          .recipe-smart-draft-copy {
+            min-width:0;
+          }
+
+          .recipe-smart-draft-copy span {
+            color:#6eabff;
+            font-size:9px;
+            font-weight:900;
+            letter-spacing:.08em;
+            text-transform:uppercase;
+          }
+
+          .recipe-smart-draft-copy h3 {
+            margin:4px 0 3px;
+            font-size:14px;
+            letter-spacing:-.02em;
+          }
+
+          .recipe-smart-draft-copy p {
+            margin:0;
+            color:#8995a4;
+            font-size:9px;
+            line-height:1.5;
+          }
+
+          .recipe-smart-draft-status {
+            display:grid;
+            min-width:88px;
+            gap:2px;
+            padding:8px 10px;
+            border:1px solid rgba(157,178,204,.13);
+            border-radius:10px;
+            text-align:center;
+          }
+
+          .recipe-smart-draft-status b {
+            font-size:10px;
+          }
+
+          .recipe-smart-draft-status span {
+            color:#7f8b99;
+            font-size:8px;
+          }
+
+          @media (max-width:760px) {
+            .recipe-smart-draft {
+              grid-template-columns:1fr;
+              align-items:stretch;
+            }
+
+            .recipe-smart-draft-status {
+              width:max-content;
+            }
+
+            .recipe-smart-draft .recipe-fast-button {
+              width:100%;
+            }
+          }
           .recipe-fast-quality {
             display:none;
             gap:9px;
@@ -5829,6 +5898,50 @@ I | Tomato | 4 | kg | 35 | kg`}
                       </div>
                     </div>
                   </div>
+
+                  {selectedDish.generatedRecipe === true ? (
+                    <div className="recipe-smart-draft">
+                      <div className="recipe-smart-draft-copy">
+                        <span>
+                          Smart Recipe Draft
+                        </span>
+                        <h3>
+                          AI prepared this 100-guest recipe for review
+                        </h3>
+                        <p>
+                          {ingredients.length} ingredients · {money(finalPerPerson)} food / person · {recipeQuality.rateCoveragePercent}% trusted rate coverage · {gasPreview.gasKgPer100.toFixed(2)} kg LPG / 100 suggested.
+                        </p>
+                      </div>
+
+                      <div className="recipe-smart-draft-status">
+                        <b>
+                          {recipeQuality.status}
+                        </b>
+                        <span>
+                          {recipeQuality.score}/100 quality
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="recipe-fast-button primary"
+                        disabled={
+                          recipeQuality.status ===
+                          'BLOCKED'
+                        }
+                        onClick={() =>
+                          acceptSmartDraft(
+                            selectedIndex,
+                          )
+                        }
+                      >
+                        {recipeQuality.status ===
+                        'BLOCKED'
+                          ? 'Fix blocked issues first'
+                          : '✓ Accept Smart Draft'}
+                      </button>
+                    </div>
+                  ) : null}
 
                   <div className="recipe-section-title">
                     <strong>
