@@ -34,6 +34,358 @@ export function dishNameKey(
     .trim();
 }
 
+export function isQuotationMetadataLine(
+  value: string,
+) {
+  const raw =
+    String(value || '')
+      .normalize('NFKC')
+      .replace(
+        /[\u200B-\u200D\uFEFF]/g,
+        '',
+      )
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  if (!raw) {
+    return true;
+  }
+
+  const normalized =
+    dishNameKey(raw);
+
+  if (
+    /^(?:quotation|catering quotation|quotation note|quotation notes|quote|estimate|proposal|invoice|bill|client location|included menu|included menu items|rate per plate|guest count|total quotation|commercial summary|price summary|terms and conditions)(?:\b|$)/i.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    /^premium vegetarian cater(?:er|ers|ing)(?:\b|$)/i.test(
+      normalized,
+    ) ||
+    /^premium vegetarian catering package(?:\b|$)/i.test(
+      normalized,
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    /\bquotation is based on\b/i.test(
+      normalized,
+    ) ||
+    (
+      /\bchanges? in menu\b/i.test(
+        normalized,
+      ) &&
+      /\bfinal amount\b/i.test(
+        normalized,
+      )
+    )
+  ) {
+    return true;
+  }
+
+  const moneyMatches =
+    raw.match(
+      /(?:₹|rs\.?|inr)\s*[\d,]+(?:\.\d+)?/gi,
+    ) || [];
+
+  if (
+    moneyMatches.length >= 2
+  ) {
+    return true;
+  }
+
+  if (
+    /\brate per plate\b/i.test(
+      normalized,
+    ) &&
+    (
+      /\bguest count\b/i.test(
+        normalized,
+      ) ||
+      /\btotal quotation\b/i.test(
+        normalized,
+      )
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export function inferMenuDishCategory(
+  value: string,
+  sectionHeading = '',
+): string | undefined {
+  const dish =
+    dishNameKey(value);
+  const section =
+    dishNameKey(
+      sectionHeading,
+    );
+
+  if (!dish) {
+    return undefined;
+  }
+
+  const has = (
+    pattern: RegExp,
+  ) => pattern.test(dish);
+
+  const isFarsan =
+    has(
+      /\b(?:samosa|kachori|khaman|dhokla|khandvi|patra|fafda|ganthia|gathiya|muthiya|handvo|dal vada|mirchi vada|sev khamani|farsan|namkeen)\b/i,
+    );
+
+  if (
+    section ===
+      'farsan and starters' ||
+    section ===
+      'farsan starters'
+  ) {
+    return isFarsan
+      ? 'Farsan'
+      : 'Starter';
+  }
+
+  if (
+    section ===
+      'dal and rice' ||
+    section ===
+      'rice and dal'
+  ) {
+    if (
+      has(
+        /\b(?:dal|daal|kadhi|kadi)\b/i,
+      )
+    ) {
+      return 'Dal / Kadhi';
+    }
+
+    if (
+      has(
+        /\b(?:rice|pulao|pulav|biryani|khichdi|khichadi)\b/i,
+      )
+    ) {
+      return 'Rice';
+    }
+  }
+
+  if (
+    section ===
+      'accompaniments' ||
+    section ===
+      'accompaniment' ||
+    section ===
+      'side accompaniments' ||
+    section ===
+      'side items' ||
+    section ===
+      'sides'
+  ) {
+    if (
+      has(
+        /\bpapad\b/i,
+      )
+    ) {
+      return 'Papad';
+    }
+
+    if (
+      has(
+        /\b(?:achar|achaar|pickle|pickles)\b/i,
+      )
+    ) {
+      return 'Pickle';
+    }
+
+    if (
+      has(
+        /\b(?:kachumber|salad)\b/i,
+      )
+    ) {
+      return 'Salad';
+    }
+
+    if (
+      has(
+        /\braita\b/i,
+      )
+    ) {
+      return 'Raita';
+    }
+
+    if (
+      has(
+        /\bmukhwas\b/i,
+      )
+    ) {
+      return 'Mukhwas';
+    }
+
+    if (
+      has(
+        /\b(?:paan|pan)\b/i,
+      )
+    ) {
+      return 'Paan';
+    }
+
+    return 'Condiments';
+  }
+
+  if (
+    has(
+      /\b(?:water bottle|mineral water|packaged water|drinking water|tea|coffee)\b/i,
+    )
+  ) {
+    return 'Beverage';
+  }
+
+  if (
+    has(
+      /\b(?:soup|shorba)\b/i,
+    )
+  ) {
+    return 'Soup';
+  }
+
+  if (
+    has(
+      /\b(?:ice cream|icecream|kulfi)\b/i,
+    )
+  ) {
+    return 'Ice Cream';
+  }
+
+  if (
+    has(
+      /\b(?:rabdi|rabri|rasmalai|gulab jamun|jamun|halwa|katli|barfi|burfi|ladoo|laddu|jalebi|kheer|basundi|malpua|pedha|peda|sweet)\b/i,
+    )
+  ) {
+    return 'Sweet';
+  }
+
+  if (
+    has(
+      /\b(?:roti|puri|poori|naan|nan|paratha|parantha|kulcha|bhakri|thepla|phulka|chapati|bread)\b/i,
+    )
+  ) {
+    return 'Bread';
+  }
+
+  if (
+    has(
+      /\b(?:dal|daal|kadhi|kadi)\b/i,
+    )
+  ) {
+    return 'Dal / Kadhi';
+  }
+
+  if (
+    has(
+      /\b(?:rice|pulao|pulav|biryani|khichdi|khichadi)\b/i,
+    )
+  ) {
+    return 'Rice';
+  }
+
+  if (
+    has(
+      /\bpapad\b/i,
+    )
+  ) {
+    return 'Papad';
+  }
+
+  if (
+    has(
+      /\b(?:achar|achaar|pickle|pickles)\b/i,
+    )
+  ) {
+    return 'Pickle';
+  }
+
+  if (
+    has(
+      /\b(?:kachumber|salad)\b/i,
+    )
+  ) {
+    return 'Salad';
+  }
+
+  if (
+    has(
+      /\braita\b/i,
+    )
+  ) {
+    return 'Raita';
+  }
+
+  if (
+    isFarsan
+  ) {
+    return 'Farsan';
+  }
+
+  if (
+    has(
+      /\b(?:pani puri|dahi puri|sev puri|bhel|chaat|chat|aloo tikki|raj kachori|dahi bhalla)\b/i,
+    )
+  ) {
+    return 'Chaat';
+  }
+
+  if (
+    has(
+      /\bpaneer\b/i,
+    )
+  ) {
+    if (
+      /\b(?:starter|starters|snack|snacks)\b/i.test(
+        section,
+      )
+    ) {
+      return 'Starter';
+    }
+
+    return 'Paneer';
+  }
+
+  if (
+    has(
+      /\b(?:mix veg|mixed veg|mix vegetable|mixed vegetable|vegetable|sabji|sabzi|bharta)\b/i,
+    )
+  ) {
+    return 'Sabji';
+  }
+
+  if (
+    /\b(?:starter|starters)\b/i.test(
+      section,
+    )
+  ) {
+    return 'Starter';
+  }
+
+  if (
+    section ===
+      'main course' ||
+    section ===
+      'main courses'
+  ) {
+    return 'Main Course';
+  }
+
+  return undefined;
+}
+
 export function sourceDishCoverageKey(
   item: {
     name: string;
