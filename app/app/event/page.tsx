@@ -74,6 +74,11 @@ import {
   type DishCostRefresh,
 } from '../../../lib/correctedDishCosting';
 
+const RECIPE_CACHE_KEY =
+  'admin_recipe_catalog_v2';
+const BULK_RECIPE_DRAFT_KEY =
+  'menu_cost_bulk_recipe_draft_v1';
+
 const SAMPLE_MENU = `Day 1 • Dinner • 300 Members
 Welcome Drink
 Orange Juice
@@ -961,6 +966,106 @@ export default function EventPage() {
     useState<Set<string>>(
       () => new Set(),
     );
+
+  const [
+    availableRecipeKeys,
+    setAvailableRecipeKeys,
+  ] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  useEffect(() => {
+    function refreshRecipeKeys() {
+      try {
+        const raw =
+          localStorage.getItem(
+            RECIPE_CACHE_KEY,
+          );
+
+        if (!raw) {
+          setAvailableRecipeKeys(
+            new Set(),
+          );
+          return;
+        }
+
+        const parsed =
+          JSON.parse(
+            raw,
+          ) as {
+            dishes?: Array<
+              Record<
+                string,
+                unknown
+              >
+            >;
+          };
+
+        const nextKeys =
+          new Set<string>(
+            (
+              Array.isArray(
+                parsed.dishes,
+              )
+                ? parsed.dishes
+                : []
+            )
+              .map(
+                (dish) =>
+                  dishNameKey(
+                    String(
+                      dish.dishName ||
+                      dish.name ||
+                      '',
+                    ),
+                  ),
+              )
+              .filter(Boolean),
+          );
+
+        setAvailableRecipeKeys(
+          nextKeys,
+        );
+      } catch {
+        setAvailableRecipeKeys(
+          new Set(),
+        );
+      }
+    }
+
+    function handleRecipeStorage(
+      event: StorageEvent,
+    ) {
+      if (
+        event.key ===
+        RECIPE_CACHE_KEY
+      ) {
+        refreshRecipeKeys();
+      }
+    }
+
+    refreshRecipeKeys();
+
+    window.addEventListener(
+      'focus',
+      refreshRecipeKeys,
+    );
+    window.addEventListener(
+      'storage',
+      handleRecipeStorage,
+    );
+
+    return () => {
+      window.removeEventListener(
+        'focus',
+        refreshRecipeKeys,
+      );
+      window.removeEventListener(
+        'storage',
+        handleRecipeStorage,
+      );
+    };
+  }, []);
 
   const [
     detectionReviewFilter,
@@ -3497,13 +3602,104 @@ export default function EventPage() {
   function openDetectedDishRecipe(
     item: MenuItem,
   ) {
-    const params = new URLSearchParams({
-      create: item.name,
-      category: item.category || 'Other',
-    });
+    const recipeAvailable =
+      availableRecipeKeys.has(
+        dishNameKey(
+          item.name,
+        ),
+      );
+
+    const params =
+      new URLSearchParams(
+        recipeAvailable
+          ? {
+              recipe:
+                item.name,
+            }
+          : {
+              create:
+                item.name,
+              category:
+                item.category ||
+                'Other',
+            },
+      );
 
     window.open(
       `/admin/recipes?${params.toString()}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  }
+
+  function openMissingDetectedRecipes(
+    items: MenuItem[],
+  ) {
+    const uniqueItems =
+      Array.from(
+        new Map<string, MenuItem>(
+          items
+            .filter(
+              (item) =>
+                item.coverageStatus !==
+                  'REJECTED' &&
+                item.detectionSource !==
+                  'catalog' &&
+                !availableRecipeKeys.has(
+                  dishNameKey(
+                    item.name,
+                  ),
+                ),
+            )
+            .map(
+              (item) => [
+                dishNameKey(
+                  item.name,
+                ),
+                item,
+              ] as const,
+            )
+            .filter(
+              ([key]) =>
+                Boolean(key),
+            ),
+        ).values(),
+      );
+
+    if (!uniqueItems.length) {
+      setError(
+        'All detected dishes already have recipes.',
+      );
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        BULK_RECIPE_DRAFT_KEY,
+        JSON.stringify({
+          createdAt:
+            Date.now(),
+          dishes:
+            uniqueItems.map(
+              (item) => ({
+                name:
+                  item.name,
+                category:
+                  item.category ||
+                  'Other',
+              }),
+            ),
+        }),
+      );
+    } catch {
+      setError(
+        'Could not prepare the missing recipes. Try again.',
+      );
+      return;
+    }
+
+    window.open(
+      '/admin/recipes?bulkCreate=1&source=menu-detection',
       '_blank',
       'noopener,noreferrer',
     );
@@ -7324,6 +7520,37 @@ export default function EventPage() {
   const detectionReviewItems =
     detectionPreview?.menu || [];
 
+  const missingDetectedRecipeItems =
+    Array.from(
+      new Map<string, MenuItem>(
+        detectionReviewItems
+          .filter(
+            (item) =>
+              item.coverageStatus !==
+                'REJECTED' &&
+              item.detectionSource !==
+                'catalog' &&
+              !availableRecipeKeys.has(
+                dishNameKey(
+                  item.name,
+                ),
+              ),
+          )
+          .map(
+            (item) => [
+              dishNameKey(
+                item.name,
+              ),
+              item,
+            ] as const,
+          )
+          .filter(
+            ([key]) =>
+              Boolean(key),
+          ),
+      ).values(),
+    );
+
   function normalizedDetectionConfidence(
     item: MenuItem,
   ) {
@@ -9508,6 +9735,22 @@ export default function EventPage() {
                       </div>
                     ) : null}
 
+                    {missingDetectedRecipeItems.length > 0 ? (
+                      <div className="event-review-add-actions no-print">
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() =>
+                            openMissingDetectedRecipes(
+                              missingDetectedRecipeItems,
+                            )
+                          }
+                        >
+                          Create {missingDetectedRecipeItems.length} Missing {missingDetectedRecipeItems.length === 1 ? 'Recipe' : 'Recipes'}
+                        </button>
+                      </div>
+                    ) : null}
+
                     <div className="event-review-groups">
                       {simpleDetectedGroups.map((group) => (
                         <section className="event-review-group" key={group.key}>
@@ -9608,14 +9851,20 @@ export default function EventPage() {
 
                                       <div className="event-review-dish-actions">
                                         {item.detectionSource !== 'catalog' ? (
-                                          <button
-                                            type="button"
-                                            className="make-recipe"
-                                            onClick={() => openDetectedDishRecipe(item)}
-                                            aria-label={`Make recipe for ${item.name}`}
-                                          >
-                                            Make recipe
-                                          </button>
+                                          availableRecipeKeys.has(dishNameKey(item.name)) ? (
+                                            <span className="event-review-master-saved">
+                                              <span aria-hidden="true">✓</span> Recipe available
+                                            </span>
+                                          ) : (
+                                            <button
+                                              type="button"
+                                              className="make-recipe"
+                                              onClick={() => openDetectedDishRecipe(item)}
+                                              aria-label={`Make recipe for ${item.name}`}
+                                            >
+                                              Make recipe
+                                            </button>
+                                          )
                                         ) : null}
                                         {canSaveToDishMaster ? (
                                           isSavedToDishMaster ? (
@@ -13346,6 +13595,22 @@ export default function EventPage() {
                   ) : null}
                 </div>
 
+                {missingDetectedRecipeItems.length > 0 ? (
+                  <div className="event-review-add-actions no-print">
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() =>
+                        openMissingDetectedRecipes(
+                          missingDetectedRecipeItems,
+                        )
+                      }
+                    >
+                      Create {missingDetectedRecipeItems.length} Missing {missingDetectedRecipeItems.length === 1 ? 'Recipe' : 'Recipes'}
+                    </button>
+                  </div>
+                ) : null}
+
                 <div className="menu-preview-groups">
                   {!detectionPreviewGroups.length ? (
                     <div className="menu-detection-filter-empty">
@@ -13543,13 +13808,19 @@ export default function EventPage() {
                                     <div className="menu-detection-item-actions">
                                       {item.detectionSource !== 'catalog' &&
                                       item.coverageStatus !== 'REJECTED' ? (
-                                        <button
-                                          type="button"
-                                          className="make-recipe"
-                                          onClick={() => openDetectedDishRecipe(item)}
-                                        >
-                                          Make recipe
-                                        </button>
+                                        availableRecipeKeys.has(dishNameKey(item.name)) ? (
+                                          <span className="event-review-master-saved">
+                                            <span aria-hidden="true">✓</span> Recipe available
+                                          </span>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            className="make-recipe"
+                                            onClick={() => openDetectedDishRecipe(item)}
+                                          >
+                                            Make recipe
+                                          </button>
+                                        )
                                       ) : null}
                                       {detectionNeedsReview(
                                         item,
