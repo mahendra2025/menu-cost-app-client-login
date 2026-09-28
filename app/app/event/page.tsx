@@ -3494,6 +3494,21 @@ export default function EventPage() {
     );
   }
 
+  function openDetectedDishRecipe(
+    item: MenuItem,
+  ) {
+    const params = new URLSearchParams({
+      create: item.name,
+      category: item.category || 'Other',
+    });
+
+    window.open(
+      `/admin/recipes?${params.toString()}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  }
+
   function cancelDetectionEdit() {
     setEditingDetectionId(
       null,
@@ -9592,6 +9607,16 @@ export default function EventPage() {
                                       )}
 
                                       <div className="event-review-dish-actions">
+                                        {item.detectionSource !== 'catalog' ? (
+                                          <button
+                                            type="button"
+                                            className="make-recipe"
+                                            onClick={() => openDetectedDishRecipe(item)}
+                                            aria-label={`Make recipe for ${item.name}`}
+                                          >
+                                            Make recipe
+                                          </button>
+                                        ) : null}
                                         {canSaveToDishMaster ? (
                                           isSavedToDishMaster ? (
                                             <span className="event-review-master-saved">
@@ -13516,6 +13541,16 @@ export default function EventPage() {
                                     </b>
 
                                     <div className="menu-detection-item-actions">
+                                      {item.detectionSource !== 'catalog' &&
+                                      item.coverageStatus !== 'REJECTED' ? (
+                                        <button
+                                          type="button"
+                                          className="make-recipe"
+                                          onClick={() => openDetectedDishRecipe(item)}
+                                        >
+                                          Make recipe
+                                        </button>
+                                      ) : null}
                                       {detectionNeedsReview(
                                         item,
                                       ) &&
