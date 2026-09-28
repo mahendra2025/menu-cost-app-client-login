@@ -1,4 +1,5 @@
 import type { MenuItem } from './types';
+import { menuDishModifierKey } from './menuDishModifiers';
 
 function normalizeIdentityPart(value: string) {
   return value
@@ -30,6 +31,9 @@ export function menuItemIdentity(item: MenuItem) {
     menuServiceIdentity(item),
     normalizeIdentityPart(item.name),
     normalizeIdentityPart(item.category),
+    menuDishModifierKey(
+      item.dishModifiers,
+    ),
   ].join('::');
 }
 
