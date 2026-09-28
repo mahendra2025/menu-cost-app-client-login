@@ -55,6 +55,7 @@ import {
 } from '../../../lib/menuCategories';
 
 import {
+  analyzeMenuSourceIntelligence,
   cleanupMenuSourceText,
   dishNameKey,
   getDishSourceEvidenceScore,
@@ -7345,6 +7346,26 @@ export default function EventPage() {
     .map((line) => line.trim())
     .filter(Boolean).length;
 
+  const menuSourceIntelligence =
+    analyzeMenuSourceIntelligence(
+      work.event.rawMenuText,
+    );
+
+  const quotationRateApplied =
+    Boolean(
+      menuSourceIntelligence
+        .ratePerPlate &&
+      Math.abs(
+        Number(
+          work.sellingPricePerPlate,
+        ) -
+        Number(
+          menuSourceIntelligence
+            .ratePerPlate,
+        ),
+      ) < 0.005,
+    );
+
   const manualDishCategories =
     Array.from(
       new Set(
@@ -9655,6 +9676,105 @@ export default function EventPage() {
                         <b>{simpleDetectedDishCount}</b>
                         <span>dishes</span>
                       </div>
+                    </div>
+
+                    <div className="menu-detection-intelligence">
+                      <div className="menu-detection-intelligence-head">
+                        <div>
+                          <span>Detection Intelligence</span>
+                          <b>Source understood before costing</b>
+                        </div>
+                        <strong>
+                          {detectionPreview.possibleMissed.length > 0
+                            ? `${detectionPreview.possibleMissed.length} possible missed`
+                            : '✓ Source clean'}
+                        </strong>
+                      </div>
+
+                      <div className="menu-detection-intelligence-stats">
+                        <div>
+                          <b>{menuSourceIntelligence.sectionHeadings.length}</b>
+                          <span>Sections</span>
+                        </div>
+                        <div>
+                          <b>{detectionSourceCounts.catalog}</b>
+                          <span>Dish Master matches</span>
+                        </div>
+                        <div>
+                          <b>{menuSourceIntelligence.ignoredMetadataLines.length}</b>
+                          <span>Quote lines filtered</span>
+                        </div>
+                        <div>
+                          <b>
+                            {menuSourceIntelligence.guestCount
+                              ? menuSourceIntelligence.guestCount.toLocaleString('en-IN')
+                              : '—'}
+                          </b>
+                          <span>Guests read</span>
+                        </div>
+                        <div>
+                          <b>
+                            {menuSourceIntelligence.ratePerPlate
+                              ? `₹${menuSourceIntelligence.ratePerPlate.toLocaleString('en-IN')}`
+                              : '—'}
+                          </b>
+                          <span>Quoted / plate</span>
+                        </div>
+                      </div>
+
+                      {menuSourceIntelligence.sectionHeadings.length ? (
+                        <div className="menu-detection-section-chips" aria-label="Detected menu sections">
+                          {menuSourceIntelligence.sectionHeadings.map((section) => (
+                            <span key={section}>{section}</span>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      {menuSourceIntelligence.commercialCheck !== 'UNKNOWN' ? (
+                        <div className={`menu-detection-commercial-check ${menuSourceIntelligence.commercialCheck === 'MATCH' ? 'match' : 'mismatch'}`}>
+                          <span aria-hidden="true">
+                            {menuSourceIntelligence.commercialCheck === 'MATCH' ? '✓' : '⚠'}
+                          </span>
+                          <div>
+                            <b>
+                              {menuSourceIntelligence.commercialCheck === 'MATCH'
+                                ? 'Quotation math matches'
+                                : 'Quotation math needs review'}
+                            </b>
+                            <small>
+                              {menuSourceIntelligence.guestCount?.toLocaleString('en-IN')} guests × ₹{menuSourceIntelligence.ratePerPlate?.toLocaleString('en-IN')} = ₹{menuSourceIntelligence.expectedQuotation?.toLocaleString('en-IN')}
+                              {menuSourceIntelligence.totalQuotation
+                                ? ` · source total ₹${menuSourceIntelligence.totalQuotation.toLocaleString('en-IN')}`
+                                : ''}
+                            </small>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {menuSourceIntelligence.ratePerPlate ? (
+                        <div className="menu-detection-intelligence-action">
+                          <div>
+                            <b>Quotation selling rate found</b>
+                            <span>Use the detected client rate without typing it again.</span>
+                          </div>
+                          <button
+                            type="button"
+                            className={quotationRateApplied ? 'is-applied' : ''}
+                            disabled={quotationRateApplied}
+                            onClick={() => {
+                              persistWork({
+                                ...work,
+                                sellingPricePerPlate:
+                                  Number(menuSourceIntelligence.ratePerPlate) || 0,
+                              });
+                            }}
+                          >
+                            {quotationRateApplied
+                              ? '✓ Rate applied'
+                              : `Use ₹${menuSourceIntelligence.ratePerPlate.toLocaleString('en-IN')}`}
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
 
                     <div className="event-review-toolbar">
@@ -12935,6 +13055,27 @@ export default function EventPage() {
                       }
                     </b>
                   </button>
+                </div>
+
+                <div className="menu-detection-intelligence detailed">
+                  <div className="menu-detection-intelligence-head">
+                    <div>
+                      <span>Source Intelligence</span>
+                      <b>{menuSourceIntelligence.sectionHeadings.length} sections · {menuSourceIntelligence.ignoredMetadataLines.length} commercial lines filtered</b>
+                    </div>
+                    <strong>
+                      {menuSourceIntelligence.commercialCheck === 'MATCH'
+                        ? '✓ Quote verified'
+                        : menuSourceIntelligence.commercialCheck === 'MISMATCH'
+                          ? '⚠ Quote mismatch'
+                          : 'Source analysed'}
+                    </strong>
+                  </div>
+                  <div className="menu-detection-section-chips">
+                    {menuSourceIntelligence.sectionHeadings.map((section) => (
+                      <span key={`detailed-${section}`}>{section}</span>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="menu-preview-toolbar">
