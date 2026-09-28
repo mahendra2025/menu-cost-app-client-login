@@ -376,6 +376,33 @@ export function extractMenuDishModifiers(
   };
 }
 
+export function menuDishModifierKey(
+  value:
+    | MenuDishModifiers
+    | null
+    | undefined,
+) {
+  if (!value) {
+    return 'standard';
+  }
+
+  return [
+    ...value.tags,
+    value.portionQuantity
+      ? `qty:${value.portionQuantity}`
+      : '',
+    value.portionUnit
+      ? `unit:${value.portionUnit}`
+      : '',
+    value.pieceWeightGrams
+      ? `piece-g:${value.pieceWeightGrams}`
+      : '',
+  ]
+    .filter(Boolean)
+    .join('|') ||
+    'standard';
+}
+
 export function menuDishModifierLabels(
   value:
     | MenuDishModifiers
