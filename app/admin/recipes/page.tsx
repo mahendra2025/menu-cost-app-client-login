@@ -4963,6 +4963,18 @@ export default function RecipesPage() {
               + Bulk Recipes
             </button>
 
+            {smartDraftCount > 0 ? (
+              <button
+                className="recipe-fast-button"
+                type="button"
+                onClick={
+                  acceptAllSmartDrafts
+                }
+              >
+                ✓ Accept {smartDraftCount} Smart Draft{smartDraftCount === 1 ? '' : 's'}
+              </button>
+            ) : null}
+
             <button
               className="recipe-fast-button"
               type="button"
@@ -5647,8 +5659,10 @@ I | Tomato | 4 | kg | 35 | kg`}
                             <span>
                               {dishCategory}
                               {dish.generatedRecipe
-                                ? ' · New menu recipe'
-                                : ''}
+                                ? ' · Smart Draft'
+                                : dish.smartDraftReviewed
+                                  ? ' · Draft reviewed'
+                                  : ''}
                               {' · '}
                               {recipeIngredients(
                                 dish,
