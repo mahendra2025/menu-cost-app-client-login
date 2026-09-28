@@ -26,12 +26,18 @@ import {
   structuredAiProvider,
 } from '../../../../../lib/structuredAi';
 
+import {
+  readMenuDishModifiers,
+  type MenuDishModifiers,
+} from '../../../../../lib/menuDishModifiers';
+
 const MAX_DISHES = 30;
 const BATCH_SIZE = 8;
 
 type RequestedDish = {
   name: string;
   category: string;
+  modifiers?: MenuDishModifiers;
 };
 
 async function requireAdmin() {
@@ -109,6 +115,10 @@ function cleanDish(
   return {
     name,
     category,
+    modifiers:
+      readMenuDishModifiers(
+        row.modifiers,
+      ),
   };
 }
 
@@ -221,6 +231,8 @@ async function generateBatch(
         'Include 6 to 12 meaningful cost-driving ingredients where practical.',
         'Do not include water, garnish, optional decoration, or tiny seasoning quantities unless they materially affect cost.',
         'For paneer, rice, dal, chana and similar core dishes, include the obvious core ingredient at a realistic 100-pax quantity.',
+        'Respect dish modifiers exactly. JAIN means exclude onion, garlic and root vegetables. NO_ONION_GARLIC means exclude onion and garlic. SATVIK means exclude onion and garlic and keep the recipe sattvik. VEGAN means exclude dairy, ghee and other animal-derived ingredients. LIVE means the dish is prepared/finished at a live counter; keep the recipe practical for live service.',
+        'If a portionQuantity/portionUnit modifier is supplied, treat it as the intended serving size per guest, while ingredient quantities must still be for the full 100-guest batch.',
         'This is a draft for human review. Do not claim the quantities are final.',
       ].join('\n'),
       input:
@@ -560,10 +572,17 @@ export async function POST(
               category:
                 requested.category,
               baseGuests: 100,
-              servingSize: 1,
+              servingSize:
+                requested.modifiers?.portionQuantity ||
+                1,
               servingUnit:
+                requested.modifiers?.portionUnit ||
                 'serving',
-              pieceWeightGrams: 0,
+              pieceWeightGrams:
+                requested.modifiers?.pieceWeightGrams ||
+                0,
+              dishModifiers:
+                requested.modifiers,
               dishRate:
                 finalCostPerPlate,
               ingredients:
