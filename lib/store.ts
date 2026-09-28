@@ -31,6 +31,12 @@ import {
   isQuotationMetadataLine,
 } from './menuDetectionCore';
 
+import {
+  extractMenuDishModifiers,
+  menuDishModifierKey,
+  type MenuDishModifiers,
+} from './menuDishModifiers';
+
 const CLIENTS_KEY = 'menu_cost_clients_v1';
 
 type DishCatalogModule = typeof import('./dishCostMaster');
@@ -1453,6 +1459,7 @@ type ParsedMenuLine = {
   text: string;
   categoryHint?: Category;
   sectionHeading?: string;
+  dishModifiers?: MenuDishModifiers;
   serviceId?: string;
   dayLabel?: string;
   mealLabel?: string;
@@ -1463,6 +1470,7 @@ type ParsedMenuLine = {
 export type PendingDishCandidate = {
   name: string;
   categoryHint: string;
+  dishModifiers?: MenuDishModifiers;
   serviceId?: string;
   dayLabel?: string;
   mealLabel?: string;
@@ -1812,6 +1820,14 @@ function splitMenuText(
       continue;
     }
 
+    const modifierDetection =
+      extractMenuDishModifiers(
+        segment,
+      );
+
+    segment =
+      modifierDetection.cleanText;
+
     const line = cleanMenuLine(segment);
     if (!line) continue;
 
@@ -1890,6 +1906,8 @@ function splitMenuText(
       categoryHint: lineCategory,
       sectionHeading:
         activeSectionHeading,
+      dishModifiers:
+        modifierDetection.modifiers,
       serviceId: activeServiceId,
       dayLabel: activeDayLabel,
       mealLabel: activeMealLabel,
@@ -2121,6 +2139,9 @@ export async function findPendingDishCandidates(
             line.categoryHint ||
             'Other',
 
+          dishModifiers:
+            line.dishModifiers,
+
           serviceId:
             line.serviceId,
 
@@ -2170,6 +2191,43 @@ export async function parseMenuText(
     if (matchedDishes.length) {
       matchedDishes.forEach(
         (matchedDish) => {
+          const basePortionQuantity =
+            matchedDish.servingQuantity ??
+            1;
+
+          const basePortionUnit =
+            matchedDish.servingUnit ??
+            'serving';
+
+          const detectedPortionQuantity =
+            Number(
+              menuLine
+                .dishModifiers
+                ?.portionQuantity,
+            ) || 0;
+
+          const detectedPortionUnit =
+            menuLine
+              .dishModifiers
+              ?.portionUnit;
+
+          const compatibleDetectedPortion =
+            detectedPortionQuantity >
+              0 &&
+            Boolean(
+              detectedPortionUnit,
+            ) &&
+            String(
+              basePortionUnit,
+            )
+              .trim()
+              .toLowerCase() ===
+              String(
+                detectedPortionUnit,
+              )
+                .trim()
+                .toLowerCase();
+
           menuItems.push({
             id: uid('dish'),
 
@@ -2196,13 +2254,28 @@ export async function parseMenuText(
           ),
 
         portionQuantity:
-          matchedDish.servingQuantity ??
-          1,
+          compatibleDetectedPortion
+            ? detectedPortionQuantity
+            : basePortionQuantity,
         portionUnit:
-          matchedDish.servingUnit ??
-          'serving',
+          compatibleDetectedPortion
+            ? detectedPortionUnit
+            : basePortionUnit,
+
+        ...(compatibleDetectedPortion
+          ? {
+              portionBaseQuantity:
+                basePortionQuantity,
+            }
+          : {}),
+
+        dishModifiers:
+          menuLine.dishModifiers,
 
         pieceWeightGrams:
+          menuLine
+            .dishModifiers
+            ?.pieceWeightGrams ??
           matchedDish
             .pieceWeightGrams,
 
@@ -2245,7 +2318,7 @@ export async function parseMenuText(
             item.name,
           )}-${normalizeText(
             item.category,
-          )}-${item.serviceId ?? 'default'}`,
+          )}-${item.serviceId ?? 'default'}-${menuDishModifierKey(item.dishModifiers)}`,
           item,
         ]),
       ).values(),
