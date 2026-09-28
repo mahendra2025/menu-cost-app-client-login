@@ -1,3 +1,8 @@
+import {
+  menuDishModifierKey,
+  type MenuDishModifiers,
+} from './menuDishModifiers';
+
 export type TenantDishAliasRule = {
   aliasName: string;
   canonicalName: string;
@@ -865,6 +870,8 @@ export function sourceDishCoverageKey(
     name: string;
     dayLabel?: string;
     mealLabel?: string;
+    dishModifiers?:
+      MenuDishModifiers;
   },
 ) {
   return [
@@ -880,6 +887,10 @@ export function sourceDishCoverageKey(
 
     dishNameKey(
       item.name,
+    ),
+
+    menuDishModifierKey(
+      item.dishModifiers,
     ),
   ].join(
     '::',
