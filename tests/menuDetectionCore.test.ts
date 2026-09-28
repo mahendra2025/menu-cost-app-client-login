@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  analyzeMenuSourceIntelligence,
   dishNameKey,
   getDishSourceEvidenceScore,
   inferMenuDishCategory,
@@ -486,6 +487,125 @@ test(
         'Beverage',
       ),
       'Beverage',
+    );
+  },
+);
+
+
+test(
+  'quotation source intelligence extracts commercial summary and sections',
+  () => {
+    const source = [
+      'KALASH CATERERS',
+      'PREMIUM VEGETARIAN CATERERS',
+      'QUOTATION',
+      'EVENT DATE: 21 OCTOBER 2026',
+      'GUESTS: 1,000',
+      'CATERING QUOTATION',
+      'Premium vegetarian catering package for 1,000 guests',
+      'CLIENT LOCATION',
+      'INCLUDED MENU',
+      'SOUP',
+      'Manchow Soup with Noodles',
+      'SWEET',
+      'Kesar Dry Fruit Rabdi',
+      'FARSAN & STARTERS',
+      'Mexican Cheese Roll',
+      'Patti Samosa',
+      'INDIAN BREADS',
+      'Puri',
+      'Roti',
+      'MAIN COURSE',
+      'Mix Vegetable',
+      'Paneer Sabji',
+      'DAL & RICE',
+      'Dal Fry Tadka',
+      'Jeera Rice',
+      'ACCOMPANIMENTS',
+      'Papad',
+      'Achar',
+      'Kachumber',
+      'BEVERAGE',
+      'Water Bottle - 200 ml',
+      'QUOTATION NOTE',
+      'Quotation is based on the above menu, 1,000 guests and the agreed service scope.',
+      'Changes in menu, guest count or event requirements may revise the final amount.',
+      'Rate per plate Guest count Total quotation',
+      '1,000',
+      'Rs. 340 Rs. 3,40,000',
+    ].join('\n');
+
+    const result =
+      analyzeMenuSourceIntelligence(
+        source,
+      );
+
+    assert.equal(
+      result.guestCount,
+      1000,
+    );
+
+    assert.equal(
+      result.ratePerPlate,
+      340,
+    );
+
+    assert.equal(
+      result.totalQuotation,
+      340000,
+    );
+
+    assert.equal(
+      result.expectedQuotation,
+      340000,
+    );
+
+    assert.equal(
+      result.commercialCheck,
+      'MATCH',
+    );
+
+    assert.deepEqual(
+      result.sectionHeadings,
+      [
+        'Soup',
+        'Sweet',
+        'Farsan & Starters',
+        'Indian Breads',
+        'Main Course',
+        'Dal & Rice',
+        'Accompaniments',
+        'Beverage',
+      ],
+    );
+
+    assert.ok(
+      result.ignoredMetadataLines.length >=
+        6,
+    );
+  },
+);
+
+test(
+  'source intelligence warns when quotation total does not match rate times guests',
+  () => {
+    const result =
+      analyzeMenuSourceIntelligence(
+        [
+          'GUESTS: 100',
+          'Rate per plate: Rs. 425',
+          'Total quotation: Rs. 40,000',
+        ].join('\n'),
+      );
+
+    assert.equal(
+      result.commercialCheck,
+      'MISMATCH',
+    );
+
+    assert.equal(
+      result.expectedQuotation,
+      42500,
     );
   },
 );
