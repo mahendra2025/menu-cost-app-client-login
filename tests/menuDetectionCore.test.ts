@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import {
   dishNameKey,
   getDishSourceEvidenceScore,
+  inferMenuDishCategory,
+  isQuotationMetadataLine,
   preprocessMenuTextWithTenantLearning,
   sourceDishCoverageKey,
   tokenWithinOneEdit,
@@ -383,6 +385,107 @@ test(
     assert.equal(
       result.replacements,
       0,
+    );
+  },
+);
+
+
+test(
+  'quotation metadata is excluded from dish detection',
+  () => {
+    for (const line of [
+      'QUOTATION',
+      'CATERING QUOTATION',
+      'QUOTATION NOTE',
+      'Premium vegetarian catering package for 1,000 guests',
+      'Quotation is based on the above menu, 1,000 guests and the agreed service scope.',
+      'Changes in menu, guest count or event requirements may revise the final amount.',
+      'Rate per plate Guest count Total quotation',
+      'Rs. 340 Rs. 3,40,000',
+    ]) {
+      assert.equal(
+        isQuotationMetadataLine(
+          line,
+        ),
+        true,
+        line,
+      );
+    }
+
+    assert.equal(
+      isQuotationMetadataLine(
+        'Kesar Dry Fruit Rabdi',
+      ),
+      false,
+    );
+  },
+);
+
+test(
+  'compound quotation menu sections infer per-dish categories',
+  () => {
+    assert.equal(
+      inferMenuDishCategory(
+        'Mexican Cheese Roll',
+        'Farsan & Starters',
+      ),
+      'Starter',
+    );
+
+    assert.equal(
+      inferMenuDishCategory(
+        'Patti Samosa',
+        'Farsan & Starters',
+      ),
+      'Farsan',
+    );
+
+    assert.equal(
+      inferMenuDishCategory(
+        'Dal Fry Tadka',
+        'Dal & Rice',
+      ),
+      'Dal / Kadhi',
+    );
+
+    assert.equal(
+      inferMenuDishCategory(
+        'Jeera Rice',
+        'Dal & Rice',
+      ),
+      'Rice',
+    );
+
+    assert.equal(
+      inferMenuDishCategory(
+        'Papad',
+        'Accompaniments',
+      ),
+      'Papad',
+    );
+
+    assert.equal(
+      inferMenuDishCategory(
+        'Achar',
+        'Accompaniments',
+      ),
+      'Pickle',
+    );
+
+    assert.equal(
+      inferMenuDishCategory(
+        'Kachumber',
+        'Accompaniments',
+      ),
+      'Salad',
+    );
+
+    assert.equal(
+      inferMenuDishCategory(
+        'Water Bottle - 200 ml',
+        'Beverage',
+      ),
+      'Beverage',
     );
   },
 );
