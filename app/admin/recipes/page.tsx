@@ -697,6 +697,64 @@ function recipeGasPreview(
   };
 }
 
+function smartServingSuggestion(
+  dish: RawRow,
+) {
+  const name =
+    recipeName(dish)
+      .toLowerCase()
+      .normalize('NFKD')
+      .replace(/\p{Diacritic}/gu, '');
+
+  const obviousPiece =
+    /\b(?:bottle|samosa|kachori|roll|ball|cutlet|patty|patties|tikki|vada|ladoo|laddu|gulab jamun|rasgulla|peda|pedha|barfi|burfi|katli|momos?|spring roll)\b/i.test(name);
+
+  return obviousPiece
+    ? {
+        servingSize: 1,
+        servingUnit: 'piece',
+      }
+    : {
+        servingSize: 1,
+        servingUnit: 'serving',
+      };
+}
+
+function draftRecipeQuality(
+  dish: RawRow,
+) {
+  const ingredients =
+    recipeIngredients(dish);
+  const missingRates =
+    ingredients.filter(
+      (ingredient) =>
+        !(ingredientRate(ingredient) > 0),
+    ).length;
+  const estimatedRates =
+    ingredients.filter(
+      (ingredient) =>
+        text(ingredient.rateSource) ===
+        'category_estimate',
+    ).length;
+  const guests =
+    Math.max(
+      1,
+      numberValue(dish.baseGuests, 100),
+    );
+  const costPerPlate =
+    applyRecipeWastage(
+      recipeTotal(dish) / guests,
+    );
+
+  return assessRecipeQuality(
+    readCostableRecipe(dish),
+    {
+      missingRates,
+      estimatedRates,
+      costPerPlate,
+    },
+  );
+}
 export default function RecipesPage() {
   const [
     catalog,
@@ -1831,6 +1889,164 @@ export default function RecipesPage() {
     );
   }
 
+  function smartDraftPatch(
+    dish: RawRow,
+  ): RawRow {
+    const category =
+      text(dish.category) ||
+      'Other';
+    const gas =
+      recipeGasPreview(
+        dish,
+        category,
+        100,
+        gasSetting,
+        gasCategoryRates,
+      );
+    const serving =
+      smartServingSuggestion(dish);
+    const hasExplicitGas =
+      dish.gasNoGas === true ||
+      hasRealRecipeGas(dish) ||
+      optionalRecipeGasNumber(
+        dish.gasKgPer100,
+      ) !== null;
+    const currentServingUnit =
+      text(dish.servingUnit) ||
+      'serving';
+    const currentServingSize =
+      Math.max(
+        0.01,
+        numberValue(
+          dish.servingSize,
+          1,
+        ),
+      );
+    const useServingSuggestion =
+      currentServingUnit ===
+        'serving' &&
+      currentServingSize === 1 &&
+      serving.servingUnit !==
+        'serving';
+
+    return {
+      generatedRecipe: false,
+      smartDraftReviewed: true,
+      smartDraftAcceptedAt:
+        new Date().toISOString(),
+      ...(useServingSuggestion
+        ? serving
+        : {}),
+      ...(hasExplicitGas
+        ? {}
+        : gas.gasKgPer100 <= 0
+          ? {
+              gasNoGas: true,
+              gasKgPer100: 0,
+            }
+          : {
+              gasNoGas: false,
+              gasKgPer100:
+                Math.round(
+                  gas.gasKgPer100 * 100,
+                ) / 100,
+            }),
+    };
+  }
+
+  function acceptSmartDraft(
+    index: number,
+  ) {
+    const dish =
+      catalog?.dishes[index];
+    if (
+      !dish ||
+      dish.generatedRecipe !== true
+    ) {
+      return;
+    }
+
+    const quality =
+      draftRecipeQuality(dish);
+    if (quality.status === 'BLOCKED') {
+      setError(
+        recipeName(dish) +
+          ' Smart Draft is blocked. Fix the recipe-quality errors before accepting it.',
+      );
+      return;
+    }
+
+    updateDish(
+      index,
+      smartDraftPatch(dish),
+    );
+    setError('');
+    setMessage(
+      'Smart Draft accepted for ' +
+        recipeName(dish) +
+        '. Suggested serving and gas defaults are now locked in. Save & Sync when ready.',
+    );
+  }
+
+  function acceptAllSmartDrafts() {
+    if (!catalog) return;
+    let accepted = 0;
+    let blocked = 0;
+    const nextDishes =
+      catalog.dishes.map(
+        (dish) => {
+          if (
+            dish.generatedRecipe !== true
+          ) return dish;
+          const quality =
+            draftRecipeQuality(dish);
+          if (quality.status === 'BLOCKED') {
+            blocked += 1;
+            return dish;
+          }
+          accepted += 1;
+          return {
+            ...dish,
+            ...smartDraftPatch(dish),
+          };
+        },
+      );
+
+    if (!accepted) {
+      setError(
+        blocked
+          ? String(blocked) +
+            ' Smart Draft' +
+            (blocked === 1 ? '' : 's') +
+            ' still have blocking recipe-quality issues.'
+          : 'No Smart Drafts are waiting for review.',
+      );
+      return;
+    }
+
+    const nextCatalog = {
+      ...catalog,
+      dishes: nextDishes,
+    };
+    setCatalog(nextCatalog);
+    memoryRecipeCatalog =
+      nextCatalog;
+    setError('');
+    setMessage(
+      String(accepted) +
+        ' Smart Draft' +
+        (accepted === 1 ? '' : 's') +
+        ' accepted' +
+        (blocked
+          ? ' · ' +
+            String(blocked) +
+            ' blocked draft' +
+            (blocked === 1 ? '' : 's') +
+            ' left for manual review'
+          : '') +
+        '. Save & Sync once when finished.',
+    );
+  }
   function quickGasPatch(
     rawValue: string,
   ): RawRow | null {
@@ -3543,6 +3759,20 @@ export default function RecipesPage() {
                 dish.gasKgPer100,
               ) > 0
             ),
+        ).length,
+      [catalog],
+    );
+
+  const smartDraftCount =
+    useMemo(
+      () =>
+        (
+          catalog?.dishes ||
+          []
+        ).filter(
+          (dish) =>
+            dish.generatedRecipe ===
+            true,
         ).length,
       [catalog],
     );
