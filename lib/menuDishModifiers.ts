@@ -376,6 +376,28 @@ export function extractMenuDishModifiers(
   };
 }
 
+export function menuDishVariantName(
+  baseName: string,
+  value:
+    | MenuDishModifiers
+    | null
+    | undefined,
+) {
+  const name =
+    String(baseName || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const labels =
+    menuDishModifierLabels(
+      value,
+    );
+
+  return labels.length
+    ? `${name} [${labels.join(', ')}]`
+    : name;
+}
+
 export function menuDishModifierKey(
   value:
     | MenuDishModifiers
