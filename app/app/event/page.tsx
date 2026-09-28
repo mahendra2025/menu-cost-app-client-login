@@ -975,61 +975,96 @@ export default function EventPage() {
   );
 
   useEffect(() => {
-    function refreshRecipeKeys() {
+    function recipeKeysFromCatalog(
+      value: unknown,
+    ) {
+      if (
+        !value ||
+        typeof value !==
+          'object' ||
+        Array.isArray(
+          value,
+        )
+      ) {
+        return new Set<string>();
+      }
+
+      const row =
+        value as {
+          dishes?: Array<
+            Record<
+              string,
+              unknown
+            >
+          >;
+        };
+
+      return new Set<string>(
+        (
+          Array.isArray(
+            row.dishes,
+          )
+            ? row.dishes
+            : []
+        )
+          .map(
+            (dish) =>
+              dishNameKey(
+                String(
+                  dish.dishName ||
+                  dish.name ||
+                  '',
+                ),
+              ),
+          )
+          .filter(Boolean),
+      );
+    }
+
+    async function refreshRecipeKeys() {
       try {
         const raw =
           localStorage.getItem(
             RECIPE_CACHE_KEY,
           );
 
-        if (!raw) {
+        if (raw) {
           setAvailableRecipeKeys(
-            new Set(),
+            recipeKeysFromCatalog(
+              JSON.parse(
+                raw,
+              ),
+            ),
           );
+        }
+      } catch {
+        // Server refresh below is authoritative.
+      }
+
+      try {
+        const response =
+          await fetch(
+            '/api/admin/recipes',
+            {
+              cache:
+                'no-store',
+            },
+          );
+
+        if (!response.ok) {
           return;
         }
 
-        const parsed =
-          JSON.parse(
-            raw,
-          ) as {
-            dishes?: Array<
-              Record<
-                string,
-                unknown
-              >
-            >;
-          };
-
-        const nextKeys =
-          new Set<string>(
-            (
-              Array.isArray(
-                parsed.dishes,
-              )
-                ? parsed.dishes
-                : []
-            )
-              .map(
-                (dish) =>
-                  dishNameKey(
-                    String(
-                      dish.dishName ||
-                      dish.name ||
-                      '',
-                    ),
-                  ),
-              )
-              .filter(Boolean),
-          );
+        const data =
+          await response.json();
 
         setAvailableRecipeKeys(
-          nextKeys,
+          recipeKeysFromCatalog(
+            data.catalog,
+          ),
         );
       } catch {
-        setAvailableRecipeKeys(
-          new Set(),
-        );
+        // Keep the last known cache result.
       }
     }
 
@@ -1040,15 +1075,19 @@ export default function EventPage() {
         event.key ===
         RECIPE_CACHE_KEY
       ) {
-        refreshRecipeKeys();
+        void refreshRecipeKeys();
       }
     }
 
-    refreshRecipeKeys();
+    void refreshRecipeKeys();
+
+    const handleFocus = () => {
+      void refreshRecipeKeys();
+    };
 
     window.addEventListener(
       'focus',
-      refreshRecipeKeys,
+      handleFocus,
     );
     window.addEventListener(
       'storage',
@@ -1058,7 +1097,7 @@ export default function EventPage() {
     return () => {
       window.removeEventListener(
         'focus',
-        refreshRecipeKeys,
+        handleFocus,
       );
       window.removeEventListener(
         'storage',
