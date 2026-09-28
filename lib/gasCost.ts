@@ -3,6 +3,58 @@ import type {
   WorkState,
 } from './types';
 
+import {
+  suggestSweetGas,
+} from './sweetGas';
+
+import {
+  suggestSabjiGas,
+} from './sabjiGas';
+
+import {
+  suggestChaatGas,
+} from './chaatGas';
+
+import {
+  suggestChineseGas,
+} from './chineseGas';
+
+import {
+  suggestDalKadhiGas,
+} from './dalKadhiGas';
+
+import {
+  suggestFarsanGas,
+} from './farsanGas';
+
+import {
+  suggestIndianBreadGas,
+} from './indianBreadGas';
+
+import {
+  suggestItalianGas,
+} from './italianGas';
+
+import {
+  suggestMovingStarterGas,
+} from './movingStarterGas';
+
+import {
+  suggestRiceGas,
+} from './riceGas';
+
+import {
+  suggestSouthIndianGas,
+} from './southIndianGas';
+
+import {
+  suggestStarterGas,
+} from './starterGas';
+
+import {
+  suggestThaiGas,
+} from './thaiGas';
+
 export type LpgCostSetting = {
   cylinderPrice: number;
   cylinderWeightKg: number;
@@ -18,7 +70,12 @@ export type GasCategoryRateValue = {
 export type DishGasOverrideValue = {
   name: string;
   category?: string;
-  gasKgPer100: number;
+  gasKgPer100?: number;
+  gasBurnerKgPerHour?: number;
+  gasCookingMinutes?: number;
+  gasBurnerCount?: number;
+  gasBatchPax?: number;
+  gasNoGas?: boolean;
 };
 
 export type GasCostMaster = {
@@ -41,10 +98,32 @@ export type GasDishCostRow = {
   gasKg: number;
   lpgRatePerKg: number;
   gasCost: number;
+  gasBurnerKgPerHour?: number;
+  gasCookingMinutes?: number;
+  gasBurnerCount?: number;
+  gasBatchPax?: number;
+  gasBatches?: number;
   source:
+    | 'EVENT_OVERRIDE'
+    | 'REAL_DISH_PROFILE'
     | 'DISH_OVERRIDE'
+    | 'SWEET_STARTER'
+    | 'SABJI_STARTER'
+    | 'CHAAT_STARTER'
+    | 'CHINESE_STARTER'
+    | 'DAL_KADHI_STARTER'
+    | 'FARSAN_STARTER'
+    | 'INDIAN_BREAD_STARTER'
+    | 'ITALIAN_STARTER'
+    | 'MOVING_STARTER'
+    | 'RICE_STARTER'
+    | 'SOUTH_INDIAN_STARTER'
+    | 'STARTER_ESTIMATE'
+    | 'THAI_STARTER'
     | 'CATEGORY'
-    | 'ZERO_FALLBACK';
+    | 'SAFE_COOKING_FALLBACK'
+    | 'NO_GAS_CATEGORY'
+    | 'DISH_NO_GAS';
 };
 
 export type GasFunctionSubtotal = {
@@ -70,6 +149,12 @@ export const DEFAULT_LPG_SETTING: LpgCostSetting = {
   cylinderPrice: 1800,
   cylinderWeightKg: 19,
 };
+
+// Safety net for a cooking dish whose category rate is missing, disabled,
+// or accidentally configured as zero. This guarantees that cooking dishes
+// never silently disappear from gas costing while a real dish profile is
+// still being collected.
+export const DEFAULT_COOKING_GAS_KG_PER_100 = 0.5;
 
 export const DEFAULT_GAS_CATEGORY_RATES:
   readonly GasCategoryRateValue[] = [
@@ -141,6 +226,25 @@ export function normalizeGasCategoryKey(
       /[^a-z0-9]+/g,
       '',
     );
+}
+
+const NO_GAS_CATEGORY_KEYS =
+  new Set([
+    'welcomedrink',
+    'mocktail',
+    'icecream',
+    'salad',
+    'fruit',
+  ]);
+
+export function isNoGasCategory(
+  category: string,
+) {
+  return NO_GAS_CATEGORY_KEYS.has(
+    normalizeGasCategoryKey(
+      category,
+    ),
+  );
 }
 
 function normalizeDishKey(
@@ -322,6 +426,106 @@ function directDishOverride(
     : undefined;
 }
 
+type RealDishGasProfile = {
+  gasBurnerKgPerHour: number;
+  gasCookingMinutes: number;
+  gasBurnerCount: number;
+  gasBatchPax: number;
+};
+
+function realDishGasProfile(
+  override:
+    | DishGasOverrideValue
+    | undefined,
+): RealDishGasProfile | null {
+  if (!override) return null;
+
+  const gasBurnerKgPerHour =
+    Number(
+      override.gasBurnerKgPerHour,
+    );
+  const gasCookingMinutes =
+    Number(
+      override.gasCookingMinutes,
+    );
+  const gasBurnerCount =
+    Number(
+      override.gasBurnerCount,
+    );
+  const gasBatchPax =
+    Number(
+      override.gasBatchPax,
+    );
+
+  if (
+    !Number.isFinite(gasBurnerKgPerHour) ||
+    gasBurnerKgPerHour <= 0 ||
+    !Number.isFinite(gasCookingMinutes) ||
+    gasCookingMinutes <= 0 ||
+    !Number.isFinite(gasBurnerCount) ||
+    gasBurnerCount <= 0 ||
+    !Number.isFinite(gasBatchPax) ||
+    gasBatchPax <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    gasBurnerKgPerHour,
+    gasCookingMinutes,
+    gasBurnerCount:
+      Math.max(
+        1,
+        Math.round(
+          gasBurnerCount,
+        ),
+      ),
+    gasBatchPax:
+      Math.max(
+        1,
+        Math.round(
+          gasBatchPax,
+        ),
+      ),
+  };
+}
+
+function realDishGasKg(
+  guests: number,
+  profile: RealDishGasProfile,
+) {
+  if (!(guests > 0)) {
+    return {
+      gasKg: 0,
+      batches: 0,
+    };
+  }
+
+  const batches =
+    Math.max(
+      1,
+      Math.ceil(
+        guests /
+        profile.gasBatchPax,
+      ),
+    );
+
+  const gasKgPerBatch =
+    profile.gasBurnerKgPerHour *
+    profile.gasBurnerCount *
+    (
+      profile.gasCookingMinutes /
+      60
+    );
+
+  return {
+    gasKg:
+      gasKgPerBatch *
+      batches,
+    batches,
+  };
+}
+
 export function calculateEventGas(
   work: WorkState,
   master?:
@@ -381,6 +585,31 @@ export function calculateEventGas(
       );
     },
   );
+
+  const eventOverrideByKey =
+    new Map(
+      (
+        work.gasEventOverrides ||
+        []
+      )
+        .filter(
+          (override) =>
+            Boolean(
+              String(
+                override.key ||
+                '',
+              ).trim(),
+            ),
+        )
+        .map(
+          (override) => [
+            String(
+              override.key,
+            ).trim(),
+            override,
+          ] as const,
+        ),
+    );
 
   const fallbackPax =
     safe(
@@ -515,37 +744,273 @@ export function calculateEventGas(
           dishKey,
         );
 
-      const hasOverride =
-        directOverride !==
-          undefined ||
+      const eventOverride =
+        eventOverrideByKey.get(
+          dedupeKey,
+        );
+
+      const eventNoGas =
+        eventOverride?.noGas ===
+        true;
+
+      const eventGasKgPer100 =
+        eventNoGas
+          ? 0
+          : eventOverride &&
+              Number.isFinite(
+                Number(
+                  eventOverride
+                    .gasKgPer100,
+                ),
+              )
+            ? safe(
+                eventOverride
+                  .gasKgPer100,
+              )
+            : undefined;
+
+      const hasEventOverride =
+        eventNoGas ||
         (
-          masterOverride &&
-          Number.isFinite(
-            Number(
+          eventGasKgPer100 !==
+            undefined &&
+          eventGasKgPer100 > 0
+        );
+
+      const noGasDish =
+        masterOverride
+          ?.gasNoGas ===
+        true;
+
+      const realProfile =
+        hasEventOverride ||
+        noGasDish
+          ? null
+          : realDishGasProfile(
+              masterOverride,
+            );
+
+      const masterMeasuredGas =
+        masterOverride &&
+        masterOverride
+          .gasKgPer100 !==
+          undefined
+          ? safe(
               masterOverride
                 .gasKgPer100,
-            ),
+            )
+          : undefined;
+
+      const configuredDishGas =
+        directOverride ??
+        masterMeasuredGas;
+
+      const noGasCategory =
+        isNoGasCategory(
+          item.category,
+        );
+
+      const categoryGas =
+        categoryGasKgPer100(
+          item.category,
+          categoryRates,
+        );
+
+      const categoryKey =
+        normalizeGasCategoryKey(
+          item.category,
+        );
+
+      const sweetStarter =
+        categoryKey === 'sweet'
+          ? suggestSweetGas(
+              item.name,
+            )
+          : null;
+
+      const sabjiStarter =
+        categoryKey === 'sabji'
+          ? suggestSabjiGas(
+              item.name,
+            )
+          : null;
+
+      const chaatStarter =
+        categoryKey === 'chaat'
+          ? suggestChaatGas(
+              item.name,
+            )
+          : null;
+
+      const chineseStarter =
+        categoryKey === 'chinese'
+          ? suggestChineseGas(
+              item.name,
+            )
+          : null;
+
+      const dalKadhiStarter =
+        categoryKey === 'dalkadhi'
+          ? suggestDalKadhiGas(
+              item.name,
+            )
+          : null;
+
+      const farsanStarter =
+        categoryKey === 'farsan'
+          ? suggestFarsanGas(
+              item.name,
+            )
+          : null;
+
+      const indianBreadStarter =
+        categoryKey === 'indianbread' ||
+        categoryKey === 'bread'
+          ? suggestIndianBreadGas(
+              item.name,
+            )
+          : null;
+
+      const italianStarter =
+        categoryKey === 'italian'
+          ? suggestItalianGas(
+              item.name,
+            )
+          : null;
+
+      const movingStarter =
+        categoryKey === 'movingstarter'
+          ? suggestMovingStarterGas(
+              item.name,
+            )
+          : null;
+
+      const riceStarter =
+        categoryKey === 'rice'
+          ? suggestRiceGas(
+              item.name,
+            )
+          : null;
+
+      const southIndianStarter =
+        categoryKey === 'southindian'
+          ? suggestSouthIndianGas(
+              item.name,
+            )
+          : null;
+
+      const starterEstimate =
+        categoryKey === 'starter'
+          ? suggestStarterGas(
+              item.name,
+            )
+          : null;
+
+      const thaiStarter =
+        categoryKey === 'thai'
+          ? suggestThaiGas(
+              item.name,
+            )
+          : null;
+
+      const hasUsableOverride =
+        noGasDish ||
+        (
+          configuredDishGas !==
+            undefined &&
+          (
+            configuredDishGas > 0 ||
+            noGasCategory
           )
         );
 
-      const gasKgPer100 =
-        directOverride ??
-        (
-          masterOverride
-            ? safe(
-                masterOverride
-                  .gasKgPer100,
+      const fallbackGasKgPer100 =
+        noGasDish
+          ? 0
+          : hasUsableOverride
+            ? (
+                configuredDishGas ??
+                0
               )
-            : categoryGasKgPer100(
-                item.category,
-                categoryRates,
-              )
-        );
+            : noGasCategory
+              ? 0
+              : sweetStarter
+                ? sweetStarter
+                    .kgPer100
+                : sabjiStarter
+                  ? sabjiStarter
+                      .kgPer100
+                  : chaatStarter
+                    ? chaatStarter
+                        .kgPer100
+                    : chineseStarter
+                      ? chineseStarter
+                          .kgPer100
+                      : dalKadhiStarter
+                        ? dalKadhiStarter
+                            .kgPer100
+                        : farsanStarter
+                          ? farsanStarter
+                              .kgPer100
+                          : indianBreadStarter
+                            ? indianBreadStarter
+                                .kgPer100
+                            : italianStarter
+                              ? italianStarter
+                                  .kgPer100
+                              : movingStarter
+                                ? movingStarter
+                                    .kgPer100
+                                : riceStarter
+                                  ? riceStarter
+                                      .kgPer100
+                                  : southIndianStarter
+                                    ? southIndianStarter
+                                        .kgPer100
+                                    : starterEstimate
+                                      ? starterEstimate
+                                          .kgPer100
+                                      : thaiStarter
+                                        ? thaiStarter
+                                            .kgPer100
+                                        : categoryGas > 0
+                                          ? categoryGas
+                                          : DEFAULT_COOKING_GAS_KG_PER_100;
+
+      const realGas =
+        realProfile
+          ? realDishGasKg(
+              guests,
+              realProfile,
+            )
+          : null;
 
       const gasKg =
-        gasKgPer100 *
-        guests /
-        100;
+        hasEventOverride
+          ? (
+              eventGasKgPer100 ??
+              0
+            ) *
+            guests /
+            100
+          : realGas
+            ? realGas.gasKg
+            : fallbackGasKgPer100 *
+              guests /
+              100;
+
+      const gasKgPer100 =
+        hasEventOverride
+          ? (
+              eventGasKgPer100 ??
+              0
+            )
+          : realProfile
+            ? realDishGasKg(
+                100,
+                realProfile,
+              ).gasKg
+            : fallbackGasKgPer100;
 
       const gasCost =
         gasKg *
@@ -580,12 +1045,61 @@ export function calculateEventGas(
         lpgRatePerKg:
           ratePerKg,
         gasCost,
+        gasBurnerKgPerHour:
+          realProfile
+            ?.gasBurnerKgPerHour,
+        gasCookingMinutes:
+          realProfile
+            ?.gasCookingMinutes,
+        gasBurnerCount:
+          realProfile
+            ?.gasBurnerCount,
+        gasBatchPax:
+          realProfile
+            ?.gasBatchPax,
+        gasBatches:
+          realGas
+            ?.batches,
         source:
-          hasOverride
-            ? 'DISH_OVERRIDE'
-            : gasKgPer100 > 0
-              ? 'CATEGORY'
-              : 'ZERO_FALLBACK',
+          hasEventOverride
+            ? 'EVENT_OVERRIDE'
+            : realProfile
+              ? 'REAL_DISH_PROFILE'
+              : noGasDish
+                ? 'DISH_NO_GAS'
+                : hasUsableOverride
+                  ? 'DISH_OVERRIDE'
+                  : noGasCategory
+                    ? 'NO_GAS_CATEGORY'
+                    : sweetStarter
+                      ? 'SWEET_STARTER'
+                      : sabjiStarter
+                        ? 'SABJI_STARTER'
+                        : chaatStarter
+                          ? 'CHAAT_STARTER'
+                          : chineseStarter
+                            ? 'CHINESE_STARTER'
+                            : dalKadhiStarter
+                              ? 'DAL_KADHI_STARTER'
+                              : farsanStarter
+                                ? 'FARSAN_STARTER'
+                                : indianBreadStarter
+                                  ? 'INDIAN_BREAD_STARTER'
+                                  : italianStarter
+                                    ? 'ITALIAN_STARTER'
+                                    : movingStarter
+                                      ? 'MOVING_STARTER'
+                                      : riceStarter
+                                        ? 'RICE_STARTER'
+                                        : southIndianStarter
+                                          ? 'SOUTH_INDIAN_STARTER'
+                                          : starterEstimate
+                                            ? 'STARTER_ESTIMATE'
+                                            : thaiStarter
+                                              ? 'THAI_STARTER'
+                                              : categoryGas > 0
+                                                ? 'CATEGORY'
+                                                : 'SAFE_COOKING_FALLBACK',
       });
     },
   );

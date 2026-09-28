@@ -5,7 +5,6 @@ import { syncCompletedCostingToCaterersOs } from '../../../../lib/caterersOsSync
 import { prisma } from '../../../../lib/prisma';
 import type { WorkState } from '../../../../lib/types';
 
-const FREE_LIMIT = 5;
 const MAX_BYTES = 1_500_000;
 
 function clean(value: unknown, max = 180) {
@@ -21,15 +20,11 @@ function int(value: unknown) {
   return Math.max(0, Math.round(num(value)));
 }
 
-function hasProAccess(tenant: { plan: string; subscriptionStatus: string | null }) {
-  const status = String(tenant.subscriptionStatus || '').toLowerCase();
-  return tenant.plan !== 'FREE' && !['halted', 'cancelled', 'completed', 'paused', 'expired'].includes(status);
-}
 
 export async function GET(request: Request) {
   try {
     const tenantId = await requireClientTenantId();
-    if (!tenantId) return NextResponse.json({ error: 'Client login required' }, { status: 401 });
+    if (!tenantId) return NextResponse.json({ error: 'Owner login required' }, { status: 401 });
 
     const url = new URL(request.url);
     const costingId = clean(url.searchParams.get('costingId'), 120);
@@ -77,173 +72,263 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const tenantId = await requireClientTenantId();
-    if (!tenantId) return NextResponse.json({ error: 'Client login required' }, { status: 401 });
+    const tenantId =
+      await requireClientTenantId();
 
-    const body = await request.json();
-    const costingId = clean(body.costingId, 120);
-
-    if (!costingId) return NextResponse.json({ error: 'Costing id required' }, { status: 400 });
-    if (!body.snapshot || typeof body.snapshot !== 'object') {
-      return NextResponse.json({ error: 'Costing snapshot required' }, { status: 400 });
-    }
-    if (Buffer.byteLength(JSON.stringify(body.snapshot), 'utf8') > MAX_BYTES) {
-      return NextResponse.json({ error: 'Costing is too large to save' }, { status: 413 });
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Owner login required' },
+        { status: 401 },
+      );
     }
 
-    let finalResult: {
-      plan: string;
-      hasProAccess: boolean;
-      used: number;
-      limit: number;
-      remaining: number | null;
-      currentClaimed: boolean;
-      currentCompleted: boolean;
-      canStartNew: boolean;
-    } | null = null;
+    const body =
+      await request.json();
+    const costingId =
+      clean(body.costingId, 120);
 
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        finalResult = await prisma.$transaction(async (tx) => {
-          const tenant = await tx.tenant.findUnique({
-            where: { id: tenantId },
-            select: { plan: true, subscriptionStatus: true },
+    if (!costingId) {
+      return NextResponse.json(
+        { error: 'Costing id required' },
+        { status: 400 },
+      );
+    }
+
+    if (
+      !body.snapshot ||
+      typeof body.snapshot !==
+        'object'
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Costing snapshot required',
+        },
+        { status: 400 },
+      );
+    }
+
+    if (
+      Buffer.byteLength(
+        JSON.stringify(
+          body.snapshot,
+        ),
+        'utf8',
+      ) > MAX_BYTES
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Costing is too large to save',
+        },
+        { status: 413 },
+      );
+    }
+
+    await prisma.$transaction(
+      async (tx) => {
+        const workspace =
+          await tx.tenant.findUnique({
+            where: {
+              id: tenantId,
+            },
+            select: {
+              id: true,
+            },
           });
-          if (!tenant) throw new Error('CLIENT_NOT_FOUND');
 
-          const pro = hasProAccess(tenant);
-          let currentClaimed = false;
+        if (!workspace) {
+          throw new Error(
+            'WORKSPACE_NOT_FOUND',
+          );
+        }
 
-          if (!pro) {
-            const existing = await tx.tenantFreeCosting.findUnique({
-              where: { tenantId_costingId: { tenantId, costingId } },
-              select: { id: true },
-            });
-
-            currentClaimed = Boolean(existing);
-
-            if (!existing) {
-              const used = await tx.tenantFreeCosting.count({ where: { tenantId } });
-              if (used >= FREE_LIMIT) throw new Error('FREE_LIMIT_REACHED');
-
-              await tx.tenantFreeCosting.create({ data: { tenantId, costingId } });
-              currentClaimed = true;
-            }
-          }
-
-          await tx.tenantCostingHistory.upsert({
-            where: { tenantId_costingId: { tenantId, costingId } },
-            create: {
+        await tx.tenantCostingHistory.upsert({
+          where: {
+            tenantId_costingId: {
               tenantId,
               costingId,
-              eventName: clean(body.eventName),
-              clientName: clean(body.clientName),
-              eventDate: clean(body.eventDate, 60),
-              menuCount: int(body.menuCount),
-              totalCovers: int(body.totalCovers),
-              totalCost: num(body.totalCost),
-              sellingPricePerPlate: num(body.sellingPricePerPlate),
-              totalSelling: num(body.totalSelling),
-              totalProfit: num(body.totalProfit),
-              snapshot: body.snapshot as Prisma.InputJsonValue,
             },
-            update: {
-              eventName: clean(body.eventName),
-              clientName: clean(body.clientName),
-              eventDate: clean(body.eventDate, 60),
-              menuCount: int(body.menuCount),
-              totalCovers: int(body.totalCovers),
-              totalCost: num(body.totalCost),
-              sellingPricePerPlate: num(body.sellingPricePerPlate),
-              totalSelling: num(body.totalSelling),
-              totalProfit: num(body.totalProfit),
-              snapshot: body.snapshot as Prisma.InputJsonValue,
-              completedAt: new Date(),
-              archivedAt: null,
-            },
-          });
+          },
+          create: {
+            tenantId,
+            costingId,
+            eventName:
+              clean(body.eventName),
+            clientName:
+              clean(body.clientName),
+            eventDate:
+              clean(
+                body.eventDate,
+                60,
+              ),
+            menuCount:
+              int(body.menuCount),
+            totalCovers:
+              int(body.totalCovers),
+            totalCost:
+              num(body.totalCost),
+            sellingPricePerPlate:
+              num(
+                body.sellingPricePerPlate,
+              ),
+            totalSelling:
+              num(body.totalSelling),
+            totalProfit:
+              num(body.totalProfit),
+            snapshot:
+              body.snapshot as Prisma.InputJsonValue,
+          },
+          update: {
+            eventName:
+              clean(body.eventName),
+            clientName:
+              clean(body.clientName),
+            eventDate:
+              clean(
+                body.eventDate,
+                60,
+              ),
+            menuCount:
+              int(body.menuCount),
+            totalCovers:
+              int(body.totalCovers),
+            totalCost:
+              num(body.totalCost),
+            sellingPricePerPlate:
+              num(
+                body.sellingPricePerPlate,
+              ),
+            totalSelling:
+              num(body.totalSelling),
+            totalProfit:
+              num(body.totalProfit),
+            snapshot:
+              body.snapshot as Prisma.InputJsonValue,
+            completedAt:
+              new Date(),
+            archivedAt:
+              null,
+          },
+        });
 
-          await tx.tenantDraftCosting.deleteMany({ where: { tenantId, costingId } });
+        await tx.tenantDraftCosting.deleteMany({
+          where: {
+            tenantId,
+            costingId,
+          },
+        });
+      },
+    );
 
-          const used = await tx.tenantFreeCosting.count({ where: { tenantId } });
+    let caterersOsSync:
+      Awaited<
+        ReturnType<
+          typeof syncCompletedCostingToCaterersOs
+        >
+      >;
 
-          return {
-            plan: tenant.plan,
-            hasProAccess: pro,
-            used,
-            limit: FREE_LIMIT,
-            remaining: pro ? null : Math.max(0, FREE_LIMIT - used),
-            currentClaimed,
-            currentCompleted: true,
-            canStartNew: pro || used < FREE_LIMIT,
-          };
-        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-
-        break;
-      } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === 'P2034' &&
-          attempt < 2
-        ) {
-          continue;
-        }
-        throw error;
-      }
-    }
-
-    if (!finalResult) throw new Error('COMPLETE_FAILED');
-
-    let caterersOsSync: Awaited<ReturnType<typeof syncCompletedCostingToCaterersOs>>;
     try {
-      caterersOsSync = await syncCompletedCostingToCaterersOs({
-        work: body.snapshot as WorkState,
-        summary: {
-          menuCount: int(body.menuCount),
-          totalCovers: int(body.totalCovers),
-          totalCost: num(body.totalCost),
-          sellingPricePerPlate: num(body.sellingPricePerPlate),
-          totalSelling: num(body.totalSelling),
-          totalProfit: num(body.totalProfit),
-        },
-      });
+      caterersOsSync =
+        await syncCompletedCostingToCaterersOs({
+          work:
+            body.snapshot as WorkState,
+          summary: {
+            menuCount:
+              int(body.menuCount),
+            totalCovers:
+              int(body.totalCovers),
+            totalCost:
+              num(body.totalCost),
+            sellingPricePerPlate:
+              num(
+                body.sellingPricePerPlate,
+              ),
+            totalSelling:
+              num(body.totalSelling),
+            totalProfit:
+              num(body.totalProfit),
+          },
+        });
     } catch (error) {
-      console.error('CaterersOS sync preparation error:', error);
+      console.error(
+        'CaterersOS sync preparation error:',
+        error,
+      );
+
       caterersOsSync = {
         status: 'failed',
-        error: 'Could not prepare CaterersOS sync',
+        error:
+          'Could not prepare CaterersOS sync',
       };
     }
 
-    if (caterersOsSync.status === 'failed') {
-      console.error('CaterersOS sync failed:', caterersOsSync.error);
+    if (
+      caterersOsSync.status ===
+      'failed'
+    ) {
+      console.error(
+        'CaterersOS sync failed:',
+        caterersOsSync.error,
+      );
     }
 
-    return NextResponse.json({ ok: true, ...finalResult, caterersOsSync });
+    return NextResponse.json({
+      ok: true,
+      workspaceMode:
+        'SINGLE_BUSINESS',
+      unlimited: true,
+
+      // Legacy response fields remain harmlessly present
+      // so older clients never show a paywall.
+      plan: 'SINGLE',
+      hasProAccess: true,
+      used: 0,
+      limit: 0,
+      remaining: null,
+      currentClaimed: true,
+      currentCompleted: true,
+      canStartNew: true,
+      caterersOsSync,
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : '';
+    const message =
+      error instanceof Error
+        ? error.message
+        : '';
 
-    if (message === 'FREE_LIMIT_REACHED') {
-      return NextResponse.json({
-        error: 'Your 5 free costings are used. Upgrade to Pro for unlimited costings.',
-        code: 'FREE_LIMIT_REACHED',
-        limit: FREE_LIMIT,
-      }, { status: 402 });
+    if (
+      message ===
+      'WORKSPACE_NOT_FOUND'
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Business workspace not found',
+        },
+        { status: 404 },
+      );
     }
 
-    if (message === 'CLIENT_NOT_FOUND') {
-      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-    }
+    console.error(
+      'Complete costing error:',
+      error,
+    );
 
-    console.error('Complete costing error:', error);
-    return NextResponse.json({ error: 'Could not complete this costing' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          'Could not complete this costing',
+      },
+      { status: 500 },
+    );
   }
 }
 
 export async function PATCH(request: Request) {
   try {
     const tenantId = await requireClientTenantId();
-    if (!tenantId) return NextResponse.json({ error: 'Client login required' }, { status: 401 });
+    if (!tenantId) return NextResponse.json({ error: 'Owner login required' }, { status: 401 });
 
     const body = await request.json();
     const costingId = clean(body.costingId, 120);

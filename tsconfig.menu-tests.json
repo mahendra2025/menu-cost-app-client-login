@@ -20,6 +20,7 @@
     "lib/pdfMenuExtraction.ts",
     "lib/operationsCost.ts",
     "lib/gasCost.ts",
+    "lib/sweetGas.ts",
     "lib/disposableCost.ts",
     "lib/unknownDishQueue.ts",
     "lib/dishAliasLearning.ts",

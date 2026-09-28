@@ -477,24 +477,211 @@ export async function PUT(request: Request) {
     }
     const dishes = updateRecipeIngredients(catalog?.dishes ?? [], ratesByOriginalId);
 
-    const saved = await prisma.recipeCatalog.upsert({
-      where: { id: CATALOG_ID },
-      create: {
-        id: CATALOG_ID,
-        rates: stampedRates,
-        ingredientCategories: categories,
-        dishes: [],
-        deletedDishIds: [],
-      },
-      update: {
-        rates: stampedRates,
-        ingredientCategories: categories,
-        dishes: dishes as Prisma.InputJsonValue,
-      },
-      select: { updatedAt: true },
+    const idChanges = Array.from(
+      ratesByOriginalId.entries(),
+    ).filter(
+      ([originalId, nextRate]) =>
+        originalId !== nextRate.id,
+    );
+
+    const removedIds = Array.from(
+      previousIds,
+    ).filter(
+      (id) =>
+        !nextIds.has(id) &&
+        !ratesByOriginalId.has(id),
+    );
+
+    const saved =
+      await prisma.$transaction(
+        async (tx) => {
+          for (const [
+            originalId,
+            nextRate,
+          ] of idChanges) {
+            const businessRows =
+              await tx.tenantIngredientRate.findMany(
+                {
+                  where: {
+                    ingredientId:
+                      originalId,
+                  },
+                  select: {
+                    tenantId: true,
+                    rate: true,
+                  },
+                },
+              );
+
+            for (const row of businessRows) {
+              await tx.tenantIngredientRate.upsert(
+                {
+                  where: {
+                    tenantId_ingredientId: {
+                      tenantId:
+                        row.tenantId,
+                      ingredientId:
+                        nextRate.id,
+                    },
+                  },
+                  create: {
+                    tenantId:
+                      row.tenantId,
+                    ingredientId:
+                      nextRate.id,
+                    rate: row.rate,
+                  },
+                  update: {
+                    rate: row.rate,
+                  },
+                },
+              );
+            }
+
+            await tx.tenantIngredientRate.deleteMany(
+              {
+                where: {
+                  ingredientId:
+                    originalId,
+                },
+              },
+            );
+
+            const cityRows =
+              await tx.ingredientCityRate.findMany(
+                {
+                  where: {
+                    ingredientId:
+                      originalId,
+                  },
+                  select: {
+                    city: true,
+                    cityKey: true,
+                    rate: true,
+                    source: true,
+                    effectiveDate: true,
+                  },
+                },
+              );
+
+            for (const row of cityRows) {
+              await tx.ingredientCityRate.upsert(
+                {
+                  where: {
+                    ingredientId_cityKey: {
+                      ingredientId:
+                        nextRate.id,
+                      cityKey:
+                        row.cityKey,
+                    },
+                  },
+                  create: {
+                    ingredientId:
+                      nextRate.id,
+                    city:
+                      row.city,
+                    cityKey:
+                      row.cityKey,
+                    rate:
+                      row.rate,
+                    source:
+                      row.source,
+                    effectiveDate:
+                      row.effectiveDate,
+                  },
+                  update: {
+                    city:
+                      row.city,
+                    rate:
+                      row.rate,
+                    source:
+                      row.source,
+                    effectiveDate:
+                      row.effectiveDate,
+                  },
+                },
+              );
+            }
+
+            await tx.ingredientCityRate.deleteMany(
+              {
+                where: {
+                  ingredientId:
+                    originalId,
+                },
+              },
+            );
+          }
+
+          if (removedIds.length) {
+            await Promise.all([
+              tx.tenantIngredientRate.deleteMany({
+                where: {
+                  ingredientId: {
+                    in: removedIds,
+                  },
+                },
+              }),
+
+              tx.ingredientCityRate.deleteMany({
+                where: {
+                  ingredientId: {
+                    in: removedIds,
+                  },
+                },
+              }),
+            ]);
+          }
+
+          return tx.recipeCatalog.upsert({
+            where: {
+              id: CATALOG_ID,
+            },
+            create: {
+              id: CATALOG_ID,
+              rates:
+                stampedRates,
+              ingredientCategories:
+                categories,
+              dishes: [],
+              deletedDishIds: [],
+            },
+            update: {
+              rates:
+                stampedRates,
+              ingredientCategories:
+                categories,
+              dishes:
+                dishes as Prisma.InputJsonValue,
+            },
+            select: {
+              updatedAt: true,
+            },
+          });
+        },
+      );
+
+    return NextResponse.json({
+      ok: true,
+      updatedAt:
+        saved.updatedAt,
+      migratedRateLinks:
+        idChanges.length,
+      cleanedIngredientRateLinks:
+        removedIds.length,
     });
-    return NextResponse.json({ ok: true, updatedAt: saved.updatedAt });
-  } catch {
-    return NextResponse.json({ error: 'Failed to save ingredients' }, { status: 500 });
+  } catch (error) {
+    console.error(
+      'Ingredient master PUT failed:',
+      error,
+    );
+
+    return NextResponse.json(
+      {
+        error:
+          'Failed to save ingredients',
+      },
+      { status: 500 },
+    );
   }
 }

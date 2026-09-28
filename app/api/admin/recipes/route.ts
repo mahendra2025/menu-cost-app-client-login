@@ -67,6 +67,31 @@ function normalizeRecipeIngredientUnit(
     : null;
 }
 
+function dishSyncWarning(error: unknown) {
+  const row =
+    error &&
+    typeof error === 'object'
+      ? error as Record<string, unknown>
+      : {};
+
+  const code =
+    String(row.code || '').trim();
+
+  if (code === 'P2022') {
+    return 'Recipes saved. Dish Master database schema is behind; pending Prisma migrations must be applied.';
+  }
+
+  if (code === 'P2028') {
+    return 'Recipes saved. Dish Master sync timed out; retry the sync after deployment.';
+  }
+
+  if (code === 'P1001' || code === 'P1002') {
+    return 'Recipes saved. Dish Master sync could not reach the database.';
+  }
+
+  return 'Recipes saved, but Dish Master sync could not finish.';
+}
+
 async function requireAdmin() {
   const cookieStore = await cookies();
   const token = cookieStore.get(getAdminCookieName())?.value;
@@ -260,6 +285,13 @@ function normalizeRecipeDishes(
     servingQuantity: number;
     servingUnit: string;
     aliases: string[];
+    gasKgPer100: number | null;
+    gasBurnerKgPerHour: number | null;
+    gasCookingMinutes: number | null;
+    gasBurnerCount: number | null;
+    gasBatchPax: number | null;
+    gasNoGas: boolean;
+    gasProfileConfigured: boolean;
   }>();
 
   for (const value of dishes) {
@@ -305,6 +337,115 @@ function normalizeRecipeDishes(
       ).values())
       : [];
 
+    const optionalGasNumber = (value: unknown) => {
+      if (
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ''
+      ) {
+        return null;
+      }
+
+      const number = Number(value);
+      return Number.isFinite(number)
+        ? Math.max(0, number)
+        : null;
+    };
+
+    const gasProfileConfigured =
+      [
+        'gasKgPer100',
+        'gasBurnerKgPerHour',
+        'gasCookingMinutes',
+        'gasBurnerCount',
+        'gasBatchPax',
+        'gasNoGas',
+      ].some(
+        (key) =>
+          Object.prototype.hasOwnProperty.call(
+            row,
+            key,
+          ),
+      );
+
+    const gasNoGas =
+      row.gasNoGas === true;
+
+    const gasKgPer100 =
+      gasNoGas
+        ? 0
+        : optionalGasNumber(
+            row.gasKgPer100,
+          );
+
+    const gasBurnerKgPerHour =
+      gasNoGas
+        ? null
+        : optionalGasNumber(
+            row.gasBurnerKgPerHour,
+          );
+    const gasCookingMinutes =
+      gasNoGas
+        ? null
+        : optionalGasNumber(
+            row.gasCookingMinutes,
+          );
+    const gasBurnerCountRaw =
+      gasNoGas
+        ? null
+        : optionalGasNumber(
+            row.gasBurnerCount,
+          );
+    const gasBatchPaxRaw =
+      gasNoGas
+        ? null
+        : optionalGasNumber(
+            row.gasBatchPax,
+          );
+
+    const realGasValues = [
+      gasBurnerKgPerHour,
+      gasCookingMinutes,
+      gasBurnerCountRaw,
+      gasBatchPaxRaw,
+    ];
+
+    const hasAnyRealGas =
+      realGasValues.some(
+        (value) => value !== null,
+      );
+
+    const hasCompleteRealGas =
+      realGasValues.every(
+        (value) =>
+          value !== null &&
+          Number(value) > 0,
+      );
+
+    const gasBurnerCount =
+      hasCompleteRealGas
+        ? Math.max(
+            1,
+            Math.round(
+              Number(
+                gasBurnerCountRaw,
+              ),
+            ),
+          )
+        : null;
+
+    const gasBatchPax =
+      hasCompleteRealGas
+        ? Math.max(
+            1,
+            Math.round(
+              Number(
+                gasBatchPaxRaw,
+              ),
+            ),
+          )
+        : null;
+
     normalized.set(name.toLowerCase(), {
       name,
       category,
@@ -313,6 +454,19 @@ function normalizeRecipeDishes(
       servingQuantity: Math.max(0.01, Number(row.servingSize) || 1),
       servingUnit: cleanText(row.servingUnit, 30) || 'serving',
       aliases,
+      gasKgPer100,
+      gasBurnerKgPerHour:
+        hasCompleteRealGas
+          ? gasBurnerKgPerHour
+          : null,
+      gasCookingMinutes:
+        hasCompleteRealGas
+          ? gasCookingMinutes
+          : null,
+      gasBurnerCount,
+      gasBatchPax,
+      gasNoGas,
+      gasProfileConfigured,
     });
   }
 
@@ -338,6 +492,12 @@ async function syncRecipesToDishCatalog(
         rate: true,
         servingQuantity: true,
         servingUnit: true,
+        gasKgPer100: true,
+        gasBurnerKgPerHour: true,
+        gasCookingMinutes: true,
+        gasBurnerCount: true,
+        gasBatchPax: true,
+        gasNoGas: true,
         aliases: true,
       },
     }),
@@ -354,11 +514,55 @@ async function syncRecipesToDishCatalog(
 
   for (const dish of recipeDishes) {
     const existing = existingByName.get(dish.name.toLowerCase());
+
+    const baseData = {
+      name: dish.name,
+      category: dish.category,
+      subcategory: dish.subcategory,
+      rate: dish.rate,
+      servingQuantity:
+        dish.servingQuantity,
+      servingUnit:
+        dish.servingUnit,
+      aliases:
+        dish.aliases,
+    };
+
+    const gasData =
+      dish.gasProfileConfigured
+        ? {
+            gasKgPer100:
+              dish.gasKgPer100,
+            gasBurnerKgPerHour:
+              dish.gasBurnerKgPerHour,
+            gasCookingMinutes:
+              dish.gasCookingMinutes,
+            gasBurnerCount:
+              dish.gasBurnerCount,
+            gasBatchPax:
+              dish.gasBatchPax,
+            gasNoGas:
+              dish.gasNoGas,
+          }
+        : {};
+
     if (existing) {
       const existingAliases = Array.isArray(existing.aliases)
         ? existing.aliases.map(String).map((alias) => alias.toLowerCase()).sort()
         : [];
       const nextAliases = dish.aliases.map((alias) => alias.toLowerCase()).sort();
+
+      const gasUnchanged =
+        !dish.gasProfileConfigured ||
+        (
+          (existing.gasKgPer100 ?? null) === dish.gasKgPer100 &&
+          (existing.gasBurnerKgPerHour ?? null) === dish.gasBurnerKgPerHour &&
+          (existing.gasCookingMinutes ?? null) === dish.gasCookingMinutes &&
+          (existing.gasBurnerCount ?? null) === dish.gasBurnerCount &&
+          (existing.gasBatchPax ?? null) === dish.gasBatchPax &&
+          existing.gasNoGas === dish.gasNoGas
+        );
+
       const unchanged =
         existing.name === dish.name &&
         existing.category === dish.category &&
@@ -366,15 +570,22 @@ async function syncRecipesToDishCatalog(
         Math.abs(existing.rate - dish.rate) < 0.001 &&
         Math.abs(existing.servingQuantity - dish.servingQuantity) < 0.001 &&
         existing.servingUnit === dish.servingUnit &&
+        gasUnchanged &&
         JSON.stringify(existingAliases) === JSON.stringify(nextAliases);
       if (unchanged) continue;
 
       updates.push(tx.dishMasterItem.update({
         where: { id: existing.id },
-        data: dish,
+        data: {
+          ...baseData,
+          ...gasData,
+        },
       }));
     } else {
-      creates.push(dish);
+      creates.push({
+        ...baseData,
+        ...gasData,
+      });
     }
   }
 
@@ -661,6 +872,10 @@ export async function POST() {
             tx,
             catalog,
           ),
+        {
+          maxWait: 10_000,
+          timeout: 30_000,
+        },
       );
 
     return NextResponse.json({
@@ -692,26 +907,57 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Invalid recipe catalog' }, { status: 400 });
     }
 
-    const saved = await prisma.$transaction(async (tx) => {
-      const recipeCatalog = await tx.recipeCatalog.upsert({
-        where: { id: CATALOG_ID },
-        create: { id: CATALOG_ID, ...catalog },
-        update: catalog,
-        select: { updatedAt: true },
-      });
-      const syncedDishes = await syncRecipesToDishCatalog(tx, catalog);
-      return {
-        updatedAt: recipeCatalog.updatedAt,
-        syncedDishes,
-      };
+    // Persist the recipe catalog first. Dish Master sync is intentionally
+    // best-effort so a sync problem can never roll back ingredient changes.
+    const recipeCatalog = await prisma.recipeCatalog.upsert({
+      where: { id: CATALOG_ID },
+      create: { id: CATALOG_ID, ...catalog },
+      update: catalog,
+      select: { updatedAt: true },
     });
+
+    let syncedDishes = 0;
+    let syncWarning = '';
+
+    try {
+      syncedDishes = await prisma.$transaction(
+        async (tx) =>
+          syncRecipesToDishCatalog(
+            tx,
+            catalog,
+          ),
+        {
+          maxWait: 10_000,
+          timeout: 30_000,
+        },
+      );
+    } catch (syncError) {
+      console.error(
+        'Recipe catalog saved but Dish Master sync failed:',
+        syncError,
+      );
+
+      syncWarning =
+        dishSyncWarning(
+          syncError,
+        );
+    }
 
     return NextResponse.json({
       ok: true,
-      updatedAt: saved.updatedAt,
-      syncedDishes: saved.syncedDishes,
+      updatedAt: recipeCatalog.updatedAt,
+      syncedDishes,
+      syncWarning: syncWarning || null,
     });
-  } catch {
-    return NextResponse.json({ error: 'Failed to save recipes' }, { status: 500 });
+  } catch (error) {
+    console.error(
+      'Failed to save recipe catalog:',
+      error,
+    );
+
+    return NextResponse.json(
+      { error: 'Failed to save recipes' },
+      { status: 500 },
+    );
   }
 }

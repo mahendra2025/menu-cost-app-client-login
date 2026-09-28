@@ -1,0 +1,2 @@
+ALTER TABLE "DishMasterItem"
+ADD COLUMN "gasNoGas" BOOLEAN NOT NULL DEFAULT false;

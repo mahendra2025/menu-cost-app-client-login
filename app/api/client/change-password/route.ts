@@ -31,7 +31,7 @@ export async function PUT(
       return NextResponse.json(
         {
           error:
-            'Client login required',
+            'Owner login required',
         },
         { status: 401 },
       );
@@ -139,7 +139,7 @@ export async function PUT(
       return NextResponse.json(
         {
           error:
-            'Account not found.',
+            'Business workspace not found.',
         },
         { status: 404 },
       );

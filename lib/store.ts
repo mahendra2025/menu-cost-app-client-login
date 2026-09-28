@@ -59,25 +59,26 @@ export const emptyExtras: ExtraCost = {
 };
 
 export const defaultDisposableItems: DisposableCostItem[] = [
-  'Tissue',
-  'Fuel',
-  'Napkin',
-  'Cap',
-  'Cafe Cap',
-  'Gloves',
-  'Packing Roll',
-  'Table Roll',
-  'Disposable Cup',
-  'Plates',
-  'Spoon',
-  'Silver Roll',
-  'Toothpick',
-  'Food Box',
-  'Sweet Box',
-  'Garbage Bag',
-].map((name, index) => ({
+  ['Tissue', 'pcs'],
+  ['Fuel', 'litre'],
+  ['Napkin', 'pcs'],
+  ['Cap', 'pcs'],
+  ['Cafe Cap', 'pcs'],
+  ['Gloves', 'pair'],
+  ['Packing Roll', 'roll'],
+  ['Table Roll', 'roll'],
+  ['Disposable Cup', 'pcs'],
+  ['Plates', 'pcs'],
+  ['Spoon', 'pcs'],
+  ['Silver Roll', 'roll'],
+  ['Toothpick', 'pack'],
+  ['Food Box', 'pcs'],
+  ['Sweet Box', 'pcs'],
+  ['Garbage Bag', 'pcs'],
+].map(([name, unit], index) => ({
   id: `disposable_${index + 1}`,
   name,
+  unit,
   quantity: 0,
   unitCost: 0,
 }));
@@ -256,30 +257,24 @@ export function refreshSessionFromClient():
 
   const session = getSession();
 
-  if (
-    !session ||
-    session.role !== 'CLIENT'
-  ) {
-    return session;
+  if (!session) {
+    return null;
   }
 
-  const client = getClients().find(
-    (item) =>
-      item.id === session.tenantId,
-  );
-
-  if (!client) {
-    return session;
-  }
-
+  /*
+   * Single-business mode no longer refreshes session state
+   * from the legacy local client-account list. In particular,
+   * an old EXPIRED client record must not re-lock the owner
+   * workspace after login.
+   */
   const nextSession: Session = {
     ...session,
-    businessName: client.businessName,
-    status: client.status,
+    role: 'CLIENT',
+    status: 'ACTIVE',
   };
 
   if (
-    nextSession.businessName !== session.businessName ||
+    nextSession.role !== session.role ||
     nextSession.status !== session.status
   ) {
     window.localStorage.setItem(
@@ -698,6 +693,7 @@ export function loadWork(
     ? savedWork.disposableItems.map((item) => ({
         id: String(item.id || uid('disposable')),
         name: String(item.name || 'Disposable item'),
+        unit: String(item.unit || 'pcs').trim() || 'pcs',
         quantity: Math.max(0, Number(item.quantity) || 0),
         unitCost: Math.max(0, Number(item.unitCost) || 0),
       }))
@@ -720,6 +716,7 @@ export function loadWork(
       return savedItem
         ? {
             ...defaultItem,
+            unit: savedItem.unit || defaultItem.unit || 'pcs',
             quantity: savedItem.quantity,
             unitCost: savedItem.unitCost,
           }
@@ -736,6 +733,7 @@ export function loadWork(
     disposableItems.push({
       id: 'disposable_existing',
       name: 'Existing disposable cost',
+      unit: 'event',
       quantity: 1,
       unitCost: Math.max(0, Number(savedWork.extras?.disposable) || 0),
     });

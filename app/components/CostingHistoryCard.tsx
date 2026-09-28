@@ -4,7 +4,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import Link from 'next/link';
 
 import {
   flushWorkSave,
@@ -85,11 +84,6 @@ export default function CostingHistoryCard() {
     setError,
   ] = useState('');
 
-  const [
-    limitReached,
-    setLimitReached,
-  ] = useState(false);
-
   useEffect(() => {
     void load();
   }, []);
@@ -161,7 +155,6 @@ export default function CostingHistoryCard() {
       item.costingId,
     );
     setError('');
-    setLimitReached(false);
 
     try {
       const response =
@@ -184,15 +177,6 @@ export default function CostingHistoryCard() {
         await response.json();
 
       if (!response.ok) {
-        if (
-          data.code ===
-          'FREE_LIMIT_REACHED'
-        ) {
-          setLimitReached(
-            true,
-          );
-        }
-
         setError(
           data.error ||
             'Could not duplicate this costing.',
@@ -273,25 +257,10 @@ export default function CostingHistoryCard() {
       </div>
 
       {error ? (
-        <div
-          className={`mc-history-message ${
-            limitReached
-              ? 'limit'
-              : ''
-          }`}
-        >
+        <div className="mc-history-message">
           <span>
             {error}
           </span>
-
-          {limitReached ? (
-            <Link
-              href="/app/profile?upgrade=1"
-              className="primary-button"
-            >
-              Upgrade Pro · ₹999
-            </Link>
-          ) : null}
         </div>
       ) : null}
 
@@ -608,18 +577,6 @@ export default function CostingHistoryCard() {
           font-weight:750;
         }
 
-        .mc-history-message.limit {
-          border-color:rgba(255,173,66,.23);
-          color:#ffc16b;
-          background:rgba(255,173,66,.07);
-        }
-
-        .mc-history-message .primary-button {
-          min-height:32px;
-          flex:0 0 auto;
-          padding:0 10px;
-          font-size:8px;
-        }
 
         @media(max-width:650px) {
           .mc-history-details {
@@ -632,8 +589,7 @@ export default function CostingHistoryCard() {
             flex-direction:column;
           }
 
-          .mc-history-actions .primary-button,
-          .mc-history-message .primary-button {
+          .mc-history-actions .primary-button {
             width:100%;
           }
         }

@@ -50,6 +50,43 @@ function normalizeItems(items: unknown) {
               Number(rawGasKgPer100) || 0,
             );
 
+      const optionalGasNumber = (value: unknown) =>
+        value === null ||
+        value === undefined ||
+        String(value).trim() === ''
+          ? null
+          : Number(value);
+
+      const gasBurnerKgPerHour =
+        optionalGasNumber(row.gasBurnerKgPerHour);
+      const gasCookingMinutes =
+        optionalGasNumber(row.gasCookingMinutes);
+      const gasBurnerCount =
+        optionalGasNumber(row.gasBurnerCount);
+      const gasBatchPax =
+        optionalGasNumber(row.gasBatchPax);
+      const gasNoGas =
+        row.gasNoGas ===
+        true;
+
+      const realGasValues = [
+        gasBurnerKgPerHour,
+        gasCookingMinutes,
+        gasBurnerCount,
+        gasBatchPax,
+      ];
+
+      const hasCompleteRealGas =
+        realGasValues.every(
+          (value) =>
+            value !== null &&
+            Number.isFinite(value),
+        ) &&
+        Number(gasBurnerKgPerHour) > 0 &&
+        Number(gasCookingMinutes) > 0 &&
+        Number(gasBurnerCount) > 0 &&
+        Number(gasBatchPax) > 0;
+
       const pieceWeightGrams =
         servingUnit.toLowerCase() === 'piece'
           ? (
@@ -76,6 +113,23 @@ function normalizeItems(items: unknown) {
         servingQuantity,
         servingUnit,
         gasKgPer100,
+        gasBurnerKgPerHour:
+          hasCompleteRealGas
+            ? Math.max(0, Number(gasBurnerKgPerHour))
+            : null,
+        gasCookingMinutes:
+          hasCompleteRealGas
+            ? Math.max(0, Number(gasCookingMinutes))
+            : null,
+        gasBurnerCount:
+          hasCompleteRealGas
+            ? Math.max(1, Math.round(Number(gasBurnerCount)))
+            : null,
+        gasBatchPax:
+          hasCompleteRealGas
+            ? Math.max(1, Math.round(Number(gasBatchPax)))
+            : null,
+        gasNoGas,
         pieceWeightGrams,
         aliases,
         originalName,
@@ -269,6 +323,12 @@ function syncRecipeCatalogWithDishes(
       catalogRate: item.rate,
       servingSize: item.servingQuantity,
       servingUnit: item.servingUnit,
+      gasKgPer100: item.gasKgPer100,
+      gasBurnerKgPerHour: item.gasBurnerKgPerHour,
+      gasCookingMinutes: item.gasCookingMinutes,
+      gasBurnerCount: item.gasBurnerCount,
+      gasBatchPax: item.gasBatchPax,
+      gasNoGas: item.gasNoGas,
 
       pieceWeightGrams:
         item.servingUnit
@@ -296,6 +356,12 @@ function syncRecipeCatalogWithDishes(
       catalogRate: item.rate,
       servingSize: item.servingQuantity,
       servingUnit: item.servingUnit,
+      gasKgPer100: item.gasKgPer100,
+      gasBurnerKgPerHour: item.gasBurnerKgPerHour,
+      gasCookingMinutes: item.gasCookingMinutes,
+      gasBurnerCount: item.gasBurnerCount,
+      gasBatchPax: item.gasBatchPax,
+      gasNoGas: item.gasNoGas,
 
       pieceWeightGrams:
         item.servingUnit
@@ -343,6 +409,11 @@ export async function GET(request: Request) {
           servingQuantity: true,
           servingUnit: true,
           gasKgPer100: true,
+          gasBurnerKgPerHour: true,
+          gasCookingMinutes: true,
+          gasBurnerCount: true,
+          gasBatchPax: true,
+          gasNoGas: true,
           aliases: true,
         },
       }),
@@ -368,6 +439,21 @@ export async function GET(request: Request) {
         gasKgPer100:
           item.gasKgPer100 ??
           undefined,
+        gasBurnerKgPerHour:
+          item.gasBurnerKgPerHour ??
+          undefined,
+        gasCookingMinutes:
+          item.gasCookingMinutes ??
+          undefined,
+        gasBurnerCount:
+          item.gasBurnerCount ??
+          undefined,
+        gasBatchPax:
+          item.gasBatchPax ??
+          undefined,
+        gasNoGas:
+          item.gasNoGas ===
+          true,
         aliases: Array.isArray(item.aliases) ? item.aliases.map((alias) => String(alias).trim()).filter(Boolean) : [],
       })))
       : [];
@@ -639,6 +725,17 @@ export async function PUT(request: Request) {
             servingUnit: item!.servingUnit,
             gasKgPer100:
               item!.gasKgPer100,
+            gasBurnerKgPerHour:
+              item!.gasBurnerKgPerHour,
+            gasCookingMinutes:
+              item!.gasCookingMinutes,
+            gasBurnerCount:
+              item!.gasBurnerCount,
+            gasBatchPax:
+              item!.gasBatchPax,
+            gasNoGas:
+              item!.gasNoGas ===
+              true,
             aliases: item!.aliases,
           },
         })

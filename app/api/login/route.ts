@@ -1,170 +1,397 @@
-import { NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
-import { createAdminSessionToken, getAdminCookieName } from '../../../lib/adminAuth';
-import { hashPassword, isPasswordHash, verifyPassword } from '../../../lib/passwords';
-import { prisma } from '../../../lib/prisma';
-import { createClientSessionToken, getClientCookieName } from '../../../lib/clientAuth';
+import {
+  timingSafeEqual,
+} from 'crypto';
+import {
+  NextResponse,
+} from 'next/server';
 
-function credentialsMatch(received: string, expected: string) {
-  const receivedValue = Buffer.from(received);
-  const expectedValue = Buffer.from(expected);
+import {
+  createAdminSessionToken,
+  getAdminCookieName,
+} from '../../../lib/adminAuth';
+import {
+  createClientSessionToken,
+  getClientCookieName,
+} from '../../../lib/clientAuth';
+import {
+  hashPassword,
+  verifyPassword,
+} from '../../../lib/passwords';
+import {
+  prisma,
+} from '../../../lib/prisma';
 
-  return receivedValue.length === expectedValue.length
-    && timingSafeEqual(receivedValue, expectedValue);
+function safeMatch(
+  received: string,
+  expected: string,
+) {
+  const receivedValue =
+    Buffer.from(received);
+  const expectedValue =
+    Buffer.from(expected);
+
+  return (
+    receivedValue.length ===
+      expectedValue.length &&
+    timingSafeEqual(
+      receivedValue,
+      expectedValue,
+    )
+  );
 }
 
-function clientLoginResponse(tenant: {
-  id: string;
-  name: string;
-  email: string;
-  plan: string;
-  status: string;
-  onboardingCompleted: boolean;
-}) {
-  const response = NextResponse.json({
-    session: {
-      tenantId: tenant.id,
-      tenantName: tenant.name,
-      email: tenant.email,
-      plan: tenant.plan,
-      status: tenant.status === 'ACTIVE' ? 'ACTIVE' : 'EXPIRED',
-      onboardingCompleted: tenant.onboardingCompleted,
+function configuredOwner() {
+  const userId =
+    (
+      process.env.SINGLE_USER_ID ||
+      process.env.SINGLE_USER_EMAIL ||
+      process.env.ADMIN_USER_ID ||
+      ''
+    )
+      .trim()
+      .toLowerCase();
+
+  const bootstrapPassword =
+    (
+      process.env.SINGLE_USER_PASSWORD ||
+      process.env.ADMIN_PASSWORD ||
+      ''
+    ).trim();
+
+  const businessName =
+    (
+      process.env.SINGLE_USER_BUSINESS_NAME ||
+      ''
+    ).trim();
+
+  return {
+    userId,
+    bootstrapPassword,
+    businessName,
+  };
+}
+
+async function currentWorkspace(
+  preferredUserId: string,
+) {
+  if (preferredUserId) {
+    const matching =
+      await prisma.tenant.findUnique({
+        where: {
+          email:
+            preferredUserId,
+        },
+      });
+
+    if (matching) {
+      return matching;
+    }
+  }
+
+  /*
+   * Migration-safe fallback:
+   * when an older SaaS database already has rows, the oldest
+   * workspace becomes the one retained single-business workspace.
+   */
+  return prisma.tenant.findFirst({
+    orderBy: {
+      createdAt: 'asc',
     },
   });
+}
+
+async function prepareWorkspace(input: {
+  workspace:
+    Awaited<
+      ReturnType<
+        typeof currentWorkspace
+      >
+    >;
+  userId: string;
+  password: string;
+  businessName: string;
+  usedBootstrapPassword: boolean;
+}) {
+  const {
+    workspace,
+    userId,
+    password,
+    businessName,
+    usedBootstrapPassword,
+  } = input;
+
+  if (workspace) {
+    return prisma.tenant.update({
+      where: {
+        id:
+          workspace.id,
+      },
+      data: {
+        name:
+          businessName ||
+          workspace.name ||
+          'My Catering Business',
+        email:
+          userId,
+        password:
+          usedBootstrapPassword
+            ? hashPassword(
+                password,
+              )
+            : workspace.password,
+
+        /*
+         * These columns are legacy database compatibility only.
+         * No plan, subscription, expiry or client-account UI uses them.
+         */
+        plan: 'SINGLE',
+        status: 'ACTIVE',
+        onboardingCompleted:
+          true,
+        razorpayCustomerId:
+          null,
+        razorpaySubscriptionId:
+          null,
+        subscriptionStatus:
+          null,
+        currentPeriodEnd:
+          null,
+        cancelAtPeriodEnd:
+          false,
+      },
+    });
+  }
+
+  return prisma.tenant.create({
+    data: {
+      name:
+        businessName ||
+        'My Catering Business',
+      email:
+        userId,
+      password:
+        hashPassword(
+          password,
+        ),
+      plan: 'SINGLE',
+      status: 'ACTIVE',
+      onboardingCompleted:
+        true,
+    },
+  });
+}
+
+function ownerLoginResponse(
+  workspace: {
+    id: string;
+    name: string;
+    email: string;
+  },
+) {
+  const response =
+    NextResponse.json({
+      session: {
+        role: 'CLIENT',
+        tenantId:
+          workspace.id,
+        tenantName:
+          workspace.name,
+        email:
+          workspace.email,
+        status: 'ACTIVE',
+        onboardingCompleted:
+          true,
+        workspaceMode:
+          'SINGLE_BUSINESS',
+      },
+    });
 
   response.cookies.set({
-    name: getClientCookieName(),
-    value: createClientSessionToken(tenant.id),
+    name:
+      getClientCookieName(),
+    value:
+      createClientSessionToken(
+        workspace.id,
+      ),
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure:
+      process.env.NODE_ENV ===
+      'production',
     path: '/',
   });
+
+  /*
+   * The same owner session can use admin master-data routes.
+   * This replaces the old separate SaaS admin/client account split.
+   */
   response.cookies.set({
-    name: getAdminCookieName(),
-    value: '',
+    name:
+      getAdminCookieName(),
+    value:
+      createAdminSessionToken(),
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure:
+      process.env.NODE_ENV ===
+      'production',
     path: '/',
-    maxAge: 0,
   });
 
   return response;
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+) {
   try {
-    const body = await request.json();
-    const email = String(body.userId || body.email || '').trim().toLowerCase();
-    const password = String(body.password || '').trim();
+    const body =
+      await request.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'User ID and password required' }, { status: 400 });
+    const userId =
+      String(
+        body.userId ||
+        body.email ||
+        '',
+      )
+        .trim()
+        .toLowerCase();
+
+    const password =
+      String(
+        body.password || '',
+      ).trim();
+
+    if (!userId || !password) {
+      return NextResponse.json(
+        {
+          error:
+            'User ID and password required',
+        },
+        { status: 400 },
+      );
     }
 
-    const singleUserEmail = (
-      process.env.SINGLE_USER_ID || process.env.SINGLE_USER_EMAIL
-    )?.trim().toLowerCase();
-    const singleUserPassword = process.env.SINGLE_USER_PASSWORD?.trim();
-    const singleUserName = process.env.SINGLE_USER_BUSINESS_NAME?.trim() || 'My Catering Business';
-    const singleUserMode = Boolean(
-      process.env.SINGLE_USER_ID || singleUserEmail || singleUserPassword,
+    const owner =
+      configuredOwner();
+
+    const existingWorkspace =
+      await currentWorkspace(
+        owner.userId,
+      );
+
+    const allowedUserId =
+      (
+        owner.userId ||
+        existingWorkspace?.email ||
+        ''
+      )
+        .trim()
+        .toLowerCase();
+
+    if (!allowedUserId) {
+      return NextResponse.json(
+        {
+          error:
+            'Single-business owner login is not configured.',
+        },
+        { status: 500 },
+      );
+    }
+
+    if (
+      !safeMatch(
+        userId,
+        allowedUserId,
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Wrong user ID or password.',
+        },
+        { status: 401 },
+      );
+    }
+
+    const databasePasswordValid =
+      Boolean(
+        existingWorkspace &&
+        verifyPassword(
+          password,
+          existingWorkspace.password,
+        ),
+      );
+
+    const bootstrapPasswordValid =
+      Boolean(
+        owner.bootstrapPassword &&
+        (
+          !existingWorkspace ||
+          existingWorkspace.plan !==
+            'SINGLE'
+        ) &&
+        safeMatch(
+          password,
+          owner.bootstrapPassword,
+        ),
+      );
+
+    if (
+      !databasePasswordValid &&
+      !bootstrapPasswordValid
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Wrong user ID or password.',
+        },
+        { status: 401 },
+      );
+    }
+
+    if (
+      !existingWorkspace &&
+      !bootstrapPasswordValid
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Single-business owner password is not configured.',
+        },
+        { status: 500 },
+      );
+    }
+
+    const workspace =
+      await prepareWorkspace({
+        workspace:
+          existingWorkspace,
+        userId:
+          allowedUserId,
+        password,
+        businessName:
+          owner.businessName,
+        usedBootstrapPassword:
+          !databasePasswordValid &&
+          bootstrapPasswordValid,
+      });
+
+    return ownerLoginResponse(
+      workspace,
+    );
+  } catch (error) {
+    console.error(
+      'Single-business login failed:',
+      error,
     );
 
-    if (singleUserMode) {
-      if (!singleUserEmail || !singleUserPassword) {
-        return NextResponse.json(
-          { error: 'Single-user login is not fully configured.' },
-          { status: 500 },
-        );
-      }
-
-      if (
-        !credentialsMatch(email, singleUserEmail)
-        || !credentialsMatch(password, singleUserPassword)
-      ) {
-        return NextResponse.json({ error: 'Wrong user ID or password.' }, { status: 401 });
-      }
-
-      const existingTenant = await prisma.tenant.findUnique({
-        where: { email: singleUserEmail },
-      });
-
-      const tenant = existingTenant
-        ? await prisma.tenant.update({
-          where: { id: existingTenant.id },
-          data: {
-            name: singleUserName,
-            password: verifyPassword(singleUserPassword, existingTenant.password)
-              ? existingTenant.password
-              : hashPassword(singleUserPassword),
-            plan: 'PRO',
-            status: 'ACTIVE',
-            onboardingCompleted: true,
-          },
-        })
-        : await prisma.tenant.create({
-          data: {
-            name: singleUserName,
-            email: singleUserEmail,
-            password: hashPassword(singleUserPassword),
-            plan: 'PRO',
-            status: 'ACTIVE',
-            onboardingCompleted: true,
-          },
-        });
-
-      return clientLoginResponse(tenant);
-    }
-
-    const adminUserId = process.env.ADMIN_USER_ID?.trim().toLowerCase();
-    const adminPassword = process.env.ADMIN_PASSWORD?.trim();
-
-    if (adminUserId && adminPassword && email === adminUserId && password === adminPassword) {
-      const response = NextResponse.json({
-        session: {
-          role: 'ADMIN',
-          tenantId: 'admin',
-          tenantName: 'Super Admin',
-          email: adminUserId,
-          plan: 'ADMIN',
-          status: 'ACTIVE',
-        },
-      });
-      response.cookies.set({
-        name: getAdminCookieName(),
-        value: createAdminSessionToken(),
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-      });
-      response.cookies.set({ name: getClientCookieName(), value: '', path: '/', maxAge: 0 });
-      return response;
-    }
-
-    const tenant = await prisma.tenant.findUnique({
-      where: { email },
-    });
-
-    if (!tenant || !verifyPassword(password, tenant.password)) {
-      return NextResponse.json({ error: 'Invalid login' }, { status: 401 });
-    }
-
-    if (!isPasswordHash(tenant.password)) {
-      await prisma.tenant.update({
-        where: { id: tenant.id },
-        data: { password: hashPassword(password) },
-      });
-    }
-
-    if (tenant.status === 'INACTIVE') {
-      return NextResponse.json({ error: 'Account inactive' }, { status: 403 });
-    }
-
-    return clientLoginResponse(tenant);
-  } catch {
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          'Login failed',
+      },
+      { status: 500 },
+    );
   }
 }

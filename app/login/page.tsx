@@ -43,18 +43,6 @@ export default function LoginPage() {
         return;
       }
 
-      if (data.session.role === 'ADMIN') {
-        localStorage.setItem(
-          SESSION_KEY,
-          JSON.stringify({
-            role: 'ADMIN', tenantId: 'admin', userId: 'admin',
-            businessName: 'Super Admin', status: 'ACTIVE',
-          })
-        );
-        router.push('/admin/users');
-        return;
-      }
-
       localStorage.setItem(
         SESSION_KEY,
         JSON.stringify({
@@ -62,10 +50,11 @@ export default function LoginPage() {
           tenantId: data.session.tenantId,
           userId: data.session.email,
           businessName: data.session.tenantName,
-          status: data.session.status,
-        })
+          status: 'ACTIVE',
+        }),
       );
-      router.push(data.session.onboardingCompleted === false ? '/onboarding' : '/app/event');
+
+      router.push('/app/event');
     } catch {
       setError('We could not reach the server. Check your connection and try again.');
     } finally {
@@ -122,9 +111,9 @@ export default function LoginPage() {
       <section className={styles.signIn} aria-labelledby="sign-in-title">
         <div className={styles.formWrap}>
           <div className={styles.heading}>
-            <p>Welcome back</p>
-            <h2 id="sign-in-title">Sign in to your workspace</h2>
-            <span>Continue where you left off.</span>
+            <p>Business workspace</p>
+            <h2 id="sign-in-title">Sign in to Menu Costing</h2>
+            <span>One owner account for costing, masters and quotations.</span>
           </div>
 
           <form className={styles.form} onSubmit={onSubmit} aria-busy={loading}>
@@ -137,7 +126,7 @@ export default function LoginPage() {
                 <input
                   id="userId" name="userId" type="text" autoComplete="username"
                   value={userId} onChange={(event) => setUserId(event.target.value)}
-                  placeholder="Email or user ID" aria-invalid={Boolean(error)}
+                  placeholder="Owner user ID" aria-invalid={Boolean(error)}
                   aria-describedby={error ? 'login-error' : undefined} autoFocus required
                 />
               </div>
@@ -182,11 +171,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          <div className={styles.newAccount}>
-            <span>New to Menu Costing?</span>
-            <Link href="/signup">Create a free account</Link>
-          </div>
 
           <p className={styles.privacy}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.4 2.8 8.4 7 10 4.2-1.6 7-5.6 7-10V6l-7-3Z" /><path d="m9 12 2 2 4-4" /></svg>

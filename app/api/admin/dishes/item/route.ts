@@ -260,6 +260,52 @@ function normalizeDish(
           rawGasKgPer100,
         );
 
+  const optionalNumber = (
+    value: unknown,
+  ) =>
+    value === null ||
+    value === undefined ||
+    String(value).trim() === ''
+      ? null
+      : Number(value);
+
+  const gasBurnerKgPerHour =
+    optionalNumber(
+      row.gasBurnerKgPerHour,
+    );
+  const gasCookingMinutes =
+    optionalNumber(
+      row.gasCookingMinutes,
+    );
+  const gasBurnerCount =
+    optionalNumber(
+      row.gasBurnerCount,
+    );
+  const gasBatchPax =
+    optionalNumber(
+      row.gasBatchPax,
+    );
+
+  const realGasValues = [
+    gasBurnerKgPerHour,
+    gasCookingMinutes,
+    gasBurnerCount,
+    gasBatchPax,
+  ];
+
+  const hasAnyRealGas =
+    realGasValues.some(
+      (value) =>
+        value !== null,
+    );
+
+  const hasCompleteRealGas =
+    realGasValues.every(
+      (value) =>
+        value !== null &&
+        Number.isFinite(value),
+    );
+
   if (
     !name ||
     !category ||
@@ -280,6 +326,16 @@ function normalizeDish(
           gasKgPer100,
         ) ||
         gasKgPer100 < 0
+      )
+    ) ||
+    (
+      hasAnyRealGas &&
+      (
+        !hasCompleteRealGas ||
+        Number(gasBurnerKgPerHour) <= 0 ||
+        Number(gasCookingMinutes) <= 0 ||
+        Number(gasBurnerCount) <= 0 ||
+        Number(gasBatchPax) <= 0
       )
     )
   ) {
@@ -302,6 +358,46 @@ function normalizeDish(
             0,
             gasKgPer100,
           ),
+    gasBurnerKgPerHour:
+      hasCompleteRealGas
+        ? Math.max(
+            0,
+            Number(
+              gasBurnerKgPerHour,
+            ),
+          )
+        : null,
+    gasCookingMinutes:
+      hasCompleteRealGas
+        ? Math.max(
+            0,
+            Number(
+              gasCookingMinutes,
+            ),
+          )
+        : null,
+    gasBurnerCount:
+      hasCompleteRealGas
+        ? Math.max(
+            1,
+            Math.round(
+              Number(
+                gasBurnerCount,
+              ),
+            ),
+          )
+        : null,
+    gasBatchPax:
+      hasCompleteRealGas
+        ? Math.max(
+            1,
+            Math.round(
+              Number(
+                gasBatchPax,
+              ),
+            ),
+          )
+        : null,
     aliases,
   };
 }
@@ -317,6 +413,10 @@ function updateRecipeDish(
     servingQuantity: number;
     servingUnit: string;
     gasKgPer100: number | null;
+    gasBurnerKgPerHour: number | null;
+    gasCookingMinutes: number | null;
+    gasBurnerCount: number | null;
+    gasBatchPax: number | null;
     aliases: string[];
   },
 ) {
@@ -385,6 +485,14 @@ function updateRecipeDish(
           next.servingUnit,
         gasKgPer100:
           next.gasKgPer100,
+        gasBurnerKgPerHour:
+          next.gasBurnerKgPerHour,
+        gasCookingMinutes:
+          next.gasCookingMinutes,
+        gasBurnerCount:
+          next.gasBurnerCount,
+        gasBatchPax:
+          next.gasBatchPax,
       };
     },
   );
@@ -506,6 +614,14 @@ export async function PATCH(
                           dish.servingUnit,
                         gasKgPer100:
                           dish.gasKgPer100,
+                        gasBurnerKgPerHour:
+                          dish.gasBurnerKgPerHour,
+                        gasCookingMinutes:
+                          dish.gasCookingMinutes,
+                        gasBurnerCount:
+                          dish.gasBurnerCount,
+                        gasBatchPax:
+                          dish.gasBatchPax,
                         aliases:
                           dish.aliases,
                       },
@@ -528,6 +644,14 @@ export async function PATCH(
                           dish.servingUnit,
                         gasKgPer100:
                           dish.gasKgPer100,
+                        gasBurnerKgPerHour:
+                          dish.gasBurnerKgPerHour,
+                        gasCookingMinutes:
+                          dish.gasCookingMinutes,
+                        gasBurnerCount:
+                          dish.gasBurnerCount,
+                        gasBatchPax:
+                          dish.gasBatchPax,
                         aliases:
                           dish.aliases,
                       },

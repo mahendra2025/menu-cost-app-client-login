@@ -58,7 +58,7 @@ export default function AdminLpgSettingsPage() {
     try {
       const response =
         await fetch(
-          '/api/admin/gas-cost',
+          '/api/admin/gas-cost/lpg',
           {
             cache:
               'no-store',
@@ -120,7 +120,7 @@ export default function AdminLpgSettingsPage() {
     try {
       const response =
         await fetch(
-          '/api/admin/gas-cost',
+          '/api/admin/gas-cost/lpg',
           {
             method: 'PUT',
             headers: {

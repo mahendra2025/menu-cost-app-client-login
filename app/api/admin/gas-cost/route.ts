@@ -78,7 +78,7 @@ export async function GET() {
         includeInactive:
           true,
         includeDishOverrides:
-          true,
+          false,
       });
 
     return NextResponse.json(
@@ -273,7 +273,7 @@ export async function PUT(
         includeInactive:
           true,
         includeDishOverrides:
-          true,
+          false,
       });
 
     return NextResponse.json({

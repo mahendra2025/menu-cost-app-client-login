@@ -1072,6 +1072,7 @@ export function downloadInternalEventCostingPdf(
           quantity(
             item.quantity,
           ),
+          item.unit || 'pcs',
           decimalMoney(
             item.unitCost,
           ),
@@ -1086,7 +1087,8 @@ export function downloadInternalEventCostingPdf(
     head: [[
       'Item',
       'Quantity',
-      'Rate / Item',
+      'Unit',
+      'Rate / Unit',
       'Total',
     ]],
     body:
@@ -1094,6 +1096,7 @@ export function downloadInternalEventCostingPdf(
         ? disposableRows
         : [[
             'No disposable items entered',
+            '-',
             '-',
             '-',
             '-',
@@ -1133,18 +1136,24 @@ export function downloadInternalEventCostingPdf(
         'bold',
     },
     columnStyles: {
+      0: {
+        cellWidth: 50,
+      },
       1: {
-        cellWidth: 26,
+        cellWidth: 20,
         halign:
           'right',
       },
       2: {
-        cellWidth: 31,
+        cellWidth: 18,
+      },
+      3: {
+        cellWidth: 28,
         halign:
           'right',
       },
-      3: {
-        cellWidth: 31,
+      4: {
+        cellWidth: 30,
         halign:
           'right',
       },
@@ -1158,6 +1167,7 @@ export function downloadInternalEventCostingPdf(
 
   sectionHeading(
     'Gas Cost Details',
+    'Dish-wise LPG calculation uses event override first, then Recipe / Gas Master, and scales to the function guest count.',
   );
 
   const automaticGasRows:
@@ -1189,7 +1199,11 @@ export function downloadInternalEventCostingPdf(
               automaticGasRows.push([
                 label,
                 row.dish,
-                row.category,
+                row.source ===
+                  'EVENT_OVERRIDE'
+                  ? row.category +
+                    ' · EVENT OVERRIDE'
+                  : row.category,
                 String(
                   row.guests,
                 ),

@@ -1821,7 +1821,8 @@ export function downloadGroceryEventPdf(
       head: [[
         'Item',
         'Quantity',
-        'Unit Cost',
+        'Unit',
+        'Rate / Unit',
         'Total Cost',
       ]],
       body:
@@ -1832,6 +1833,7 @@ export function downloadGroceryEventPdf(
                 quantity(
                   item.quantity,
                 ),
+                item.unit || 'pcs',
                 money(
                   item.unitCost,
                 ),
@@ -1842,6 +1844,7 @@ export function downloadGroceryEventPdf(
             )
           : [[
               'No plastic / disposable items entered',
+              '-',
               '-',
               '-',
               money(0),
@@ -1867,21 +1870,25 @@ export function downloadGroceryEventPdf(
       columnStyles: {
         0: {
           cellWidth:
-            88,
+            70,
         },
         1: {
           cellWidth:
-            28,
+            24,
           halign:
             'right',
         },
         2: {
           cellWidth:
+            24,
+        },
+        3: {
+          cellWidth:
             32,
           halign:
             'right',
         },
-        3: {
+        4: {
           halign:
             'right',
           fontStyle:

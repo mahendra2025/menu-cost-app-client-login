@@ -113,16 +113,40 @@ export async function readGasCostMaster(
           )
         : prisma.dishMasterItem.findMany({
             where: {
-              gasKgPer100: {
-                not:
-                  null,
-              },
+              OR: [
+                {
+                  gasKgPer100: {
+                    not:
+                      null,
+                  },
+                },
+                {
+                  gasBurnerKgPerHour: {
+                    not:
+                      null,
+                  },
+                },
+                {
+                  gasNoGas:
+                    true,
+                },
+              ],
             },
             select: {
               name: true,
               category:
                 true,
               gasKgPer100:
+                true,
+              gasBurnerKgPerHour:
+                true,
+              gasCookingMinutes:
+                true,
+              gasBurnerCount:
+                true,
+              gasBatchPax:
+                true,
+              gasNoGas:
                 true,
             },
           }),
@@ -168,7 +192,11 @@ export async function readGasCostMaster(
         .filter(
           (dish) =>
             dish.gasKgPer100 !==
-            null,
+              null ||
+            dish.gasBurnerKgPerHour !==
+              null ||
+            dish.gasNoGas ===
+              true,
         )
         .map(
           (dish) => ({
@@ -177,12 +205,53 @@ export async function readGasCostMaster(
             category:
               dish.category,
             gasKgPer100:
-              Math.max(
-                0,
-                Number(
-                  dish.gasKgPer100,
-                ) || 0,
-              ),
+              dish.gasKgPer100 === null
+                ? undefined
+                : Math.max(
+                    0,
+                    Number(
+                      dish.gasKgPer100,
+                    ) || 0,
+                  ),
+            gasBurnerKgPerHour:
+              dish.gasBurnerKgPerHour === null
+                ? undefined
+                : Math.max(
+                    0,
+                    Number(
+                      dish.gasBurnerKgPerHour,
+                    ) || 0,
+                  ),
+            gasCookingMinutes:
+              dish.gasCookingMinutes === null
+                ? undefined
+                : Math.max(
+                    0,
+                    Number(
+                      dish.gasCookingMinutes,
+                    ) || 0,
+                  ),
+            gasBurnerCount:
+              dish.gasBurnerCount === null
+                ? undefined
+                : Math.max(
+                    1,
+                    Number(
+                      dish.gasBurnerCount,
+                    ) || 1,
+                  ),
+            gasBatchPax:
+              dish.gasBatchPax === null
+                ? undefined
+                : Math.max(
+                    1,
+                    Number(
+                      dish.gasBatchPax,
+                    ) || 1,
+                  ),
+            gasNoGas:
+              dish.gasNoGas ===
+              true,
           }),
         ),
   };

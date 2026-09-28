@@ -428,7 +428,11 @@ export default function GroceryPage() {
       ),
 
       fetch(
-        '/api/client/ingredients',
+        `/api/client/ingredients?city=${encodeURIComponent(
+          savedWork.event.city ||
+            savedWork.profile.city ||
+            '',
+        )}`,
         {
           cache:
             'no-store',

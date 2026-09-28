@@ -351,6 +351,7 @@ export function calculateDisposableCost(
 
     return {
       ...item,
+      unit: String(item.unit || 'pcs').trim() || 'pcs',
       quantity,
       unitCost,
       lineTotal: quantity * unitCost,

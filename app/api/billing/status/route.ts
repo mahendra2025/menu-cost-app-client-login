@@ -1,38 +1,26 @@
 import { NextResponse } from 'next/server';
 import { requireClientTenantId } from '../../../../lib/billingAuth';
-import { prisma } from '../../../../lib/prisma';
-import { getRazorpayConfig } from '../../../../lib/razorpay';
 
 export async function GET() {
-  const tenantId = await requireClientTenantId();
-  if (!tenantId) return NextResponse.json({ error: 'Client login required' }, { status: 401 });
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
-    select: { plan: true, status: true, subscriptionStatus: true, currentPeriodEnd: true, cancelAtPeriodEnd: true, razorpaySubscriptionId: true },
-  });
-  if (!tenant) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-  const subscriptionStatus =
-    String(
-      tenant.subscriptionStatus || '',
-    ).toLowerCase();
+  const workspaceId =
+    await requireClientTenantId();
 
-  const hasProAccess =
-    tenant.plan !== 'FREE' &&
-    ![
-      'halted',
-      'cancelled',
-      'completed',
-      'paused',
-      'expired',
-    ].includes(
-      subscriptionStatus,
+  if (!workspaceId) {
+    return NextResponse.json(
+      { error: 'Owner login required' },
+      { status: 401 },
     );
+  }
 
   return NextResponse.json({
-    ...tenant,
-    hasProAccess,
-    configured:
-      getRazorpayConfig()
-        .configured,
+    workspaceMode: 'SINGLE_BUSINESS',
+    configured: false,
+    plan: 'SINGLE',
+    status: 'ACTIVE',
+    hasProAccess: true,
+    subscriptionStatus: null,
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
+    razorpaySubscriptionId: null,
   });
 }

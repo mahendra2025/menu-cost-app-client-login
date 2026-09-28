@@ -8,16 +8,10 @@ import { duplicateEventWork, validateDuplicateDetails } from '../../../../../lib
 import { calculate } from '../../../../../lib/workCosting';
 import type { WorkState } from '../../../../../lib/types';
 
-const FREE_LIMIT = 5;
-
 function clean(value: unknown, max = 120) {
   return String(value || '').trim().slice(0, max);
 }
 
-function hasProAccess(tenant: { plan: string; subscriptionStatus: string | null }) {
-  const status = String(tenant.subscriptionStatus || '').toLowerCase();
-  return tenant.plan !== 'FREE' && !['halted', 'cancelled', 'completed', 'paused', 'expired'].includes(status);
-}
 
 function record(value: unknown) {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -28,43 +22,35 @@ function record(value: unknown) {
 export async function POST(request: Request) {
   try {
     const tenantId = await requireClientTenantId();
-    if (!tenantId) return NextResponse.json({ error: 'Client login required' }, { status: 401 });
+    if (!tenantId) return NextResponse.json({ error: 'Owner login required' }, { status: 401 });
 
     const body = await request.json();
     const sourceCostingId = clean(body.sourceCostingId);
+    const clientName = clean(body.clientName);
+    const eventDate = clean(body.eventDate, 30);
+    const pax = Math.max(0, Math.round(Number(body.pax) || 0));
+
     if (!sourceCostingId) return NextResponse.json({ error: 'Source costing id required' }, { status: 400 });
 
-    let details;
-    if (body.details !== undefined) {
-      try {
-        details = validateDuplicateDetails(body.details);
-      } catch (error) {
-        return NextResponse.json({ error: error instanceof Error ? error.message : 'Invalid event details' }, { status: 400 });
-      }
-    }
+    const source =
+      await prisma.tenantCostingHistory.findUnique({
+        where: {
+          tenantId_costingId: {
+            tenantId,
+            costingId:
+              sourceCostingId,
+          },
+        },
+      });
 
-    const [tenant, used, source] = await Promise.all([
-      prisma.tenant.findUnique({
-        where: { id: tenantId },
-        select: { plan: true, subscriptionStatus: true },
-      }),
-      prisma.tenantFreeCosting.count({ where: { tenantId } }),
-      prisma.tenantCostingHistory.findUnique({
-        where: { tenantId_costingId: { tenantId, costingId: sourceCostingId } },
-      }),
-    ]);
-
-    if (!tenant) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-    if (!source) return NextResponse.json({ error: 'Completed costing not found' }, { status: 404 });
-
-    const pro = hasProAccess(tenant);
-    if (!pro && used >= FREE_LIMIT) {
-      return NextResponse.json({
-        error: 'Your 5 free costings are used. Upgrade to Pro to duplicate this costing.',
-        code: 'FREE_LIMIT_REACHED',
-        used,
-        limit: FREE_LIMIT,
-      }, { status: 402 });
+    if (!source) {
+      return NextResponse.json(
+        {
+          error:
+            'Completed costing not found',
+        },
+        { status: 404 },
+      );
     }
 
     const snapshot = record(source.snapshot);
@@ -74,10 +60,45 @@ export async function POST(request: Request) {
         !Array.isArray(snapshot.manpower) || !record(snapshot.extras)) {
       return NextResponse.json({ error: 'Saved costing data is incomplete' }, { status: 422 });
     }
+
+    let details;
+    try {
+      details = validateDuplicateDetails(
+        body.details !== undefined
+          ? body.details
+          : {
+              clientName,
+              eventName: clean(record(snapshot.event)?.eventName) || source.eventName,
+              eventDate,
+              pax,
+            },
+      );
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid event details' },
+        { status: 400 },
+      );
+    }
+
     const newCostingId = `costing_${randomUUID()}`;
     const work = duplicateEventWork(snapshot as unknown as WorkState, newCostingId, details);
     const totals = calculate(work);
+    const copiedFunctionCount = Math.max(
+      1,
+      new Set(
+        work.menu.map((item) =>
+          item.serviceId || `${item.dayLabel || ''}::${item.mealLabel || 'Event Menu'}`,
+        ),
+      ).size,
+    );
 
+    /*
+     * Keep the reusable costing setup (menu rates, manpower rates/quantities,
+     * gas settings, transport, disposable setup and selling price) intact.
+     * Only booking identity + guest-sensitive service pax are changed here.
+     * The client workspace immediately re-saves the draft after opening,
+     * which refreshes calculated totals from this copied setup.
+     */
     await prisma.tenantDraftCosting.create({
       data: {
         tenantId,
@@ -99,11 +120,14 @@ export async function POST(request: Request) {
       ok: true,
       sourceCostingId,
       newCostingId,
+      copiedFunctionCount,
       work,
-      hasProAccess: pro,
-      used,
-      limit: FREE_LIMIT,
-      remaining: pro ? null : Math.max(0, FREE_LIMIT - used),
+      workspaceMode: 'SINGLE_BUSINESS',
+      unlimited: true,
+      hasProAccess: true,
+      used: 0,
+      limit: 0,
+      remaining: null,
     });
   } catch (error) {
     console.error('Duplicate costing error:', error);

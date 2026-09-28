@@ -87,15 +87,38 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
   return null;
 }
 
-const adminNav = [
-  { href: '/admin/users', label: 'Clients', mobileLabel: 'Clients', description: 'Accounts and access', icon: 'clients' as NavIcon },
-  { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish catalog and rates', icon: 'dishes' as NavIcon },
-  { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients and recipe costing', icon: 'dishes' as NavIcon },
-  { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Categories and rates', icon: 'ingredients' as NavIcon },
-  { href: '/admin/gas', label: 'Gas Cost', mobileLabel: 'Gas', description: 'LPG settings and category usage', icon: 'ingredients' as NavIcon },
-  { href: '/admin/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Automatic manpower rules', icon: 'clients' as NavIcon },
-  { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Workspace settings', icon: 'profile' as NavIcon },
+const adminNavGroups = [
+  {
+    label: 'Catalog',
+    items: [
+      { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish master and selling rates', icon: 'dishes' as NavIcon },
+      { href: '/admin/recipes', label: 'Recipes', mobileLabel: 'Recipes', description: 'Ingredients, portions and costing', icon: 'dishes' as NavIcon },
+      { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Ingredient rates and categories', icon: 'ingredients' as NavIcon },
+    ],
+  },
+  {
+    label: 'Cost Masters',
+    items: [
+      { href: '/admin/gas', label: 'Gas Cost', mobileLabel: 'Gas', description: 'LPG rates and dish gas profiles', icon: 'ingredients' as NavIcon },
+      { href: '/admin/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Automatic staffing rules', icon: 'clients' as NavIcon },
+    ],
+  },
+  {
+    label: 'Workspace',
+    items: [
+      { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Business and workspace settings', icon: 'profile' as NavIcon },
+    ],
+  },
 ];
+
+const adminNav =
+  adminNavGroups.flatMap(
+    (group) =>
+      group.items.map((item) => ({
+        ...item,
+        section: group.label,
+      })),
+  );
 
 const clientWorkflowNav = [
   { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Upload and review menu', icon: 'event' as ClientNavIcon },
@@ -109,7 +132,8 @@ const clientWorkflowNav = [
 
 const clientWorkspaceNav = [
   { href: '/app/history', match: '/app/history', label: 'History', description: 'Saved events', icon: 'history' as ClientNavIcon },
-  { href: '/app/ingredients', match: '/app/ingredients', label: 'My Ingredients', description: 'Custom ingredient rates', icon: 'ingredients' as ClientNavIcon },
+  { href: '/app/ingredients', match: '/app/ingredients', label: 'Ingredient Rates', description: 'Business + city + global rates', icon: 'ingredients' as ClientNavIcon },
+  { href: '/admin/dishes', match: '/admin/dishes', label: 'Master Data', description: 'Dishes, recipes and cost masters', icon: 'ingredients' as ClientNavIcon },
   { href: '/app/profile', match: '/app/profile', label: 'Profile', description: 'Business settings', icon: 'profile' as ClientNavIcon },
 ];
 
@@ -249,6 +273,31 @@ export default function AppShell({
     cachedShellSession = current;
     setSession(current);
     setReady(true);
+
+    /*
+     * Existing browsers from the former SaaS model may not yet
+     * have the owner/master-data cookie. Upgrade only the retained
+     * workspace; reject stale secondary-account sessions.
+     */
+    void fetch(
+      '/api/client/session',
+      {
+        method: 'POST',
+      },
+    )
+      .then((response) => {
+        if (
+          response.status === 401 ||
+          response.status === 403
+        ) {
+          cachedShellSession = null;
+          logout();
+          router.replace('/login');
+        }
+      })
+      .catch(() => {
+        // Keep the local workspace available during a temporary network issue.
+      });
   }, [router]);
 
   useEffect(() => {
@@ -273,7 +322,12 @@ export default function AppShell({
     };
   }, [moreOpen]);
 
-  const isAdmin = session?.role === 'ADMIN';
+  // Single-business mode: the same owner session uses both
+  // event pages and master-data pages. Admin styling is route-based,
+  // not a separate account/role.
+  const isAdmin =
+    pathname === '/admin' ||
+    pathname.startsWith('/admin/');
   const isDishWorkspace =
     pathname === '/admin/dishes' ||
     pathname.startsWith('/admin/dishes/');
@@ -290,6 +344,20 @@ export default function AppShell({
     (href === '/admin/ingredients' && isIngredientWorkspace) ||
     (href === '/admin/gas' && isGasWorkspace);
 
+  const activeAdminItem =
+    isAdmin
+      ? adminNav.find(
+          (item) =>
+            isAdminNavItemActive(
+              item.href,
+            ),
+        )
+      : undefined;
+
+  const activeAdminSection =
+    activeAdminItem?.section ||
+    'Master Data';
+
   const clientFlow =
     !isAdmin
       ? clientFlowForPath(pathname)
@@ -305,9 +373,16 @@ export default function AppShell({
   const signOut = () => {
     cachedShellSession = null;
     logout();
-    void fetch('/api/client/session', {
-      method: 'DELETE',
-    });
+
+    void Promise.all([
+      fetch('/api/client/session', {
+        method: 'DELETE',
+      }),
+      fetch('/api/admin/session', {
+        method: 'DELETE',
+      }),
+    ]);
+
     router.replace('/login');
   };
 
@@ -322,7 +397,7 @@ export default function AppShell({
   return (
     <main className={`page-shell app-frame admin-theme ${isAdmin ? 'admin-workspace-shell' : 'client-theme'}`}>
       <header className="topbar no-print">
-        <Link href={isAdmin ? '/admin/users' : '/app/event?resume=1'} className="brand-chip">
+        <Link href="/app/event?resume=1" className="brand-chip">
           <span className="brand-logo">MC</span>
           <span className="brand-copy">
             <b>Menu Costing</b>
@@ -345,9 +420,9 @@ export default function AppShell({
             </label>
           ) : null}
 
-          <span className={`account-status ${session?.status === 'ACTIVE' ? 'active' : ''}`}>
+          <span className="account-status active">
             <i aria-hidden="true" />
-            {isAdmin ? 'Admin' : session?.status === 'ACTIVE' ? t('Active') : session?.status}
+            Owner Workspace
           </span>
 
           <button
@@ -366,32 +441,56 @@ export default function AppShell({
 
       <div className="app-layout">
         {isAdmin ? (
-          <aside className="app-sidebar no-print">
-            <div className="sidebar-heading">
-              <span>Admin workspace</span>
-              <b>Manage your catalog</b>
+          <aside className="app-sidebar admin-desktop-sidebar no-print">
+            <div className="sidebar-heading admin-sidebar-heading">
+              <span>Business controls</span>
+              <b>Master Data</b>
+              <small>Dishes, ingredients, gas and manpower</small>
             </div>
 
-            <nav className="sidebar-nav" aria-label="Admin navigation">
-              {adminNav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={isAdminNavItemActive(item.href) ? 'active' : ''}
-                  aria-current={isAdminNavItemActive(item.href) ? 'page' : undefined}
+            <nav className="sidebar-nav admin-sidebar-nav" aria-label="Admin navigation">
+              {adminNavGroups.map((group) => (
+                <div
+                  className="admin-nav-group"
+                  key={group.label}
                 >
-                  <NavIconMark icon={item.icon} />
-                  <span className="nav-copy">
-                    <b>{item.label}</b>
-                    <small>{item.description}</small>
+                  <span className="admin-nav-group-label">
+                    {group.label}
                   </span>
-                </Link>
+
+                  <div className="admin-nav-group-links">
+                    {group.items.map((item) => {
+                      const active =
+                        isAdminNavItemActive(
+                          item.href,
+                        );
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={active ? 'active' : ''}
+                          aria-current={active ? 'page' : undefined}
+                        >
+                          <NavIconMark icon={item.icon} />
+                          <span className="nav-copy">
+                            <b>{item.label}</b>
+                            <small>{item.description}</small>
+                          </span>
+                          <span className="admin-nav-chevron" aria-hidden="true">
+                            ›
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </nav>
 
-            <div className="sidebar-support">
-              <span>Catalog workspace</span>
-              <p>Review dish names, categories and rates before saving changes.</p>
+            <div className="sidebar-support admin-sidebar-support">
+              <span>Single business workspace</span>
+              <p>Changes here apply to this catering business and future event costings.</p>
             </div>
           </aside>
         ) : null}
@@ -458,37 +557,31 @@ export default function AppShell({
         ) : null}
 
         <div className="app-workspace">
-          {session?.status === 'EXPIRED' && session.role === 'CLIENT' ? (
-            <div className="alert-card no-print">
-              <b>Plan expired.</b> Upload, cost and final costing are locked. Renew ₹999/month from admin to continue.
-            </div>
-          ) : null}
-
           {isAdmin && !hidePageTitle ? (
-            <section className="page-title no-print">
-              <div>
-                <span className="page-eyebrow">Menu Costing Admin</span>
+            <section className="page-title admin-page-head no-print">
+              <div className="admin-page-head-copy">
+                <div className="admin-breadcrumb" aria-label="Admin location">
+                  <span>Business</span>
+                  <i aria-hidden="true">/</i>
+                  <b>{activeAdminSection}</b>
+                </div>
+
                 <h1>{title}</h1>
-                <p>{subtitle ?? 'Plan, price and present every event with confidence.'}</p>
+                <p>{subtitle ?? 'Manage master data for this catering business.'}</p>
               </div>
 
-              <div className="page-progress" aria-label="Admin workspace">
-                <span>Workspace</span>
-                <div><i style={{ width: '100%' }} /></div>
+              <div className="admin-page-context">
+                <span>Owner workspace</span>
+                <b>{activeAdminItem?.label || title}</b>
+                <small>Single-business master data</small>
               </div>
             </section>
           ) : null}
 
           {isAdmin && isDishWorkspace ? (
             <nav
-              className="action-row no-print"
+              className="action-row admin-section-tabs no-print"
               aria-label="Dish management"
-              style={{
-                justifyContent: 'flex-start',
-                gap: '10px',
-                marginBottom: '18px',
-                flexWrap: 'wrap',
-              }}
             >
               <Link
                 href="/admin/dishes"
@@ -540,14 +633,8 @@ export default function AppShell({
 
           {isAdmin && isIngredientWorkspace ? (
             <nav
-              className="action-row no-print"
+              className="action-row admin-section-tabs no-print"
               aria-label="Ingredient management"
-              style={{
-                justifyContent: 'flex-start',
-                gap: '10px',
-                marginBottom: '18px',
-                flexWrap: 'wrap',
-              }}
             >
               <Link
                 href="/admin/ingredients"
@@ -578,6 +665,74 @@ export default function AppShell({
                 }
               >
                 Rate Health
+              </Link>
+            </nav>
+          ) : null}
+
+          {isAdmin && isGasWorkspace ? (
+            <nav
+              className="action-row admin-section-tabs no-print"
+              aria-label="Gas cost management"
+            >
+              <Link
+                href="/admin/gas"
+                className={
+                  pathname === '/admin/gas'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/gas'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Category Rates
+              </Link>
+              <Link
+                href="/admin/gas/profiles"
+                className={
+                  pathname === '/admin/gas/profiles'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/gas/profiles'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Dish Gas Profiles
+              </Link>
+              <Link
+                href="/admin/gas/sweets"
+                className={
+                  pathname === '/admin/gas/sweets'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/gas/sweets'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                Sweet Gas Master
+              </Link>
+              <Link
+                href="/admin/settings/cost-masters/lpg"
+                className={
+                  pathname === '/admin/settings/cost-masters/lpg'
+                    ? 'primary-button'
+                    : 'ghost-button'
+                }
+                aria-current={
+                  pathname === '/admin/settings/cost-masters/lpg'
+                    ? 'page'
+                    : undefined
+                }
+              >
+                LPG Settings
               </Link>
             </nav>
           ) : null}
@@ -734,7 +889,7 @@ export default function AppShell({
                   </Link>
                   <Link href="/app/ingredients">
                     <b>{t('Ingredients')}</b>
-                    <small>{t('My custom rates')}</small>
+                    <small>{t('Business + city rates')}</small>
                   </Link>
                   <Link href="/app/profile">
                     <b>{t('Profile')}</b>
@@ -797,9 +952,9 @@ export default function AppShell({
 export function LockedCard() {
   return (
     <div className="locked-card">
-      <h2>App locked</h2>
-      <p>Your plan is expired. Only Profile and Logout are available until renewal.</p>
-      <Link href="/app/profile" className="primary-button">Open Profile</Link>
+      <h2>Workspace unavailable</h2>
+      <p>Sign in again to continue using the business workspace.</p>
+      <Link href="/login" className="primary-button">Sign In</Link>
     </div>
   );
 }

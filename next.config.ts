@@ -27,6 +27,18 @@ const nextConfig: NextConfig = {
         headers: noStoreHeaders,
       },
       {
+        source: '/admin/gas',
+        headers: noStoreHeaders,
+      },
+      {
+        source: '/admin/settings/cost-masters/lpg',
+        headers: noStoreHeaders,
+      },
+      {
+        source: '/api/admin/gas-cost/:path*',
+        headers: noStoreHeaders,
+      },
+      {
         source: '/sw.js',
         headers: [
           {

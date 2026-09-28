@@ -243,6 +243,8 @@ export type ExtraCost = {
 export type DisposableCostItem = {
   id: string;
   name: string;
+  /** Purchase / usage unit, for example pcs, pack, roll, kg or litre. */
+  unit?: string;
   quantity: number;
   unitCost: number;
 };
@@ -323,6 +325,17 @@ export type ManpowerRow = {
   servicePax?: number;
 };
 
+export type EventGasOverride = {
+  key: string;
+  serviceKey?: string;
+  serviceId?: string;
+  dishId?: string;
+  dishName: string;
+  gasKgPer100: number;
+  noGas?: boolean;
+  updatedAt?: string;
+};
+
 export type BusinessProfile = {
   businessName: string;
   ownerName: string;
@@ -339,6 +352,11 @@ export type WorkState = {
   manpowerInputs?: ManpowerInputs;
   extras: ExtraCost;
   disposableItems: DisposableCostItem[];
+  /**
+   * Per-event LPG overrides. These affect only this costing and never
+   * write back to Recipe / Dish Master.
+   */
+  gasEventOverrides?: EventGasOverride[];
   gasCostMaster?: {
     setting: { cylinderPrice: number; cylinderWeightKg: number };
     categoryRates: Array<{ categoryName: string; lpgKgPer100: number; basePax: number; active: boolean }>;
