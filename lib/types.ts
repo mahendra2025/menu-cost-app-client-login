@@ -94,6 +94,10 @@ export type CustomerPlan = {
   functions: CustomerFunctionPlan[];
 };
 
+import type {
+  MenuDishModifiers,
+} from './menuDishModifiers';
+
 export type MenuItem = {
   id: string;
   name: string;
@@ -101,6 +105,17 @@ export type MenuItem = {
   costPerPlate: number;
   portionQuantity?: number;
   portionUnit?: string;
+
+  /*
+   * Parsed directly from the uploaded menu.
+   *
+   * Examples:
+   * Jain Paneer Tikka
+   * Dal Fry - No Onion Garlic
+   * Water Bottle - 200 ml
+   * Gulab Jamun - 2 pcs
+   */
+  dishModifiers?: MenuDishModifiers;
 
   /*
    * Optional LPG override copied from Dish Master when available.
