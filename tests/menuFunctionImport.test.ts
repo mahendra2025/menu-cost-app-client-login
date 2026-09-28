@@ -136,3 +136,54 @@ test(
     assert.equal(result.newItems[0].servicePax, 120);
   },
 );
+
+
+test(
+  'keeps standard and Jain variants in the same function',
+  () => {
+    const standard =
+      dish(
+        'standard-paneer',
+        'Paneer Tikka',
+        'Event Menu',
+      );
+
+    const jain: MenuItem = {
+      ...dish(
+        'jain-paneer',
+        'Paneer Tikka',
+        'Event Menu',
+      ),
+      dishModifiers: {
+        tags: [
+          'JAIN',
+        ],
+      },
+    };
+
+    const result =
+      mergeFunctionMenu({
+        existingMenu: [],
+        detectedMenu: [
+          standard,
+          jain,
+        ],
+        functionName:
+          'Dinner',
+        functionPax:
+          300,
+        defaultPax:
+          0,
+      });
+
+    assert.equal(
+      result.menu.length,
+      2,
+    );
+
+    assert.equal(
+      result.newItems.length,
+      2,
+    );
+  },
+);
