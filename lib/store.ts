@@ -1835,7 +1835,8 @@ function splitMenuText(
     const cleanedHeadingKey = normalizeMenuHeading(line);
 
     if (
-      cleanedHeadingKey in MENU_HEADING_CATEGORIES
+      cleanedHeadingKey in MENU_HEADING_CATEGORIES &&
+      !modifierDetection.modifiers
     ) {
       activeCategory =
         MENU_HEADING_CATEGORIES[cleanedHeadingKey] ?? undefined;
@@ -1874,7 +1875,8 @@ function splitMenuText(
         MENU_HEADINGS.has(
           normalized,
         ) &&
-        !isExplicitMenuItem
+        !isExplicitMenuItem &&
+        !modifierDetection.modifiers
       ) {
         continue;
       }
