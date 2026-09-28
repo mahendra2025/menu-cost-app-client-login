@@ -980,8 +980,15 @@ export default function EventPage() {
     () => new Set(),
   );
 
+  const [
+    smartDraftRecipeKeys,
+    setSmartDraftRecipeKeys,
+  ] = useState<Set<string>>(
+    () => new Set(),
+  );
+
   useEffect(() => {
-    function recipeKeysFromCatalog(
+    function recipeStateFromCatalog(
       value: unknown,
     ) {
       if (
@@ -992,7 +999,12 @@ export default function EventPage() {
           value,
         )
       ) {
-        return new Set<string>();
+        return {
+          available:
+            new Set<string>(),
+          smartDrafts:
+            new Set<string>(),
+        };
       }
 
       const row =
@@ -1005,28 +1017,52 @@ export default function EventPage() {
           >;
         };
 
-      return new Set<string>(
-        (
-          Array.isArray(
-            row.dishes,
-          )
-            ? row.dishes
-            : []
-        )
-          .map(
-            (dish) =>
-              dishNameKey(
-                String(
-                  dish.dishName ||
-                  dish.name ||
-                  '',
-                ),
-              ),
-          )
-          .filter(Boolean),
-      );
-    }
+      const available =
+        new Set<string>();
+      const smartDrafts =
+        new Set<string>();
 
+      (
+        Array.isArray(
+          row.dishes,
+        )
+          ? row.dishes
+          : []
+      ).forEach(
+        (dish) => {
+          const key =
+            dishNameKey(
+              String(
+                dish.dishName ||
+                dish.name ||
+                '',
+              ),
+            );
+
+          if (!key) {
+            return;
+          }
+
+          available.add(
+            key,
+          );
+
+          if (
+            dish.generatedRecipe ===
+            true
+          ) {
+            smartDrafts.add(
+              key,
+            );
+          }
+        },
+      );
+
+      return {
+        available,
+        smartDrafts,
+      };
+    }
     async function refreshRecipeKeys() {
       try {
         const raw =
@@ -1035,12 +1071,18 @@ export default function EventPage() {
           );
 
         if (raw) {
-          setAvailableRecipeKeys(
-            recipeKeysFromCatalog(
+          const recipeState =
+            recipeStateFromCatalog(
               JSON.parse(
                 raw,
               ),
-            ),
+            );
+
+          setAvailableRecipeKeys(
+            recipeState.available,
+          );
+          setSmartDraftRecipeKeys(
+            recipeState.smartDrafts,
           );
         }
       } catch {
@@ -1064,10 +1106,16 @@ export default function EventPage() {
         const data =
           await response.json();
 
-        setAvailableRecipeKeys(
-          recipeKeysFromCatalog(
+        const recipeState =
+          recipeStateFromCatalog(
             data.catalog,
-          ),
+          );
+
+        setAvailableRecipeKeys(
+          recipeState.available,
+        );
+        setSmartDraftRecipeKeys(
+          recipeState.smartDrafts,
         );
       } catch {
         // Keep the last known cache result.
@@ -3647,11 +3695,19 @@ export default function EventPage() {
   function openDetectedDishRecipe(
     item: MenuItem,
   ) {
+    const itemKey =
+      dishNameKey(
+        item.name,
+      );
+
     const recipeAvailable =
       availableRecipeKeys.has(
-        dishNameKey(
-          item.name,
-        ),
+        itemKey,
+      );
+
+    const smartDraft =
+      smartDraftRecipeKeys.has(
+        itemKey,
       );
 
     const params =
@@ -3660,6 +3716,12 @@ export default function EventPage() {
           ? {
               recipe:
                 item.name,
+              ...(smartDraft
+                ? {
+                    smartDraft:
+                      '1',
+                  }
+                : {}),
             }
           : {
               create:
@@ -7585,6 +7647,35 @@ export default function EventPage() {
   const detectionReviewItems =
     detectionPreview?.menu || [];
 
+  const smartDraftDetectedItems =
+    Array.from(
+      new Map<string, MenuItem>(
+        detectionReviewItems
+          .filter(
+            (item) =>
+              item.coverageStatus !==
+                'REJECTED' &&
+              smartDraftRecipeKeys.has(
+                dishNameKey(
+                  item.name,
+                ),
+              ),
+          )
+          .map(
+            (item) => [
+              dishNameKey(
+                item.name,
+              ),
+              item,
+            ] as const,
+          )
+          .filter(
+            ([key]) =>
+              Boolean(key),
+          ),
+      ).values(),
+    );
+
   const missingDetectedRecipeItems =
     Array.from(
       new Map<string, MenuItem>(
@@ -9899,6 +9990,22 @@ export default function EventPage() {
                       </div>
                     ) : null}
 
+                    {smartDraftDetectedItems.length > 0 ? (
+                      <div className="event-review-add-actions no-print">
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() =>
+                            openDetectedDishRecipe(
+                              smartDraftDetectedItems[0],
+                            )
+                          }
+                        >
+                          Review {smartDraftDetectedItems.length} Smart Recipe {smartDraftDetectedItems.length === 1 ? 'Draft' : 'Drafts'}
+                        </button>
+                      </div>
+                    ) : null}
+
                     {missingDetectedRecipeItems.length > 0 ? (
                       <div className="event-review-add-actions no-print">
                         <button
@@ -10015,7 +10122,15 @@ export default function EventPage() {
 
                                       <div className="event-review-dish-actions">
                                         {item.detectionSource !== 'catalog' ? (
-                                          availableRecipeKeys.has(dishNameKey(item.name)) ? (
+                                          smartDraftRecipeKeys.has(dishNameKey(item.name)) ? (
+                                            <button
+                                              type="button"
+                                              className="make-recipe"
+                                              onClick={() => openDetectedDishRecipe(item)}
+                                            >
+                                              ✦ Smart draft ready
+                                            </button>
+                                          ) : availableRecipeKeys.has(dishNameKey(item.name)) ? (
                                             <span className="event-review-master-saved">
                                               <span aria-hidden="true">✓</span> Recipe available
                                             </span>
@@ -13780,6 +13895,22 @@ export default function EventPage() {
                   ) : null}
                 </div>
 
+                {smartDraftDetectedItems.length > 0 ? (
+                  <div className="event-review-add-actions no-print">
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() =>
+                        openDetectedDishRecipe(
+                          smartDraftDetectedItems[0],
+                        )
+                      }
+                    >
+                      Review {smartDraftDetectedItems.length} Smart Recipe {smartDraftDetectedItems.length === 1 ? 'Draft' : 'Drafts'}
+                    </button>
+                  </div>
+                ) : null}
+
                 {missingDetectedRecipeItems.length > 0 ? (
                   <div className="event-review-add-actions no-print">
                     <button
@@ -13993,7 +14124,15 @@ export default function EventPage() {
                                     <div className="menu-detection-item-actions">
                                       {item.detectionSource !== 'catalog' &&
                                       item.coverageStatus !== 'REJECTED' ? (
-                                        availableRecipeKeys.has(dishNameKey(item.name)) ? (
+                                        smartDraftRecipeKeys.has(dishNameKey(item.name)) ? (
+                                          <button
+                                            type="button"
+                                            className="make-recipe"
+                                            onClick={() => openDetectedDishRecipe(item)}
+                                          >
+                                            ✦ Smart draft ready
+                                          </button>
+                                        ) : availableRecipeKeys.has(dishNameKey(item.name)) ? (
                                           <span className="event-review-master-saved">
                                             <span aria-hidden="true">✓</span> Recipe available
                                           </span>
