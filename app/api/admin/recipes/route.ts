@@ -21,6 +21,10 @@ import {
   applyRecipeWastage,
 } from '../../../../lib/recipeCosting';
 
+import {
+  extractMenuDishModifiers,
+} from '../../../../lib/menuDishModifiers';
+
 const CATALOG_ID = 'global';
 const CATEGORY_CATALOG_ID = 'global';
 
@@ -758,13 +762,28 @@ export async function GET(request: Request) {
       }
 
       existingRecipeNames.add(recipe.normalizedName);
+
+      const inferredModifiers =
+        extractMenuDishModifiers(
+          recipe.name,
+        ).modifiers;
+
       visibleGeneratedRecipes.push({
         dishName: recipe.name,
         category: recipe.category || 'Other',
         subcategory: '',
         baseGuests: Math.max(1, Number(recipe.baseGuests) || 100),
-        servingSize: 1,
-        servingUnit: 'serving',
+        servingSize:
+          inferredModifiers?.portionQuantity ||
+          1,
+        servingUnit:
+          inferredModifiers?.portionUnit ||
+          'serving',
+        pieceWeightGrams:
+          inferredModifiers?.pieceWeightGrams ||
+          0,
+        dishModifiers:
+          inferredModifiers,
         dishRate: Math.max(0, Number(recipe.costPerPlate) || 0),
         ingredients: Array.isArray(recipe.ingredients) ? recipe.ingredients : [],
         generatedRecipe: true,
