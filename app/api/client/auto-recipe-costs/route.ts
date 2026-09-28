@@ -37,6 +37,11 @@ import {
   structuredAiProvider,
 } from '../../../../lib/structuredAi';
 
+import {
+  readMenuDishModifiers,
+  type MenuDishModifiers,
+} from '../../../../lib/menuDishModifiers';
+
 /*
  * Permanent large-menu costing limits.
  *
@@ -64,6 +69,7 @@ function withWastage(costPerPlate: number) {
 type RequestedDish = {
   name: string;
   category: string;
+  modifiers?: MenuDishModifiers;
 };
 
 function cleanDish(value: unknown): RequestedDish | null {
@@ -79,6 +85,10 @@ function cleanDish(value: unknown): RequestedDish | null {
   return {
     name,
     category: String(row.category || 'Other').trim().slice(0, 60) || 'Other',
+    modifiers:
+      readMenuDishModifiers(
+        row.modifiers,
+      ),
   };
 }
 
@@ -152,6 +162,8 @@ async function generateRecipes(
         'Quantities must be realistic production quantities, not per-person quantities.',
         'Use kg, gram, ltr, ml, piece, or packet exactly as supplied.',
         'This is an editable costing estimate. Return 6 to 12 material cost drivers per dish, never minor garnishes or optional ingredients.',
+        'Respect dish modifiers exactly. JAIN means exclude onion, garlic and root vegetables. NO_ONION_GARLIC means exclude onion and garlic. SATVIK means exclude onion and garlic and keep the recipe sattvik. VEGAN means exclude dairy, ghee and other animal-derived ingredients. LIVE means make the ingredient plan practical for live-counter production.',
+        'If portionQuantity/portionUnit is present, treat it as the serving size per guest; recipe ingredient quantities must still be for the full 100-guest batch.',
       ].join('\n'),
       input: JSON.stringify({ dishes, availableIngredients }),
     });
