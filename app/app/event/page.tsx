@@ -315,15 +315,20 @@ function detectEventDetails(
     }
 
     const labeledPax = line.match(
-      /^(?:pax|guests?|members?|persons?|people)\s*[:=-]?\s*(\d{1,6})\b/i,
+      /^(?:pax|guests?|members?|persons?|people)\s*[:=-]?\s*([\d,]{1,9})\b/i,
     );
     const trailingPax = line.match(
-      /\b(\d{1,6})\s*(?:pax|guests?|members?|persons?|people)\b/i,
+      /\b([\d,]{1,9})\s*(?:pax|guests?|members?|persons?|people)\b/i,
     );
     const pax = Number(
-      labeledPax?.[1] ||
-        trailingPax?.[1] ||
-        0,
+      String(
+        labeledPax?.[1] ||
+          trailingPax?.[1] ||
+          '0',
+      ).replace(
+        /,/g,
+        '',
+      ),
     );
 
     if (pax > Number(detected.pax || 0)) {
