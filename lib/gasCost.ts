@@ -136,10 +136,26 @@ export type GasFunctionSubtotal = {
   gasCost: number;
 };
 
+export type GasCategorySubtotal = {
+  key: string;
+  serviceKey: string;
+  serviceId?: string;
+  dayLabel: string;
+  mealLabel: string;
+  category: string;
+  guests: number;
+  dishCount: number;
+  gasKg: number;
+  gasCost: number;
+  gasKgPer100: number;
+  sourceCounts: Record<GasDishCostRow['source'], number>;
+};
+
 export type EventGasCostBreakdown = {
   setting: LpgCostSetting;
   lpgRatePerKg: number;
   rows: GasDishCostRow[];
+  categoryTotals: GasCategorySubtotal[];
   functionTotals: GasFunctionSubtotal[];
   totalGasKg: number;
   totalGasCost: number;
@@ -1149,6 +1165,100 @@ export function calculateEventGas(
     },
   );
 
+  const categorySubtotalMap =
+    new Map<
+      string,
+      GasCategorySubtotal
+    >();
+
+  rows.forEach(
+    (row) => {
+      const category =
+        String(
+          row.category ||
+          'Other',
+        ).trim() ||
+        'Other';
+
+      const key =
+        `${row.serviceKey}::${normalizeGasCategoryKey(category) || 'other'}`;
+
+      const current =
+        categorySubtotalMap.get(
+          key,
+        ) || {
+          key,
+          serviceKey:
+            row.serviceKey,
+          serviceId:
+            row.serviceId,
+          dayLabel:
+            row.dayLabel,
+          mealLabel:
+            row.mealLabel,
+          category,
+          guests:
+            row.guests,
+          dishCount: 0,
+          gasKg: 0,
+          gasCost: 0,
+          gasKgPer100: 0,
+          sourceCounts:
+            {} as Record<
+              GasDishCostRow['source'],
+              number
+            >,
+        };
+
+      current.guests =
+        Math.max(
+          current.guests,
+          row.guests,
+        );
+
+      current.dishCount +=
+        1;
+
+      current.gasKg +=
+        row.gasKg;
+
+      current.gasCost +=
+        row.gasCost;
+
+      current.sourceCounts[
+        row.source
+      ] =
+        (
+          current
+            .sourceCounts[
+              row.source
+            ] || 0
+        ) + 1;
+
+      categorySubtotalMap.set(
+        key,
+        current,
+      );
+    },
+  );
+
+  const categoryTotals =
+    Array.from(
+      categorySubtotalMap.values(),
+    ).map(
+      (item) => ({
+        ...item,
+        gasKgPer100:
+          item.guests > 0
+            ? (
+                item.gasKg *
+                100
+              ) /
+              item.guests
+            : 0,
+      }),
+    );
+
   const functionTotals =
     Array.from(
       subtotalMap.values(),
@@ -1175,6 +1285,7 @@ export function calculateEventGas(
     lpgRatePerKg:
       ratePerKg,
     rows,
+    categoryTotals,
     functionTotals,
     totalGasKg,
     totalGasCost,

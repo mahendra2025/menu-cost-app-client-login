@@ -606,6 +606,12 @@ export default function OperationsCostPage() {
                 item.serviceKey === row.id,
             ) || [];
 
+          const gasCategories =
+            gasBreakdown?.categoryTotals.filter(
+              (item) =>
+                item.serviceKey === row.id,
+            ) || [];
+
           const eventGasDishCount =
             gasRows.filter(
               (dish) =>
@@ -678,6 +684,90 @@ export default function OperationsCostPage() {
                   {eventGasDishCount} event override · {realGasDishCount} real profile · {measuredGasDishCount} measured · {fallbackGasDishCount} fallback estimate
                 </small>
               </div>
+
+              {gasCategories.length ? (
+                <section
+                  className="no-print"
+                  aria-label="Category gas requirement"
+                  style={{
+                    marginTop: 14,
+                    marginBottom: 14,
+                    display: 'grid',
+                    gap: 10,
+                  }}
+                >
+                  <div className="operations-section-title" style={{ marginBottom: 0 }}>
+                    <div>
+                      <strong>Category LPG requirement</strong>
+                      <small>Combined gas from all dishes in each category for this function.</small>
+                    </div>
+                    <b>{gasCategories.reduce((sum, item) => sum + item.gasKg, 0).toFixed(2)} kg</b>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                      gap: 10,
+                    }}
+                  >
+                    {gasCategories.map((category) => {
+                      const realCount =
+                        (category.sourceCounts.REAL_DISH_PROFILE || 0) +
+                        (category.sourceCounts.DISH_OVERRIDE || 0) +
+                        (category.sourceCounts.EVENT_OVERRIDE || 0);
+                      const fallbackCount =
+                        (category.sourceCounts.CATEGORY || 0) +
+                        (category.sourceCounts.SAFE_COOKING_FALLBACK || 0) +
+                        (category.sourceCounts.SWEET_STARTER || 0) +
+                        (category.sourceCounts.SABJI_STARTER || 0) +
+                        (category.sourceCounts.CHAAT_STARTER || 0) +
+                        (category.sourceCounts.CHINESE_STARTER || 0) +
+                        (category.sourceCounts.DAL_KADHI_STARTER || 0) +
+                        (category.sourceCounts.FARSAN_STARTER || 0) +
+                        (category.sourceCounts.INDIAN_BREAD_STARTER || 0) +
+                        (category.sourceCounts.ITALIAN_STARTER || 0) +
+                        (category.sourceCounts.MOVING_STARTER || 0) +
+                        (category.sourceCounts.RICE_STARTER || 0) +
+                        (category.sourceCounts.SOUTH_INDIAN_STARTER || 0) +
+                        (category.sourceCounts.STARTER_ESTIMATE || 0) +
+                        (category.sourceCounts.THAI_STARTER || 0);
+
+                      return (
+                        <article
+                          key={category.key}
+                          style={{
+                            border: '1px solid var(--border)',
+                            borderRadius: 14,
+                            padding: 12,
+                            display: 'grid',
+                            gap: 6,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                            <div>
+                              <small className="muted">{category.dishCount} dish{category.dishCount === 1 ? '' : 'es'}</small>
+                              <b style={{ display: 'block' }}>{category.category}</b>
+                            </div>
+                            <strong>{money(category.gasCost)}</strong>
+                          </div>
+                          <div style={{ display: 'grid', gap: 3 }}>
+                            <span>
+                              <b>{category.gasKg.toFixed(2)} kg</b> total LPG
+                            </span>
+                            <small className="muted">
+                              {category.gasKgPer100.toFixed(2)} kg / 100 guests · ₹{(gasBreakdown?.lpgRatePerKg || 0).toFixed(2)} / kg
+                            </small>
+                            <small className="muted">
+                              {realCount} real/measured · {fallbackCount} estimated
+                            </small>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
 
               {gasRows.length ? (
                 <div className="gas-mini-table gas-real-table">
