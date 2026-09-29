@@ -20,6 +20,7 @@ import type {
 
 import { calculate } from './workCosting';
 import { sortMenuItemsByCategoryPriority } from './menuCategoryPriority';
+import { MANPOWER_ROLE_MASTER } from './manpowerMaster';
 export { calculate, buildMenuCostBreakdown, getMenuServiceKey } from './workCosting';
 
 import {
@@ -314,6 +315,126 @@ function customManpowerRolesKey(tenantId: string): string {
 
 function disposableRateMasterKey(tenantId: string): string {
   return `menu_cost_disposable_rate_master_${tenantId}_v1`;
+}
+
+function manpowerRateMasterKey(tenantId: string): string {
+  return `menu_cost_manpower_rate_master_${tenantId}_v1`;
+}
+
+export type ManpowerRateMasterItem = {
+  id: string;
+  role: string;
+  department: string;
+  rate: number;
+  customRole?: boolean;
+};
+
+export function loadManpowerRateMaster(
+  tenantId: string,
+): ManpowerRateMasterItem[] {
+  if (typeof window === 'undefined') {
+    return MANPOWER_ROLE_MASTER.map((item) => ({
+      id: item.id,
+      role: item.role,
+      department: item.department,
+      rate: Math.max(0, Number(item.rate) || 0),
+    }));
+  }
+
+  const saved = safeJsonParse<ManpowerRateMasterItem[]>(
+    window.localStorage.getItem(manpowerRateMasterKey(tenantId)),
+    [],
+  );
+
+  const customRoles = loadCustomManpowerRoles(tenantId);
+  const savedByRole = new Map(
+    (Array.isArray(saved) ? saved : []).map((item) => [
+      String(item.role || '').trim().toLocaleLowerCase('en-IN'),
+      item,
+    ]),
+  );
+
+  const builtIn = MANPOWER_ROLE_MASTER.map((item) => {
+    const matched = savedByRole.get(item.role.toLocaleLowerCase('en-IN'));
+    return {
+      id: item.id,
+      role: item.role,
+      department: item.department,
+      rate: Math.max(0, Number(matched?.rate ?? item.rate) || 0),
+    };
+  });
+
+  const custom = customRoles.map((item) => {
+    const matched = savedByRole.get(item.role.toLocaleLowerCase('en-IN'));
+    return {
+      id: item.id,
+      role: item.role,
+      department: 'CUSTOM',
+      rate: Math.max(0, Number(matched?.rate ?? item.rate) || 0),
+      customRole: true,
+    };
+  });
+
+  return [...builtIn, ...custom];
+}
+
+export function saveManpowerRateMaster(
+  tenantId: string,
+  items: ManpowerRateMasterItem[],
+): ManpowerRateMasterItem[] {
+  if (typeof window === 'undefined') return [];
+
+  const normalized = items
+    .filter((item) => String(item.role || '').trim())
+    .map((item) => ({
+      id: String(item.id || uid('manpower_rate')),
+      role: String(item.role || '').trim().replace(/\s+/g, ' '),
+      department: String(item.department || 'CUSTOM').trim() || 'CUSTOM',
+      rate: Math.max(0, Number(item.rate) || 0),
+      customRole: Boolean(item.customRole),
+    }));
+
+  window.localStorage.setItem(
+    manpowerRateMasterKey(tenantId),
+    JSON.stringify(normalized),
+  );
+
+  normalized
+    .filter((item) => item.customRole)
+    .forEach((item) => {
+      saveCustomManpowerRole(tenantId, item.role, item.rate);
+    });
+
+  return normalized;
+}
+
+export function applyManpowerRateMaster(
+  tenantId: string,
+  rows: ManpowerRow[],
+  force = false,
+): ManpowerRow[] {
+  const master = loadManpowerRateMaster(tenantId);
+  const byRole = new Map(
+    master.map((item) => [
+      item.role.toLocaleLowerCase('en-IN'),
+      item,
+    ]),
+  );
+
+  return rows.map((row) => {
+    const matched = byRole.get(
+      String(row.role || '').trim().toLocaleLowerCase('en-IN'),
+    );
+
+    if (!matched) return row;
+    if (!force && row.rateManualOverride) return row;
+
+    return {
+      ...row,
+      rate: matched.rate,
+      rateManualOverride: force ? false : row.rateManualOverride,
+    };
+  });
 }
 
 export type DisposableRateMasterItem = {
