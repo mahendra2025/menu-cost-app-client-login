@@ -312,6 +312,109 @@ function customManpowerRolesKey(tenantId: string): string {
   return `menu_cost_custom_manpower_roles_${tenantId}_v1`;
 }
 
+function disposableRateMasterKey(tenantId: string): string {
+  return `menu_cost_disposable_rate_master_${tenantId}_v1`;
+}
+
+export type DisposableRateMasterItem = {
+  id: string;
+  name: string;
+  unit: string;
+  unitCost: number;
+};
+
+export function loadDisposableRateMaster(
+  tenantId: string,
+): DisposableRateMasterItem[] {
+  if (typeof window === 'undefined') {
+    return defaultDisposableItems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      unit: item.unit || 'pcs',
+      unitCost: Math.max(0, Number(item.unitCost) || 0),
+    }));
+  }
+
+  const saved = safeJsonParse<DisposableRateMasterItem[]>(
+    window.localStorage.getItem(disposableRateMasterKey(tenantId)),
+    [],
+  );
+
+  const savedByName = new Map(
+    (Array.isArray(saved) ? saved : []).map((item) => [
+      String(item.name || '').trim().toLocaleLowerCase('en-IN'),
+      item,
+    ]),
+  );
+
+  return defaultDisposableItems.map((item) => {
+    const matched = savedByName.get(item.name.toLocaleLowerCase('en-IN'));
+
+    return {
+      id: item.id,
+      name: item.name,
+      unit: String(matched?.unit || item.unit || 'pcs').trim() || 'pcs',
+      unitCost: Math.max(0, Number(matched?.unitCost) || 0),
+    };
+  });
+}
+
+export function saveDisposableRateMaster(
+  tenantId: string,
+  items: DisposableRateMasterItem[],
+): DisposableRateMasterItem[] {
+  if (typeof window === 'undefined') return [];
+
+  const normalized = defaultDisposableItems.map((item) => {
+    const matched = items.find(
+      (candidate) =>
+        String(candidate.name || '').trim().toLocaleLowerCase('en-IN') ===
+        item.name.toLocaleLowerCase('en-IN'),
+    );
+
+    return {
+      id: item.id,
+      name: item.name,
+      unit: String(matched?.unit || item.unit || 'pcs').trim() || 'pcs',
+      unitCost: Math.max(0, Number(matched?.unitCost) || 0),
+    };
+  });
+
+  window.localStorage.setItem(
+    disposableRateMasterKey(tenantId),
+    JSON.stringify(normalized),
+  );
+
+  return normalized;
+}
+
+export function applyDisposableRateMaster(
+  tenantId: string,
+  items: DisposableCostItem[],
+): DisposableCostItem[] {
+  const master = loadDisposableRateMaster(tenantId);
+  const byName = new Map(
+    master.map((item) => [
+      item.name.toLocaleLowerCase('en-IN'),
+      item,
+    ]),
+  );
+
+  return items.map((item) => {
+    const matched = byName.get(item.name.trim().toLocaleLowerCase('en-IN'));
+    if (!matched) return item;
+
+    return {
+      ...item,
+      unit: item.unit || matched.unit || 'pcs',
+      unitCost:
+        Number(item.unitCost) > 0
+          ? Math.max(0, Number(item.unitCost) || 0)
+          : matched.unitCost,
+    };
+  });
+}
+
 export type CustomManpowerRole = {
   id: string;
   role: string;

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import AppShell, { LockedCard } from '../../components/AppShell';
 import {
+  applyDisposableRateMaster,
   calculate,
   getSession,
   loadWork,
@@ -98,10 +99,14 @@ export default function DisposableCostPage() {
           manpower: saved.manpower,
           manpowerInputs: saved.manpowerInputs,
         });
-    const disposableItems =
+    const plannedDisposableItems =
       autoAssignment?.recommendations.length
         ? autoAssignment.items
         : saved.disposableItems;
+    const disposableItems = applyDisposableRateMaster(
+      current.tenantId,
+      plannedDisposableItems,
+    );
     const disposable = calculateDisposableCost(disposableItems);
     const autoApplied = Boolean(autoAssignment?.recommendations.length);
 
@@ -260,6 +265,23 @@ export default function DisposableCostPage() {
     );
   }
 
+  function applyMasterRates() {
+    if (!work || !session) return;
+
+    const items = applyDisposableRateMaster(
+      session.tenantId,
+      work.disposableItems.map((item) => ({
+        ...item,
+        unitCost: 0,
+      })),
+    );
+
+    persistItems(
+      items,
+      'Plastic Rate Master applied to this event.',
+    );
+  }
+
   function addItem() {
     if (!work) return;
 
@@ -389,6 +411,16 @@ export default function DisposableCostPage() {
               </small>
             </div>
             <div className="disposable-heading-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => router.push('/app/disposable-rates')}
+              >
+                Plastic Rate Master
+              </button>
+              <button className="secondary-button" type="button" onClick={applyMasterRates}>
+                Apply Master Rates
+              </button>
               <button className="secondary-button" type="button" onClick={autoAssignItems}>
                 Auto Assign Again
               </button>
