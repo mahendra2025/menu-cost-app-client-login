@@ -53,6 +53,7 @@ import {
   CATEGORIES,
   type Category,
 } from '../../../lib/menuCategories';
+import { sortMenuItemsByCategoryPriority } from '../../../lib/menuCategoryPriority';
 
 import {
   analyzeMenuSourceIntelligence,
@@ -6872,18 +6873,20 @@ export default function EventPage() {
     }
 
     const selectedMenu =
-      skipReview
-        ? detectionPreview.menu.filter(
-            (item) =>
-              item.coverageStatus !==
-              'REJECTED',
-          )
-        : detectionPreview.menu.filter(
-            (item) =>
-              selectedPreviewIds.has(
-                item.id,
-              ),
-          );
+      sortMenuItemsByCategoryPriority(
+        skipReview
+          ? detectionPreview.menu.filter(
+              (item) =>
+                item.coverageStatus !==
+                'REJECTED',
+            )
+          : detectionPreview.menu.filter(
+              (item) =>
+                selectedPreviewIds.has(
+                  item.id,
+                ),
+            ),
+      );
 
     if (!selectedMenu.length) {
       setError(
@@ -7968,7 +7971,9 @@ export default function EventPage() {
       ),
     ) ?? [];
   const detectionReviewItems =
-    detectionPreview?.menu || [];
+    sortMenuItemsByCategoryPriority(
+      detectionPreview?.menu || [],
+    );
 
   const smartDraftDetectedItems =
     Array.from(
