@@ -406,8 +406,11 @@ export function applyDisposableRateMaster(
 
     return {
       ...item,
-      unit: matched.unit || item.unit || 'pcs',
-      unitCost: matched.unitCost,
+      unit: item.unit || matched.unit || 'pcs',
+      unitCost:
+        Number(item.unitCost) > 0
+          ? Math.max(0, Number(item.unitCost) || 0)
+          : matched.unitCost,
     };
   });
 }
