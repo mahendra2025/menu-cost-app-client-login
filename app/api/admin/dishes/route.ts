@@ -233,6 +233,9 @@ function readRecipeHierarchy(value: unknown) {
       const name = String(row.dishName || row.name || '').trim();
       const category = String(row.category || '').trim();
       const subcategory = String(row.subcategory || '').trim();
+      const ingredients = Array.isArray(row.ingredients)
+        ? row.ingredients
+        : [];
 
       const pieceWeightGrams =
         Math.max(
@@ -242,7 +245,13 @@ function readRecipeHierarchy(value: unknown) {
           0,
         ) || undefined;
 
-      if (!name || !category || category.length > 60 || subcategory.length > 60) return null;
+      if (
+        !name ||
+        !category ||
+        ingredients.length === 0 ||
+        category.length > 60 ||
+        subcategory.length > 60
+      ) return null;
 
       return {
         name,
@@ -470,9 +479,11 @@ export async function GET(request: Request) {
     const recipeByName = new Map(
       recipeHierarchy.map((item) => [item.name.toLowerCase(), item]),
     );
-    const alignedItems = catalogItems.map((item) => {
+    const alignedItems = catalogItems.flatMap((item) => {
       const recipe = recipeByName.get(item.name.trim().toLowerCase());
-      return {
+      if (!recipe) return [];
+
+      return [{
         ...item,
 
         subcategory:
@@ -482,7 +493,7 @@ export async function GET(request: Request) {
 
         pieceWeightGrams:
           recipe?.pieceWeightGrams,
-      };
+      }];
     });
     const categories = normalizeCategories(
       categoryCatalog?.categories,

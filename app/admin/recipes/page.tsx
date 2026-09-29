@@ -1757,6 +1757,14 @@ export default function RecipesPage() {
           ({
             dish,
           }) => {
+            if (
+              recipeIngredients(
+                dish,
+              ).length === 0
+            ) {
+              return false;
+            }
+
             const matchesCategory =
               category ===
                 'ALL' ||
