@@ -467,10 +467,12 @@ export default function CostPage() {
       items: [item],
       subtotal: Number(item.itemTotalCost) || 0,
       missingCount: needsManualRate(item) ? 1 : 0,
-      targetPercent: Math.min(
-        300,
-        Math.max(0, Number(item.categoryPortionPercent) || 100),
-      ),
+      targetPercent: Number.isFinite(Number(item.categoryPortionPercent))
+        ? Math.min(
+            300,
+            Math.max(0, Number(item.categoryPortionPercent)),
+          )
+        : 100,
     });
 
     return groups;
