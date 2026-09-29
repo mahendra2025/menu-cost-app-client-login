@@ -214,7 +214,11 @@ function chefRoleForItem(
     ].some(
       (key) =>
         category === key ||
-        category.includes(key),
+        (
+          key !== 'pan' &&
+          key !== 'paan' &&
+          category.includes(key)
+        ),
     )
   ) {
     return null;
@@ -286,14 +290,19 @@ function chefRoleForItem(
   return 'main_course_cook';
 }
 
-function countChefRole(
+function countChefRoleCategories(
   menu: MenuItem[],
   role: ChefRoleId,
 ) {
-  return menu.filter(
-    (item) =>
-      chefRoleForItem(item) === role,
-  ).length;
+  return new Set(
+    menu
+      .filter(
+        (item) =>
+          chefRoleForItem(item) === role,
+      )
+      .map(categoryKey)
+      .filter(Boolean),
+  ).size;
 }
 
 function rowBelongsToMeal(
@@ -347,21 +356,13 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   const recommendations = new Map<string, Recommendation>();
   const workload = calculateMenuWorkload(menu);
 
-  const chefCount = (
-    dishCount: number,
-  ) =>
-    ceilRatio(
-      dishCount,
-      rules.chefDishesPerCook,
-    );
-
   const chefReason = (
-    dishCount: number,
+    categoryCount: number,
     label: string,
   ) =>
-    dishCount > 0
-      ? `${dishCount} ${label} dish${dishCount === 1 ? '' : 'es'} ÷ ${rules.chefDishesPerCook} dish${rules.chefDishesPerCook === 1 ? '' : 'es'} per chef`
-      : `No ${label.toLowerCase()} dishes detected`;
+    categoryCount > 0
+      ? `${categoryCount} ${label} categor${categoryCount === 1 ? 'y' : 'ies'} · one cook per category`
+      : `No ${label.toLowerCase()} category detected`;
 
   const waiters = ceilRatio(
     guests,
@@ -423,14 +424,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const chaatCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'chaat_cook',
     );
-  const chaatCooks =
-    chefCount(
-      chaatCount,
-    );
+  const chaatCooks = chaatCount;
   recommendations.set('chaat_cook', {
     quantity: chaatCooks,
     reason:
@@ -445,14 +443,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const chineseCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'chinese_cook',
     );
-  const chineseCooks =
-    chefCount(
-      chineseCount,
-    );
+  const chineseCooks = chineseCount;
   recommendations.set('chinese_cook', {
     quantity: chineseCooks,
     reason:
@@ -467,14 +462,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const italianCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'italian_cook',
     );
-  const italianCooks =
-    chefCount(
-      italianCount,
-    );
+  const italianCooks = italianCount;
   recommendations.set('italian_cook', {
     quantity: italianCooks,
     reason:
@@ -489,14 +481,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const southIndianCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'south_indian_cook',
     );
-  const southIndianCooks =
-    chefCount(
-      southIndianCount,
-    );
+  const southIndianCooks = southIndianCount;
   recommendations.set('south_indian_cook', {
     quantity:
       southIndianCooks,
@@ -512,14 +501,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const starterCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'starter_cook',
     );
-  const starterCooks =
-    chefCount(
-      starterCount,
-    );
+  const starterCooks = starterCount;
   recommendations.set('starter_cook', {
     quantity:
       starterCooks,
@@ -535,14 +521,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const soupCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'soup_cook',
     );
-  const soupCooks =
-    chefCount(
-      soupCount,
-    );
+  const soupCooks = soupCount;
   recommendations.set('soup_cook', {
     quantity:
       soupCooks,
@@ -558,14 +541,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const otherLiveCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'live_counter_cook',
     );
-  const liveCooks =
-    chefCount(
-      otherLiveCount,
-    );
+  const liveCooks = otherLiveCount;
   recommendations.set('live_counter_cook', {
     quantity:
       liveCooks,
@@ -598,14 +578,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const breadCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'bread_cook',
     );
-  const breadCooks =
-    chefCount(
-      breadCount,
-    );
+  const breadCooks = breadCount;
   recommendations.set('bread_cook', {
     quantity:
       breadCooks,
@@ -640,14 +617,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const mainCourseCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'main_course_cook',
     );
-  const mainCourseCooks =
-    chefCount(
-      mainCourseCount,
-    );
+  const mainCourseCooks = mainCourseCount;
   recommendations.set('main_course_cook', {
     quantity:
       mainCourseCooks,
@@ -661,14 +635,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const farsanCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'farsan_cook',
     );
-  const farsanCooks =
-    chefCount(
-      farsanCount,
-    );
+  const farsanCooks = farsanCount;
   recommendations.set('farsan_cook', {
     quantity:
       farsanCooks,
@@ -682,14 +653,11 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   });
 
   const sweetCount =
-    countChefRole(
+    countChefRoleCategories(
       menu,
       'sweet_halwai',
     );
-  const sweetCooks =
-    chefCount(
-      sweetCount,
-    );
+  const sweetCooks = sweetCount;
   recommendations.set('sweet_halwai', {
     quantity:
       sweetCooks,

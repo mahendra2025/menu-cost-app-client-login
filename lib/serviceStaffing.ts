@@ -73,11 +73,13 @@ export function specialistStaffRecommendations(
   const stations = new Map<string, SpecialistStaffRecommendation>();
   dishes.forEach((dish) => {
     const specialist = specialistForDish(dish);
-    if (!specialist || stations.has(specialist.role)) return;
-    stations.set(specialist.role, {
+    const category = String(dish.category || 'Other').trim() || 'Other';
+    const categoryKey = category.toLocaleLowerCase('en-IN');
+    if (!specialist || stations.has(categoryKey)) return;
+    stations.set(categoryKey, {
       ...specialist,
       quantity,
-      stationLabel: specialist.role.replace(/\s+(?:cook|master|maker)$/i, '').trim() || specialist.role,
+      stationLabel: category,
     });
   });
   return Array.from(stations.values());

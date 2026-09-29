@@ -71,13 +71,13 @@ test('premium buffet increases waiter recommendation', () => {
   assert.equal(result.find((row) => row.role === 'Waiter')?.recommendedQuantity, 35);
 });
 
-test('chef manpower uses one dish = one chef by category', () => {
+test('chef manpower assigns one cook to each distinct category', () => {
   const result = rows();
 
-  assert.equal(result.find((row) => row.role === 'Bread Cook')?.recommendedQuantity, 3);
-  assert.equal(result.find((row) => row.role === 'Bread Helper')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Bread Cook')?.recommendedQuantity, 1);
+  assert.equal(result.find((row) => row.role === 'Bread Helper')?.recommendedQuantity, 1);
   assert.equal(result.find((row) => row.role === 'Chaat Cook')?.recommendedQuantity, 1);
-  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.recommendedQuantity, 1);
   assert.equal(result.find((row) => row.role === 'Farsan Cook')?.recommendedQuantity, 1);
   assert.equal(result.find((row) => row.role === 'Main Course Cook')?.recommendedQuantity, 4);
 });
@@ -194,7 +194,7 @@ test('utility manpower changes with crockery and outdoor venue settings', () => 
 });
 
 
-test('admin manpower rules change service and chef dish ratio', () => {
+test('admin service rules do not merge distinct kitchen categories', () => {
   const result = rows({
     rules: {
       standardBuffetGuestsPerWaiter: 35,
@@ -205,9 +205,9 @@ test('admin manpower rules change service and chef dish ratio', () => {
 
   assert.equal(result.find((row) => row.role === 'Waiter')?.recommendedQuantity, 20);
   assert.equal(result.find((row) => row.role === 'Chaat Cook')?.recommendedQuantity, 1);
-  assert.equal(result.find((row) => row.role === 'Bread Cook')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Bread Cook')?.recommendedQuantity, 1);
   assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.recommendedQuantity, 1);
-  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Main Course Cook')?.recommendedQuantity, 4);
   assert.equal(result.find((row) => row.role === 'Dishwasher')?.recommendedQuantity, 4);
 });
 
@@ -238,7 +238,7 @@ test('manual override still wins after admin master changes', () => {
 });
 
 
-test('starter and soup each get one chef per dish while non-cooking categories get no chef', () => {
+test('starter and soup each get one chef per category while non-cooking categories get no chef', () => {
   const customMenu: MenuItem[] = [
     dish('starter_1', 'Paneer Tikka', 'Starter'),
     dish('starter_2', 'Hara Bhara Kabab', 'Starter'),
@@ -259,13 +259,13 @@ test('starter and soup each get one chef per dish while non-cooking categories g
     mealLabel: 'Lunch',
   });
 
-  assert.equal(result.find((row) => row.role === 'Starter Cook')?.recommendedQuantity, 2);
-  assert.equal(result.find((row) => row.role === 'Soup Cook')?.recommendedQuantity, 2);
+  assert.equal(result.find((row) => row.role === 'Starter Cook')?.recommendedQuantity, 1);
+  assert.equal(result.find((row) => row.role === 'Soup Cook')?.recommendedQuantity, 1);
   assert.equal(result.find((row) => row.role === 'Main Course Cook')?.recommendedQuantity, 0);
   assert.equal(result.find((row) => row.role === 'Sweet / Halwai Cook')?.recommendedQuantity, 0);
 });
 
-test('new cooked categories automatically fall back to one main-course chef per dish', () => {
+test('new cooked categories automatically get one main-course cook per category', () => {
   const customMenu: MenuItem[] = [
     dish('thai_1', 'Thai Green Curry', 'Thai'),
     dish('mexican_1', 'Mexican Rice Bowl', 'Mexican'),
