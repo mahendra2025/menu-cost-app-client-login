@@ -17,6 +17,11 @@ import {
 import type { CustomManpowerRole } from '../../../lib/store';
 import {
   calculateManpowerCost,
+  getManpowerRateMode,
+  inferManpowerShift,
+  manpowerBillableCost,
+  manpowerIncludedInSharedRate,
+  manpowerRateModeLabel,
   manpowerRawCost,
 } from '../../../lib/manpowerCost';
 import {
@@ -287,7 +292,8 @@ function buildMealManpowerRows(
         customRole: true,
         manualOverride: true,
         calculationSource: 'MANUAL' as const,
-        rateMode: 'PER_MEAL' as const,
+        rateMode: row.rateMode ?? 'PER_MEAL',
+        shiftLabel: row.shiftLabel,
         serviceId: meal.serviceId,
         dayLabel: meal.dayLabel || undefined,
         mealLabel: meal.mealLabel,
@@ -1129,6 +1135,21 @@ export default function ManpowerPage() {
     persistRows(rows);
   }
 
+  function updateRateMode(
+    row: ManpowerRow,
+    rateMode: 'PER_MEAL' | 'PER_SHIFT' | 'PER_DAY',
+  ) {
+    updateRow(row.id, {
+      rateMode,
+      shiftLabel:
+        rateMode === 'PER_SHIFT'
+          ? row.shiftLabel || inferManpowerShift(row)
+          : row.shiftLabel,
+      manualOverride: true,
+      calculationSource: 'MANUAL',
+    });
+  }
+
   function continueToExpenses() {
     if (!work || !session) return;
 
@@ -1316,6 +1337,12 @@ export default function ManpowerPage() {
             (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
             0,
           );
+          const sharedRateRows = mealRows.filter(
+            (row) =>
+              getManpowerRateMode(row) !== 'PER_MEAL' &&
+              Math.max(0, Number(row.quantity) || 0) > 0,
+          );
+          const sharedRateCount = sharedRateRows.length;
           const mealRecommendedPeople = mealRows.reduce(
             (sum, row) => sum + Math.max(0, Number(row.recommendedQuantity) || 0),
             0,
@@ -1443,6 +1470,10 @@ export default function ManpowerPage() {
                   <span className={reviewRoleCount > 0 ? 'needs-attention' : ''}>
                     <b>{reviewRoleCount}</b>
                     roles differ
+                  </span>
+                  <span>
+                    <b>{sharedRateCount}</b>
+                    shared-rate roles
                   </span>
                   <span>
                     <b>{money(mealTotal)}</b>
@@ -1774,6 +1805,7 @@ export default function ManpowerPage() {
                       <th>Dishes</th>
                       <th>Quantity</th>
                       <th>Status</th>
+                      <th>Billing</th>
                       <th>Rate / person</th>
                       <th>Total</th>
                     </tr>
@@ -1861,6 +1893,43 @@ export default function ManpowerPage() {
                           )}
                         </td>
                         <td>
+                          <div style={{ display: 'grid', gap: 6, minWidth: 150 }}>
+                            <select
+                              className="input"
+                              value={getManpowerRateMode(row)}
+                              onChange={(event) =>
+                                updateRateMode(
+                                  row,
+                                  event.target.value as 'PER_MEAL' | 'PER_SHIFT' | 'PER_DAY',
+                                )
+                              }
+                              aria-label={`Billing mode for ${row.role}`}
+                            >
+                              <option value="PER_MEAL">Per Meal</option>
+                              <option value="PER_SHIFT">Per Shift</option>
+                              <option value="PER_DAY">Per Day</option>
+                            </select>
+                            {getManpowerRateMode(row) === 'PER_SHIFT' ? (
+                              <input
+                                className="input"
+                                value={row.shiftLabel || inferManpowerShift(row)}
+                                placeholder="Morning / Afternoon / Evening"
+                                onChange={(event) =>
+                                  updateRow(row.id, {
+                                    shiftLabel: event.target.value,
+                                    manualOverride: true,
+                                    calculationSource: 'MANUAL',
+                                  })
+                                }
+                                aria-label={`Shift label for ${row.role}`}
+                              />
+                            ) : null}
+                            <small className="muted">
+                              {manpowerRateModeLabel(row)}
+                            </small>
+                          </div>
+                        </td>
+                        <td>
                           <div style={{ display: 'grid', gap: 4 }}>
                             <small className="muted">
                               {row.rateManualOverride ? 'Event rate' : 'Master rate'}
@@ -1884,7 +1953,16 @@ export default function ManpowerPage() {
                             </label>
                           </div>
                         </td>
-                        <td><strong>{money(manpowerRawCost(row))}</strong></td>
+                        <td>
+                          <div style={{ display: 'grid', gap: 3 }}>
+                            <strong>{money(manpowerBillableCost(row, work.manpower))}</strong>
+                            {manpowerIncludedInSharedRate(row, work.manpower) ? (
+                              <small className="muted">Included in shared {getManpowerRateMode(row) === 'PER_DAY' ? 'day' : 'shift'} team</small>
+                            ) : getManpowerRateMode(row) !== 'PER_MEAL' ? (
+                              <small className="muted">Shared billing leader · raw {money(manpowerRawCost(row))}</small>
+                            ) : null}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1987,10 +2065,55 @@ export default function ManpowerPage() {
                       </button>
                     ) : null}
 
+                    <div className="field">
+                      <label>Billing mode</label>
+                      <select
+                        className="input"
+                        value={getManpowerRateMode(row)}
+                        onChange={(event) =>
+                          updateRateMode(
+                            row,
+                            event.target.value as 'PER_MEAL' | 'PER_SHIFT' | 'PER_DAY',
+                          )
+                        }
+                      >
+                        <option value="PER_MEAL">Per Meal</option>
+                        <option value="PER_SHIFT">Per Shift</option>
+                        <option value="PER_DAY">Per Day</option>
+                      </select>
+                    </div>
+
+                    {getManpowerRateMode(row) === 'PER_SHIFT' ? (
+                      <label className="field">
+                        <span>Shift</span>
+                        <input
+                          className="input"
+                          value={row.shiftLabel || inferManpowerShift(row)}
+                          placeholder="Morning / Afternoon / Evening"
+                          onChange={(event) =>
+                            updateRow(row.id, {
+                              shiftLabel: event.target.value,
+                              manualOverride: true,
+                              calculationSource: 'MANUAL',
+                            })
+                          }
+                        />
+                      </label>
+                    ) : null}
+
                     <div className="manpower-role-card-total">
                       <span>Total</span>
-                      <strong>{money(manpowerRawCost(row))}</strong>
+                      <strong>{money(manpowerBillableCost(row, work.manpower))}</strong>
                     </div>
+                    {manpowerIncludedInSharedRate(row, work.manpower) ? (
+                      <small className="muted">
+                        Included in shared {getManpowerRateMode(row) === 'PER_DAY' ? 'day' : 'shift'} team
+                      </small>
+                    ) : getManpowerRateMode(row) !== 'PER_MEAL' ? (
+                      <small className="muted">
+                        {manpowerRateModeLabel(row)} · raw {money(manpowerRawCost(row))}
+                      </small>
+                    ) : null}
                   </article>
                 ))}
               </div>
@@ -2083,6 +2206,16 @@ export default function ManpowerPage() {
                 <span>Recommendation gaps</span>
                 <b className={work.manpower.filter((row) => !isCustomRole(row) && manpowerGap(row) !== 0).length > 0 ? 'needs-attention' : ''}>
                   {work.manpower.filter((row) => !isCustomRole(row) && manpowerGap(row) !== 0).length}
+                </b>
+              </div>
+              <div>
+                <span>Shared shift/day roles</span>
+                <b>
+                  {work.manpower.filter(
+                    (row) =>
+                      getManpowerRateMode(row) !== 'PER_MEAL' &&
+                      Math.max(0, Number(row.quantity) || 0) > 0,
+                  ).length}
                 </b>
               </div>
             </div>
