@@ -21,22 +21,48 @@ export function buildMenuCostBreakdown(
   menu: MenuItem[],
   fallbackPax = 0,
 ) {
-  const categoryCounts =
+  const categoryStats =
     menu.reduce<
-      Record<string, number>
+      Record<
+        string,
+        {
+          count: number;
+          autoCount: number;
+          customTotal: number;
+          targetPercent: number;
+        }
+      >
     >(
-      (counts, item) => {
+      (stats, item) => {
         const serviceKey = getMenuServiceKey(item);
         const categoryKey = `${serviceKey}::${item.category}`;
+        const current = stats[categoryKey] ?? {
+          count: 0,
+          autoCount: 0,
+          customTotal: 0,
+          targetPercent: 100,
+        };
 
-        counts[categoryKey] =
-          (
-            counts[
-              categoryKey
-            ] ?? 0
-          ) + 1;
+        current.count += 1;
 
-        return counts;
+        if (item.portionMode === 'CUSTOM') {
+          current.customTotal += Math.min(
+            300,
+            Math.max(0, Number(item.portionPercent) || 0),
+          );
+        } else {
+          current.autoCount += 1;
+        }
+
+        if (Number.isFinite(Number(item.categoryPortionPercent))) {
+          current.targetPercent = Math.min(
+            300,
+            Math.max(0, Number(item.categoryPortionPercent) || 0),
+          );
+        }
+
+        stats[categoryKey] = current;
+        return stats;
       },
       {},
     );
@@ -44,10 +70,16 @@ export function buildMenuCostBreakdown(
   const breakdown = menu.map((item) => {
     const serviceKey = getMenuServiceKey(item);
     const categoryKey = `${serviceKey}::${item.category}`;
-    const categoryCount =
-      categoryCounts[
+    const categoryStat =
+      categoryStats[
         categoryKey
-      ] ?? 1;
+      ] ?? {
+        count: 1,
+        autoCount: 1,
+        customTotal: 0,
+        targetPercent: 100,
+      };
+    const categoryCount = categoryStat.count;
 
     /*
      * Manual rate remains zero until
@@ -64,15 +96,32 @@ export function buildMenuCostBreakdown(
         ) || 0,
       );
 
-    const automaticPortionFactor =
-      categoryCount > 1 ? 1 / categoryCount : 1;
     const customPortion =
       item.portionMode === 'CUSTOM'
         ? Math.min(300, Math.max(0, Number(item.portionPercent) || 0))
         : null;
+
+    /*
+     * Category target applies to the whole meal/category.
+     * Existing custom dish portions are preserved first, then the
+     * remaining target is shared equally across AUTO dishes.
+     *
+     * Example:
+     * Sweet target = 100%
+     * Malpua custom = 35%
+     * 2 AUTO sweets -> remaining 65% -> 32.5% each.
+     */
+    const remainingAutoPercent = Math.max(
+      0,
+      categoryStat.targetPercent - categoryStat.customTotal,
+    );
+    const automaticPortionPercent =
+      categoryStat.autoCount > 0
+        ? remainingAutoPercent / categoryStat.autoCount
+        : 0;
     const portionFactor =
       customPortion === null
-        ? automaticPortionFactor
+        ? automaticPortionPercent / 100
         : customPortion / 100;
 
     /*
@@ -128,11 +177,12 @@ export function buildMenuCostBreakdown(
       serviceKey,
       baseCostPerPlate,
       categoryCount,
+      categoryPortionPercent: categoryStat.targetPercent,
       portionFactor,
       portionMode: customPortion === null ? 'AUTO' as const : 'CUSTOM' as const,
       portionPercent:
         customPortion === null
-          ? automaticPortionFactor * 100
+          ? automaticPortionPercent
           : customPortion,
       adjustedCostPerPlate,
       effectivePax,

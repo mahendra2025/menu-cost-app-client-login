@@ -445,6 +445,7 @@ export default function CostPage() {
       items: (typeof filteredDishCosts)[number][];
       subtotal: number;
       missingCount: number;
+      targetPercent: number;
     }>
   >((groups, item) => {
     const key = `${item.serviceKey}::${item.category}`;
@@ -466,6 +467,12 @@ export default function CostPage() {
       items: [item],
       subtotal: Number(item.itemTotalCost) || 0,
       missingCount: needsManualRate(item) ? 1 : 0,
+      targetPercent: Number.isFinite(Number(item.categoryPortionPercent))
+        ? Math.min(
+            300,
+            Math.max(0, Number(item.categoryPortionPercent)),
+          )
+        : 100,
     });
 
     return groups;
@@ -476,6 +483,32 @@ export default function CostPage() {
       ...current,
       [key]: !current[key],
     }));
+  }
+
+  function updateCategoryPortion(
+    serviceKey: string,
+    category: string,
+    value: number,
+  ) {
+    if (!work) return;
+
+    const targetPercent = Math.min(
+      300,
+      Math.max(0, Number(value) || 0),
+    );
+
+    persist({
+      ...work,
+      menu: work.menu.map((item) =>
+        getMenuServiceKey(item) === serviceKey &&
+        item.category === category
+          ? {
+              ...item,
+              categoryPortionPercent: targetPercent,
+            }
+          : item,
+      ),
+    });
   }
 
   const hasWeddingServices =
@@ -893,6 +926,7 @@ export default function CostPage() {
           ? {
               ...item,
               category,
+              categoryPortionPercent: undefined,
             }
           : item,
       ),
@@ -1592,38 +1626,68 @@ export default function CostPage() {
                             <Fragment key={group.key}>
                               <tr className="dish-category-section-row">
                                 <td colSpan={9} style={{ padding: 0 }}>
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleDishCategoryGroup(group.key)}
-                                    aria-expanded={!collapsed}
+                                  <div
                                     style={{
                                       width: '100%',
-                                      border: 0,
                                       background: 'var(--surface-subtle, rgba(0,0,0,0.035))',
-                                      padding: '12px 14px',
+                                      padding: '10px 14px',
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'space-between',
                                       gap: 12,
-                                      cursor: 'pointer',
-                                      textAlign: 'left',
                                     }}
                                   >
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleDishCategoryGroup(group.key)}
+                                      aria-expanded={!collapsed}
+                                      style={{
+                                        border: 0,
+                                        background: 'transparent',
+                                        padding: 0,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        minWidth: 0,
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
+                                      }}
+                                    >
                                       <span aria-hidden="true" style={{ fontSize: 12 }}>{collapsed ? '▶' : '▼'}</span>
                                       <strong>{group.category}</strong>
                                       <small className="muted">
                                         {group.dayLabel ? `${group.dayLabel} • ` : ''}{group.mealLabel}
                                       </small>
-                                    </span>
+                                    </button>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 12, whiteSpace: 'nowrap' }}>
+                                      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <small>Category consumption</small>
+                                        <input
+                                          className="input"
+                                          type="number"
+                                          min="0"
+                                          max="300"
+                                          step="5"
+                                          value={group.targetPercent}
+                                          onChange={(event) =>
+                                            updateCategoryPortion(
+                                              group.serviceKey,
+                                              group.category,
+                                              Number(event.target.value),
+                                            )
+                                          }
+                                          aria-label={`${group.category} category consumption percentage`}
+                                          style={{ width: 72 }}
+                                        />
+                                        <small>%</small>
+                                      </label>
                                       <small>{group.items.length} dish{group.items.length === 1 ? '' : 'es'}</small>
                                       {group.missingCount > 0 ? (
                                         <small className="needs-attention">{group.missingCount} rate{group.missingCount === 1 ? '' : 's'} missing</small>
                                       ) : null}
                                       <strong>{money(group.subtotal)}</strong>
                                     </span>
-                                  </button>
+                                  </div>
                                 </td>
                               </tr>
                               {!collapsed ? group.items.map((item) => (
@@ -1868,7 +1932,7 @@ export default function CostPage() {
                                     <span>%</span>
                                   </label>
                                 ) : (
-                                  <span className="portion-chip">{item.categoryCount > 1 ? `1/${item.categoryCount}` : 'Full'}</span>
+                                  <span className="portion-chip">{Math.round(item.portionPercent * 100) / 100}%</span>
                                 )}
                               </div>
                             </td>
@@ -1899,32 +1963,64 @@ export default function CostPage() {
 
                       return (
                         <section key={group.key} className="dish-cost-category-group">
-                          <button
-                            type="button"
-                            onClick={() => toggleDishCategoryGroup(group.key)}
-                            aria-expanded={!collapsed}
+                          <div
                             style={{
                               width: '100%',
-                              border: 0,
                               borderRadius: 14,
                               padding: '12px 14px',
                               marginBottom: 10,
                               background: 'var(--surface-subtle, rgba(0,0,0,0.035))',
                               display: 'grid',
-                              gap: 6,
-                              textAlign: 'left',
-                              cursor: 'pointer',
+                              gap: 10,
                             }}
                           >
-                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                            <button
+                              type="button"
+                              onClick={() => toggleDishCategoryGroup(group.key)}
+                              aria-expanded={!collapsed}
+                              style={{
+                                border: 0,
+                                background: 'transparent',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: 10,
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                              }}
+                            >
                               <strong>{collapsed ? '▶' : '▼'} {group.category}</strong>
                               <strong>{money(group.subtotal)}</strong>
-                            </span>
+                            </button>
                             <small className="muted">
                               {group.dayLabel ? `${group.dayLabel} • ` : ''}{group.mealLabel} · {group.items.length} dish{group.items.length === 1 ? '' : 'es'}
                               {group.missingCount > 0 ? ` · ${group.missingCount} rate${group.missingCount === 1 ? '' : 's'} missing` : ''}
                             </small>
-                          </button>
+                            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                              <span>Category consumption</span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <input
+                                  className="input"
+                                  type="number"
+                                  min="0"
+                                  max="300"
+                                  step="5"
+                                  value={group.targetPercent}
+                                  onChange={(event) =>
+                                    updateCategoryPortion(
+                                      group.serviceKey,
+                                      group.category,
+                                      Number(event.target.value),
+                                    )
+                                  }
+                                  aria-label={`${group.category} category consumption percentage`}
+                                  style={{ width: 82 }}
+                                />
+                                <span>%</span>
+                              </span>
+                            </label>
+                          </div>
                           {!collapsed ? group.items.map((item) => (
                       <article className={`dish-cost-card ${needsManualRate(item) ? 'dish-rate-missing' : ''}`} key={item.id}>
                         <div className="dish-cost-card-heading">
