@@ -1504,6 +1504,17 @@ export default function CostPage() {
                 <>
                   <div className="table-wrap dish-cost-table-wrap">
                     <table className="dish-cost-table">
+                      <colgroup>
+                        <col className="dish-cost-col-name" />
+                        <col className="dish-cost-col-category" />
+                        <col className="dish-cost-col-serving" />
+                        <col className="dish-cost-col-members" />
+                        <col className="dish-cost-col-rate" />
+                        <col className="dish-cost-col-portion" />
+                        <col className="dish-cost-col-adjusted" />
+                        <col className="dish-cost-col-total" />
+                        <col className="dish-cost-col-action" />
+                      </colgroup>
                       <thead>
                         <tr>
                           <th>Dish &amp; meal</th>
@@ -1697,7 +1708,7 @@ export default function CostPage() {
                                 ) : null}
                               </div>
                             </td>
-                            <td>{item.effectivePax.toLocaleString('en-IN')}</td>
+                            <td className="dish-cost-number">{item.effectivePax.toLocaleString('en-IN')}</td>
                             <td>
                               {needsManualRate(item) ? (
                                 <span className="dish-manual-rate-label">Add manual rate</span>
@@ -1764,8 +1775,8 @@ export default function CostPage() {
                                 )}
                               </div>
                             </td>
-                            <td>{money(item.adjustedCostPerPlate)}</td>
-                            <td><strong className="dish-total-cost">{money(item.itemTotalCost)}</strong></td>
+                            <td className="dish-cost-number">{money(item.adjustedCostPerPlate)}</td>
+                            <td className="dish-cost-number"><strong className="dish-total-cost">{money(item.itemTotalCost)}</strong></td>
                             <td>
                               <button
                                 className="dish-remove-button"
@@ -1809,28 +1820,71 @@ export default function CostPage() {
                             ))}
                           </select>
                         </div>
+                        <div className="dish-cost-card-serving">
+                          <span>Serving quantity</span>
+                          <div>
+                            <input
+                              className="input"
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              inputMode="decimal"
+                              aria-label={`Serving quantity for ${item.name}`}
+                              value={item.portionQuantity ?? 1}
+                              onChange={(event) =>
+                                updateDishServing(item.id, {
+                                  portionQuantity: Math.max(
+                                    0.01,
+                                    Number(event.target.value) || 0.01,
+                                  ),
+                                })
+                              }
+                            />
+                            <select
+                              className="select"
+                              aria-label={`Serving unit for ${item.name}`}
+                              value={item.portionUnit || 'serving'}
+                              onChange={(event) =>
+                                updateDishServing(item.id, {
+                                  portionUnit: event.target.value,
+                                })
+                              }
+                            >
+                              <option value="serving">serving</option>
+                              <option value="piece">piece</option>
+                              <option value="g">g</option>
+                              <option value="ml">ml</option>
+                            </select>
+                          </div>
+                          {(item.portionUnit || '').toLowerCase() === 'piece' ? (
+                            <label>
+                              <input
+                                className="input"
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                inputMode="decimal"
+                                value={item.pieceWeightGrams ?? ''}
+                                onChange={(event) =>
+                                  updateDishServing(item.id, {
+                                    pieceWeightGrams: Math.max(
+                                      0,
+                                      Number(event.target.value) || 0,
+                                    ),
+                                  })
+                                }
+                                placeholder="35"
+                                aria-label={`Weight per piece for ${item.name}`}
+                              />
+                              <span>grams per piece</span>
+                            </label>
+                          ) : null}
+                        </div>
                         <div className="dish-cost-card-grid">
                           <div><small>Members</small><b>{item.effectivePax.toLocaleString('en-IN')}</b></div>
-                          <div>
-                            <small>Serving quantity</small>
-                            <b>
-                              {Number(item.portionQuantity) > 0
-                                ? `${item.portionQuantity} ${item.portionUnit || 'serving'}`
-                                : 'Not set'}
-
-                              {(item.portionUnit || '').toLowerCase() ===
-                                'piece' &&
-                              Number(item.pieceWeightGrams) > 0
-                                ? ` • ≈${(
-                                    Number(item.portionQuantity) *
-                                    Number(item.pieceWeightGrams)
-                                  ).toFixed(0)} g`
-                                : ''}
-                            </b>
-                          </div>
                           <div><small>Portion</small><b>{Math.round(item.portionPercent * 100) / 100}%</b></div>
                           <div><small>Adjusted / plate</small><b>{money(item.adjustedCostPerPlate)}</b></div>
-                          <div><small>Total cost</small><b>{money(item.itemTotalCost)}</b></div>
+                          <div className="dish-cost-card-total"><small>Total cost</small><b>{money(item.itemTotalCost)}</b></div>
                         </div>
                         <div className="field">
                           <label htmlFor={`mobile-portion-mode-${item.id}`}>
