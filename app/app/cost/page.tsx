@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Fragment,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -140,6 +141,7 @@ export default function CostPage() {
   const [dishServiceFilter, setDishServiceFilter] = useState('ALL');
   const [dishCategoryFilter, setDishCategoryFilter] = useState('ALL');
   const [dishStatusFilter, setDishStatusFilter] = useState<'ALL' | 'MISSING' | 'COSTED'>('ALL');
+  const [collapsedDishGroups, setCollapsedDishGroups] = useState<Record<string, boolean>>({});
   const deferredDishQuery = useDeferredValue(dishQuery);
   const [availableDishCategories, setAvailableDishCategories] =
     useState<string[]>([]);
@@ -433,6 +435,49 @@ export default function CostPage() {
       return matchesSearch && matchesService && matchesCategory && matchesRateStatus;
     }),
   );
+  const dishCategoryGroups = filteredDishCosts.reduce<
+    Array<{
+      key: string;
+      category: string;
+      serviceKey: string;
+      mealLabel: string;
+      dayLabel: string;
+      items: (typeof filteredDishCosts)[number][];
+      subtotal: number;
+      missingCount: number;
+    }>
+  >((groups, item) => {
+    const key = `${item.serviceKey}::${item.category}`;
+    const current = groups[groups.length - 1];
+
+    if (current?.key === key) {
+      current.items.push(item);
+      current.subtotal += Number(item.itemTotalCost) || 0;
+      if (needsManualRate(item)) current.missingCount += 1;
+      return groups;
+    }
+
+    groups.push({
+      key,
+      category: item.category,
+      serviceKey: item.serviceKey,
+      mealLabel: item.mealLabel || 'Event Menu',
+      dayLabel: item.dayLabel || '',
+      items: [item],
+      subtotal: Number(item.itemTotalCost) || 0,
+      missingCount: needsManualRate(item) ? 1 : 0,
+    });
+
+    return groups;
+  }, []);
+
+  function toggleDishCategoryGroup(key: string) {
+    setCollapsedDishGroups((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  }
+
   const hasWeddingServices =
     result.serviceSummaries.length > 1 ||
     result.serviceSummaries.some(
@@ -1540,7 +1585,48 @@ export default function CostPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredDishCosts.map((item) => (
+                        {dishCategoryGroups.map((group) => {
+                          const collapsed = Boolean(collapsedDishGroups[group.key]);
+
+                          return (
+                            <Fragment key={group.key}>
+                              <tr className="dish-category-section-row">
+                                <td colSpan={9} style={{ padding: 0 }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleDishCategoryGroup(group.key)}
+                                    aria-expanded={!collapsed}
+                                    style={{
+                                      width: '100%',
+                                      border: 0,
+                                      background: 'var(--surface-subtle, rgba(0,0,0,0.035))',
+                                      padding: '12px 14px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      gap: 12,
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                    }}
+                                  >
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                      <span aria-hidden="true" style={{ fontSize: 12 }}>{collapsed ? '▶' : '▼'}</span>
+                                      <strong>{group.category}</strong>
+                                      <small className="muted">
+                                        {group.dayLabel ? `${group.dayLabel} • ` : ''}{group.mealLabel}
+                                      </small>
+                                    </span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 12, whiteSpace: 'nowrap' }}>
+                                      <small>{group.items.length} dish{group.items.length === 1 ? '' : 'es'}</small>
+                                      {group.missingCount > 0 ? (
+                                        <small className="needs-attention">{group.missingCount} rate{group.missingCount === 1 ? '' : 's'} missing</small>
+                                      ) : null}
+                                      <strong>{money(group.subtotal)}</strong>
+                                    </span>
+                                  </button>
+                                </td>
+                              </tr>
+                              {!collapsed ? group.items.map((item) => (
                           <tr key={item.id} className={needsManualRate(item) ? 'dish-rate-missing' : ''}>
                             <td>
                               <div className="dish-cost-name">
@@ -1799,13 +1885,47 @@ export default function CostPage() {
                               </button>
                             </td>
                           </tr>
-                        ))}
+                              )) : null}
+                            </Fragment>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
 
                   <div className="dish-cost-cards">
-                    {filteredDishCosts.map((item) => (
+                    {dishCategoryGroups.map((group) => {
+                      const collapsed = Boolean(collapsedDishGroups[group.key]);
+
+                      return (
+                        <section key={group.key} className="dish-cost-category-group">
+                          <button
+                            type="button"
+                            onClick={() => toggleDishCategoryGroup(group.key)}
+                            aria-expanded={!collapsed}
+                            style={{
+                              width: '100%',
+                              border: 0,
+                              borderRadius: 14,
+                              padding: '12px 14px',
+                              marginBottom: 10,
+                              background: 'var(--surface-subtle, rgba(0,0,0,0.035))',
+                              display: 'grid',
+                              gap: 6,
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                              <strong>{collapsed ? '▶' : '▼'} {group.category}</strong>
+                              <strong>{money(group.subtotal)}</strong>
+                            </span>
+                            <small className="muted">
+                              {group.dayLabel ? `${group.dayLabel} • ` : ''}{group.mealLabel} · {group.items.length} dish{group.items.length === 1 ? '' : 'es'}
+                              {group.missingCount > 0 ? ` · ${group.missingCount} rate${group.missingCount === 1 ? '' : 's'} missing` : ''}
+                            </small>
+                          </button>
+                          {!collapsed ? group.items.map((item) => (
                       <article className={`dish-cost-card ${needsManualRate(item) ? 'dish-rate-missing' : ''}`} key={item.id}>
                         <div className="dish-cost-card-heading">
                           <div className="dish-cost-name">
@@ -1998,7 +2118,10 @@ export default function CostPage() {
                           Remove dish
                         </button>
                       </article>
-                    ))}
+                          )) : null}
+                        </section>
+                      );
+                    })}
                   </div>
                 </>
               )}
