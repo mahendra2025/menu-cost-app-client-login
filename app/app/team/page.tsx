@@ -16,6 +16,7 @@ import {
 } from '../../../lib/store';
 import type { CustomManpowerRole } from '../../../lib/store';
 import {
+  buildManpowerBillingSummary,
   calculateManpowerCost,
   getManpowerRateMode,
   inferManpowerShift,
@@ -769,6 +770,20 @@ export default function ManpowerPage() {
     [work],
   );
 
+  const billingSummary = useMemo(
+    () =>
+      work
+        ? buildManpowerBillingSummary(work.manpower)
+        : {
+            groups: [],
+            rawCost: 0,
+            billableCost: 0,
+            savings: 0,
+            sharedGroupCount: 0,
+          },
+    [work],
+  );
+
   const totalPeople = useMemo(
     () =>
       work?.manpower.reduce(
@@ -1206,6 +1221,7 @@ export default function ManpowerPage() {
             <b>{money(manpowerTotal)}</b>
             <small>
               {meals.length} meal{meals.length === 1 ? '' : 's'} · {totalPeople} manpower assignments
+              {billingSummary.savings > 0 ? ` · ${money(billingSummary.savings)} saved by shared staffing` : ''}
             </small>
             <div style={{ display: 'grid', gap: 8 }}>
               <button
@@ -2171,6 +2187,11 @@ export default function ManpowerPage() {
               <span>Total manpower cost</span>
               <strong>{money(manpowerTotal)}</strong>
               <small>{money(manpowerPerCover)} per function cover</small>
+              {billingSummary.savings > 0 ? (
+                <small style={{ display: 'block', marginTop: 4 }}>
+                  Raw per-meal {money(billingSummary.rawCost)} · saved {money(billingSummary.savings)}
+                </small>
+              ) : null}
             </div>
 
             <div className="manpower-desktop-summary-grid">
@@ -2242,6 +2263,17 @@ export default function ManpowerPage() {
                 <small>No role quantity is selected automatically.</small>
               </div>
             </div>
+
+            {billingSummary.groups.some((group) => group.mode !== 'PER_MEAL') ? (
+              <div className="manpower-review-ready">
+                <div>
+                  <b>Shared billing groups</b>
+                  <small>
+                    {billingSummary.sharedGroupCount} shared group{billingSummary.sharedGroupCount === 1 ? '' : 's'} · {money(billingSummary.savings)} saved
+                  </small>
+                </div>
+              </div>
+            ) : null}
 
             {unassignedMenuDishCount > 0 ||
             zeroQuantityAssignedRoleCount > 0 ? (
