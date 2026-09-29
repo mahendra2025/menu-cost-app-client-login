@@ -62,7 +62,7 @@ const NORMALIZED_CATEGORY_PRIORITY = [
   'other',
 ] as const;
 
-const CATEGORY_PRIORITY = new Map(
+const CATEGORY_PRIORITY = new Map<string, number>(
   NORMALIZED_CATEGORY_PRIORITY.map((category, index) => [category, index]),
 );
 
