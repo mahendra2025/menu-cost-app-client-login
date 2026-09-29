@@ -13,6 +13,10 @@ import type { MenuItem, Session, WorkState } from '../../../lib/types';
 import { calculateManpowerCost } from '../../../lib/manpowerCost';
 import type { Category } from '../../../lib/menuCategories';
 import {
+  compareMenuCategoryPriority,
+  sortMenuItemsByCategoryPriority,
+} from '../../../lib/menuCategoryPriority';
+import {
   getCostingAnalyticsKey,
   trackProductEvent,
 } from '../../../lib/productAnalytics';
@@ -278,7 +282,12 @@ export default function CostPage() {
         .map((item) => item.category)
         .filter((category) => availableDishCategories.includes(category)),
     ),
-  ).sort((a, b) => a.localeCompare(b));
+  ).sort((a, b) =>
+    compareMenuCategoryPriority(
+      { name: '', category: a },
+      { name: '', category: b },
+    ),
+  );
   const dishServices = Array.from(
     new Map(
       result.menuBreakdown.map((item) => {
@@ -408,20 +417,22 @@ export default function CostPage() {
         missingRateCount,
     );
   const normalizedDishQuery = deferredDishQuery.trim().toLocaleLowerCase('en-IN');
-  const filteredDishCosts = result.menuBreakdown.filter((item) => {
-    const matchesSearch = !normalizedDishQuery ||
-      item.name.toLocaleLowerCase('en-IN').includes(normalizedDishQuery) ||
-      item.category.toLocaleLowerCase('en-IN').includes(normalizedDishQuery);
-    const matchesService = dishServiceFilter === 'ALL' || item.serviceKey === dishServiceFilter;
-    const matchesCategory = dishCategoryFilter === 'ALL' || item.category === dishCategoryFilter;
-    const matchesRateStatus =
-      dishStatusFilter === 'ALL'
-        ? true
-        : dishStatusFilter === 'MISSING'
-          ? needsManualRate(item)
-          : !needsManualRate(item);
-    return matchesSearch && matchesService && matchesCategory && matchesRateStatus;
-  });
+  const filteredDishCosts = sortMenuItemsByCategoryPriority(
+    result.menuBreakdown.filter((item) => {
+      const matchesSearch = !normalizedDishQuery ||
+        item.name.toLocaleLowerCase('en-IN').includes(normalizedDishQuery) ||
+        item.category.toLocaleLowerCase('en-IN').includes(normalizedDishQuery);
+      const matchesService = dishServiceFilter === 'ALL' || item.serviceKey === dishServiceFilter;
+      const matchesCategory = dishCategoryFilter === 'ALL' || item.category === dishCategoryFilter;
+      const matchesRateStatus =
+        dishStatusFilter === 'ALL'
+          ? true
+          : dishStatusFilter === 'MISSING'
+            ? needsManualRate(item)
+            : !needsManualRate(item);
+      return matchesSearch && matchesService && matchesCategory && matchesRateStatus;
+    }),
+  );
   const hasWeddingServices =
     result.serviceSummaries.length > 1 ||
     result.serviceSummaries.some(

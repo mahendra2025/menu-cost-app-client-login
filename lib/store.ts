@@ -19,6 +19,7 @@ import type {
 } from './types';
 
 import { calculate } from './workCosting';
+import { sortMenuItemsByCategoryPriority } from './menuCategoryPriority';
 export { calculate, buildMenuCostBreakdown, getMenuServiceKey } from './workCosting';
 
 import {
@@ -2386,7 +2387,7 @@ export async function parseMenuText(
     `Menu detection completed: ${uniqueItems.length} catalog dish(es).`,
   );
 
-  return uniqueItems;
+  return sortMenuItemsByCategoryPriority(uniqueItems);
 }
 
 /* -------------------------------------------------------------------------- */
