@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import {
+  applyManpowerRateMaster,
   deleteCustomManpowerRole,
   getSession,
   loadCustomManpowerRoles,
@@ -698,11 +699,14 @@ export default function ManpowerPage() {
         );
       });
 
-    const manpower = buildMealManpowerRows(
-      savedWork.manpower,
-      meals,
-      savedWork,
-      customRoles,
+    const manpower = applyManpowerRateMaster(
+      current.tenantId,
+      buildMealManpowerRows(
+        savedWork.manpower,
+        meals,
+        savedWork,
+        customRoles,
+      ),
     );
     const nextWork: WorkState = {
       ...savedWork,
@@ -724,11 +728,14 @@ export default function ManpowerPage() {
         if (!latestWork) return latestWork;
 
         const latestMeals = buildMealPlans(latestWork);
-        const syncedManpower = buildMealManpowerRows(
-          latestWork.manpower,
-          latestMeals,
-          latestWork,
-          syncedRoles,
+        const syncedManpower = applyManpowerRateMaster(
+          current.tenantId,
+          buildMealManpowerRows(
+            latestWork.manpower,
+            latestMeals,
+            latestWork,
+            syncedRoles,
+          ),
         );
         const syncedWork: WorkState = {
           ...latestWork,
@@ -1110,6 +1117,18 @@ export default function ManpowerPage() {
     );
   }
 
+  function applyMasterRates() {
+    if (!work || !session) return;
+
+    const rows = applyManpowerRateMaster(
+      session.tenantId,
+      work.manpower,
+      true,
+    );
+
+    persistRows(rows);
+  }
+
   function continueToExpenses() {
     if (!work || !session) return;
 
@@ -1167,13 +1186,29 @@ export default function ManpowerPage() {
             <small>
               {meals.length} meal{meals.length === 1 ? '' : 's'} · {totalPeople} manpower assignments
             </small>
-            <button
-              className="primary-button workflow-overview-button"
-              type="button"
-              onClick={continueToExpenses}
-            >
-              Continue to Operations
-            </button>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => router.push('/app/manpower-rates')}
+              >
+                Manpower Rate Master
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={applyMasterRates}
+              >
+                Apply Master Rates
+              </button>
+              <button
+                className="primary-button workflow-overview-button"
+                type="button"
+                onClick={continueToExpenses}
+              >
+                Continue to Operations
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1826,7 +1861,11 @@ export default function ManpowerPage() {
                           )}
                         </td>
                         <td>
-                          <label className="manpower-rate-input">
+                          <div style={{ display: 'grid', gap: 4 }}>
+                            <small className="muted">
+                              {row.rateManualOverride ? 'Event rate' : 'Master rate'}
+                            </small>
+                            <label className="manpower-rate-input">
                             <span aria-hidden="true">₹</span>
                             <input
                               type="number"
@@ -1837,11 +1876,13 @@ export default function ManpowerPage() {
                               onChange={(event) =>
                                 updateRow(row.id, {
                                   rate: Math.max(0, Number(event.target.value) || 0),
+                                  rateManualOverride: true,
                                 })
                               }
                               aria-label={`Rate for ${row.role} in ${meal.mealLabel}`}
                             />
-                          </label>
+                            </label>
+                          </div>
                         </td>
                         <td><strong>{money(manpowerRawCost(row))}</strong></td>
                       </tr>
@@ -1928,6 +1969,7 @@ export default function ManpowerPage() {
                             onChange={(event) =>
                               updateRow(row.id, {
                                 rate: Math.max(0, Number(event.target.value) || 0),
+                                rateManualOverride: true,
                               })
                             }
                           />
