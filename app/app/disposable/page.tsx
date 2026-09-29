@@ -47,11 +47,33 @@ const DISPOSABLE_UNITS = [
   'event',
 ];
 
+type DisposableCategory =
+  | 'Serviceware'
+  | 'Beverage'
+  | 'Packing'
+  | 'Hygiene'
+  | 'Waste'
+  | 'Other';
+
+function disposableCategory(name: string): DisposableCategory {
+  const value = String(name || '').trim().toLocaleLowerCase('en-IN');
+
+  if (/plate|spoon|fork|bowl|cutlery/.test(value)) return 'Serviceware';
+  if (/cup|glass|straw/.test(value)) return 'Beverage';
+  if (/box|packing|silver roll|foil|wrap/.test(value)) return 'Packing';
+  if (/tissue|napkin|cap|glove|toothpick/.test(value)) return 'Hygiene';
+  if (/garbage|waste|bin bag/.test(value)) return 'Waste';
+
+  return 'Other';
+}
+
 export default function DisposableCostPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [work, setWork] = useState<WorkState | null>(null);
   const [message, setMessage] = useState('');
+  const [itemSearch, setItemSearch] = useState('');
+  const [itemStatus, setItemStatus] = useState<'ALL' | 'MISSING_RATE' | 'ACTIVE'>('ALL');
 
   useEffect(() => {
     const current = getSession();
@@ -133,6 +155,70 @@ export default function DisposableCostPage() {
       }),
     [work, totalCovers],
   );
+
+  const recommendationById = useMemo(
+    () =>
+      new Map(
+        autoAssignment.recommendations.map((item) => [item.id, item] as const),
+      ),
+    [autoAssignment.recommendations],
+  );
+
+  const missingRateCount = summary.items.filter(
+    (item) => item.quantity > 0 && !(item.unitCost > 0),
+  ).length;
+
+  const activeQuantityCount = summary.items.filter(
+    (item) => item.quantity > 0,
+  ).length;
+
+  const filteredItems = summary.items.filter((item) => {
+    const query = itemSearch.trim().toLocaleLowerCase('en-IN');
+    const matchesSearch =
+      !query ||
+      item.name.toLocaleLowerCase('en-IN').includes(query) ||
+      disposableCategory(item.name).toLocaleLowerCase('en-IN').includes(query);
+    const matchesStatus =
+      itemStatus === 'ALL'
+        ? true
+        : itemStatus === 'MISSING_RATE'
+          ? item.quantity > 0 && !(item.unitCost > 0)
+          : item.quantity > 0;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const categorySummary = Array.from(
+    summary.items.reduce(
+      (map, item) => {
+        const category = disposableCategory(item.name);
+        const current = map.get(category) || {
+          category,
+          itemCount: 0,
+          activeCount: 0,
+          quantity: 0,
+          total: 0,
+        };
+
+        current.itemCount += 1;
+        if (item.quantity > 0) current.activeCount += 1;
+        current.quantity += item.quantity;
+        current.total += item.lineTotal;
+        map.set(category, current);
+        return map;
+      },
+      new Map<
+        DisposableCategory,
+        {
+          category: DisposableCategory;
+          itemCount: number;
+          activeCount: number;
+          quantity: number;
+          total: number;
+        }
+      >(),
+    ).values(),
+  ).filter((group) => group.activeCount > 0 || group.total > 0);
 
   function persistItems(items: DisposableCostItem[], nextMessage = '') {
     if (!work || !session) return;
@@ -245,6 +331,49 @@ export default function DisposableCostPage() {
 
         </div>
 
+        <div className="glass-card no-print" style={{ display: 'grid', gap: 14 }}>
+          <div className="final-costing-section-heading" style={{ marginBottom: 0 }}>
+            <div>
+              <span className="section-kicker">Cost health</span>
+              <h2>Plastic costing readiness</h2>
+              <p>
+                {missingRateCount > 0
+                  ? `${missingRateCount} active item${missingRateCount === 1 ? '' : 's'} still need purchase rates.`
+                  : 'All active disposable items have purchase rates.'}
+              </p>
+            </div>
+            <strong className={missingRateCount > 0 ? 'needs-attention' : ''}>
+              {missingRateCount > 0 ? `${missingRateCount} to review` : 'Ready'}
+            </strong>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: 10,
+            }}
+          >
+            {categorySummary.map((group) => (
+              <div
+                key={group.category}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 14,
+                  padding: 12,
+                  display: 'grid',
+                  gap: 4,
+                }}
+              >
+                <small className="muted">{group.activeCount} active item{group.activeCount === 1 ? '' : 's'}</small>
+                <b>{group.category}</b>
+                <span>{money(group.total)}</span>
+                <small className="muted">{group.quantity.toLocaleString('en-IN')} total units</small>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="disposable-desktop-workspace">
           <div className="disposable-desktop-main">
         <div className="glass-card disposable-items-card">
@@ -275,11 +404,67 @@ export default function DisposableCostPage() {
             ))}
           </datalist>
 
+          <div
+            className="no-print"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(220px, 1fr) auto auto',
+              gap: 10,
+              alignItems: 'end',
+              marginBottom: 12,
+            }}
+          >
+            <label className="field">
+              <span>Find item</span>
+              <input
+                className="input"
+                type="search"
+                value={itemSearch}
+                placeholder="Search plate, cup, tissue..."
+                onChange={(event) => setItemSearch(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className={itemStatus === 'ACTIVE' ? 'primary-button' : 'secondary-button'}
+              onClick={() => setItemStatus(itemStatus === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
+            >
+              Active {activeQuantityCount}
+            </button>
+            <button
+              type="button"
+              className={itemStatus === 'MISSING_RATE' ? 'primary-button' : 'secondary-button'}
+              onClick={() => setItemStatus(itemStatus === 'MISSING_RATE' ? 'ALL' : 'MISSING_RATE')}
+            >
+              Missing rate {missingRateCount}
+            </button>
+          </div>
+
+          {filteredItems.length === 0 ? (
+            <div className="empty-state" style={{ marginBottom: 12 }}>
+              <div>
+                <h3>No matching disposable items</h3>
+                <p>Clear search or status filter to show all items.</p>
+              </div>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => {
+                  setItemSearch('');
+                  setItemStatus('ALL');
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : null}
+
           <div className="table-wrap disposable-table-wrap">
             <table className="disposable-table">
               <thead>
                 <tr>
                   <th>Item</th>
+                  <th>Category</th>
                   <th>Quantity</th>
                   <th>Unit</th>
                   <th>Rate / unit</th>
@@ -288,7 +473,7 @@ export default function DisposableCostPage() {
                 </tr>
               </thead>
               <tbody>
-                {summary.items.map((item) => {
+                {filteredItems.map((item) => {
                   const custom = item.id.startsWith('disposable_custom');
                   const legacyFuel = item.name.trim().toLowerCase() === 'fuel';
 
@@ -304,9 +489,16 @@ export default function DisposableCostPage() {
                         ) : (
                           <div className="disposable-name">
                             <strong>{item.name}</strong>
+                            <small className="muted">{disposableCategory(item.name)}</small>
+                            {recommendationById.get(item.id)?.reason ? (
+                              <small className="muted">{recommendationById.get(item.id)?.reason}</small>
+                            ) : null}
                             {legacyFuel ? <small>Use Gas & Transport instead</small> : null}
                           </div>
                         )}
+                      </td>
+                      <td>
+                        <span className="muted">{disposableCategory(item.name)}</span>
                       </td>
                       <td>
                         <input
@@ -341,7 +533,7 @@ export default function DisposableCostPage() {
                           step="0.01"
                           inputMode="decimal"
                           value={item.unitCost || ''}
-                          placeholder="₹0"
+                          placeholder={item.quantity > 0 && !(item.unitCost > 0) ? 'Add rate' : '₹0'}
                           onChange={(event) =>
                             updateItem(item.id, { unitCost: numberValue(event.target.value) })
                           }
@@ -367,7 +559,7 @@ export default function DisposableCostPage() {
           </div>
 
           <div className="disposable-card-list">
-            {summary.items.map((item) => {
+            {filteredItems.map((item) => {
               const custom =
                 item.id.startsWith('disposable_custom');
               const legacyFuel =
@@ -401,6 +593,10 @@ export default function DisposableCostPage() {
                       ) : (
                         <>
                           <strong>{item.name}</strong>
+                          <small className="muted">{disposableCategory(item.name)}</small>
+                          {recommendationById.get(item.id)?.reason ? (
+                            <small className="muted">{recommendationById.get(item.id)?.reason}</small>
+                          ) : null}
                           {legacyFuel ? (
                             <small>
                               Use Gas & Transport instead
@@ -457,7 +653,7 @@ export default function DisposableCostPage() {
                         step="0.01"
                         inputMode="decimal"
                         value={item.unitCost || ''}
-                        placeholder="₹0"
+                        placeholder={item.quantity > 0 && !(item.unitCost > 0) ? 'Add rate' : '₹0'}
                         onChange={(event) =>
                           updateItem(item.id, {
                             unitCost:
@@ -548,6 +744,10 @@ export default function DisposableCostPage() {
                 <span>Suggested units</span>
                 <b>{autoAssignment.totalSuggestedUnits.toLocaleString('en-IN')}</b>
               </div>
+              <div>
+                <span>Missing rates</span>
+                <b className={missingRateCount > 0 ? 'needs-attention' : ''}>{missingRateCount}</b>
+              </div>
             </div>
 
             <div className="disposable-desktop-summary-list">
@@ -610,7 +810,7 @@ export default function DisposableCostPage() {
         </div>
 
         <style>{`
-          .disposable-page{padding-bottom:28px}.disposable-heading-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.auto-assign-summary{display:block;margin-top:8px;color:var(--muted);font-size:11px}.disposable-table{width:100%;border-collapse:collapse}.disposable-table th,.disposable-table td{padding:11px 10px;border-bottom:1px solid rgba(148,163,184,.14);text-align:left;vertical-align:middle}.disposable-table th{color:var(--muted);font-size:11px;font-weight:700}.disposable-table td:nth-child(2),.disposable-table td:nth-child(3),.disposable-table td:nth-child(4){width:150px}.disposable-number{min-width:110px}.disposable-unit{min-width:88px}.disposable-name{display:grid;gap:2px}.disposable-name small{color:#f59e0b;font-size:10px}.disposable-remove{padding:7px 10px}.disposable-table tr.is-active{background:rgba(59,130,246,.04)}.disposable-card-list{display:none}@media(max-width:720px){.disposable-heading-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.disposable-heading-actions button{width:100%}.disposable-table-wrap{display:none}.disposable-card-list{display:grid;gap:10px;margin-top:14px}.disposable-mobile-card{display:grid;gap:12px;padding:14px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(148,163,184,.025)}.disposable-mobile-card.is-active{border-color:rgba(59,130,246,.28);background:rgba(59,130,246,.055)}.disposable-mobile-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.disposable-mobile-card-heading>div{display:grid;gap:3px;min-width:0}.disposable-mobile-card-heading strong{font-size:14px}.disposable-mobile-card-heading small{color:#f59e0b;font-size:10px}.disposable-mobile-card-heading>b{font-size:16px;white-space:nowrap}.disposable-mobile-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.disposable-mobile-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,.12)}.disposable-mobile-total span{color:var(--muted);font-size:11px}.disposable-mobile-total strong{font-size:15px}.disposable-page .final-costing-section-heading{align-items:flex-start;gap:14px}}@media(max-width:420px){.disposable-mobile-fields{grid-template-columns:1fr}}
+          .disposable-page{padding-bottom:28px}.disposable-heading-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.auto-assign-summary{display:block;margin-top:8px;color:var(--muted);font-size:11px}.disposable-table{width:100%;border-collapse:collapse}.disposable-table th,.disposable-table td{padding:11px 10px;border-bottom:1px solid rgba(148,163,184,.14);text-align:left;vertical-align:middle}.disposable-table th{color:var(--muted);font-size:11px;font-weight:700}.disposable-table td:nth-child(3),.disposable-table td:nth-child(4),.disposable-table td:nth-child(5){width:150px}.disposable-number{min-width:110px}.disposable-unit{min-width:88px}.disposable-name{display:grid;gap:2px}.disposable-name small{color:#f59e0b;font-size:10px}.disposable-remove{padding:7px 10px}.disposable-table tr.is-active{background:rgba(59,130,246,.04)}.disposable-card-list{display:none}@media(max-width:720px){.disposable-page .no-print[style*="grid-template-columns: minmax(220px"]{grid-template-columns:1fr!important}.disposable-heading-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.disposable-heading-actions button{width:100%}.disposable-table-wrap{display:none}.disposable-card-list{display:grid;gap:10px;margin-top:14px}.disposable-mobile-card{display:grid;gap:12px;padding:14px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:rgba(148,163,184,.025)}.disposable-mobile-card.is-active{border-color:rgba(59,130,246,.28);background:rgba(59,130,246,.055)}.disposable-mobile-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.disposable-mobile-card-heading>div{display:grid;gap:3px;min-width:0}.disposable-mobile-card-heading strong{font-size:14px}.disposable-mobile-card-heading small{color:#f59e0b;font-size:10px}.disposable-mobile-card-heading>b{font-size:16px;white-space:nowrap}.disposable-mobile-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.disposable-mobile-total{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,.12)}.disposable-mobile-total span{color:var(--muted);font-size:11px}.disposable-mobile-total strong{font-size:15px}.disposable-page .final-costing-section-heading{align-items:flex-start;gap:14px}}@media(max-width:420px){.disposable-mobile-fields{grid-template-columns:1fr}}
         `}</style>
       </section>
     </AppShell>
