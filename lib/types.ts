@@ -298,6 +298,9 @@ export type ManpowerRow = {
   /* Preserve user quantity changes when the menu or page reloads. */
   manualOverride?: boolean;
 
+  /* Preserve an event-specific manpower rate instead of replacing it from Rate Master. */
+  rateManualOverride?: boolean;
+
   /* Optional menu workload value used for kitchen recommendations. */
   workloadScore?: number;
 
