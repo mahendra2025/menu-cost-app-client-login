@@ -22,6 +22,7 @@ import {
   defaultGasCostMaster,
   type GasCostMaster,
 } from '../../../lib/gasCost';
+import { assessCostingHealth } from '../../../lib/costingHealth';
 
 const PRICE_PRESETS = [10, 20, 30, 40];
 
@@ -191,6 +192,17 @@ export default function FinalCostingPage() {
     [costing, mode, pricingPercent, manualPrice],
   );
 
+  const costingHealth = useMemo(
+    () =>
+      work
+        ? assessCostingHealth(work, {
+            totalCovers: costing?.totalCovers ?? 0,
+            sellingPricePerCover: pricing.sellingPricePerCover,
+          })
+        : null,
+    [work, costing?.totalCovers, pricing.sellingPricePerCover],
+  );
+
   if (!work || !session || !costing) {
     return (
       <AppShell title="Final Cost" subtitle="Review the real event cost and set the selling price">
@@ -205,13 +217,10 @@ export default function FinalCostingPage() {
     );
   }
 
-  const missingRateCount = work.menu.filter(
-    (item) => !(Number(item.costPerPlate) > 0),
-  ).length;
   const costReady =
     work.menu.length > 0 &&
     costing.totalCovers > 0 &&
-    missingRateCount === 0;
+    Boolean(costingHealth?.canPrice);
   const priceReady = costReady && pricing.sellingPricePerCover > 0;
 
   const profitPerCover =
@@ -415,6 +424,62 @@ export default function FinalCostingPage() {
             </button>
           </div>
         </div>
+
+        {costingHealth ? (
+          <div className="glass-card" style={{ borderLeft: costingHealth.blockerCount > 0 ? '4px solid #dc2626' : costingHealth.warningCount > 0 ? '4px solid #d97706' : '4px solid #16a34a' }}>
+            <div className="final-costing-section-heading">
+              <div>
+                <span className="section-kicker">Costing health check</span>
+                <h2>
+                  {costingHealth.status === 'INCOMPLETE'
+                    ? 'Incomplete — fix missing costs before pricing'
+                    : costingHealth.status === 'REVIEW_NEEDED'
+                      ? 'Review needed — confirm warnings'
+                      : costingHealth.status === 'READY_FOR_QUOTATION'
+                        ? 'Ready for quotation'
+                        : 'Cost verified'}
+                </h2>
+                <p>
+                  Automatic checks for missing rates, duplicate dishes, category quality, LPG overrides,
+                  manpower mapping and transport completeness.
+                </p>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <b>
+                  {costingHealth.blockerCount} blocker{costingHealth.blockerCount === 1 ? '' : 's'} ·{' '}
+                  {costingHealth.warningCount} warning{costingHealth.warningCount === 1 ? '' : 's'}
+                </b>
+              </div>
+            </div>
+
+            {costingHealth.issues.length > 0 ? (
+              <div className="final-cost-breakdown" style={{ marginTop: 14 }}>
+                {costingHealth.issues.map((issue) => (
+                  <div key={issue.code}>
+                    <span>{issue.severity === 'BLOCKER' ? 'Must fix' : 'Review'}</span>
+                    <b>{issue.title}</b>
+                    <small>{issue.detail}</small>
+                    {issue.actionPath ? (
+                      <button type="button" onClick={() => router.push(issue.actionPath!)}>
+                        Fix / Review
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="admin-message" style={{ marginTop: 12 }}>
+                All tracked costing inputs are complete. You can set the selling price with confidence.
+              </div>
+            )}
+
+            {!costingHealth.canPrice ? (
+              <div className="admin-message" style={{ marginTop: 12 }}>
+                Selling-price actions are locked until all blocker items are resolved.
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="final-cost-desktop-kpis">
           <div>
