@@ -17,6 +17,7 @@ import {
   compareMenuCategoryPriority,
   sortMenuItemsByCategoryPriority,
 } from '../../../lib/menuCategoryPriority';
+import { recommendCategoryConsumptionPercent } from '../../../lib/categoryConsumption';
 import {
   getCostingAnalyticsKey,
   trackProductEvent,
@@ -446,6 +447,8 @@ export default function CostPage() {
       subtotal: number;
       missingCount: number;
       targetPercent: number;
+      recommendedPercent: number;
+      pax: number;
     }>
   >((groups, item) => {
     const key = `${item.serviceKey}::${item.category}`;
@@ -473,6 +476,12 @@ export default function CostPage() {
             Math.max(0, Number(item.categoryPortionPercent)),
           )
         : 100,
+      recommendedPercent: recommendCategoryConsumptionPercent({
+        category: item.category,
+        mealLabel: item.mealLabel,
+        pax: item.effectivePax,
+      }),
+      pax: item.effectivePax,
     });
 
     return groups;
@@ -508,6 +517,22 @@ export default function CostPage() {
             }
           : item,
       ),
+    });
+  }
+
+  function applyAllCategoryRecommendations() {
+    if (!work) return;
+
+    persist({
+      ...work,
+      menu: work.menu.map((item) => ({
+        ...item,
+        categoryPortionPercent: recommendCategoryConsumptionPercent({
+          category: item.category,
+          mealLabel: item.mealLabel,
+          pax: item.servicePax || work.event.pax,
+        }),
+      })),
     });
   }
 
@@ -1573,6 +1598,19 @@ export default function CostPage() {
                 <b>Portion allocation:</b> automatic sharing is calculated separately inside every meal and category. You can also set a custom percentage for any dish: 50% charges half its base cost; 150% charges one-and-a-half times.
               </div>
 
+              <div
+                className="no-print"
+                style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}
+              >
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={applyAllCategoryRecommendations}
+                >
+                  Apply all recommended consumption
+                </button>
+              </div>
+
               {filteredDishCosts.length === 0 ? (
                 <div className="dish-cost-empty">
                   <b>No matching dishes</b>
@@ -1681,6 +1719,23 @@ export default function CostPage() {
                                         />
                                         <small>%</small>
                                       </label>
+                                      <small className="muted">Recommended {group.recommendedPercent}%</small>
+                                      {group.targetPercent !== group.recommendedPercent ? (
+                                        <button
+                                          className="ghost-button"
+                                          type="button"
+                                          onClick={() =>
+                                            updateCategoryPortion(
+                                              group.serviceKey,
+                                              group.category,
+                                              group.recommendedPercent,
+                                            )
+                                          }
+                                          style={{ padding: '6px 9px' }}
+                                        >
+                                          Apply
+                                        </button>
+                                      ) : null}
                                       <small>{group.items.length} dish{group.items.length === 1 ? '' : 'es'}</small>
                                       {group.missingCount > 0 ? (
                                         <small className="needs-attention">{group.missingCount} rate{group.missingCount === 1 ? '' : 's'} missing</small>
@@ -2020,6 +2075,27 @@ export default function CostPage() {
                                 <span>%</span>
                               </span>
                             </label>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                              <small className="muted">
+                                Recommended {group.recommendedPercent}% · {group.pax.toLocaleString('en-IN')} guests
+                              </small>
+                              {group.targetPercent !== group.recommendedPercent ? (
+                                <button
+                                  className="ghost-button"
+                                  type="button"
+                                  onClick={() =>
+                                    updateCategoryPortion(
+                                      group.serviceKey,
+                                      group.category,
+                                      group.recommendedPercent,
+                                    )
+                                  }
+                                  style={{ padding: '6px 9px' }}
+                                >
+                                  Apply
+                                </button>
+                              ) : null}
+                            </div>
                           </div>
                           {!collapsed ? group.items.map((item) => (
                       <article className={`dish-cost-card ${needsManualRate(item) ? 'dish-rate-missing' : ''}`} key={item.id}>
