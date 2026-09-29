@@ -141,6 +141,14 @@ export type MenuItem = {
   portionManuallyEdited?: boolean;
   portionMode?: 'AUTO' | 'CUSTOM';
   portionPercent?: number;
+
+  /*
+   * Total expected consumption for this meal/category.
+   * Example: Sweet category = 80% means the category should contribute
+   * 0.8 full servings per guest, shared across its AUTO dishes.
+   */
+  categoryPortionPercent?: number;
+
   serviceId?: string;
   dayLabel?: string;
   mealLabel?: string;
