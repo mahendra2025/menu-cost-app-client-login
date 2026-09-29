@@ -62,9 +62,10 @@ const NORMALIZED_CATEGORY_PRIORITY = [
   'other',
 ] as const;
 
-const CATEGORY_PRIORITY = new Map<string, number>(
-  NORMALIZED_CATEGORY_PRIORITY.map((category, index) => [category, index]),
-);
+const CATEGORY_PRIORITY: Record<string, number> =
+  Object.fromEntries(
+    NORMALIZED_CATEGORY_PRIORITY.map((category, index) => [category, index]),
+  );
 
 function normalizeCategory(value: string) {
   return String(value || '')
@@ -92,7 +93,7 @@ function dishPriority(item: Pick<MenuItem, 'name' | 'category'>) {
   }
 
   const category = normalizeCategory(item.category);
-  return CATEGORY_PRIORITY.get(category) ?? NORMALIZED_CATEGORY_PRIORITY.length;
+  return CATEGORY_PRIORITY[category] ?? NORMALIZED_CATEGORY_PRIORITY.length;
 }
 
 /**
