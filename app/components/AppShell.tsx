@@ -135,6 +135,7 @@ const clientWorkspaceNav = [
   { href: '/app/history', match: '/app/history', label: 'History', description: 'Saved events', icon: 'history' as ClientNavIcon },
   { href: '/app/ingredients', match: '/app/ingredients', label: 'Ingredient Rates', description: 'Business + city + global rates', icon: 'ingredients' as ClientNavIcon },
   { href: '/app/disposable-rates', match: '/app/disposable-rates', label: 'Plastic Rates', description: 'Reusable disposable purchase rates', icon: 'expenses' as ClientNavIcon },
+  { href: '/app/manpower-rates', match: '/app/manpower-rates', label: 'Manpower Rates', description: 'Reusable staff rates', icon: 'team' as ClientNavIcon },
   { href: '/admin/dishes', match: '/admin/dishes', label: 'Master Data', description: 'Dishes, recipes and cost masters', icon: 'ingredients' as ClientNavIcon },
   { href: '/app/profile', match: '/app/profile', label: 'Profile', description: 'Business settings', icon: 'profile' as ClientNavIcon },
 ];
@@ -371,6 +372,7 @@ export default function AppShell({
     pathname === '/app/history' ||
     pathname === '/app/ingredients' ||
     pathname === '/app/disposable-rates' ||
+    pathname === '/app/manpower-rates' ||
     pathname === '/app/profile';
 
   const signOut = () => {
