@@ -28177,3 +28177,322 @@ body.client-sheet-open {
     display: none;
   }
 }
+
+/* ========================================================================== */
+/* Desktop usability system                                                   */
+/* Restores a comfortable working scale across the client costing workspace.   */
+/* ========================================================================== */
+
+@media (min-width: 821px) {
+  .client-theme.page-shell {
+    padding: 14px 24px 40px;
+  }
+
+  .client-theme .topbar {
+    top: 10px;
+    width: 100%;
+    max-width: 1680px;
+    min-height: 64px;
+    margin-bottom: 18px;
+    padding: 8px 10px 8px 8px;
+    border-radius: 16px;
+  }
+
+  .client-theme .brand-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 13px;
+  }
+
+  .client-theme .brand-copy b {
+    font-size: 15px;
+  }
+
+  .client-theme .brand-copy small {
+    max-width: 280px;
+    margin-top: 2px;
+    font-size: 11px;
+  }
+
+  .client-theme .topbar-actions {
+    gap: 9px;
+  }
+
+  .client-theme .app-language-select > span {
+    font-size: 10px;
+  }
+
+  .client-theme .app-language-select select,
+  .client-theme .account-status,
+  .client-theme .logout-button {
+    min-height: 38px;
+    font-size: 12px;
+  }
+
+  .client-theme .app-layout {
+    grid-template-columns: 244px minmax(0, 1fr) !important;
+    gap: 22px !important;
+    max-width: 1680px;
+  }
+
+  .client-theme .client-desktop-sidebar {
+    top: 92px;
+    gap: 14px;
+    min-height: calc(100vh - 118px);
+    max-height: calc(100vh - 118px);
+    padding: 16px 12px;
+    border-radius: 18px;
+  }
+
+  .client-theme .client-desktop-sidebar .sidebar-heading {
+    padding: 2px 8px 11px;
+  }
+
+  .client-theme .client-desktop-sidebar .sidebar-heading span {
+    font-size: 10px;
+    letter-spacing: .06em;
+  }
+
+  .client-theme .client-desktop-sidebar .sidebar-heading b {
+    margin-top: 3px;
+    font-size: 15px;
+  }
+
+  .client-theme .client-desktop-sidebar .sidebar-nav {
+    gap: 5px;
+  }
+
+  .client-theme .client-desktop-sidebar .sidebar-nav a {
+    min-height: 54px;
+    padding: 8px 9px;
+    border-radius: 12px;
+  }
+
+  .client-theme .client-desktop-nav .client-nav-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+
+  .client-theme .client-desktop-nav .client-nav-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .client-theme .client-desktop-sidebar .nav-copy b {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .client-theme .client-desktop-sidebar .nav-copy small {
+    margin-top: 2px;
+    color: #7d8b9e;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .client-theme .client-desktop-step {
+    width: 22px;
+    height: 22px;
+    font-size: 9px;
+  }
+
+  .client-theme .client-desktop-nav-secondary a {
+    min-height: 48px !important;
+  }
+
+  .client-theme .client-desktop-nav-secondary .nav-copy small {
+    display: block;
+  }
+
+  .client-theme .client-desktop-sidebar .sidebar-support {
+    padding: 12px;
+  }
+
+  .client-theme .client-desktop-sidebar .sidebar-support span {
+    font-size: 10px;
+  }
+
+  .client-theme .client-desktop-sidebar .sidebar-support p {
+    font-size: 11px;
+  }
+
+  .client-theme .client-desktop-page-head {
+    align-items: center;
+    margin-bottom: 18px;
+    padding: 4px 2px 18px;
+  }
+
+  .client-theme .client-desktop-page-head .page-eyebrow {
+    margin-bottom: 6px;
+    font-size: 10px;
+  }
+
+  .client-theme .client-desktop-page-head h1 {
+    font-size: clamp(30px, 2.5vw, 40px);
+    line-height: 1.08;
+  }
+
+  .client-theme .client-desktop-page-head p {
+    margin-top: 7px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .client-theme .client-desktop-page-step {
+    min-width: 184px;
+    gap: 4px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    text-align: left;
+  }
+
+  .client-theme .client-desktop-page-step span,
+  .client-theme .client-desktop-page-step small {
+    font-size: 9px;
+  }
+
+  .client-theme .client-desktop-page-step b {
+    font-size: 14px;
+  }
+
+  .client-theme .content-grid,
+  .client-theme .form-grid {
+    gap: 16px;
+  }
+
+  .client-theme :where(.glass-card, .panel) {
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .client-theme :where(.glass-card, .panel) > h2 {
+    font-size: 22px;
+  }
+
+  .client-theme :where(.glass-card, .panel) > h3 {
+    font-size: 17px;
+  }
+
+  .client-theme .field {
+    gap: 7px;
+  }
+
+  .client-theme .field label,
+  .client-theme .field > span {
+    font-size: 12px;
+  }
+
+  .client-theme .field small {
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .client-theme :where(.input, .textarea, .select) {
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 11px;
+    font-size: 14px;
+  }
+
+  .client-theme :where(.primary-button, .secondary-button, .ghost-button, .danger-button) {
+    min-height: 40px;
+    padding: 9px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .client-theme .section-kicker,
+  .client-theme .page-eyebrow {
+    font-size: 10px;
+  }
+
+  .client-theme .muted,
+  .client-theme :where(.glass-card, .panel) > p {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .client-theme .stat-grid {
+    gap: 12px;
+  }
+
+  .client-theme :where(.stat-card, .helper-card, .readiness-card) {
+    padding: 15px 16px;
+    border-radius: 14px;
+  }
+
+  .client-theme .stat-card small,
+  .client-theme .stat-card span {
+    font-size: 10px;
+  }
+
+  .client-theme .stat-card strong {
+    margin-top: 5px;
+    font-size: 23px;
+  }
+
+  .client-theme .table-wrap {
+    border-radius: 14px;
+    scrollbar-color: #3b4b60 #111821;
+  }
+
+  .client-theme table {
+    font-size: 13px;
+  }
+
+  .client-theme table th {
+    height: 42px;
+    padding: 10px 12px;
+    color: #91a0b3;
+    font-size: 10px;
+    letter-spacing: .035em;
+  }
+
+  .client-theme table td {
+    padding: 12px;
+    line-height: 1.4;
+  }
+
+  .client-theme .page-actions {
+    position: sticky;
+    z-index: 12;
+    bottom: 12px;
+    gap: 8px;
+    margin-top: 18px;
+    padding: 10px;
+    border-radius: 14px;
+    backdrop-filter: blur(18px);
+  }
+
+  .client-theme :where(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid #79b6ff;
+    outline-offset: 2px;
+  }
+}
+
+@media (min-width: 821px) and (max-width: 1180px) {
+  .client-theme.page-shell {
+    padding-inline: 16px;
+  }
+
+  .client-theme .app-layout {
+    grid-template-columns: 204px minmax(0, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  .client-theme .client-desktop-sidebar .nav-copy small,
+  .client-theme .client-desktop-step,
+  .client-theme .account-status {
+    display: none;
+  }
+
+  .client-theme .client-desktop-nav a {
+    grid-template-columns: 32px minmax(0, 1fr) !important;
+  }
+
+  .client-theme .client-desktop-page-step {
+    min-width: 150px;
+  }
+}
