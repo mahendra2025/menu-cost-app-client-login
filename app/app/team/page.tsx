@@ -671,6 +671,8 @@ export default function ManpowerPage() {
     useState<DishCoverageFilter>('ALL');
   const [newRoleDrafts, setNewRoleDrafts] = useState<Record<string, NewRoleDraft>>({});
   const [roleErrors, setRoleErrors] = useState<Record<string, string>>({});
+  const [roleSearch, setRoleSearch] = useState('');
+  const [roleStatus, setRoleStatus] = useState<'ALL' | 'ACTIVE' | 'NEEDS_REVIEW'>('ALL');
 
   useEffect(() => {
     const current = getSession();
@@ -1122,6 +1124,19 @@ export default function ManpowerPage() {
 
     window.location.assign('/app/operations');
   }
+  function manpowerGap(row: ManpowerRow) {
+    const selected = Math.max(0, Number(row.quantity) || 0);
+    const recommended = Math.max(0, Number(row.recommendedQuantity) || 0);
+    return selected - recommended;
+  }
+
+  function applyRoleRecommendation(row: ManpowerRow) {
+    updateRow(row.id, {
+      quantity: Math.max(0, Number(row.recommendedQuantity) || 0),
+      manualOverride: true,
+      calculationSource: 'MANUAL',
+    });
+  }
 
   if (!work) {
     return (
@@ -1214,7 +1229,7 @@ export default function ManpowerPage() {
         {meals.filter((meal) => meal.key === activeMealKey).map((meal) => {
           const mealIndex = meals.findIndex((item) => item.key === meal.key);
           const mealRows = rowsForMeal(meal);
-          const filteredMealRows =
+          const departmentRows =
             departmentFilter === 'ALL'
               ? mealRows
               : mealRows.filter(
@@ -1222,6 +1237,28 @@ export default function ManpowerPage() {
                     manpowerFilterGroup(row) ===
                     departmentFilter,
                 );
+          const roleQuery = roleSearch.trim().toLocaleLowerCase('en-IN');
+          const filteredMealRows = departmentRows.filter((row) => {
+            const matchesSearch =
+              !roleQuery ||
+              row.role.toLocaleLowerCase('en-IN').includes(roleQuery) ||
+              String(row.department || '').toLocaleLowerCase('en-IN').includes(roleQuery);
+
+            const gap = manpowerGap(row);
+            const matchesStatus =
+              roleStatus === 'ALL'
+                ? true
+                : roleStatus === 'ACTIVE'
+                  ? Math.max(0, Number(row.quantity) || 0) > 0
+                  : gap !== 0 ||
+                    (
+                      canAssignDishes(row) &&
+                      (row.assignedDishIds ?? []).length > 0 &&
+                      Math.max(0, Number(row.quantity) || 0) === 0
+                    );
+
+            return matchesSearch && matchesStatus;
+          });
           const mealDishes = work.menu.filter((dish) =>
             meal.dishIds.includes(dish.id),
           );
@@ -1244,6 +1281,15 @@ export default function ManpowerPage() {
             (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
             0,
           );
+          const mealRecommendedPeople = mealRows.reduce(
+            (sum, row) => sum + Math.max(0, Number(row.recommendedQuantity) || 0),
+            0,
+          );
+          const reviewRoleCount = mealRows.filter(
+            (row) =>
+              !isCustomRole(row) &&
+              manpowerGap(row) !== 0,
+          ).length;
           const mealTitle = [meal.dayLabel, meal.mealLabel]
             .filter(Boolean)
             .join(' · ');
@@ -1353,7 +1399,15 @@ export default function ManpowerPage() {
                   </span>
                   <span>
                     <b>{mealPeople}</b>
-                    people
+                    selected people
+                  </span>
+                  <span className={reviewRoleCount > 0 ? 'needs-attention' : 'is-complete'}>
+                    <b>{mealRecommendedPeople}</b>
+                    recommended people
+                  </span>
+                  <span className={reviewRoleCount > 0 ? 'needs-attention' : ''}>
+                    <b>{reviewRoleCount}</b>
+                    roles differ
                   </span>
                   <span>
                     <b>{money(mealTotal)}</b>
@@ -1633,6 +1687,49 @@ export default function ManpowerPage() {
                 })}
               </div>
 
+              <div
+                className="no-print"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(220px, 1fr) auto auto',
+                  gap: 10,
+                  alignItems: 'end',
+                  marginBottom: 12,
+                }}
+              >
+                <label className="field">
+                  <span>Find manpower role</span>
+                  <input
+                    className="input"
+                    type="search"
+                    value={roleSearch}
+                    placeholder="Search waiter, cook, helper..."
+                    onChange={(event) => setRoleSearch(event.target.value)}
+                  />
+                </label>
+                <button
+                  className={roleStatus === 'ACTIVE' ? 'primary-button' : 'secondary-button'}
+                  type="button"
+                  onClick={() => setRoleStatus(roleStatus === 'ACTIVE' ? 'ALL' : 'ACTIVE')}
+                >
+                  Active roles
+                </button>
+                <button
+                  className={roleStatus === 'NEEDS_REVIEW' ? 'primary-button' : 'secondary-button'}
+                  type="button"
+                  onClick={() => setRoleStatus(roleStatus === 'NEEDS_REVIEW' ? 'ALL' : 'NEEDS_REVIEW')}
+                >
+                  Needs review {reviewRoleCount}
+                </button>
+              </div>
+
+              {filteredMealRows.length === 0 ? (
+                <div className="manpower-menu-empty" style={{ marginBottom: 12 }}>
+                  <b>No matching manpower roles</b>
+                  <span>Clear filters or search to show all roles for this meal.</span>
+                </div>
+              ) : null}
+
               <div className="table-wrap manpower-table-wrap">
                 <table className="manpower-table">
                   <thead>
@@ -1641,6 +1738,7 @@ export default function ManpowerPage() {
                       <th>Manpower</th>
                       <th>Dishes</th>
                       <th>Quantity</th>
+                      <th>Status</th>
                       <th>Rate / person</th>
                       <th>Total</th>
                     </tr>
@@ -1705,6 +1803,29 @@ export default function ManpowerPage() {
                           />
                         </td>
                         <td>
+                          {isCustomRole(row) ? (
+                            <span className="muted">Manual</span>
+                          ) : manpowerGap(row) === 0 ? (
+                            <span className="account-status active">Matches recommendation</span>
+                          ) : (
+                            <div style={{ display: 'grid', gap: 6 }}>
+                              <span className="needs-attention">
+                                {manpowerGap(row) > 0
+                                  ? `+${manpowerGap(row)} above`
+                                  : `${Math.abs(manpowerGap(row))} below`}
+                              </span>
+                              <button
+                                className="ghost-button"
+                                type="button"
+                                onClick={() => applyRoleRecommendation(row)}
+                                style={{ padding: '6px 8px' }}
+                              >
+                                Use {Math.max(0, Number(row.recommendedQuantity) || 0)}
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td>
                           <label className="manpower-rate-input">
                             <span aria-hidden="true">₹</span>
                             <input
@@ -1742,6 +1863,16 @@ export default function ManpowerPage() {
                           {!isCustomRole(row) && row.department ? ` · ${row.department.replace(/_/g, ' ')}` : ''}
                         </small>
                         <b>{row.role}</b>
+                        {!isCustomRole(row) ? (
+                          <small className={manpowerGap(row) === 0 ? 'muted' : 'needs-attention'}>
+                            Recommended {Math.max(0, Number(row.recommendedQuantity) || 0)}
+                            {manpowerGap(row) === 0
+                              ? ' · matched'
+                              : manpowerGap(row) > 0
+                                ? ` · +${manpowerGap(row)} above`
+                                : ` · ${Math.abs(manpowerGap(row))} below`}
+                          </small>
+                        ) : null}
 
                       </div>
                       {isCustomRole(row) ? (
@@ -1803,6 +1934,16 @@ export default function ManpowerPage() {
                         </label>
                       </div>
                     </div>
+
+                    {!isCustomRole(row) && manpowerGap(row) !== 0 ? (
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => applyRoleRecommendation(row)}
+                      >
+                        Use recommended quantity {Math.max(0, Number(row.recommendedQuantity) || 0)}
+                      </button>
+                    ) : null}
 
                     <div className="manpower-role-card-total">
                       <span>Total</span>
@@ -1894,6 +2035,12 @@ export default function ManpowerPage() {
                 <span>Roles need qty</span>
                 <b className={zeroQuantityAssignedRoleCount > 0 ? 'needs-attention' : ''}>
                   {zeroQuantityAssignedRoleCount}
+                </b>
+              </div>
+              <div>
+                <span>Recommendation gaps</span>
+                <b className={work.manpower.filter((row) => !isCustomRole(row) && manpowerGap(row) !== 0).length > 0 ? 'needs-attention' : ''}>
+                  {work.manpower.filter((row) => !isCustomRole(row) && manpowerGap(row) !== 0).length}
                 </b>
               </div>
             </div>
