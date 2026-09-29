@@ -226,6 +226,74 @@ export function calculateManpowerCost(
   );
 }
 
+export type ManpowerBillingSummaryGroup = {
+  key: string;
+  mode: ManpowerRateMode;
+  label: string;
+  cost: number;
+  coveredRows: number;
+};
+
+export function buildManpowerBillingSummary(
+  rows: ManpowerRow[],
+) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const groups = billingGroups(safeRows);
+  const groupRows = new Map<string, ManpowerRow[]>();
+
+  safeRows.forEach((row) => {
+    if (!(manpowerRawCost(row) > 0)) return;
+    const key = manpowerBillingKey(row);
+    const current = groupRows.get(key) || [];
+    current.push(row);
+    groupRows.set(key, current);
+  });
+
+  const summaryGroups: ManpowerBillingSummaryGroup[] =
+    Array.from(groups.entries()).map(([key, group]) => {
+      const covered = groupRows.get(key) || [];
+      const representative =
+        covered.find((row) => row.id === group.representativeId) ||
+        covered[0];
+      const mode = representative
+        ? getManpowerRateMode(representative)
+        : 'PER_MEAL';
+      const label =
+        mode === 'PER_DAY'
+          ? `${representative?.dayLabel || 'Event'} · ${representative?.role || 'Staff'}`
+          : mode === 'PER_SHIFT'
+            ? `${representative?.dayLabel || 'Event'} · ${inferManpowerShift(representative)} · ${representative?.role || 'Staff'}`
+            : `${representative?.mealLabel || 'Meal'} · ${representative?.role || 'Staff'}`;
+
+      return {
+        key,
+        mode,
+        label,
+        cost: group.cost,
+        coveredRows: covered.length,
+      };
+    });
+
+  const rawCost = safeRows.reduce(
+    (sum, row) => sum + manpowerRawCost(row),
+    0,
+  );
+  const billableCost = summaryGroups.reduce(
+    (sum, group) => sum + group.cost,
+    0,
+  );
+
+  return {
+    groups: summaryGroups,
+    rawCost,
+    billableCost,
+    savings: Math.max(0, rawCost - billableCost),
+    sharedGroupCount: summaryGroups.filter(
+      (group) => group.mode !== 'PER_MEAL' && group.coveredRows > 1,
+    ).length,
+  };
+}
+
 export function manpowerBillableCost(
   row: ManpowerRow,
   rows: ManpowerRow[],
