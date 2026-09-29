@@ -19361,6 +19361,26 @@ body.client-sheet-open {
   line-height: 1.55;
 }
 
+.event-paste-details {
+  display: grid;
+  grid-template-columns: minmax(0, 240px);
+}
+
+.event-paste-details .field {
+  gap: 6px;
+}
+
+.event-paste-details .field > span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.event-paste-details .field small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .event-paste-actions {
   display: flex;
   align-items: center;
@@ -19373,6 +19393,10 @@ body.client-sheet-open {
 }
 
 @media (max-width: 640px) {
+  .event-paste-details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .event-paste-actions {
     align-items: stretch;
     flex-direction: column;

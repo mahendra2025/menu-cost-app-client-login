@@ -10104,6 +10104,38 @@ export default function EventPage() {
                           rows={10}
                           autoFocus
                         />
+                        <div className="event-paste-details">
+                          <label
+                            className="field"
+                            htmlFor="pastedMenuGuests"
+                          >
+                            <span>Guests</span>
+                            <input
+                              id="pastedMenuGuests"
+                              className="input"
+                              type="number"
+                              min="1"
+                              step="1"
+                              inputMode="numeric"
+                              value={importFunctionPax}
+                              onChange={(event) => {
+                                const value = event.target.value;
+                                const guests = Math.max(
+                                  0,
+                                  Math.round(Number(value) || 0),
+                                );
+
+                                setImportFunctionPax(value);
+                                updateEvent('pax', guests);
+                                setError('');
+                              }}
+                              placeholder="e.g. 300"
+                            />
+                            <small>
+                              Enter it here, or include it in the pasted menu.
+                            </small>
+                          </label>
+                        </div>
                         <div className="event-paste-actions">
                           <small>{work.event.rawMenuText.trim() ? `${work.event.rawMenuText.trim().split(/\n+/).length} menu lines ready` : 'Paste dish names and category headings.'}</small>
                           <button
