@@ -5807,6 +5807,47 @@ export default function EventPage() {
         );
 
       /*
+       * A pasted menu often contains one event-level guest count rather than
+       * repeating the count beside every meal. Event-detail detection already
+       * finds that value, but the review/save flow validates servicePax on the
+       * individual menu items. Carry the event count onto any function that
+       * does not have its own explicit count so the detected value is visible
+       * in the Guests field and the menu can be saved without re-entry.
+       *
+       * A function-specific count always wins over this fallback.
+       */
+      const detectedDefaultPax =
+        Math.max(
+          0,
+          Math.round(
+            Number(
+              detectedDetails.pax,
+            ) ||
+              Number(
+                detectionWork.event.pax,
+              ) ||
+              0,
+          ),
+        );
+
+      if (detectedDefaultPax > 0) {
+        detectedMenu =
+          detectedMenu.map(
+            (item) => ({
+              ...item,
+              servicePax:
+                Math.max(
+                  0,
+                  Number(
+                    item.servicePax,
+                  ) || 0,
+                ) ||
+                detectedDefaultPax,
+            }),
+          );
+      }
+
+      /*
        * The Dishes page owns the category catalog. Detection may infer a
        * legacy heading, but it must never reintroduce a category that was
        * removed there.
