@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Fragment,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -1588,8 +1589,8 @@ export default function CostPage() {
                           const collapsed = Boolean(collapsedDishGroups[group.key]);
 
                           return (
-                            <>
-                              <tr key={`${group.key}-heading`} className="dish-category-section-row">
+                            <Fragment key={group.key}>
+                              <tr className="dish-category-section-row">
                                 <td colSpan={9} style={{ padding: 0 }}>
                                   <button
                                     type="button"
@@ -1885,7 +1886,7 @@ export default function CostPage() {
                             </td>
                           </tr>
                               )) : null}
-                            </>
+                            </Fragment>
                           );
                         })}
                       </tbody>
