@@ -18,7 +18,10 @@ import {
   calculateManpowerCost,
   manpowerRawCost,
 } from '../../../lib/manpowerCost';
-import { generateMealManpowerRows } from '../../../lib/manpowerEngine';
+import {
+  buildCategoryManpowerRecommendations,
+  generateMealManpowerRows,
+} from '../../../lib/manpowerEngine';
 import {
   MANPOWER_ROLE_MASTER,
 } from '../../../lib/manpowerMaster';
@@ -907,6 +910,36 @@ export default function ManpowerPage() {
     saveWork(session.tenantId, nextWork);
   }
 
+  function applyRecommendedMealManpower(
+    meal: MealPlan,
+    roleId?: string,
+  ) {
+    if (!work) return;
+
+    const nextRows = work.manpower.map((row) => {
+      if (!rowBelongsToMeal(row, meal)) return row;
+      if (isCustomRole(row)) return row;
+
+      const matchesRole =
+        !roleId ||
+        row.id.endsWith(`::${roleId}`);
+
+      if (!matchesRole) return row;
+
+      return {
+        ...row,
+        quantity: Math.max(
+          0,
+          Number(row.recommendedQuantity) || 0,
+        ),
+        manualOverride: true,
+        calculationSource: 'MANUAL' as const,
+      };
+    });
+
+    persistRows(nextRows);
+  }
+
   function updateRow(id: string, patch: Partial<ManpowerRow>) {
     if (!work) return;
 
@@ -1192,6 +1225,19 @@ export default function ManpowerPage() {
           const mealDishes = work.menu.filter((dish) =>
             meal.dishIds.includes(dish.id),
           );
+          const categoryRecommendations =
+            buildCategoryManpowerRecommendations(
+              mealDishes,
+              meal.pax,
+            );
+          const recommendedKitchenPeople =
+            categoryRecommendations.reduce(
+              (sum, item) =>
+                sum +
+                item.recommendedCooks +
+                item.recommendedHelpers,
+              0,
+            );
           const newRoleDraft = newRoleDrafts[meal.key] || { role: '', rate: '' };
           const mealTotal = calculateManpowerCost(mealRows);
           const mealPeople = mealRows.reduce(
@@ -1360,6 +1406,108 @@ export default function ManpowerPage() {
                 </div>
               </section>
 
+              {categoryRecommendations.length > 0 ? (
+                <section
+                  className="no-print"
+                  aria-label="Category manpower recommendations"
+                  style={{
+                    marginTop: 16,
+                    padding: 16,
+                    border: '1px solid var(--border)',
+                    borderRadius: 16,
+                    display: 'grid',
+                    gap: 14,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: 14,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div>
+                      <span className="section-kicker">Smart kitchen recommendation</span>
+                      <h3 style={{ margin: '4px 0' }}>Category chef &amp; helper plan</h3>
+                      <p className="muted" style={{ margin: 0 }}>
+                        Based on category, dish count, {meal.pax.toLocaleString('en-IN')} guests and live-counter workload.
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <strong>{recommendedKitchenPeople} suggested kitchen people</strong>
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => applyRecommendedMealManpower(meal)}
+                      >
+                        Apply all recommendations
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                      gap: 10,
+                    }}
+                  >
+                    {categoryRecommendations.map((item) => {
+                      const roleRow = mealRows.find((row) =>
+                        row.id.endsWith(`::${item.cookRoleId}`),
+                      );
+                      const roleRecommended =
+                        Math.max(
+                          0,
+                          Number(roleRow?.recommendedQuantity) || 0,
+                        );
+
+                      return (
+                        <article
+                          key={`${item.cookRoleId}::${item.category}`}
+                          style={{
+                            border: '1px solid var(--border)',
+                            borderRadius: 14,
+                            padding: 12,
+                            display: 'grid',
+                            gap: 8,
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                            <div>
+                              <small className="muted">{item.liveCounter ? 'Live / active station' : 'Kitchen category'}</small>
+                              <b style={{ display: 'block', marginTop: 2 }}>{item.category}</b>
+                            </div>
+                            <strong>{item.recommendedCooks} cook{item.recommendedCooks === 1 ? '' : 's'}</strong>
+                          </div>
+                          <small className="muted">
+                            {item.dishCount} dish{item.dishCount === 1 ? '' : 'es'} · workload {item.workloadScore.toFixed(1)}
+                            {item.recommendedHelpers > 0 ? ` · ${item.recommendedHelpers} helper${item.recommendedHelpers === 1 ? '' : 's'}` : ''}
+                          </small>
+                          <small>{item.reason}</small>
+                          {roleRow ? (
+                            <button
+                              className="ghost-button"
+                              type="button"
+                              onClick={() =>
+                                applyRecommendedMealManpower(
+                                  meal,
+                                  item.cookRoleId,
+                                )
+                              }
+                            >
+                              Apply {item.cookRole} total: {roleRecommended}
+                            </button>
+                          ) : null}
+                        </article>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
+
               <section className="manpower-coverage-review no-print" aria-label="Kitchen coverage review">
                 <div className="manpower-coverage-review-head">
                   <div>
@@ -1508,6 +1656,12 @@ export default function ManpowerPage() {
                           <div className="manpower-role-name-cell">
                             <div>
                               <b>{row.role}</b>
+                              {!isCustomRole(row) && Number(row.recommendedQuantity) >= 0 ? (
+                                <small className="muted" style={{ display: 'block', marginTop: 3 }}>
+                                  Recommended: {Math.max(0, Number(row.recommendedQuantity) || 0)}
+                                  {row.calculationReason ? ` · ${row.calculationReason}` : ''}
+                                </small>
+                              ) : null}
                               {!isCustomRole(row) && row.department ? (
                                 <small className="muted" style={{ display: 'block', marginTop: 3 }}>
                                   {row.department.replace(/_/g, ' ')}

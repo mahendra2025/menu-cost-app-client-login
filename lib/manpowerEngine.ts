@@ -305,6 +305,132 @@ function countChefRoleCategories(
   ).size;
 }
 
+const CHEF_ROLE_LABELS: Record<ChefRoleId, string> = {
+  chaat_cook: 'Chaat Cook',
+  chinese_cook: 'Chinese Cook',
+  italian_cook: 'Italian / Pasta Cook',
+  south_indian_cook: 'South Indian Cook',
+  live_counter_cook: 'Live Counter Cook',
+  starter_cook: 'Starter Cook',
+  soup_cook: 'Soup Cook',
+  bread_cook: 'Bread Cook',
+  main_course_cook: 'Main Course Cook',
+  farsan_cook: 'Farsan Cook',
+  sweet_halwai: 'Sweet / Halwai Cook',
+};
+
+const CHEF_GUEST_CAPACITY: Record<ChefRoleId, number> = {
+  chaat_cook: 250,
+  chinese_cook: 250,
+  italian_cook: 250,
+  south_indian_cook: 250,
+  live_counter_cook: 225,
+  starter_cook: 300,
+  soup_cook: 400,
+  bread_cook: 300,
+  main_course_cook: 500,
+  farsan_cook: 400,
+  sweet_halwai: 400,
+};
+
+export type CategoryManpowerRecommendation = {
+  category: string;
+  dishCount: number;
+  cookRoleId: ChefRoleId;
+  cookRole: string;
+  recommendedCooks: number;
+  recommendedHelpers: number;
+  liveCounter: boolean;
+  workloadScore: number;
+  reason: string;
+};
+
+export function buildCategoryManpowerRecommendations(
+  menu: MenuItem[],
+  guests: number,
+  rulesInput?: Partial<ManpowerRuleConfig> | null,
+): CategoryManpowerRecommendation[] {
+  const rules = normalizeManpowerRules(rulesInput);
+  const safeGuests = Math.max(0, Number(guests) || 0);
+  const groups = new Map<
+    string,
+    {
+      category: string;
+      role: ChefRoleId;
+      dishes: MenuItem[];
+    }
+  >();
+
+  (menu ?? []).forEach((item) => {
+    const role = chefRoleForItem(item);
+    if (!role) return;
+
+    const category = String(item.category || 'Other').trim() || 'Other';
+    const key = `${role}::${categoryKey(item)}`;
+    const current = groups.get(key);
+
+    if (current) {
+      current.dishes.push(item);
+      return;
+    }
+
+    groups.set(key, {
+      category,
+      role,
+      dishes: [item],
+    });
+  });
+
+  return Array.from(groups.values()).map((group) => {
+    const dishCount = group.dishes.length;
+    const dishDriven = Math.max(
+      1,
+      Math.ceil(dishCount / Math.max(1, rules.chefDishesPerCook)),
+    );
+    const guestCapacity = CHEF_GUEST_CAPACITY[group.role];
+    const guestDriven =
+      safeGuests > 0
+        ? Math.max(1, Math.ceil(safeGuests / guestCapacity))
+        : 1;
+    const recommendedCooks = Math.max(dishDriven, guestDriven);
+    const liveCounter = [
+      'chaat_cook',
+      'chinese_cook',
+      'italian_cook',
+      'south_indian_cook',
+      'live_counter_cook',
+      'starter_cook',
+    ].includes(group.role);
+    const recommendedHelpers =
+      group.role === 'bread_cook'
+        ? Math.ceil(recommendedCooks / rules.breadCooksPerHelper)
+        : liveCounter
+          ? Math.ceil(recommendedCooks / rules.liveCooksPerHelper)
+          : recommendedCooks >= 3
+            ? Math.ceil(recommendedCooks / 3)
+            : 0;
+    const workloadScore = group.dishes.reduce(
+      (sum, item) => sum + dishWorkload(item),
+      0,
+    );
+
+    return {
+      category: group.category,
+      dishCount,
+      cookRoleId: group.role,
+      cookRole: CHEF_ROLE_LABELS[group.role],
+      recommendedCooks,
+      recommendedHelpers,
+      liveCounter,
+      workloadScore,
+      reason:
+        `${dishCount} dish${dishCount === 1 ? '' : 'es'} · ` +
+        `${safeGuests.toLocaleString('en-IN')} guests · ` +
+        `capacity ~${guestCapacity} guests/cook`,
+    };
+  });
+}
+
 function rowBelongsToMeal(
   row: ManpowerRow,
   input: MealManpowerEngineInput,
@@ -355,13 +481,24 @@ function buildRecommendations(input: MealManpowerEngineInput) {
   const rules = normalizeManpowerRules(input.rules);
   const recommendations = new Map<string, Recommendation>();
   const workload = calculateMenuWorkload(menu);
+  const categoryRecommendations = buildCategoryManpowerRecommendations(
+    menu,
+    guests,
+    rules,
+  );
+
+  const categoryCookTotal = (role: ChefRoleId) =>
+    categoryRecommendations
+      .filter((item) => item.cookRoleId === role)
+      .reduce((sum, item) => sum + item.recommendedCooks, 0);
 
   const chefReason = (
     categoryCount: number,
     label: string,
+    cookCount?: number,
   ) =>
     categoryCount > 0
-      ? `${categoryCount} ${label} categor${categoryCount === 1 ? 'y' : 'ies'} · one cook per category`
+      ? `${categoryCount} ${label} categor${categoryCount === 1 ? 'y' : 'ies'} · ${cookCount ?? categoryCount} recommended cook${(cookCount ?? categoryCount) === 1 ? '' : 's'} for ${guests} guests`
       : `No ${label.toLowerCase()} category detected`;
 
   const waiters = ceilRatio(
@@ -428,13 +565,14 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'chaat_cook',
     );
-  const chaatCooks = chaatCount;
+  const chaatCooks = categoryCookTotal('chaat_cook');
   recommendations.set('chaat_cook', {
     quantity: chaatCooks,
     reason:
       chefReason(
         chaatCount,
         'Chaat',
+        chaatCooks,
       ),
     stationLabel:
       chaatCount > 0
@@ -447,13 +585,14 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'chinese_cook',
     );
-  const chineseCooks = chineseCount;
+  const chineseCooks = categoryCookTotal('chinese_cook');
   recommendations.set('chinese_cook', {
     quantity: chineseCooks,
     reason:
       chefReason(
         chineseCount,
         'Chinese',
+        chineseCooks,
       ),
     stationLabel:
       chineseCount > 0
@@ -466,13 +605,14 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'italian_cook',
     );
-  const italianCooks = italianCount;
+  const italianCooks = categoryCookTotal('italian_cook');
   recommendations.set('italian_cook', {
     quantity: italianCooks,
     reason:
       chefReason(
         italianCount,
         'Italian / Pasta',
+        italianCooks,
       ),
     stationLabel:
       italianCount > 0
@@ -485,7 +625,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'south_indian_cook',
     );
-  const southIndianCooks = southIndianCount;
+  const southIndianCooks = categoryCookTotal('south_indian_cook');
   recommendations.set('south_indian_cook', {
     quantity:
       southIndianCooks,
@@ -493,6 +633,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       chefReason(
         southIndianCount,
         'South Indian',
+        southIndianCooks,
       ),
     stationLabel:
       southIndianCount > 0
@@ -505,7 +646,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'starter_cook',
     );
-  const starterCooks = starterCount;
+  const starterCooks = categoryCookTotal('starter_cook');
   recommendations.set('starter_cook', {
     quantity:
       starterCooks,
@@ -513,6 +654,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       chefReason(
         starterCount,
         'Starter',
+        starterCooks,
       ),
     stationLabel:
       starterCount > 0
@@ -525,7 +667,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'soup_cook',
     );
-  const soupCooks = soupCount;
+  const soupCooks = categoryCookTotal('soup_cook');
   recommendations.set('soup_cook', {
     quantity:
       soupCooks,
@@ -533,6 +675,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       chefReason(
         soupCount,
         'Soup',
+        soupCooks,
       ),
     stationLabel:
       soupCount > 0
@@ -545,7 +688,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'live_counter_cook',
     );
-  const liveCooks = otherLiveCount;
+  const liveCooks = categoryCookTotal('live_counter_cook');
   recommendations.set('live_counter_cook', {
     quantity:
       liveCooks,
@@ -553,6 +696,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       chefReason(
         otherLiveCount,
         'Live Counter',
+        liveCooks,
       ),
     stationLabel:
       otherLiveCount > 0
@@ -582,7 +726,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'bread_cook',
     );
-  const breadCooks = breadCount;
+  const breadCooks = categoryCookTotal('bread_cook');
   recommendations.set('bread_cook', {
     quantity:
       breadCooks,
@@ -590,6 +734,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       chefReason(
         breadCount,
         'Bread',
+        breadCooks,
       ),
     workloadScore:
       breadCount * 1.5,
@@ -621,7 +766,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'main_course_cook',
     );
-  const mainCourseCooks = mainCourseCount;
+  const mainCourseCooks = categoryCookTotal('main_course_cook');
   recommendations.set('main_course_cook', {
     quantity:
       mainCourseCooks,
@@ -629,6 +774,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       chefReason(
         mainCourseCount,
         'Main Course / Other Cooked',
+        mainCourseCooks,
       ),
     workloadScore:
       workload,
@@ -639,7 +785,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'farsan_cook',
     );
-  const farsanCooks = farsanCount;
+  const farsanCooks = categoryCookTotal('farsan_cook');
   recommendations.set('farsan_cook', {
     quantity:
       farsanCooks,
@@ -647,6 +793,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       chefReason(
         farsanCount,
         'Farsan',
+        farsanCooks,
       ),
     workloadScore:
       farsanCount,
@@ -657,7 +804,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       menu,
       'sweet_halwai',
     );
-  const sweetCooks = sweetCount;
+  const sweetCooks = categoryCookTotal('sweet_halwai');
   recommendations.set('sweet_halwai', {
     quantity:
       sweetCooks,
@@ -665,6 +812,7 @@ function buildRecommendations(input: MealManpowerEngineInput) {
       chefReason(
         sweetCount,
         'Sweet',
+        sweetCooks,
       ),
     workloadScore:
       sweetCount * 1.5,
