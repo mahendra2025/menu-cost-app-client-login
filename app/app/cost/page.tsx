@@ -404,6 +404,67 @@ export default function CostPage() {
     ]?.serviceKey ||
     '';
 
+  const quickCatalogByName = new Map<string, AvailableDish>();
+  availableDishes.forEach((dish) => {
+    quickCatalogByName.set(normalizeDishName(dish.name), dish);
+    (dish.aliases || []).forEach((alias) => {
+      const key = normalizeDishName(alias);
+      if (key && !quickCatalogByName.has(key)) quickCatalogByName.set(key, dish);
+    });
+  });
+
+  const quickRequestedNames = Array.from(
+    new Map(
+      quickDishNames
+        .split(/[\n,;]+/)
+        .map((name) => name.replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .map((name) => [normalizeDishName(name), name]),
+    ).values(),
+  );
+  const quickExistingNames = new Set(
+    work.menu
+      .filter((item) => getMenuServiceKey(item) === selectedAddServiceKey)
+      .map((item) => normalizeDishName(item.name)),
+  );
+  const quickPreview = quickRequestedNames.map((requestedName) => {
+    const catalogDish = quickCatalogByName.get(normalizeDishName(requestedName));
+    const canonicalName = catalogDish?.name || requestedName;
+    return {
+      requestedName,
+      canonicalName,
+      category: catalogDish?.category || newDishCategory,
+      rate: Math.max(0, Number(catalogDish?.rate) || 0),
+      status: quickExistingNames.has(normalizeDishName(canonicalName))
+        ? 'duplicate' as const
+        : catalogDish
+          ? 'saved' as const
+          : 'new' as const,
+    };
+  });
+  const quickPreviewCounts = quickPreview.reduce(
+    (counts, item) => ({ ...counts, [item.status]: counts[item.status] + 1 }),
+    { saved: 0, new: 0, duplicate: 0 },
+  );
+  const quickActiveQuery = normalizeDishName(
+    quickDishNames.split(/[\n,;]+/).at(-1) || '',
+  );
+  const quickSuggestions = quickActiveQuery.length >= 2
+    ? availableDishes
+        .filter((dish) => {
+          const names = [dish.name, ...(dish.aliases || [])].map(normalizeDishName);
+          return names.some((name) => name.includes(quickActiveQuery)) &&
+            !names.some((name) => name === quickActiveQuery) &&
+            !quickExistingNames.has(normalizeDishName(dish.name));
+        })
+        .sort((left, right) => {
+          const leftStarts = normalizeDishName(left.name).startsWith(quickActiveQuery) ? 0 : 1;
+          const rightStarts = normalizeDishName(right.name).startsWith(quickActiveQuery) ? 0 : 1;
+          return leftStarts - rightStarts || left.name.localeCompare(right.name);
+        })
+        .slice(0, 6)
+    : [];
+
   const missingRateCount = work.menu.filter(
     needsManualRate,
   ).length;
@@ -546,15 +607,17 @@ export default function CostPage() {
     saveWork(session.tenantId, next);
   }
 
+  function chooseQuickDish(dish: AvailableDish) {
+    const match = quickDishNames.match(/^([\s\S]*?[\n,;]\s*)?([^\n,;]*)$/);
+    const prefix = match?.[1] || '';
+    setQuickDishNames(`${prefix}${dish.name}\n`);
+    setQuickAddMessage('');
+  }
+
   function addMissingCostDishes() {
     if (!work || !result) return;
 
-    const requestedNames = Array.from(new Set(
-      quickDishNames
-        .split(/[\n,;]+/)
-        .map((name) => name.replace(/\s+/g, ' ').trim())
-        .filter(Boolean),
-    ));
+    const requestedNames = quickRequestedNames;
 
     if (!requestedNames.length) {
       setQuickAddMessage('Type at least one dish name.');
@@ -571,10 +634,13 @@ export default function CostPage() {
     const existingNames = new Set(
       work.menu
         .filter((item) => getMenuServiceKey(item) === targetServiceKey)
-        .map((item) => item.name.trim().toLocaleLowerCase('en-IN')),
+        .map((item) => normalizeDishName(item.name)),
     );
     const namesToAdd = requestedNames.filter(
-      (name) => !existingNames.has(name.toLocaleLowerCase('en-IN')),
+      (name) => {
+        const catalogDish = quickCatalogByName.get(normalizeDishName(name));
+        return !existingNames.has(normalizeDishName(catalogDish?.name || name));
+      },
     );
     const skippedCount = requestedNames.length - namesToAdd.length;
 
@@ -583,18 +649,9 @@ export default function CostPage() {
       return;
     }
 
-    const catalogByName = new Map<string, AvailableDish>();
-    availableDishes.forEach((dish) => {
-      catalogByName.set(normalizeDishName(dish.name), dish);
-      (dish.aliases || []).forEach((alias) => {
-        const key = normalizeDishName(alias);
-        if (key && !catalogByName.has(key)) catalogByName.set(key, dish);
-      });
-    });
-
     const matchedDishes = namesToAdd.map((requestedName) => ({
       requestedName,
-      catalogDish: catalogByName.get(normalizeDishName(requestedName)),
+      catalogDish: quickCatalogByName.get(normalizeDishName(requestedName)),
     }));
     const now = Date.now();
     const additions: WorkState['menu'] = matchedDishes.map(
@@ -1098,7 +1155,48 @@ export default function CostPage() {
                     rows={4}
                     autoFocus
                   />
+                  {quickSuggestions.length ? (
+                    <div className="cost-quick-suggestions" role="listbox" aria-label="Dish Master suggestions">
+                      {quickSuggestions.map((dish) => (
+                        <button
+                          key={dish.name}
+                          type="button"
+                          role="option"
+                          aria-selected="false"
+                          onClick={() => chooseQuickDish(dish)}
+                        >
+                          <span><b>{dish.name}</b><small>{dish.category}</small></span>
+                          <strong>{money(dish.rate)}</strong>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
                   <small className="muted">One per line, or separate with commas · Ctrl/⌘ + Enter to add</small>
+
+                  {quickPreview.length ? (
+                    <div className="cost-quick-preview" aria-live="polite">
+                      <div className="cost-quick-preview-summary">
+                        <span className="saved"><b>{quickPreviewCounts.saved}</b> saved</span>
+                        <span className="new"><b>{quickPreviewCounts.new}</b> new</span>
+                        <span className="duplicate"><b>{quickPreviewCounts.duplicate}</b> already added</span>
+                      </div>
+                      <div className="cost-quick-preview-list">
+                        {quickPreview.slice(0, 8).map((item) => (
+                          <span className={item.status} key={normalizeDishName(item.requestedName)}>
+                            <b>{item.canonicalName}</b>
+                            <small>
+                              {item.status === 'saved'
+                                ? `${item.category} · ${money(item.rate)}`
+                                : item.status === 'duplicate'
+                                  ? 'Already in this meal'
+                                  : `${item.category} · rate needed`}
+                            </small>
+                          </span>
+                        ))}
+                        {quickPreview.length > 8 ? <em>+{quickPreview.length - 8} more</em> : null}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="cost-quick-add-options">

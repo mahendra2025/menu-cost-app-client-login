@@ -15353,6 +15353,109 @@ small {
   line-height: 1.5;
 }
 
+.cost-quick-suggestions {
+  display: grid;
+  max-height: 230px;
+  overflow-y: auto;
+  border: 1px solid rgba(74,156,255,.24);
+  border-radius: 11px;
+  background: #111b27;
+  box-shadow: 0 14px 30px rgba(0,0,0,.28);
+}
+
+.cost-quick-suggestions button {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid rgba(148,163,184,.1);
+  color: #e6edf5;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cost-quick-suggestions button:last-child {
+  border-bottom: 0;
+}
+
+.cost-quick-suggestions button:hover,
+.cost-quick-suggestions button:focus-visible {
+  outline: none;
+  background: rgba(74,156,255,.1);
+}
+
+.cost-quick-suggestions button span,
+.cost-quick-suggestions button b,
+.cost-quick-suggestions button small {
+  display: block;
+}
+
+.cost-quick-suggestions button small {
+  margin-top: 2px;
+  color: #8493a6;
+  font-size: 9px;
+}
+
+.cost-quick-suggestions button strong {
+  color: #9fcaff;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.cost-quick-preview {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px;
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 11px;
+  background: rgba(8,14,21,.38);
+}
+
+.cost-quick-preview-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cost-quick-preview-summary span {
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.cost-quick-preview-summary .saved { color: #a6dfbe; background: rgba(98,217,149,.1); }
+.cost-quick-preview-summary .new { color: #f2d394; background: rgba(244,182,74,.1); }
+.cost-quick-preview-summary .duplicate { color: #aeb8c5; background: rgba(148,163,184,.1); }
+
+.cost-quick-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cost-quick-preview-list > span {
+  display: grid;
+  gap: 1px;
+  min-width: 120px;
+  padding: 6px 8px;
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 9px;
+  background: rgba(255,255,255,.025);
+}
+
+.cost-quick-preview-list > span.saved { border-color: rgba(98,217,149,.2); }
+.cost-quick-preview-list > span.new { border-color: rgba(244,182,74,.22); }
+.cost-quick-preview-list > span.duplicate { opacity: .62; }
+.cost-quick-preview-list b { color: #dce5ef; font-size: 10px; }
+.cost-quick-preview-list small { color: #8190a3; font-size: 8px; }
+.cost-quick-preview-list em { align-self: center; color: #8190a3; font-size: 9px; font-style: normal; }
+
 .cost-quick-add-options {
   display: grid;
   align-content: start;
