@@ -874,7 +874,7 @@ export default function FinalCostingPage() {
             {!costReady ? (
               <div className="final-cost-desktop-warning">
                 <b>Costing not ready</b>
-                <small>{missingRateCount} dish rate{missingRateCount === 1 ? '' : 's'} missing or guest/menu details incomplete.</small>
+                <small>{costingHealth?.blockerCount || 0} costing blocker{(costingHealth?.blockerCount || 0) === 1 ? '' : 's'} remaining, or guest/menu details are incomplete.</small>
               </div>
             ) : pricing.profit < 0 ? (
               <div className="final-cost-desktop-warning">
