@@ -5972,15 +5972,31 @@ export default function RecipesPage() {
 
           <div className="recipe-fast-actions">
             {typeof window !== 'undefined' &&
-            new URLSearchParams(window.location.search).get('from') === 'dishes' ? (
+            ['dishes', 'grocery'].includes(
+              new URLSearchParams(window.location.search).get('from') || '',
+            ) ? (
               <button
                 className="recipe-fast-button"
                 type="button"
-                onClick={() =>
-                  window.location.assign('/admin/dishes')
-                }
+                onClick={() => {
+                  const from =
+                    new URLSearchParams(
+                      window.location.search,
+                    ).get('from');
+
+                  window.location.assign(
+                    from === 'grocery'
+                      ? '/app/grocery'
+                      : '/admin/dishes',
+                  );
+                }}
               >
-                ← Back to Dishes
+                ← Back to{' '}
+                {new URLSearchParams(
+                  window.location.search,
+                ).get('from') === 'grocery'
+                  ? 'Grocery'
+                  : 'Dishes'}
               </button>
             ) : null}
 
