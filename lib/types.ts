@@ -362,6 +362,19 @@ export type EventGasOverride = {
   updatedAt?: string;
 };
 
+export type GroceryIngredientPurchaseOverride = {
+  key: string;
+  requiredQuantityOverride?: number;
+  wastagePercent?: number;
+  roundTo?: number;
+  updatedAt?: string;
+};
+
+export type GroceryPurchaseSettings = {
+  defaultWastagePercent?: number;
+  ingredientOverrides?: GroceryIngredientPurchaseOverride[];
+};
+
 export type BusinessProfile = {
   businessName: string;
   ownerName: string;
@@ -383,6 +396,12 @@ export type WorkState = {
    * write back to Recipe / Dish Master.
    */
   gasEventOverrides?: EventGasOverride[];
+  /**
+   * Per-event Grocery buying controls. These never change Recipe Master.
+   * Required quantity overrides, wastage and purchase rounding live only
+   * inside the current costing.
+   */
+  groceryPurchaseSettings?: GroceryPurchaseSettings;
   gasCostMaster?: {
     setting: { cylinderPrice: number; cylinderWeightKg: number };
     categoryRates: Array<{ categoryName: string; lpgKgPer100: number; basePax: number; active: boolean }>;
