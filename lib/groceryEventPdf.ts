@@ -493,6 +493,10 @@ export function downloadGroceryEventPdf(
             'en-IN',
           ),
         ],
+        [
+          'Recipe Coverage',
+          `${plan.completeRecipeCount}/${plan.recipeCoverage.length} complete · ${plan.incompleteRecipeCount} incomplete · ${plan.missingRecipeCount} missing`,
+        ],
       ],
       columnStyles: {
         0: {
@@ -541,7 +545,7 @@ export function downloadGroceryEventPdf(
   const groceryPerCover =
     plan.totalFunctionCovers >
       0
-      ? plan.combinedIngredientCost /
+      ? plan.combinedPurchaseCost /
         plan.totalFunctionCovers
       : 0;
 
@@ -574,12 +578,12 @@ export function downloadGroceryEventPdf(
           ),
         ],
         [
-          'Recipe Grocery Cost (Reference)',
+          'Grocery Purchase Cost (Estimate)',
           money(
             groceryPerCover,
           ),
           money(
-            plan.combinedIngredientCost,
+            plan.combinedPurchaseCost,
           ),
         ],
         [
@@ -1042,7 +1046,7 @@ export function downloadGroceryEventPdf(
     doc,
     'Grocery List - Category Wise',
     y,
-    'Combined purchasing requirement for the full event with ingredient rate and estimated cost.',
+    'Combined event requirement with wastage, purchase rounding, ingredient rate and purchase cost.',
   );
 
   y += 9;
@@ -1125,7 +1129,7 @@ export function downloadGroceryEventPdf(
               item,
             ) =>
               sum +
-              item.estimatedCost,
+              item.purchaseEstimatedCost,
             0,
           );
 
@@ -1170,10 +1174,11 @@ export function downloadGroceryEventPdf(
               index === 0
                 ? [[
                     'Ingredient',
-                    'Qty',
+                    'Required',
+                    'Purchase',
                     'Unit',
                     'Rate',
-                    'Ingredient Cost',
+                    'Purchase Cost',
                     'Used In',
                   ]]
                 : undefined,
@@ -1182,14 +1187,17 @@ export function downloadGroceryEventPdf(
                 (item) => [
                   item.name,
                   quantity(
-                    item.quantity,
+                    item.requiredQuantity,
+                  ),
+                  quantity(
+                    item.purchaseQuantity,
                   ),
                   item.unit,
                   item.hasRate
                     ? `${money(item.rate || 0)} / ${item.rateUnit || item.unit}`
                     : 'Rate missing',
                   money(
-                    item.estimatedCost,
+                    item.purchaseEstimatedCost,
                   ),
                   item.dishes.join(
                     ', ',
@@ -1217,7 +1225,7 @@ export function downloadGroceryEventPdf(
             columnStyles: {
               0: {
                 cellWidth:
-                  39,
+                  33,
               },
               1: {
                 cellWidth:
@@ -1229,25 +1237,33 @@ export function downloadGroceryEventPdf(
               },
               2: {
                 cellWidth:
-                  15,
-              },
-              3: {
-                cellWidth:
-                  32,
-                halign:
-                  'right',
-              },
-              4: {
-                cellWidth:
-                  29,
+                  18,
                 halign:
                   'right',
                 fontStyle:
                   'bold',
               },
+              3: {
+                cellWidth:
+                  13,
+              },
+              4: {
+                cellWidth:
+                  28,
+                halign:
+                  'right',
+              },
               5: {
                 cellWidth:
-                  49,
+                  27,
+                halign:
+                  'right',
+                fontStyle:
+                  'bold',
+              },
+              6: {
+                cellWidth:
+                  45,
               },
             },
             styles: {
@@ -1283,7 +1299,7 @@ export function downloadGroceryEventPdf(
 
   sectionTitle(
     doc,
-    'Grocery Cost Total',
+    'Grocery Purchase Cost Total',
     y,
   );
 
@@ -1314,15 +1330,15 @@ export function downloadGroceryEventPdf(
           ),
         ],
         [
-          'Grocery Cost / Cover',
+          'Purchase Cost / Cover',
           money(
             groceryPerCover,
           ),
         ],
         [
-          'Total Grocery Cost',
+          'Total Purchase Cost',
           money(
-            plan.combinedIngredientCost,
+            plan.combinedPurchaseCost,
           ),
         ],
       ],
