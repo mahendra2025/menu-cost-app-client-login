@@ -25,39 +25,51 @@ function readRecipe(value: unknown) {
 
   if (!name) return null;
 
+  const ingredientRows = Array.isArray(row.ingredients)
+    ? row.ingredients.filter(
+        (value) =>
+          Boolean(
+            value &&
+            typeof value === 'object' &&
+            !Array.isArray(value),
+          ),
+      )
+    : [];
+
+  const ingredients = ingredientRows.flatMap((value) => {
+    const ingredient = value as Record<string, unknown>;
+    const ingredientName = String(
+      ingredient.name || ingredient.ingredientName || '',
+    ).trim();
+    const quantity = Math.max(
+      0,
+      Number(ingredient.quantity ?? ingredient.qty) || 0,
+    );
+    const unit = String(
+      ingredient.unit || ingredient.rateUnit || '',
+    ).trim();
+
+    if (!ingredientName || !(quantity > 0) || !unit) return [];
+
+    return [{
+      name: ingredientName,
+      quantity,
+      unit,
+    }];
+  });
+
   return {
     name,
     aliases: Array.isArray(row.aliases)
       ? row.aliases.map(String).map((item) => item.trim()).filter(Boolean)
       : [],
     baseGuests: Math.max(1, Number(row.baseGuests) || 100),
-    ingredients: Array.isArray(row.ingredients)
-      ? row.ingredients.flatMap((value) => {
-          if (!value || typeof value !== 'object' || Array.isArray(value)) {
-            return [];
-          }
-
-          const ingredient = value as Record<string, unknown>;
-          const ingredientName = String(
-            ingredient.name || ingredient.ingredientName || '',
-          ).trim();
-          const quantity = Math.max(
-            0,
-            Number(ingredient.quantity ?? ingredient.qty) || 0,
-          );
-          const unit = String(
-            ingredient.unit || ingredient.rateUnit || '',
-          ).trim();
-
-          if (!ingredientName || !(quantity > 0) || !unit) return [];
-
-          return [{
-            name: ingredientName,
-            quantity,
-            unit,
-          }];
-        })
-      : [],
+    ingredients,
+    totalIngredientRows: ingredientRows.length,
+    invalidIngredientCount: Math.max(
+      0,
+      ingredientRows.length - ingredients.length,
+    ),
   };
 }
 
