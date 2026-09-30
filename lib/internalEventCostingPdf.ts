@@ -32,6 +32,7 @@ import type {
   EventGasCostBreakdown,
 } from './gasCost';
 import { compareMenuCategoryPriority } from './menuCategoryPriority';
+import { INGREDIENT_CATEGORIES, inferIngredientCategory } from './ingredientCatalog';
 
 function money(
   value: number,
@@ -1220,35 +1221,128 @@ export function downloadInternalEventCostingPdf(
     'Combined event grocery generated from saved recipes. Missing recipe or rate data remains visibly marked.',
   );
 
-  const groceryRows =
-    groceryPlan
-      ?.combinedItems
-      .map(
-        (item) => [
-          item.name,
-          `${quantity(
-            item.quantity,
-          )} ${item.unit}`,
-          item.hasRate
-            ? decimalMoney(
-                Number(
-                  item.rate,
-                ) || 0,
-              )
-            : 'RATE MISSING',
-          item.rateUnit ||
-            item.unit,
-          item.hasRate
-            ? money(
-                item.estimatedCost,
-              )
-            : '-',
-          item.dishes.join(
-            ', ',
-          ),
+  const groceryRows: any[] = [];
+
+  const groceryCategoryRank =
+    new Map<string, number>(
+      INGREDIENT_CATEGORIES.map(
+        (category, index) => [
+          category,
+          index,
         ],
-      ) ||
-    [];
+      ),
+    );
+
+  const sortedGroceryItems =
+    [
+      ...(
+        groceryPlan
+          ?.combinedItems ||
+        []
+      ),
+    ].sort(
+      (a, b) => {
+        const leftCategory =
+          inferIngredientCategory(
+            a.name,
+          );
+        const rightCategory =
+          inferIngredientCategory(
+            b.name,
+          );
+        const categoryDifference =
+          (
+            groceryCategoryRank.get(
+              leftCategory,
+            ) ??
+            Number.MAX_SAFE_INTEGER
+          ) -
+          (
+            groceryCategoryRank.get(
+              rightCategory,
+            ) ??
+            Number.MAX_SAFE_INTEGER
+          );
+
+        if (
+          categoryDifference !==
+          0
+        ) {
+          return categoryDifference;
+        }
+
+        return a.name.localeCompare(
+          b.name,
+          'en-IN',
+        );
+      },
+    );
+
+  let currentGroceryCategory = '';
+
+  sortedGroceryItems.forEach(
+    (item) => {
+      const category =
+        inferIngredientCategory(
+          item.name,
+        );
+
+      if (
+        category !==
+        currentGroceryCategory
+      ) {
+        groceryRows.push([
+          {
+            content:
+              category.toUpperCase(),
+            colSpan: 6,
+            styles: {
+              fillColor: [
+                241,
+                245,
+                249,
+              ],
+              textColor: [
+                15,
+                23,
+                42,
+              ],
+              fontStyle:
+                'bold',
+              cellPadding: 2.2,
+            },
+          },
+        ]);
+
+        currentGroceryCategory =
+          category;
+      }
+
+      groceryRows.push([
+        item.name,
+        `${quantity(
+          item.quantity,
+        )} ${item.unit}`,
+        item.hasRate
+          ? decimalMoney(
+              Number(
+                item.rate,
+              ) || 0,
+            )
+          : 'RATE MISSING',
+        item.rateUnit ||
+          item.unit,
+        item.hasRate
+          ? money(
+              item.estimatedCost,
+            )
+          : '-',
+        item.dishes.join(
+          ', ',
+        ),
+      ]);
+    },
+  );
 
   autoTable(doc, {
     startY: y,
