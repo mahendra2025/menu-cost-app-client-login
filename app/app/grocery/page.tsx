@@ -804,13 +804,25 @@ export default function GroceryPage() {
     );
 
   function updatePurchaseSettings(
-    nextWork: WorkState,
+    updater: (
+      current: WorkState,
+    ) => WorkState,
   ) {
-    setWork(nextWork);
-    saveWork(
-      tenantId,
-      nextWork,
-    );
+    setWork((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const nextWork =
+        updater(current);
+
+      saveWork(
+        tenantId,
+        nextWork,
+      );
+
+      return nextWork;
+    });
   }
 
   function updateDefaultWastage(
@@ -825,20 +837,22 @@ export default function GroceryPage() {
         ),
       );
 
-    updatePurchaseSettings({
-      ...work,
-      groceryPurchaseSettings: {
-        ...work
-          .groceryPurchaseSettings,
-        defaultWastagePercent:
-          nextValue,
-        ingredientOverrides:
-          work
-            .groceryPurchaseSettings
-            ?.ingredientOverrides ||
-          [],
-      },
-    });
+    updatePurchaseSettings(
+      (current) => ({
+        ...current,
+        groceryPurchaseSettings: {
+          ...current
+            .groceryPurchaseSettings,
+          defaultWastagePercent:
+            nextValue,
+          ingredientOverrides:
+            current
+              .groceryPurchaseSettings
+              ?.ingredientOverrides ||
+            [],
+        },
+      }),
+    );
   }
 
   function updateIngredientPurchase(
@@ -851,71 +865,77 @@ export default function GroceryPage() {
         item.name,
         item.unit,
       );
-    const settings =
-      work.groceryPurchaseSettings ||
-      {};
-    const overrides =
-      settings
-        .ingredientOverrides ||
-      [];
-    const existing =
-      overrides.find(
-        (override) =>
-          override.key === key,
-      ) || { key };
-    const nextOverride = {
-      ...existing,
-      ...patch,
-      key,
-      updatedAt:
-        new Date()
-          .toISOString(),
-    };
-    const keepOverride =
-      (
-        Number(
-          nextOverride
-            .requiredQuantityOverride,
-        ) > 0
-      ) ||
-      (
-        nextOverride
-          .wastagePercent !==
-        undefined
-      ) ||
-      (
-        Number(
-          nextOverride.roundTo,
-        ) > 0
-      );
-    const nextOverrides =
-      keepOverride
-        ? [
-            ...overrides.filter(
-              (override) =>
-                override.key !==
-                key,
-            ),
-            nextOverride,
-          ]
-        : overrides.filter(
-            (override) =>
-              override.key !==
-              key,
-          );
 
-    updatePurchaseSettings({
-      ...work,
-      groceryPurchaseSettings: {
-        ...settings,
-        defaultWastagePercent:
+    updatePurchaseSettings(
+      (current) => {
+        const settings =
+          current
+            .groceryPurchaseSettings ||
+          {};
+        const overrides =
           settings
-            .defaultWastagePercent ??
-          0,
-        ingredientOverrides:
-          nextOverrides,
+            .ingredientOverrides ||
+          [];
+        const existing =
+          overrides.find(
+            (override) =>
+              override.key === key,
+          ) || { key };
+        const nextOverride = {
+          ...existing,
+          ...patch,
+          key,
+          updatedAt:
+            new Date()
+              .toISOString(),
+        };
+        const keepOverride =
+          (
+            Number(
+              nextOverride
+                .requiredQuantityOverride,
+            ) > 0
+          ) ||
+          (
+            nextOverride
+              .wastagePercent !==
+            undefined
+          ) ||
+          (
+            Number(
+              nextOverride.roundTo,
+            ) > 0
+          );
+        const nextOverrides =
+          keepOverride
+            ? [
+                ...overrides.filter(
+                  (override) =>
+                    override.key !==
+                    key,
+                ),
+                nextOverride,
+              ]
+            : overrides.filter(
+                (override) =>
+                  override.key !==
+                  key,
+              );
+
+        return {
+          ...current,
+          groceryPurchaseSettings: {
+            ...settings,
+            defaultWastagePercent:
+              settings
+                .defaultWastagePercent ??
+              0,
+            ingredientOverrides:
+              nextOverrides,
+          },
+        };
       },
-    });
+    );
   }
 
   function openRecipeEditor(
