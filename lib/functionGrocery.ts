@@ -1,5 +1,9 @@
 import { canonicalIngredientName } from './ingredientCatalog';
-import type { MenuItem, WorkState } from './types';
+import type {
+  GroceryPurchaseSettings,
+  MenuItem,
+  WorkState,
+} from './types';
 
 export type GroceryRecipeIngredient = {
   name: string;
@@ -12,6 +16,22 @@ export type GroceryRecipe = {
   aliases?: string[];
   baseGuests: number;
   ingredients: GroceryRecipeIngredient[];
+  totalIngredientRows?: number;
+  invalidIngredientCount?: number;
+};
+
+export type GroceryRecipeCoverageStatus =
+  | 'COMPLETE'
+  | 'INCOMPLETE'
+  | 'MISSING';
+
+export type GroceryRecipeCoverage = {
+  name: string;
+  category: string;
+  status: GroceryRecipeCoverageStatus;
+  issueCount: number;
+  validIngredientCount: number;
+  totalIngredientRows: number;
 };
 
 export type GroceryIngredientRate = {
@@ -23,12 +43,20 @@ export type GroceryIngredientRate = {
 
 export type FunctionGroceryItem = {
   name: string;
+  /** Event required quantity. Kept as quantity for backward compatibility. */
   quantity: number;
+  recipeQuantity: number;
+  requiredQuantity: number;
+  purchaseQuantity: number;
+  wastagePercent: number;
+  roundTo: number;
+  manualQuantityOverride: boolean;
   unit: string;
   dishes: string[];
   rate: number | null;
   rateUnit: string | null;
   estimatedCost: number;
+  purchaseEstimatedCost: number;
   hasRate: boolean;
 };
 
@@ -41,7 +69,9 @@ export type FunctionGrocerySection = {
   items: FunctionGroceryItem[];
   matchedDishes: string[];
   unmatchedDishes: string[];
+  recipeCoverage: GroceryRecipeCoverage[];
   estimatedIngredientCost: number;
+  estimatedPurchaseCost: number;
   pricedIngredientCount: number;
   unpricedIngredientCount: number;
 };
@@ -52,6 +82,11 @@ export type FunctionGroceryPlan = {
   combinedIngredientCost: number;
   matchedDishes: string[];
   unmatchedDishes: string[];
+  recipeCoverage: GroceryRecipeCoverage[];
+  completeRecipeCount: number;
+  incompleteRecipeCount: number;
+  missingRecipeCount: number;
+  combinedPurchaseCost: number;
   totalFunctionCovers: number;
   pricedIngredientCount: number;
   unpricedIngredientCount: number;
@@ -435,10 +470,173 @@ function roundMoney(value: number) {
   return Math.round(value * 100) / 100;
 }
 
+export function groceryPurchaseKey(
+  name: string,
+  unit: string,
+) {
+  return [
+    normalizeIngredientKey(name),
+    normalizeText(unit),
+  ].join('::');
+}
+
+function purchaseOverrides(
+  settings?: GroceryPurchaseSettings,
+) {
+  return new Map(
+    (
+      settings?.ingredientOverrides ||
+      []
+    )
+      .filter(
+        (override) =>
+          Boolean(
+            override?.key,
+          ),
+      )
+      .map(
+        (override) => [
+          override.key,
+          override,
+        ],
+      ),
+  );
+}
+
+function finalizeIngredient(
+  item: IngredientAccumulator,
+  settings: GroceryPurchaseSettings | undefined,
+  allowRequiredOverride: boolean,
+): FunctionGroceryItem {
+  const recipeQuantity =
+    roundQuantity(
+      item.quantity,
+    );
+  const key =
+    groceryPurchaseKey(
+      item.name,
+      item.unit,
+    );
+  const override =
+    purchaseOverrides(
+      settings,
+    ).get(key);
+  const requiredOverride =
+    Math.max(
+      0,
+      Number(
+        override
+          ?.requiredQuantityOverride,
+      ) || 0,
+    );
+  const requiredQuantity =
+    roundQuantity(
+      allowRequiredOverride &&
+      requiredOverride > 0
+        ? requiredOverride
+        : recipeQuantity,
+    );
+  const wastagePercent =
+    Math.min(
+      100,
+      Math.max(
+        0,
+        Number(
+          override
+            ?.wastagePercent ??
+          settings
+            ?.defaultWastagePercent ??
+          0,
+        ) || 0,
+      ),
+    );
+  const roundTo =
+    Math.max(
+      0.001,
+      Number(
+        override?.roundTo,
+      ) || 1,
+    );
+  const withWastage =
+    requiredQuantity *
+    (
+      1 +
+      wastagePercent /
+        100
+    );
+  const purchaseQuantity =
+    roundQuantity(
+      Math.ceil(
+        Math.max(
+          0,
+          withWastage -
+            1e-9,
+        ) /
+          roundTo,
+      ) *
+        roundTo,
+    );
+  const estimatedCost =
+    item.rate === null
+      ? 0
+      : roundMoney(
+          requiredQuantity *
+            item.rate,
+        );
+  const purchaseEstimatedCost =
+    item.rate === null
+      ? 0
+      : roundMoney(
+          purchaseQuantity *
+            item.rate,
+        );
+
+  return {
+    name: item.name,
+    quantity:
+      requiredQuantity,
+    recipeQuantity,
+    requiredQuantity,
+    purchaseQuantity,
+    wastagePercent:
+      roundMoney(
+        wastagePercent,
+      ),
+    roundTo:
+      roundQuantity(
+        roundTo,
+      ),
+    manualQuantityOverride:
+      Boolean(
+        allowRequiredOverride &&
+        requiredOverride > 0,
+      ),
+    unit: item.unit,
+    dishes: Array.from(
+      item.dishes,
+    ).sort((left, right) =>
+      left.localeCompare(right),
+    ),
+    rate:
+      item.rate === null
+        ? null
+        : roundMoney(
+            item.rate,
+          ),
+    rateUnit:
+      item.rateUnit,
+    estimatedCost,
+    purchaseEstimatedCost,
+    hasRate:
+      item.hasRate,
+  };
+}
+
 function buildSection(
   group: FunctionAccumulator,
   recipes: Map<string, GroceryRecipe>,
   rates: Map<string, GroceryIngredientRate[]>,
+  purchaseSettings?: GroceryPurchaseSettings,
 ): FunctionGrocerySection {
   const groceries = new Map<
     string,
@@ -450,6 +648,11 @@ function buildSection(
     new Set<string>();
   const seenDishes =
     new Set<string>();
+  const recipeCoverage =
+    new Map<
+      string,
+      GroceryRecipeCoverage
+    >();
 
   group.items.forEach((item) => {
     const dishKey =
@@ -467,12 +670,89 @@ function buildSection(
     const recipe =
       recipes.get(dishKey);
 
+    if (!recipe) {
+      recipeCoverage.set(
+        dishKey,
+        {
+          name: item.name,
+          category:
+            item.category ||
+            'Other',
+          status:
+            'MISSING',
+          issueCount: 1,
+          validIngredientCount:
+            0,
+          totalIngredientRows:
+            0,
+        },
+      );
+
+      unmatchedDishes.add(
+        item.name,
+      );
+      return;
+    }
+
+    const validIngredientCount =
+      Array.isArray(
+        recipe.ingredients,
+      )
+        ? recipe.ingredients
+            .length
+        : 0;
+    const invalidIngredientCount =
+      Math.max(
+        0,
+        Number(
+          recipe
+            .invalidIngredientCount,
+        ) || 0,
+      );
+    const totalIngredientRows =
+      Math.max(
+        validIngredientCount +
+          invalidIngredientCount,
+        Number(
+          recipe
+            .totalIngredientRows,
+        ) || 0,
+      );
+    const incomplete =
+      validIngredientCount ===
+        0 ||
+      invalidIngredientCount >
+        0;
+
+    recipeCoverage.set(
+      dishKey,
+      {
+        name: item.name,
+        category:
+          item.category ||
+          'Other',
+        status:
+          incomplete
+            ? 'INCOMPLETE'
+            : 'COMPLETE',
+        issueCount:
+          incomplete
+            ? Math.max(
+                1,
+                invalidIngredientCount,
+              )
+            : 0,
+        validIngredientCount,
+        totalIngredientRows,
+      },
+    );
+
     if (
-      !recipe ||
       !Array.isArray(
         recipe.ingredients,
       ) ||
-      recipe.ingredients.length === 0
+      recipe.ingredients.length ===
+        0
     ) {
       unmatchedDishes.add(
         item.name,
@@ -598,29 +878,14 @@ function buildSection(
   const items = Array.from(
     groceries.values(),
   )
-    .map((item) => ({
-      name: item.name,
-      quantity:
-        roundQuantity(
-          item.quantity,
+    .map(
+      (item) =>
+        finalizeIngredient(
+          item,
+          purchaseSettings,
+          false,
         ),
-      unit: item.unit,
-      dishes: Array.from(
-        item.dishes,
-      ).sort((left, right) =>
-        left.localeCompare(right),
-      ),
-      rate:
-        item.rate === null
-          ? null
-          : roundMoney(item.rate),
-      rateUnit: item.rateUnit,
-      estimatedCost:
-        roundMoney(
-          item.estimatedCost,
-        ),
-      hasRate: item.hasRate,
-    }))
+    )
     .sort((left, right) =>
       left.name.localeCompare(
         right.name,
@@ -644,12 +909,31 @@ function buildSection(
     ).sort((left, right) =>
       left.localeCompare(right),
     ),
+    recipeCoverage:
+      Array.from(
+        recipeCoverage.values(),
+      ).sort(
+        (left, right) =>
+          left.name.localeCompare(
+            right.name,
+          ),
+      ),
     estimatedIngredientCost:
       roundMoney(
         items.reduce(
           (sum, item) =>
             sum +
             item.estimatedCost,
+          0,
+        ),
+      ),
+    estimatedPurchaseCost:
+      roundMoney(
+        items.reduce(
+          (sum, item) =>
+            sum +
+            item
+              .purchaseEstimatedCost,
           0,
         ),
       ),
@@ -666,6 +950,7 @@ function buildSection(
 
 function combineSections(
   sections: FunctionGrocerySection[],
+  purchaseSettings?: GroceryPurchaseSettings,
 ) {
   const combined = new Map<
     string,
@@ -685,7 +970,7 @@ function combineSections(
 
       if (existing) {
         existing.quantity +=
-          item.quantity;
+          item.recipeQuantity;
         existing.estimatedCost +=
           item.estimatedCost;
         item.dishes.forEach((dish) =>
@@ -707,7 +992,8 @@ function combineSections(
 
       combined.set(key, {
         name: item.name,
-        quantity: item.quantity,
+        quantity:
+          item.recipeQuantity,
         unit: item.unit,
         dishes: new Set(
           item.dishes,
@@ -724,29 +1010,14 @@ function combineSections(
   return Array.from(
     combined.values(),
   )
-    .map((item) => ({
-      name: item.name,
-      quantity:
-        roundQuantity(
-          item.quantity,
+    .map(
+      (item) =>
+        finalizeIngredient(
+          item,
+          purchaseSettings,
+          true,
         ),
-      unit: item.unit,
-      dishes: Array.from(
-        item.dishes,
-      ).sort((left, right) =>
-        left.localeCompare(right),
-      ),
-      rate:
-        item.rate === null
-          ? null
-          : roundMoney(item.rate),
-      rateUnit: item.rateUnit,
-      estimatedCost:
-        roundMoney(
-          item.estimatedCost,
-        ),
-      hasRate: item.hasRate,
-    }))
+    )
     .sort((left, right) =>
       left.name.localeCompare(
         right.name,
@@ -758,6 +1029,9 @@ export function buildFunctionGroceryPlan(
   work: WorkState,
   recipeValues: GroceryRecipe[],
   rateValues: GroceryIngredientRate[],
+  purchaseSettings:
+    GroceryPurchaseSettings | undefined =
+      work.groceryPurchaseSettings,
 ): FunctionGroceryPlan {
   const recipes =
     recipeCatalog(
@@ -774,14 +1048,23 @@ export function buildFunctionGroceryPlan(
           group,
           recipes,
           rates,
+          purchaseSettings,
         ),
       );
   const combinedItems =
-    combineSections(functions);
+    combineSections(
+      functions,
+      purchaseSettings,
+    );
   const matchedDishes =
     new Set<string>();
   const unmatchedDishes =
     new Set<string>();
+  const recipeCoverageMap =
+    new Map<
+      string,
+      GroceryRecipeCoverage
+    >();
 
   functions.forEach((section) => {
     section.matchedDishes.forEach(
@@ -792,7 +1075,46 @@ export function buildFunctionGroceryPlan(
       (dish) =>
         unmatchedDishes.add(dish),
     );
+
+    section.recipeCoverage.forEach(
+      (coverage) => {
+        const key =
+          normalizeText(
+            coverage.name,
+          );
+        const existing =
+          recipeCoverageMap.get(
+            key,
+          );
+        const rank = {
+          COMPLETE: 0,
+          INCOMPLETE: 1,
+          MISSING: 2,
+        } as const;
+
+        if (
+          !existing ||
+          rank[coverage.status] >
+            rank[existing.status]
+        ) {
+          recipeCoverageMap.set(
+            key,
+            coverage,
+          );
+        }
+      },
+    );
   });
+
+  const recipeCoverage =
+    Array.from(
+      recipeCoverageMap.values(),
+    ).sort(
+      (left, right) =>
+        left.name.localeCompare(
+          right.name,
+        ),
+    );
 
   return {
     functions,
@@ -816,6 +1138,35 @@ export function buildFunctionGroceryPlan(
     ).sort((left, right) =>
       left.localeCompare(right),
     ),
+    recipeCoverage,
+    completeRecipeCount:
+      recipeCoverage.filter(
+        (recipe) =>
+          recipe.status ===
+          'COMPLETE',
+      ).length,
+    incompleteRecipeCount:
+      recipeCoverage.filter(
+        (recipe) =>
+          recipe.status ===
+          'INCOMPLETE',
+      ).length,
+    missingRecipeCount:
+      recipeCoverage.filter(
+        (recipe) =>
+          recipe.status ===
+          'MISSING',
+      ).length,
+    combinedPurchaseCost:
+      roundMoney(
+        combinedItems.reduce(
+          (sum, item) =>
+            sum +
+            item
+              .purchaseEstimatedCost,
+          0,
+        ),
+      ),
     totalFunctionCovers:
       functions.reduce(
         (sum, section) =>
@@ -879,8 +1230,8 @@ export function downloadFunctionGroceryCsv(
       plan.totalFunctionCovers,
     ],
     [
-      'Estimated Ingredient Cost',
-      plan.combinedIngredientCost,
+      'Estimated Purchase Cost',
+      plan.combinedPurchaseCost,
     ],
   ];
 
@@ -903,7 +1254,8 @@ export function downloadFunctionGroceryCsv(
         ],
         [
           'Ingredient',
-          'Quantity',
+          'Required Qty',
+          'Purchase Qty',
           'Unit',
           'Rate',
           'Rate Unit',
@@ -917,12 +1269,15 @@ export function downloadFunctionGroceryCsv(
           rows.push([
             item.name,
             quantityText(
-              item.quantity,
+              item.requiredQuantity,
+            ),
+            quantityText(
+              item.purchaseQuantity,
             ),
             item.unit,
             item.rate ?? '',
             item.rateUnit ?? '',
-            item.estimatedCost,
+            item.purchaseEstimatedCost,
             item.dishes.join(', '),
           ]);
         },
@@ -950,7 +1305,8 @@ export function downloadFunctionGroceryCsv(
     ['Combined Event Grocery'],
     [
       'Ingredient',
-      'Quantity',
+      'Required Qty',
+      'Purchase Qty',
       'Unit',
       'Rate',
       'Rate Unit',
@@ -964,12 +1320,15 @@ export function downloadFunctionGroceryCsv(
       rows.push([
         item.name,
         quantityText(
-          item.quantity,
+          item.requiredQuantity,
+        ),
+        quantityText(
+          item.purchaseQuantity,
         ),
         item.unit,
         item.rate ?? '',
         item.rateUnit ?? '',
-        item.estimatedCost,
+        item.purchaseEstimatedCost,
         item.dishes.join(', '),
       ]);
     },
