@@ -54,6 +54,21 @@ function needsManualRate(
   );
 }
 
+type AvailableDish = {
+  name: string;
+  category: string;
+  rate: number;
+  servingQuantity?: number;
+  servingUnit?: string;
+  pieceWeightGrams?: number;
+  gasKgPer100?: number;
+  aliases?: string[];
+};
+
+function normalizeDishName(value: string) {
+  return value.trim().toLocaleLowerCase('en-IN').replace(/\s+/g, ' ');
+}
+
 
 function formatMenuDate(
   value: string,
@@ -146,6 +161,7 @@ export default function CostPage() {
   const deferredDishQuery = useDeferredValue(dishQuery);
   const [availableDishCategories, setAvailableDishCategories] =
     useState<string[]>([]);
+  const [availableDishes, setAvailableDishes] = useState<AvailableDish[]>([]);
 
   const [
     showAddDish,
@@ -213,6 +229,16 @@ export default function CostPage() {
       .then((response) => response.json())
       .then((data) => {
         if (!active) return;
+        const dishes = Array.isArray(data.items)
+          ? data.items.filter(
+              (item: unknown): item is AvailableDish =>
+                Boolean(
+                  item &&
+                  typeof item === 'object' &&
+                  String((item as AvailableDish).name || '').trim(),
+                ),
+            )
+          : [];
         const categories = Array.isArray(data.categories)
           ? Array.from(
               new Set(
@@ -222,6 +248,7 @@ export default function CostPage() {
               ),
             ) as string[]
           : [];
+        setAvailableDishes(dishes);
         setAvailableDishCategories(categories);
         if (categories.length) {
           setNewDishCategory((current) =>
@@ -230,7 +257,10 @@ export default function CostPage() {
         }
       })
       .catch(() => {
-        if (active) setAvailableDishCategories([]);
+        if (active) {
+          setAvailableDishes([]);
+          setAvailableDishCategories([]);
+        }
       });
 
     return () => {
@@ -872,58 +902,104 @@ export default function CostPage() {
       return;
     }
 
-    const now = Date.now();
-    const additions: WorkState['menu'] = namesToAdd.map((name, index) => ({
-      id: `dish_${now}_${index}_${Math.random().toString(36).slice(2, 7)}`,
-      name,
-      category: newDishCategory,
-      costPerPlate: 0,
-      portionQuantity: 1,
-      portionBaseQuantity: 1,
-      portionUnit: 'serving',
-      portionMode: 'AUTO',
-      serviceId: targetTemplate?.serviceId,
-      dayLabel: targetService?.dayLabel || targetTemplate?.dayLabel,
-      mealLabel: targetService?.mealLabel || targetTemplate?.mealLabel || 'Event Menu',
-      servicePax:
-        Number(targetService?.pax) ||
-        Number(targetTemplate?.servicePax) ||
-        Number(work.event.pax) ||
-        0,
-      costSource: 'manual',
-      coverageStatus: 'NEW_DISH_PENDING',
-      costConfidence: 0,
-      rateCoveragePercent: 0,
-      coverageReason: 'Manual rate required',
-      costApprovalStatus: 'PENDING',
-      costApprovalReason: 'Manual rate required',
-      detectionSource: 'manual',
-      detectionConfidence: 100,
-      detectionReason: 'User quickly added missing dish on Cost page',
+    const catalogByName = new Map<string, AvailableDish>();
+    availableDishes.forEach((dish) => {
+      catalogByName.set(normalizeDishName(dish.name), dish);
+      (dish.aliases || []).forEach((alias) => {
+        const key = normalizeDishName(alias);
+        if (key && !catalogByName.has(key)) catalogByName.set(key, dish);
+      });
+    });
+
+    const matchedDishes = namesToAdd.map((requestedName) => ({
+      requestedName,
+      catalogDish: catalogByName.get(normalizeDishName(requestedName)),
     }));
+    const now = Date.now();
+    const additions: WorkState['menu'] = matchedDishes.map(
+      ({ requestedName, catalogDish }, index) => {
+        const savedRate = Math.max(0, Number(catalogDish?.rate) || 0);
+        const servingQuantity = Math.max(
+          0.01,
+          Number(catalogDish?.servingQuantity) || 1,
+        );
+        const hasSavedRate = savedRate > 0;
+
+        return {
+          id: `dish_${now}_${index}_${Math.random().toString(36).slice(2, 7)}`,
+          name: catalogDish?.name || requestedName,
+          category: catalogDish?.category || newDishCategory,
+          costPerPlate: savedRate,
+          portionQuantity: servingQuantity,
+          portionBaseQuantity: servingQuantity,
+          portionUnit: catalogDish?.servingUnit || 'serving',
+          pieceWeightGrams: catalogDish?.pieceWeightGrams,
+          gasKgPer100: catalogDish?.gasKgPer100,
+          portionMode: 'AUTO',
+          serviceId: targetTemplate?.serviceId,
+          dayLabel: targetService?.dayLabel || targetTemplate?.dayLabel,
+          mealLabel: targetService?.mealLabel || targetTemplate?.mealLabel || 'Event Menu',
+          servicePax:
+            Number(targetService?.pax) ||
+            Number(targetTemplate?.servicePax) ||
+            Number(work.event.pax) ||
+            0,
+          costSource: catalogDish ? 'catalog' : 'manual',
+          coverageStatus: hasSavedRate ? 'COSTED' : 'NEW_DISH_PENDING',
+          costQualityStatus: hasSavedRate ? 'READY' : undefined,
+          costConfidence: hasSavedRate ? 100 : 0,
+          rateCoveragePercent: hasSavedRate ? 100 : 0,
+          coverageReason: hasSavedRate
+            ? 'Matched saved Dish Master rate during quick add'
+            : 'Manual rate required',
+          costApprovalStatus: hasSavedRate ? 'NOT_REQUIRED' : 'PENDING',
+          costApprovalReason: hasSavedRate
+            ? 'Saved Dish Master rate'
+            : 'Manual rate required',
+          detectionSource: catalogDish ? 'catalog' : 'manual',
+          detectionConfidence: 100,
+          detectionReason: catalogDish
+            ? 'Matched existing Dish Master item during quick add'
+            : 'User quickly added missing dish on Cost page',
+        };
+      },
+    );
 
     persist({ ...work, menu: [...work.menu, ...additions] });
     setQuickDishNames('');
     setDishQuery('');
     setDishServiceFilter('ALL');
     setDishCategoryFilter('ALL');
-    setDishStatusFilter('MISSING');
+    const databaseMatchCount = matchedDishes.filter(({ catalogDish }) => catalogDish).length;
+    const newDishCount = additions.length - databaseMatchCount;
+    setDishStatusFilter(newDishCount > 0 ? 'MISSING' : 'ALL');
     setQuickAddMessage(
       `${additions.length} ${additions.length === 1 ? 'dish' : 'dishes'} added${
-        skippedCount ? ` · ${skippedCount} already existed` : ''
-      }. Add rates below.`,
+        databaseMatchCount ? ` · ${databaseMatchCount} matched Dish Master` : ''
+      }${skippedCount ? ` · ${skippedCount} already existed` : ''}${
+        newDishCount ? ` · add rates for ${newDishCount} new` : ''
+      }.`,
     );
 
-    void fetch('/api/dish-suggestions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sourceFileName: 'Quick added from Cost page',
-        candidates: namesToAdd.map((name) => ({ name, categoryHint: newDishCategory })),
-      }),
-    }).catch((suggestionError) =>
-      console.warn('Quick dish suggestions skipped:', suggestionError),
-    );
+    const genuinelyNewNames = matchedDishes
+      .filter(({ catalogDish }) => !catalogDish)
+      .map(({ requestedName }) => requestedName);
+
+    if (genuinelyNewNames.length) {
+      void fetch('/api/dish-suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceFileName: 'Quick added from Cost page',
+          candidates: genuinelyNewNames.map((name) => ({
+            name,
+            categoryHint: newDishCategory,
+          })),
+        }),
+      }).catch((suggestionError) =>
+        console.warn('Quick dish suggestions skipped:', suggestionError),
+      );
+    }
   }
 
   function updateDishCost(id: string, value: number) {
@@ -1303,7 +1379,7 @@ export default function CostPage() {
                   </h3>
 
                   <p className="muted">
-                    Paste a list or type dish names separated by commas. Rates can be filled in after adding.
+                    Paste a list or type dish names separated by commas. Saved Dish Master details fill automatically.
                   </p>
                 </div>
 
