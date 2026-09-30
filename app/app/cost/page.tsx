@@ -171,6 +171,9 @@ export default function CostPage() {
 
   const [quickDishNames, setQuickDishNames] = useState('');
   const [quickAddMessage, setQuickAddMessage] = useState('');
+  const [showDishBrowser, setShowDishBrowser] = useState(false);
+  const [dishBrowserQuery, setDishBrowserQuery] = useState('');
+  const [dishBrowserCategory, setDishBrowserCategory] = useState('ALL');
 
   const [
     newDishCategory,
@@ -464,6 +467,17 @@ export default function CostPage() {
         })
         .slice(0, 6)
     : [];
+  const normalizedBrowserQuery = normalizeDishName(dishBrowserQuery);
+  const browsableDishes = availableDishes
+    .filter((dish) =>
+      (dishBrowserCategory === 'ALL' || dish.category === dishBrowserCategory) &&
+      (!normalizedBrowserQuery ||
+        [dish.name, ...(dish.aliases || [])]
+          .some((name) => normalizeDishName(name).includes(normalizedBrowserQuery))) &&
+      !quickExistingNames.has(normalizeDishName(dish.name)),
+    )
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .slice(0, 60);
 
   const missingRateCount = work.menu.filter(
     needsManualRate,
@@ -611,6 +625,13 @@ export default function CostPage() {
     const match = quickDishNames.match(/^([\s\S]*?[\n,;]\s*)?([^\n,;]*)$/);
     const prefix = match?.[1] || '';
     setQuickDishNames(`${prefix}${dish.name}\n`);
+    setQuickAddMessage('');
+  }
+
+  function appendBrowsedDish(dish: AvailableDish) {
+    const selected = new Set(quickRequestedNames.map(normalizeDishName));
+    if (selected.has(normalizeDishName(dish.name))) return;
+    setQuickDishNames((current) => `${current.trimEnd()}${current.trim() ? '\n' : ''}${dish.name}\n`);
     setQuickAddMessage('');
   }
 
@@ -1133,6 +1154,77 @@ export default function CostPage() {
                   Close
                 </button>
               </div>
+
+              <div className="cost-browser-bar">
+                <div>
+                  <b>Select from Dish Master</b>
+                  <span>Search and tap dishes to build the list faster.</span>
+                </div>
+                <button
+                  className="ghost-button"
+                  type="button"
+                  aria-expanded={showDishBrowser}
+                  onClick={() => setShowDishBrowser((current) => !current)}
+                >
+                  {showDishBrowser ? 'Hide dishes' : 'Browse saved dishes'}
+                </button>
+              </div>
+
+              {showDishBrowser ? (
+                <div className="cost-dish-browser">
+                  <div className="cost-dish-browser-tools">
+                    <label>
+                      <span>Search Dish Master</span>
+                      <input
+                        className="input"
+                        type="search"
+                        value={dishBrowserQuery}
+                        onChange={(event) => setDishBrowserQuery(event.target.value)}
+                        placeholder="Search paneer, sweet, soup…"
+                        autoFocus
+                      />
+                    </label>
+                    <label>
+                      <span>Category</span>
+                      <select
+                        className="select"
+                        value={dishBrowserCategory}
+                        onChange={(event) => setDishBrowserCategory(event.target.value)}
+                      >
+                        <option value="ALL">All categories</option>
+                        {availableDishCategories.map((category) => (
+                          <option key={category} value={category}>{category}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="cost-dish-browser-results" aria-live="polite">
+                    {browsableDishes.map((dish) => {
+                      const selected = quickRequestedNames.some(
+                        (name) => normalizeDishName(name) === normalizeDishName(dish.name),
+                      );
+                      return (
+                        <button
+                          type="button"
+                          className={selected ? 'selected' : ''}
+                          key={dish.name}
+                          onClick={() => appendBrowsedDish(dish)}
+                          disabled={selected}
+                        >
+                          <span><b>{dish.name}</b><small>{dish.category}</small></span>
+                          <span><strong>{money(dish.rate)}</strong><i aria-hidden="true">{selected ? '✓' : '+'}</i></span>
+                        </button>
+                      );
+                    })}
+                    {!browsableDishes.length ? (
+                      <p>No saved dishes match this search.</p>
+                    ) : null}
+                  </div>
+                  {browsableDishes.length === 60 ? (
+                    <small className="muted">Showing the first 60 matches. Search to narrow the list.</small>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="cost-quick-add">
                 <div className="field cost-quick-add-names">
