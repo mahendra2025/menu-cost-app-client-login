@@ -1474,12 +1474,12 @@ export default function CostPage() {
                       </colgroup>
                       <thead>
                         <tr>
-                          <th>Dish &amp; function</th>
-                          <th>Category &amp; serving</th>
+                          <th>Dish</th>
+                          <th>Serving setup</th>
                           <th>Guests</th>
-                          <th>Base ₹ / plate</th>
-                          <th>Portion</th>
-                          <th>Calculated cost</th>
+                          <th>Rate / plate</th>
+                          <th>Allocation</th>
+                          <th>Cost</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1489,43 +1489,24 @@ export default function CostPage() {
                           return (
                             <Fragment key={group.key}>
                               <tr className="dish-category-section-row">
-                                <td colSpan={9} style={{ padding: 0 }}>
-                                  <div
-                                    style={{
-                                      width: '100%',
-                                      background: 'var(--surface-subtle, rgba(0,0,0,0.035))',
-                                      padding: '10px 14px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      gap: 12,
-                                    }}
-                                  >
+                                <td colSpan={6}>
+                                  <div className="dish-category-section">
                                     <button
+                                      className="dish-category-toggle"
                                       type="button"
                                       onClick={() => toggleDishCategoryGroup(group.key)}
                                       aria-expanded={!collapsed}
-                                      style={{
-                                        border: 0,
-                                        background: 'transparent',
-                                        padding: 0,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 10,
-                                        minWidth: 0,
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                      }}
                                     >
-                                      <span aria-hidden="true" style={{ fontSize: 12 }}>{collapsed ? '▶' : '▼'}</span>
-                                      <strong>{group.category}</strong>
-                                      <small className="muted">
-                                        {group.dayLabel ? `${group.dayLabel} • ` : ''}{group.mealLabel}
-                                      </small>
+                                      <span className="dish-category-chevron" aria-hidden="true">{collapsed ? '›' : '⌄'}</span>
+                                      <span>
+                                        <strong>{group.category}</strong>
+                                        <small>{group.dayLabel ? `${group.dayLabel} · ` : ''}{group.mealLabel}</small>
+                                      </span>
                                     </button>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: 12, whiteSpace: 'nowrap' }}>
-                                      <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <small>Category consumption</small>
+                                    <div className="dish-category-controls">
+                                      <label className="dish-category-consumption">
+                                        <span>Consumption</span>
+                                        <div>
                                         <input
                                           className="input"
                                           type="number"
@@ -1541,14 +1522,17 @@ export default function CostPage() {
                                             )
                                           }
                                           aria-label={`${group.category} category consumption percentage`}
-                                          style={{ width: 72 }}
                                         />
-                                        <small>%</small>
+                                        <b>%</b>
+                                        </div>
                                       </label>
-                                      <small className="muted">Recommended {group.recommendedPercent}%</small>
+                                      <div className="dish-category-recommendation">
+                                        <span>Recommended</span>
+                                        <b>{group.recommendedPercent}%</b>
+                                      </div>
                                       {group.targetPercent !== group.recommendedPercent ? (
                                         <button
-                                          className="ghost-button"
+                                          className="dish-category-apply"
                                           type="button"
                                           onClick={() =>
                                             updateCategoryPortion(
@@ -1557,17 +1541,16 @@ export default function CostPage() {
                                               group.recommendedPercent,
                                             )
                                           }
-                                          style={{ padding: '6px 9px' }}
                                         >
-                                          Apply
+                                          Use recommended
                                         </button>
                                       ) : null}
-                                      <small>{group.items.length} dish{group.items.length === 1 ? '' : 'es'}</small>
-                                      {group.missingCount > 0 ? (
-                                        <small className="needs-attention">{group.missingCount} rate{group.missingCount === 1 ? '' : 's'} missing</small>
-                                      ) : null}
+                                    </div>
+                                    <div className="dish-category-total">
+                                      <span>{group.items.length} dish{group.items.length === 1 ? '' : 'es'}</span>
                                       <strong>{money(group.subtotal)}</strong>
-                                    </span>
+                                      {group.missingCount > 0 ? <small>{group.missingCount} missing rate{group.missingCount === 1 ? '' : 's'}</small> : null}
+                                    </div>
                                   </div>
                                 </td>
                               </tr>
@@ -1843,43 +1826,24 @@ export default function CostPage() {
 
                       return (
                         <section key={group.key} className="dish-cost-category-group">
-                          <div
-                            style={{
-                              width: '100%',
-                              borderRadius: 14,
-                              padding: '12px 14px',
-                              marginBottom: 10,
-                              background: 'var(--surface-subtle, rgba(0,0,0,0.035))',
-                              display: 'grid',
-                              gap: 10,
-                            }}
-                          >
+                          <div className="dish-cost-category-card-head">
                             <button
+                              className="dish-cost-category-card-toggle"
                               type="button"
                               onClick={() => toggleDishCategoryGroup(group.key)}
                               aria-expanded={!collapsed}
-                              style={{
-                                border: 0,
-                                background: 'transparent',
-                                padding: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: 10,
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                              }}
                             >
-                              <strong>{collapsed ? '▶' : '▼'} {group.category}</strong>
+                              <span className="dish-category-chevron" aria-hidden="true">{collapsed ? '›' : '⌄'}</span>
+                              <strong>{group.category}</strong>
                               <strong>{money(group.subtotal)}</strong>
                             </button>
-                            <small className="muted">
+                            <small className="dish-cost-category-card-meta">
                               {group.dayLabel ? `${group.dayLabel} • ` : ''}{group.mealLabel} · {group.items.length} dish{group.items.length === 1 ? '' : 'es'}
                               {group.missingCount > 0 ? ` · ${group.missingCount} rate${group.missingCount === 1 ? '' : 's'} missing` : ''}
                             </small>
-                            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                              <span>Category consumption</span>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <label className="dish-cost-category-card-consumption">
+                              <span>Consumption</span>
+                              <span>
                                 <input
                                   className="input"
                                   type="number"
@@ -1895,12 +1859,11 @@ export default function CostPage() {
                                     )
                                   }
                                   aria-label={`${group.category} category consumption percentage`}
-                                  style={{ width: 82 }}
                                 />
                                 <span>%</span>
                               </span>
                             </label>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                            <div className="dish-cost-category-card-recommendation">
                               <small className="muted">
                                 Recommended {group.recommendedPercent}% · {group.pax.toLocaleString('en-IN')} guests
                               </small>
@@ -1915,9 +1878,8 @@ export default function CostPage() {
                                       group.recommendedPercent,
                                     )
                                   }
-                                  style={{ padding: '6px 9px' }}
                                 >
-                                  Apply
+                                  Use recommended
                                 </button>
                               ) : null}
                             </div>
@@ -2009,14 +1971,14 @@ export default function CostPage() {
                           ) : null}
                         </div>
                         <div className="dish-cost-card-grid">
-                          <div><small>Members</small><b>{item.effectivePax.toLocaleString('en-IN')}</b></div>
-                          <div><small>Portion</small><b>{Math.round(item.portionPercent * 100) / 100}%</b></div>
-                          <div><small>Adjusted / plate</small><b>{money(item.adjustedCostPerPlate)}</b></div>
-                          <div className="dish-cost-card-total"><small>Total cost</small><b>{money(item.itemTotalCost)}</b></div>
+                          <div><small>Guests</small><b>{item.effectivePax.toLocaleString('en-IN')}</b></div>
+                          <div><small>Allocation</small><b>{Math.round(item.portionPercent * 100) / 100}%</b></div>
+                          <div><small>Cost / plate</small><b>{money(item.adjustedCostPerPlate)}</b></div>
+                          <div className="dish-cost-card-total"><small>Event total</small><b>{money(item.itemTotalCost)}</b></div>
                         </div>
                         <div className="field">
                           <label htmlFor={`mobile-portion-mode-${item.id}`}>
-                            Client portion
+                            Allocation mode
                           </label>
 
                           <div className="cost-portion-control">
