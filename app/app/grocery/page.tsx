@@ -43,6 +43,15 @@ type ClientIngredientRate =
     isCustomRate?: boolean;
   };
 
+type RateSaveState = {
+  status:
+    | 'idle'
+    | 'saving'
+    | 'saved'
+    | 'error';
+  message?: string;
+};
+
 function money(value: number) {
   return `₹${Math.max(0, Number(value) || 0).toLocaleString('en-IN', {
     minimumFractionDigits: 2,
@@ -250,6 +259,21 @@ function groceryCategoryRank(
     : INGREDIENT_CATEGORIES.length;
 }
 
+function groceryRateKey(
+  item: FunctionGroceryItem,
+) {
+  return [
+    normalize(
+      canonicalIngredientName(
+        item.name,
+      ),
+    ),
+    normalize(
+      item.unit,
+    ),
+  ].join('::');
+}
+
 export default function GroceryPage() {
   const router = useRouter();
 
@@ -326,16 +350,39 @@ export default function GroceryPage() {
     >('ALL');
 
   const [
-    savingRateKey,
-    setSavingRateKey,
+    rateDrafts,
+    setRateDrafts,
   ] =
-    useState('');
+    useState<
+      Record<string, string>
+    >({});
+
+  const [
+    rateStates,
+    setRateStates,
+  ] =
+    useState<
+      Record<
+        string,
+        RateSaveState
+      >
+    >({});
 
   const [
     rateMessage,
     setRateMessage,
   ] =
     useState('');
+
+  const [
+    rateMessageType,
+    setRateMessageType,
+  ] =
+    useState<
+      'saving' |
+      'success' |
+      'error'
+    >('success');
 
   useEffect(() => {
     const current =
@@ -729,6 +776,11 @@ export default function GroceryPage() {
     item: FunctionGroceryItem,
     displayRate: number,
   ) {
+    const key =
+      groceryRateKey(
+        item,
+      );
+
     const safeDisplayRate =
       Math.max(
         0,
@@ -738,8 +790,25 @@ export default function GroceryPage() {
     if (
       !(safeDisplayRate > 0)
     ) {
+      const message =
+        'Ingredient rate must be greater than ₹0.';
+
+      setRateStates(
+        (current) => ({
+          ...current,
+          [key]: {
+            status: 'error',
+            message,
+          },
+        }),
+      );
+
+      setRateMessageType(
+        'error',
+      );
+
       setRateMessage(
-        'Ingredient rate must be greater than ₹0.',
+        message,
       );
 
       return;
@@ -751,26 +820,32 @@ export default function GroceryPage() {
         rates,
       );
 
-    if (!source) {
-      setRateMessage(
-        `${item.name} is not in the Ingredient Master yet. Open My Ingredients to add or correct its rate.`,
-      );
-
-      return;
-    }
+    const sourceUnit =
+      source?.unit ||
+      item.unit;
 
     const sourceRate =
       sourceRateFromDisplay(
         safeDisplayRate,
-        source.unit,
+        sourceUnit,
       );
 
-    setSavingRateKey(
-      `${item.name}::${item.unit}`,
+    setRateStates(
+      (current) => ({
+        ...current,
+        [key]: {
+          status: 'saving',
+          message: 'Saving…',
+        },
+      }),
+    );
+
+    setRateMessageType(
+      'saving',
     );
 
     setRateMessage(
-      '',
+      `Saving ${item.name} rate…`,
     );
 
     try {
@@ -788,8 +863,21 @@ export default function GroceryPage() {
               JSON.stringify({
                 rates: [
                   {
-                    ingredientId:
-                      source.id,
+                    ...(source
+                      ? {
+                          ingredientId:
+                            source.id,
+                        }
+                      : {
+                          name:
+                            item.name,
+                          category:
+                            inferIngredientCategory(
+                              item.name,
+                            ),
+                          unit:
+                            sourceUnit,
+                        }),
                     rate:
                       sourceRate,
                   },
@@ -810,38 +898,126 @@ export default function GroceryPage() {
         );
       }
 
+      const savedRate =
+        Array.isArray(
+          data.savedRates,
+        )
+          ? data.savedRates[0] as
+              ClientIngredientRate |
+              undefined
+          : undefined;
+
       setRates(
-        (current) =>
-          current.map(
-            (rate) =>
-              rate.id ===
-              source.id
-                ? {
-                    ...rate,
-                    rate:
-                      sourceRate,
-                    isCustomRate:
-                      true,
-                  }
-                : rate,
-          ),
+        (current) => {
+          if (savedRate) {
+            const exists =
+              current.some(
+                (rate) =>
+                  rate.id ===
+                  savedRate.id,
+              );
+
+            return exists
+              ? current.map(
+                  (rate) =>
+                    rate.id ===
+                    savedRate.id
+                      ? {
+                          ...rate,
+                          ...savedRate,
+                        }
+                      : rate,
+                )
+              : [
+                  ...current,
+                  savedRate,
+                ];
+          }
+
+          if (source) {
+            return current.map(
+              (rate) =>
+                rate.id ===
+                source.id
+                  ? {
+                      ...rate,
+                      rate:
+                        sourceRate,
+                      isCustomRate:
+                        true,
+                    }
+                  : rate,
+            );
+          }
+
+          return current;
+        },
+      );
+
+      setRateDrafts(
+        (current) => ({
+          ...current,
+          [key]:
+            safeDisplayRate.toFixed(
+              2,
+            ),
+        }),
+      );
+
+      const created =
+        Number(
+          data.created,
+        ) > 0;
+
+      const message =
+        created
+          ? 'Saved · Ingredient Master item created'
+          : 'Saved';
+
+      setRateStates(
+        (current) => ({
+          ...current,
+          [key]: {
+            status: 'saved',
+            message,
+          },
+        }),
+      );
+
+      setRateMessageType(
+        'success',
       );
 
       setRateMessage(
-        `${item.name} rate saved.`,
+        created
+          ? `${item.name} created in Ingredient Master and rate saved.`
+          : `${item.name} rate saved.`,
       );
     } catch (
       error
     ) {
-      setRateMessage(
+      const message =
         error instanceof
         Error
           ? error.message
-          : 'Ingredient rate could not be saved.',
+          : 'Ingredient rate could not be saved.';
+
+      setRateStates(
+        (current) => ({
+          ...current,
+          [key]: {
+            status: 'error',
+            message,
+          },
+        }),
       );
-    } finally {
-      setSavingRateKey(
-        '',
+
+      setRateMessageType(
+        'error',
+      );
+
+      setRateMessage(
+        `Error: ${message}`,
       );
     }
   }
@@ -1224,8 +1400,13 @@ export default function GroceryPage() {
 
               {rateMessage ? (
                 <div
-                  className="grocery-rate-message"
-                  role="status"
+                  className={`grocery-rate-message ${rateMessageType}`}
+                  role={
+                    rateMessageType ===
+                    'error'
+                      ? 'alert'
+                      : 'status'
+                  }
                 >
                   {rateMessage}
                 </div>
@@ -1343,9 +1524,22 @@ export default function GroceryPage() {
                                 rates,
                               );
 
+                            const key =
+                              groceryRateKey(
+                                item,
+                              );
+
+                            const rateState =
+                              rateStates[
+                                key
+                              ] || {
+                                status:
+                                  'idle',
+                              };
+
                             const saving =
-                              savingRateKey ===
-                              `${item.name}::${item.unit}`;
+                              rateState.status ===
+                              'saving';
 
                             const displayedRate =
                               sourceRate
@@ -1354,6 +1548,22 @@ export default function GroceryPage() {
                                     sourceRate.unit,
                                   )
                                 : item.rate;
+
+                            const draftRate =
+                              rateDrafts[
+                                key
+                              ] ??
+                              (
+                                displayedRate &&
+                                displayedRate >
+                                  0
+                                  ? Number(
+                                      displayedRate,
+                                    ).toFixed(
+                                      2,
+                                    )
+                                  : ''
+                              );
 
                             return (
                               <tr
@@ -1404,57 +1614,72 @@ export default function GroceryPage() {
                                 </td>
 
                                 <td>
-                                  {sourceRate ? (
+                                  <div className="grocery-rate-editor">
                                     <label className="grocery-rate-input">
                                       <span>
                                         ₹
                                       </span>
 
                                       <input
-                                        key={`${sourceRate.id}::${displayedRate}`}
                                         type="number"
                                         min="0"
                                         step="0.01"
-                                        defaultValue={
-                                          displayedRate &&
-                                          displayedRate >
-                                            0
-                                            ? Number(
-                                                displayedRate,
-                                              ).toFixed(
-                                                2,
-                                              )
-                                            : ''
+                                        value={
+                                          draftRate
                                         }
                                         placeholder="Rate"
                                         disabled={
                                           saving
                                         }
                                         aria-label={`Rate for ${item.name}`}
-                                        onBlur={(
+                                        onChange={(
                                           event,
                                         ) => {
-                                          const next =
-                                            Number(
-                                              event.currentTarget
-                                                .value,
-                                            );
+                                          const value =
+                                            event.target
+                                              .value;
 
+                                          setRateDrafts(
+                                            (
+                                              current,
+                                            ) => ({
+                                              ...current,
+                                              [key]:
+                                                value,
+                                            }),
+                                          );
+
+                                          setRateStates(
+                                            (
+                                              current,
+                                            ) => ({
+                                              ...current,
+                                              [key]: {
+                                                status:
+                                                  'idle',
+                                              },
+                                            }),
+                                          );
+
+                                          setRateMessage(
+                                            '',
+                                          );
+                                        }}
+                                        onKeyDown={(
+                                          event,
+                                        ) => {
                                           if (
-                                            next >
-                                              0 &&
-                                            Math.abs(
-                                              next -
-                                                Number(
-                                                  displayedRate ||
-                                                    0,
-                                                ),
-                                            ) >
-                                              0.0001
+                                            event.key ===
+                                            'Enter'
                                           ) {
+                                            event.preventDefault();
+
                                             void saveIngredientRate(
                                               item,
-                                              next,
+                                              Number(
+                                                event.currentTarget
+                                                  .value,
+                                              ),
                                             );
                                           }
                                         }}
@@ -1462,23 +1687,52 @@ export default function GroceryPage() {
 
                                       <small>
                                         /{' '}
-                                        {item.rateUnit ||
+                                        {sourceRate?.unit ||
+                                          item.rateUnit ||
                                           item.unit}
                                       </small>
                                     </label>
-                                  ) : (
+
                                     <button
-                                      className="grocery-manage-rate"
+                                      className="grocery-rate-save-button"
                                       type="button"
+                                      disabled={
+                                        saving ||
+                                        !(
+                                          Number(
+                                            draftRate,
+                                          ) >
+                                          0
+                                        )
+                                      }
                                       onClick={() =>
-                                        router.push(
-                                          '/app/ingredients',
+                                        void saveIngredientRate(
+                                          item,
+                                          Number(
+                                            draftRate,
+                                          ),
                                         )
                                       }
                                     >
-                                      Set rate
+                                      {saving
+                                        ? 'Saving…'
+                                        : sourceRate
+                                          ? 'Save'
+                                          : 'Create & Save'}
                                     </button>
-                                  )}
+
+                                    <small
+                                      className={`grocery-rate-save-status ${rateState.status}`}
+                                      aria-live="polite"
+                                    >
+                                      {rateState.message ||
+                                        (
+                                          sourceRate
+                                            ? 'Press Enter or Save'
+                                            : 'Creates Ingredient Master item on save'
+                                        )}
+                                    </small>
+                                  </div>
                                 </td>
 
                                 <td>
@@ -1544,74 +1798,239 @@ export default function GroceryPage() {
                     {filteredItems.map(
                       (
                         item,
-                      ) => (
-                        <article
-                          className={
-                            !item.hasRate
-                              ? 'grocery-mobile-item grocery-rate-missing'
-                              : 'grocery-mobile-item'
-                          }
-                          key={`mobile-${item.name}::${item.unit}`}
-                        >
-                          <div className="grocery-mobile-head">
-                            <div>
-                              <b>
-                                {
-                                  item.name
-                                }
-                              </b>
+                      ) => {
+                        const sourceRate =
+                          rateRowForItem(
+                            item,
+                            rates,
+                          );
 
-                              <small>
-                                {inferIngredientCategory(
-                                  item.name,
-                                )}
-                              </small>
+                        const key =
+                          groceryRateKey(
+                            item,
+                          );
+
+                        const rateState =
+                          rateStates[
+                            key
+                          ] || {
+                            status:
+                              'idle',
+                          };
+
+                        const saving =
+                          rateState.status ===
+                          'saving';
+
+                        const displayedRate =
+                          sourceRate
+                            ? displayRateFromSource(
+                                sourceRate.rate,
+                                sourceRate.unit,
+                              )
+                            : item.rate;
+
+                        const draftRate =
+                          rateDrafts[
+                            key
+                          ] ??
+                          (
+                            displayedRate &&
+                            displayedRate >
+                              0
+                              ? Number(
+                                  displayedRate,
+                                ).toFixed(
+                                  2,
+                                )
+                              : ''
+                          );
+
+                        return (
+                          <article
+                            className={
+                              !item.hasRate
+                                ? 'grocery-mobile-item grocery-rate-missing'
+                                : 'grocery-mobile-item'
+                            }
+                            key={`mobile-${item.name}::${item.unit}`}
+                          >
+                            <div className="grocery-mobile-head">
+                              <div>
+                                <b>
+                                  {
+                                    item.name
+                                  }
+                                </b>
+
+                                <small>
+                                  {inferIngredientCategory(
+                                    item.name,
+                                  )}
+                                </small>
+                              </div>
+
+                              <strong>
+                                {quantity(
+                                  item.quantity,
+                                )}{' '}
+                                {
+                                  item.unit
+                                }
+                              </strong>
                             </div>
 
-                            <strong>
-                              {quantity(
-                                item.quantity,
-                              )}{' '}
-                              {
-                                item.unit
-                              }
-                            </strong>
-                          </div>
+                            <div className="grocery-mobile-meta">
+                              <span>
+                                Rate{' '}
+                                <b>
+                                  {item.hasRate
+                                    ? `${money(
+                                        item.rate ||
+                                          0,
+                                      )} / ${item.rateUnit ||
+                                        item.unit}`
+                                    : 'Missing'}
+                                </b>
+                              </span>
 
-                          <div className="grocery-mobile-meta">
-                            <span>
-                              Rate{' '}
-                              <b>
-                                {item.hasRate
-                                  ? `${money(
-                                      item.rate ||
-                                        0,
-                                    )} / ${item.rateUnit ||
-                                      item.unit}`
-                                  : 'Missing'}
-                              </b>
-                            </span>
+                              <span>
+                                Cost{' '}
+                                <b>
+                                  {item.hasRate
+                                    ? money(
+                                        item.estimatedCost,
+                                      )
+                                    : '—'}
+                                </b>
+                              </span>
+                            </div>
 
-                            <span>
-                              Cost{' '}
-                              <b>
-                                {item.hasRate
-                                  ? money(
-                                      item.estimatedCost,
-                                    )
-                                  : '—'}
-                              </b>
-                            </span>
-                          </div>
+                            <div className="grocery-mobile-rate-editor">
+                              <label>
+                                <span>
+                                  Rate /{' '}
+                                  {sourceRate?.unit ||
+                                    item.rateUnit ||
+                                    item.unit}
+                                </span>
 
-                          <p>
-                            Used in:{' '}
-                            {item.dishes.join(
-                              ', ',
-                            )}
-                          </p>
-                        </article>
-                      ),
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={
+                                    draftRate
+                                  }
+                                  placeholder="Enter rate"
+                                  disabled={
+                                    saving
+                                  }
+                                  aria-label={`Rate for ${item.name}`}
+                                  onChange={(
+                                    event,
+                                  ) => {
+                                    const value =
+                                      event.target
+                                        .value;
+
+                                    setRateDrafts(
+                                      (
+                                        current,
+                                      ) => ({
+                                        ...current,
+                                        [key]:
+                                          value,
+                                      }),
+                                    );
+
+                                    setRateStates(
+                                      (
+                                        current,
+                                      ) => ({
+                                        ...current,
+                                        [key]: {
+                                          status:
+                                            'idle',
+                                        },
+                                      }),
+                                    );
+
+                                    setRateMessage(
+                                      '',
+                                    );
+                                  }}
+                                  onKeyDown={(
+                                    event,
+                                  ) => {
+                                    if (
+                                      event.key ===
+                                      'Enter'
+                                    ) {
+                                      event.preventDefault();
+
+                                      void saveIngredientRate(
+                                        item,
+                                        Number(
+                                          event.currentTarget
+                                            .value,
+                                        ),
+                                      );
+                                    }
+                                  }}
+                                />
+                              </label>
+
+                              <button
+                                type="button"
+                                className="grocery-rate-save-button"
+                                disabled={
+                                  saving ||
+                                  !(
+                                    Number(
+                                      draftRate,
+                                    ) >
+                                    0
+                                  )
+                                }
+                                onClick={() =>
+                                  void saveIngredientRate(
+                                    item,
+                                    Number(
+                                      draftRate,
+                                    ),
+                                  )
+                                }
+                              >
+                                {saving
+                                  ? 'Saving…'
+                                  : sourceRate
+                                    ? 'Save'
+                                    : 'Create & Save'}
+                              </button>
+                            </div>
+
+                            <small
+                              className={`grocery-rate-save-status ${rateState.status}`}
+                              aria-live="polite"
+                            >
+                              {rateState.message ||
+                                (
+                                  sourceRate
+                                    ? 'Press Enter or Save'
+                                    : 'Creates Ingredient Master item on save'
+                                )}
+                            </small>
+
+                            <p>
+                              Used in:{' '}
+                              {item.dishes.join(
+                                ', ',
+                              )}
+                            </p>
+                          </article>
+                        );
+                      },
                     )}
                   </div>
                 </>

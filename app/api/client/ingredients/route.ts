@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -7,7 +8,13 @@ import {
 } from '../../../../lib/clientAuth';
 
 import {
+  canonicalIngredientName,
+  inferIngredientCategory,
+  INGREDIENT_UNITS,
+  normalizeIngredientId,
   normalizeIngredientRate,
+  type IngredientRate,
+  type IngredientUnit,
 } from '../../../../lib/ingredientCatalog';
 import {
   ingredientCityOptions,
@@ -415,6 +422,9 @@ export async function PUT(
       await request.json() as {
         rates?: Array<{
           ingredientId?: string;
+          name?: string;
+          category?: string;
+          unit?: string;
           rate?: number;
         }>;
 
@@ -450,6 +460,7 @@ export async function PUT(
         },
         select: {
           rates: true,
+          ingredientCategories: true,
         },
       });
 
@@ -483,28 +494,31 @@ export async function PUT(
         ),
       );
 
-    for (const item of submitted) {
-      const ingredientId =
-        String(
-          item.ingredientId || '',
-        ).trim();
+    const masterById =
+      new Map(
+        masterRates.map(
+          (rate) => [
+            rate.id,
+            rate,
+          ] as const,
+        ),
+      );
 
+    const createdMasterRates:
+      IngredientRate[] = [];
+
+    const effectiveSubmitted:
+      Array<{
+        ingredientId: string;
+        rate: number;
+      }> = [];
+
+    const now =
+      new Date().toISOString();
+
+    for (const item of submitted) {
       const rate =
         Number(item.rate);
-
-      if (
-        !validIds.has(
-          ingredientId,
-        )
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              'Invalid ingredient',
-          },
-          { status: 400 },
-        );
-      }
 
       if (
         !Number.isFinite(rate) ||
@@ -518,6 +532,114 @@ export async function PUT(
           { status: 400 },
         );
       }
+
+      let ingredientId =
+        String(
+          item.ingredientId || '',
+        ).trim();
+
+      if (ingredientId) {
+        if (
+          !validIds.has(
+            ingredientId,
+          )
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                'Invalid ingredient',
+            },
+            { status: 400 },
+          );
+        }
+      } else {
+        const name =
+          canonicalIngredientName(
+            String(
+              item.name || '',
+            ),
+          );
+
+        const unit =
+          String(
+            item.unit || '',
+          ).trim() as IngredientUnit;
+
+        if (
+          !name ||
+          !INGREDIENT_UNITS.includes(
+            unit,
+          )
+        ) {
+          return NextResponse.json(
+            {
+              error:
+                'Missing ingredients need a valid name and purchase unit',
+            },
+            { status: 400 },
+          );
+        }
+
+        ingredientId =
+          normalizeIngredientId(
+            name,
+            unit,
+          );
+
+        if (
+          !validIds.has(
+            ingredientId,
+          )
+        ) {
+          const suppliedCategory =
+            String(
+              item.category || '',
+            )
+              .trim()
+              .replace(
+                /\s+/g,
+                ' ',
+              );
+
+          const created:
+            IngredientRate = {
+              id: ingredientId,
+              name,
+              category:
+                suppliedCategory &&
+                suppliedCategory.length <=
+                  60
+                  ? suppliedCategory
+                  : inferIngredientCategory(
+                      name,
+                    ),
+              rate:
+                Math.round(
+                  rate * 100,
+                ) / 100,
+              unit,
+              updatedAt: now,
+            };
+
+          createdMasterRates.push(
+            created,
+          );
+
+          masterById.set(
+            ingredientId,
+            created,
+          );
+
+          validIds.add(
+            ingredientId,
+          );
+        }
+      }
+
+      effectiveSubmitted.push({
+        ingredientId,
+        rate,
+      });
     }
 
     for (const id of resetIds) {
@@ -534,6 +656,69 @@ export async function PUT(
 
     await prisma.$transaction(
       async (tx) => {
+        if (
+          createdMasterRates.length
+        ) {
+          const rawRates =
+            Array.isArray(
+              catalog.rates,
+            )
+              ? catalog.rates
+              : [];
+
+          const existingCategories =
+            Array.isArray(
+              catalog.ingredientCategories,
+            )
+              ? catalog.ingredientCategories
+                  .map((value) =>
+                    String(
+                      value || '',
+                    )
+                      .trim()
+                      .replace(
+                        /\s+/g,
+                        ' ',
+                      ),
+                  )
+                  .filter(Boolean)
+              : [];
+
+          const categories =
+            Array.from(
+              new Map(
+                [
+                  ...existingCategories,
+                  ...createdMasterRates.map(
+                    (rate) =>
+                      rate.category,
+                  ),
+                ].map(
+                  (category) => [
+                    category.toLowerCase(),
+                    category,
+                  ],
+                ),
+              ).values(),
+            );
+
+          await tx.recipeCatalog.update({
+            where: {
+              id: CATALOG_ID,
+            },
+
+            data: {
+              rates: [
+                ...rawRates,
+                ...createdMasterRates,
+              ] as Prisma.InputJsonValue,
+
+              ingredientCategories:
+                categories as Prisma.InputJsonValue,
+            },
+          });
+        }
+
         if (resetIds.length) {
           await tx.tenantIngredientRate.deleteMany({
             where: {
@@ -545,14 +730,12 @@ export async function PUT(
           });
         }
 
-        for (const item of submitted) {
+        for (const item of effectiveSubmitted) {
           const ingredientId =
-            String(
-              item.ingredientId,
-            ).trim();
+            item.ingredientId;
 
           const rate =
-            Number(item.rate);
+            item.rate;
 
           await tx.tenantIngredientRate.upsert({
             where: {
@@ -576,12 +759,39 @@ export async function PUT(
       },
     );
 
+    const savedRates =
+      effectiveSubmitted.flatMap(
+        (item) => {
+          const master =
+            masterById.get(
+              item.ingredientId,
+            );
+
+          return master
+            ? [
+                {
+                  ...master,
+                  rate: item.rate,
+                  defaultRate:
+                    master.rate,
+                  isCustomRate: true,
+                },
+              ]
+            : [];
+        },
+      );
+
     return NextResponse.json({
       ok: true,
       updated:
-        submitted.length,
+        effectiveSubmitted.length,
       reset:
         resetIds.length,
+      created:
+        createdMasterRates.length,
+      createdIngredients:
+        createdMasterRates,
+      savedRates,
     });
   } catch (error) {
     console.error(
