@@ -737,6 +737,9 @@ export default function GroceryPage() {
     );
   }
 
+  const tenantId =
+    session.tenantId;
+
   const totalIngredientCount =
     plan?.combinedItems
       .length || 0;
@@ -805,7 +808,7 @@ export default function GroceryPage() {
   ) {
     setWork(nextWork);
     saveWork(
-      session.tenantId,
+      tenantId,
       nextWork,
     );
   }
