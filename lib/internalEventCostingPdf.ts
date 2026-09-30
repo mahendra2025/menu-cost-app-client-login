@@ -31,6 +31,9 @@ import type {
 import type {
   EventGasCostBreakdown,
 } from './gasCost';
+import {
+  assessCostingHealth,
+} from './costingHealth';
 
 function money(
   value: number,
@@ -177,6 +180,35 @@ export function downloadInternalEventCostingPdf(
 
   const result =
     calculate(work);
+
+  const costingHealth =
+    assessCostingHealth(
+      work,
+      {
+        totalCovers:
+          result.totalCovers,
+        sellingPricePerCover:
+          work.sellingPricePerPlate,
+      },
+    );
+
+  const groceryMissingRecipeCount =
+    groceryPlan?.unmatchedDishes.length ||
+    0;
+
+  const groceryMissingRateCount =
+    groceryPlan?.combinedItems.filter(
+      (item) =>
+        !item.hasRate,
+    ).length || 0;
+
+  const pdfBlockerCount =
+    costingHealth.blockerCount +
+    groceryMissingRecipeCount +
+    groceryMissingRateCount;
+
+  const pdfWarningCount =
+    costingHealth.warningCount;
 
   const manpowerTotal =
     calculateManpowerCost(
@@ -475,7 +507,244 @@ export function downloadInternalEventCostingPdf(
   y =
     (tableDoc.lastAutoTable
       ?.finalY ||
-      y) + 10;
+      y) + 8;
+
+  sectionHeading(
+    'Costing Health',
+    'Automatic pre-quotation check for missing costs, duplicate menu rows, category quality, LPG overrides, manpower mapping and transport completeness.',
+  );
+
+  const healthRows: string[][] = [
+    ...costingHealth.issues.map(
+      (issue) => [
+        issue.severity ===
+        'BLOCKER'
+          ? 'MUST FIX'
+          : 'REVIEW',
+        issue.title,
+        issue.detail,
+      ],
+    ),
+  ];
+
+  if (
+    groceryMissingRecipeCount >
+    0
+  ) {
+    healthRows.unshift([
+      'MUST FIX',
+      'Recipes missing',
+      `${groceryMissingRecipeCount} dish(es) have no saved recipe, so grocery costing is incomplete.`,
+    ]);
+  }
+
+  if (
+    groceryMissingRateCount >
+    0
+  ) {
+    healthRows.unshift([
+      'MUST FIX',
+      'Ingredient rates missing',
+      `${groceryMissingRateCount} grocery item(s) have no usable purchase rate.`,
+    ]);
+  }
+
+  if (
+    healthRows.length ===
+    0
+  ) {
+    healthRows.push([
+      'VERIFIED',
+      'Cost inputs complete',
+      'No tracked costing blockers or review warnings were found.',
+    ]);
+  }
+
+  autoTable(doc, {
+    startY: y,
+    head: [[
+      'Status',
+      'Check',
+      'Detail',
+    ]],
+    body:
+      healthRows,
+    margin: {
+      left: 14,
+      right: 14,
+    },
+    styles: {
+      font: 'helvetica',
+      fontSize: 7.4,
+      cellPadding: 2,
+      textColor: [
+        51,
+        65,
+        85,
+      ],
+      lineColor: [
+        226,
+        232,
+        240,
+      ],
+      lineWidth: 0.12,
+    },
+    headStyles: {
+      fillColor: [
+        30,
+        41,
+        59,
+      ],
+      textColor: [
+        255,
+        255,
+        255,
+      ],
+      fontStyle:
+        'bold',
+    },
+    columnStyles: {
+      0: {
+        cellWidth: 24,
+        fontStyle:
+          'bold',
+      },
+      1: {
+        cellWidth: 48,
+        fontStyle:
+          'bold',
+      },
+      2: {
+        cellWidth: 110,
+      },
+    },
+    didParseCell: (
+      data,
+    ) => {
+      if (
+        data.section !==
+        'body'
+      ) {
+        return;
+      }
+
+      const status =
+        String(
+          data.row.raw?.[0] ||
+          '',
+        );
+
+      if (
+        status ===
+        'MUST FIX'
+      ) {
+        data.cell.styles.fillColor =
+          [
+            254,
+            242,
+            242,
+          ];
+
+        if (
+          data.column.index ===
+          0
+        ) {
+          data.cell.styles.textColor =
+            [
+              185,
+              28,
+              28,
+            ];
+        }
+      } else if (
+        status ===
+        'REVIEW'
+      ) {
+        data.cell.styles.fillColor =
+          [
+            255,
+            251,
+            235,
+          ];
+
+        if (
+          data.column.index ===
+          0
+        ) {
+          data.cell.styles.textColor =
+            [
+              180,
+              83,
+              9,
+            ];
+        }
+      } else if (
+        status ===
+        'VERIFIED'
+      ) {
+        data.cell.styles.fillColor =
+          [
+            240,
+            253,
+            244,
+          ];
+
+        if (
+          data.column.index ===
+          0
+        ) {
+          data.cell.styles.textColor =
+            [
+              21,
+              128,
+              61,
+            ];
+        }
+      }
+    },
+  });
+
+  y =
+    (tableDoc.lastAutoTable
+      ?.finalY ||
+      y) + 5;
+
+  doc.setFont(
+    'helvetica',
+    'bold',
+  );
+
+  doc.setFontSize(8);
+
+  doc.setTextColor(
+    pdfBlockerCount > 0
+      ? 185
+      : pdfWarningCount > 0
+        ? 180
+        : 21,
+    pdfBlockerCount > 0
+      ? 28
+      : pdfWarningCount > 0
+        ? 83
+        : 128,
+    pdfBlockerCount > 0
+      ? 28
+      : pdfWarningCount > 0
+        ? 9
+        : 61,
+  );
+
+  doc.text(
+    pdfBlockerCount > 0
+      ? `Costing incomplete: ${pdfBlockerCount} blocker(s) · ${pdfWarningCount} warning(s). Fix blockers before setting selling price.`
+      : pdfWarningCount > 0
+        ? `Costing review needed: 0 blockers · ${pdfWarningCount} warning(s). Confirm warnings before quotation.`
+        : 'Cost verified: no blockers or warnings detected.',
+    14,
+    y,
+  );
+
+  y += 9;
 
   sectionHeading(
     'Cost Index',
