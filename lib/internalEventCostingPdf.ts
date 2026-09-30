@@ -630,7 +630,10 @@ export function downloadInternalEventCostingPdf(
 
       const status =
         String(
-          data.row.raw?.[0] ||
+          (
+            data.row.raw as
+              string[]
+          )?.[0] ||
           '',
         );
 
