@@ -31,9 +31,7 @@ import type {
 import type {
   EventGasCostBreakdown,
 } from './gasCost';
-import {
-  assessCostingHealth,
-} from './costingHealth';
+import { compareMenuCategoryPriority } from './menuCategoryPriority';
 
 function money(
   value: number,
@@ -181,34 +179,6 @@ export function downloadInternalEventCostingPdf(
   const result =
     calculate(work);
 
-  const costingHealth =
-    assessCostingHealth(
-      work,
-      {
-        totalCovers:
-          result.totalCovers,
-        sellingPricePerCover:
-          work.sellingPricePerPlate,
-      },
-    );
-
-  const groceryMissingRecipeCount =
-    groceryPlan?.unmatchedDishes.length ||
-    0;
-
-  const groceryMissingRateCount =
-    groceryPlan?.combinedItems.filter(
-      (item) =>
-        !item.hasRate,
-    ).length || 0;
-
-  const pdfBlockerCount =
-    costingHealth.blockerCount +
-    groceryMissingRecipeCount +
-    groceryMissingRateCount;
-
-  const pdfWarningCount =
-    costingHealth.warningCount;
 
   const manpowerTotal =
     calculateManpowerCost(
@@ -562,58 +532,6 @@ export function downloadInternalEventCostingPdf(
     );
   }
 
-  const healthLabel =
-    pdfBlockerCount > 0
-      ? 'INCOMPLETE'
-      : pdfWarningCount > 0
-        ? 'REVIEW NEEDED'
-        : 'COST VERIFIED';
-
-  doc.setFillColor(
-    pdfBlockerCount > 0
-      ? 127
-      : pdfWarningCount > 0
-        ? 146
-        : 22,
-    pdfBlockerCount > 0
-      ? 29
-      : pdfWarningCount > 0
-        ? 64
-        : 101,
-    pdfBlockerCount > 0
-      ? 29
-      : pdfWarningCount > 0
-        ? 14
-        : 52,
-  );
-  doc.roundedRect(
-    14,
-    31,
-    42,
-    8,
-    2,
-    2,
-    'F',
-  );
-  doc.setFont(
-    'helvetica',
-    'bold',
-  );
-  doc.setFontSize(7);
-  doc.setTextColor(
-    255,
-    255,
-    255,
-  );
-  doc.text(
-    healthLabel,
-    35,
-    36.2,
-    {
-      align:
-        'center',
-    },
-  );
 
   y = 56;
 
@@ -792,10 +710,14 @@ export function downloadInternalEventCostingPdf(
 
   y += 24;
 
+  const secondaryCardWidth =
+    (182 - cardGap) /
+    2;
+
   metricCard(
     14,
     y,
-    cardWidth,
+    secondaryCardWidth,
     'Disposable',
     money(
       disposable.total,
@@ -804,296 +726,17 @@ export function downloadInternalEventCostingPdf(
 
   metricCard(
     14 +
-      cardWidth +
+      secondaryCardWidth +
       cardGap,
     y,
-    cardWidth,
+    secondaryCardWidth,
     'Transport',
     money(
       operationsTotals.transportTotal,
     ),
   );
 
-  metricCard(
-    14 +
-      (cardWidth +
-        cardGap) *
-        2,
-    y,
-    cardWidth,
-    'Blockers',
-    String(
-      pdfBlockerCount,
-    ),
-    pdfBlockerCount > 0
-      ? 'Must fix before pricing'
-      : 'No blockers',
-  );
-
-  metricCard(
-    14 +
-      (cardWidth +
-        cardGap) *
-        3,
-    y,
-    cardWidth,
-    'Warnings',
-    String(
-      pdfWarningCount,
-    ),
-    pdfWarningCount > 0
-      ? 'Review before quotation'
-      : 'No warnings',
-  );
-
   y += 27;
-
-  sectionHeading(
-    'Costing Health',
-    'Automatic pre-quotation check for missing costs, duplicate menu rows, category quality, LPG overrides, manpower mapping and transport completeness.',
-  );
-
-  const healthRows: string[][] = [
-    ...costingHealth.issues.map(
-      (issue) => [
-        issue.severity ===
-        'BLOCKER'
-          ? 'MUST FIX'
-          : 'REVIEW',
-        issue.title,
-        issue.detail,
-      ],
-    ),
-  ];
-
-  if (
-    groceryMissingRecipeCount >
-    0
-  ) {
-    healthRows.unshift([
-      'MUST FIX',
-      'Recipes missing',
-      `${groceryMissingRecipeCount} dish(es) have no saved recipe, so grocery costing is incomplete.`,
-    ]);
-  }
-
-  if (
-    groceryMissingRateCount >
-    0
-  ) {
-    healthRows.unshift([
-      'MUST FIX',
-      'Ingredient rates missing',
-      `${groceryMissingRateCount} grocery item(s) have no usable purchase rate.`,
-    ]);
-  }
-
-  if (
-    healthRows.length ===
-    0
-  ) {
-    healthRows.push([
-      'VERIFIED',
-      'Cost inputs complete',
-      'No tracked costing blockers or review warnings were found.',
-    ]);
-  }
-
-  autoTable(doc, {
-    startY: y,
-    head: [[
-      'Status',
-      'Check',
-      'Detail',
-    ]],
-    body:
-      healthRows,
-    margin: {
-      left: 14,
-      right: 14,
-    },
-    styles: {
-      font: 'helvetica',
-      fontSize: 7.4,
-      cellPadding: 2,
-      textColor: [
-        51,
-        65,
-        85,
-      ],
-      lineColor: [
-        226,
-        232,
-        240,
-      ],
-      lineWidth: 0.12,
-    },
-    alternateRowStyles: {
-      fillColor: [
-        248,
-        250,
-        252,
-      ],
-    },
-    headStyles: {
-      fillColor: [
-        30,
-        41,
-        59,
-      ],
-      textColor: [
-        255,
-        255,
-        255,
-      ],
-      fontStyle:
-        'bold',
-    },
-    columnStyles: {
-      0: {
-        cellWidth: 24,
-        fontStyle:
-          'bold',
-      },
-      1: {
-        cellWidth: 48,
-        fontStyle:
-          'bold',
-      },
-      2: {
-        cellWidth: 110,
-      },
-    },
-    didParseCell: (
-      data,
-    ) => {
-      if (
-        data.section !==
-        'body'
-      ) {
-        return;
-      }
-
-      const status =
-        String(
-          (
-            data.row.raw as
-              string[]
-          )?.[0] ||
-          '',
-        );
-
-      if (
-        status ===
-        'MUST FIX'
-      ) {
-        data.cell.styles.fillColor =
-          [
-            254,
-            242,
-            242,
-          ];
-
-        if (
-          data.column.index ===
-          0
-        ) {
-          data.cell.styles.textColor =
-            [
-              185,
-              28,
-              28,
-            ];
-        }
-      } else if (
-        status ===
-        'REVIEW'
-      ) {
-        data.cell.styles.fillColor =
-          [
-            255,
-            251,
-            235,
-          ];
-
-        if (
-          data.column.index ===
-          0
-        ) {
-          data.cell.styles.textColor =
-            [
-              180,
-              83,
-              9,
-            ];
-        }
-      } else if (
-        status ===
-        'VERIFIED'
-      ) {
-        data.cell.styles.fillColor =
-          [
-            240,
-            253,
-            244,
-          ];
-
-        if (
-          data.column.index ===
-          0
-        ) {
-          data.cell.styles.textColor =
-            [
-              21,
-              128,
-              61,
-            ];
-        }
-      }
-    },
-  });
-
-  y =
-    (tableDoc.lastAutoTable
-      ?.finalY ||
-      y) + 5;
-
-  doc.setFont(
-    'helvetica',
-    'bold',
-  );
-
-  doc.setFontSize(8);
-
-  doc.setTextColor(
-    pdfBlockerCount > 0
-      ? 185
-      : pdfWarningCount > 0
-        ? 180
-        : 21,
-    pdfBlockerCount > 0
-      ? 28
-      : pdfWarningCount > 0
-        ? 83
-        : 128,
-    pdfBlockerCount > 0
-      ? 28
-      : pdfWarningCount > 0
-        ? 9
-        : 61,
-  );
-
-  doc.text(
-    pdfBlockerCount > 0
-      ? `Costing incomplete: ${pdfBlockerCount} blocker(s) · ${pdfWarningCount} warning(s). Fix blockers before setting selling price.`
-      : pdfWarningCount > 0
-        ? `Costing review needed: 0 blockers · ${pdfWarningCount} warning(s). Confirm warnings before quotation.`
-        : 'Cost verified: no blockers or warnings detected.',
-    14,
-    y,
-  );
-
-  y += 9;
 
   sectionHeading(
     'Cost Index',
@@ -1232,14 +875,207 @@ export function downloadInternalEventCostingPdf(
       ?.finalY ||
       y) + 10;
 
+  doc.addPage();
+  y = 18;
+
   sectionHeading(
-    'Dish Rates & Food Cost',
-    'Dish rate is the saved base cost per plate. Final cost per plate reflects the selected serving and portion allocation.',
+    'Dish Rate Index',
+    'Category-wise dish costing. Dish rate is the saved base cost per plate. Final cost per plate reflects the selected serving and portion allocation.',
   );
 
-  const dishRows =
-    result.menuBreakdown.map(
-      (item) => [
+  const dishIndexCategory = (
+    item: (typeof result.menuBreakdown)[number],
+  ) => {
+    const rawCategory =
+      String(
+        item.category || '',
+      ).trim();
+
+    const normalizedCategory =
+      rawCategory
+        .toLocaleLowerCase('en-IN')
+        .replace(/\s+/g, ' ');
+
+    const dishName =
+      String(
+        item.name || '',
+      ).toLocaleLowerCase('en-IN');
+
+    if (
+      /\b(?:water|mineral water|water bottle|bottled water)\b/.test(
+        dishName,
+      )
+    ) {
+      return 'Water Bottle';
+    }
+
+    if (
+      normalizedCategory ===
+      'mocktail'
+    ) {
+      return 'Welcome Drink';
+    }
+
+    if (
+      [
+        'paneer',
+        'sabji',
+        'main course',
+        'punjabi',
+        'north indian',
+        'kathiyawadi',
+        'rajasthani',
+        'gujarati',
+        'mughlai',
+        'awadhi',
+        'kashmiri',
+        'bengali',
+        'maharashtrian',
+        'sindhi',
+        'bihari',
+        'odia',
+        'hyderabadi',
+        'andhra',
+        'kerala',
+        'goan',
+      ].includes(
+        normalizedCategory,
+      )
+    ) {
+      return 'Sabji';
+    }
+
+    if (
+      normalizedCategory ===
+      'bread'
+    ) {
+      return 'Indian Bread';
+    }
+
+    if (
+      normalizedCategory ===
+      'dal / kadhi'
+    ) {
+      return 'Dal/Kadhi';
+    }
+
+    if (
+      [
+        'pickle',
+        'raita',
+        'condiments',
+      ].includes(
+        normalizedCategory,
+      )
+    ) {
+      return 'Condiments';
+    }
+
+    if (
+      [
+        'pizza',
+        'pasta',
+        'continental',
+      ].includes(
+        normalizedCategory,
+      )
+    ) {
+      return 'Italian';
+    }
+
+    if (
+      normalizedCategory ===
+      'paan'
+    ) {
+      return 'Mukhwas';
+    }
+
+    return (
+      rawCategory ||
+      'Other'
+    );
+  };
+
+  const sortedDishBreakdown =
+    result.menuBreakdown
+      .map(
+        (item, index) => ({
+          item,
+          index,
+        }),
+      )
+      .sort(
+        (a, b) => {
+          const categoryDifference =
+            compareMenuCategoryPriority(
+              {
+                name: a.item.name,
+                category:
+                  a.item.category || '',
+              },
+              {
+                name: b.item.name,
+                category:
+                  b.item.category || '',
+              },
+            );
+
+          if (
+            categoryDifference !==
+            0
+          ) {
+            return categoryDifference;
+          }
+
+          return a.index - b.index;
+        },
+      )
+      .map(
+        ({ item }) => item,
+      );
+
+  const dishRows: any[] = [];
+  let currentDishCategory = '';
+
+  sortedDishBreakdown.forEach(
+    (item) => {
+      const category =
+        dishIndexCategory(
+          item,
+        );
+
+      if (
+        category !==
+        currentDishCategory
+      ) {
+        dishRows.push([
+          {
+            content:
+              category.toUpperCase(),
+            colSpan: 8,
+            styles: {
+              fillColor: [
+                241,
+                245,
+                249,
+              ],
+              textColor: [
+                15,
+                23,
+                42,
+              ],
+              fontStyle:
+                'bold',
+              cellPadding: 2.2,
+            },
+          },
+        ]);
+
+        currentDishCategory =
+          category;
+      }
+
+      dishRows.push([
         [
           item.dayLabel,
           item.mealLabel,
@@ -1250,8 +1086,7 @@ export function downloadInternalEventCostingPdf(
           .join(' · ') ||
           'Event Menu',
         item.name,
-        item.category ||
-          '',
+        category,
         decimalMoney(
           item.baseCostPerPlate,
         ),
@@ -1267,8 +1102,9 @@ export function downloadInternalEventCostingPdf(
         money(
           item.itemTotalCost,
         ),
-      ],
-    );
+      ]);
+    },
+  );
 
   autoTable(doc, {
     startY: y,
