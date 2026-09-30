@@ -19210,6 +19210,12 @@
   },
   {
     "dishName": "Veg Cutlet",
+    "aliases": [
+      "Vegetable Cutlet",
+      "Veg Katlet",
+      "Vegetable Katlet",
+      "Veg Cutlets"
+    ],
     "category": "Starter",
     "subcategory": "Indian Fried",
     "baseGuests": 100,
