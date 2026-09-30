@@ -159,6 +159,9 @@ export default function CostPage() {
   ] =
     useState('');
 
+  const [quickDishNames, setQuickDishNames] = useState('');
+  const [quickAddMessage, setQuickAddMessage] = useState('');
+
   const [
     newDishCategory,
     setNewDishCategory,
@@ -832,6 +835,97 @@ export default function CostPage() {
     );
   }
 
+  function addMissingCostDishes() {
+    if (!work || !result) return;
+
+    const requestedNames = Array.from(new Set(
+      quickDishNames
+        .split(/[\n,;]+/)
+        .map((name) => name.replace(/\s+/g, ' ').trim())
+        .filter(Boolean),
+    ));
+
+    if (!requestedNames.length) {
+      setQuickAddMessage('Type at least one dish name.');
+      return;
+    }
+
+    const targetServiceKey = selectedAddServiceKey || 'default';
+    const targetService = result.serviceSummaries.find(
+      (service) => service.serviceKey === targetServiceKey,
+    );
+    const targetTemplate = work.menu.find(
+      (item) => getMenuServiceKey(item) === targetServiceKey,
+    );
+    const existingNames = new Set(
+      work.menu
+        .filter((item) => getMenuServiceKey(item) === targetServiceKey)
+        .map((item) => item.name.trim().toLocaleLowerCase('en-IN')),
+    );
+    const namesToAdd = requestedNames.filter(
+      (name) => !existingNames.has(name.toLocaleLowerCase('en-IN')),
+    );
+    const skippedCount = requestedNames.length - namesToAdd.length;
+
+    if (!namesToAdd.length) {
+      setQuickAddMessage('Those dishes are already in this meal.');
+      return;
+    }
+
+    const now = Date.now();
+    const additions: WorkState['menu'] = namesToAdd.map((name, index) => ({
+      id: `dish_${now}_${index}_${Math.random().toString(36).slice(2, 7)}`,
+      name,
+      category: newDishCategory,
+      costPerPlate: 0,
+      portionQuantity: 1,
+      portionBaseQuantity: 1,
+      portionUnit: 'serving',
+      portionMode: 'AUTO',
+      serviceId: targetTemplate?.serviceId,
+      dayLabel: targetService?.dayLabel || targetTemplate?.dayLabel,
+      mealLabel: targetService?.mealLabel || targetTemplate?.mealLabel || 'Event Menu',
+      servicePax:
+        Number(targetService?.pax) ||
+        Number(targetTemplate?.servicePax) ||
+        Number(work.event.pax) ||
+        0,
+      costSource: 'manual',
+      coverageStatus: 'NEW_DISH_PENDING',
+      costConfidence: 0,
+      rateCoveragePercent: 0,
+      coverageReason: 'Manual rate required',
+      costApprovalStatus: 'PENDING',
+      costApprovalReason: 'Manual rate required',
+      detectionSource: 'manual',
+      detectionConfidence: 100,
+      detectionReason: 'User quickly added missing dish on Cost page',
+    }));
+
+    persist({ ...work, menu: [...work.menu, ...additions] });
+    setQuickDishNames('');
+    setDishQuery('');
+    setDishServiceFilter('ALL');
+    setDishCategoryFilter('ALL');
+    setDishStatusFilter('MISSING');
+    setQuickAddMessage(
+      `${additions.length} ${additions.length === 1 ? 'dish' : 'dishes'} added${
+        skippedCount ? ` · ${skippedCount} already existed` : ''
+      }. Add rates below.`,
+    );
+
+    void fetch('/api/dish-suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sourceFileName: 'Quick added from Cost page',
+        candidates: namesToAdd.map((name) => ({ name, categoryHint: newDishCategory })),
+      }),
+    }).catch((suggestionError) =>
+      console.warn('Quick dish suggestions skipped:', suggestionError),
+    );
+  }
+
   function updateDishCost(id: string, value: number) {
     if (!work) return;
     const rate = Math.max(0, value);
@@ -1184,7 +1278,7 @@ export default function CostPage() {
                   )
                 }
               >
-                + Add Dish
+                + Add missing dishes
               </button>
             </div>
 
@@ -1201,15 +1295,15 @@ export default function CostPage() {
               <div className="cost-add-dish-head">
                 <div>
                   <span className="page-eyebrow">
-                    Manual dish
+                    Quick add
                   </span>
 
                   <h3>
-                    Add Dish to Costing
+                    Add missing dishes
                   </h3>
 
                   <p className="muted">
-                    Add a missed or custom dish directly to the correct wedding meal.
+                    Paste a list or type dish names separated by commas. Rates can be filled in after adding.
                   </p>
                 </div>
 
@@ -1225,6 +1319,75 @@ export default function CostPage() {
                   Close
                 </button>
               </div>
+
+              <div className="cost-quick-add">
+                <div className="field cost-quick-add-names">
+                  <label htmlFor="quickDishNames">Dish names</label>
+                  <textarea
+                    id="quickDishNames"
+                    className="input"
+                    value={quickDishNames}
+                    onChange={(event) => {
+                      setQuickDishNames(event.target.value);
+                      setQuickAddMessage('');
+                    }}
+                    onKeyDown={(event) => {
+                      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                        event.preventDefault();
+                        addMissingCostDishes();
+                      }
+                    }}
+                    placeholder={'Kaju Curry\nPaneer Tikka\nFruit Custard'}
+                    rows={4}
+                    autoFocus
+                  />
+                  <small className="muted">One per line, or separate with commas · Ctrl/⌘ + Enter to add</small>
+                </div>
+
+                <div className="cost-quick-add-options">
+                  <div className="field">
+                    <label htmlFor="quickDishMeal">Add to meal</label>
+                    <select
+                      id="quickDishMeal"
+                      className="select"
+                      value={selectedAddServiceKey}
+                      onChange={(event) => setNewDishServiceKey(event.target.value)}
+                    >
+                      {result.serviceSummaries.map((service) => (
+                        <option key={service.serviceKey} value={service.serviceKey}>
+                          {service.dayLabel ? `${service.dayLabel} · ` : ''}{service.mealLabel}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="quickDishCategory">Category</label>
+                    <select
+                      id="quickDishCategory"
+                      className="select"
+                      value={newDishCategory}
+                      onChange={(event) => setNewDishCategory(event.target.value as Category)}
+                    >
+                      {availableDishCategories.map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    className="primary-button cost-quick-add-button"
+                    type="button"
+                    onClick={addMissingCostDishes}
+                  >
+                    Add all dishes
+                  </button>
+                </div>
+              </div>
+
+              {quickAddMessage ? (
+                <p className="cost-quick-add-message" role="status">{quickAddMessage}</p>
+              ) : null}
+
+              <div className="cost-add-dish-divider"><span>Or add one dish with serving and rate</span></div>
 
               <div className="cost-add-dish-grid">
                 <div className="field">
@@ -1244,7 +1407,6 @@ export default function CostPage() {
                       )
                     }
                     placeholder="Example: Kaju Curry"
-                    autoFocus
                   />
                 </div>
 
@@ -1634,26 +1796,20 @@ export default function CostPage() {
                     <table className="dish-cost-table">
                       <colgroup>
                         <col className="dish-cost-col-name" />
-                        <col className="dish-cost-col-category" />
-                        <col className="dish-cost-col-serving" />
+                        <col className="dish-cost-col-setup" />
                         <col className="dish-cost-col-members" />
                         <col className="dish-cost-col-rate" />
                         <col className="dish-cost-col-portion" />
-                        <col className="dish-cost-col-adjusted" />
-                        <col className="dish-cost-col-total" />
-                        <col className="dish-cost-col-action" />
+                        <col className="dish-cost-col-result" />
                       </colgroup>
                       <thead>
                         <tr>
-                          <th>Dish &amp; meal</th>
-                          <th>Category</th>
-                          <th>Serving quantity</th>
-                          <th>Members</th>
-                          <th>Base cost / plate</th>
+                          <th>Dish &amp; function</th>
+                          <th>Category &amp; serving</th>
+                          <th>Guests</th>
+                          <th>Base ₹ / plate</th>
                           <th>Portion</th>
-                          <th>Adjusted / plate</th>
-                          <th>Total cost</th>
-                          <th>Action</th>
+                          <th>Calculated cost</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1761,42 +1917,40 @@ export default function CostPage() {
                                       ? ' • Category estimate — review recommended'
                                       : ''}
                                 </small>
+                                <button
+                                  className="dish-cost-inline-remove"
+                                  type="button"
+                                  onClick={() => removeDish(item.id)}
+                                  aria-label={`Remove ${item.name} from menu`}
+                                >
+                                  Remove dish
+                                </button>
                               </div>
                             </td>
                             <td>
-                              <select
-                                className="select dish-category-select"
-                                value={item.category}
-                                aria-label={`Category for ${item.name}`}
-                                onChange={(event) =>
-                                  updateDishCategory(
-                                    item.id,
-                                    event.target.value as Category,
-                                  )
-                                }
-                              >
-                                {availableDishCategories.map((category) => (
-                                  <option key={category} value={category}>{category}</option>
-                                ))}
-                              </select>
-                            </td>
-                            <td>
-                              <div
-                                className="dish-serving-quantity"
-                                style={{
-                                  display: 'grid',
-                                  gap: 6,
-                                  minWidth: 150,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: 'grid',
-                                    gridTemplateColumns:
-                                      '72px minmax(76px, 1fr)',
-                                    gap: 6,
-                                  }}
-                                >
+                              <div className="dish-cost-setup">
+                                <label>
+                                  <span>Category</span>
+                                  <select
+                                    className="select dish-category-select"
+                                    value={item.category}
+                                    aria-label={`Category for ${item.name}`}
+                                    onChange={(event) =>
+                                      updateDishCategory(
+                                        item.id,
+                                        event.target.value as Category,
+                                      )
+                                    }
+                                  >
+                                    {availableDishCategories.map((category) => (
+                                      <option key={category} value={category}>{category}</option>
+                                    ))}
+                                  </select>
+                                </label>
+
+                                <label>
+                                  <span>Serving</span>
+                                  <div className="dish-cost-serving-fields">
                                   <input
                                     className="input"
                                     type="number"
@@ -1857,7 +2011,8 @@ export default function CostPage() {
                                       ml
                                     </option>
                                   </select>
-                                </div>
+                                  </div>
+                                </label>
 
                                 {(item.portionUnit || '').toLowerCase() ===
                                 'piece' ? (
@@ -1991,17 +2146,17 @@ export default function CostPage() {
                                 )}
                               </div>
                             </td>
-                            <td className="dish-cost-number">{money(item.adjustedCostPerPlate)}</td>
-                            <td className="dish-cost-number"><strong className="dish-total-cost">{money(item.itemTotalCost)}</strong></td>
-                            <td>
-                              <button
-                                className="dish-remove-button"
-                                type="button"
-                                onClick={() => removeDish(item.id)}
-                                aria-label={`Remove ${item.name} from menu`}
-                              >
-                                Remove
-                              </button>
+                            <td className="dish-cost-number">
+                              <div className="dish-cost-result">
+                                <span>
+                                  <small>Per plate</small>
+                                  <b>{money(item.adjustedCostPerPlate)}</b>
+                                </span>
+                                <span>
+                                  <small>Event total</small>
+                                  <strong className="dish-total-cost">{money(item.itemTotalCost)}</strong>
+                                </span>
+                              </div>
                             </td>
                           </tr>
                               )) : null}
