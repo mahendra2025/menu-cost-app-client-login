@@ -30,6 +30,18 @@ test('Starter gas estimates distinguish tandoor, fry, kebab, momos and light ass
   );
 });
 
+test('Veg Cutlet and common menu spellings use 1.00 kg LPG per 100 guests', () => {
+  assert.deepEqual(
+    [
+      suggestStarterGas('Veg Cutlet').kgPer100,
+      suggestStarterGas('Vegetable Cutlet').kgPer100,
+      suggestStarterGas('Veg Katlet').kgPer100,
+      suggestStarterGas('Vegetable Katlet').kgPer100,
+    ],
+    [1.00, 1.00, 1.00, 1.00],
+  );
+});
+
 test('Starter exact dishes preserve heavier stuffed and fry+toss items', () => {
   assert.equal(
     suggestStarterGas('Paneer Lifafa').kgPer100,
