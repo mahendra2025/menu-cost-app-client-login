@@ -760,6 +760,457 @@ function draftRecipeQuality(
     },
   );
 }
+
+function normalizeChatGptRecipePaste(
+  value: string,
+) {
+  const raw =
+    value.trim();
+
+  if (!raw) {
+    return raw;
+  }
+
+  const meaningfulLines =
+    raw
+      .split(/\r?\n/)
+      .map((line) =>
+        line.trim(),
+      )
+      .filter(Boolean);
+
+  const alreadyStructured =
+    meaningfulLines.some(
+      (line) =>
+        /^(?:R|RECIPE|I|ING|INGREDIENT)\s*\|/i.test(
+          line,
+        ),
+    );
+
+  if (alreadyStructured) {
+    return raw;
+  }
+
+  const unitAliases:
+    Record<string, string> = {
+      kg: 'kg',
+      kgs: 'kg',
+      kilogram: 'kg',
+      kilograms: 'kg',
+      g: 'gram',
+      gm: 'gram',
+      gms: 'gram',
+      gram: 'gram',
+      grams: 'gram',
+      l: 'ltr',
+      lt: 'ltr',
+      ltr: 'ltr',
+      litre: 'ltr',
+      liter: 'ltr',
+      litres: 'ltr',
+      liters: 'ltr',
+      ml: 'ml',
+      pc: 'piece',
+      pcs: 'piece',
+      piece: 'piece',
+      pieces: 'piece',
+      pkt: 'packet',
+      pack: 'packet',
+      packet: 'packet',
+      packets: 'packet',
+      serving: 'serving',
+      servings: 'serving',
+    };
+
+  type ChatRecipeDraft = {
+    name: string;
+    category: string;
+    subcategory: string;
+    baseGuests: number;
+    servingSize: number;
+    servingUnit: string;
+    pieceWeightGrams: number;
+    gasKgPer100: string;
+    ingredients: string[];
+  };
+
+  const createDraft =
+    (): ChatRecipeDraft => ({
+      name: '',
+      category: 'Other',
+      subcategory: '',
+      baseGuests: 100,
+      servingSize: 1,
+      servingUnit: 'serving',
+      pieceWeightGrams: 0,
+      gasKgPer100: '',
+      ingredients: [],
+    });
+
+  const drafts:
+    ChatRecipeDraft[] = [];
+
+  let draft =
+    createDraft();
+
+  const flushDraft = () => {
+    if (
+      draft.name &&
+      draft.ingredients.length
+    ) {
+      drafts.push(draft);
+    }
+
+    draft =
+      createDraft();
+  };
+
+  const cleanLine = (
+    input: string,
+  ) =>
+    input
+      .replace(/^\s*[-*•]\s*/, '')
+      .replace(/\*\*/g, '')
+      .trim();
+
+  const cleanNumber = (
+    input: string,
+  ) => {
+    const match =
+      input
+        .replace(/,/g, '')
+        .match(/-?\d+(?:\.\d+)?/);
+
+    return match
+      ? Number(match[0])
+      : Number.NaN;
+  };
+
+  for (
+    const rawLine of meaningfulLines
+  ) {
+    const line =
+      cleanLine(rawLine);
+
+    if (!line) {
+      continue;
+    }
+
+    const dishMatch =
+      line.match(
+        /^(?:DISH(?:\s+NAME)?|RECIPE)\s*[:=-]\s*(.+)$/i,
+      );
+
+    if (dishMatch) {
+      if (
+        draft.name &&
+        draft.ingredients.length
+      ) {
+        flushDraft();
+      }
+
+      draft.name =
+        dishMatch[1]
+          .replace(/^#+\s*/, '')
+          .trim();
+
+      continue;
+    }
+
+    const categoryMatch =
+      line.match(
+        /^CATEGORY\s*[:=-]\s*(.+)$/i,
+      );
+
+    if (categoryMatch) {
+      draft.category =
+        categoryMatch[1].trim() ||
+        'Other';
+      continue;
+    }
+
+    const subcategoryMatch =
+      line.match(
+        /^SUB\s*CATEGORY\s*[:=-]\s*(.+)$/i,
+      ) ||
+      line.match(
+        /^SUBCATEGORY\s*[:=-]\s*(.+)$/i,
+      );
+
+    if (subcategoryMatch) {
+      draft.subcategory =
+        subcategoryMatch[1].trim();
+      continue;
+    }
+
+    const guestMatch =
+      line.match(
+        /^(?:GUESTS?|PAX|BASE\s*GUESTS?)\s*[:=-]\s*(.+)$/i,
+      );
+
+    if (guestMatch) {
+      const guests =
+        cleanNumber(
+          guestMatch[1],
+        );
+
+      if (
+        Number.isFinite(guests) &&
+        guests > 0
+      ) {
+        draft.baseGuests =
+          Math.round(guests);
+      }
+
+      continue;
+    }
+
+    const gasMatch =
+      line.match(
+        /^(?:GAS(?:\s*KG)?(?:\s*\/\s*100)?|GAS_KG|LPG(?:\s*KG)?(?:\s*\/\s*100)?)\s*[:=-]\s*(.+)$/i,
+      );
+
+    if (gasMatch) {
+      const gas =
+        cleanNumber(
+          gasMatch[1],
+        );
+
+      if (
+        Number.isFinite(gas) &&
+        gas >= 0
+      ) {
+        draft.gasKgPer100 =
+          String(gas);
+      }
+
+      continue;
+    }
+
+    const servingMatch =
+      line.match(
+        /^SERVING(?:\s+SIZE)?\s*[:=-]\s*(.+)$/i,
+      );
+
+    if (servingMatch) {
+      const parts =
+        servingMatch[1]
+          .trim()
+          .split(/\s+/);
+
+      const serving =
+        cleanNumber(
+          parts[0] || '',
+        );
+
+      const servingUnit =
+        unitAliases[
+          String(
+            parts[1] ||
+            'serving',
+          ).toLowerCase()
+        ];
+
+      if (
+        Number.isFinite(serving) &&
+        serving > 0
+      ) {
+        draft.servingSize =
+          serving;
+      }
+
+      if (servingUnit) {
+        draft.servingUnit =
+          servingUnit;
+      }
+
+      continue;
+    }
+
+    if (
+      !draft.name &&
+      /^#{1,3}\s+/.test(
+        rawLine.trim(),
+      )
+    ) {
+      const heading =
+        rawLine
+          .trim()
+          .replace(
+            /^#{1,3}\s+/,
+            '',
+          )
+          .replace(/\*\*/g, '')
+          .trim();
+
+      if (
+        heading &&
+        !/^(?:ingredients?|recipe|method|preparation)$/i.test(
+          heading,
+        )
+      ) {
+        draft.name =
+          heading;
+      }
+
+      continue;
+    }
+
+    let row =
+      line;
+
+    if (
+      row.startsWith('|')
+    ) {
+      row =
+        row.slice(1);
+    }
+
+    if (
+      row.endsWith('|')
+    ) {
+      row =
+        row.slice(0, -1);
+    }
+
+    const parts =
+      row
+        .split(
+          /\s*(?:\||,|\t)\s*/,
+        )
+        .map((part) =>
+          part.trim(),
+        )
+        .filter(Boolean);
+
+    if (
+      parts.length < 3
+    ) {
+      continue;
+    }
+
+    const headerText =
+      parts
+        .slice(0, 4)
+        .join(' ')
+        .toLowerCase();
+
+    if (
+      /ingredient/.test(
+        headerText,
+      ) &&
+      /(?:qty|quantity)/.test(
+        headerText,
+      )
+    ) {
+      continue;
+    }
+
+    if (
+      parts.every(
+        (part) =>
+          /^:?-{2,}:?$/.test(
+            part,
+          ),
+      )
+    ) {
+      continue;
+    }
+
+    const ingredientName =
+      parts[0];
+
+    const quantity =
+      cleanNumber(
+        parts[1],
+      );
+
+    const rawUnit =
+      String(
+        parts[2] || '',
+      )
+        .toLowerCase()
+        .replace(/\./g, '');
+
+    const unit =
+      unitAliases[
+        rawUnit
+      ];
+
+    if (
+      !ingredientName ||
+      !Number.isFinite(
+        quantity,
+      ) ||
+      quantity < 0 ||
+      !unit
+    ) {
+      continue;
+    }
+
+    const rate =
+      parts[3]
+        ? cleanNumber(
+            parts[3],
+          )
+        : Number.NaN;
+
+    const rateUnit =
+      unitAliases[
+        String(
+          parts[4] ||
+          rawUnit,
+        )
+          .toLowerCase()
+          .replace(/\./g, '')
+      ] ||
+      unit;
+
+    draft.ingredients.push(
+      [
+        'I',
+        ingredientName,
+        String(quantity),
+        unit,
+        Number.isFinite(rate) &&
+        rate >= 0
+          ? String(rate)
+          : '',
+        rateUnit,
+      ].join(' | '),
+    );
+  }
+
+  flushDraft();
+
+  if (!drafts.length) {
+    return raw;
+  }
+
+  return drafts
+    .flatMap((recipe) => [
+      [
+        'R',
+        recipe.name,
+        recipe.category,
+        recipe.subcategory,
+        String(
+          recipe.servingSize,
+        ),
+        recipe.servingUnit,
+        String(
+          recipe.baseGuests,
+        ),
+        String(
+          recipe.pieceWeightGrams,
+        ),
+        recipe.gasKgPer100,
+      ].join(' | '),
+      ...recipe.ingredients,
+    ])
+    .join('\n');
+}
+
 export default function RecipesPage() {
   const [
     catalog,
@@ -3107,8 +3558,13 @@ export default function RecipesPage() {
         servings: 'serving',
       };
 
+    const normalizedBulkRecipes =
+      normalizeChatGptRecipePaste(
+        bulkRecipes,
+      );
+
     const lines =
-      bulkRecipes
+      normalizedBulkRecipes
         .split(/\r?\n/)
         .map((line) =>
           line.trim(),
@@ -3262,6 +3718,30 @@ export default function RecipesPage() {
             parts[7],
           );
 
+        const rawGasKgPer100 =
+          (
+            parts[8] ||
+            ''
+          ).trim();
+
+        const parsedGasKgPer100 =
+          rawGasKgPer100
+            ? Number(
+                rawGasKgPer100,
+              )
+            : Number.NaN;
+
+        const hasGasKgPer100 =
+          Number.isFinite(
+            parsedGasKgPer100,
+          ) &&
+          parsedGasKgPer100 >= 0;
+
+        const safeGasKgPer100 =
+          hasGasKgPer100
+            ? parsedGasKgPer100
+            : 0;
+
         const normalizedName =
           name
             .replace(
@@ -3354,6 +3834,23 @@ export default function RecipesPage() {
               pieceWeightGrams:
                 safePieceWeightGrams,
 
+              ...(hasGasKgPer100
+                ? {
+                    gasKgPer100:
+                      safeGasKgPer100,
+                    gasNoGas:
+                      safeGasKgPer100 === 0,
+                    gasBurnerKgPerHour:
+                      '',
+                    gasCookingMinutes:
+                      '',
+                    gasBurnerCount:
+                      '',
+                    gasBatchPax:
+                      '',
+                  }
+                : {}),
+
               // New pasted ingredient list
               // replaces old ingredients.
               ingredients: [],
@@ -3398,6 +3895,15 @@ export default function RecipesPage() {
 
               pieceWeightGrams:
                 safePieceWeightGrams,
+
+              ...(hasGasKgPer100
+                ? {
+                    gasKgPer100:
+                      safeGasKgPer100,
+                    gasNoGas:
+                      safeGasKgPer100 === 0,
+                  }
+                : {}),
 
               dishRate: 0,
 
@@ -5507,7 +6013,7 @@ export default function RecipesPage() {
                 !catalog
               }
             >
-              + Bulk Recipes
+              + ChatGPT Import
             </button>
 
             {blankSmartDraftCount > 0 ? (
@@ -5577,11 +6083,11 @@ export default function RecipesPage() {
             <div className="recipe-fast-bulk-head">
               <div>
                 <strong>
-                  Bulk Recipe Adder
+                  ChatGPT Recipe Import
                 </strong>
 
                 <span>
-                  Add many recipe headers in one paste.
+                  Paste a recipe from ChatGPT. Ingredients, quantities, rates and LPG are detected automatically.
                 </span>
               </div>
 
@@ -5606,22 +6112,12 @@ export default function RecipesPage() {
                   event.target.value,
                 )
               }
-              placeholder={`R | Mix Veg | Sabji | Dry | 100 | gram | 100
-I | Potato | 5 | kg | 28 | kg
-I | Cauliflower | 4 | kg | 60 | kg
-I | Green Peas | 3 | kg | 120 | kg
-I | Oil | 1.5 | ltr | 150 | ltr
-
-R | Matar Paneer | Paneer | Gravy | 120 | gram | 100
-I | Paneer | 8 | kg | 280 | kg
-I | Green Peas | 4 | kg | 120 | kg
-I | Onion | 3 | kg | 30 | kg
-I | Tomato | 4 | kg | 35 | kg`}
+              placeholder={`DISH: Mix Pakoda\nCATEGORY: Starter\nGUESTS: 100\nGAS_KG: 1.0\n\nIngredient | Qty | Unit | Rate\nBesan | 8 | kg | 120\nPotato | 5 | kg | 30\nOnion | 4 | kg | 35\nOil | 6 | ltr | 150\n\nYou can also paste the advanced R | / I | format.`}
             />
 
             <div className="recipe-fast-bulk-footer">
               <small>
-                R = Recipe · I = Ingredient · I | Name | Qty | Unit | Rate | Rate Unit
+                ChatGPT format: DISH / CATEGORY / GUESTS / GAS_KG + ingredient table · Advanced R/I format still supported
               </small>
 
               <button
@@ -5634,7 +6130,7 @@ I | Tomato | 4 | kg | 35 | kg`}
                   addBulkRecipes
                 }
               >
-                Add Recipes
+                Import Recipe
               </button>
             </div>
           </div>
