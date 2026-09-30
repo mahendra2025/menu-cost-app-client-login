@@ -15371,46 +15371,6 @@ small {
   font-weight: 750;
 }
 
-.cost-add-dish-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #77869a;
-  font-size: 10px;
-  font-weight: 750;
-}
-
-.cost-add-dish-divider::before,
-.cost-add-dish-divider::after {
-  content: '';
-  height: 1px;
-  flex: 1;
-  background: rgba(148,163,184,.13);
-}
-
-.cost-add-dish-grid {
-  display: grid;
-  grid-template-columns:
-    repeat(
-      4,
-      minmax(0,1fr)
-    );
-  gap: 10px;
-}
-
-.cost-add-dish-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.cost-add-date {
-  display: block;
-  margin-top: 4px;
-  color: #8dbfff;
-  font-size: 9px;
-  font-weight: 800;
-}
-
 .meal-summary-date {
   display: inline-flex;
   align-items: center;
@@ -15446,16 +15406,6 @@ small {
   position: relative;
   border-color:
     rgba(255,173,66,.38);
-}
-
-@media (max-width: 1050px) {
-  .cost-add-dish-grid {
-    grid-template-columns:
-      repeat(
-        2,
-        minmax(0,1fr)
-      );
-  }
 }
 
 @media (max-width: 680px) {
@@ -15561,22 +15511,9 @@ small {
     flex-direction: column;
   }
 
-  .cost-add-dish-grid {
-    grid-template-columns: 1fr;
-  }
-
   .cost-quick-add {
     grid-template-columns: 1fr;
     padding: 10px;
-  }
-
-  .cost-add-dish-actions {
-    display: grid;
-    grid-template-columns:
-      repeat(
-        2,
-        minmax(0,1fr)
-      );
   }
 
   .dish-cost-heading-actions {
