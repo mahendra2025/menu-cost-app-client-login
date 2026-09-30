@@ -788,7 +788,7 @@ export default function FinalCostingPage() {
             <div className="readiness-list">
               <span className={work.menu.length > 0 ? 'is-complete' : ''}>Menu dishes</span>
               <span className={costing.totalCovers > 0 ? 'is-complete' : ''}>Guest counts</span>
-              <span className={missingRateCount === 0 && work.menu.length > 0 ? 'is-complete' : ''}>Dish costs</span>
+              <span className={costingHealth?.issues.some((issue) => issue.code === 'MISSING_DISH_RATE' || issue.code === 'UNRESOLVED_DISH') ? '' : work.menu.length > 0 ? 'is-complete' : ''}>Dish costs</span>
             </div>
           </div>
         ) : pricing.profit < 0 ? (
