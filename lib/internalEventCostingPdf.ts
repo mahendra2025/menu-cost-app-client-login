@@ -135,7 +135,7 @@ function addPageFooter(
     );
 
     doc.text(
-      'PRIVATE INTERNAL COSTING - NOT FOR CLIENT',
+      'OWNER COPY · PRIVATE INTERNAL COSTING · NOT FOR CLIENT',
       14,
       287,
     );
@@ -285,35 +285,57 @@ export function downloadInternalEventCostingPdf(
         : 18,
     );
 
+    doc.setFillColor(
+      15,
+      23,
+      42,
+    );
+    doc.roundedRect(
+      14,
+      y - 4.2,
+      3,
+      6.2,
+      1.2,
+      1.2,
+      'F',
+    );
+
     doc.setFont(
       'helvetica',
       'bold',
     );
-
-    doc.setFontSize(12);
-
+    doc.setFontSize(11.5);
     doc.setTextColor(
       15,
       23,
       42,
     );
-
     doc.text(
       title,
-      14,
+      20,
       y,
     );
 
-    y += 5;
+    doc.setDrawColor(
+      226,
+      232,
+      240,
+    );
+    doc.line(
+      20,
+      y + 2.4,
+      196,
+      y + 2.4,
+    );
+
+    y += 7;
 
     if (subtitle) {
       doc.setFont(
         'helvetica',
         'normal',
       );
-
-      doc.setFontSize(8);
-
+      doc.setFontSize(7.8);
       doc.setTextColor(
         100,
         116,
@@ -323,18 +345,128 @@ export function downloadInternalEventCostingPdf(
       const lines =
         doc.splitTextToSize(
           subtitle,
-          178,
+          176,
         );
 
       doc.text(
         lines,
-        14,
+        20,
         y,
       );
 
       y +=
-        lines.length * 3.5 +
+        lines.length * 3.4 +
         2;
+    }
+  };
+
+  const metricCard = (
+    x: number,
+    top: number,
+    width: number,
+    label: string,
+    value: string,
+    note?: string,
+    emphasis = false,
+  ) => {
+    doc.setFillColor(
+      emphasis
+        ? 15
+        : 248,
+      emphasis
+        ? 23
+        : 250,
+      emphasis
+        ? 42
+        : 252,
+    );
+    doc.setDrawColor(
+      emphasis
+        ? 15
+        : 226,
+      emphasis
+        ? 23
+        : 232,
+      emphasis
+        ? 42
+        : 240,
+    );
+    doc.roundedRect(
+      x,
+      top,
+      width,
+      19,
+      2.4,
+      2.4,
+      'FD',
+    );
+
+    doc.setFont(
+      'helvetica',
+      'normal',
+    );
+    doc.setFontSize(6.8);
+    doc.setTextColor(
+      emphasis
+        ? 203
+        : 100,
+      emphasis
+        ? 213
+        : 116,
+      emphasis
+        ? 225
+        : 139,
+    );
+    doc.text(
+      label.toUpperCase(),
+      x + 4,
+      top + 5.2,
+    );
+
+    doc.setFont(
+      'helvetica',
+      'bold',
+    );
+    doc.setFontSize(11);
+    doc.setTextColor(
+      emphasis
+        ? 255
+        : 15,
+      emphasis
+        ? 255
+        : 23,
+      emphasis
+        ? 255
+        : 42,
+    );
+    doc.text(
+      value,
+      x + 4,
+      top + 11.8,
+    );
+
+    if (note) {
+      doc.setFont(
+        'helvetica',
+        'normal',
+      );
+      doc.setFontSize(6.3);
+      doc.setTextColor(
+        emphasis
+          ? 203
+          : 100,
+        emphasis
+          ? 213
+          : 116,
+        emphasis
+          ? 225
+          : 139,
+      );
+      doc.text(
+        note,
+        x + 4,
+        top + 16.2,
+      );
     }
   };
 
@@ -374,7 +506,7 @@ export function downloadInternalEventCostingPdf(
   doc.setFontSize(15);
 
   doc.text(
-    'INTERNAL EVENT COSTING',
+    'OWNER COSTING REPORT',
     196,
     16,
     {
@@ -392,7 +524,7 @@ export function downloadInternalEventCostingPdf(
   );
 
   doc.text(
-    'PRIVATE - NOT FOR CLIENT',
+    'INTERNAL · PRIVATE · NOT FOR CLIENT',
     196,
     24,
     {
@@ -429,6 +561,59 @@ export function downloadInternalEventCostingPdf(
       25,
     );
   }
+
+  const healthLabel =
+    pdfBlockerCount > 0
+      ? 'INCOMPLETE'
+      : pdfWarningCount > 0
+        ? 'REVIEW NEEDED'
+        : 'COST VERIFIED';
+
+  doc.setFillColor(
+    pdfBlockerCount > 0
+      ? 127
+      : pdfWarningCount > 0
+        ? 146
+        : 22,
+    pdfBlockerCount > 0
+      ? 29
+      : pdfWarningCount > 0
+        ? 64
+        : 101,
+    pdfBlockerCount > 0
+      ? 29
+      : pdfWarningCount > 0
+        ? 14
+        : 52,
+  );
+  doc.roundedRect(
+    14,
+    31,
+    42,
+    8,
+    2,
+    2,
+    'F',
+  );
+  doc.setFont(
+    'helvetica',
+    'bold',
+  );
+  doc.setFontSize(7);
+  doc.setTextColor(
+    255,
+    255,
+    255,
+  );
+  doc.text(
+    healthLabel,
+    35,
+    36.2,
+    {
+      align:
+        'center',
+    },
+  );
 
   y = 56;
 
@@ -510,6 +695,160 @@ export function downloadInternalEventCostingPdf(
       y) + 8;
 
   sectionHeading(
+    'Executive Cost Snapshot',
+    'Fast owner view of the event before reviewing detailed food, manpower, grocery and operations costing.',
+  );
+
+  const totalCovers =
+    Math.max(
+      0,
+      Number(
+        result.totalCovers,
+      ) || 0,
+    );
+
+  const costPerCover =
+    totalCovers > 0
+      ? totalCost /
+        totalCovers
+      : 0;
+
+  const cardGap = 4;
+  const cardWidth =
+    (182 - cardGap * 3) /
+    4;
+
+  metricCard(
+    14,
+    y,
+    cardWidth,
+    'Total Cost',
+    money(
+      totalCost,
+    ),
+    totalCovers > 0
+      ? `${money(
+          costPerCover,
+        )} / cover`
+      : 'No covers entered',
+    true,
+  );
+
+  metricCard(
+    14 +
+      cardWidth +
+      cardGap,
+    y,
+    cardWidth,
+    'Food',
+    money(
+      result.menuFoodTotal,
+    ),
+    totalCovers > 0
+      ? `${money(
+          result.menuFoodTotal /
+            totalCovers,
+        )} / cover`
+      : undefined,
+  );
+
+  metricCard(
+    14 +
+      (cardWidth +
+        cardGap) *
+        2,
+    y,
+    cardWidth,
+    'Manpower',
+    money(
+      manpowerTotal,
+    ),
+    totalCovers > 0
+      ? `${money(
+          manpowerTotal /
+            totalCovers,
+        )} / cover`
+      : undefined,
+  );
+
+  metricCard(
+    14 +
+      (cardWidth +
+        cardGap) *
+        3,
+    y,
+    cardWidth,
+    'Gas',
+    money(
+      operationsTotals.gasTotal,
+    ),
+    totalCovers > 0
+      ? `${money(
+          operationsTotals.gasTotal /
+            totalCovers,
+        )} / cover`
+      : undefined,
+  );
+
+  y += 24;
+
+  metricCard(
+    14,
+    y,
+    cardWidth,
+    'Disposable',
+    money(
+      disposable.total,
+    ),
+  );
+
+  metricCard(
+    14 +
+      cardWidth +
+      cardGap,
+    y,
+    cardWidth,
+    'Transport',
+    money(
+      operationsTotals.transportTotal,
+    ),
+  );
+
+  metricCard(
+    14 +
+      (cardWidth +
+        cardGap) *
+        2,
+    y,
+    cardWidth,
+    'Blockers',
+    String(
+      pdfBlockerCount,
+    ),
+    pdfBlockerCount > 0
+      ? 'Must fix before pricing'
+      : 'No blockers',
+  );
+
+  metricCard(
+    14 +
+      (cardWidth +
+        cardGap) *
+        3,
+    y,
+    cardWidth,
+    'Warnings',
+    String(
+      pdfWarningCount,
+    ),
+    pdfWarningCount > 0
+      ? 'Review before quotation'
+      : 'No warnings',
+  );
+
+  y += 27;
+
+  sectionHeading(
     'Costing Health',
     'Automatic pre-quotation check for missing costs, duplicate menu rows, category quality, LPG overrides, manpower mapping and transport completeness.',
   );
@@ -588,6 +927,13 @@ export function downloadInternalEventCostingPdf(
         240,
       ],
       lineWidth: 0.12,
+    },
+    alternateRowStyles: {
+      fillColor: [
+        248,
+        250,
+        252,
+      ],
     },
     headStyles: {
       fillColor: [
@@ -802,6 +1148,16 @@ export function downloadInternalEventCostingPdf(
     ]);
   }
 
+  if (result.totalCovers > 0) {
+    indexRows.push([
+      'Cost / Cover',
+      decimalMoney(
+        totalCost /
+          result.totalCovers,
+      ),
+    ]);
+  }
+
   indexRows.push([
     'TOTAL COST',
     money(
@@ -959,6 +1315,13 @@ export function downloadInternalEventCostingPdf(
       ],
       lineWidth: 0.12,
     },
+    alternateRowStyles: {
+      fillColor: [
+        248,
+        250,
+        252,
+      ],
+    },
     headStyles: {
       fillColor: [
         30,
@@ -1092,6 +1455,13 @@ export function downloadInternalEventCostingPdf(
       ],
       lineWidth: 0.12,
     },
+    alternateRowStyles: {
+      fillColor: [
+        248,
+        250,
+        252,
+      ],
+    },
     headStyles: {
       fillColor: [
         30,
@@ -1128,6 +1498,36 @@ export function downloadInternalEventCostingPdf(
         halign:
           'right',
       },
+    },
+    didParseCell: (
+      data,
+    ) => {
+      if (
+        data.section ===
+          'body' &&
+        data.column.index ===
+          2 &&
+        String(
+          data.cell.raw ||
+            '',
+        ) ===
+          'RATE MISSING'
+      ) {
+        data.cell.styles.fillColor =
+          [
+            254,
+            242,
+            242,
+          ];
+        data.cell.styles.textColor =
+          [
+            185,
+            28,
+            28,
+          ];
+        data.cell.styles.fontStyle =
+          'bold';
+      }
     },
   });
 
@@ -1276,6 +1676,13 @@ export function downloadInternalEventCostingPdf(
       ],
       lineWidth: 0.12,
     },
+    alternateRowStyles: {
+      fillColor: [
+        248,
+        250,
+        252,
+      ],
+    },
     headStyles: {
       fillColor: [
         30,
@@ -1393,6 +1800,13 @@ export function downloadInternalEventCostingPdf(
       ],
       lineWidth: 0.15,
     },
+    alternateRowStyles: {
+      fillColor: [
+        248,
+        250,
+        252,
+      ],
+    },
     headStyles: {
       fillColor: [
         30,
@@ -1429,6 +1843,37 @@ export function downloadInternalEventCostingPdf(
         halign:
           'right',
       },
+    },
+    didParseCell: (
+      data,
+    ) => {
+      if (
+        data.section ===
+          'body' &&
+        data.column.index ===
+          3 &&
+        String(
+          data.cell.raw ||
+            '',
+        ).includes(
+          '0.00',
+        )
+      ) {
+        data.cell.styles.fillColor =
+          [
+            255,
+            251,
+            235,
+          ];
+        data.cell.styles.textColor =
+          [
+            180,
+            83,
+            9,
+          ];
+        data.cell.styles.fontStyle =
+          'bold';
+      }
     },
   });
 
@@ -1646,6 +2091,13 @@ export function downloadInternalEventCostingPdf(
       ],
       lineWidth: 0.12,
     },
+    alternateRowStyles: {
+      fillColor: [
+        248,
+        250,
+        252,
+      ],
+    },
     headStyles: {
       fillColor: [
         30,
@@ -1839,6 +2291,13 @@ export function downloadInternalEventCostingPdf(
         240,
       ],
       lineWidth: 0.12,
+    },
+    alternateRowStyles: {
+      fillColor: [
+        248,
+        250,
+        252,
+      ],
     },
     headStyles: {
       fillColor: [
