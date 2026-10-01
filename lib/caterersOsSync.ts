@@ -241,6 +241,56 @@ function convertRecipeQuantity(
   return quantity;
 }
 
+function resolveRecipeGasKgPer100(row: Record<string, unknown>) {
+  if (row.gasNoGas === true) {
+    return 0;
+  }
+
+  if (
+    row.gasKgPer100 !== null &&
+    row.gasKgPer100 !== undefined &&
+    String(row.gasKgPer100).trim() !== ''
+  ) {
+    return Math.max(0, finiteNumber(row.gasKgPer100));
+  }
+
+  const burnerKgPerHour = Math.max(
+    0,
+    finiteNumber(row.gasBurnerKgPerHour),
+  );
+  const cookingMinutes = Math.max(
+    0,
+    finiteNumber(row.gasCookingMinutes),
+  );
+  const burnerCount = Math.max(
+    0,
+    finiteNumber(row.gasBurnerCount),
+  );
+  const batchPax = Math.max(
+    0,
+    finiteNumber(row.gasBatchPax),
+  );
+
+  if (
+    burnerKgPerHour > 0 &&
+    cookingMinutes > 0 &&
+    burnerCount > 0 &&
+    batchPax > 0
+  ) {
+    const gasKgPerBatch =
+      burnerKgPerHour *
+      burnerCount *
+      (cookingMinutes / 60);
+
+    return (
+      gasKgPerBatch *
+      Math.max(1, Math.ceil(100 / batchPax))
+    );
+  }
+
+  return 0;
+}
+
 export function buildCaterersOsRecipePayload({
   workspaceId,
   catalog,
@@ -328,9 +378,7 @@ export function buildCaterersOsRecipePayload({
         servingUnit: cleanText(row.servingUnit, 30) || 'serving',
         wastagePercent: 8,
         gasKgPer100:
-          row.gasNoGas === true
-            ? 0
-            : Math.max(0, finiteNumber(row.gasKgPer100)),
+          resolveRecipeGasKgPer100(row),
         ingredients,
         source: 'menu-cost-app-client-login',
       }];
