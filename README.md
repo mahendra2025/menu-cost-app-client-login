@@ -124,9 +124,9 @@ OPENAI_MENU_MODEL=gpt-5.6-sol
 
 If neither provider is available, the existing local menu parser is used automatically. Existing saved dishes and recipes still calculate normally; only AI extraction and recipe generation are skipped.
 
-## CaterersOS event sync
+## CaterersOS event + recipe sync
 
-Completed costings can automatically create or update events in CaterersOS. Configure the Menu Costing server with:
+Completed costings can automatically create or update events in CaterersOS. The Admin Recipes page also pushes the saved recipe catalog into the connected CaterersOS workspace. Configure the Menu Costing server with:
 
 ```bash
 CATERERSOS_API_URL=https://your-caterersos-domain.com
@@ -136,7 +136,7 @@ CATERERSOS_SYNC_SECRET=the-same-long-random-secret-used-by-caterersos
 
 Configure CaterersOS with the matching `MENU_COSTING_SYNC_SECRET`. Saving a costing to history then sends the event, function, menu, manpower, extra-cost, and financial-summary data. The `costingId` is used as the idempotency key, so saving again updates the existing CaterersOS event.
 
-The Menu Costing history save remains successful if CaterersOS is temporarily unavailable; the save screen reports the sync failure and saving the costing again retries it.
+The Menu Costing history save remains successful if CaterersOS is temporarily unavailable; the save screen reports the sync failure and saving the costing again retries it. Recipe saves also remain successful if CaterersOS is unavailable; saving or manually syncing Recipes again retries the recipe catalog connection.
 
 ## Razorpay subscriptions
 
