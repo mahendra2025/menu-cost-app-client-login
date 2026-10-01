@@ -17,6 +17,12 @@ import {
 } from '../../../lib/recipeCosting';
 
 import {
+  canonicalIngredientName,
+  inferIngredientCategory,
+  normalizeIngredientId,
+} from '../../../lib/ingredientCatalog';
+
+import {
   DEFAULT_COOKING_GAS_KG_PER_100,
   DEFAULT_GAS_CATEGORY_RATES,
   DEFAULT_LPG_SETTING,
@@ -782,7 +788,7 @@ function normalizeChatGptRecipePaste(
   const alreadyStructured =
     meaningfulLines.some(
       (line) =>
-        /^(?:R|RECIPE|I|ING|INGREDIENT)\s*\|/i.test(
+        /^(?:R|RECIPE|I|ING|INGREDIENT|G|GAS|LPG)\s*\|/i.test(
           line,
         ),
     );
@@ -1211,6 +1217,534 @@ function normalizeChatGptRecipePaste(
     .join('\n');
 }
 
+
+type BulkDuplicateMode =
+  | 'update'
+  | 'skip'
+  | 'copy';
+
+type BulkImportIngredientPreview = {
+  name: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+  rateUnit: string;
+  existsInMaster: boolean;
+  missingRate: boolean;
+  duplicate: boolean;
+};
+
+type BulkImportRecipePreview = {
+  name: string;
+  category: string;
+  subcategory: string;
+  servingSize: number;
+  servingUnit: string;
+  baseGuests: number;
+  pieceWeightGrams: number;
+  gasKgPer100: number | null;
+  ingredients: BulkImportIngredientPreview[];
+  duplicateRecipe: boolean;
+};
+
+type BulkImportPreview = {
+  recipes: BulkImportRecipePreview[];
+  invalidLines: number;
+  invalidRecipes: number;
+};
+
+const BULK_RECIPE_UNIT_ALIASES:
+  Record<string, string> = {
+    kg: 'kg',
+    kgs: 'kg',
+    kilogram: 'kg',
+    kilograms: 'kg',
+    g: 'gram',
+    gm: 'gram',
+    gms: 'gram',
+    gram: 'gram',
+    grams: 'gram',
+    l: 'ltr',
+    lt: 'ltr',
+    ltr: 'ltr',
+    litre: 'ltr',
+    liter: 'ltr',
+    litres: 'ltr',
+    liters: 'ltr',
+    ml: 'ml',
+    pc: 'piece',
+    pcs: 'piece',
+    piece: 'piece',
+    pieces: 'piece',
+    pkt: 'packet',
+    pack: 'packet',
+    packet: 'packet',
+    packets: 'packet',
+    serving: 'serving',
+    servings: 'serving',
+  };
+
+function normalizeBulkRecipeUnit(
+  value: unknown,
+) {
+  return (
+    BULK_RECIPE_UNIT_ALIASES[
+      text(value)
+        .toLowerCase()
+        .replace(/\./g, '')
+    ] || ''
+  );
+}
+
+function bulkIngredientKey(
+  name: string,
+  unit: string,
+) {
+  return (
+    canonicalIngredientName(name)
+      .toLowerCase() +
+    '|' +
+    unit
+  );
+}
+
+function parseBulkRecipeImport(
+  value: string,
+  catalog: RecipeCatalog,
+  rateOverrides:
+    Record<string, string> = {},
+): BulkImportPreview {
+  const normalized =
+    normalizeChatGptRecipePaste(
+      value,
+    );
+
+  const lines =
+    normalized
+      .split(/\r?\n/)
+      .map((line) =>
+        line.trim(),
+      )
+      .filter(Boolean);
+
+  const masterById =
+    new Map<string, RawRow>();
+
+  const masterByName =
+    new Map<string, RawRow>();
+
+  for (
+    const rate of catalog.rates
+  ) {
+    const name =
+      canonicalIngredientName(
+        text(
+          rate.name ||
+          rate.ingredientName,
+        ),
+      );
+
+    const unit =
+      normalizeBulkRecipeUnit(
+        rate.unit ||
+        rate.rateUnit,
+      );
+
+    if (!name || !unit) {
+      continue;
+    }
+
+    masterById.set(
+      normalizeIngredientId(
+        name,
+        unit,
+      ).toLowerCase(),
+      rate,
+    );
+
+    if (
+      !masterByName.has(
+        name.toLowerCase(),
+      )
+    ) {
+      masterByName.set(
+        name.toLowerCase(),
+        rate,
+      );
+    }
+  }
+
+  const existingRecipeNames =
+    new Set(
+      catalog.dishes.map(
+        (dish) =>
+          recipeName(dish)
+            .trim()
+            .toLowerCase(),
+      ),
+    );
+
+  const pastedRecipeNames =
+    new Set<string>();
+
+  const recipes:
+    BulkImportRecipePreview[] =
+    [];
+
+  let active:
+    BulkImportRecipePreview | null =
+    null;
+
+  let invalidLines = 0;
+  let invalidRecipes = 0;
+
+  for (const line of lines) {
+    const parts =
+      line
+        .split(/\s*\|\s*/)
+        .map((part) =>
+          part.trim(),
+        );
+
+    const type =
+      text(parts[0])
+        .toUpperCase();
+
+    if (
+      type === 'R' ||
+      type === 'RECIPE'
+    ) {
+      const name =
+        text(parts[1])
+          .replace(
+            /\s+/g,
+            ' ',
+          );
+
+      const category =
+        text(parts[2]) ||
+        'Other';
+
+      const subcategory =
+        text(parts[3]);
+
+      const servingSizeRaw =
+        Number(parts[4]);
+
+      const servingUnit =
+        normalizeBulkRecipeUnit(
+          parts[5] ||
+          'serving',
+        );
+
+      const baseGuestsRaw =
+        Number(parts[6]);
+
+      const pieceWeightRaw =
+        Number(parts[7]);
+
+      const gasText =
+        text(parts[8]);
+
+      const gasRaw =
+        gasText
+          ? Number(gasText)
+          : Number.NaN;
+
+      if (
+        !name ||
+        !servingUnit
+      ) {
+        active = null;
+        invalidRecipes += 1;
+        continue;
+      }
+
+      const nameKey =
+        name.toLowerCase();
+
+      active = {
+        name,
+        category,
+        subcategory,
+        servingSize:
+          Number.isFinite(
+            servingSizeRaw,
+          ) &&
+          servingSizeRaw > 0
+            ? servingSizeRaw
+            : 1,
+        servingUnit,
+        baseGuests:
+          Number.isFinite(
+            baseGuestsRaw,
+          ) &&
+          baseGuestsRaw > 0
+            ? Math.round(
+                baseGuestsRaw,
+              )
+            : 100,
+        pieceWeightGrams:
+          servingUnit ===
+            'piece' &&
+          Number.isFinite(
+            pieceWeightRaw,
+          ) &&
+          pieceWeightRaw > 0
+            ? pieceWeightRaw
+            : 0,
+        gasKgPer100:
+          Number.isFinite(
+            gasRaw,
+          ) &&
+          gasRaw >= 0
+            ? gasRaw
+            : null,
+        ingredients: [],
+        duplicateRecipe:
+          existingRecipeNames.has(
+            nameKey,
+          ) ||
+          pastedRecipeNames.has(
+            nameKey,
+          ),
+      };
+
+      recipes.push(active);
+
+      pastedRecipeNames.add(
+        nameKey,
+      );
+
+      continue;
+    }
+
+    if (
+      type === 'G' ||
+      type === 'GAS' ||
+      type === 'LPG'
+    ) {
+      if (!active) {
+        invalidLines += 1;
+        continue;
+      }
+
+      const gasValue =
+        Number(parts[1]);
+
+      const gasUnit =
+        normalizeBulkRecipeUnit(
+          parts[2] ||
+          'kg',
+        );
+
+      if (
+        !Number.isFinite(
+          gasValue,
+        ) ||
+        gasValue < 0 ||
+        (
+          gasUnit !== 'kg' &&
+          gasUnit !== 'gram'
+        )
+      ) {
+        invalidLines += 1;
+        continue;
+      }
+
+      active.gasKgPer100 =
+        gasUnit === 'gram'
+          ? gasValue / 1000
+          : gasValue;
+
+      continue;
+    }
+
+    if (
+      type === 'I' ||
+      type === 'ING' ||
+      type === 'INGREDIENT'
+    ) {
+      if (!active) {
+        invalidLines += 1;
+        continue;
+      }
+
+      const ingredientName =
+        canonicalIngredientName(
+          text(parts[1]),
+        );
+
+      const quantity =
+        Number(parts[2]);
+
+      const unit =
+        normalizeBulkRecipeUnit(
+          parts[3] ||
+          'kg',
+        );
+
+      if (
+        !ingredientName ||
+        !unit ||
+        !Number.isFinite(
+          quantity,
+        ) ||
+        quantity < 0
+      ) {
+        invalidLines += 1;
+        continue;
+      }
+
+      const enteredRateText =
+        text(parts[4]);
+
+      const enteredRate =
+        enteredRateText
+          ? Number(
+              enteredRateText,
+            )
+          : Number.NaN;
+
+      const enteredRateValid =
+        enteredRateText !== '' &&
+        Number.isFinite(
+          enteredRate,
+        ) &&
+        enteredRate >= 0;
+
+      const enteredRateUnit =
+        normalizeBulkRecipeUnit(
+          parts[5],
+        );
+
+      const lookupUnit =
+        enteredRateUnit ||
+        unit;
+
+      const master =
+        masterById.get(
+          normalizeIngredientId(
+            ingredientName,
+            lookupUnit,
+          ).toLowerCase(),
+        ) ||
+        masterByName.get(
+          ingredientName
+            .toLowerCase(),
+        );
+
+      const masterRate =
+        Math.max(
+          0,
+          numberValue(
+            master?.rate ??
+            master?.marketRate,
+          ),
+        );
+
+      const masterUnit =
+        normalizeBulkRecipeUnit(
+          master?.unit ||
+          master?.rateUnit,
+        );
+
+      const rateUnit =
+        masterUnit ||
+        enteredRateUnit ||
+        unit;
+
+      const overrideKey =
+        bulkIngredientKey(
+          ingredientName,
+          rateUnit,
+        );
+
+      const overrideText =
+        Object.prototype
+          .hasOwnProperty.call(
+            rateOverrides,
+            overrideKey,
+          )
+          ? text(
+              rateOverrides[
+                overrideKey
+              ],
+            )
+          : '';
+
+      const overrideRate =
+        overrideText !== ''
+          ? Number(
+              overrideText,
+            )
+          : Number.NaN;
+
+      const overrideValid =
+        overrideText !== '' &&
+        Number.isFinite(
+          overrideRate,
+        ) &&
+        overrideRate >= 0;
+
+      const finalRate =
+        masterRate > 0
+          ? masterRate
+          : overrideValid
+            ? overrideRate
+            : enteredRateValid
+              ? enteredRate
+              : 0;
+
+      const ingredientKey =
+        bulkIngredientKey(
+          ingredientName,
+          unit,
+        );
+
+      const duplicate =
+        active.ingredients.some(
+          (ingredient) =>
+            bulkIngredientKey(
+              ingredient.name,
+              ingredient.unit,
+            ) ===
+            ingredientKey,
+        );
+
+      active.ingredients.push({
+        name:
+          ingredientName,
+        quantity,
+        unit,
+        rate:
+          Math.max(
+            0,
+            finalRate,
+          ),
+        rateUnit,
+        existsInMaster:
+          Boolean(master),
+        missingRate:
+          !(masterRate > 0) &&
+          !overrideValid &&
+          !enteredRateValid,
+        duplicate,
+      });
+
+      continue;
+    }
+
+    invalidLines += 1;
+  }
+
+  return {
+    recipes,
+    invalidLines,
+    invalidRecipes,
+  };
+}
+
 export default function RecipesPage() {
   const [
     catalog,
@@ -1312,6 +1846,21 @@ export default function RecipesPage() {
     bulkRecipes,
     setBulkRecipes,
   ] = useState('');
+
+  const [
+    bulkDuplicateMode,
+    setBulkDuplicateMode,
+  ] =
+    useState<BulkDuplicateMode>(
+      'update',
+    );
+
+  const [
+    bulkRateOverrides,
+    setBulkRateOverrides,
+  ] = useState<
+    Record<string, string>
+  >({});
 
   const [
     showBulkRecipes,
@@ -3522,64 +4071,156 @@ export default function RecipesPage() {
     );
   }
 
-  function addBulkRecipes() {
+  const bulkImportPreview =
+    useMemo<BulkImportPreview>(
+      () => {
+        if (
+          !catalog ||
+          !bulkRecipes.trim()
+        ) {
+          return {
+            recipes: [],
+            invalidLines: 0,
+            invalidRecipes: 0,
+          };
+        }
+
+        return parseBulkRecipeImport(
+          bulkRecipes,
+          catalog,
+          bulkRateOverrides,
+        );
+      },
+      [
+        bulkRecipes,
+        catalog,
+        bulkRateOverrides,
+      ],
+    );
+
+  const bulkIngredientIssues =
+    useMemo(
+      () => {
+        const issues =
+          new Map<
+            string,
+            BulkImportIngredientPreview
+          >();
+
+        for (
+          const recipe of
+          bulkImportPreview.recipes
+        ) {
+          for (
+            const ingredient of
+            recipe.ingredients
+          ) {
+            if (
+              ingredient.existsInMaster &&
+              !ingredient.missingRate
+            ) {
+              continue;
+            }
+
+            const key =
+              bulkIngredientKey(
+                ingredient.name,
+                ingredient.rateUnit,
+              );
+
+            if (!issues.has(key)) {
+              issues.set(
+                key,
+                ingredient,
+              );
+            }
+          }
+        }
+
+        return Array.from(
+          issues.values(),
+        );
+      },
+      [
+        bulkImportPreview,
+      ],
+    );
+
+  const bulkMissingRateCount =
+    bulkIngredientIssues.filter(
+      (ingredient) =>
+        ingredient.missingRate,
+    ).length;
+
+  const bulkMissingMasterCount =
+    bulkIngredientIssues.filter(
+      (ingredient) =>
+        !ingredient.existsInMaster,
+    ).length;
+
+  const bulkDuplicateIngredientCount =
+    bulkImportPreview.recipes.reduce(
+      (
+        total,
+        recipe,
+      ) =>
+        total +
+        recipe.ingredients.filter(
+          (ingredient) =>
+            ingredient.duplicate,
+        ).length,
+      0,
+    );
+
+  const bulkDuplicateRecipeCount =
+    bulkImportPreview.recipes.filter(
+      (recipe) =>
+        recipe.duplicateRecipe,
+    ).length;
+
+  async function addBulkRecipes() {
     if (!catalog) {
       return;
     }
 
-    const unitAliases:
-      Record<string, string> = {
-        kg: 'kg',
-        kgs: 'kg',
-        kilogram: 'kg',
-
-        g: 'gram',
-        gm: 'gram',
-        gram: 'gram',
-        grams: 'gram',
-
-        l: 'ltr',
-        lt: 'ltr',
-        ltr: 'ltr',
-        litre: 'ltr',
-        liter: 'ltr',
-
-        ml: 'ml',
-
-        pc: 'piece',
-        pcs: 'piece',
-        piece: 'piece',
-        pieces: 'piece',
-
-        pkt: 'packet',
-        packet: 'packet',
-
-        serving: 'serving',
-        servings: 'serving',
-      };
-
-    const normalizedBulkRecipes =
-      normalizeChatGptRecipePaste(
-        bulkRecipes,
-      );
-
-    const lines =
-      normalizedBulkRecipes
-        .split(/\r?\n/)
-        .map((line) =>
-          line.trim(),
-        )
-        .filter(Boolean);
-
-    if (!lines.length) {
+    if (
+      !bulkImportPreview
+        .recipes.length
+    ) {
       setError(
-        'Paste at least one recipe.',
+        'No valid recipes found. Use R | for recipe, I | for ingredient and G | for LPG.',
       );
       return;
     }
 
-    // Clone current recipes so existing data
-    // is never directly mutated.
+    if (
+      bulkMissingRateCount > 0
+    ) {
+      setError(
+        String(
+          bulkMissingRateCount,
+        ) +
+        ' ingredient rate(s) are missing. Set the rate before Add All & Save.',
+      );
+      return;
+    }
+
+    if (
+      bulkDuplicateIngredientCount >
+      0
+    ) {
+      setError(
+        String(
+          bulkDuplicateIngredientCount,
+        ) +
+        ' duplicate ingredient line(s) found. Remove duplicates before saving.',
+      );
+      return;
+    }
+
+    const previousCatalog =
+      catalog;
+
     const nextDishes:
       RawRow[] =
       catalog.dishes.map(
@@ -3593,6 +4234,14 @@ export default function RecipesPage() {
                 ...ingredient,
               }),
             ),
+        }),
+      );
+
+    const nextRates:
+      RawRow[] =
+      catalog.rates.map(
+        (rate) => ({
+          ...rate,
         }),
       );
 
@@ -3618,538 +4267,383 @@ export default function RecipesPage() {
         ...catalog.subcategories,
       };
 
-    const masterRateByName =
-      new Map(
-        catalog.rates.map(
-          (rate) => [
-            text(
-              rate.name ||
-              rate.ingredientName,
-            ).toLowerCase(),
-            rate,
-          ],
-        ),
-      );
-
-    let activeRecipe:
-      RawRow | null =
-      null;
-
-    let activeRecipeIndex:
-      number | null =
-      null;
-
+    let addedRecipes = 0;
+    let updatedRecipes = 0;
+    let copiedRecipes = 0;
+    let skippedRecipes = 0;
+    let ingredientCount = 0;
+    let masterChanges = 0;
     let firstTouchedIndex:
       number | null =
       null;
 
-    let addedRecipes = 0;
-    let updatedRecipes = 0;
-    let invalidRecipes = 0;
-    let invalidLines = 0;
-    let ingredientCount = 0;
+    const makeCopyName = (
+      originalName: string,
+    ) => {
+      let candidate =
+        originalName + ' Copy';
 
-    for (const line of lines) {
-      const parts =
-        line
-          .split(/\s*\|\s*/)
-          .map((part) =>
-            part.trim(),
-          );
+      let suffix = 2;
 
-      const type =
-        (
-          parts[0] ||
-          ''
+      while (
+        recipeIndexByName.has(
+          candidate
+            .toLowerCase(),
         )
-          .trim()
-          .toUpperCase();
-
-      // =================================
-      // R = RECIPE
-      // =================================
-      if (
-        type === 'R' ||
-        type === 'RECIPE'
       ) {
-        const name =
-          parts[1] || '';
+        candidate =
+          originalName +
+          ' Copy ' +
+          String(suffix);
 
-        const recipeCategory =
-          parts[2] ||
-          'Other';
+        suffix += 1;
+      }
 
-        const subcategory =
-          parts[3] || '';
+      return candidate;
+    };
 
-        const servingSize =
-          Number(
-            parts[4],
-          );
+    for (
+      const recipe of
+      bulkImportPreview.recipes
+    ) {
+      const originalKey =
+        recipe.name
+          .trim()
+          .toLowerCase();
 
-        const rawServingUnit =
-          (
-            parts[5] ||
-            'serving'
-          )
-            .trim()
-            .toLowerCase();
-
-        const servingUnit =
-          unitAliases[
-            rawServingUnit
-          ];
-
-        const baseGuests =
-          Number(
-            parts[6],
-          );
-
-        /*
-         * Optional 8th R field:
-         *
-         * R | Gulab Jamun | Sweet | Milk Sweet |
-         * 1 | piece | 100 | 35
-         *
-         * 35 = grams per piece.
-         */
-        const pieceWeightGrams =
-          Number(
-            parts[7],
-          );
-
-        const rawGasKgPer100 =
-          (
-            parts[8] ||
-            ''
-          ).trim();
-
-        const parsedGasKgPer100 =
-          rawGasKgPer100
-            ? Number(
-                rawGasKgPer100,
-              )
-            : Number.NaN;
-
-        const hasGasKgPer100 =
-          Number.isFinite(
-            parsedGasKgPer100,
-          ) &&
-          parsedGasKgPer100 >= 0;
-
-        const safeGasKgPer100 =
-          hasGasKgPer100
-            ? parsedGasKgPer100
-            : 0;
-
-        const normalizedName =
-          name
-            .replace(
-              /\s+/g,
-              ' ',
-            )
-            .trim();
-
-        if (
-          !normalizedName ||
-          !servingUnit
-        ) {
-          activeRecipe = null;
-          activeRecipeIndex = null;
-          invalidRecipes += 1;
-          continue;
-        }
-
-        const nameKey =
-          normalizedName
-            .toLowerCase();
-
-        const safeServingSize =
-          Number.isFinite(
-            servingSize,
-          ) &&
-          servingSize > 0
-            ? servingSize
-            : 1;
-
-        const safeBaseGuests =
-          Number.isFinite(
-            baseGuests,
-          ) &&
-          baseGuests > 0
-            ? Math.round(
-                baseGuests,
-              )
-            : 100;
-
-        const safePieceWeightGrams =
-          servingUnit === 'piece' &&
-          Number.isFinite(
-            pieceWeightGrams,
-          ) &&
-          pieceWeightGrams > 0
-            ? pieceWeightGrams
-            : 0;
-
-        const existingIndex =
-          recipeIndexByName.get(
-            nameKey,
-          );
-
-        // =================================
-        // EXISTING RECIPE → UPDATE
-        // =================================
-        if (
-          existingIndex !==
-          undefined
-        ) {
-          const oldRecipe =
-            nextDishes[
-              existingIndex
-            ];
-
-          const updatedRecipe:
-            RawRow = {
-              ...oldRecipe,
-
-              dishName:
-                normalizedName,
-
-              name:
-                normalizedName,
-
-              category:
-                recipeCategory,
-
-              subcategory,
-
-              baseGuests:
-                safeBaseGuests,
-
-              servingSize:
-                safeServingSize,
-
-              servingUnit,
-
-              pieceWeightGrams:
-                safePieceWeightGrams,
-
-              ...(hasGasKgPer100
-                ? {
-                    gasKgPer100:
-                      safeGasKgPer100,
-                    gasNoGas:
-                      safeGasKgPer100 === 0,
-                    gasBurnerKgPerHour:
-                      '',
-                    gasCookingMinutes:
-                      '',
-                    gasBurnerCount:
-                      '',
-                    gasBatchPax:
-                      '',
-                  }
-                : {}),
-
-              // New pasted ingredient list
-              // replaces old ingredients.
-              ingredients: [],
-          };
-
-          nextDishes[
-            existingIndex
-          ] =
-            updatedRecipe;
-
-          activeRecipe =
-            updatedRecipe;
-
-          activeRecipeIndex =
-            existingIndex;
-
-          updatedRecipes += 1;
-        } else {
-          // =================================
-          // NEW RECIPE → CREATE
-          // =================================
-          const recipe:
-            RawRow = {
-              dishName:
-                normalizedName,
-
-              name:
-                normalizedName,
-
-              category:
-                recipeCategory,
-
-              subcategory,
-
-              baseGuests:
-                safeBaseGuests,
-
-              servingSize:
-                safeServingSize,
-
-              servingUnit,
-
-              pieceWeightGrams:
-                safePieceWeightGrams,
-
-              ...(hasGasKgPer100
-                ? {
-                    gasKgPer100:
-                      safeGasKgPer100,
-                    gasNoGas:
-                      safeGasKgPer100 === 0,
-                  }
-                : {}),
-
-              dishRate: 0,
-
-              ingredients: [],
-          };
-
-          const newIndex =
-            nextDishes.length;
-
-          nextDishes.push(
-            recipe,
-          );
-
-          recipeIndexByName.set(
-            nameKey,
-            newIndex,
-          );
-
-          activeRecipe =
-            recipe;
-
-          activeRecipeIndex =
-            newIndex;
-
-          addedRecipes += 1;
-        }
-
-        if (
-          firstTouchedIndex ===
-            null &&
-          activeRecipeIndex !==
-            null
-        ) {
-          firstTouchedIndex =
-            activeRecipeIndex;
-        }
-
-        nextCategories.add(
-          recipeCategory,
+      const existingIndex =
+        recipeIndexByName.get(
+          originalKey,
         );
 
-        if (subcategory) {
-          const existing =
-            nextSubcategories[
-              recipeCategory
-            ] || [];
-
-          if (
-            !existing.some(
-              (item) =>
-                item
-                  .toLowerCase() ===
-                subcategory
-                  .toLowerCase(),
-            )
-          ) {
-            nextSubcategories[
-              recipeCategory
-            ] = [
-              ...existing,
-              subcategory,
-            ];
-          }
-        }
-
+      if (
+        existingIndex !==
+          undefined &&
+        bulkDuplicateMode ===
+          'skip'
+      ) {
+        skippedRecipes += 1;
         continue;
       }
 
-      // =================================
-      // I = INGREDIENT
-      // =================================
-      if (
-        type === 'I' ||
-        type === 'ING' ||
-        type === 'INGREDIENT'
-      ) {
-        if (!activeRecipe) {
-          invalidLines += 1;
-          continue;
-        }
+      const isCopy =
+        existingIndex !==
+          undefined &&
+        bulkDuplicateMode ===
+          'copy';
 
-        const ingredientName =
-          parts[1] || '';
-
-        const quantity =
-          Number(
-            parts[2],
-          );
-
-        const rawUnit =
-          (
-            parts[3] ||
-            'kg'
-          )
-            .trim()
-            .toLowerCase();
-
-        const unit =
-          unitAliases[
-            rawUnit
-          ];
-
-        const rawRate =
-          (
-            parts[4] ||
-            ''
-          ).trim();
-
-        const enteredRate =
-          rawRate
-            ? Number(
-                rawRate,
-              )
-            : Number.NaN;
-
-        const enteredRateUnit =
-          unitAliases[
-            (
-              parts[5] ||
-              ''
+      const targetName =
+        isCopy
+          ? makeCopyName(
+              recipe.name,
             )
-              .trim()
-              .toLowerCase()
-          ];
+          : recipe.name;
 
-        if (
-          !ingredientName ||
-          !unit ||
-          !Number.isFinite(
-            quantity,
-          ) ||
-          quantity < 0
-        ) {
-          invalidLines += 1;
-          continue;
-        }
+      const importedIngredients =
+        recipe.ingredients.map(
+          (ingredient) => {
+            const name =
+              canonicalIngredientName(
+                ingredient.name,
+              );
 
-        const masterRate =
-          masterRateByName.get(
-            ingredientName
-              .trim()
-              .toLowerCase(),
-          );
+            let rateIndex =
+              nextRates.findIndex(
+                (rate) =>
+                  canonicalIngredientName(
+                    text(
+                      rate.name ||
+                      rate.ingredientName,
+                    ),
+                  )
+                    .toLowerCase() ===
+                    name
+                      .toLowerCase() &&
+                  normalizeBulkRecipeUnit(
+                    rate.unit ||
+                    rate.rateUnit,
+                  ) ===
+                    ingredient.rateUnit,
+              );
 
-        const masterValue =
-          Math.max(
-            0,
-            numberValue(
-              masterRate?.rate ??
-              masterRate?.marketRate,
-            ),
-          );
+            if (
+              rateIndex < 0
+            ) {
+              nextRates.push({
+                id:
+                  normalizeIngredientId(
+                    name,
+                    ingredient.rateUnit,
+                  ),
+                name,
+                category:
+                  inferIngredientCategory(
+                    name,
+                  ),
+                rate:
+                  Math.max(
+                    0,
+                    ingredient.rate,
+                  ),
+                unit:
+                  ingredient.rateUnit,
+              });
 
-        const finalRate =
-          Number.isFinite(
-            enteredRate,
-          ) &&
-          enteredRate >= 0
-            ? enteredRate
-            : masterValue;
+              rateIndex =
+                nextRates.length -
+                1;
 
-        const masterRateUnit =
-          unitAliases[
-            text(
-              masterRate?.unit ||
-              masterRate?.rateUnit,
-            ).toLowerCase()
-          ];
+              masterChanges += 1;
+            } else {
+              const currentRate =
+                Math.max(
+                  0,
+                  numberValue(
+                    nextRates[
+                      rateIndex
+                    ].rate ??
+                    nextRates[
+                      rateIndex
+                    ].marketRate,
+                  ),
+                );
 
-        const rateUnit =
-          enteredRateUnit ||
-          masterRateUnit ||
-          unit;
+              if (
+                !(currentRate > 0) &&
+                ingredient.rate >= 0
+              ) {
+                nextRates[
+                  rateIndex
+                ] = {
+                  ...nextRates[
+                    rateIndex
+                  ],
+                  id:
+                    normalizeIngredientId(
+                      name,
+                      ingredient.rateUnit,
+                    ),
+                  name,
+                  category:
+                    text(
+                      nextRates[
+                        rateIndex
+                      ].category,
+                    ) ||
+                    inferIngredientCategory(
+                      name,
+                    ),
+                  rate:
+                    ingredient.rate,
+                  unit:
+                    ingredient.rateUnit,
+                };
 
-        const rateKey =
-          text(
-            masterRate?.id ||
-            masterRate?.rateKey,
-          );
+                masterChanges += 1;
+              }
+            }
 
-        const ingredient:
-          RawRow = {
-            name:
-              ingredientName.trim(),
+            const master =
+              nextRates[
+                rateIndex
+              ];
 
-            ingredientName:
-              ingredientName.trim(),
+            const masterRate =
+              Math.max(
+                0,
+                numberValue(
+                  master.rate ??
+                  master.marketRate,
+                ),
+              );
 
-            quantity,
+            const masterUnit =
+              normalizeBulkRecipeUnit(
+                master.unit ||
+                master.rateUnit,
+              ) ||
+              ingredient.rateUnit;
 
-            qty:
-              quantity,
+            ingredientCount += 1;
 
-            unit,
+            return {
+              name,
+              ingredientName:
+                name,
+              quantity:
+                ingredient.quantity,
+              qty:
+                ingredient.quantity,
+              unit:
+                ingredient.unit,
+              marketRate:
+                masterRate,
+              rate:
+                masterRate,
+              rateUnit:
+                masterUnit,
+              rateKey:
+                text(master.id) ||
+                normalizeIngredientId(
+                  name,
+                  masterUnit,
+                ),
+            };
+          },
+        );
 
-            marketRate:
-              finalRate,
+      const gasPatch =
+        recipe.gasKgPer100 !==
+        null
+          ? {
+              gasKgPer100:
+                recipe.gasKgPer100,
+              gasNoGas:
+                recipe.gasKgPer100 ===
+                0,
+              gasBurnerKgPerHour:
+                '',
+              gasCookingMinutes:
+                '',
+              gasBurnerCount:
+                '',
+              gasBatchPax:
+                '',
+            }
+          : {};
 
-            rate:
-              finalRate,
-
-            rateUnit,
+      const recipePayload:
+        RawRow = {
+          dishName:
+            targetName,
+          name:
+            targetName,
+          category:
+            recipe.category,
+          subcategory:
+            recipe.subcategory,
+          baseGuests:
+            recipe.baseGuests,
+          servingSize:
+            recipe.servingSize,
+          servingUnit:
+            recipe.servingUnit,
+          pieceWeightGrams:
+            recipe.pieceWeightGrams,
+          ...gasPatch,
+          dishRate: 0,
+          ingredients:
+            importedIngredients,
         };
 
-        if (rateKey) {
-          ingredient.rateKey =
-            rateKey;
+      let touchedIndex:
+        number;
+
+      if (
+        existingIndex !==
+          undefined &&
+        !isCopy
+      ) {
+        nextDishes[
+          existingIndex
+        ] = {
+          ...nextDishes[
+            existingIndex
+          ],
+          ...recipePayload,
+        };
+
+        touchedIndex =
+          existingIndex;
+
+        updatedRecipes += 1;
+      } else {
+        touchedIndex =
+          nextDishes.length;
+
+        nextDishes.push(
+          recipePayload,
+        );
+
+        recipeIndexByName.set(
+          targetName
+            .toLowerCase(),
+          touchedIndex,
+        );
+
+        if (isCopy) {
+          copiedRecipes += 1;
+        } else {
+          addedRecipes += 1;
         }
-
-        activeRecipe.ingredients = [
-          ...recipeIngredients(
-            activeRecipe,
-          ),
-          ingredient,
-        ];
-
-        ingredientCount += 1;
-        continue;
       }
 
-      invalidLines += 1;
-    }
+      if (
+        firstTouchedIndex ===
+        null
+      ) {
+        firstTouchedIndex =
+          touchedIndex;
+      }
 
-    if (
-      addedRecipes === 0 &&
-      updatedRecipes === 0
-    ) {
-      setError(
-        'No valid recipes found. Use R | for recipe and I | for ingredient.',
+      nextCategories.add(
+        recipe.category,
       );
 
+      if (
+        recipe.subcategory
+      ) {
+        const existing =
+          nextSubcategories[
+            recipe.category
+          ] || [];
+
+        if (
+          !existing.some(
+            (item) =>
+              item
+                .toLowerCase() ===
+              recipe.subcategory
+                .toLowerCase(),
+          )
+        ) {
+          nextSubcategories[
+            recipe.category
+          ] = [
+            ...existing,
+            recipe.subcategory,
+          ];
+        }
+      }
+    }
+
+    const changedRecipes =
+      addedRecipes +
+      updatedRecipes +
+      copiedRecipes;
+
+    if (
+      changedRecipes === 0
+    ) {
+      setError(
+        skippedRecipes > 0
+          ? 'All pasted recipes already exist and duplicate action is Skip.'
+          : 'No recipe was imported.',
+      );
       return;
     }
 
     const nextCatalog:
       RecipeCatalog = {
         ...catalog,
-
         dishes:
           nextDishes,
-
+        rates:
+          nextRates,
         categories:
           Array.from(
             nextCategories,
           ),
-
         subcategories:
           nextSubcategories,
     };
@@ -4161,14 +4655,7 @@ export default function RecipesPage() {
     memoryRecipeCatalog =
       nextCatalog;
 
-    setBulkRecipes('');
-
-    setShowBulkRecipes(
-      false,
-    );
-
     setQuery('');
-
     setCategory(
       'ALL',
     );
@@ -4189,29 +4676,47 @@ export default function RecipesPage() {
     }
 
     setError('');
+    setMessage(
+      'Validated. Saving recipes, Ingredient Master and Dish Master sync...',
+    );
+
+    const saved =
+      await saveRecipes(
+        nextCatalog,
+      );
+
+    if (!saved) {
+      setCatalog(
+        previousCatalog,
+      );
+
+      memoryRecipeCatalog =
+        previousCatalog;
+
+      return;
+    }
+
+    setBulkRecipes('');
+    setBulkRateOverrides(
+      {},
+    );
+    setShowBulkRecipes(
+      false,
+    );
 
     setMessage(
-      `${addedRecipes} new recipe${
-        addedRecipes === 1
-          ? ''
-          : 's'
-      } · ${updatedRecipes} existing recipe${
-        updatedRecipes === 1
-          ? ''
-          : 's'
-      } updated · ${ingredientCount} ingredient${
-        ingredientCount === 1
-          ? ''
-          : 's'
-      } imported${
-        invalidRecipes
-          ? ` · ${invalidRecipes} invalid recipe skipped`
-          : ''
-      }${
-        invalidLines
-          ? ` · ${invalidLines} invalid line skipped`
-          : ''
-      }. Click Save & Sync.`,
+      String(addedRecipes) +
+      ' new | ' +
+      String(updatedRecipes) +
+      ' updated | ' +
+      String(copiedRecipes) +
+      ' copied | ' +
+      String(skippedRecipes) +
+      ' skipped | ' +
+      String(ingredientCount) +
+      ' ingredients | ' +
+      String(masterChanges) +
+      ' Ingredient Master changes | saved and synced.',
     );
   }
 
@@ -5015,6 +5520,200 @@ export default function RecipesPage() {
           .recipe-fast-bulk-footer small {
             color:#7f8b99;
             font-size:9px;
+          }
+
+          .recipe-bulk-options {
+            display:grid;
+            grid-template-columns:minmax(220px,300px) 1fr;
+            gap:10px;
+            align-items:end;
+          }
+
+          .recipe-bulk-option {
+            display:grid;
+            gap:5px;
+          }
+
+          .recipe-bulk-option label {
+            color:#8190a0;
+            font-size:8px;
+            font-weight:900;
+            text-transform:uppercase;
+          }
+
+          .recipe-bulk-summary {
+            display:grid;
+            grid-template-columns:repeat(5,minmax(0,1fr));
+            gap:7px;
+          }
+
+          .recipe-bulk-summary div {
+            padding:9px 10px;
+            border:1px solid #29333e;
+            border-radius:10px;
+            background:#0d1319;
+          }
+
+          .recipe-bulk-summary span,
+          .recipe-bulk-summary b {
+            display:block;
+          }
+
+          .recipe-bulk-summary span {
+            color:#758495;
+            font-size:8px;
+            text-transform:uppercase;
+          }
+
+          .recipe-bulk-summary b {
+            margin-top:3px;
+            font-size:12px;
+          }
+
+          .recipe-bulk-issues {
+            display:grid;
+            gap:7px;
+            padding:10px;
+            border:1px solid rgba(255,159,10,.28);
+            border-radius:11px;
+            background:rgba(255,159,10,.055);
+          }
+
+          .recipe-bulk-issues strong {
+            font-size:11px;
+          }
+
+          .recipe-bulk-issue-list {
+            display:grid;
+            gap:5px;
+            max-height:220px;
+            overflow:auto;
+          }
+
+          .recipe-bulk-issue-row {
+            display:grid;
+            grid-template-columns:minmax(150px,1fr) auto minmax(110px,150px);
+            gap:7px;
+            align-items:center;
+            padding:7px 8px;
+            border:1px solid rgba(255,255,255,.07);
+            border-radius:9px;
+            background:rgba(5,8,12,.28);
+          }
+
+          .recipe-bulk-issue-row b {
+            font-size:10px;
+          }
+
+          .recipe-bulk-badges {
+            display:flex;
+            flex-wrap:wrap;
+            gap:4px;
+          }
+
+          .recipe-bulk-badge {
+            padding:3px 6px;
+            border:1px solid #394552;
+            border-radius:999px;
+            color:#9cacbd;
+            font-size:7px;
+            font-weight:900;
+            text-transform:uppercase;
+          }
+
+          .recipe-bulk-badge.warn {
+            border-color:rgba(255,159,10,.35);
+            color:#ffc267;
+          }
+
+          .recipe-bulk-badge.good {
+            border-color:rgba(52,199,89,.3);
+            color:#8ee6a5;
+          }
+
+          .recipe-bulk-rate-input {
+            width:100%;
+            min-height:34px;
+            padding:0 9px;
+            border:1px solid #3a4653;
+            border-radius:8px;
+            outline:0;
+            background:#0b1016;
+            color:#eef5ff;
+            font:inherit;
+            font-size:10px;
+            text-align:right;
+          }
+
+          .recipe-bulk-rate-input:focus {
+            border-color:#409cff;
+          }
+
+          .recipe-bulk-preview {
+            display:grid;
+            gap:7px;
+            max-height:520px;
+            overflow:auto;
+          }
+
+          .recipe-bulk-preview-card {
+            display:grid;
+            gap:8px;
+            padding:10px;
+            border:1px solid #2a3540;
+            border-radius:11px;
+            background:#0d1319;
+          }
+
+          .recipe-bulk-preview-head {
+            display:flex;
+            justify-content:space-between;
+            align-items:flex-start;
+            gap:10px;
+          }
+
+          .recipe-bulk-preview-head b,
+          .recipe-bulk-preview-head span {
+            display:block;
+          }
+
+          .recipe-bulk-preview-head b {
+            font-size:11px;
+          }
+
+          .recipe-bulk-preview-head span {
+            margin-top:2px;
+            color:#758495;
+            font-size:8px;
+          }
+
+          .recipe-bulk-preview-kpis {
+            display:grid;
+            grid-template-columns:repeat(5,minmax(0,1fr));
+            gap:6px;
+          }
+
+          .recipe-bulk-preview-kpis div {
+            padding:7px 8px;
+            border:1px solid #25303b;
+            border-radius:8px;
+            background:#10171f;
+          }
+
+          .recipe-bulk-preview-kpis span,
+          .recipe-bulk-preview-kpis b {
+            display:block;
+          }
+
+          .recipe-bulk-preview-kpis span {
+            color:#718091;
+            font-size:7px;
+            text-transform:uppercase;
+          }
+
+          .recipe-bulk-preview-kpis b {
+            margin-top:3px;
+            font-size:10px;
           }
 
           .recipe-fast-sync {
@@ -5936,6 +6635,24 @@ export default function RecipesPage() {
           }
 
           @media(max-width:620px) {
+            .recipe-bulk-options {
+              grid-template-columns:1fr;
+            }
+
+            .recipe-bulk-summary,
+            .recipe-bulk-preview-kpis {
+              grid-template-columns:1fr 1fr;
+            }
+
+            .recipe-bulk-issue-row {
+              grid-template-columns:1fr;
+            }
+
+            .recipe-fast-bulk-footer {
+              align-items:stretch;
+              flex-direction:column;
+            }
+
             .recipe-gas-quick-head {
               flex-direction:column;
             }
@@ -6152,11 +6869,11 @@ export default function RecipesPage() {
             <div className="recipe-fast-bulk-head">
               <div>
                 <strong>
-                  ChatGPT Recipe Import
+                  Bulk Recipe Import v2
                 </strong>
 
                 <span>
-                  Paste a recipe from ChatGPT. Ingredients, quantities, rates and LPG are detected automatically.
+                  Paste recipes, validate rates and LPG, preview cost, then save everything in one action.
                 </span>
               </div>
 
@@ -6181,25 +6898,401 @@ export default function RecipesPage() {
                   event.target.value,
                 )
               }
-              placeholder={`DISH: Mix Pakoda\nCATEGORY: Starter\nGUESTS: 100\nGAS_KG: 1.0\n\nIngredient | Qty | Unit | Rate\nBesan | 8 | kg | 120\nPotato | 5 | kg | 30\nOnion | 4 | kg | 35\nOil | 6 | ltr | 150\n\nYou can also paste the advanced R | / I | format.`}
+              placeholder={'R | Mix Pakoda | Farsan | Dry | 100 | gram | 100\nI | Besan | 8 | kg | 120 | kg\nI | Potato | 5 | kg | 30 | kg\nI | Oil | 6 | ltr | 150 | ltr\nG | 1.00 | kg'}
             />
+
+            <div className="recipe-bulk-options">
+              <div className="recipe-bulk-option">
+                <label>
+                  Existing recipe action
+                </label>
+
+                <select
+                  className="recipe-fast-input"
+                  value={
+                    bulkDuplicateMode
+                  }
+                  onChange={(event) =>
+                    setBulkDuplicateMode(
+                      event.target
+                        .value as
+                        BulkDuplicateMode,
+                    )
+                  }
+                >
+                  <option value="update">
+                    Update existing
+                  </option>
+                  <option value="skip">
+                    Skip duplicates
+                  </option>
+                  <option value="copy">
+                    Create copy
+                  </option>
+                </select>
+              </div>
+
+              <div className="recipe-bulk-summary">
+                <div>
+                  <span>Recipes</span>
+                  <b>
+                    {bulkImportPreview.recipes.length}
+                  </b>
+                </div>
+
+                <div>
+                  <span>Existing</span>
+                  <b>
+                    {bulkDuplicateRecipeCount}
+                  </b>
+                </div>
+
+                <div>
+                  <span>New ingredients</span>
+                  <b>
+                    {bulkMissingMasterCount}
+                  </b>
+                </div>
+
+                <div>
+                  <span>Missing rates</span>
+                  <b>
+                    {bulkMissingRateCount}
+                  </b>
+                </div>
+
+                <div>
+                  <span>Invalid</span>
+                  <b>
+                    {bulkImportPreview.invalidLines + bulkImportPreview.invalidRecipes}
+                  </b>
+                </div>
+              </div>
+            </div>
+
+            {bulkIngredientIssues.length > 0 ? (
+              <div className="recipe-bulk-issues">
+                <div>
+                  <strong>
+                    Ingredient Master checks
+                  </strong>
+
+                  <div
+                    style={{
+                      marginTop: '3px',
+                      color: '#9a865e',
+                      fontSize: '8px',
+                    }}
+                  >
+                    New ingredients are created automatically. Enter a rate where it is missing.
+                  </div>
+                </div>
+
+                <div className="recipe-bulk-issue-list">
+                  {bulkIngredientIssues.map(
+                    (ingredient) => {
+                      const key =
+                        bulkIngredientKey(
+                          ingredient.name,
+                          ingredient.rateUnit,
+                        );
+
+                      const override =
+                        bulkRateOverrides[
+                          key
+                        ];
+
+                      const displayRate =
+                        override !==
+                        undefined
+                          ? override
+                          : ingredient.missingRate
+                            ? ''
+                            : String(
+                                ingredient.rate,
+                              );
+
+                      return (
+                        <div
+                          className="recipe-bulk-issue-row"
+                          key={key}
+                        >
+                          <div>
+                            <b>
+                              {ingredient.name}
+                            </b>
+
+                            <div
+                              style={{
+                                marginTop: '2px',
+                                color: '#758495',
+                                fontSize: '8px',
+                              }}
+                            >
+                              Rate unit: {ingredient.rateUnit}
+                            </div>
+                          </div>
+
+                          <div className="recipe-bulk-badges">
+                            {!ingredient.existsInMaster ? (
+                              <span className="recipe-bulk-badge warn">
+                                New ingredient
+                              </span>
+                            ) : (
+                              <span className="recipe-bulk-badge good">
+                                In master
+                              </span>
+                            )}
+
+                            {ingredient.missingRate ? (
+                              <span className="recipe-bulk-badge warn">
+                                Rate missing
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <input
+                            className="recipe-bulk-rate-input"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={displayRate}
+                            placeholder={'Rate / ' + ingredient.rateUnit}
+                            onChange={(event) =>
+                              setBulkRateOverrides(
+                                (current) => ({
+                                  ...current,
+                                  [key]:
+                                    event
+                                      .target
+                                      .value,
+                                }),
+                              )
+                            }
+                          />
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
+              </div>
+            ) : null}
+
+            {bulkDuplicateIngredientCount > 0 ? (
+              <div className="recipe-fast-error">
+                {bulkDuplicateIngredientCount} duplicate ingredient line(s) detected. Remove duplicates before saving.
+              </div>
+            ) : null}
+
+            {bulkImportPreview.recipes.length > 0 ? (
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    marginBottom: '7px',
+                  }}
+                >
+                  <strong
+                    style={{
+                      fontSize: '11px',
+                    }}
+                  >
+                    Import preview
+                  </strong>
+
+                  <span
+                    style={{
+                      color: '#758495',
+                      fontSize: '8px',
+                    }}
+                  >
+                    Food + LPG + total cost before save
+                  </span>
+                </div>
+
+                <div className="recipe-bulk-preview">
+                  {bulkImportPreview.recipes.map(
+                    (
+                      recipe,
+                      recipeIndex,
+                    ) => {
+                      const previewDish:
+                        RawRow = {
+                          dishName:
+                            recipe.name,
+                          name:
+                            recipe.name,
+                          category:
+                            recipe.category,
+                          baseGuests:
+                            recipe.baseGuests,
+                          ...(recipe.gasKgPer100 !==
+                          null
+                            ? {
+                                gasKgPer100:
+                                  recipe.gasKgPer100,
+                                gasNoGas:
+                                  recipe.gasKgPer100 ===
+                                  0,
+                              }
+                            : {}),
+                          ingredients:
+                            recipe.ingredients.map(
+                              (
+                                ingredient,
+                              ) => ({
+                                name:
+                                  ingredient.name,
+                                quantity:
+                                  ingredient.quantity,
+                                unit:
+                                  ingredient.unit,
+                                rate:
+                                  ingredient.rate,
+                                marketRate:
+                                  ingredient.rate,
+                                rateUnit:
+                                  ingredient.rateUnit,
+                              }),
+                            ),
+                        };
+
+                      const foodCost =
+                        recipeTotal(
+                          previewDish,
+                        );
+
+                      const gas =
+                        recipeGasPreview(
+                          previewDish,
+                          recipe.category,
+                          recipe.baseGuests,
+                          gasSetting,
+                          gasCategoryRates,
+                        );
+
+                      const total =
+                        foodCost +
+                        gas.gasCost;
+
+                      const perPerson =
+                        total /
+                        Math.max(
+                          1,
+                          recipe.baseGuests,
+                        );
+
+                      return (
+                        <div
+                          className="recipe-bulk-preview-card"
+                          key={recipe.name + '-' + String(recipeIndex)}
+                        >
+                          <div className="recipe-bulk-preview-head">
+                            <div>
+                              <b>
+                                {recipe.name}
+                              </b>
+
+                              <span>
+                                {recipe.category}
+                                {recipe.subcategory
+                                  ? ' | ' + recipe.subcategory
+                                  : ''}
+                                {' | '}
+                                {recipe.baseGuests} guests
+                                {' | '}
+                                {recipe.servingSize} {recipe.servingUnit}
+                              </span>
+                            </div>
+
+                            <div className="recipe-bulk-badges">
+                              {recipe.duplicateRecipe ? (
+                                <span className="recipe-bulk-badge warn">
+                                  Existing recipe
+                                </span>
+                              ) : (
+                                <span className="recipe-bulk-badge good">
+                                  New recipe
+                                </span>
+                              )}
+
+                              <span className="recipe-bulk-badge">
+                                {gas.source}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="recipe-bulk-preview-kpis">
+                            <div>
+                              <span>Ingredients</span>
+                              <b>
+                                {recipe.ingredients.length}
+                              </b>
+                            </div>
+
+                            <div>
+                              <span>Food cost</span>
+                              <b>
+                                {money(foodCost)}
+                              </b>
+                            </div>
+
+                            <div>
+                              <span>LPG</span>
+                              <b>
+                                {gas.gasKg.toFixed(2)} kg
+                              </b>
+                            </div>
+
+                            <div>
+                              <span>Total</span>
+                              <b>
+                                {money(total)}
+                              </b>
+                            </div>
+
+                            <div>
+                              <span>Cost / person</span>
+                              <b>
+                                {money(perPerson)}
+                              </b>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
+              </div>
+            ) : null}
 
             <div className="recipe-fast-bulk-footer">
               <small>
-                ChatGPT format: DISH / CATEGORY / GUESTS / GAS_KG + ingredient table · Advanced R/I format still supported
+                R = recipe | I = ingredient | G = LPG kg per 100 guests. Missing Ingredient Master items are created automatically.
               </small>
 
               <button
                 className="recipe-fast-button primary"
                 type="button"
                 disabled={
-                  !bulkRecipes.trim()
+                  saving ||
+                  !bulkRecipes.trim() ||
+                  !bulkImportPreview
+                    .recipes.length ||
+                  bulkMissingRateCount >
+                    0 ||
+                  bulkDuplicateIngredientCount >
+                    0
                 }
-                onClick={
-                  addBulkRecipes
+                onClick={() =>
+                  void addBulkRecipes()
                 }
               >
-                Import Recipe
+                {saving
+                  ? 'Validating & Saving...'
+                  : 'Add All & Save (' + String(bulkImportPreview.recipes.length) + ')'}
               </button>
             </div>
           </div>
