@@ -20,6 +20,9 @@ import { prisma } from '../../../../lib/prisma';
 import {
   applyRecipeWastage,
 } from '../../../../lib/recipeCosting';
+import {
+  syncRecipeCatalogToCaterersOs,
+} from '../../../../lib/caterersOsSync';
 
 import {
   extractMenuDishModifiers,
@@ -968,11 +971,17 @@ export async function POST() {
         },
       );
 
+    const caterersOsSync =
+      await syncRecipeCatalogToCaterersOs(
+        catalog,
+      );
+
     return NextResponse.json({
       ok: true,
       syncedDishes,
       updatedAt:
         stored.updatedAt,
+      caterersOsSync,
     });
   } catch {
     return NextResponse.json(
@@ -1033,11 +1042,25 @@ export async function PUT(request: Request) {
         );
     }
 
+    const caterersOsSync =
+      await syncRecipeCatalogToCaterersOs(
+        catalog,
+      );
+
+    const caterersOsWarning =
+      caterersOsSync.status === 'failed'
+        ? caterersOsSync.error
+        : '';
+
     return NextResponse.json({
       ok: true,
       updatedAt: recipeCatalog.updatedAt,
       syncedDishes,
-      syncWarning: syncWarning || null,
+      syncWarning:
+        [syncWarning, caterersOsWarning]
+          .filter(Boolean)
+          .join(' ') || null,
+      caterersOsSync,
     });
   } catch (error) {
     console.error(
