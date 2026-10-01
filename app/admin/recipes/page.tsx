@@ -5049,6 +5049,24 @@ export default function RecipesPage() {
           ) || 0,
         );
 
+      const caterersOsWorkspaceCount =
+        Math.max(
+          0,
+          Number(
+            caterersOsSync
+              ?.workspaceCount,
+          ) || 0,
+        );
+
+      const caterersOsFailedWorkspaceCount =
+        Math.max(
+          0,
+          Number(
+            caterersOsSync
+              ?.failedWorkspaceCount,
+          ) || 0,
+        );
+
       if (syncWarning) {
         setSyncStatus(
           'error',
@@ -5065,24 +5083,29 @@ export default function RecipesPage() {
         );
       } else if (
         caterersOsStatus ===
-        'failed'
+          'failed' ||
+        caterersOsStatus ===
+          'partial'
       ) {
         setSyncStatus(
           'error',
         );
 
         setSyncMessage(
-          `✓ Dish Master synced · CaterersOS sync failed${ 
-            caterersOsError
-              ? `: ${caterersOsError}`
-              : ''
-          }`,
+          caterersOsStatus ===
+            'partial'
+            ? `✓ Dish Master synced · CaterersOS updated ${caterersOsWorkspaceCount} workspace${caterersOsWorkspaceCount === 1 ? '' : 's'} · ${caterersOsFailedWorkspaceCount} failed`
+            : `✓ Dish Master synced · CaterersOS sync failed${ 
+                caterersOsError
+                  ? `: ${caterersOsError}`
+                  : ''
+              }`,
         );
 
         setMessage(
           activeDish
-            ? `Saved · ${recipeName(activeDish)} ${money(activeRate)}/plate. CaterersOS recipe sync did not finish.`
-            : 'Saved successfully. CaterersOS recipe sync did not finish.',
+            ? `Saved · ${recipeName(activeDish)} ${money(activeRate)}/plate. CaterersOS recipe sync did not finish for every linked workspace.`
+            : 'Saved successfully. CaterersOS recipe sync did not finish for every linked workspace.',
         );
       } else {
         setSyncStatus(
@@ -5096,10 +5119,10 @@ export default function RecipesPage() {
                 caterersOsRecipeCount === 1
                   ? ''
                   : 's'
-              } synced to CaterersOS`
+              } synced to ${caterersOsWorkspaceCount} CaterersOS workspace${caterersOsWorkspaceCount === 1 ? '' : 's'}`
             : caterersOsStatus ===
               'not_configured'
-              ? ' · CaterersOS not configured'
+              ? ' · No CaterersOS workspaces linked'
               : '';
 
         setSyncMessage(

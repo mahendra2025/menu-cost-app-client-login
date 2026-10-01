@@ -33,6 +33,9 @@ model Tenant {
   subscriptionStatus     String?
   currentPeriodEnd       DateTime?
   cancelAtPeriodEnd      Boolean                @default(false)
+  caterersOsWorkspaceId  String?                @unique
+  caterersOsSyncEnabled  Boolean                @default(false)
+  caterersOsLinkedAt     DateTime?
 }
 
 model TenantAutoRecipe {

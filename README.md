@@ -126,17 +126,20 @@ If neither provider is available, the existing local menu parser is used automat
 
 ## CaterersOS event + recipe sync
 
-Completed costings can automatically create or update events in CaterersOS. The Admin Recipes page also pushes the saved recipe catalog into the connected CaterersOS workspace. Configure the Menu Costing server with:
+Completed costings can automatically create or update events in CaterersOS. The integration is tenant-aware: every Menu Cost tenant stores its own CaterersOS workspace ID, so customer data cannot be routed through one global workspace setting. The Admin Recipes page fans the global recipe master out to active, linked CaterersOS workspaces.
+
+Configure the Menu Costing server with:
 
 ```bash
 CATERERSOS_API_URL=https://your-caterersos-domain.com
-CATERERSOS_WORKSPACE_ID=your-caterersos-workspace-id
 CATERERSOS_SYNC_SECRET=the-same-long-random-secret-used-by-caterersos
 ```
 
-Configure CaterersOS with the matching `MENU_COSTING_SYNC_SECRET`. Saving a costing to history then sends the event, function, menu, manpower, extra-cost, and financial-summary data. The `costingId` is used as the idempotency key, so saving again updates the existing CaterersOS event.
+Do not configure `CATERERSOS_WORKSPACE_ID` globally. Link each tenant from `/admin/caterersos`; the mapping is stored in PostgreSQL on the tenant record. Configure CaterersOS with the matching `MENU_COSTING_SYNC_SECRET`.
 
-The Menu Costing history save remains successful if CaterersOS is temporarily unavailable; the save screen reports the sync failure and saving the costing again retries it. Recipe saves also remain successful if CaterersOS is unavailable; saving or manually syncing Recipes again retries the recipe catalog connection.
+Saving a costing to history sends the event, function, menu, manpower, extra-cost, and financial-summary data only to that tenant's linked CaterersOS workspace. The `costingId` is used as the idempotency key, so saving again updates the existing CaterersOS event.
+
+The Menu Costing history save remains successful if CaterersOS is temporarily unavailable or a tenant is not linked. Recipe saves also remain successful if a CaterersOS workspace is unavailable; the Recipes screen reports full or partial fleet-sync status.
 
 ## Razorpay subscriptions
 

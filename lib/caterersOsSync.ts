@@ -126,20 +126,25 @@ export function buildCaterersOsEventPayload({
 }
 
 export async function syncCompletedCostingToCaterersOs({
+  workspaceId,
   work,
   summary,
 }: {
+  workspaceId?: string | null;
   work: WorkState;
   summary: CompletedCostingSummary;
 }): Promise<CaterersOsSyncResult> {
   const apiUrl = process.env.CATERERSOS_API_URL?.trim();
-  const workspaceId = process.env.CATERERSOS_WORKSPACE_ID?.trim();
   const secret = process.env.CATERERSOS_SYNC_SECRET?.trim();
+  const targetWorkspaceId = cleanText(workspaceId, 120);
 
-  if (!apiUrl && !workspaceId && !secret) {
+  if (!targetWorkspaceId) {
     return { status: 'not_configured' };
   }
-  if (!apiUrl || !workspaceId || !secret) {
+  if (!apiUrl && !secret) {
+    return { status: 'not_configured' };
+  }
+  if (!apiUrl || !secret) {
     return {
       status: 'failed',
       error: 'CaterersOS sync environment is incomplete',
@@ -155,7 +160,11 @@ export async function syncCompletedCostingToCaterersOs({
         'X-Menu-Costing-Secret': secret,
       },
       body: JSON.stringify(
-        buildCaterersOsEventPayload({ workspaceId, work, summary })
+        buildCaterersOsEventPayload({
+          workspaceId: targetWorkspaceId,
+          work,
+          summary,
+        })
       ),
       cache: 'no-store',
       signal: AbortSignal.timeout(8000),
@@ -392,18 +401,26 @@ export function buildCaterersOsRecipePayload({
   };
 }
 
-export async function syncRecipeCatalogToCaterersOs(
-  catalog: RecipeCatalogForSync,
-): Promise<CaterersOsRecipeSyncResult> {
+export async function syncRecipeCatalogToCaterersOs({
+  workspaceId,
+  catalog,
+}: {
+  workspaceId?: string | null;
+  catalog: RecipeCatalogForSync;
+}): Promise<CaterersOsRecipeSyncResult> {
   const apiUrl = process.env.CATERERSOS_API_URL?.trim();
-  const workspaceId = process.env.CATERERSOS_WORKSPACE_ID?.trim();
   const secret = process.env.CATERERSOS_SYNC_SECRET?.trim();
+  const targetWorkspaceId = cleanText(workspaceId, 120);
 
-  if (!apiUrl && !workspaceId && !secret) {
+  if (!targetWorkspaceId) {
     return { status: 'not_configured' };
   }
 
-  if (!apiUrl || !workspaceId || !secret) {
+  if (!apiUrl && !secret) {
+    return { status: 'not_configured' };
+  }
+
+  if (!apiUrl || !secret) {
     return {
       status: 'failed',
       error: 'CaterersOS sync environment is incomplete',
@@ -413,7 +430,7 @@ export async function syncRecipeCatalogToCaterersOs(
   try {
     const endpoint = new URL('/api/integrations/menu-costing/recipes', apiUrl);
     const payload = buildCaterersOsRecipePayload({
-      workspaceId,
+      workspaceId: targetWorkspaceId,
       catalog,
     });
     const response = await fetch(endpoint, {
@@ -456,4 +473,117 @@ export async function syncRecipeCatalogToCaterersOs(
           : 'Could not reach CaterersOS recipe sync',
     };
   }
+}
+
+export type CaterersOsRecipeFleetSyncResult =
+  | {
+      status: 'not_configured';
+      recipeCount: number;
+      workspaceCount: number;
+      failedWorkspaceCount: number;
+    }
+  | {
+      status: 'synced';
+      recipeCount: number;
+      workspaceCount: number;
+      failedWorkspaceCount: 0;
+    }
+  | {
+      status: 'partial';
+      recipeCount: number;
+      workspaceCount: number;
+      failedWorkspaceCount: number;
+      error: string;
+    }
+  | {
+      status: 'failed';
+      recipeCount: number;
+      workspaceCount: number;
+      failedWorkspaceCount: number;
+      error: string;
+    };
+
+export async function syncRecipeCatalogToCaterersOsWorkspaces(
+  catalog: RecipeCatalogForSync,
+  workspaceIds: Array<string | null | undefined>,
+): Promise<CaterersOsRecipeFleetSyncResult> {
+  const targets = Array.from(
+    new Set(
+      workspaceIds
+        .map((value) => cleanText(value, 120))
+        .filter(Boolean),
+    ),
+  );
+
+  const recipeCount =
+    buildCaterersOsRecipePayload({
+      workspaceId: targets[0] || 'preview',
+      catalog,
+    }).recipes.length;
+
+  if (!targets.length) {
+    return {
+      status: 'not_configured',
+      recipeCount,
+      workspaceCount: 0,
+      failedWorkspaceCount: 0,
+    };
+  }
+
+  const results: CaterersOsRecipeSyncResult[] = [];
+  const batchSize = 8;
+
+  for (let index = 0; index < targets.length; index += batchSize) {
+    const batch = targets.slice(index, index + batchSize);
+    results.push(
+      ...(await Promise.all(
+        batch.map((workspaceId) =>
+          syncRecipeCatalogToCaterersOs({
+            workspaceId,
+            catalog,
+          }),
+        ),
+      )),
+    );
+  }
+
+  const synced = results.filter((result) => result.status === 'synced');
+  const failed = results.filter((result) => result.status === 'failed');
+  const notConfigured = results.filter((result) => result.status === 'not_configured');
+  const failedWorkspaceCount = failed.length + notConfigured.length;
+
+  if (synced.length === targets.length) {
+    return {
+      status: 'synced',
+      recipeCount,
+      workspaceCount: synced.length,
+      failedWorkspaceCount: 0,
+    };
+  }
+
+  if (synced.length > 0) {
+    return {
+      status: 'partial',
+      recipeCount,
+      workspaceCount: synced.length,
+      failedWorkspaceCount,
+      error: `${failedWorkspaceCount} CaterersOS workspace sync${failedWorkspaceCount === 1 ? '' : 's'} did not finish`,
+    };
+  }
+
+  const firstFailure = failed[0];
+  return {
+    status: failed.length ? 'failed' : 'not_configured',
+    recipeCount,
+    workspaceCount: 0,
+    failedWorkspaceCount,
+    ...(failed.length
+      ? {
+          error:
+            firstFailure.status === 'failed'
+              ? firstFailure.error
+              : 'CaterersOS sync is not configured',
+        }
+      : {}),
+  } as CaterersOsRecipeFleetSyncResult;
 }

@@ -221,6 +221,17 @@ export async function POST(request: Request) {
       },
     );
 
+    const caterersOsLink =
+      await prisma.tenant.findUnique({
+        where: {
+          id: tenantId,
+        },
+        select: {
+          caterersOsWorkspaceId: true,
+          caterersOsSyncEnabled: true,
+        },
+      });
+
     let caterersOsSync:
       Awaited<
         ReturnType<
@@ -231,6 +242,10 @@ export async function POST(request: Request) {
     try {
       caterersOsSync =
         await syncCompletedCostingToCaterersOs({
+          workspaceId:
+            caterersOsLink?.caterersOsSyncEnabled
+              ? caterersOsLink.caterersOsWorkspaceId
+              : null,
           work:
             body.snapshot as WorkState,
           summary: {

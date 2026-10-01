@@ -21,7 +21,7 @@ import {
   applyRecipeWastage,
 } from '../../../../lib/recipeCosting';
 import {
-  syncRecipeCatalogToCaterersOs,
+  syncRecipeCatalogToCaterersOsWorkspaces,
 } from '../../../../lib/caterersOsSync';
 
 import {
@@ -106,6 +106,31 @@ async function requireAdmin() {
     return NextResponse.json({ error: 'Admin login required' }, { status: 401 });
   }
   return null;
+}
+
+async function linkedCaterersOsWorkspaceIds() {
+  const tenants =
+    await prisma.tenant.findMany({
+      where: {
+        status: 'ACTIVE',
+        caterersOsSyncEnabled: true,
+        caterersOsWorkspaceId: {
+          not: null,
+        },
+      },
+      select: {
+        caterersOsWorkspaceId: true,
+      },
+    });
+
+  return tenants
+    .map((tenant) =>
+      String(
+        tenant.caterersOsWorkspaceId ||
+          '',
+      ).trim(),
+    )
+    .filter(Boolean);
 }
 
 function readCatalogPayload(value: unknown) {
@@ -972,8 +997,9 @@ export async function POST() {
       );
 
     const caterersOsSync =
-      await syncRecipeCatalogToCaterersOs(
+      await syncRecipeCatalogToCaterersOsWorkspaces(
         catalog,
+        await linkedCaterersOsWorkspaceIds(),
       );
 
     return NextResponse.json({
@@ -1043,8 +1069,9 @@ export async function PUT(request: Request) {
     }
 
     const caterersOsSync =
-      await syncRecipeCatalogToCaterersOs(
+      await syncRecipeCatalogToCaterersOsWorkspaces(
         catalog,
+        await linkedCaterersOsWorkspaceIds(),
       );
 
     return NextResponse.json({
