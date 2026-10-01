@@ -167,7 +167,7 @@ export async function syncCompletedCostingToCaterersOs({
         })
       ),
       cache: 'no-store',
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(30000),
     });
     const data = await response.json().catch(() => ({})) as {
       created?: boolean;
@@ -441,7 +441,7 @@ export async function syncRecipeCatalogToCaterersOs({
       },
       body: JSON.stringify(payload),
       cache: 'no-store',
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(30000),
     });
     const data = await response.json().catch(() => ({})) as {
       recipeCount?: number;

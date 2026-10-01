@@ -133,6 +133,139 @@ async function linkedCaterersOsWorkspaceIds() {
     .filter(Boolean);
 }
 
+function normalizedRecipeName(
+  value: unknown,
+) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLocaleLowerCase('en-IN')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function catalogForCaterersOsSync(
+  catalog: NonNullable<ReturnType<typeof readCatalogPayload>>,
+) {
+  const generatedRecipes =
+    await prisma.tenantAutoRecipe.findMany({
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      select: {
+        normalizedName: true,
+        name: true,
+        category: true,
+        baseGuests: true,
+        ingredients: true,
+        costPerPlate: true,
+      },
+    });
+
+  if (!generatedRecipes.length) {
+    return catalog;
+  }
+
+  const mergedDishes =
+    [...catalog.dishes];
+  const existingNames =
+    new Set(
+      mergedDishes
+        .map((dishValue) => {
+          if (
+            !dishValue ||
+            typeof dishValue !== 'object' ||
+            Array.isArray(dishValue)
+          ) {
+            return '';
+          }
+
+          const dish =
+            dishValue as Record<string, unknown>;
+
+          return normalizedRecipeName(
+            dish.dishName ||
+            dish.name,
+          );
+        })
+        .filter(Boolean),
+    );
+
+  for (const recipe of generatedRecipes) {
+    const normalizedName =
+      recipe.normalizedName ||
+      normalizedRecipeName(
+        recipe.name,
+      );
+
+    if (
+      !normalizedName ||
+      existingNames.has(
+        normalizedName,
+      )
+    ) {
+      continue;
+    }
+
+    existingNames.add(
+      normalizedName,
+    );
+
+    mergedDishes.push({
+      dishName:
+        recipe.name,
+      category:
+        recipe.category ||
+        'Other',
+      subcategory: '',
+      baseGuests:
+        Math.max(
+          1,
+          Number(
+            recipe.baseGuests,
+          ) || 100,
+        ),
+      servingSize: 1,
+      servingUnit:
+        'serving',
+      dishRate:
+        Math.max(
+          0,
+          Number(
+            recipe.costPerPlate,
+          ) || 0,
+        ),
+      ingredients:
+        Array.isArray(
+          recipe.ingredients,
+        )
+          ? recipe.ingredients
+          : [],
+      generatedRecipe:
+        true,
+    });
+  }
+
+  const normalized =
+    readCatalogPayload({
+      dishes:
+        mergedDishes,
+      rates:
+        catalog.rates,
+      deletedDishIds:
+        catalog.deletedDishIds,
+      catalogVersion:
+        catalog.catalogVersion,
+    });
+
+  return normalized ||
+    {
+      ...catalog,
+      dishes:
+        mergedDishes,
+    };
+}
+
 function readCatalogPayload(value: unknown) {
   if (!value || typeof value !== 'object') return null;
   const body = value as Record<string, unknown>;
@@ -996,9 +1129,14 @@ export async function POST() {
         },
       );
 
+    const caterersOsCatalog =
+      await catalogForCaterersOsSync(
+        catalog,
+      );
+
     const caterersOsSync =
       await syncRecipeCatalogToCaterersOsWorkspaces(
-        catalog,
+        caterersOsCatalog,
         await linkedCaterersOsWorkspaceIds(),
       );
 
@@ -1068,9 +1206,14 @@ export async function PUT(request: Request) {
         );
     }
 
+    const caterersOsCatalog =
+      await catalogForCaterersOsSync(
+        catalog,
+      );
+
     const caterersOsSync =
       await syncRecipeCatalogToCaterersOsWorkspaces(
-        catalog,
+        caterersOsCatalog,
         await linkedCaterersOsWorkspaceIds(),
       );
 
