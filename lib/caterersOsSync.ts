@@ -188,3 +188,224 @@ export async function syncCompletedCostingToCaterersOs({
     };
   }
 }
+
+
+type RecipeCatalogForSync = {
+  dishes?: unknown[];
+  rates?: unknown[];
+  deletedDishIds?: unknown[];
+  catalogVersion?: number;
+};
+
+export type CaterersOsRecipeSyncResult =
+  | { status: 'not_configured' }
+  | { status: 'synced'; recipeCount: number; updatedAt?: string }
+  | { status: 'failed'; error: string };
+
+function normalizeRecipeUnit(value: unknown) {
+  const unit = cleanText(value, 30).toLowerCase();
+  const aliases: Record<string, string> = {
+    g: 'gram',
+    gm: 'gram',
+    gms: 'gram',
+    grams: 'gram',
+    kg: 'kg',
+    kgs: 'kg',
+    ml: 'ml',
+    l: 'ltr',
+    lt: 'ltr',
+    ltr: 'ltr',
+    litre: 'ltr',
+    liter: 'ltr',
+    pc: 'piece',
+    pcs: 'piece',
+    piece: 'piece',
+    pieces: 'piece',
+    pkt: 'packet',
+    pack: 'packet',
+    packet: 'packet',
+  };
+  return aliases[unit] || unit || 'kg';
+}
+
+function convertRecipeQuantity(
+  quantity: number,
+  unit: string,
+  rateUnit: string,
+) {
+  if (unit === rateUnit) return quantity;
+  if (unit === 'gram' && rateUnit === 'kg') return quantity / 1000;
+  if (unit === 'kg' && rateUnit === 'gram') return quantity * 1000;
+  if (unit === 'ml' && rateUnit === 'ltr') return quantity / 1000;
+  if (unit === 'ltr' && rateUnit === 'ml') return quantity * 1000;
+  return quantity;
+}
+
+export function buildCaterersOsRecipePayload({
+  workspaceId,
+  catalog,
+}: {
+  workspaceId: string;
+  catalog: RecipeCatalogForSync;
+}) {
+  const rates = Array.isArray(catalog.rates) ? catalog.rates : [];
+  const rateRows = rates.flatMap((value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+    const row = value as Record<string, unknown>;
+    const id = cleanText(row.id, 180);
+    if (!id) return [];
+    return [[id, {
+      rate: Math.max(0, finiteNumber(row.rate)),
+      unit: normalizeRecipeUnit(row.unit),
+    }] as const];
+  });
+  const ratesById = new Map(rateRows);
+
+  const recipes = (Array.isArray(catalog.dishes) ? catalog.dishes : [])
+    .flatMap((value, index) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+      const row = value as Record<string, unknown>;
+      const dishName = cleanText(row.dishName || row.name, 180);
+      if (!dishName) return [];
+
+      const baseGuests = Math.max(
+        1,
+        Math.round(finiteNumber(row.baseGuests) || 100),
+      );
+      const ingredients = Array.isArray(row.ingredients)
+        ? row.ingredients.flatMap((ingredientValue, ingredientIndex) => {
+            if (
+              !ingredientValue ||
+              typeof ingredientValue !== 'object' ||
+              Array.isArray(ingredientValue)
+            ) {
+              return [];
+            }
+
+            const ingredient = ingredientValue as Record<string, unknown>;
+            const name = cleanText(
+              ingredient.name || ingredient.ingredientName,
+              180,
+            );
+            const qty = Math.max(
+              0,
+              finiteNumber(ingredient.quantity ?? ingredient.qty),
+            );
+            const unit = normalizeRecipeUnit(
+              ingredient.unit || ingredient.rateUnit,
+            );
+            const master = ratesById.get(cleanText(ingredient.rateKey, 180));
+            const rate = master?.rate ??
+              Math.max(
+                0,
+                finiteNumber(ingredient.marketRate ?? ingredient.rate),
+              );
+            const rateUnit = master?.unit ||
+              normalizeRecipeUnit(ingredient.rateUnit || unit);
+            const normalizedQty = convertRecipeQuantity(qty, unit, rateUnit);
+
+            return name
+              ? [{
+                  id: `${index}-${ingredientIndex}`,
+                  name,
+                  qty: normalizedQty,
+                  unit: rateUnit,
+                  rate,
+                }]
+              : [];
+          })
+        : [];
+
+      return [{
+        id: cleanText(row.id, 120) || `menu-cost-recipe-${index + 1}`,
+        dish: dishName,
+        dishName,
+        category: cleanText(row.category, 80) || 'Other',
+        subcategory: cleanText(row.subcategory, 80) || 'General',
+        basePax: baseGuests,
+        batchGuests: baseGuests,
+        serving: `${Math.max(0, finiteNumber(row.servingSize) || 1)} ${cleanText(row.servingUnit, 30) || 'serving'}`,
+        servingUnit: cleanText(row.servingUnit, 30) || 'serving',
+        wastagePercent: 8,
+        gasKgPer100:
+          row.gasNoGas === true
+            ? 0
+            : Math.max(0, finiteNumber(row.gasKgPer100)),
+        ingredients,
+        source: 'menu-cost-app-client-login',
+      }];
+    });
+
+  return {
+    workspaceId: cleanText(workspaceId, 120),
+    catalogVersion: Math.max(1, Math.floor(finiteNumber(catalog.catalogVersion) || 1)),
+    recipes,
+    syncedAt: new Date().toISOString(),
+  };
+}
+
+export async function syncRecipeCatalogToCaterersOs(
+  catalog: RecipeCatalogForSync,
+): Promise<CaterersOsRecipeSyncResult> {
+  const apiUrl = process.env.CATERERSOS_API_URL?.trim();
+  const workspaceId = process.env.CATERERSOS_WORKSPACE_ID?.trim();
+  const secret = process.env.CATERERSOS_SYNC_SECRET?.trim();
+
+  if (!apiUrl && !workspaceId && !secret) {
+    return { status: 'not_configured' };
+  }
+
+  if (!apiUrl || !workspaceId || !secret) {
+    return {
+      status: 'failed',
+      error: 'CaterersOS sync environment is incomplete',
+    };
+  }
+
+  try {
+    const endpoint = new URL('/api/integrations/menu-costing/recipes', apiUrl);
+    const payload = buildCaterersOsRecipePayload({
+      workspaceId,
+      catalog,
+    });
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Menu-Costing-Secret': secret,
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await response.json().catch(() => ({})) as {
+      recipeCount?: number;
+      updatedAt?: string;
+      error?: string;
+    };
+
+    if (!response.ok) {
+      return {
+        status: 'failed',
+        error: cleanText(
+          data.error || `CaterersOS returned HTTP ${response.status}`,
+          240,
+        ),
+      };
+    }
+
+    return {
+      status: 'synced',
+      recipeCount: Math.max(0, finiteNumber(data.recipeCount)),
+      updatedAt: cleanText(data.updatedAt, 80) || undefined,
+    };
+  } catch (error) {
+    return {
+      status: 'failed',
+      error:
+        error instanceof Error && error.name === 'TimeoutError'
+          ? 'CaterersOS recipe sync timed out'
+          : 'Could not reach CaterersOS recipe sync',
+    };
+  }
+}
