@@ -14,9 +14,11 @@ import AppShell, {
 import {
   getSession,
   loadWork,
+  saveWork,
 } from '../../../lib/store';
 
 import type {
+  GroceryIngredientPurchaseOverride,
   Session,
   WorkState,
 } from '../../../lib/types';
@@ -24,9 +26,11 @@ import type {
 import {
   buildFunctionGroceryPlan,
   downloadFunctionGroceryCsv,
+  groceryPurchaseKey,
   type FunctionGroceryItem,
   type GroceryIngredientRate,
   type GroceryRecipe,
+  type GroceryRecipeCoverage,
 } from '../../../lib/functionGrocery';
 
 import {
@@ -733,6 +737,9 @@ export default function GroceryPage() {
     );
   }
 
+  const tenantId =
+    session.tenantId;
+
   const totalIngredientCount =
     plan?.combinedItems
       .length || 0;
@@ -746,7 +753,7 @@ export default function GroceryPage() {
     0;
 
   const groceryTotal =
-    plan?.combinedIngredientCost ||
+    plan?.combinedPurchaseCost ||
     0;
 
   const totalCovers =
@@ -771,6 +778,198 @@ export default function GroceryPage() {
           ),
       ),
     ).size;
+
+  const recipeIssues =
+    plan?.recipeCoverage.filter(
+      (recipe) =>
+        recipe.status !==
+        'COMPLETE',
+    ) || [];
+
+  const totalRecipeCount =
+    plan?.recipeCoverage.length ||
+    0;
+
+  const defaultWastagePercent =
+    Math.min(
+      100,
+      Math.max(
+        0,
+        Number(
+          work
+            .groceryPurchaseSettings
+            ?.defaultWastagePercent,
+        ) || 0,
+      ),
+    );
+
+  function updatePurchaseSettings(
+    updater: (
+      current: WorkState,
+    ) => WorkState,
+  ) {
+    setWork((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const nextWork =
+        updater(current);
+
+      saveWork(
+        tenantId,
+        nextWork,
+      );
+
+      return nextWork;
+    });
+  }
+
+  function updateDefaultWastage(
+    value: number,
+  ) {
+    const nextValue =
+      Math.min(
+        100,
+        Math.max(
+          0,
+          Number(value) || 0,
+        ),
+      );
+
+    updatePurchaseSettings(
+      (current) => ({
+        ...current,
+        groceryPurchaseSettings: {
+          ...current
+            .groceryPurchaseSettings,
+          defaultWastagePercent:
+            nextValue,
+          ingredientOverrides:
+            current
+              .groceryPurchaseSettings
+              ?.ingredientOverrides ||
+            [],
+        },
+      }),
+    );
+  }
+
+  function updateIngredientPurchase(
+    item: FunctionGroceryItem,
+    patch:
+      Partial<GroceryIngredientPurchaseOverride>,
+  ) {
+    const key =
+      groceryPurchaseKey(
+        item.name,
+        item.unit,
+      );
+
+    updatePurchaseSettings(
+      (current) => {
+        const settings =
+          current
+            .groceryPurchaseSettings ||
+          {};
+        const overrides =
+          settings
+            .ingredientOverrides ||
+          [];
+        const existing =
+          overrides.find(
+            (override) =>
+              override.key === key,
+          ) || { key };
+        const nextOverride = {
+          ...existing,
+          ...patch,
+          key,
+          updatedAt:
+            new Date()
+              .toISOString(),
+        };
+        const keepOverride =
+          (
+            Number(
+              nextOverride
+                .requiredQuantityOverride,
+            ) > 0
+          ) ||
+          (
+            nextOverride
+              .wastagePercent !==
+            undefined
+          ) ||
+          (
+            Number(
+              nextOverride.roundTo,
+            ) > 0
+          );
+        const nextOverrides =
+          keepOverride
+            ? [
+                ...overrides.filter(
+                  (override) =>
+                    override.key !==
+                    key,
+                ),
+                nextOverride,
+              ]
+            : overrides.filter(
+                (override) =>
+                  override.key !==
+                  key,
+              );
+
+        return {
+          ...current,
+          groceryPurchaseSettings: {
+            ...settings,
+            defaultWastagePercent:
+              settings
+                .defaultWastagePercent ??
+              0,
+            ingredientOverrides:
+              nextOverrides,
+          },
+        };
+      },
+    );
+  }
+
+  function openRecipeEditor(
+    recipe: GroceryRecipeCoverage,
+  ) {
+    const params =
+      new URLSearchParams({
+        from: 'grocery',
+      });
+
+    if (
+      recipe.status ===
+      'MISSING'
+    ) {
+      params.set(
+        'create',
+        recipe.name,
+      );
+      params.set(
+        'category',
+        recipe.category ||
+          'Other',
+      );
+    } else {
+      params.set(
+        'recipe',
+        recipe.name,
+      );
+    }
+
+    router.push(
+      `/admin/recipes?${params.toString()}`,
+    );
+  }
 
   async function saveIngredientRate(
     item: FunctionGroceryItem,
@@ -1412,44 +1611,146 @@ export default function GroceryPage() {
                 </div>
               ) : null}
 
-              {plan &&
-              plan.unmatchedDishes
-                .length > 0 ? (
-                <div className="grocery-recipe-warning">
+              <div className="grocery-purchase-settings no-print">
+                <div>
+                  <b>
+                    Purchase quantity settings
+                  </b>
+                  <span>
+                    Required quantity can be overridden for this event only. Purchase quantity adds wastage and rounds up to the buying step.
+                  </span>
+                </div>
+
+                <label>
+                  <span>
+                    Default wastage %
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    key={`default-wastage-${defaultWastagePercent}`}
+                    defaultValue={
+                      defaultWastagePercent
+                    }
+                    onBlur={(event) =>
+                      updateDefaultWastage(
+                        Number(
+                          event.currentTarget
+                            .value,
+                        ),
+                      )
+                    }
+                    onKeyDown={(event) => {
+                      if (
+                        event.key ===
+                        'Enter'
+                      ) {
+                        event.currentTarget
+                          .blur();
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              <div className="grocery-recipe-health">
+                <div className="grocery-recipe-health-head">
                   <div>
                     <b>
-                      {
-                        plan
-                          .unmatchedDishes
-                          .length
-                      }{' '}
-                      {plan
-                        .unmatchedDishes
-                        .length ===
-                      1
-                        ? 'dish has'
-                        : 'dishes have'}{' '}
-                      no linked recipe
+                      Recipe Coverage
                     </b>
-
                     <span>
-                      These dishes cannot contribute ingredient quantities until a recipe is available.
+                      Grocery is trustworthy only when every menu dish has a complete recipe.
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() =>
-                      router.push(
-                        '/app/cost',
-                      )
-                    }
-                  >
-                    Review dishes
-                  </button>
+                  <strong>
+                    {plan?.completeRecipeCount ||
+                      0}
+                    /
+                    {totalRecipeCount}{' '}
+                    complete
+                  </strong>
                 </div>
-              ) : null}
+
+                <div className="grocery-recipe-health-stats">
+                  <div className="ready">
+                    <span>
+                      Complete
+                    </span>
+                    <b>
+                      {plan?.completeRecipeCount ||
+                        0}
+                    </b>
+                  </div>
+
+                  <div className="attention">
+                    <span>
+                      Incomplete
+                    </span>
+                    <b>
+                      {plan?.incompleteRecipeCount ||
+                        0}
+                    </b>
+                  </div>
+
+                  <div className="missing">
+                    <span>
+                      No recipe
+                    </span>
+                    <b>
+                      {plan?.missingRecipeCount ||
+                        0}
+                    </b>
+                  </div>
+                </div>
+
+                {recipeIssues.length ? (
+                  <div className="grocery-recipe-issues">
+                    {recipeIssues.map(
+                      (recipe) => (
+                        <div
+                          key={`${recipe.status}::${recipe.name}`}
+                          className={`grocery-recipe-issue ${recipe.status.toLowerCase()}`}
+                        >
+                          <div>
+                            <b>
+                              {recipe.name}
+                            </b>
+                            <span>
+                              {recipe.status ===
+                              'MISSING'
+                                ? 'No linked recipe. Grocery quantity is blocked for this dish.'
+                                : `${recipe.issueCount} ingredient row${recipe.issueCount === 1 ? '' : 's'} need quantity, unit or ingredient details.`}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="ghost-button"
+                            onClick={() =>
+                              openRecipeEditor(
+                                recipe,
+                              )
+                            }
+                          >
+                            {recipe.status ===
+                            'MISSING'
+                              ? 'Make Recipe'
+                              : 'Fix Recipe'}
+                          </button>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                ) : (
+                  <div className="grocery-recipe-ready">
+                    ✓ Every menu dish has a complete recipe.
+                  </div>
+                )}
+              </div>
 
               {filteredItems.length ===
               0 ? (
@@ -1494,13 +1795,19 @@ export default function GroceryPage() {
                             Category
                           </th>
                           <th>
-                            Required Qty
+                            Recipe Qty
+                          </th>
+                          <th>
+                            Event Required
+                          </th>
+                          <th>
+                            Purchase Qty
                           </th>
                           <th>
                             Rate
                           </th>
                           <th>
-                            Est. Cost
+                            Purchase Cost
                           </th>
                           <th>
                             Used In
@@ -1603,14 +1910,187 @@ export default function GroceryPage() {
                                 </td>
 
                                 <td>
-                                  <strong className="grocery-quantity">
+                                  <strong className="grocery-quantity grocery-recipe-quantity">
                                     {quantity(
-                                      item.quantity,
+                                      item.recipeQuantity,
                                     )}{' '}
                                     {
                                       item.unit
                                     }
                                   </strong>
+                                </td>
+
+                                <td>
+                                  {functionFilter ===
+                                  'ALL' ? (
+                                    <div className="grocery-required-editor">
+                                      <input
+                                        key={`required-${key}-${item.requiredQuantity}`}
+                                        type="number"
+                                        min="0"
+                                        step="0.001"
+                                        defaultValue={quantity(
+                                          item.requiredQuantity,
+                                        )}
+                                        aria-label={`Event required quantity for ${item.name}`}
+                                        onBlur={(event) => {
+                                          const value =
+                                            Number(
+                                              event.currentTarget
+                                                .value,
+                                            );
+
+                                          updateIngredientPurchase(
+                                            item,
+                                            {
+                                              requiredQuantityOverride:
+                                                value >
+                                                0
+                                                  ? value
+                                                  : undefined,
+                                            },
+                                          );
+                                        }}
+                                        onKeyDown={(event) => {
+                                          if (
+                                            event.key ===
+                                            'Enter'
+                                          ) {
+                                            event.currentTarget
+                                              .blur();
+                                          }
+                                        }}
+                                      />
+
+                                      {item.manualQuantityOverride ? (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            updateIngredientPurchase(
+                                              item,
+                                              {
+                                                requiredQuantityOverride:
+                                                  undefined,
+                                              },
+                                            )
+                                          }
+                                        >
+                                          Auto
+                                        </button>
+                                      ) : (
+                                        <small>
+                                          Recipe
+                                        </small>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <strong className="grocery-quantity">
+                                      {quantity(
+                                        item.requiredQuantity,
+                                      )}{' '}
+                                      {item.unit}
+                                    </strong>
+                                  )}
+                                </td>
+
+                                <td>
+                                  <div className="grocery-purchase-quantity">
+                                    <strong>
+                                      {quantity(
+                                        item.purchaseQuantity,
+                                      )}{' '}
+                                      {item.unit}
+                                    </strong>
+
+                                    {functionFilter ===
+                                    'ALL' ? (
+                                      <div className="grocery-purchase-mini">
+                                        <label>
+                                          <span>
+                                            Waste %
+                                          </span>
+                                          <input
+                                            key={`waste-${key}-${item.wastagePercent}`}
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.5"
+                                            defaultValue={
+                                              item.wastagePercent
+                                            }
+                                            onBlur={(event) =>
+                                              updateIngredientPurchase(
+                                                item,
+                                                {
+                                                  wastagePercent:
+                                                    Math.min(
+                                                      100,
+                                                      Math.max(
+                                                        0,
+                                                        Number(
+                                                          event.currentTarget
+                                                            .value,
+                                                        ) ||
+                                                          0,
+                                                      ),
+                                                    ),
+                                                },
+                                              )
+                                            }
+                                            onKeyDown={(event) => {
+                                              if (
+                                                event.key ===
+                                                'Enter'
+                                              ) {
+                                                event.currentTarget
+                                                  .blur();
+                                              }
+                                            }}
+                                          />
+                                        </label>
+
+                                        <label>
+                                          <span>
+                                            Round to
+                                          </span>
+                                          <input
+                                            key={`round-${key}-${item.roundTo}`}
+                                            type="number"
+                                            min="0.001"
+                                            step="0.001"
+                                            defaultValue={
+                                              item.roundTo
+                                            }
+                                            onBlur={(event) =>
+                                              updateIngredientPurchase(
+                                                item,
+                                                {
+                                                  roundTo:
+                                                    Math.max(
+                                                      0.001,
+                                                      Number(
+                                                        event.currentTarget
+                                                          .value,
+                                                      ) ||
+                                                        1,
+                                                    ),
+                                                },
+                                              )
+                                            }
+                                            onKeyDown={(event) => {
+                                              if (
+                                                event.key ===
+                                                'Enter'
+                                              ) {
+                                                event.currentTarget
+                                                  .blur();
+                                              }
+                                            }}
+                                          />
+                                        </label>
+                                      </div>
+                                    ) : null}
+                                  </div>
                                 </td>
 
                                 <td>
@@ -1739,7 +2219,7 @@ export default function GroceryPage() {
                                   {item.hasRate ? (
                                     <strong className="grocery-cost">
                                       {money(
-                                        item.estimatedCost,
+                                        item.purchaseEstimatedCost,
                                       )}
                                     </strong>
                                   ) : (
@@ -1872,25 +2352,42 @@ export default function GroceryPage() {
 
                               <strong>
                                 {quantity(
-                                  item.quantity,
+                                  item.purchaseQuantity,
                                 )}{' '}
                                 {
                                   item.unit
-                                }
+                                } buy
                               </strong>
                             </div>
 
-                            <div className="grocery-mobile-meta">
+                            <div className="grocery-mobile-meta grocery-mobile-quantity-meta">
                               <span>
-                                Rate{' '}
+                                Recipe{' '}
                                 <b>
-                                  {item.hasRate
-                                    ? `${money(
-                                        item.rate ||
-                                          0,
-                                      )} / ${item.rateUnit ||
-                                        item.unit}`
-                                    : 'Missing'}
+                                  {quantity(
+                                    item.recipeQuantity,
+                                  )}{' '}
+                                  {item.unit}
+                                </b>
+                              </span>
+
+                              <span>
+                                Required{' '}
+                                <b>
+                                  {quantity(
+                                    item.requiredQuantity,
+                                  )}{' '}
+                                  {item.unit}
+                                </b>
+                              </span>
+
+                              <span>
+                                Purchase{' '}
+                                <b>
+                                  {quantity(
+                                    item.purchaseQuantity,
+                                  )}{' '}
+                                  {item.unit}
                                 </b>
                               </span>
 
@@ -1899,12 +2396,161 @@ export default function GroceryPage() {
                                 <b>
                                   {item.hasRate
                                     ? money(
-                                        item.estimatedCost,
+                                        item.purchaseEstimatedCost,
                                       )
                                     : '—'}
                                 </b>
                               </span>
                             </div>
+
+                            {functionFilter ===
+                            'ALL' ? (
+                              <div className="grocery-mobile-purchase-editor">
+                                <label>
+                                  <span>
+                                    Event required
+                                  </span>
+                                  <input
+                                    key={`mobile-required-${key}-${item.requiredQuantity}`}
+                                    type="number"
+                                    min="0"
+                                    step="0.001"
+                                    defaultValue={quantity(
+                                      item.requiredQuantity,
+                                    )}
+                                    onBlur={(event) => {
+                                      const value =
+                                        Number(
+                                          event.currentTarget
+                                            .value,
+                                        );
+
+                                      updateIngredientPurchase(
+                                        item,
+                                        {
+                                          requiredQuantityOverride:
+                                            value >
+                                            0
+                                              ? value
+                                              : undefined,
+                                        },
+                                      );
+                                    }}
+                                    onKeyDown={(event) => {
+                                      if (
+                                        event.key ===
+                                        'Enter'
+                                      ) {
+                                        event.currentTarget
+                                          .blur();
+                                      }
+                                    }}
+                                  />
+                                </label>
+
+                                <label>
+                                  <span>
+                                    Waste %
+                                  </span>
+                                  <input
+                                    key={`mobile-waste-${key}-${item.wastagePercent}`}
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.5"
+                                    defaultValue={
+                                      item.wastagePercent
+                                    }
+                                    onBlur={(event) =>
+                                      updateIngredientPurchase(
+                                        item,
+                                        {
+                                          wastagePercent:
+                                            Math.min(
+                                              100,
+                                              Math.max(
+                                                0,
+                                                Number(
+                                                  event.currentTarget
+                                                    .value,
+                                                ) ||
+                                                  0,
+                                              ),
+                                            ),
+                                        },
+                                      )
+                                    }
+                                    onKeyDown={(event) => {
+                                      if (
+                                        event.key ===
+                                        'Enter'
+                                      ) {
+                                        event.currentTarget
+                                          .blur();
+                                      }
+                                    }}
+                                  />
+                                </label>
+
+                                <label>
+                                  <span>
+                                    Round to
+                                  </span>
+                                  <input
+                                    key={`mobile-round-${key}-${item.roundTo}`}
+                                    type="number"
+                                    min="0.001"
+                                    step="0.001"
+                                    defaultValue={
+                                      item.roundTo
+                                    }
+                                    onBlur={(event) =>
+                                      updateIngredientPurchase(
+                                        item,
+                                        {
+                                          roundTo:
+                                            Math.max(
+                                              0.001,
+                                              Number(
+                                                event.currentTarget
+                                                  .value,
+                                              ) ||
+                                                1,
+                                            ),
+                                        },
+                                      )
+                                    }
+                                    onKeyDown={(event) => {
+                                      if (
+                                        event.key ===
+                                        'Enter'
+                                      ) {
+                                        event.currentTarget
+                                          .blur();
+                                      }
+                                    }}
+                                  />
+                                </label>
+
+                                {item.manualQuantityOverride ? (
+                                  <button
+                                    type="button"
+                                    className="ghost-button"
+                                    onClick={() =>
+                                      updateIngredientPurchase(
+                                        item,
+                                        {
+                                          requiredQuantityOverride:
+                                            undefined,
+                                        },
+                                      )
+                                    }
+                                  >
+                                    Reset required to Recipe
+                                  </button>
+                                ) : null}
+                              </div>
+                            ) : null}
 
                             <div className="grocery-mobile-rate-editor">
                               <label>
@@ -2040,7 +2686,7 @@ export default function GroceryPage() {
             <aside className="grocery-summary-panel no-print">
               <div className="grocery-summary-head">
                 <span>
-                  Grocery total
+                  Purchase total
                 </span>
 
                 <strong>
@@ -2162,15 +2808,33 @@ export default function GroceryPage() {
 
                 <div>
                   <span>
-                    Matched dishes
+                    Complete recipes
                   </span>
 
                   <b>
-                    {
-                      plan
-                        ?.matchedDishes
-                        .length || 0
+                    {plan?.completeRecipeCount ||
+                      0}
+                  </b>
+                </div>
+
+                <div>
+                  <span>
+                    Incomplete recipes
+                  </span>
+
+                  <b
+                    className={
+                      (
+                        plan
+                          ?.incompleteRecipeCount ||
+                        0
+                      ) > 0
+                        ? 'needs-attention'
+                        : ''
                     }
+                  >
+                    {plan?.incompleteRecipeCount ||
+                      0}
                   </b>
                 </div>
 
@@ -2179,12 +2843,19 @@ export default function GroceryPage() {
                     Missing recipes
                   </span>
 
-                  <b>
-                    {
-                      plan
-                        ?.unmatchedDishes
-                        .length || 0
+                  <b
+                    className={
+                      (
+                        plan
+                          ?.missingRecipeCount ||
+                        0
+                      ) > 0
+                        ? 'needs-attention'
+                        : ''
                     }
+                  >
+                    {plan?.missingRecipeCount ||
+                      0}
                   </b>
                 </div>
               </div>

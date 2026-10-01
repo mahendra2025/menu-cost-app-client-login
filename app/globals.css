@@ -29082,3 +29082,315 @@ body.client-sheet-open {
     display: none !important;
   }
 }
+
+
+/* Grocery recipe coverage + purchase quantity -------------------------------- */
+.grocery-purchase-settings,
+.grocery-recipe-health {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, .14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.grocery-purchase-settings {
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 220px);
+  align-items: end;
+}
+
+.grocery-purchase-settings > div,
+.grocery-recipe-health-head > div {
+  display: grid;
+  gap: 4px;
+}
+
+.grocery-purchase-settings b,
+.grocery-recipe-health-head b {
+  color: #e8eef6;
+  font-size: 12px;
+}
+
+.grocery-purchase-settings span,
+.grocery-recipe-health-head span {
+  color: #7f8da1;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.grocery-purchase-settings label {
+  display: grid;
+  gap: 5px;
+}
+
+.grocery-purchase-settings label > span {
+  color: #8f9caf;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.grocery-purchase-settings input,
+.grocery-required-editor input,
+.grocery-purchase-mini input,
+.grocery-mobile-purchase-editor input {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 1px solid #34404e;
+  border-radius: 8px;
+  outline: 0;
+  color: #edf3f9;
+  background: #151d27;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.grocery-purchase-settings input:focus,
+.grocery-required-editor input:focus,
+.grocery-purchase-mini input:focus,
+.grocery-mobile-purchase-editor input:focus {
+  border-color: rgba(74, 156, 255, .68);
+  box-shadow: 0 0 0 2px rgba(74, 156, 255, .10);
+}
+
+.grocery-recipe-health-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.grocery-recipe-health-head > strong {
+  flex: 0 0 auto;
+  color: #dbeafe;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.grocery-recipe-health-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.grocery-recipe-health-stats > div {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, .12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .018);
+}
+
+.grocery-recipe-health-stats span {
+  color: #7f8da1;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.grocery-recipe-health-stats b {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.grocery-recipe-health-stats .ready b {
+  color: #98ddb6;
+}
+
+.grocery-recipe-health-stats .attention b {
+  color: #f7c873;
+}
+
+.grocery-recipe-health-stats .missing b {
+  color: #ff9f9f;
+}
+
+.grocery-recipe-issues {
+  display: grid;
+  gap: 7px;
+}
+
+.grocery-recipe-issue {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 11px;
+  border: 1px solid rgba(148, 163, 184, .11);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .018);
+}
+
+.grocery-recipe-issue.incomplete {
+  border-color: rgba(247, 200, 115, .20);
+}
+
+.grocery-recipe-issue.missing {
+  border-color: rgba(255, 110, 110, .22);
+}
+
+.grocery-recipe-issue > div {
+  display: grid;
+  gap: 3px;
+}
+
+.grocery-recipe-issue b {
+  color: #e8eef6;
+  font-size: 10px;
+}
+
+.grocery-recipe-issue span {
+  color: #748296;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.grocery-recipe-ready {
+  padding: 9px 10px;
+  border: 1px solid rgba(98, 217, 149, .16);
+  border-radius: 9px;
+  color: #a9e2c1;
+  background: rgba(98, 217, 149, .045);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.grocery-recipe-quantity {
+  color: #8e9caf;
+}
+
+.grocery-required-editor {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) auto;
+  gap: 5px;
+  align-items: center;
+  min-width: 135px;
+}
+
+.grocery-required-editor input {
+  min-height: 32px;
+  font-size: 9px;
+}
+
+.grocery-required-editor button {
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 1px solid rgba(148, 163, 184, .15);
+  border-radius: 7px;
+  color: #b7c3d3;
+  background: rgba(255, 255, 255, .025);
+  font-size: 7px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.grocery-required-editor small {
+  color: #66758a;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.grocery-purchase-quantity {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.grocery-purchase-quantity > strong {
+  color: #dbeafe;
+  font-variant-numeric: tabular-nums;
+}
+
+.grocery-purchase-mini {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(64px, 1fr));
+  gap: 5px;
+}
+
+.grocery-purchase-mini label,
+.grocery-mobile-purchase-editor label {
+  display: grid;
+  gap: 3px;
+}
+
+.grocery-purchase-mini label > span,
+.grocery-mobile-purchase-editor label > span {
+  color: #66758a;
+  font-size: 6px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.grocery-purchase-mini input {
+  min-height: 28px;
+  padding: 5px 6px;
+  font-size: 8px;
+}
+
+.grocery-mobile-purchase-editor {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid rgba(148, 163, 184, .10);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .018);
+}
+
+.grocery-mobile-purchase-editor input {
+  min-height: 36px;
+  font-size: 10px;
+}
+
+.grocery-mobile-purchase-editor .ghost-button {
+  grid-column: 1 / -1;
+  min-height: 34px;
+  font-size: 9px;
+}
+
+.grocery-mobile-quantity-meta {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 820px) {
+  .grocery-purchase-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .grocery-recipe-health-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .grocery-recipe-health-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .grocery-recipe-issue {
+    grid-template-columns: 1fr;
+  }
+
+  .grocery-recipe-issue .ghost-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .grocery-recipe-health-stats,
+  .grocery-mobile-purchase-editor {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .grocery-purchase-settings,
+  .grocery-recipe-health,
+  .grocery-required-editor button,
+  .grocery-purchase-mini,
+  .grocery-mobile-purchase-editor {
+    display: none !important;
+  }
+}

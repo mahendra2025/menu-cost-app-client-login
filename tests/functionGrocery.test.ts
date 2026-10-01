@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   buildFunctionGroceryPlan,
+  groceryPurchaseKey,
   type GroceryIngredientRate,
   type GroceryRecipe,
 } from '../lib/functionGrocery';
@@ -263,6 +264,145 @@ test(
     assert.equal(
       plan.combinedItems.length,
       0,
+    );
+  },
+);
+
+
+test(
+  'keeps Recipe Master quantity separate from event required and purchase quantity',
+  () => {
+    const work = makeWork([
+      menuItem(
+        'paneer-purchase',
+        'Paneer Butter Masala',
+        'Lunch',
+        100,
+      ),
+    ]);
+
+    work.groceryPurchaseSettings = {
+      defaultWastagePercent: 5,
+      ingredientOverrides: [
+        {
+          key: groceryPurchaseKey(
+            'Paneer',
+            'kg',
+          ),
+          requiredQuantityOverride: 20,
+          roundTo: 1,
+        },
+      ],
+    };
+
+    const plan =
+      buildFunctionGroceryPlan(
+        work,
+        recipes,
+        rates,
+      );
+
+    const paneer =
+      plan.combinedItems.find(
+        (item) =>
+          item.name === 'Paneer',
+      );
+
+    assert.ok(paneer);
+    assert.equal(
+      paneer.recipeQuantity,
+      8,
+    );
+    assert.equal(
+      paneer.requiredQuantity,
+      20,
+    );
+    assert.equal(
+      paneer.purchaseQuantity,
+      21,
+    );
+    assert.equal(
+      paneer.manualQuantityOverride,
+      true,
+    );
+    assert.equal(
+      paneer.estimatedCost,
+      8000,
+    );
+    assert.equal(
+      paneer.purchaseEstimatedCost,
+      8400,
+    );
+  },
+);
+
+test(
+  'reports complete, incomplete and missing recipe coverage separately',
+  () => {
+    const coverageRecipes: GroceryRecipe[] = [
+      ...recipes,
+      {
+        name: 'Incomplete Dish',
+        baseGuests: 100,
+        ingredients: [
+          {
+            name: 'Onion',
+            quantity: 1,
+            unit: 'kg',
+          },
+        ],
+        totalIngredientRows: 2,
+        invalidIngredientCount: 1,
+      },
+    ];
+
+    const work = makeWork([
+      menuItem(
+        'complete',
+        'Paneer Butter Masala',
+        'Lunch',
+        100,
+      ),
+      menuItem(
+        'incomplete',
+        'Incomplete Dish',
+        'Lunch',
+        100,
+      ),
+      menuItem(
+        'missing',
+        'New Royal Dish',
+        'Lunch',
+        100,
+      ),
+    ]);
+
+    const plan =
+      buildFunctionGroceryPlan(
+        work,
+        coverageRecipes,
+        rates,
+      );
+
+    assert.equal(
+      plan.completeRecipeCount,
+      1,
+    );
+    assert.equal(
+      plan.incompleteRecipeCount,
+      1,
+    );
+    assert.equal(
+      plan.missingRecipeCount,
+      1,
+    );
+    assert.equal(
+      plan.recipeCoverage.find(
+        (item) =>
+          item.name ===
+          'Incomplete Dish',
+      )?.status,
+      'INCOMPLETE',
     );
   },
 );
