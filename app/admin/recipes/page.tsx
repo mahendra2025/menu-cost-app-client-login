@@ -4517,6 +4517,33 @@ export default function RecipesPage() {
           data.syncWarning,
         );
 
+      const caterersOsSync =
+        data.caterersOsSync &&
+        typeof data.caterersOsSync ===
+          'object'
+          ? data.caterersOsSync as
+              Record<string, unknown>
+          : null;
+
+      const caterersOsStatus =
+        text(
+          caterersOsSync?.status,
+        );
+
+      const caterersOsError =
+        text(
+          caterersOsSync?.error,
+        );
+
+      const caterersOsRecipeCount =
+        Math.max(
+          0,
+          Number(
+            caterersOsSync
+              ?.recipeCount,
+          ) || 0,
+        );
+
       if (syncWarning) {
         setSyncStatus(
           'error',
@@ -4531,31 +4558,73 @@ export default function RecipesPage() {
             ? `Saved successfully · ${recipeName(activeDish)} ${money(activeRate)}/plate. Dish Master sync did not finish.`
             : 'Saved successfully. Dish Master sync did not finish.',
         );
+      } else if (
+        caterersOsStatus ===
+        'failed'
+      ) {
+        setSyncStatus(
+          'error',
+        );
+
+        setSyncMessage(
+          `✓ Dish Master synced · CaterersOS sync failed${ 
+            caterersOsError
+              ? `: ${caterersOsError}`
+              : ''
+          }`,
+        );
+
+        setMessage(
+          activeDish
+            ? `Saved · ${recipeName(activeDish)} ${money(activeRate)}/plate. CaterersOS recipe sync did not finish.`
+            : 'Saved successfully. CaterersOS recipe sync did not finish.',
+        );
       } else {
         setSyncStatus(
           'synced',
         );
 
+        const caterersOsSuffix =
+          caterersOsStatus ===
+          'synced'
+            ? ` · ${caterersOsRecipeCount} recipe${ 
+                caterersOsRecipeCount === 1
+                  ? ''
+                  : 's'
+              } synced to CaterersOS`
+            : caterersOsStatus ===
+              'not_configured'
+              ? ' · CaterersOS not configured'
+              : '';
+
         setSyncMessage(
-          `✓ ${syncedDishes} recipe${
+          `✓ ${syncedDishes} recipe${ 
             syncedDishes === 1
               ? ''
               : 's'
-          } synced to Dish Master`,
+          } synced to Dish Master${caterersOsSuffix}`,
         );
 
         setMessage(
           syncedDishes > 0
-            ? `Saved · Synced to Dish Master: ${syncedDishes} recipe${
+            ? `Saved · Synced to Dish Master: ${syncedDishes} recipe${ 
                 syncedDishes === 1
                   ? ''
                   : 's'
-              }${
+              }${ 
                 activeDish
                   ? ` · ${recipeName(activeDish)} ${money(activeRate)}/plate`
                   : ''
+              }${ 
+                caterersOsStatus ===
+                'synced'
+                  ? ' · CaterersOS updated'
+                  : ''
               }.`
-            : 'Saved successfully.',
+            : caterersOsStatus ===
+              'synced'
+              ? 'Saved · CaterersOS recipe catalog updated.'
+              : 'Saved successfully.',
         );
       }
 
