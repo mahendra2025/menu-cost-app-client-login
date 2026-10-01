@@ -1047,19 +1047,11 @@ export async function PUT(request: Request) {
         catalog,
       );
 
-    const caterersOsWarning =
-      caterersOsSync.status === 'failed'
-        ? caterersOsSync.error
-        : '';
-
     return NextResponse.json({
       ok: true,
       updatedAt: recipeCatalog.updatedAt,
       syncedDishes,
-      syncWarning:
-        [syncWarning, caterersOsWarning]
-          .filter(Boolean)
-          .join(' ') || null,
+      syncWarning: syncWarning || null,
       caterersOsSync,
     });
   } catch (error) {
