@@ -567,48 +567,6 @@ export default function CostPage() {
     }));
   }
 
-  function updateCategoryPortion(
-    serviceKey: string,
-    category: string,
-    value: number,
-  ) {
-    if (!work) return;
-
-    const targetPercent = Math.min(
-      300,
-      Math.max(0, Number(value) || 0),
-    );
-
-    persist({
-      ...work,
-      menu: work.menu.map((item) =>
-        getMenuServiceKey(item) === serviceKey &&
-        item.category === category
-          ? {
-              ...item,
-              categoryPortionPercent: targetPercent,
-            }
-          : item,
-      ),
-    });
-  }
-
-  function applyAllCategoryRecommendations() {
-    if (!work) return;
-
-    persist({
-      ...work,
-      menu: work.menu.map((item) => ({
-        ...item,
-        categoryPortionPercent: recommendCategoryConsumptionPercent({
-          category: item.category,
-          mealLabel: item.mealLabel,
-          pax: item.servicePax || work.event.pax,
-        }),
-      })),
-    });
-  }
-
   const hasWeddingServices =
     result.serviceSummaries.length > 1 ||
     result.serviceSummaries.some(
@@ -1429,7 +1387,7 @@ export default function CostPage() {
               <div className="dish-portion-note dish-cost-index-guide">
                 <div>
                   <b>How this index works</b>
-                  <span>Category target controls expected consumption. Dish allocation then divides that target across dishes in the same category.</span>
+                  <span>Dish allocation adjusts the base rate to the final per-plate cost for this event.</span>
                 </div>
                 <div className="dish-cost-index-formula" aria-label="Dish costing formula">
                   <span>Base rate</span>
@@ -1442,19 +1400,6 @@ export default function CostPage() {
                   <i>=</i>
                   <strong>Event total</strong>
                 </div>
-              </div>
-
-              <div
-                className="no-print"
-                style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}
-              >
-                <button
-                  className="ghost-button"
-                  type="button"
-                  onClick={applyAllCategoryRecommendations}
-                >
-                  Apply all recommended consumption
-                </button>
               </div>
 
               {filteredDishCosts.length === 0 ? (
@@ -1517,51 +1462,6 @@ export default function CostPage() {
                                         <small>{group.dayLabel ? `${group.dayLabel} · ` : ''}{group.mealLabel}</small>
                                       </span>
                                     </button>
-                                    <div className="dish-category-controls">
-                                      <label className="dish-category-consumption">
-                                        <span>Category target</span>
-                                        <div>
-                                          <input
-                                            className="input"
-                                            type="number"
-                                            min="0"
-                                            max="300"
-                                            step="5"
-                                            value={group.targetPercent}
-                                            onChange={(event) =>
-                                              updateCategoryPortion(
-                                                group.serviceKey,
-                                                group.category,
-                                                Number(event.target.value),
-                                              )
-                                            }
-                                            aria-label={`${group.category} category consumption percentage`}
-                                          />
-                                          <b>%</b>
-                                        </div>
-                                      </label>
-                                      <div className="dish-category-recommendation">
-                                        <span>Recommended</span>
-                                        <b>{group.recommendedPercent}%</b>
-                                      </div>
-                                      {group.targetPercent !== group.recommendedPercent ? (
-                                        <button
-                                          className="dish-category-apply"
-                                          type="button"
-                                          onClick={() =>
-                                            updateCategoryPortion(
-                                              group.serviceKey,
-                                              group.category,
-                                              group.recommendedPercent,
-                                            )
-                                          }
-                                        >
-                                          Apply
-                                        </button>
-                                      ) : (
-                                        <span className="dish-category-on-target">On target</span>
-                                      )}
-                                    </div>
                                     <div className="dish-category-total">
                                       <span>{group.pax.toLocaleString('en-IN')} guests · {group.items.length} dish{group.items.length === 1 ? '' : 'es'}</span>
                                       <strong>{money(group.subtotal)}</strong>
@@ -1864,48 +1764,9 @@ export default function CostPage() {
                               {group.dayLabel ? `${group.dayLabel} • ` : ''}{group.mealLabel} · {group.items.length} dish{group.items.length === 1 ? '' : 'es'}
                               {group.missingCount > 0 ? ` · ${group.missingCount} rate${group.missingCount === 1 ? '' : 's'} missing` : ''}
                             </small>
-                            <label className="dish-cost-category-card-consumption">
-                              <span>Category target</span>
-                              <span>
-                                <input
-                                  className="input"
-                                  type="number"
-                                  min="0"
-                                  max="300"
-                                  step="5"
-                                  value={group.targetPercent}
-                                  onChange={(event) =>
-                                    updateCategoryPortion(
-                                      group.serviceKey,
-                                      group.category,
-                                      Number(event.target.value),
-                                    )
-                                  }
-                                  aria-label={`${group.category} category consumption percentage`}
-                                />
-                                <span>%</span>
-                              </span>
-                            </label>
-                            <div className="dish-cost-category-card-recommendation">
-                              <small className="muted">
-                                Recommended {group.recommendedPercent}% · {group.pax.toLocaleString('en-IN')} guests
-                              </small>
-                              {group.targetPercent !== group.recommendedPercent ? (
-                                <button
-                                  className="ghost-button"
-                                  type="button"
-                                  onClick={() =>
-                                    updateCategoryPortion(
-                                      group.serviceKey,
-                                      group.category,
-                                      group.recommendedPercent,
-                                    )
-                                  }
-                                >
-                                  Use recommended
-                                </button>
-                              ) : null}
-                            </div>
+                            <small className="dish-cost-category-card-meta">
+                              {group.pax.toLocaleString('en-IN')} guests
+                            </small>
                           </div>
                           {!collapsed ? group.items.map((item) => (
                       <article className={`dish-cost-card ${needsManualRate(item) ? 'dish-rate-missing' : ''}`} key={item.id}>
