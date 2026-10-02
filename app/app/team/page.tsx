@@ -943,7 +943,8 @@ export default function ManpowerPage() {
   const manpowerAttentionCount =
     unassignedMenuDishCount +
     zeroQuantityAssignedRoleCount +
-    missingRateRoleCount;
+    missingRateRoleCount +
+    recommendationGapCount;
 
   function rowsForMeal(meal: MealPlan) {
     return work?.manpower.filter((row) => rowBelongsToMeal(row, meal)) ?? [];
@@ -1322,7 +1323,7 @@ export default function ManpowerPage() {
             <span>Needs attention</span>
             <b>{manpowerAttentionCount}</b>
             <small>
-              {unassignedMenuDishCount} dish · {zeroQuantityAssignedRoleCount} qty · {missingRateRoleCount} rate
+              {unassignedMenuDishCount} dish · {zeroQuantityAssignedRoleCount} qty · {missingRateRoleCount} rate · {recommendationGapCount} plan
             </small>
           </article>
         </section>
