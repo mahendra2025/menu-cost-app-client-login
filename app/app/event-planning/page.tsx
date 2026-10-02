@@ -613,7 +613,8 @@ export default function EventPlanningPage() {
   function persistPlan(next: StoredPlan) {
     if (!work) return;
 
-    persistPlan(next);
+    setPlan(next);
+    writePlan(work.costingId, next);
     queueServerSave(next);
   }
 
