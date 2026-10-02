@@ -2,129 +2,71 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import {
-  createAdminSessionToken,
-  getAdminCookieName,
-} from '../../../../lib/adminAuth';
-import {
+  createClientSessionToken,
   getClientCookieName,
   readClientSessionToken,
 } from '../../../../lib/clientAuth';
 import { prisma } from '../../../../lib/prisma';
 
-function configuredSingleOwnerId() {
-  return (
-    process.env.SINGLE_USER_ID ||
-    process.env.SINGLE_USER_EMAIL ||
-    ''
-  )
-    .trim()
-    .toLowerCase();
-}
-
-async function retainedWorkspace() {
-  const ownerId =
-    configuredSingleOwnerId();
-
-  /*
-   * Only an explicitly selected legacy workspace may be
-   * auto-upgraded before the first new owner login.
-   */
-  if (ownerId) {
-    const matching =
-      await prisma.tenant.findUnique({
-        where: {
-          email: ownerId,
-        },
-        select: {
-          id: true,
-        },
-      });
-
-    if (matching) {
-      return matching;
-    }
-  }
-
-  /*
-   * After the first single-business login, the retained
-   * workspace is stamped SINGLE and can safely renew its
-   * master-data cookie on later browser sessions.
-   */
-  // Tenant has createdAt (no Tenant.updatedAt); use the newest retained SINGLE workspace.
-  return prisma.tenant.findFirst({
-    where: {
-      plan: 'SINGLE',
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    select: {
-      id: true,
-    },
-  });
-}
-
-/**
- * Upgrade an existing authenticated browser into single-business
- * owner mode. Only the retained workspace may receive master-data
- * access; stale sessions from old secondary SaaS accounts are rejected.
- */
 export async function POST() {
-  const cookieStore =
-    await cookies();
+  const cookieStore = await cookies();
+  const tenantId = readClientSessionToken(
+    cookieStore.get(getClientCookieName())?.value,
+  );
 
-  const workspaceId =
-    readClientSessionToken(
-      cookieStore.get(
-        getClientCookieName(),
-      )?.value,
-    );
-
-  if (!workspaceId) {
+  if (!tenantId) {
     return NextResponse.json(
-      {
-        error:
-          'Owner login required',
-      },
+      { error: 'Client login required' },
       { status: 401 },
     );
   }
 
-  const retained =
-    await retainedWorkspace();
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      status: true,
+      plan: true,
+    },
+  });
 
-  if (
-    !retained ||
-    retained.id !== workspaceId
-  ) {
+  if (!tenant) {
+    return NextResponse.json(
+      { error: 'Account not found' },
+      { status: 401 },
+    );
+  }
+
+  if (String(tenant.status || '').toUpperCase() !== 'ACTIVE') {
     return NextResponse.json(
       {
-        error:
-          'This old account is no longer an active workspace. Sign in with the business owner login.',
-        code:
-          'SINGLE_BUSINESS_OWNER_REQUIRED',
+        error: 'This account is disabled. Contact your Super Admin.',
+        code: 'ACCOUNT_DISABLED',
       },
       { status: 403 },
     );
   }
 
-  const response =
-    NextResponse.json({
-      ok: true,
-      workspaceMode:
-        'SINGLE_BUSINESS',
-    });
+  const response = NextResponse.json({
+    ok: true,
+    tenant: {
+      id: tenant.id,
+      name: tenant.name,
+      email: tenant.email,
+      plan: tenant.plan,
+      status: tenant.status,
+    },
+    workspaceMode: 'MULTI_TENANT',
+  });
 
   response.cookies.set({
-    name:
-      getAdminCookieName(),
-    value:
-      createAdminSessionToken(),
+    name: getClientCookieName(),
+    value: createClientSessionToken(tenant.id),
     httpOnly: true,
     sameSite: 'lax',
-    secure:
-      process.env.NODE_ENV ===
-      'production',
+    secure: process.env.NODE_ENV === 'production',
     path: '/',
   });
 
@@ -132,14 +74,10 @@ export async function POST() {
 }
 
 export async function DELETE() {
-  const response =
-    NextResponse.json({
-      ok: true,
-    });
+  const response = NextResponse.json({ ok: true });
 
   response.cookies.set({
-    name:
-      getClientCookieName(),
+    name: getClientCookieName(),
     value: '',
     path: '/',
     maxAge: 0,
