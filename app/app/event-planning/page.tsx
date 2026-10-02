@@ -3,6 +3,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -49,6 +50,7 @@ type AssignmentRow = {
   quantity: number;
   unit: string;
   assignedTo: string;
+  partnerId?: string;
   partnerType: PartnerType;
   rate: number;
   deliveryTime: string;
@@ -65,6 +67,29 @@ type FunctionPlan = {
 };
 
 type StoredPlan = Record<string, AssignmentRow[]>;
+
+type VendorRate = {
+  id: string;
+  kind: RequirementKind | 'GENERAL';
+  item: string;
+  unit: string;
+  rate: number;
+};
+
+type Vendor = {
+  id: string;
+  name: string;
+  type: 'VENDOR' | 'AGENCY' | 'INDIVIDUAL';
+  category: string;
+  contactPerson: string;
+  phone: string;
+  city: string;
+  gst: string;
+  paymentTerms: string;
+  notes: string;
+  active: boolean;
+  rates: VendorRate[];
+};
 
 const TABS: Array<{
   kind: RequirementKind;
@@ -100,6 +125,40 @@ function safeReadPlan(costingId: string): StoredPlan {
 function writePlan(costingId: string, plan: StoredPlan) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(planKey(costingId), JSON.stringify(plan));
+}
+
+function normalized(value: string) {
+  return String(value || '')
+    .trim()
+    .toLocaleLowerCase('en-IN')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function matchingVendorRate(
+  vendor: Vendor,
+  row: AssignmentRow,
+) {
+  const requirement = normalized(row.requirement);
+
+  return (
+    vendor.rates.find((rate) =>
+      (rate.kind === row.kind || rate.kind === 'GENERAL') &&
+      normalized(rate.item) === requirement,
+    ) ||
+    vendor.rates.find((rate) => {
+      if (rate.kind !== row.kind && rate.kind !== 'GENERAL') {
+        return false;
+      }
+
+      const item = normalized(rate.item);
+      return Boolean(
+        item &&
+        requirement &&
+        (item.includes(requirement) || requirement.includes(item)),
+      );
+    })
+  );
 }
 
 function functionKey(item: MenuItem, fallbackMeal: string) {
@@ -385,6 +444,12 @@ export default function EventPlanningPage() {
     useState('');
   const [tab, setTab] =
     useState<RequirementKind>('MENU');
+  const [vendors, setVendors] =
+    useState<Vendor[]>([]);
+  const [saveState, setSaveState] =
+    useState<'SAVED' | 'SAVING' | 'ERROR'>('SAVED');
+  const saveTimer =
+    useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const session = getSession();
@@ -396,10 +461,56 @@ export default function EventPlanningPage() {
 
     const currentWork = loadWork(session.tenantId);
     const functions = buildFunctions(currentWork);
+    const localPlan = safeReadPlan(currentWork.costingId);
 
     setWork(currentWork);
-    setPlan(safeReadPlan(currentWork.costingId));
+    setPlan(localPlan);
     setSelectedFunction(functions[0]?.key || 'event');
+
+    void Promise.all([
+      fetch('/api/client/vendors', {
+        cache: 'no-store',
+      }),
+      fetch(
+        `/api/client/event-planning?costingId=${encodeURIComponent(
+          currentWork.costingId,
+        )}`,
+        {
+          cache: 'no-store',
+        },
+      ),
+    ])
+      .then(async ([vendorResponse, planningResponse]) => {
+        if (vendorResponse.ok) {
+          const vendorData = await vendorResponse.json();
+          setVendors(
+            Array.isArray(vendorData.vendors)
+              ? vendorData.vendors as Vendor[]
+              : [],
+          );
+        }
+
+        if (planningResponse.ok) {
+          const planningData = await planningResponse.json();
+          const serverPlan =
+            planningData.plan &&
+            typeof planningData.plan === 'object' &&
+            !Array.isArray(planningData.plan)
+              ? planningData.plan as StoredPlan
+              : {};
+
+          if (
+            planningData.exists &&
+            Object.keys(serverPlan).length
+          ) {
+            setPlan(serverPlan);
+            writePlan(currentWork.costingId, serverPlan);
+          }
+        }
+      })
+      .catch(() => {
+        // Local fallback remains usable if the server is temporarily unavailable.
+      });
   }, []);
 
   const functions = useMemo(
@@ -467,19 +578,55 @@ export default function EventPlanningPage() {
   const overallReadiness = readiness(allRows);
   const functionReadiness = readiness(currentRows);
 
+  function queueServerSave(next: StoredPlan) {
+    if (!work || typeof window === 'undefined') return;
+
+    if (saveTimer.current !== undefined) {
+      window.clearTimeout(saveTimer.current);
+    }
+
+    setSaveState('SAVING');
+
+    saveTimer.current = window.setTimeout(() => {
+      void fetch('/api/client/event-planning', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          costingId: work.costingId,
+          plan: next,
+        }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Save failed');
+          }
+          setSaveState('SAVED');
+        })
+        .catch(() => {
+          setSaveState('ERROR');
+        });
+    }, 550);
+  }
+
+  function persistPlan(next: StoredPlan) {
+    if (!work) return;
+
+    persistPlan(next);
+    queueServerSave(next);
+  }
+
   function persistRows(
     fnKey: string,
     rows: AssignmentRow[],
   ) {
     if (!work) return;
 
-    const next = {
+    persistPlan({
       ...plan,
       [fnKey]: rows,
-    };
-
-    setPlan(next);
-    writePlan(work.costingId, next);
+    });
   }
 
   function updateRow(
@@ -499,6 +646,52 @@ export default function EventPlanningPage() {
           : row,
       ),
     );
+  }
+
+  function assignPartner(
+    row: AssignmentRow,
+    value: string,
+  ) {
+    if (value === '__in_house') {
+      updateRow(row.id, {
+        partnerId: '',
+        assignedTo: 'In-house',
+        partnerType: 'IN_HOUSE',
+      });
+      return;
+    }
+
+    const vendor = vendors.find(
+      (item) => item.id === value,
+    );
+
+    if (!vendor) {
+      updateRow(row.id, {
+        partnerId: '',
+        assignedTo: '',
+      });
+      return;
+    }
+
+    const matchedRate = matchingVendorRate(
+      vendor,
+      row,
+    );
+
+    updateRow(row.id, {
+      partnerId: vendor.id,
+      assignedTo: vendor.name,
+      partnerType:
+        vendor.type === 'AGENCY'
+          ? 'AGENCY'
+          : 'VENDOR',
+      rate:
+        matchedRate?.rate ??
+        row.rate,
+      unit:
+        matchedRate?.unit ||
+        row.unit,
+    });
   }
 
   function addRequirement() {
@@ -663,6 +856,9 @@ export default function EventPlanningPage() {
           </div>
 
           <div className="ep-hero-actions">
+            <Link className="ep-button" href="/app/vendors">
+              Vendor Master
+            </Link>
             <Link className="ep-button" href="/app/event?resume=1">
               Edit Event & Menu
             </Link>
@@ -783,6 +979,19 @@ export default function EventPlanningPage() {
               <span className="ep-chip ready">
                 {functionReadiness}% ready
               </span>
+              <span
+                className={
+                  saveState === 'ERROR'
+                    ? 'ep-chip'
+                    : 'ep-chip ready'
+                }
+              >
+                {saveState === 'SAVING'
+                  ? 'Saving…'
+                  : saveState === 'ERROR'
+                    ? 'Save error'
+                    : 'Saved to server'}
+              </span>
             </div>
 
             <nav className="ep-tabs">
@@ -889,17 +1098,50 @@ export default function EventPlanningPage() {
                         </td>
 
                         <td>
+                          <select
+                            className="ep-field"
+                            value={
+                              row.partnerType === 'IN_HOUSE'
+                                ? '__in_house'
+                                : row.partnerId || ''
+                            }
+                            onChange={(event) =>
+                              assignPartner(
+                                row,
+                                event.target.value,
+                              )
+                            }
+                            aria-label="Choose saved partner"
+                          >
+                            <option value="">
+                              Choose saved partner
+                            </option>
+                            <option value="__in_house">
+                              In-house
+                            </option>
+                            {vendors
+                              .filter((vendor) => vendor.active)
+                              .map((vendor) => (
+                                <option
+                                  key={vendor.id}
+                                  value={vendor.id}
+                                >
+                                  {vendor.name} · {vendor.type}
+                                </option>
+                              ))}
+                          </select>
                           <input
                             className="ep-field"
                             value={row.assignedTo}
-                            placeholder="Vendor / agency / team"
+                            placeholder="Or type partner manually"
                             onChange={(event) =>
                               updateRow(row.id, {
+                                partnerId: '',
                                 assignedTo:
                                   event.target.value,
                               })
                             }
-                            aria-label="Assign to"
+                            aria-label="Assigned partner name"
                           />
                         </td>
 
@@ -1018,8 +1260,8 @@ export default function EventPlanningPage() {
             <footer className="ep-table-actions">
               <span className="ep-hint">
                 Suggestions come from the current menu,
-                manpower and disposable data. Your edits
-                are saved for this costing.
+                manpower and disposable data. Saved partners
+                can auto-fill rates, and edits sync to PostgreSQL.
               </span>
 
               <button
