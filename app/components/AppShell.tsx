@@ -27,11 +27,20 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     };
   }
 
+  if (pathname === '/app/event-planning') {
+    return {
+      step: 1,
+      label: 'Plan',
+      desktopStep: 2,
+      desktopLabel: 'Event Planning',
+    };
+  }
+
   if (pathname === '/app/cost') {
     return {
       step: 1,
       label: 'Event',
-      desktopStep: 2,
+      desktopStep: 3,
       desktopLabel: 'Dish Cost',
     };
   }
@@ -40,7 +49,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 1,
       label: 'Event',
-      desktopStep: 3,
+      desktopStep: 4,
       desktopLabel: 'Grocery',
     };
   }
@@ -49,7 +58,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 2,
       label: 'Team',
-      desktopStep: 4,
+      desktopStep: 5,
       desktopLabel: 'Manpower',
     };
   }
@@ -62,7 +71,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 3,
       label: 'Expenses',
-      desktopStep: 5,
+      desktopStep: 6,
       desktopLabel: 'Operations',
     };
   }
@@ -71,7 +80,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 4,
       label: 'Pricing',
-      desktopStep: 6,
+      desktopStep: 7,
       desktopLabel: 'Final Cost',
     };
   }
@@ -80,7 +89,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 5,
       label: 'Quotation',
-      desktopStep: 7,
+      desktopStep: 8,
       desktopLabel: 'Quotation',
     };
   }
@@ -123,6 +132,7 @@ const adminNav =
 
 const clientWorkflowNav = [
   { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Upload and review menu', icon: 'event' as ClientNavIcon },
+  { href: '/app/event-planning', match: '/app/event-planning', label: 'Event Planning', description: 'Vendors, agencies and readiness', icon: 'event' as ClientNavIcon },
   { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
   { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
   { href: '/app/team', match: '/app/team', label: 'Manpower', description: 'Manual staff costing', icon: 'team' as ClientNavIcon },
