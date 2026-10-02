@@ -41,22 +41,34 @@ function safeMatch(
 }
 
 function configuredOwner() {
-  const userId =
-    (
-      process.env.SINGLE_USER_ID ||
-      process.env.SINGLE_USER_EMAIL ||
-      process.env.ADMIN_USER_ID ||
-      ''
-    )
-      .trim()
-      .toLowerCase();
+  const userIds = Array.from(
+    new Set(
+      [
+        process.env.SINGLE_USER_ID,
+        process.env.SINGLE_USER_EMAIL,
+        process.env.ADMIN_USER_ID,
+      ]
+        .map((value) =>
+          String(value || '')
+            .trim()
+            .toLowerCase(),
+        )
+        .filter(Boolean),
+    ),
+  );
 
-  const bootstrapPassword =
-    (
-      process.env.SINGLE_USER_PASSWORD ||
-      process.env.ADMIN_PASSWORD ||
-      ''
-    ).trim();
+  const bootstrapPasswords = Array.from(
+    new Set(
+      [
+        process.env.SINGLE_USER_PASSWORD,
+        process.env.ADMIN_PASSWORD,
+      ]
+        .map((value) =>
+          String(value || '').trim(),
+        )
+        .filter(Boolean),
+    ),
+  );
 
   const businessName =
     (
@@ -65,8 +77,8 @@ function configuredOwner() {
     ).trim();
 
   return {
-    userId,
-    bootstrapPassword,
+    userIds,
+    bootstrapPasswords,
     businessName,
   };
 }
@@ -277,19 +289,28 @@ export async function POST(
 
     const existingWorkspace =
       await currentWorkspace(
-        owner.userId,
+        userId,
       );
 
-    const allowedUserId =
+    const workspaceUserId =
       (
-        owner.userId ||
         existingWorkspace?.email ||
         ''
       )
         .trim()
         .toLowerCase();
 
-    if (!allowedUserId) {
+    const acceptedUserIds =
+      Array.from(
+        new Set(
+          [
+            ...owner.userIds,
+            workspaceUserId,
+          ].filter(Boolean),
+        ),
+      );
+
+    if (acceptedUserIds.length === 0) {
       return NextResponse.json(
         {
           error:
@@ -299,12 +320,16 @@ export async function POST(
       );
     }
 
-    if (
-      !safeMatch(
-        userId,
-        allowedUserId,
-      )
-    ) {
+    const userIdAllowed =
+      acceptedUserIds.some(
+        (configuredUserId) =>
+          safeMatch(
+            userId,
+            configuredUserId,
+          ),
+      );
+
+    if (!userIdAllowed) {
       return NextResponse.json(
         {
           error:
@@ -324,17 +349,17 @@ export async function POST(
       );
 
     /*
-     * Keep the configured owner password authoritative in production.
-     * This also provides a recovery path when the stored SINGLE workspace
-     * password is stale after an environment/password change.
+     * Treat both SINGLE_USER_PASSWORD and ADMIN_PASSWORD as valid owner
+     * recovery credentials. This prevents stale optional SINGLE_USER_*
+     * values from shadowing the real production admin login.
      */
     const bootstrapPasswordValid =
-      Boolean(
-        owner.bootstrapPassword &&
-        safeMatch(
-          password,
-          owner.bootstrapPassword,
-        ),
+      owner.bootstrapPasswords.some(
+        (configuredPassword) =>
+          safeMatch(
+            password,
+            configuredPassword,
+          ),
       );
 
     if (
@@ -367,8 +392,7 @@ export async function POST(
       await prepareWorkspace({
         workspace:
           existingWorkspace,
-        userId:
-          allowedUserId,
+        userId,
         password,
         businessName:
           owner.businessName,
