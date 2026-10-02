@@ -611,6 +611,15 @@ export default function EventPlanningPage() {
   const overallReadiness = readiness(allRows);
   const functionReadiness = readiness(currentRows);
 
+  const equipmentShortages =
+    currentRows.filter(
+      (row) =>
+        row.kind === 'EQUIPMENT' &&
+        Boolean(row.equipmentId) &&
+        Number(row.availableQty) > 0 &&
+        Number(row.quantity) > Number(row.availableQty),
+    );
+
   function queueServerSave(next: StoredPlan) {
     if (!work || typeof window === 'undefined') return;
 
@@ -1542,6 +1551,18 @@ export default function EventPlanningPage() {
             <section className="ep-side-card">
               <h3>Pending Attention</h3>
               <div className="ep-pending">
+                {equipmentShortages.map((row) => (
+                  <div
+                    className="ep-pending-row"
+                    key={`shortage:${row.id}`}
+                  >
+                    <b>{row.requirement} shortage</b>
+                    <span>
+                      Selected {row.quantity} · Available {row.availableQty}
+                    </span>
+                  </div>
+                ))}
+
                 {currentRows
                   .filter(
                     (row) =>
@@ -1563,7 +1584,8 @@ export default function EventPlanningPage() {
                     </div>
                   ))}
 
-                {!currentRows.some(
+                {!equipmentShortages.length &&
+                !currentRows.some(
                   (row) =>
                     row.status === 'PENDING' ||
                     !row.assignedTo.trim(),
