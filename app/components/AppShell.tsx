@@ -66,6 +66,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
   if (
     pathname === '/app/operations' ||
     pathname === '/app/disposable' ||
+    pathname === '/app/disposable-master' ||
     pathname === '/app/disposable-rates'
   ) {
     return {
@@ -148,6 +149,7 @@ const clientWorkspaceNav = [
   { href: '/app/crockery', match: '/app/crockery', label: 'Crockery & Cutlery', description: 'Photo stock and guest quantities', icon: 'expenses' as ClientNavIcon },
   { href: '/app/work-orders', match: '/app/work-orders', label: 'Work Orders', description: 'Printable vendor assignments', icon: 'quotation' as ClientNavIcon },
   { href: '/app/uniforms', match: '/app/uniforms', label: 'Dress & Uniform', description: 'Photo uniform stock and role mapping', icon: 'team' as ClientNavIcon },
+  { href: '/app/disposable-master', match: '/app/disposable-master', label: 'Disposable Master', description: 'Photo catalog and supplier defaults', icon: 'expenses' as ClientNavIcon },
   { href: '/app/ingredients', match: '/app/ingredients', label: 'Ingredient Rates', description: 'Business + city + global rates', icon: 'ingredients' as ClientNavIcon },
   { href: '/app/disposable-rates', match: '/app/disposable-rates', label: 'Plastic Rates', description: 'Reusable disposable purchase rates', icon: 'expenses' as ClientNavIcon },
   { href: '/app/manpower-rates', match: '/app/manpower-rates', label: 'Manpower Rates', description: 'Reusable staff rates', icon: 'team' as ClientNavIcon },
@@ -396,6 +398,7 @@ export default function AppShell({
     pathname === '/app/crockery' ||
     pathname === '/app/work-orders' ||
     pathname === '/app/uniforms' ||
+    pathname === '/app/disposable-master' ||
     pathname === '/app/ingredients' ||
     pathname === '/app/disposable-rates' ||
     pathname === '/app/manpower-rates' ||
