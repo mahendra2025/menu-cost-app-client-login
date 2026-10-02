@@ -1,10 +1,10 @@
 import { createHmac, timingSafeEqual } from 'crypto';
-import { getRequiredEnv } from './env';
+import { getSessionSecret } from './env';
 
 const CLIENT_COOKIE_NAME = 'menu_cost_client_session';
 
 function signTenantId(tenantId: string) {
-  return createHmac('sha256', getRequiredEnv('ADMIN_SESSION_SECRET')).update(tenantId).digest('hex');
+  return createHmac('sha256', getSessionSecret()).update(tenantId).digest('hex');
 }
 
 export function getClientCookieName() {
