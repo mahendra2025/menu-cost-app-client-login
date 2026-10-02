@@ -43,6 +43,22 @@ export default function LoginPage() {
         return;
       }
 
+      if (data.session.role === 'ADMIN') {
+        localStorage.setItem(
+          SESSION_KEY,
+          JSON.stringify({
+            role: 'ADMIN',
+            tenantId: 'admin',
+            userId: data.session.email,
+            businessName: data.session.tenantName || 'Super Admin',
+            status: 'ACTIVE',
+          }),
+        );
+
+        router.push('/admin/dishes');
+        return;
+      }
+
       localStorage.setItem(
         SESSION_KEY,
         JSON.stringify({
