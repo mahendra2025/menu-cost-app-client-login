@@ -962,6 +962,7 @@ export function loadWork(
       return savedItem
         ? {
             ...defaultItem,
+            photoUrl: savedItem.photoUrl || defaultItem.photoUrl || '',
             unit: savedItem.unit || defaultItem.unit || 'pcs',
             quantity: savedItem.quantity,
             unitCost: savedItem.unitCost,
