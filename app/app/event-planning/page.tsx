@@ -55,6 +55,7 @@ type AssignmentRow = {
   equipmentId?: string;
   crockeryId?: string;
   uniformId?: string;
+  disposableMasterId?: string;
   photoUrl?: string;
   availableQty?: number;
   unitsPerGuest?: number;
@@ -149,6 +150,19 @@ type UniformItem = {
   vendorId: string;
   vendorName: string;
   laundryStatus: string;
+  notes: string;
+  active: boolean;
+};
+
+type DisposableMasterItem = {
+  id: string;
+  name: string;
+  category: string;
+  photoUrl: string;
+  unit: string;
+  defaultRate: number;
+  supplierId: string;
+  supplierName: string;
   notes: string;
   active: boolean;
 };
@@ -517,6 +531,8 @@ export default function EventPlanningPage() {
     useState<CrockeryItem[]>([]);
   const [uniforms, setUniforms] =
     useState<UniformItem[]>([]);
+  const [disposableMaster, setDisposableMaster] =
+    useState<DisposableMasterItem[]>([]);
   const [saveState, setSaveState] =
     useState<'SAVED' | 'SAVING' | 'ERROR'>('SAVED');
   const saveTimer =
@@ -551,6 +567,9 @@ export default function EventPlanningPage() {
       fetch('/api/client/uniforms', {
         cache: 'no-store',
       }),
+      fetch('/api/client/disposable-master', {
+        cache: 'no-store',
+      }),
       fetch(
         `/api/client/event-planning?costingId=${encodeURIComponent(
           currentWork.costingId,
@@ -560,7 +579,7 @@ export default function EventPlanningPage() {
         },
       ),
     ])
-      .then(async ([vendorResponse, equipmentResponse, crockeryResponse, uniformResponse, planningResponse]) => {
+      .then(async ([vendorResponse, equipmentResponse, crockeryResponse, uniformResponse, disposableResponse, planningResponse]) => {
         if (vendorResponse.ok) {
           const vendorData = await vendorResponse.json();
           setVendors(
@@ -593,6 +612,15 @@ export default function EventPlanningPage() {
           setUniforms(
             Array.isArray(uniformData.uniforms)
               ? uniformData.uniforms as UniformItem[]
+              : [],
+          );
+        }
+
+        if (disposableResponse.ok) {
+          const disposableData = await disposableResponse.json();
+          setDisposableMaster(
+            Array.isArray(disposableData.items)
+              ? disposableData.items as DisposableMasterItem[]
               : [],
           );
         }
@@ -1176,6 +1204,107 @@ export default function EventPlanningPage() {
     );
   }
 
+  function selectedDisposableQty(
+    masterId: string,
+  ) {
+    return currentRows
+      .filter(
+        (row) =>
+          row.kind === 'DISPOSABLE' &&
+          row.disposableMasterId === masterId,
+      )
+      .reduce(
+        (sum, row) =>
+          sum +
+          Math.max(0, Number(row.quantity) || 0),
+        0,
+      );
+  }
+
+  function addDisposableFromMaster(
+    item: DisposableMasterItem,
+  ) {
+    if (!currentFunction) return;
+
+    const baseRows =
+      plan[currentFunction.key] || defaultRows;
+
+    const existing =
+      baseRows.find(
+        (row) =>
+          row.kind === 'DISPOSABLE' &&
+          (
+            row.disposableMasterId === item.id ||
+            normalized(row.requirement) === normalized(item.name)
+          ),
+      );
+
+    if (existing) {
+      persistRows(
+        currentFunction.key,
+        baseRows.map((row) =>
+          row.id === existing.id
+            ? {
+                ...row,
+                disposableMasterId: item.id,
+                photoUrl: item.photoUrl || row.photoUrl,
+                unit: item.unit || row.unit,
+                rate:
+                  Number(row.rate) > 0
+                    ? row.rate
+                    : item.defaultRate,
+                partnerId:
+                  row.partnerId ||
+                  item.supplierId,
+                assignedTo:
+                  row.assignedTo ||
+                  item.supplierName,
+                partnerType:
+                  row.assignedTo
+                    ? row.partnerType
+                    : item.supplierName
+                      ? 'VENDOR'
+                      : row.partnerType,
+              }
+            : row,
+        ),
+      );
+      return;
+    }
+
+    const row = newRow(
+      'DISPOSABLE',
+      item.name,
+      [
+        item.category,
+        item.notes,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      0,
+      item.unit || 'pcs',
+      item.defaultRate,
+    );
+
+    persistRows(
+      currentFunction.key,
+      [
+        ...baseRows,
+        {
+          ...row,
+          disposableMasterId: item.id,
+          photoUrl: item.photoUrl,
+          partnerId: item.supplierId,
+          assignedTo: item.supplierName,
+          partnerType:
+            item.supplierName
+              ? 'VENDOR'
+              : 'IN_HOUSE',
+        },
+      ],
+    );
+  }
+
   function addRequirement() {
     if (!currentFunction) return;
 
@@ -1369,6 +1498,9 @@ export default function EventPlanningPage() {
             <Link className="ep-button" href="/app/uniforms">
               Dress Master
             </Link>
+            <Link className="ep-button" href="/app/disposable-master">
+              Disposable Master
+            </Link>
             <Link className="ep-button" href="/app/work-orders">
               Work Orders
             </Link>
@@ -1529,6 +1661,83 @@ export default function EventPlanningPage() {
                 );
               })}
             </nav>
+
+            {tab === 'DISPOSABLE' ? (
+              <section className="ep-equipment-picker">
+                <div className="ep-equipment-picker-head">
+                  <div>
+                    <b>Choose disposable by photo</b>
+                    <span>
+                      Tap a saved item to attach its photo, unit, supplier and default rate.
+                    </span>
+                  </div>
+
+                  <Link className="ep-button" href="/app/disposable-master">
+                    Manage Photos
+                  </Link>
+                </div>
+
+                {disposableMaster.filter((item) => item.active).length ? (
+                  <div className="ep-equipment-grid">
+                    {disposableMaster
+                      .filter((item) => item.active)
+                      .map((item) => {
+                        const selected =
+                          selectedDisposableQty(item.id);
+
+                        return (
+                          <button
+                            key={item.id}
+                            className={
+                              selected > 0
+                                ? 'ep-equipment-card selected'
+                                : 'ep-equipment-card'
+                            }
+                            type="button"
+                            onClick={() =>
+                              addDisposableFromMaster(item)
+                            }
+                          >
+                            <div className="ep-equipment-photo">
+                              {item.photoUrl ? (
+                                <img
+                                  src={item.photoUrl}
+                                  alt={item.name}
+                                />
+                              ) : (
+                                <div className="ep-equipment-fallback">
+                                  <b>
+                                    {item.name
+                                      .slice(0, 2)
+                                      .toUpperCase() || 'DP'}
+                                  </b>
+                                  <small>No photo</small>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="ep-equipment-card-body">
+                              <b>{item.name}</b>
+                              <span>
+                                {item.category} · {item.unit}
+                              </span>
+                              <small>
+                                {selected > 0
+                                  ? `Selected ${selected} ${item.unit}`
+                                  : `${currency(item.defaultRate)} / ${item.unit}`}
+                              </small>
+                            </div>
+                          </button>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="ep-empty">
+                    No disposable photos saved yet. Open Disposable Master and add items first.
+                  </div>
+                )}
+              </section>
+            ) : null}
 
             {tab === 'DRESS' ? (
               <section className="ep-equipment-picker">
@@ -1784,6 +1993,7 @@ export default function EventPlanningPage() {
                 <table className="ep-table">
                   <thead>
                     <tr>
+                      <th>Photo</th>
                       <th>Requirement</th>
                       <th>Qty</th>
                       <th>Assign To</th>
@@ -1800,6 +2010,24 @@ export default function EventPlanningPage() {
                   <tbody>
                     {visibleRows.map((row) => (
                       <tr key={row.id}>
+                        <td>
+                          <div className="ep-assignment-photo">
+                            {row.photoUrl ? (
+                              <img
+                                src={row.photoUrl}
+                                alt={row.requirement}
+                              />
+                            ) : (
+                              <div className="ep-assignment-photo-fallback">
+                                <b>
+                                  {row.requirement
+                                    .slice(0, 2)
+                                    .toUpperCase() || '—'}
+                                </b>
+                              </div>
+                            )}
+                          </div>
+                        </td>
                         <td>
                           <input
                             className="ep-field"
