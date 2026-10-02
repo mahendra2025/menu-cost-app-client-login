@@ -1204,6 +1204,52 @@ export default function EventPlanningPage() {
     );
   }
 
+  function assignmentPhoto(
+    row: AssignmentRow,
+  ) {
+    if (row.photoUrl) return row.photoUrl;
+
+    const name = normalized(row.requirement);
+
+    if (row.kind === 'DISPOSABLE') {
+      return (
+        disposableMaster.find(
+          (item) =>
+            normalized(item.name) === name,
+        )?.photoUrl || ''
+      );
+    }
+
+    if (row.kind === 'EQUIPMENT') {
+      return (
+        equipment.find(
+          (item) =>
+            normalized(item.name) === name,
+        )?.photoUrl || ''
+      );
+    }
+
+    if (row.kind === 'CROCKERY') {
+      return (
+        crockery.find(
+          (item) =>
+            normalized(item.name) === name,
+        )?.photoUrl || ''
+      );
+    }
+
+    if (row.kind === 'DRESS') {
+      return (
+        uniforms.find(
+          (item) =>
+            normalized(item.name) === name,
+        )?.photoUrl || ''
+      );
+    }
+
+    return '';
+  }
+
   function selectedDisposableQty(
     masterId: string,
   ) {
@@ -1420,6 +1466,10 @@ export default function EventPlanningPage() {
           .ep-table th{padding:8px 9px;border-bottom:1px solid #28313c;color:#718094;background:#0c1117;font-size:7px;font-weight:900;letter-spacing:.04em;text-align:left;text-transform:uppercase}
           .ep-table td{padding:7px 9px;border-bottom:1px solid rgba(148,163,184,.08);vertical-align:middle}
           .ep-table tr:last-child td{border-bottom:0}
+          .ep-assignment-photo{width:54px;height:54px;overflow:hidden;border:1px solid #2d3743;border-radius:10px;background:#151d27}
+          .ep-assignment-photo img{width:100%;height:100%;display:block;object-fit:cover}
+          .ep-assignment-photo-fallback{display:grid;width:100%;height:100%;place-items:center;color:#728196;background:linear-gradient(145deg,#18212c,#111820)}
+          .ep-assignment-photo-fallback b{font-size:13px;letter-spacing:.02em}
           .ep-field{width:100%;min-height:33px;padding:0 8px;border:1px solid #303945;border-radius:7px;outline:0;color:#dbe4ee;background:#151c25;font:inherit;font-size:9px}
           textarea.ep-field{min-height:52px;padding:7px;resize:vertical}
           .ep-field:focus{border-color:rgba(74,156,255,.6);box-shadow:0 0 0 3px rgba(74,156,255,.08)}
@@ -1454,6 +1504,7 @@ export default function EventPlanningPage() {
           .ep-equipment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
           .ep-equipment-card{overflow:hidden;border:1px solid #2b3440;border-radius:11px;background:#111820;color:#dce5ef;text-align:left;cursor:pointer}
           .ep-equipment-card:hover{border-color:rgba(74,156,255,.55)}
+          .ep-equipment-card.selected{border-color:rgba(74,156,255,.7);box-shadow:inset 0 0 0 1px rgba(74,156,255,.18)}
           .ep-equipment-photo{aspect-ratio:4/3;overflow:hidden;background:#18202a}
           .ep-equipment-photo img{width:100%;height:100%;display:block;object-fit:cover}
           .ep-equipment-fallback{display:grid;width:100%;height:100%;place-items:center;align-content:center;gap:3px;color:#718197}
@@ -2012,9 +2063,9 @@ export default function EventPlanningPage() {
                       <tr key={row.id}>
                         <td>
                           <div className="ep-assignment-photo">
-                            {row.photoUrl ? (
+                            {assignmentPhoto(row) ? (
                               <img
-                                src={row.photoUrl}
+                                src={assignmentPhoto(row)}
                                 alt={row.requirement}
                               />
                             ) : (
