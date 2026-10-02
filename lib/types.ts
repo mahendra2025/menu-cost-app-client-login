@@ -266,6 +266,8 @@ export type ExtraCost = {
 export type DisposableCostItem = {
   id: string;
   name: string;
+  /** Optional visual reference used by event staff when selecting disposable items. */
+  photoUrl?: string;
   /** Purchase / usage unit, for example pcs, pack, roll, kg or litre. */
   unit?: string;
   quantity: number;
