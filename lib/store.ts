@@ -938,6 +938,7 @@ export function loadWork(
     ? savedWork.disposableItems.map((item) => ({
         id: String(item.id || uid('disposable')),
         name: String(item.name || 'Disposable item'),
+        photoUrl: String(item.photoUrl || '').trim(),
         unit: String(item.unit || 'pcs').trim() || 'pcs',
         quantity: Math.max(0, Number(item.quantity) || 0),
         unitCost: Math.max(0, Number(item.unitCost) || 0),
