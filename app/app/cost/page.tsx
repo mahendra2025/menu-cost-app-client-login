@@ -1426,8 +1426,22 @@ export default function CostPage() {
                 <button className="ghost-button" type="button" onClick={() => router.push('/app/event?resume=1')}>Edit menu</button>
               </div>
 
-              <div className="dish-portion-note">
-                <b>Portion allocation:</b> automatic sharing is calculated separately inside every meal and category. You can also set a custom percentage for any dish: 50% charges half its base cost; 150% charges one-and-a-half times.
+              <div className="dish-portion-note dish-cost-index-guide">
+                <div>
+                  <b>How this index works</b>
+                  <span>Category target controls expected consumption. Dish allocation then divides that target across dishes in the same category.</span>
+                </div>
+                <div className="dish-cost-index-formula" aria-label="Dish costing formula">
+                  <span>Base rate</span>
+                  <i>×</i>
+                  <span>Allocation</span>
+                  <i>=</i>
+                  <strong>Final / plate</strong>
+                  <i>×</i>
+                  <span>Guests</span>
+                  <i>=</i>
+                  <strong>Event total</strong>
+                </div>
               </div>
 
               <div
@@ -1475,11 +1489,11 @@ export default function CostPage() {
                       <thead>
                         <tr>
                           <th>Dish</th>
-                          <th>Serving setup</th>
+                          <th>Serving</th>
                           <th>Guests</th>
-                          <th>Rate / plate</th>
+                          <th>Base rate</th>
                           <th>Allocation</th>
-                          <th>Cost</th>
+                          <th>Final cost</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1505,25 +1519,25 @@ export default function CostPage() {
                                     </button>
                                     <div className="dish-category-controls">
                                       <label className="dish-category-consumption">
-                                        <span>Consumption</span>
+                                        <span>Category target</span>
                                         <div>
-                                        <input
-                                          className="input"
-                                          type="number"
-                                          min="0"
-                                          max="300"
-                                          step="5"
-                                          value={group.targetPercent}
-                                          onChange={(event) =>
-                                            updateCategoryPortion(
-                                              group.serviceKey,
-                                              group.category,
-                                              Number(event.target.value),
-                                            )
-                                          }
-                                          aria-label={`${group.category} category consumption percentage`}
-                                        />
-                                        <b>%</b>
+                                          <input
+                                            className="input"
+                                            type="number"
+                                            min="0"
+                                            max="300"
+                                            step="5"
+                                            value={group.targetPercent}
+                                            onChange={(event) =>
+                                              updateCategoryPortion(
+                                                group.serviceKey,
+                                                group.category,
+                                                Number(event.target.value),
+                                              )
+                                            }
+                                            aria-label={`${group.category} category consumption percentage`}
+                                          />
+                                          <b>%</b>
                                         </div>
                                       </label>
                                       <div className="dish-category-recommendation">
@@ -1542,14 +1556,23 @@ export default function CostPage() {
                                             )
                                           }
                                         >
-                                          Use recommended
+                                          Apply
                                         </button>
-                                      ) : null}
+                                      ) : (
+                                        <span className="dish-category-on-target">On target</span>
+                                      )}
                                     </div>
                                     <div className="dish-category-total">
-                                      <span>{group.items.length} dish{group.items.length === 1 ? '' : 'es'}</span>
+                                      <span>{group.pax.toLocaleString('en-IN')} guests · {group.items.length} dish{group.items.length === 1 ? '' : 'es'}</span>
                                       <strong>{money(group.subtotal)}</strong>
-                                      {group.missingCount > 0 ? <small>{group.missingCount} missing rate{group.missingCount === 1 ? '' : 's'}</small> : null}
+                                      <small>
+                                        {group.pax > 0
+                                          ? `${money(group.subtotal / group.pax)} / guest`
+                                          : 'Category total'}
+                                        {group.missingCount > 0
+                                          ? ` · ${group.missingCount} rate${group.missingCount === 1 ? '' : 's'} missing`
+                                          : ''}
+                                      </small>
                                     </div>
                                   </div>
                                 </td>
@@ -1734,9 +1757,9 @@ export default function CostPage() {
                             </td>
                             <td className="dish-cost-number">{item.effectivePax.toLocaleString('en-IN')}</td>
                             <td>
-                              {needsManualRate(item) ? (
-                                <span className="dish-manual-rate-label">Add manual rate</span>
-                              ) : null}
+                              <span className={needsManualRate(item) ? 'dish-manual-rate-label' : 'dish-base-rate-label'}>
+                                {needsManualRate(item) ? 'Add manual rate' : 'Base cost'}
+                              </span>
                               <label className="dish-rate-input">
                                 <span aria-hidden="true">₹</span>
                                 <input
@@ -1771,7 +1794,7 @@ export default function CostPage() {
                                     });
                                   }}
                                 >
-                                  <option value="AUTO">Auto</option>
+                                  <option value="AUTO">Auto split</option>
                                   <option value="CUSTOM">Custom</option>
                                 </select>
                                 {item.portionMode === 'CUSTOM' ? (
@@ -1802,7 +1825,7 @@ export default function CostPage() {
                             <td className="dish-cost-number">
                               <div className="dish-cost-result">
                                 <span>
-                                  <small>Per plate</small>
+                                  <small>Final / plate</small>
                                   <b>{money(item.adjustedCostPerPlate)}</b>
                                 </span>
                                 <span>
@@ -1842,7 +1865,7 @@ export default function CostPage() {
                               {group.missingCount > 0 ? ` · ${group.missingCount} rate${group.missingCount === 1 ? '' : 's'} missing` : ''}
                             </small>
                             <label className="dish-cost-category-card-consumption">
-                              <span>Consumption</span>
+                              <span>Category target</span>
                               <span>
                                 <input
                                   className="input"
@@ -1973,7 +1996,7 @@ export default function CostPage() {
                         <div className="dish-cost-card-grid">
                           <div><small>Guests</small><b>{item.effectivePax.toLocaleString('en-IN')}</b></div>
                           <div><small>Allocation</small><b>{Math.round(item.portionPercent * 100) / 100}%</b></div>
-                          <div><small>Cost / plate</small><b>{money(item.adjustedCostPerPlate)}</b></div>
+                          <div><small>Final / plate</small><b>{money(item.adjustedCostPerPlate)}</b></div>
                           <div className="dish-cost-card-total"><small>Event total</small><b>{money(item.itemTotalCost)}</b></div>
                         </div>
                         <div className="field">
