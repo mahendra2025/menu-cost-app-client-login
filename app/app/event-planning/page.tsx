@@ -738,8 +738,7 @@ export default function EventPlanningPage() {
     const next = { ...plan };
     delete next[currentFunction.key];
 
-    setPlan(next);
-    writePlan(work.costingId, next);
+    persistPlan(next);
   }
 
   if (!work || !currentFunction) {
