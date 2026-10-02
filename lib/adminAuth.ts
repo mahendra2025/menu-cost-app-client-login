@@ -1,11 +1,11 @@
 import { createHmac, timingSafeEqual } from 'crypto';
-import { getRequiredEnv } from './env';
+import { getSessionSecret } from './env';
 
 const ADMIN_COOKIE_NAME = 'menu_cost_admin_session';
 const ADMIN_COOKIE_VALUE = 'admin';
 
 function getAdminSessionSecret() {
-  return getRequiredEnv('ADMIN_SESSION_SECRET');
+  return getSessionSecret();
 }
 
 function signAdminValue(value: string) {
