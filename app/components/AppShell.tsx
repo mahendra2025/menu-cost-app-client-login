@@ -277,6 +277,12 @@ export default function AppShell({
     setSession(current);
     setReady(true);
 
+    // A real admin session already has the admin cookie and must not
+    // be forced through the single-business client-session upgrader.
+    if (current.role === 'ADMIN') {
+      return;
+    }
+
     /*
      * Existing browsers from the former SaaS model may not yet
      * have the owner/master-data cookie. Upgrade only the retained
