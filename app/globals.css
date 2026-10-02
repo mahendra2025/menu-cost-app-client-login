@@ -29082,3 +29082,328 @@ body.client-sheet-open {
     display: none !important;
   }
 }
+
+
+/* Dish Cost index refinement ---------------------------------------------- */
+.dish-cost-index-guide {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(74, 156, 255, .13);
+  border-left: 3px solid rgba(74, 156, 255, .48);
+  border-radius: 12px;
+  background: rgba(74, 156, 255, .045);
+}
+
+.dish-cost-index-guide > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.dish-cost-index-guide > div:first-child b {
+  color: #dcecff;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.dish-cost-index-guide > div:first-child span {
+  color: #7f8da0;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.dish-cost-index-formula {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dish-cost-index-formula span,
+.dish-cost-index-formula strong {
+  padding: 6px 8px;
+  border: 1px solid rgba(148, 163, 184, .12);
+  border-radius: 8px;
+  color: #aab7c6;
+  background: rgba(255, 255, 255, .025);
+  font-size: 8px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.dish-cost-index-formula strong {
+  color: #cbe2ff;
+  border-color: rgba(74, 156, 255, .20);
+  background: rgba(74, 156, 255, .07);
+}
+
+.dish-cost-index-formula i {
+  color: #617083;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.dish-category-section {
+  grid-template-columns: minmax(210px, 1fr) auto minmax(155px, auto);
+  gap: 14px;
+  padding: 11px 13px;
+  border-color: rgba(74, 156, 255, .17);
+  background:
+    linear-gradient(90deg, rgba(74, 156, 255, .09), rgba(74, 156, 255, .025) 48%, rgba(255,255,255,.012));
+}
+
+.dish-category-toggle strong {
+  font-size: 14px;
+  letter-spacing: -.015em;
+}
+
+.dish-category-toggle small {
+  color: #78879a;
+  font-size: 8px;
+}
+
+.dish-category-controls {
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid rgba(148, 163, 184, .09);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, .08);
+}
+
+.dish-category-consumption > span,
+.dish-category-recommendation > span,
+.dish-category-total > span {
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.dish-category-consumption .input {
+  width: 58px;
+  min-height: 30px;
+  border-color: rgba(74, 156, 255, .20);
+  background: rgba(15, 24, 34, .88);
+}
+
+.dish-category-recommendation {
+  padding-left: 8px;
+  border-left: 1px solid rgba(148, 163, 184, .10);
+}
+
+.dish-category-recommendation b {
+  color: #a9d6ff;
+}
+
+.dish-category-apply {
+  min-width: 48px;
+}
+
+.dish-category-on-target {
+  padding: 5px 7px;
+  border: 1px solid rgba(98, 217, 149, .18);
+  border-radius: 8px;
+  color: #a9dfbf;
+  background: rgba(98, 217, 149, .055);
+  font-size: 8px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.dish-category-total {
+  min-width: 145px;
+}
+
+.dish-category-total strong {
+  color: #ffffff;
+  font-size: 16px;
+  letter-spacing: -.02em;
+}
+
+.dish-category-total small {
+  max-width: 170px;
+  color: #8090a3;
+  text-align: right;
+  line-height: 1.35;
+}
+
+.dish-cost-table {
+  min-width: 1080px;
+}
+
+.dish-cost-table th {
+  color: #7d8b9c;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.dish-cost-table td {
+  border-color: rgba(148, 163, 184, .075);
+}
+
+.dish-cost-name {
+  gap: 3px;
+}
+
+.dish-cost-name b {
+  color: #f2f6fb;
+  font-size: 12px;
+  letter-spacing: -.01em;
+}
+
+.dish-cost-name small {
+  color: #68778a;
+  font-size: 8px;
+}
+
+.dish-cost-inline-remove {
+  width: fit-content;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  color: #6f7d8f;
+  background: transparent;
+  font-size: 8px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.dish-cost-inline-remove:hover {
+  color: #ef8e87;
+}
+
+.dish-cost-setup {
+  gap: 6px;
+}
+
+.dish-cost-setup > label {
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 6px;
+}
+
+.dish-cost-setup > label > span {
+  color: #667588;
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.dish-cost-serving-fields .input,
+.dish-cost-serving-fields .select,
+.dish-cost-setup .dish-category-select {
+  min-height: 30px;
+  border-radius: 8px;
+}
+
+.dish-cost-number {
+  color: #d7e0ea;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.dish-base-rate-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #69798d;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.dish-rate-input {
+  width: 112px;
+  min-height: 34px;
+  border-radius: 9px;
+}
+
+.dish-rate-input input {
+  height: 32px;
+  font-size: 11px;
+}
+
+.cost-portion-control {
+  gap: 5px;
+}
+
+.cost-portion-control .select {
+  min-height: 34px;
+  border-radius: 9px;
+  font-size: 9px;
+}
+
+.portion-chip {
+  padding: 5px 7px;
+  color: #b7d8fa;
+  background: rgba(74, 156, 255, .08);
+  font-size: 9px;
+}
+
+.dish-cost-result {
+  gap: 4px;
+}
+
+.dish-cost-result > span:first-child {
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(148, 163, 184, .08);
+}
+
+.dish-cost-result small {
+  color: #657589;
+  text-transform: uppercase;
+  letter-spacing: .035em;
+}
+
+.dish-cost-result b {
+  color: #9fd0ff;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dish-cost-result strong {
+  color: #f7f9fc;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dish-cost-category-card-head {
+  padding: 13px;
+}
+
+.dish-cost-category-card-toggle strong:last-child {
+  color: #d8ebff;
+  font-size: 16px;
+}
+
+.dish-cost-category-card-consumption > span:first-child {
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+@media (max-width: 900px) {
+  .dish-cost-index-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .dish-cost-index-formula {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .dish-cost-index-formula {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-content: stretch;
+  }
+
+  .dish-cost-index-formula span,
+  .dish-cost-index-formula strong {
+    text-align: center;
+  }
+}
