@@ -100,6 +100,12 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
 
 const adminNavGroups = [
   {
+    label: 'Platform',
+    items: [
+      { href: '/admin/users', label: 'Caterer Accounts', mobileLabel: 'Users', description: 'Create, disable and reset tenant accounts', icon: 'clients' as NavIcon },
+    ],
+  },
+  {
     label: 'Catalog',
     items: [
       { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish master and selling rates', icon: 'dishes' as NavIcon },
@@ -153,7 +159,6 @@ const clientWorkspaceNav = [
   { href: '/app/ingredients', match: '/app/ingredients', label: 'Ingredient Rates', description: 'Business + city + global rates', icon: 'ingredients' as ClientNavIcon },
   { href: '/app/disposable-rates', match: '/app/disposable-rates', label: 'Plastic Rates', description: 'Reusable disposable purchase rates', icon: 'expenses' as ClientNavIcon },
   { href: '/app/manpower-rates', match: '/app/manpower-rates', label: 'Manpower Rates', description: 'Reusable staff rates', icon: 'team' as ClientNavIcon },
-  { href: '/admin/dishes', match: '/admin/dishes', label: 'Master Data', description: 'Dishes, recipes and cost masters', icon: 'ingredients' as ClientNavIcon },
   { href: '/app/profile', match: '/app/profile', label: 'Profile', description: 'Business settings', icon: 'profile' as ClientNavIcon },
 ];
 
@@ -348,12 +353,14 @@ export default function AppShell({
     };
   }, [moreOpen]);
 
-  // Single-business mode: the same owner session uses both
-  // event pages and master-data pages. Admin styling is route-based,
-  // not a separate account/role.
+  // Admin styling is route-based. Global master-data routes are reserved
+  // for the Super Admin; caterer accounts stay inside their tenant workspace.
   const isAdmin =
     pathname === '/admin' ||
     pathname.startsWith('/admin/');
+  const isUsersWorkspace =
+    pathname === '/admin/users' ||
+    pathname.startsWith('/admin/users/');
   const isDishWorkspace =
     pathname === '/admin/dishes' ||
     pathname.startsWith('/admin/dishes/');
@@ -366,6 +373,7 @@ export default function AppShell({
     pathname.startsWith('/admin/settings/cost-masters/lpg');
   const isAdminNavItemActive = (href: string) =>
     pathname === href ||
+    (href === '/admin/users' && isUsersWorkspace) ||
     (href === '/admin/dishes' && isDishWorkspace) ||
     (href === '/admin/ingredients' && isIngredientWorkspace) ||
     (href === '/admin/gas' && isGasWorkspace);
@@ -431,7 +439,7 @@ export default function AppShell({
   return (
     <main className={`page-shell app-frame admin-theme ${isAdmin ? 'admin-workspace-shell' : 'client-theme'}`}>
       <header className="topbar no-print">
-        <Link href="/app/event?resume=1" className="brand-chip">
+        <Link href={isAdmin ? '/admin/users' : '/app/event?resume=1'} className="brand-chip">
           <span className="brand-logo">MC</span>
           <span className="brand-copy">
             <b>Menu Costing</b>
@@ -456,7 +464,7 @@ export default function AppShell({
 
           <span className="account-status active">
             <i aria-hidden="true" />
-            Owner Workspace
+            {session?.role === 'ADMIN' ? 'Super Admin' : 'Caterer Workspace'}
           </span>
 
           <button
