@@ -98,6 +98,19 @@ type DisposableCategory =
   | 'Waste'
   | 'Other';
 
+type DisposableMasterItem = {
+  id: string;
+  name: string;
+  category: string;
+  photoUrl: string;
+  unit: string;
+  defaultRate: number;
+  supplierId: string;
+  supplierName: string;
+  notes: string;
+  active: boolean;
+};
+
 function disposableCategory(name: string): DisposableCategory {
   const value = String(name || '').trim().toLocaleLowerCase('en-IN');
 
@@ -117,6 +130,7 @@ export default function DisposableCostPage() {
   const [message, setMessage] = useState('');
   const [itemSearch, setItemSearch] = useState('');
   const [itemStatus, setItemStatus] = useState<'ALL' | 'MISSING_RATE' | 'ACTIVE'>('ALL');
+  const [masterItems, setMasterItems] = useState<DisposableMasterItem[]>([]);
 
   useEffect(() => {
     const current = getSession();
@@ -127,6 +141,21 @@ export default function DisposableCostPage() {
     }
 
     setSession(current);
+
+    void fetch('/api/client/disposable-master', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = await response.json();
+        setMasterItems(
+          Array.isArray(data.items)
+            ? (data.items as DisposableMasterItem[]).filter((item) => item.active !== false)
+            : [],
+        );
+      })
+      .catch(() => {
+        // Event costing remains usable if the master is temporarily unavailable.
+      });
+
     const saved = loadWork(current.tenantId);
     const totalCovers = calculate(saved).totalCovers;
     const alreadyAssigned = saved.disposableItems.some(
@@ -324,6 +353,50 @@ export default function DisposableCostPage() {
     );
   }
 
+  function addFromDisposableMaster(item: DisposableMasterItem) {
+    if (!work) return;
+
+    const normalizedName = item.name.trim().toLocaleLowerCase('en-IN');
+    const existing = work.disposableItems.find(
+      (row) => row.name.trim().toLocaleLowerCase('en-IN') === normalizedName,
+    );
+
+    if (existing) {
+      persistItems(
+        work.disposableItems.map((row) =>
+          row.id === existing.id
+            ? {
+                ...row,
+                photoUrl: item.photoUrl || row.photoUrl || '',
+                unit: item.unit || row.unit || 'pcs',
+                unitCost:
+                  Number(row.unitCost) > 0
+                    ? row.unitCost
+                    : Math.max(0, Number(item.defaultRate) || 0),
+              }
+            : row,
+        ),
+        `${item.name} updated from Disposable Master.`,
+      );
+      return;
+    }
+
+    persistItems(
+      [
+        ...work.disposableItems,
+        {
+          id: uid('disposable_custom'),
+          name: item.name,
+          photoUrl: item.photoUrl,
+          unit: item.unit || 'pcs',
+          quantity: 0,
+          unitCost: Math.max(0, Number(item.defaultRate) || 0),
+        },
+      ],
+      `${item.name} added from Disposable Master.`,
+    );
+  }
+
   async function uploadItemPhoto(
     id: string,
     event: ChangeEvent<HTMLInputElement>,
@@ -483,6 +556,13 @@ export default function DisposableCostPage() {
               >
                 Plastic Rate Master
               </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => router.push('/app/disposable-master')}
+              >
+                Disposable Master
+              </button>
               <button className="secondary-button" type="button" onClick={applyMasterRates}>
                 Apply Master Rates
               </button>
@@ -494,6 +574,139 @@ export default function DisposableCostPage() {
               </button>
             </div>
           </div>
+
+          <section
+            className="no-print"
+            style={{
+              marginBottom: 14,
+              padding: 12,
+              border: '1px solid var(--border)',
+              borderRadius: 16,
+              background: 'var(--surface-subtle, rgba(148,163,184,.04))',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                marginBottom: 10,
+              }}
+            >
+              <div>
+                <strong style={{ display: 'block', fontSize: 13 }}>
+                  Choose disposable by photo
+                </strong>
+                <small className="muted">
+                  Tap a saved item to add its photo, unit and default rate to this event.
+                </small>
+              </div>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => router.push('/app/disposable-master')}
+              >
+                Manage Photos
+              </button>
+            </div>
+
+            {masterItems.length ? (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                  gap: 9,
+                }}
+              >
+                {masterItems.map((item) => {
+                  const eventItem = work.disposableItems.find(
+                    (row) =>
+                      row.name.trim().toLocaleLowerCase('en-IN') ===
+                      item.name.trim().toLocaleLowerCase('en-IN'),
+                  );
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => addFromDisposableMaster(item)}
+                      style={{
+                        overflow: 'hidden',
+                        padding: 0,
+                        border: eventItem
+                          ? '1px solid rgba(74,156,255,.65)'
+                          : '1px solid var(--border)',
+                        borderRadius: 13,
+                        background: 'var(--surface, rgba(15,20,27,.7))',
+                        color: 'inherit',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div
+                        style={{
+                          aspectRatio: '4 / 3',
+                          background: 'rgba(148,163,184,.08)',
+                          overflow: 'hidden',
+                          display: 'grid',
+                          placeItems: 'center',
+                        }}
+                      >
+                        {item.photoUrl ? (
+                          <img
+                            src={item.photoUrl}
+                            alt={item.name}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              display: 'block',
+                            }}
+                          />
+                        ) : (
+                          <span className="muted" style={{ fontSize: 10 }}>
+                            No photo
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ padding: 9 }}>
+                        <b style={{ display: 'block', fontSize: 10 }}>
+                          {item.name}
+                        </b>
+                        <small
+                          className="muted"
+                          style={{ display: 'block', marginTop: 3 }}
+                        >
+                          {item.category} · {item.unit}
+                        </small>
+                        <small
+                          style={{
+                            display: 'block',
+                            marginTop: 5,
+                            color: eventItem ? '#75dca0' : 'inherit',
+                            fontWeight: 800,
+                          }}
+                        >
+                          {eventItem
+                            ? 'Added to event'
+                            : `${money(item.defaultRate)} / ${item.unit}`}
+                        </small>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-state" style={{ margin: 0 }}>
+                <div>
+                  <h3>No disposable photos saved yet</h3>
+                  <p>Create Disposable Master items first, then select them here by photo.</p>
+                </div>
+              </div>
+            )}
+          </section>
 
           <datalist id="disposable-unit-options">
             {DISPOSABLE_UNITS.map((unit) => (
