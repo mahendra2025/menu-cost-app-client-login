@@ -25,6 +25,7 @@ import type {
 type RequirementKind =
   | 'MENU'
   | 'MANPOWER'
+  | 'DRESS'
   | 'GROCERY'
   | 'DISPOSABLE'
   | 'EQUIPMENT'
@@ -53,6 +54,7 @@ type AssignmentRow = {
   partnerId?: string;
   equipmentId?: string;
   crockeryId?: string;
+  uniformId?: string;
   photoUrl?: string;
   availableQty?: number;
   unitsPerGuest?: number;
@@ -133,12 +135,31 @@ type CrockeryItem = {
   active: boolean;
 };
 
+type UniformItem = {
+  id: string;
+  name: string;
+  photoUrl: string;
+  staffRole: string;
+  components: string;
+  sizes: string;
+  ownership: 'IN_HOUSE' | 'RENTAL';
+  availableQty: number;
+  unit: string;
+  defaultRate: number;
+  vendorId: string;
+  vendorName: string;
+  laundryStatus: string;
+  notes: string;
+  active: boolean;
+};
+
 const TABS: Array<{
   kind: RequirementKind;
   label: string;
 }> = [
   { kind: 'MENU', label: 'Menu Vendors' },
   { kind: 'MANPOWER', label: 'Manpower Agencies' },
+  { kind: 'DRESS', label: 'Dress & Uniform' },
   { kind: 'GROCERY', label: 'Grocery Suppliers' },
   { kind: 'DISPOSABLE', label: 'Disposables' },
   { kind: 'EQUIPMENT', label: 'Equipment' },
@@ -494,6 +515,8 @@ export default function EventPlanningPage() {
     useState<EquipmentItem[]>([]);
   const [crockery, setCrockery] =
     useState<CrockeryItem[]>([]);
+  const [uniforms, setUniforms] =
+    useState<UniformItem[]>([]);
   const [saveState, setSaveState] =
     useState<'SAVED' | 'SAVING' | 'ERROR'>('SAVED');
   const saveTimer =
@@ -525,6 +548,9 @@ export default function EventPlanningPage() {
       fetch('/api/client/crockery', {
         cache: 'no-store',
       }),
+      fetch('/api/client/uniforms', {
+        cache: 'no-store',
+      }),
       fetch(
         `/api/client/event-planning?costingId=${encodeURIComponent(
           currentWork.costingId,
@@ -534,7 +560,7 @@ export default function EventPlanningPage() {
         },
       ),
     ])
-      .then(async ([vendorResponse, equipmentResponse, crockeryResponse, planningResponse]) => {
+      .then(async ([vendorResponse, equipmentResponse, crockeryResponse, uniformResponse, planningResponse]) => {
         if (vendorResponse.ok) {
           const vendorData = await vendorResponse.json();
           setVendors(
@@ -558,6 +584,15 @@ export default function EventPlanningPage() {
           setCrockery(
             Array.isArray(crockeryData.crockery)
               ? crockeryData.crockery as CrockeryItem[]
+              : [],
+          );
+        }
+
+        if (uniformResponse.ok) {
+          const uniformData = await uniformResponse.json();
+          setUniforms(
+            Array.isArray(uniformData.uniforms)
+              ? uniformData.uniforms as UniformItem[]
               : [],
           );
         }
@@ -665,6 +700,15 @@ export default function EventPlanningPage() {
         row.kind === 'CROCKERY' &&
         Boolean(row.crockeryId) &&
         Number(row.availableQty) > 0 &&
+        Number(row.quantity) > Number(row.availableQty),
+    );
+
+  const uniformShortages =
+    currentRows.filter(
+      (row) =>
+        row.kind === 'DRESS' &&
+        Boolean(row.uniformId) &&
+        Number(row.availableQty) >= 0 &&
         Number(row.quantity) > Number(row.availableQty),
     );
 
@@ -1011,6 +1055,127 @@ export default function EventPlanningPage() {
       );
   }
 
+  function requiredUniformQty(
+    item: UniformItem,
+  ) {
+    const role = normalized(item.staffRole);
+    if (!role) return 0;
+
+    return currentRows
+      .filter((row) => row.kind === 'MANPOWER')
+      .filter((row) => {
+        const manpowerRole = normalized(row.requirement);
+        return (
+          manpowerRole === role ||
+          manpowerRole.includes(role) ||
+          role.includes(manpowerRole)
+        );
+      })
+      .reduce(
+        (sum, row) =>
+          sum +
+          Math.max(0, Number(row.quantity) || 0),
+        0,
+      );
+  }
+
+  function selectedUniformQty(
+    uniformId: string,
+  ) {
+    return currentRows
+      .filter(
+        (row) =>
+          row.kind === 'DRESS' &&
+          row.uniformId === uniformId,
+      )
+      .reduce(
+        (sum, row) =>
+          sum +
+          Math.max(0, Number(row.quantity) || 0),
+        0,
+      );
+  }
+
+  function addUniformFromMaster(
+    item: UniformItem,
+  ) {
+    if (!currentFunction) return;
+
+    const baseRows =
+      plan[currentFunction.key] || defaultRows;
+    const suggestedQty =
+      requiredUniformQty(item);
+
+    const existing =
+      baseRows.find(
+        (row) =>
+          row.kind === 'DRESS' &&
+          row.uniformId === item.id,
+      );
+
+    if (existing) {
+      persistRows(
+        currentFunction.key,
+        baseRows.map((row) =>
+          row.id === existing.id
+            ? {
+                ...row,
+                quantity:
+                  suggestedQty ||
+                  row.quantity,
+              }
+            : row,
+        ),
+      );
+      return;
+    }
+
+    const row = newRow(
+      'DRESS',
+      item.name,
+      [
+        item.staffRole,
+        item.components,
+        item.sizes
+          ? `Sizes: ${item.sizes}`
+          : '',
+        item.laundryStatus
+          ? `Laundry: ${item.laundryStatus.replace(/_/g, ' ')}`
+          : '',
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      suggestedQty,
+      item.unit || 'set',
+      item.defaultRate,
+    );
+
+    persistRows(
+      currentFunction.key,
+      [
+        ...baseRows,
+        {
+          ...row,
+          uniformId: item.id,
+          photoUrl: item.photoUrl,
+          availableQty: item.availableQty,
+          partnerId:
+            item.ownership === 'RENTAL'
+              ? item.vendorId
+              : '',
+          assignedTo:
+            item.ownership === 'RENTAL'
+              ? item.vendorName
+              : 'In-house',
+          partnerType:
+            item.ownership === 'RENTAL'
+              ? 'VENDOR'
+              : 'IN_HOUSE',
+        },
+      ],
+    );
+  }
+
   function addRequirement() {
     if (!currentFunction) return;
 
@@ -1028,6 +1193,8 @@ export default function EventPlanningPage() {
           1,
           tab === 'MANPOWER'
             ? 'person'
+            : tab === 'DRESS'
+              ? 'set'
             : tab === 'TRANSPORT'
               ? 'trip'
               : 'unit',
@@ -1199,6 +1366,9 @@ export default function EventPlanningPage() {
             <Link className="ep-button" href="/app/crockery">
               Crockery Master
             </Link>
+            <Link className="ep-button" href="/app/uniforms">
+              Dress Master
+            </Link>
             <Link className="ep-button" href="/app/work-orders">
               Work Orders
             </Link>
@@ -1359,6 +1529,91 @@ export default function EventPlanningPage() {
                 );
               })}
             </nav>
+
+            {tab === 'DRESS' ? (
+              <section className="ep-equipment-picker">
+                <div className="ep-equipment-picker-head">
+                  <div>
+                    <b>Choose staff dress by photo</b>
+                    <span>
+                      Required sets are calculated from the assigned manpower role.
+                    </span>
+                  </div>
+
+                  <Link className="ep-button" href="/app/uniforms">
+                    Manage Uniforms
+                  </Link>
+                </div>
+
+                {uniforms.filter((item) => item.active).length ? (
+                  <div className="ep-equipment-grid">
+                    {uniforms
+                      .filter((item) => item.active)
+                      .map((item) => {
+                        const required =
+                          requiredUniformQty(item);
+                        const selected =
+                          selectedUniformQty(item.id);
+                        const shortage =
+                          Math.max(
+                            0,
+                            selected - item.availableQty,
+                          );
+
+                        return (
+                          <button
+                            key={item.id}
+                            className={
+                              shortage > 0
+                                ? 'ep-equipment-card over'
+                                : 'ep-equipment-card'
+                            }
+                            type="button"
+                            onClick={() =>
+                              addUniformFromMaster(item)
+                            }
+                          >
+                            <div className="ep-equipment-photo">
+                              {item.photoUrl ? (
+                                <img
+                                  src={item.photoUrl}
+                                  alt={item.name}
+                                />
+                              ) : (
+                                <div className="ep-equipment-fallback">
+                                  <b>
+                                    {item.name
+                                      .slice(0, 2)
+                                      .toUpperCase() || 'UF'}
+                                  </b>
+                                  <small>No photo</small>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="ep-equipment-card-body">
+                              <b>{item.name}</b>
+                              <span>
+                                {item.staffRole || 'No role'}
+                                {item.components
+                                  ? ` · ${item.components}`
+                                  : ''}
+                              </span>
+                              <small>
+                                Required {required} · Selected {selected} · Available {item.availableQty}
+                              </small>
+                            </div>
+                          </button>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="ep-empty">
+                    No uniform photos saved yet. Open Dress Master and add staff uniforms first.
+                  </div>
+                )}
+              </section>
+            ) : null}
 
             {tab === 'EQUIPMENT' ? (
               <section className="ep-equipment-picker">
@@ -1848,7 +2103,6 @@ export default function EventPlanningPage() {
                 ))}
 
                 {crockeryShortages.map((row) => (
-
                   <div
                     className="ep-pending-row"
                     key={`shortage:${row.id}`}
@@ -1856,6 +2110,18 @@ export default function EventPlanningPage() {
                     <b>{row.requirement} shortage</b>
                     <span>
                       Selected {row.quantity} · Available {row.availableQty}
+                    </span>
+                  </div>
+                ))}
+
+                {uniformShortages.map((row) => (
+                  <div
+                    className="ep-pending-row"
+                    key={`uniform-shortage:${row.id}`}
+                  >
+                    <b>{row.requirement} shortage</b>
+                    <span>
+                      Required {row.quantity} · Available {row.availableQty}
                     </span>
                   </div>
                 ))}
@@ -1883,6 +2149,7 @@ export default function EventPlanningPage() {
 
                 {!equipmentShortages.length &&
                 !crockeryShortages.length &&
+                !uniformShortages.length &&
                 !currentRows.some(
                   (row) =>
                     row.status === 'PENDING' ||
