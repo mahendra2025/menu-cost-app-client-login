@@ -60,6 +60,8 @@ type AssignmentRow = {
   partnerType: PartnerType;
   rate: number;
   deliveryTime: string;
+  pickupTime?: string;
+  paymentTerms?: string;
   status: AssignmentStatus;
 };
 
@@ -273,6 +275,8 @@ function newRow(
     partnerType: 'VENDOR',
     rate: Math.max(0, Number(rate) || 0),
     deliveryTime: '',
+    pickupTime: '',
+    paymentTerms: '',
     status: 'PENDING',
   };
 }
@@ -778,6 +782,10 @@ export default function EventPlanningPage() {
       unit:
         matchedRate?.unit ||
         row.unit,
+      paymentTerms:
+        vendor.paymentTerms ||
+        row.paymentTerms ||
+        '',
     });
   }
 
@@ -1191,6 +1199,9 @@ export default function EventPlanningPage() {
             <Link className="ep-button" href="/app/crockery">
               Crockery Master
             </Link>
+            <Link className="ep-button" href="/app/work-orders">
+              Work Orders
+            </Link>
             <Link className="ep-button" href="/app/event?resume=1">
               Edit Event & Menu
             </Link>
@@ -1525,6 +1536,7 @@ export default function EventPlanningPage() {
                       <th>Rate</th>
                       <th>Total</th>
                       <th>Delivery / Reporting</th>
+                      <th>Pickup / Return</th>
                       <th>Status</th>
                       <th />
                     </tr>
@@ -1701,6 +1713,21 @@ export default function EventPlanningPage() {
                               })
                             }
                             aria-label="Delivery or reporting time"
+                          />
+                        </td>
+
+                        <td>
+                          <input
+                            className="ep-field"
+                            type="datetime-local"
+                            value={row.pickupTime || ''}
+                            onChange={(event) =>
+                              updateRow(row.id, {
+                                pickupTime:
+                                  event.target.value,
+                              })
+                            }
+                            aria-label="Pickup or return time"
                           />
                         </td>
 
