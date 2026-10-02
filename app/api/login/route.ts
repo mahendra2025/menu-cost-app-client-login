@@ -323,14 +323,14 @@ export async function POST(
         ),
       );
 
+    /*
+     * Keep the configured owner password authoritative in production.
+     * This also provides a recovery path when the stored SINGLE workspace
+     * password is stale after an environment/password change.
+     */
     const bootstrapPasswordValid =
       Boolean(
         owner.bootstrapPassword &&
-        (
-          !existingWorkspace ||
-          existingWorkspace.plan !==
-            'SINGLE'
-        ) &&
         safeMatch(
           password,
           owner.bootstrapPassword,
