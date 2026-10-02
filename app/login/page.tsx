@@ -129,7 +129,7 @@ export default function LoginPage() {
           <div className={styles.heading}>
             <p>Business workspace</p>
             <h2 id="sign-in-title">Sign in to Menu Costing</h2>
-            <span>One owner account for costing, masters and quotations.</span>
+            <span>Sign in with your Caterer User ID or Super Admin account.</span>
           </div>
 
           <form className={styles.form} onSubmit={onSubmit} aria-busy={loading}>
@@ -142,7 +142,7 @@ export default function LoginPage() {
                 <input
                   id="userId" name="userId" type="text" autoComplete="username"
                   value={userId} onChange={(event) => setUserId(event.target.value)}
-                  placeholder="Owner user ID" aria-invalid={Boolean(error)}
+                  placeholder="Caterer User ID" aria-invalid={Boolean(error)}
                   aria-describedby={error ? 'login-error' : undefined} autoFocus required
                 />
               </div>
