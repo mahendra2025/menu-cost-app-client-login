@@ -52,8 +52,11 @@ type AssignmentRow = {
   assignedTo: string;
   partnerId?: string;
   equipmentId?: string;
+  crockeryId?: string;
   photoUrl?: string;
   availableQty?: number;
+  unitsPerGuest?: number;
+  bufferPercent?: number;
   partnerType: PartnerType;
   rate: number;
   deliveryTime: string;
@@ -106,6 +109,24 @@ type EquipmentItem = {
   vendorId: string;
   vendorName: string;
   capacity: string;
+  notes: string;
+  active: boolean;
+};
+
+type CrockeryItem = {
+  id: string;
+  name: string;
+  category: string;
+  photoUrl: string;
+  ownership: 'IN_HOUSE' | 'RENTAL';
+  availableQty: number;
+  unit: string;
+  defaultRate: number;
+  vendorId: string;
+  vendorName: string;
+  sizeType: string;
+  unitsPerGuest: number;
+  bufferPercent: number;
   notes: string;
   active: boolean;
 };
@@ -467,6 +488,8 @@ export default function EventPlanningPage() {
     useState<Vendor[]>([]);
   const [equipment, setEquipment] =
     useState<EquipmentItem[]>([]);
+  const [crockery, setCrockery] =
+    useState<CrockeryItem[]>([]);
   const [saveState, setSaveState] =
     useState<'SAVED' | 'SAVING' | 'ERROR'>('SAVED');
   const saveTimer =
@@ -495,6 +518,9 @@ export default function EventPlanningPage() {
       fetch('/api/client/equipment', {
         cache: 'no-store',
       }),
+      fetch('/api/client/crockery', {
+        cache: 'no-store',
+      }),
       fetch(
         `/api/client/event-planning?costingId=${encodeURIComponent(
           currentWork.costingId,
@@ -504,7 +530,7 @@ export default function EventPlanningPage() {
         },
       ),
     ])
-      .then(async ([vendorResponse, equipmentResponse, planningResponse]) => {
+      .then(async ([vendorResponse, equipmentResponse, crockeryResponse, planningResponse]) => {
         if (vendorResponse.ok) {
           const vendorData = await vendorResponse.json();
           setVendors(
@@ -519,6 +545,15 @@ export default function EventPlanningPage() {
           setEquipment(
             Array.isArray(equipmentData.equipment)
               ? equipmentData.equipment as EquipmentItem[]
+              : [],
+          );
+        }
+
+        if (crockeryResponse.ok) {
+          const crockeryData = await crockeryResponse.json();
+          setCrockery(
+            Array.isArray(crockeryData.crockery)
+              ? crockeryData.crockery as CrockeryItem[]
               : [],
           );
         }
@@ -616,6 +651,15 @@ export default function EventPlanningPage() {
       (row) =>
         row.kind === 'EQUIPMENT' &&
         Boolean(row.equipmentId) &&
+        Number(row.availableQty) > 0 &&
+        Number(row.quantity) > Number(row.availableQty),
+    );
+
+  const crockeryShortages =
+    currentRows.filter(
+      (row) =>
+        row.kind === 'CROCKERY' &&
+        Boolean(row.crockeryId) &&
         Number(row.availableQty) > 0 &&
         Number(row.quantity) > Number(row.availableQty),
     );
@@ -832,6 +876,133 @@ export default function EventPlanningPage() {
       );
   }
 
+  function recommendedCrockeryQty(
+    item: CrockeryItem,
+  ) {
+    const pax = Math.max(
+      0,
+      Number(currentFunction?.pax) || 0,
+    );
+    const base =
+      pax *
+      Math.max(
+        0,
+        Number(item.unitsPerGuest) || 0,
+      );
+    const withBuffer =
+      base *
+      (1 +
+        Math.max(
+          0,
+          Number(item.bufferPercent) || 0,
+        ) /
+          100);
+
+    return Math.max(
+      0,
+      Math.ceil(withBuffer),
+    );
+  }
+
+  function addCrockeryFromMaster(
+    item: CrockeryItem,
+  ) {
+    if (!currentFunction) return;
+
+    const baseRows =
+      plan[currentFunction.key] || defaultRows;
+
+    const suggestedQty =
+      recommendedCrockeryQty(item);
+
+    const existing =
+      baseRows.find(
+        (row) =>
+          row.kind === 'CROCKERY' &&
+          row.crockeryId === item.id,
+      );
+
+    if (existing) {
+      persistRows(
+        currentFunction.key,
+        baseRows.map((row) =>
+          row.id === existing.id
+            ? {
+                ...row,
+                quantity:
+                  suggestedQty ||
+                  row.quantity,
+              }
+            : row,
+        ),
+      );
+      return;
+    }
+
+    const row = newRow(
+      'CROCKERY',
+      item.name,
+      [
+        item.category,
+        item.sizeType,
+        `${item.unitsPerGuest || 0} / guest`,
+        `${item.bufferPercent || 0}% buffer`,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      suggestedQty,
+      item.unit || 'pcs',
+      item.defaultRate,
+    );
+
+    persistRows(
+      currentFunction.key,
+      [
+        ...baseRows,
+        {
+          ...row,
+          crockeryId: item.id,
+          photoUrl: item.photoUrl,
+          availableQty: item.availableQty,
+          unitsPerGuest: item.unitsPerGuest,
+          bufferPercent: item.bufferPercent,
+          partnerId:
+            item.ownership === 'RENTAL'
+              ? item.vendorId
+              : '',
+          assignedTo:
+            item.ownership === 'RENTAL'
+              ? item.vendorName
+              : 'In-house',
+          partnerType:
+            item.ownership === 'RENTAL'
+              ? 'VENDOR'
+              : 'IN_HOUSE',
+        },
+      ],
+    );
+  }
+
+  function selectedCrockeryQty(
+    crockeryId: string,
+  ) {
+    return currentRows
+      .filter(
+        (row) =>
+          row.kind === 'CROCKERY' &&
+          row.crockeryId === crockeryId,
+      )
+      .reduce(
+        (sum, row) =>
+          sum +
+          Math.max(
+            0,
+            Number(row.quantity) || 0,
+          ),
+        0,
+      );
+  }
+
   function addRequirement() {
     if (!currentFunction) return;
 
@@ -1016,6 +1187,9 @@ export default function EventPlanningPage() {
             </Link>
             <Link className="ep-button" href="/app/equipment">
               Equipment Master
+            </Link>
+            <Link className="ep-button" href="/app/crockery">
+              Crockery Master
             </Link>
             <Link className="ep-button" href="/app/event?resume=1">
               Edit Event & Menu
@@ -1251,6 +1425,89 @@ export default function EventPlanningPage() {
                 ) : (
                   <div className="ep-empty">
                     No photo equipment saved yet. Open Equipment Master and add photos first.
+                  </div>
+                )}
+              </section>
+            ) : null}
+
+            {tab === 'CROCKERY' ? (
+              <section className="ep-equipment-picker">
+                <div className="ep-equipment-picker-head">
+                  <div>
+                    <b>Choose crockery & cutlery by photo</b>
+                    <span>
+                      Quantity is suggested from guests × units per guest + buffer.
+                    </span>
+                  </div>
+
+                  <Link className="ep-button" href="/app/crockery">
+                    Manage Photos
+                  </Link>
+                </div>
+
+                {crockery.filter((item) => item.active).length ? (
+                  <div className="ep-equipment-grid">
+                    {crockery
+                      .filter((item) => item.active)
+                      .map((item) => {
+                        const selected =
+                          selectedCrockeryQty(item.id);
+                        const suggested =
+                          recommendedCrockeryQty(item);
+                        const over =
+                          item.availableQty > 0 &&
+                          selected > item.availableQty;
+
+                        return (
+                          <button
+                            key={item.id}
+                            className={
+                              over
+                                ? 'ep-equipment-card over'
+                                : 'ep-equipment-card'
+                            }
+                            type="button"
+                            onClick={() =>
+                              addCrockeryFromMaster(item)
+                            }
+                          >
+                            <div className="ep-equipment-photo">
+                              {item.photoUrl ? (
+                                <img
+                                  src={item.photoUrl}
+                                  alt={item.name}
+                                />
+                              ) : (
+                                <div className="ep-equipment-fallback">
+                                  <b>
+                                    {item.name
+                                      .slice(0, 2)
+                                      .toUpperCase() || 'CK'}
+                                  </b>
+                                  <small>No photo</small>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="ep-equipment-card-body">
+                              <b>{item.name}</b>
+                              <span>
+                                {item.category}
+                                {item.sizeType
+                                  ? ` · ${item.sizeType}`
+                                  : ''}
+                              </span>
+                              <small>
+                                Suggested {suggested} · Selected {selected} · Available {item.availableQty}
+                              </small>
+                            </div>
+                          </button>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="ep-empty">
+                    No crockery photos saved yet. Open Crockery Master and add items first.
                   </div>
                 )}
               </section>
@@ -1563,6 +1820,19 @@ export default function EventPlanningPage() {
                   </div>
                 ))}
 
+                {crockeryShortages.map((row) => (
+
+                  <div
+                    className="ep-pending-row"
+                    key={`shortage:${row.id}`}
+                  >
+                    <b>{row.requirement} shortage</b>
+                    <span>
+                      Selected {row.quantity} · Available {row.availableQty}
+                    </span>
+                  </div>
+                ))}
+
                 {currentRows
                   .filter(
                     (row) =>
@@ -1585,6 +1855,7 @@ export default function EventPlanningPage() {
                   ))}
 
                 {!equipmentShortages.length &&
+                !crockeryShortages.length &&
                 !currentRows.some(
                   (row) =>
                     row.status === 'PENDING' ||
