@@ -284,6 +284,53 @@ export async function POST(
       );
     }
 
+    const adminUserId =
+      (process.env.ADMIN_USER_ID || '')
+        .trim()
+        .toLowerCase();
+    const adminPassword =
+      (process.env.ADMIN_PASSWORD || '')
+        .trim();
+
+    if (
+      adminUserId &&
+      adminPassword &&
+      safeMatch(userId, adminUserId) &&
+      safeMatch(password, adminPassword)
+    ) {
+      const response =
+        NextResponse.json({
+          session: {
+            role: 'ADMIN',
+            tenantId: 'admin',
+            tenantName: 'Super Admin',
+            email: adminUserId,
+            status: 'ACTIVE',
+            workspaceMode: 'ADMIN',
+          },
+        });
+
+      response.cookies.set({
+        name: getAdminCookieName(),
+        value: createAdminSessionToken(),
+        httpOnly: true,
+        sameSite: 'lax',
+        secure:
+          process.env.NODE_ENV ===
+          'production',
+        path: '/',
+      });
+
+      response.cookies.set({
+        name: getClientCookieName(),
+        value: '',
+        path: '/',
+        maxAge: 0,
+      });
+
+      return response;
+    }
+
     const owner =
       configuredOwner();
 
