@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import AppShell, { LockedCard } from '../../components/AppShell';
@@ -30,6 +30,48 @@ function money(value: number) {
 function numberValue(value: string) {
   const number = Number(value);
   return Number.isFinite(number) ? Math.max(0, number) : 0;
+}
+
+async function compressDisposablePhoto(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Could not read image'));
+    reader.readAsDataURL(file);
+  });
+
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => reject(new Error('Could not open image'));
+    element.src = dataUrl;
+  });
+
+  const scale = Math.min(1, 360 / image.width, 260 / image.height);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(image.width * scale));
+  canvas.height = Math.max(1, Math.round(image.height * scale));
+
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('Image processing unavailable');
+  }
+
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  let quality = 0.7;
+  let output = canvas.toDataURL('image/jpeg', quality);
+
+  while (output.length > 75000 && quality > 0.35) {
+    quality -= 0.08;
+    output = canvas.toDataURL('image/jpeg', quality);
+  }
+
+  if (output.length > 95000) {
+    throw new Error('Photo is too large. Please choose a smaller image.');
+  }
+
+  return output;
 }
 
 const DISPOSABLE_UNITS = [
@@ -282,6 +324,28 @@ export default function DisposableCostPage() {
     );
   }
 
+  async function uploadItemPhoto(
+    id: string,
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const photoUrl = await compressDisposablePhoto(file);
+      updateItem(id, { photoUrl });
+      setMessage('Disposable photo added.');
+    } catch (caught) {
+      setMessage(
+        caught instanceof Error
+          ? caught.message
+          : 'Could not process disposable photo.',
+      );
+    } finally {
+      event.target.value = '';
+    }
+  }
+
   function addItem() {
     if (!work) return;
 
@@ -290,6 +354,7 @@ export default function DisposableCostPage() {
       {
         id: uid('disposable_custom'),
         name: 'Custom item',
+        photoUrl: '',
         unit: 'pcs',
         quantity: 0,
         unitCost: 0,
@@ -495,6 +560,7 @@ export default function DisposableCostPage() {
             <table className="disposable-table">
               <thead>
                 <tr>
+                  <th>Photo</th>
                   <th>Item</th>
                   <th>Category</th>
                   <th>Quantity</th>
@@ -512,12 +578,99 @@ export default function DisposableCostPage() {
                   return (
                     <tr key={item.id} className={item.lineTotal > 0 ? 'is-active' : ''}>
                       <td>
+                        <div
+                          style={{
+                            width: 62,
+                            height: 62,
+                            borderRadius: 12,
+                            overflow: 'hidden',
+                            border: '1px solid var(--border)',
+                            background: 'var(--surface-subtle, rgba(148,163,184,.08))',
+                            display: 'grid',
+                            placeItems: 'center',
+                          }}
+                        >
+                          {item.photoUrl ? (
+                            <img
+                              src={item.photoUrl}
+                              alt={item.name}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                display: 'block',
+                              }}
+                            />
+                          ) : (
+                            <span className="muted" style={{ fontSize: 10 }}>
+                              No photo
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
                         {custom ? (
-                          <input
-                            className="input"
-                            value={item.name}
-                            onChange={(event) => updateItem(item.id, { name: event.target.value })}
-                          />
+                          <div style={{ display: 'grid', gap: 7, minWidth: 190 }}>
+                            <input
+                              className="input"
+                              value={item.name}
+                              onChange={(event) =>
+                                updateItem(item.id, {
+                                  name: event.target.value,
+                                })
+                              }
+                            />
+
+                            <div
+                              className="no-print"
+                              style={{
+                                display: 'flex',
+                                gap: 6,
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <label className="secondary-button" style={{ cursor: 'pointer' }}>
+                                Upload Photo
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  onChange={(event) =>
+                                    void uploadItemPhoto(item.id, event)
+                                  }
+                                />
+                              </label>
+
+                              {item.photoUrl ? (
+                                <button
+                                  className="ghost-button"
+                                  type="button"
+                                  onClick={() =>
+                                    updateItem(item.id, {
+                                      photoUrl: '',
+                                    })
+                                  }
+                                >
+                                  Remove Photo
+                                </button>
+                              ) : null}
+                            </div>
+
+                            <input
+                              className="input no-print"
+                              value={
+                                item.photoUrl?.startsWith('data:')
+                                  ? ''
+                                  : item.photoUrl || ''
+                              }
+                              placeholder="Optional photo URL"
+                              onChange={(event) =>
+                                updateItem(item.id, {
+                                  photoUrl: event.target.value,
+                                })
+                              }
+                            />
+                          </div>
                         ) : (
                           <div className="disposable-name">
                             <strong>{item.name}</strong>
@@ -606,7 +759,45 @@ export default function DisposableCostPage() {
                       : 'disposable-mobile-card'
                   }
                 >
-                  <div className="disposable-mobile-card-heading">
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '78px minmax(0, 1fr)',
+                      gap: 12,
+                      alignItems: 'start',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 78,
+                        height: 78,
+                        borderRadius: 14,
+                        overflow: 'hidden',
+                        border: '1px solid var(--border)',
+                        background: 'var(--surface-subtle, rgba(148,163,184,.08))',
+                        display: 'grid',
+                        placeItems: 'center',
+                      }}
+                    >
+                      {item.photoUrl ? (
+                        <img
+                          src={item.photoUrl}
+                          alt={item.name}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block',
+                          }}
+                        />
+                      ) : (
+                        <span className="muted" style={{ fontSize: 10 }}>
+                          No photo
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="disposable-mobile-card-heading">
                     <div>
                       {custom ? (
                         <label className="field">
@@ -618,6 +809,57 @@ export default function DisposableCostPage() {
                             onChange={(event) =>
                               updateItem(item.id, {
                                 name: event.target.value,
+                              })
+                            }
+                          />
+                          <div
+                            className="no-print"
+                            style={{
+                              display: 'flex',
+                              gap: 6,
+                              flexWrap: 'wrap',
+                              marginTop: 7,
+                            }}
+                          >
+                            <label className="secondary-button" style={{ cursor: 'pointer' }}>
+                              Upload Photo
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={(event) =>
+                                  void uploadItemPhoto(item.id, event)
+                                }
+                              />
+                            </label>
+
+                            {item.photoUrl ? (
+                              <button
+                                className="ghost-button"
+                                type="button"
+                                onClick={() =>
+                                  updateItem(item.id, {
+                                    photoUrl: '',
+                                  })
+                                }
+                              >
+                                Remove
+                              </button>
+                            ) : null}
+                          </div>
+
+                          <input
+                            className="input no-print"
+                            style={{ marginTop: 7 }}
+                            value={
+                              item.photoUrl?.startsWith('data:')
+                                ? ''
+                                : item.photoUrl || ''
+                            }
+                            placeholder="Optional photo URL"
+                            onChange={(event) =>
+                              updateItem(item.id, {
+                                photoUrl: event.target.value,
                               })
                             }
                           />
@@ -639,6 +881,7 @@ export default function DisposableCostPage() {
                     </div>
 
                     <b>{money(item.lineTotal)}</b>
+                    </div>
                   </div>
 
                   <div className="disposable-mobile-fields">
