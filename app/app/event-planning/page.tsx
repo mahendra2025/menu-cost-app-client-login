@@ -51,6 +51,9 @@ type AssignmentRow = {
   unit: string;
   assignedTo: string;
   partnerId?: string;
+  equipmentId?: string;
+  photoUrl?: string;
+  availableQty?: number;
   partnerType: PartnerType;
   rate: number;
   deliveryTime: string;
@@ -89,6 +92,22 @@ type Vendor = {
   notes: string;
   active: boolean;
   rates: VendorRate[];
+};
+
+type EquipmentItem = {
+  id: string;
+  name: string;
+  category: string;
+  photoUrl: string;
+  ownership: 'IN_HOUSE' | 'RENTAL';
+  availableQty: number;
+  unit: string;
+  defaultRate: number;
+  vendorId: string;
+  vendorName: string;
+  capacity: string;
+  notes: string;
+  active: boolean;
 };
 
 const TABS: Array<{
@@ -446,6 +465,8 @@ export default function EventPlanningPage() {
     useState<RequirementKind>('MENU');
   const [vendors, setVendors] =
     useState<Vendor[]>([]);
+  const [equipment, setEquipment] =
+    useState<EquipmentItem[]>([]);
   const [saveState, setSaveState] =
     useState<'SAVED' | 'SAVING' | 'ERROR'>('SAVED');
   const saveTimer =
@@ -471,6 +492,9 @@ export default function EventPlanningPage() {
       fetch('/api/client/vendors', {
         cache: 'no-store',
       }),
+      fetch('/api/client/equipment', {
+        cache: 'no-store',
+      }),
       fetch(
         `/api/client/event-planning?costingId=${encodeURIComponent(
           currentWork.costingId,
@@ -480,12 +504,21 @@ export default function EventPlanningPage() {
         },
       ),
     ])
-      .then(async ([vendorResponse, planningResponse]) => {
+      .then(async ([vendorResponse, equipmentResponse, planningResponse]) => {
         if (vendorResponse.ok) {
           const vendorData = await vendorResponse.json();
           setVendors(
             Array.isArray(vendorData.vendors)
               ? vendorData.vendors as Vendor[]
+              : [],
+          );
+        }
+
+        if (equipmentResponse.ok) {
+          const equipmentData = await equipmentResponse.json();
+          setEquipment(
+            Array.isArray(equipmentData.equipment)
+              ? equipmentData.equipment as EquipmentItem[]
               : [],
           );
         }
@@ -695,6 +728,101 @@ export default function EventPlanningPage() {
     });
   }
 
+  function addEquipmentFromMaster(
+    item: EquipmentItem,
+  ) {
+    if (!currentFunction) return;
+
+    const baseRows =
+      plan[currentFunction.key] || defaultRows;
+
+    const existing =
+      baseRows.find(
+        (row) =>
+          row.kind === 'EQUIPMENT' &&
+          row.equipmentId === item.id,
+      );
+
+    if (existing) {
+      persistRows(
+        currentFunction.key,
+        baseRows.map((row) =>
+          row.id === existing.id
+            ? {
+                ...row,
+                quantity:
+                  Math.max(
+                    0,
+                    Number(row.quantity) || 0,
+                  ) + 1,
+              }
+            : row,
+        ),
+      );
+      return;
+    }
+
+    const row = newRow(
+      'EQUIPMENT',
+      item.name,
+      [
+        item.category,
+        item.capacity,
+        item.notes,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      1,
+      item.unit || 'unit',
+      item.defaultRate,
+    );
+
+    persistRows(
+      currentFunction.key,
+      [
+        ...baseRows,
+        {
+          ...row,
+          equipmentId: item.id,
+          photoUrl: item.photoUrl,
+          availableQty: item.availableQty,
+          partnerId:
+            item.ownership === 'RENTAL'
+              ? item.vendorId
+              : '',
+          assignedTo:
+            item.ownership === 'RENTAL'
+              ? item.vendorName
+              : 'In-house',
+          partnerType:
+            item.ownership === 'RENTAL'
+              ? 'VENDOR'
+              : 'IN_HOUSE',
+        },
+      ],
+    );
+  }
+
+  function selectedEquipmentQty(
+    equipmentId: string,
+  ) {
+    return currentRows
+      .filter(
+        (row) =>
+          row.kind === 'EQUIPMENT' &&
+          row.equipmentId === equipmentId,
+      )
+      .reduce(
+        (sum, row) =>
+          sum +
+          Math.max(
+            0,
+            Number(row.quantity) || 0,
+          ),
+        0,
+      );
+  }
+
   function addRequirement() {
     if (!currentFunction) return;
 
@@ -835,6 +963,24 @@ export default function EventPlanningPage() {
           .ep-costs{display:grid;gap:7px}
           .ep-cost-row{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#8f9cac;font-size:9px}
           .ep-cost-row b{color:#e3ebf4}
+          .ep-equipment-picker{padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-equipment-picker-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+          .ep-equipment-picker-head b{font-size:11px}
+          .ep-equipment-picker-head span{color:#748294;font-size:8px}
+          .ep-equipment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+          .ep-equipment-card{overflow:hidden;border:1px solid #2b3440;border-radius:11px;background:#111820;color:#dce5ef;text-align:left;cursor:pointer}
+          .ep-equipment-card:hover{border-color:rgba(74,156,255,.55)}
+          .ep-equipment-photo{aspect-ratio:4/3;overflow:hidden;background:#18202a}
+          .ep-equipment-photo img{width:100%;height:100%;display:block;object-fit:cover}
+          .ep-equipment-fallback{display:grid;width:100%;height:100%;place-items:center;align-content:center;gap:3px;color:#718197}
+          .ep-equipment-fallback b{font-size:20px}
+          .ep-equipment-fallback small{font-size:7px}
+          .ep-equipment-card-body{padding:8px}
+          .ep-equipment-card-body b,.ep-equipment-card-body span,.ep-equipment-card-body small{display:block}
+          .ep-equipment-card-body b{font-size:9px}
+          .ep-equipment-card-body span{margin-top:3px;color:#7f8c9b;font-size:7px}
+          .ep-equipment-card-body small{margin-top:5px;color:#71d99d;font-size:7px;font-weight:900}
+          .ep-equipment-card.over small{color:#ffb35a}
           .ep-empty{padding:40px 15px;color:#748294;font-size:10px;text-align:center}
           @media(max-width:1180px){.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
           @media(max-width:720px){.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
@@ -858,6 +1004,9 @@ export default function EventPlanningPage() {
           <div className="ep-hero-actions">
             <Link className="ep-button" href="/app/vendors">
               Vendor Master
+            </Link>
+            <Link className="ep-button" href="/app/equipment">
+              Equipment Master
             </Link>
             <Link className="ep-button" href="/app/event?resume=1">
               Edit Event & Menu
@@ -1016,6 +1165,87 @@ export default function EventPlanningPage() {
                 );
               })}
             </nav>
+
+            {tab === 'EQUIPMENT' ? (
+              <section className="ep-equipment-picker">
+                <div className="ep-equipment-picker-head">
+                  <div>
+                    <b>Choose equipment by photo</b>
+                    <span>
+                      Tap a photo to add one unit to this function.
+                    </span>
+                  </div>
+
+                  <Link className="ep-button" href="/app/equipment">
+                    Manage Photos
+                  </Link>
+                </div>
+
+                {equipment.filter((item) => item.active).length ? (
+                  <div className="ep-equipment-grid">
+                    {equipment
+                      .filter((item) => item.active)
+                      .map((item) => {
+                        const selected =
+                          selectedEquipmentQty(item.id);
+                        const over =
+                          item.availableQty > 0 &&
+                          selected > item.availableQty;
+
+                        return (
+                          <button
+                            key={item.id}
+                            className={
+                              over
+                                ? 'ep-equipment-card over'
+                                : 'ep-equipment-card'
+                            }
+                            type="button"
+                            onClick={() =>
+                              addEquipmentFromMaster(item)
+                            }
+                          >
+                            <div className="ep-equipment-photo">
+                              {item.photoUrl ? (
+                                <img
+                                  src={item.photoUrl}
+                                  alt={item.name}
+                                />
+                              ) : (
+                                <div className="ep-equipment-fallback">
+                                  <b>
+                                    {item.name
+                                      .slice(0, 2)
+                                      .toUpperCase() || 'EQ'}
+                                  </b>
+                                  <small>No photo</small>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="ep-equipment-card-body">
+                              <b>{item.name}</b>
+                              <span>
+                                {item.category}
+                                {item.capacity
+                                  ? ` · ${item.capacity}`
+                                  : ''}
+                              </span>
+                              <small>
+                                Selected {selected} · Available {item.availableQty}
+                              </small>
+                            </div>
+                          </button>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="ep-empty">
+                    No photo equipment saved yet. Open Equipment Master and add photos first.
+                  </div>
+                )}
+              </section>
+            ) : null}
 
             {visibleRows.length ? (
               <div className="ep-table-wrap">
