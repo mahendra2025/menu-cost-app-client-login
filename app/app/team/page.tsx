@@ -918,6 +918,33 @@ export default function ManpowerPage() {
         ).length > 0,
     ).length;
 
+  const missingRateRoleCount =
+    activeManpowerRows.filter(
+      (row) =>
+        !(Math.max(0, Number(row.rate) || 0) > 0),
+    ).length;
+
+  const recommendationGapCount =
+    (work?.manpower ?? []).filter(
+      (row) =>
+        !isCustomRole(row) &&
+        manpowerGap(row) !== 0,
+    ).length;
+
+  const dishCoveragePercent =
+    (work?.menu.length ?? 0) > 0
+      ? Math.round(
+          (staffedMenuDishCount /
+            Math.max(1, work?.menu.length ?? 1)) *
+            100,
+        )
+      : 100;
+
+  const manpowerAttentionCount =
+    unassignedMenuDishCount +
+    zeroQuantityAssignedRoleCount +
+    missingRateRoleCount;
+
   function rowsForMeal(meal: MealPlan) {
     return work?.manpower.filter((row) => rowBelongsToMeal(row, meal)) ?? [];
   }
@@ -1209,10 +1236,10 @@ export default function ManpowerPage() {
       <section className="content-grid manpower-page">
         <div className="manpower-overview manpower-overview-v2">
           <div className="manpower-overview-copy">
-            <span className="page-eyebrow">Meal-wise manpower costing</span>
-            <h2>Build the team from the menu</h2>
+            <span className="page-eyebrow">Manpower control center</span>
+            <h2>Plan every person, role and kitchen responsibility</h2>
             <p>
-              Add the cooks, helpers, service and utility manpower you actually need for each meal. Nothing is selected automatically.
+              Build each function team manually, assign kitchen dishes, verify rates and see staffing gaps before the event moves to Operations.
             </p>
           </div>
 
@@ -1223,13 +1250,27 @@ export default function ManpowerPage() {
               {meals.length} meal{meals.length === 1 ? '' : 's'} · {totalPeople} manpower assignments
               {billingSummary.savings > 0 ? ` · ${money(billingSummary.savings)} saved by shared staffing` : ''}
             </small>
-            <div style={{ display: 'grid', gap: 8 }}>
+            <div className="manpower-overview-actions">
               <button
                 className="secondary-button"
                 type="button"
                 onClick={() => router.push('/app/manpower-rates')}
               >
-                Manpower Rate Master
+                Rate Master
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => router.push('/app/uniforms')}
+              >
+                Dress & Uniform
+              </button>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => router.push('/app/event-planning')}
+              >
+                Event Planning
               </button>
               <button
                 className="secondary-button"
@@ -1248,6 +1289,43 @@ export default function ManpowerPage() {
             </div>
           </div>
         </div>
+
+        <section className="manpower-command-strip no-print" aria-label="Manpower event health">
+          <article>
+            <span>Total people</span>
+            <b>{totalPeople}</b>
+            <small>{activeManpowerRows.length} active roles</small>
+          </article>
+          <article>
+            <span>Service team</span>
+            <b>{servicePeople}</b>
+            <small>Waiters, captains & service</small>
+          </article>
+          <article>
+            <span>Kitchen team</span>
+            <b>{kitchenPeople}</b>
+            <small>Cooks, chefs & helpers</small>
+          </article>
+          <article>
+            <span>Dish coverage</span>
+            <b className={dishCoveragePercent < 100 ? 'needs-attention' : 'is-ready'}>
+              {dishCoveragePercent}%
+            </b>
+            <small>{staffedMenuDishCount}/{work.menu.length} dishes staffed</small>
+          </article>
+          <article>
+            <span>Cost / cover</span>
+            <b>{money(manpowerPerCover)}</b>
+            <small>{money(manpowerTotal)} total</small>
+          </article>
+          <article className={manpowerAttentionCount > 0 ? 'attention' : 'ready'}>
+            <span>Needs attention</span>
+            <b>{manpowerAttentionCount}</b>
+            <small>
+              {unassignedMenuDishCount} dish · {zeroQuantityAssignedRoleCount} qty · {missingRateRoleCount} rate
+            </small>
+          </article>
+        </section>
 
         <section className="manpower-meal-selector" aria-label="Choose a meal to staff">
           <div className="manpower-meal-selector-head">
@@ -1353,6 +1431,21 @@ export default function ManpowerPage() {
             (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
             0,
           );
+          const mealActiveRows = mealRows.filter(
+            (row) => Math.max(0, Number(row.quantity) || 0) > 0,
+          );
+          const mealMissingRateCount = mealActiveRows.filter(
+            (row) => !(Math.max(0, Number(row.rate) || 0) > 0),
+          ).length;
+          const mealServicePeople = mealActiveRows
+            .filter((row) => manpowerFilterGroup(row) === 'SERVICE')
+            .reduce((sum, row) => sum + Math.max(0, Number(row.quantity) || 0), 0);
+          const mealKitchenPeople = mealActiveRows
+            .filter((row) => manpowerFilterGroup(row) === 'KITCHEN')
+            .reduce((sum, row) => sum + Math.max(0, Number(row.quantity) || 0), 0);
+          const mealUtilityPeople = mealActiveRows
+            .filter((row) => manpowerFilterGroup(row) === 'UTILITY')
+            .reduce((sum, row) => sum + Math.max(0, Number(row.quantity) || 0), 0);
           const sharedRateRows = mealRows.filter(
             (row) =>
               getManpowerRateMode(row) !== 'PER_MEAL' &&
@@ -1498,6 +1591,90 @@ export default function ManpowerPage() {
                 </div>
               </div>
 
+              <section className="manpower-meal-control-strip no-print" aria-label="Selected meal manpower summary">
+                <div>
+                  <span>Selected</span>
+                  <b>{mealPeople}</b>
+                  <small>people</small>
+                </div>
+                <div>
+                  <span>Service</span>
+                  <b>{mealServicePeople}</b>
+                  <small>people</small>
+                </div>
+                <div>
+                  <span>Kitchen</span>
+                  <b>{mealKitchenPeople}</b>
+                  <small>people</small>
+                </div>
+                <div>
+                  <span>Utility</span>
+                  <b>{mealUtilityPeople}</b>
+                  <small>people</small>
+                </div>
+                <div>
+                  <span>Dish coverage</span>
+                  <b className={staffedDishCount === mealDishes.length ? 'is-ready' : 'needs-attention'}>
+                    {staffedDishCount}/{mealDishes.length}
+                  </b>
+                  <small>staffed</small>
+                </div>
+                <div>
+                  <span>Missing rate</span>
+                  <b className={mealMissingRateCount > 0 ? 'needs-attention' : 'is-ready'}>
+                    {mealMissingRateCount}
+                  </b>
+                  <small>active roles</small>
+                </div>
+                <div>
+                  <span>Meal cost</span>
+                  <b>{money(mealTotal)}</b>
+                  <small>{meal.pax > 0 ? `${money(mealTotal / meal.pax)} / guest` : 'No guests'}</small>
+                </div>
+              </section>
+
+              {(mealUnassignedDishes.length > 0 ||
+                zeroQuantityAssignedRows.length > 0 ||
+                mealMissingRateCount > 0) ? (
+                <section className="manpower-attention-banner no-print">
+                  <div>
+                    <span>Needs attention</span>
+                    <b>Finish this meal before Operations</b>
+                    <small>
+                      {mealUnassignedDishes.length} unassigned dish{mealUnassignedDishes.length === 1 ? '' : 'es'}
+                      {' · '}
+                      {zeroQuantityAssignedRows.length} assigned role{zeroQuantityAssignedRows.length === 1 ? '' : 's'} without quantity
+                      {' · '}
+                      {mealMissingRateCount} active role{mealMissingRateCount === 1 ? '' : 's'} without rate
+                    </small>
+                  </div>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => {
+                      setRoleStatus('NEEDS_REVIEW');
+                      setDishCoverageFilter(
+                        mealUnassignedDishes.length > 0
+                          ? 'UNASSIGNED'
+                          : zeroQuantityAssignedRows.length > 0
+                            ? 'NEEDS_QTY'
+                            : 'ALL',
+                      );
+                    }}
+                  >
+                    Review issues
+                  </button>
+                </section>
+              ) : (
+                <section className="manpower-ready-banner no-print">
+                  <span aria-hidden="true">✓</span>
+                  <div>
+                    <b>This meal is ready</b>
+                    <small>Dish coverage, quantities and active rates are complete.</small>
+                  </div>
+                </section>
+              )}
+
               <section className="manpower-quick-add no-print" aria-label="Quick manual manpower add">
                 <div className="manpower-quick-add-copy">
                   <span>Quick add</span>
@@ -1544,7 +1721,7 @@ export default function ManpowerPage() {
 
               {categoryRecommendations.length > 0 ? (
                 <section
-                  className="no-print"
+                  className="no-print manpower-smart-recommendation"
                   aria-label="Category manpower recommendations"
                   style={{
                     marginTop: 16,
@@ -1844,10 +2021,14 @@ export default function ManpowerPage() {
                                 </small>
                               ) : null}
                               {!isCustomRole(row) && row.department ? (
-                                <small className="muted" style={{ display: 'block', marginTop: 3 }}>
+                                <span className="manpower-department-badge">
                                   {row.department.replace(/_/g, ' ')}
-                                </small>
-                              ) : null}
+                                </span>
+                              ) : (
+                                <span className="manpower-department-badge custom">
+                                  Custom
+                                </span>
+                              )}
                             </div>
                             {isCustomRole(row) ? (
                               <button
@@ -1889,13 +2070,13 @@ export default function ManpowerPage() {
                           {isCustomRole(row) ? (
                             <span className="muted">Manual</span>
                           ) : manpowerGap(row) === 0 ? (
-                            <span className="account-status active">Matches recommendation</span>
+                            <span className="manpower-role-status ready">Ready</span>
                           ) : (
                             <div style={{ display: 'grid', gap: 6 }}>
-                              <span className="needs-attention">
+                              <span className="manpower-role-status attention">
                                 {manpowerGap(row) > 0
-                                  ? `+${manpowerGap(row)} above`
-                                  : `${Math.abs(manpowerGap(row))} below`}
+                                  ? `+${manpowerGap(row)} above plan`
+                                  : `${Math.abs(manpowerGap(row))} below plan`}
                               </span>
                               <button
                                 className="ghost-button"
