@@ -277,10 +277,17 @@ export function refreshSessionFromClient():
   }
 
   /*
-   * Single-business mode no longer refreshes session state
-   * from the legacy local client-account list. In particular,
-   * an old EXPIRED client record must not re-lock the owner
-   * workspace after login.
+   * Preserve a real admin session. Admin authentication is cookie-backed
+   * and must never be downgraded to CLIENT during local session refresh.
+   */
+  if (session.role === 'ADMIN') {
+    return session;
+  }
+
+  /*
+   * Single-business owner/client sessions stay active without consulting
+   * the removed legacy client-account list. In particular, an old EXPIRED
+   * client record must not re-lock the owner workspace after login.
    */
   const nextSession: Session = {
     ...session,
