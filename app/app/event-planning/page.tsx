@@ -366,6 +366,20 @@ function manpowerDepartmentLabel(
   return 'Other';
 }
 
+function menuCategoryFromRow(
+  row: AssignmentRow,
+) {
+  return String(
+    row.requirement || 'Menu',
+  )
+    .replace(
+      /\s+station$/i,
+      '',
+    )
+    .trim() ||
+    'Menu';
+}
+
 function planKey(costingId: string) {
   return `menu_cost_event_planning_${costingId}_v1`;
 }
@@ -1646,6 +1660,78 @@ export default function EventPlanningPage() {
       [currentRows],
     );
 
+  const menuVendorRows =
+    useMemo(
+      () =>
+        currentRows.filter(
+          (row) =>
+            row.kind ===
+            'MENU',
+        ),
+      [currentRows],
+    );
+
+  const menuVendorSummary =
+    useMemo(() => {
+      const assigned =
+        menuVendorRows.filter(
+          (row) =>
+            Boolean(
+              row.assignedTo.trim(),
+            ),
+        ).length;
+
+      const confirmed =
+        menuVendorRows.filter(
+          (row) =>
+            [
+              'CONFIRMED',
+              'DELIVERED',
+              'CLOSED',
+            ].includes(
+              row.status,
+            ),
+        ).length;
+
+      const withSetupTime =
+        menuVendorRows.filter(
+          (row) =>
+            Boolean(
+              row.deliveryTime,
+            ),
+        ).length;
+
+      const totalCost =
+        menuVendorRows.reduce(
+          (sum, row) =>
+            sum +
+            Math.max(
+              0,
+              Number(
+                row.quantity,
+              ) || 0,
+            ) *
+              Math.max(
+                0,
+                Number(
+                  row.rate,
+                ) || 0,
+              ),
+          0,
+        );
+
+      return {
+        assigned,
+        confirmed,
+        withSetupTime,
+        totalCost,
+        readiness:
+          readiness(
+            menuVendorRows,
+          ),
+      };
+    }, [menuVendorRows]);
+
   const manpowerAgencyRows =
     useMemo(
       () =>
@@ -2537,6 +2623,48 @@ export default function EventPlanningPage() {
 
     return /grocery|provision|dry|kirana/.test(
       category,
+    );
+  }
+
+  function vendorMatchesMenuRow(
+    vendor: Vendor,
+    row: AssignmentRow,
+  ) {
+    if (row.kind !== 'MENU') {
+      return false;
+    }
+
+    if (
+      matchingVendorRate(
+        vendor,
+        row,
+      )
+    ) {
+      return true;
+    }
+
+    const vendorValue =
+      normalized(
+        `${vendor.category} ${vendor.type}`,
+      );
+
+    const category =
+      normalized(
+        menuCategoryFromRow(
+          row,
+        ),
+      );
+
+    return Boolean(
+      /food|catering|caterer|kitchen|chef|live counter|sweet|farsan|bakery/.test(
+        vendorValue,
+      ) ||
+      (
+        category &&
+        vendorValue.includes(
+          category,
+        )
+      )
     );
   }
 
@@ -3655,6 +3783,61 @@ export default function EventPlanningPage() {
     );
   }
 
+  function setMenuVendorCovers(
+    row: AssignmentRow,
+    covers: number,
+  ) {
+    const nextCovers =
+      Math.max(
+        0,
+        Math.round(
+          Number(
+            covers,
+          ) || 0,
+        ),
+      );
+
+    if (
+      nextCovers <= 0
+    ) {
+      removeRow(
+        row.id,
+      );
+      return;
+    }
+
+    updateRow(
+      row.id,
+      {
+        quantity:
+          nextCovers,
+        unit:
+          'cover',
+      },
+    );
+  }
+
+  function useFunctionCovers(
+    row: AssignmentRow,
+  ) {
+    const covers =
+      Math.max(
+        0,
+        Number(
+          currentFunction?.pax,
+        ) || 0,
+      );
+
+    if (
+      covers > 0
+    ) {
+      setMenuVendorCovers(
+        row,
+        covers,
+      );
+    }
+  }
+
   function requiredManpowerQty(
     row: AssignmentRow,
   ) {
@@ -4375,6 +4558,49 @@ export default function EventPlanningPage() {
           .ep-manpower-role-footer small{color:#637285;font-size:6px}
           @media(max-width:1100px){.ep-manpower-agency-summary{grid-template-columns:repeat(3,1fr)}}
           @media(max-width:680px){.ep-manpower-agency-head{align-items:stretch;flex-direction:column}.ep-manpower-agency-summary{grid-template-columns:1fr 1fr}.ep-manpower-role-grid{grid-template-columns:1fr}}
+          .ep-menu-vendor-control{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-menu-vendor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-menu-vendor-head b,.ep-menu-vendor-head span{display:block}
+          .ep-menu-vendor-head b{color:#e6edf5;font-size:11px}
+          .ep-menu-vendor-head span{margin-top:3px;max-width:760px;color:#748294;font-size:8px;line-height:1.45}
+          .ep-menu-vendor-head-actions{display:flex;gap:6px;flex-wrap:wrap}
+          .ep-menu-vendor-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+          .ep-menu-vendor-summary article{padding:9px 10px;border:1px solid rgba(148,163,184,.09);border-radius:10px;background:rgba(255,255,255,.018)}
+          .ep-menu-vendor-summary span,.ep-menu-vendor-summary b,.ep-menu-vendor-summary small{display:block}
+          .ep-menu-vendor-summary span{color:#718094;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-menu-vendor-summary b{margin-top:4px;color:#e1eaf3;font-size:12px}
+          .ep-menu-vendor-summary small{margin-top:2px;color:#657487;font-size:6px}
+          .ep-menu-vendor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+          .ep-menu-vendor-card{padding:10px;border:1px solid #2b3440;border-radius:11px;background:#111820}
+          .ep-menu-vendor-card.assigned{border-color:rgba(74,156,255,.28)}
+          .ep-menu-vendor-card.ready{border-color:rgba(85,217,143,.20)}
+          .ep-menu-vendor-card.attention{border-color:rgba(244,173,84,.35)}
+          .ep-menu-vendor-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-menu-vendor-card-top span,.ep-menu-vendor-card-top b,.ep-menu-vendor-card-top small{display:block}
+          .ep-menu-vendor-card-top span{color:#78b5ff;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-menu-vendor-card-top b{margin-top:3px;color:#e6edf5;font-size:9px}
+          .ep-menu-vendor-card-top small{margin-top:3px;color:#6e7c8e;font-size:6px}
+          .ep-menu-vendor-card-top>strong{color:#d9e4ef;font-size:9px;white-space:nowrap}
+          .ep-menu-dishes{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+          .ep-menu-dishes span{padding:4px 6px;border-radius:999px;color:#8295aa;background:rgba(74,156,255,.045);font-size:6px;font-weight:750}
+          .ep-menu-vendor-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
+          .ep-menu-vendor-meta>span{padding:5px 6px;border-radius:7px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
+          .ep-menu-vendor-meta>span b{display:block;margin-top:2px;color:#d7e1ec;font-size:8px}
+          .ep-menu-vendor-meta>span.warn{color:#e7a653;background:rgba(244,173,84,.06)}
+          .ep-menu-vendor-meta>span.warn b{color:#f1b361}
+          .ep-menu-cover-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end;margin-top:8px}
+          .ep-menu-cover-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
+          .ep-menu-cover-editor>button:disabled{opacity:.35;cursor:not-allowed}
+          .ep-menu-cover-editor label{display:grid;gap:3px}
+          .ep-menu-cover-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-menu-cover-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
+          .ep-menu-use-covers{width:100%;min-height:30px;margin-top:6px;border:1px solid rgba(74,156,255,.16);border-radius:8px;color:#92c3fb;background:rgba(74,156,255,.045);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
+          .ep-menu-vendor-card-footer{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.07)}
+          .ep-menu-vendor-card-footer>span{padding:4px 7px;border-radius:999px;color:#f0b15f;background:rgba(244,173,84,.07);font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-menu-vendor-card-footer>span.confirmed,.ep-menu-vendor-card-footer>span.delivered,.ep-menu-vendor-card-footer>span.closed{color:#76dda2;background:rgba(85,217,143,.07)}
+          .ep-menu-vendor-card-footer small{color:#637285;font-size:6px}
+          @media(max-width:1100px){.ep-menu-vendor-summary{grid-template-columns:repeat(3,1fr)}}
+          @media(max-width:680px){.ep-menu-vendor-head{align-items:stretch;flex-direction:column}.ep-menu-vendor-summary{grid-template-columns:1fr 1fr}.ep-menu-vendor-grid{grid-template-columns:1fr}}
           .ep-empty{padding:40px 15px;color:#748294;font-size:10px;text-align:center}
           @media(max-width:1180px){.ep-readiness-grid{grid-template-columns:repeat(4,1fr)}.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
           @media(max-width:720px){.ep-event-selector{grid-template-columns:1fr}.ep-readiness-head{align-items:flex-start}.ep-readiness-grid{grid-template-columns:1fr 1fr}.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
@@ -5865,6 +6091,253 @@ export default function EventPlanningPage() {
               </section>
             ) : null}
 
+            {tab === 'MENU' ? (
+              <section className="ep-menu-vendor-control">
+                <div className="ep-menu-vendor-head">
+                  <div>
+                    <b>Menu Vendor Planning</b>
+                    <span>
+                      Categories and dishes come directly from the selected menu for this function. Assign an in-house team or external food vendor per category/station.
+                    </span>
+                  </div>
+
+                  <div className="ep-menu-vendor-head-actions">
+                    <Link
+                      className="ep-button"
+                      href="/app/event"
+                    >
+                      Edit Menu
+                    </Link>
+
+                    <Link
+                      className="ep-button"
+                      href="/app/vendors"
+                    >
+                      Food Vendors
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="ep-menu-vendor-summary">
+                  <article>
+                    <span>Menu Categories</span>
+                    <b>{menuVendorRows.length}</b>
+                    <small>{currentFunction?.menu.length || 0} selected dishes</small>
+                  </article>
+                  <article>
+                    <span>Assigned</span>
+                    <b>{menuVendorSummary.assigned}/{menuVendorRows.length}</b>
+                    <small>In-house or vendor assigned</small>
+                  </article>
+                  <article>
+                    <span>Setup Ready</span>
+                    <b>{menuVendorSummary.withSetupTime}/{menuVendorRows.length}</b>
+                    <small>Reporting/setup time entered</small>
+                  </article>
+                  <article>
+                    <span>Confirmed</span>
+                    <b>{menuVendorSummary.confirmed}</b>
+                    <small>{menuVendorSummary.readiness}% vendor readiness</small>
+                  </article>
+                  <article>
+                    <span>Vendor Cost</span>
+                    <b>{currency(menuVendorSummary.totalCost)}</b>
+                    <small>Cover × vendor rate</small>
+                  </article>
+                </div>
+
+                {menuVendorRows.length ? (
+                  <div className="ep-menu-vendor-grid">
+                    {menuVendorRows.map((row) => {
+                      const category =
+                        menuCategoryFromRow(
+                          row,
+                        );
+
+                      const dishes =
+                        currentFunction?.menu.filter(
+                          (item) =>
+                            normalized(
+                              item.category ||
+                                'Other',
+                            ) ===
+                            normalized(
+                              category,
+                            ),
+                        ) || [];
+
+                      const functionCovers =
+                        Math.max(
+                          0,
+                          Number(
+                            currentFunction?.pax,
+                          ) || 0,
+                        );
+
+                      const variance =
+                        row.quantity -
+                        functionCovers;
+
+                      return (
+                        <article
+                          className={
+                            [
+                              'ep-menu-vendor-card',
+                              row.assignedTo.trim()
+                                ? 'assigned'
+                                : '',
+                              row.status !== 'PENDING'
+                                ? 'ready'
+                                : '',
+                              functionCovers > 0 &&
+                              row.quantity < functionCovers
+                                ? 'attention'
+                                : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')
+                          }
+                          key={row.id}
+                        >
+                          <div className="ep-menu-vendor-card-top">
+                            <div>
+                              <span>{category}</span>
+                              <b>{row.requirement}</b>
+                              <small>
+                                {row.assignedTo ||
+                                  'Vendor not assigned'}
+                              </small>
+                            </div>
+
+                            <strong>
+                              {currency(
+                                row.quantity *
+                                  row.rate,
+                              )}
+                            </strong>
+                          </div>
+
+                          <div className="ep-menu-dishes">
+                            {dishes.length ? (
+                              dishes.map((dish) => (
+                                <span key={dish.id}>
+                                  {dish.name}
+                                </span>
+                              ))
+                            ) : (
+                              <span>
+                                {row.detail || 'No dish detail'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="ep-menu-vendor-meta">
+                            <span>
+                              Function Covers
+                              <b>{functionCovers}</b>
+                            </span>
+                            <span>
+                              Vendor Covers
+                              <b>{row.quantity}</b>
+                            </span>
+                            <span
+                              className={
+                                variance < 0
+                                  ? 'warn'
+                                  : ''
+                              }
+                            >
+                              Variance
+                              <b>
+                                {variance > 0
+                                  ? `+${variance}`
+                                  : variance}
+                              </b>
+                            </span>
+                          </div>
+
+                          <div className="ep-menu-cover-editor">
+                            <button
+                              type="button"
+                              disabled={row.quantity <= 1}
+                              onClick={() =>
+                                setMenuVendorCovers(
+                                  row,
+                                  row.quantity - 1,
+                                )
+                              }
+                            >
+                              −
+                            </button>
+
+                            <label>
+                              <span>Covers</span>
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={row.quantity}
+                                onChange={(event) =>
+                                  setMenuVendorCovers(
+                                    row,
+                                    Number(
+                                      event.target.value,
+                                    ),
+                                  )
+                                }
+                              />
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setMenuVendorCovers(
+                                  row,
+                                  row.quantity + 1,
+                                )
+                              }
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          {functionCovers > 0 ? (
+                            <button
+                              className="ep-menu-use-covers"
+                              type="button"
+                              onClick={() =>
+                                useFunctionCovers(
+                                  row,
+                                )
+                              }
+                            >
+                              Use Function Covers {functionCovers}
+                            </button>
+                          ) : null}
+
+                          <div className="ep-menu-vendor-card-footer">
+                            <span className={row.status.toLowerCase()}>
+                              {row.status}
+                            </span>
+
+                            <small>
+                              {row.deliveryTime
+                                ? `Setup ${row.deliveryTime.replace('T', ' ')}`
+                                : 'Setup/reporting time not set'}
+                            </small>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="ep-empty">
+                    No menu categories found for this function. Select the function menu first.
+                  </div>
+                )}
+              </section>
+            ) : null}
+
             {tab === 'MANPOWER' ? (
               <section className="ep-manpower-agency-control">
                 <div className="ep-manpower-agency-head">
@@ -6547,6 +7020,56 @@ export default function EventPlanningPage() {
                                     ))}
                                 </optgroup>
                               </>
+                            ) : row.kind === 'MENU' &&
+                              vendors.some(
+                                (vendor) =>
+                                  vendor.active &&
+                                  vendorMatchesMenuRow(
+                                    vendor,
+                                    row,
+                                  ),
+                              ) ? (
+                              <>
+                                <optgroup label="Matching food vendors">
+                                  {vendors
+                                    .filter(
+                                      (vendor) =>
+                                        vendor.active &&
+                                        vendorMatchesMenuRow(
+                                          vendor,
+                                          row,
+                                        ),
+                                    )
+                                    .map((vendor) => (
+                                      <option
+                                        key={vendor.id}
+                                        value={vendor.id}
+                                      >
+                                        {vendor.name} · {vendor.category || vendor.type}
+                                      </option>
+                                    ))}
+                                </optgroup>
+
+                                <optgroup label="Other active partners">
+                                  {vendors
+                                    .filter(
+                                      (vendor) =>
+                                        vendor.active &&
+                                        !vendorMatchesMenuRow(
+                                          vendor,
+                                          row,
+                                        ),
+                                    )
+                                    .map((vendor) => (
+                                      <option
+                                        key={vendor.id}
+                                        value={vendor.id}
+                                      >
+                                        {vendor.name} · {vendor.category || vendor.type}
+                                      </option>
+                                    ))}
+                                </optgroup>
+                              </>
                             ) : row.kind === 'MANPOWER' &&
                               vendors.some(
                                 (vendor) =>
@@ -6801,13 +7324,15 @@ export default function EventPlanningPage() {
 
             <footer className="ep-table-actions">
               <span className="ep-hint">
-                {tab === 'GROCERY'
-                  ? 'Grocery suppliers are separated into Grocery, Dairy, and Vegetables & Fruits. Matching vendor categories are shown first.'
-                  : tab === 'MANPOWER'
-                    ? 'Roles come from the saved manpower plan. Agencies are shown first, and manual Event Planning quantity changes stay under your control.'
-                    : tab === 'TRANSPORT'
-                      ? 'Transport is separated into food/kitchen, equipment/material, staff and additional trips. Transport vendors are shown first.'
-                      : 'Suggestions come from the current menu, manpower and disposable data. Saved partners can auto-fill rates, and edits sync to PostgreSQL.'}
+                {tab === 'MENU'
+                  ? 'Menu categories come from the selected function menu. Matching food vendors are shown first; covers and vendor rates remain editable.'
+                  : tab === 'GROCERY'
+                    ? 'Grocery suppliers are separated into Grocery, Dairy, and Vegetables & Fruits. Matching vendor categories are shown first.'
+                    : tab === 'MANPOWER'
+                      ? 'Roles come from the saved manpower plan. Agencies are shown first, and manual Event Planning quantity changes stay under your control.'
+                      : tab === 'TRANSPORT'
+                        ? 'Transport is separated into food/kitchen, equipment/material, staff and additional trips. Transport vendors are shown first.'
+                        : 'Suggestions come from the current menu, manpower and disposable data. Saved partners can auto-fill rates, and edits sync to PostgreSQL.'}
               </span>
 
               <button
