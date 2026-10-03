@@ -255,6 +255,74 @@ function grocerySupplierGroup(
   return 'GROCERY';
 }
 
+type TransportPresetKey =
+  | 'FOOD_KITCHEN'
+  | 'EQUIPMENT_MATERIAL'
+  | 'STAFF'
+  | 'ADDITIONAL';
+
+const TRANSPORT_PRESETS: Array<{
+  key: TransportPresetKey;
+  label: string;
+  detail: string;
+}> = [
+  {
+    key: 'FOOD_KITCHEN',
+    label: 'Food & Kitchen Vehicle',
+    detail: 'Food, kitchen material and production dispatch',
+  },
+  {
+    key: 'EQUIPMENT_MATERIAL',
+    label: 'Equipment & Material Vehicle',
+    detail: 'Equipment, crockery, counters and event material',
+  },
+  {
+    key: 'STAFF',
+    label: 'Staff Vehicle',
+    detail: 'Chef, service and support manpower movement',
+  },
+  {
+    key: 'ADDITIONAL',
+    label: 'Additional Trip',
+    detail: 'Extra pickup, refill, emergency or return movement',
+  },
+];
+
+function transportPresetKey(
+  row: AssignmentRow,
+): TransportPresetKey {
+  const value =
+    normalized(
+      `${row.requirement} ${row.detail}`,
+    );
+
+  if (
+    /staff|chef|manpower|service team/.test(
+      value,
+    )
+  ) {
+    return 'STAFF';
+  }
+
+  if (
+    /equipment|material|crockery|counter/.test(
+      value,
+    )
+  ) {
+    return 'EQUIPMENT_MATERIAL';
+  }
+
+  if (
+    /additional|extra|emergency|refill|return trip/.test(
+      value,
+    )
+  ) {
+    return 'ADDITIONAL';
+  }
+
+  return 'FOOD_KITCHEN';
+}
+
 function planKey(costingId: string) {
   return `menu_cost_event_planning_${costingId}_v1`;
 }
@@ -566,8 +634,8 @@ function seedRows(
   rows.push(
     newRow(
       'TRANSPORT',
-      'Kitchen to venue vehicle',
-      'Food, equipment and service material dispatch',
+      'Food & Kitchen Vehicle',
+      'Food, kitchen material and production dispatch',
       1,
       'trip',
     ),
@@ -1535,6 +1603,92 @@ export default function EventPlanningPage() {
       [currentRows],
     );
 
+  const transportRows =
+    useMemo(
+      () =>
+        currentRows.filter(
+          (row) =>
+            row.kind ===
+            'TRANSPORT',
+        ),
+      [currentRows],
+    );
+
+  const transportSummary =
+    useMemo(() => {
+      const assigned =
+        transportRows.filter(
+          (row) =>
+            Boolean(
+              row.assignedTo.trim(),
+            ),
+        ).length;
+
+      const confirmed =
+        transportRows.filter(
+          (row) =>
+            [
+              'CONFIRMED',
+              'DELIVERED',
+              'CLOSED',
+            ].includes(
+              row.status,
+            ),
+        ).length;
+
+      const totalTrips =
+        transportRows.reduce(
+          (sum, row) =>
+            sum +
+            Math.max(
+              0,
+              Number(
+                row.quantity,
+              ) || 0,
+            ),
+          0,
+        );
+
+      const totalCost =
+        transportRows.reduce(
+          (sum, row) =>
+            sum +
+            Math.max(
+              0,
+              Number(
+                row.quantity,
+              ) || 0,
+            ) *
+              Math.max(
+                0,
+                Number(
+                  row.rate,
+                ) || 0,
+              ),
+          0,
+        );
+
+      const withTiming =
+        transportRows.filter(
+          (row) =>
+            Boolean(
+              row.deliveryTime,
+            ),
+        ).length;
+
+      return {
+        assigned,
+        confirmed,
+        totalTrips,
+        totalCost,
+        withTiming,
+        readiness:
+          readiness(
+            transportRows,
+          ),
+      };
+    }, [transportRows]);
+
   const equipmentCategoryGroups =
     useMemo(() => {
       const groups =
@@ -2173,6 +2327,19 @@ export default function EventPlanningPage() {
 
     return /grocery|provision|dry|kirana/.test(
       category,
+    );
+  }
+
+  function vendorMatchesTransport(
+    vendor: Vendor,
+  ) {
+    const value =
+      normalized(
+        `${vendor.category} ${vendor.type}`,
+      );
+
+    return /transport|vehicle|logistic|tempo|truck|cab|taxi/.test(
+      value,
     );
   }
 
@@ -3263,6 +3430,102 @@ export default function EventPlanningPage() {
     );
   }
 
+  function setTransportQuantity(
+    row: AssignmentRow,
+    quantity: number,
+  ) {
+    if (!currentFunction) return;
+
+    const nextQuantity =
+      Math.max(
+        0,
+        Math.round(
+          Number(
+            quantity,
+          ) || 0,
+        ),
+      );
+
+    if (nextQuantity <= 0) {
+      removeRow(
+        row.id,
+      );
+      return;
+    }
+
+    updateRow(
+      row.id,
+      {
+        quantity:
+          nextQuantity,
+      },
+    );
+  }
+
+  function addTransportPreset(
+    preset: (typeof TRANSPORT_PRESETS)[number],
+  ) {
+    if (!currentFunction) return;
+
+    const baseRows =
+      plan[currentFunction.key] ||
+      defaultRows;
+
+    const existing =
+      baseRows.find(
+        (row) =>
+          row.kind ===
+            'TRANSPORT' &&
+          transportPresetKey(
+            row,
+          ) === preset.key,
+      );
+
+    if (existing) {
+      persistRows(
+        currentFunction.key,
+        baseRows.map(
+          (row) =>
+            row.id ===
+            existing.id
+              ? {
+                  ...row,
+                  requirement:
+                    preset.label,
+                  detail:
+                    preset.detail,
+                  quantity:
+                    Math.max(
+                      1,
+                      Number(
+                        row.quantity,
+                      ) || 0,
+                    ) + 1,
+                  unit:
+                    row.unit ||
+                    'trip',
+                }
+              : row,
+        ),
+      );
+      return;
+    }
+
+    persistRows(
+      currentFunction.key,
+      [
+        ...baseRows,
+        newRow(
+          'TRANSPORT',
+          preset.label,
+          preset.detail,
+          1,
+          'trip',
+        ),
+      ],
+    );
+  }
+
   function addRequirement() {
     if (!currentFunction) return;
 
@@ -3681,6 +3944,50 @@ export default function EventPlanningPage() {
           .ep-disposable-note.warn{color:#c28e53}
           @media(max-width:760px){.ep-disposable-master-head{align-items:stretch;flex-direction:column}.ep-disposable-master-head-actions{justify-content:space-between}.ep-disposable-master-grid{grid-template-columns:1fr 1fr}}
           @media(max-width:520px){.ep-disposable-master-grid{grid-template-columns:1fr}}
+          .ep-transport-control{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-transport-control-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-transport-control-head b,.ep-transport-control-head span{display:block}
+          .ep-transport-control-head b{color:#e6edf5;font-size:11px}
+          .ep-transport-control-head span{margin-top:3px;max-width:720px;color:#748294;font-size:8px;line-height:1.45}
+          .ep-transport-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+          .ep-transport-summary article{padding:9px 10px;border:1px solid rgba(148,163,184,.09);border-radius:10px;background:rgba(255,255,255,.018)}
+          .ep-transport-summary span,.ep-transport-summary b,.ep-transport-summary small{display:block}
+          .ep-transport-summary span{color:#718094;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-transport-summary b{margin-top:4px;color:#e1eaf3;font-size:12px}
+          .ep-transport-summary small{margin-top:2px;color:#657487;font-size:6px}
+          .ep-transport-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+          .ep-transport-preset{display:grid;gap:4px;min-height:78px;padding:10px;border:1px solid #2b3440;border-radius:10px;color:#8190a2;background:#101720;font:inherit;text-align:left;cursor:pointer}
+          .ep-transport-preset:hover{border-color:#3c4856;background:#121b25}
+          .ep-transport-preset.active{border-color:rgba(74,156,255,.38);background:rgba(74,156,255,.045)}
+          .ep-transport-preset span{color:#dbe5ef;font-size:9px;font-weight:900}
+          .ep-transport-preset small{color:#68778a;font-size:6px;line-height:1.4}
+          .ep-transport-preset b{align-self:end;color:#8fc2ff;font-size:7px}
+          .ep-transport-list{display:grid;gap:7px}
+          .ep-transport-card{padding:10px;border:1px solid #2b3440;border-radius:11px;background:#101720}
+          .ep-transport-card.ready{border-color:rgba(85,217,143,.18)}
+          .ep-transport-card.attention{border-color:rgba(244,173,84,.24)}
+          .ep-transport-card-main{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-transport-card-main span,.ep-transport-card-main b,.ep-transport-card-main small{display:block}
+          .ep-transport-card-main span{color:#78b5ff;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-transport-card-main b{margin-top:3px;color:#e4edf6;font-size:10px}
+          .ep-transport-card-main small{margin-top:2px;color:#6e7c8e;font-size:7px}
+          .ep-transport-card-main>strong{color:#dce7f1;font-size:11px;white-space:nowrap}
+          .ep-transport-card-grid{display:grid;grid-template-columns:150px minmax(0,1fr);gap:9px;align-items:end;margin-top:9px}
+          .ep-transport-qty-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end}
+          .ep-transport-qty-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
+          .ep-transport-qty-editor>button:disabled{opacity:.35;cursor:not-allowed}
+          .ep-transport-qty-editor label{display:grid;gap:3px}
+          .ep-transport-qty-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-transport-qty-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
+          .ep-transport-card-meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+          .ep-transport-card-meta>span{padding:6px;border-radius:8px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
+          .ep-transport-card-meta b{display:block;overflow:hidden;margin-top:3px;color:#d7e1ec;font-size:7px;text-overflow:ellipsis;white-space:nowrap}
+          .ep-transport-card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:7px;border-top:1px solid rgba(148,163,184,.07)}
+          .ep-transport-card-footer>span{padding:4px 7px;border-radius:999px;color:#f0b15f;background:rgba(244,173,84,.07);font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-transport-card-footer>span.confirmed,.ep-transport-card-footer>span.delivered,.ep-transport-card-footer>span.closed{color:#76dda2;background:rgba(85,217,143,.07)}
+          .ep-transport-card-footer small{color:#637285;font-size:6px}
+          @media(max-width:1100px){.ep-transport-summary{grid-template-columns:repeat(3,1fr)}.ep-transport-presets{grid-template-columns:1fr 1fr}.ep-transport-card-grid{grid-template-columns:1fr}.ep-transport-card-meta{grid-template-columns:1fr 1fr}}
+          @media(max-width:640px){.ep-transport-control-head{align-items:stretch;flex-direction:column}.ep-transport-summary{grid-template-columns:1fr 1fr}.ep-transport-presets{grid-template-columns:1fr}.ep-transport-card-meta{grid-template-columns:1fr}}
           .ep-empty{padding:40px 15px;color:#748294;font-size:10px;text-align:center}
           @media(max-width:1180px){.ep-readiness-grid{grid-template-columns:repeat(4,1fr)}.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
           @media(max-width:720px){.ep-event-selector{grid-template-columns:1fr}.ep-readiness-head{align-items:flex-start}.ep-readiness-grid{grid-template-columns:1fr 1fr}.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
@@ -5171,6 +5478,238 @@ export default function EventPlanningPage() {
               </section>
             ) : null}
 
+            {tab === 'TRANSPORT' ? (
+              <section className="ep-transport-control">
+                <div className="ep-transport-control-head">
+                  <div>
+                    <b>Transport Control</b>
+                    <span>
+                      Plan food, equipment, staff and extra trips separately for this function. Set vehicle/trip count, partner, rate, dispatch and return timing.
+                    </span>
+                  </div>
+
+                  <Link
+                    className="ep-button"
+                    href="/app/vendors"
+                  >
+                    Transport Vendors
+                  </Link>
+                </div>
+
+                <div className="ep-transport-summary">
+                  <article>
+                    <span>Trips / Vehicles</span>
+                    <b>{transportSummary.totalTrips}</b>
+                    <small>{transportRows.length} transport line{transportRows.length === 1 ? '' : 's'}</small>
+                  </article>
+                  <article>
+                    <span>Assigned</span>
+                    <b>{transportSummary.assigned}/{transportRows.length}</b>
+                    <small>In-house or vendor assigned</small>
+                  </article>
+                  <article>
+                    <span>Timing Ready</span>
+                    <b>{transportSummary.withTiming}/{transportRows.length}</b>
+                    <small>Dispatch/reporting time entered</small>
+                  </article>
+                  <article>
+                    <span>Confirmed</span>
+                    <b>{transportSummary.confirmed}</b>
+                    <small>{transportSummary.readiness}% transport readiness</small>
+                  </article>
+                  <article>
+                    <span>Transport Cost</span>
+                    <b>{currency(transportSummary.totalCost)}</b>
+                    <small>Quantity × rate</small>
+                  </article>
+                </div>
+
+                <div className="ep-transport-presets">
+                  {TRANSPORT_PRESETS.map((preset) => {
+                    const rows =
+                      transportRows.filter(
+                        (row) =>
+                          transportPresetKey(
+                            row,
+                          ) === preset.key,
+                      );
+
+                    const quantity =
+                      rows.reduce(
+                        (sum, row) =>
+                          sum +
+                          Math.max(
+                            0,
+                            Number(
+                              row.quantity,
+                            ) || 0,
+                          ),
+                        0,
+                      );
+
+                    return (
+                      <button
+                        key={preset.key}
+                        type="button"
+                        className={
+                          quantity > 0
+                            ? 'ep-transport-preset active'
+                            : 'ep-transport-preset'
+                        }
+                        onClick={() =>
+                          addTransportPreset(
+                            preset,
+                          )
+                        }
+                      >
+                        <span>{preset.label}</span>
+                        <small>{preset.detail}</small>
+                        <b>
+                          {quantity > 0
+                            ? `${quantity} trip${quantity === 1 ? '' : 's'}`
+                            : '+ Add'}
+                        </b>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {transportRows.length ? (
+                  <div className="ep-transport-list">
+                    {transportRows.map((row) => (
+                      <article
+                        className={
+                          [
+                            'ep-transport-card',
+                            row.status !== 'PENDING'
+                              ? 'ready'
+                              : '',
+                            !row.assignedTo.trim()
+                              ? 'attention'
+                              : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')
+                        }
+                        key={row.id}
+                      >
+                        <div className="ep-transport-card-main">
+                          <div>
+                            <span>
+                              {TRANSPORT_PRESETS.find(
+                                (preset) =>
+                                  preset.key ===
+                                  transportPresetKey(row),
+                              )?.label || 'Transport'}
+                            </span>
+                            <b>{row.requirement}</b>
+                            <small>{row.detail || 'Event transport movement'}</small>
+                          </div>
+
+                          <strong>
+                            {currency(
+                              row.quantity *
+                                row.rate,
+                            )}
+                          </strong>
+                        </div>
+
+                        <div className="ep-transport-card-grid">
+                          <div className="ep-transport-qty-editor">
+                            <button
+                              type="button"
+                              disabled={row.quantity <= 1}
+                              onClick={() =>
+                                setTransportQuantity(
+                                  row,
+                                  row.quantity - 1,
+                                )
+                              }
+                            >
+                              −
+                            </button>
+
+                            <label>
+                              <span>Trips</span>
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={row.quantity}
+                                onChange={(event) =>
+                                  setTransportQuantity(
+                                    row,
+                                    Number(
+                                      event.target.value,
+                                    ),
+                                  )
+                                }
+                              />
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setTransportQuantity(
+                                  row,
+                                  row.quantity + 1,
+                                )
+                              }
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <div className="ep-transport-card-meta">
+                            <span>
+                              Assigned
+                              <b>
+                                {row.assignedTo || 'Not assigned'}
+                              </b>
+                            </span>
+                            <span>
+                              Rate
+                              <b>{currency(row.rate)} / {row.unit || 'trip'}</b>
+                            </span>
+                            <span>
+                              Dispatch
+                              <b>
+                                {row.deliveryTime
+                                  ? row.deliveryTime.replace('T', ' ')
+                                  : 'Not set'}
+                              </b>
+                            </span>
+                            <span>
+                              Return
+                              <b>
+                                {row.pickupTime
+                                  ? row.pickupTime.replace('T', ' ')
+                                  : 'Not set'}
+                              </b>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="ep-transport-card-footer">
+                          <span className={row.status.toLowerCase()}>
+                            {row.status.replace(/_/g, ' ')}
+                          </span>
+
+                          <small>
+                            Use the detailed row below to edit vendor, rate, timing and status.
+                          </small>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="ep-empty">
+                    No transport planned yet. Add a transport type above.
+                  </div>
+                )}
+              </section>
+            ) : null}
+
             {visibleRows.length ? (
               <div className="ep-table-wrap">
                 <table className="ep-table">
@@ -5331,6 +5870,53 @@ export default function EventPlanningPage() {
                                         !vendorMatchesGroceryGroup(
                                           vendor,
                                           row,
+                                        ),
+                                    )
+                                    .map((vendor) => (
+                                      <option
+                                        key={vendor.id}
+                                        value={vendor.id}
+                                      >
+                                        {vendor.name} · {vendor.category || vendor.type}
+                                      </option>
+                                    ))}
+                                </optgroup>
+                              </>
+                            ) : row.kind === 'TRANSPORT' &&
+                              vendors.some(
+                                (vendor) =>
+                                  vendor.active &&
+                                  vendorMatchesTransport(
+                                    vendor,
+                                  ),
+                              ) ? (
+                              <>
+                                <optgroup label="Transport vendors">
+                                  {vendors
+                                    .filter(
+                                      (vendor) =>
+                                        vendor.active &&
+                                        vendorMatchesTransport(
+                                          vendor,
+                                        ),
+                                    )
+                                    .map((vendor) => (
+                                      <option
+                                        key={vendor.id}
+                                        value={vendor.id}
+                                      >
+                                        {vendor.name} · {vendor.category || vendor.type}
+                                      </option>
+                                    ))}
+                                </optgroup>
+
+                                <optgroup label="Other active partners">
+                                  {vendors
+                                    .filter(
+                                      (vendor) =>
+                                        vendor.active &&
+                                        !vendorMatchesTransport(
+                                          vendor,
                                         ),
                                     )
                                     .map((vendor) => (
@@ -5505,7 +6091,9 @@ export default function EventPlanningPage() {
               <span className="ep-hint">
                 {tab === 'GROCERY'
                   ? 'Grocery suppliers are separated into Grocery, Dairy, and Vegetables & Fruits. Matching vendor categories are shown first.'
-                  : 'Suggestions come from the current menu, manpower and disposable data. Saved partners can auto-fill rates, and edits sync to PostgreSQL.'}
+                  : tab === 'TRANSPORT'
+                    ? 'Transport is separated into food/kitchen, equipment/material, staff and additional trips. Transport vendors are shown first.'
+                    : 'Suggestions come from the current menu, manpower and disposable data. Saved partners can auto-fill rates, and edits sync to PostgreSQL.'}
               </span>
 
               <button
