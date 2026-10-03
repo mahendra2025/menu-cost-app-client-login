@@ -30732,3 +30732,313 @@ body.client-sheet-open {
     padding: 11px;
   }
 }
+
+
+/* Grocery visual system v2 ----------------------------------------------- */
+.client-theme .client-ui-system-v2 .grocery-workspace-page {
+  gap: 14px;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-card {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(300px,.72fr);
+  gap: 14px 18px;
+  align-items: center;
+  padding: 18px 20px;
+  border-color: #2a3542;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 96% 10%, rgba(74,156,255,.13), transparent 22rem),
+    linear-gradient(145deg,#111923,#0d141c);
+  box-shadow: 0 14px 34px rgba(0,0,0,.16);
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-copy h2 {
+  margin-top: 6px;
+  font-size: clamp(28px,3.4vw,40px);
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-copy p {
+  max-width: 700px;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 8px;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(148,163,184,.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,.022);
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article span,
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article b,
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article small {
+  display: block;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article span {
+  color: #738196;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article b {
+  margin-top: 5px;
+  overflow: hidden;
+  color: #e8eef5;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article small {
+  margin-top: 3px;
+  color: #718094;
+  font-size: 7px;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article.attention {
+  border-color: rgba(244,173,84,.18);
+  background: rgba(244,173,84,.045);
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article.attention b {
+  color: #f0c780;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article.ready {
+  border-color: rgba(85,217,143,.16);
+  background: rgba(85,217,143,.045);
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-kpis article.ready b {
+  color: #9ce4bb;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-side {
+  display: grid;
+  grid-template-columns: 72px minmax(0,1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.client-theme .client-ui-system-v2 .grocery-readiness-ring {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  padding: 6px;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: 0 8px 22px rgba(0,0,0,.18);
+}
+
+.client-theme .client-ui-system-v2 .grocery-readiness-ring > span {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 50%;
+  background: #0f161e;
+}
+
+.client-theme .client-ui-system-v2 .grocery-readiness-ring b,
+.client-theme .client-ui-system-v2 .grocery-readiness-ring small {
+  display: block;
+  line-height: 1;
+}
+
+.client-theme .client-ui-system-v2 .grocery-readiness-ring b {
+  color: #eef5fc;
+  font-size: 16px;
+  letter-spacing: -.03em;
+}
+
+.client-theme .client-ui-system-v2 .grocery-readiness-ring small {
+  margin-top: -9px;
+  color: #748397;
+  font-size: 6px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.client-theme .client-ui-system-v2 .grocery-overview-actions > * {
+  width: 100%;
+  min-height: 36px;
+}
+
+.client-theme .client-ui-system-v2 .grocery-main-card {
+  border-color: #29333f;
+  background: #0f151c;
+}
+
+.client-theme .client-ui-system-v2 .grocery-toolbar {
+  border-color: #29333f;
+  background: rgba(14,20,28,.96);
+}
+
+.client-theme .client-ui-system-v2 .grocery-recipe-warning {
+  border-color: rgba(244,173,84,.20);
+  border-radius: 12px;
+  background: rgba(244,173,84,.05);
+}
+
+.client-theme .client-ui-system-v2 .grocery-recipe-warning b {
+  color: #efc982;
+}
+
+.client-theme .client-ui-system-v2 .grocery-recipe-warning span,
+.client-theme .client-ui-system-v2 .grocery-recipe-warning small {
+  color: #94866d;
+}
+
+.client-theme .client-ui-system-v2 .grocery-table-wrap {
+  border-color: #29333f;
+  background: #0e141b;
+}
+
+.client-theme .client-ui-system-v2 .grocery-table th {
+  color: #718094;
+  background: #0b1118;
+}
+
+.client-theme .client-ui-system-v2 .grocery-table td {
+  border-color: rgba(148,163,184,.075);
+}
+
+.client-theme .client-ui-system-v2 .grocery-table tbody tr.grocery-rate-missing {
+  background: rgba(244,173,84,.025);
+}
+
+.client-theme .client-ui-system-v2 .grocery-summary-panel {
+  border-color: #29333f;
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(74,156,255,.11), transparent 13rem),
+    #0e151d;
+  box-shadow: 0 14px 32px rgba(0,0,0,.16);
+}
+
+.client-theme .client-ui-system-v2 .grocery-summary-readiness {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.client-theme .client-ui-system-v2 .grocery-summary-readiness > div {
+  padding: 9px;
+  border: 1px solid rgba(148,163,184,.09);
+  border-radius: 10px;
+  background: rgba(255,255,255,.02);
+}
+
+.client-theme .client-ui-system-v2 .grocery-summary-readiness span,
+.client-theme .client-ui-system-v2 .grocery-summary-readiness b {
+  display: block;
+}
+
+.client-theme .client-ui-system-v2 .grocery-summary-readiness span {
+  color: #718094;
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.client-theme .client-ui-system-v2 .grocery-summary-readiness b {
+  margin-top: 4px;
+  color: #dce8f5;
+  font-size: 13px;
+}
+
+.client-theme .client-ui-system-v2 .grocery-summary-list b.needs-attention {
+  color: #efc27a;
+}
+
+.client-theme .client-ui-system-v2 .grocery-review-recipes {
+  min-height: 36px;
+  border: 1px solid rgba(74,156,255,.18);
+  border-radius: 10px;
+  color: #a8cffb;
+  background: rgba(74,156,255,.055);
+  font: inherit;
+  font-size: 8px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.client-theme .client-ui-system-v2 .grocery-review-recipes:hover {
+  border-color: rgba(74,156,255,.32);
+  background: rgba(74,156,255,.09);
+}
+
+.client-theme .client-ui-system-v2 .grocery-review-recipes:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.client-theme .client-ui-system-v2 .grocery-next-button {
+  box-shadow: 0 8px 18px rgba(37,118,217,.16);
+}
+
+@media (max-width: 1100px) {
+  .client-theme .client-ui-system-v2 .grocery-overview-card {
+    grid-template-columns: minmax(0,1fr) 260px;
+  }
+
+  .client-theme .client-ui-system-v2 .grocery-overview-kpis {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .client-theme .client-ui-system-v2 .grocery-overview-card {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .client-theme .client-ui-system-v2 .grocery-overview-side {
+    grid-template-columns: 62px minmax(0,1fr);
+  }
+
+  .client-theme .client-ui-system-v2 .grocery-readiness-ring {
+    width: 58px;
+    height: 58px;
+  }
+
+  .client-theme .client-ui-system-v2 .grocery-overview-actions {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+
+  .client-theme .client-ui-system-v2 .grocery-overview-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .client-theme .client-ui-system-v2 .grocery-overview-side {
+    grid-template-columns: 1fr;
+  }
+
+  .client-theme .client-ui-system-v2 .grocery-overview-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .client-theme .client-ui-system-v2 .grocery-overview-kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+}
