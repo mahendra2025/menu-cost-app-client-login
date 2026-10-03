@@ -27,15 +27,6 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     };
   }
 
-  if (pathname === '/app/event-planning') {
-    return {
-      step: 1,
-      label: 'Plan',
-      desktopStep: 2,
-      desktopLabel: 'Event Planning',
-    };
-  }
-
   if (pathname === '/app/cost') {
     return {
       step: 1,
@@ -139,7 +130,6 @@ const adminNav =
 
 const clientWorkflowNav = [
   { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Upload and review menu', icon: 'event' as ClientNavIcon },
-  { href: '/app/event-planning', match: '/app/event-planning', label: 'Event Planning', description: 'Vendors, agencies and readiness', icon: 'event' as ClientNavIcon },
   { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
   { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
   { href: '/app/team', match: '/app/team', label: 'Manpower', description: 'Manual staff costing', icon: 'team' as ClientNavIcon },
@@ -149,6 +139,7 @@ const clientWorkflowNav = [
 ];
 
 const clientWorkspaceNav = [
+  { href: '/app/event-planning', match: '/app/event-planning', label: 'Event Planning', description: 'Vendors, agencies and readiness', icon: 'event' as ClientNavIcon },
   { href: '/app/history', match: '/app/history', label: 'History', description: 'Saved events', icon: 'history' as ClientNavIcon },
   { href: '/app/vendors', match: '/app/vendors', label: 'Vendors & Agencies', description: 'Supplier and rate master', icon: 'team' as ClientNavIcon },
   { href: '/app/equipment', match: '/app/equipment', label: 'Equipment Master', description: 'Photo catalog and availability', icon: 'expenses' as ClientNavIcon },
@@ -400,6 +391,7 @@ export default function AppShell({
   const clientMoreActive =
     moreOpen ||
     clientFlow?.step === 5 ||
+    pathname === '/app/event-planning' ||
     pathname === '/app/history' ||
     pathname === '/app/vendors' ||
     pathname === '/app/equipment' ||
@@ -913,6 +905,10 @@ export default function AppShell({
                 </div>
 
                 <div className="client-more-grid">
+                  <Link href="/app/event-planning">
+                    <b>{t('Event Planning')}</b>
+                    <small>{t('Vendors, agencies and readiness')}</small>
+                  </Link>
                   <Link href="/app/history">
                     <b>{t('History')}</b>
                     <small>{t('Saved work')}</small>
