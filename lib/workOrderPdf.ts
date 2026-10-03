@@ -411,32 +411,32 @@ export function downloadWorkOrderPdf({
       },
       columnStyles: {
         0: {
-          cellWidth: 24,
+          cellWidth: 22,
         },
         1: {
-          cellWidth: 45,
+          cellWidth: 43,
         },
         2: {
-          cellWidth: 18,
+          cellWidth: 17,
         },
         3: {
-          cellWidth: 18,
+          cellWidth: 17,
           halign:
             'right',
         },
         4: {
-          cellWidth: 21,
+          cellWidth: 20,
           halign:
             'right',
         },
         5: {
-          cellWidth: 22,
+          cellWidth: 21,
         },
         6: {
-          cellWidth: 22,
+          cellWidth: 21,
         },
         7: {
-          cellWidth: 16,
+          cellWidth: 17,
         },
       },
       alternateRowStyles: {
