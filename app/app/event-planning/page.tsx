@@ -721,6 +721,156 @@ function readiness(rows: AssignmentRow[]) {
   return Math.round((done / rows.length) * 100);
 }
 
+function assignmentReady(
+  row: AssignmentRow,
+) {
+  return [
+    'CONFIRMED',
+    'DELIVERED',
+    'CLOSED',
+  ].includes(
+    row.status,
+  );
+}
+
+function requiresExecutionTime(
+  kind: RequirementKind,
+) {
+  return [
+    'MENU',
+    'MANPOWER',
+    'GROCERY',
+    'DISPOSABLE',
+    'TRANSPORT',
+  ].includes(
+    kind,
+  );
+}
+
+function hasStockShortage(
+  row: AssignmentRow,
+) {
+  const linkedToMaster =
+    Boolean(
+      row.equipmentId ||
+      row.crockeryId ||
+      row.uniformId ||
+      row.disposableMasterId,
+    );
+
+  if (
+    !linkedToMaster ||
+    row.availableQty === undefined
+  ) {
+    return false;
+  }
+
+  return (
+    Math.max(
+      0,
+      Number(
+        row.quantity,
+      ) || 0,
+    ) >
+    Math.max(
+      0,
+      Number(
+        row.availableQty,
+      ) || 0,
+    )
+  );
+}
+
+function operationalReadiness(
+  rows: AssignmentRow[],
+) {
+  if (!rows.length) return 0;
+
+  const assigned =
+    rows.filter(
+      (row) =>
+        Boolean(
+          row.assignedTo.trim(),
+        ),
+    ).length;
+
+  const confirmed =
+    rows.filter(
+      assignmentReady,
+    ).length;
+
+  const timingRows =
+    rows.filter(
+      (row) =>
+        requiresExecutionTime(
+          row.kind,
+        ),
+    );
+
+  const timingReady =
+    timingRows.length
+      ? timingRows.filter(
+          (row) =>
+            Boolean(
+              row.deliveryTime,
+            ),
+        ).length
+      : rows.length;
+
+  const assignmentScore =
+    assigned /
+    rows.length *
+    35;
+
+  const confirmationScore =
+    confirmed /
+    rows.length *
+    45;
+
+  const timingScore =
+    (
+      timingRows.length
+        ? timingReady /
+          timingRows.length
+        : 1
+    ) *
+    20;
+
+  const shortagePenalty =
+    rows.filter(
+      hasStockShortage,
+    ).length /
+    rows.length *
+    30;
+
+  const missingVendorRatePenalty =
+    rows.filter(
+      (row) =>
+        row.partnerType !==
+          'IN_HOUSE' &&
+        Boolean(
+          row.assignedTo.trim(),
+        ) &&
+        !(Number(row.rate) > 0),
+    ).length /
+    rows.length *
+    10;
+
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        assignmentScore +
+        confirmationScore +
+        timingScore -
+        shortagePenalty -
+        missingVendorRatePenalty,
+      ),
+    ),
+  );
+}
+
 function ReadinessIcon({
   kind,
 }: {
@@ -2227,7 +2377,6 @@ export default function EventPlanningPage() {
   ).length;
 
   const overallReadiness = readiness(allRows);
-  const functionReadiness = readiness(currentRows);
 
   const activeMenuItems =
     work
@@ -2490,31 +2639,280 @@ export default function EventPlanningPage() {
         )
       : 0;
 
-  const equipmentShortages =
-    currentRows.filter(
-      (row) =>
-        row.kind === 'EQUIPMENT' &&
-        Boolean(row.equipmentId) &&
-        Number(row.availableQty) > 0 &&
-        Number(row.quantity) > Number(row.availableQty),
+
+  const executionTabSummaries =
+    TABS.map((item) => {
+      const rows =
+        allRows.filter(
+          (row) =>
+            row.kind ===
+            item.kind,
+        );
+
+      const assigned =
+        rows.filter(
+          (row) =>
+            Boolean(
+              row.assignedTo.trim(),
+            ),
+        ).length;
+
+      const confirmed =
+        rows.filter(
+          assignmentReady,
+        ).length;
+
+      const shortages =
+        rows.filter(
+          hasStockShortage,
+        ).length;
+
+      const missingTiming =
+        rows.filter(
+          (row) =>
+            requiresExecutionTime(
+              row.kind,
+            ) &&
+            !row.deliveryTime,
+        ).length;
+
+      const missingRates =
+        rows.filter(
+          (row) =>
+            row.partnerType !==
+              'IN_HOUSE' &&
+            Boolean(
+              row.assignedTo.trim(),
+            ) &&
+            !(Number(row.rate) > 0),
+        ).length;
+
+      const unassigned =
+        rows.length -
+        assigned;
+
+      const pending =
+        rows.filter(
+          (row) =>
+            !assignmentReady(
+              row,
+            ),
+        ).length;
+
+      const issueCount =
+        unassigned +
+        shortages +
+        missingTiming +
+        missingRates +
+        pending;
+
+      const cost =
+        rows.reduce(
+          (sum, row) =>
+            sum +
+            Math.max(
+              0,
+              Number(
+                row.quantity,
+              ) || 0,
+            ) *
+              Math.max(
+                0,
+                Number(
+                  row.rate,
+                ) || 0,
+              ),
+          0,
+        );
+
+      return {
+        ...item,
+        rows,
+        assigned,
+        confirmed,
+        shortages,
+        missingTiming,
+        missingRates,
+        unassigned,
+        pending,
+        issueCount,
+        cost,
+        score:
+          operationalReadiness(
+            rows,
+          ),
+      };
+    });
+
+  const eventExecutionReadiness =
+    operationalReadiness(
+      allRows,
     );
 
-  const crockeryShortages =
-    currentRows.filter(
-      (row) =>
-        row.kind === 'CROCKERY' &&
-        Boolean(row.crockeryId) &&
-        Number(row.availableQty) > 0 &&
-        Number(row.quantity) > Number(row.availableQty),
+  const eventExecutionIssues =
+    executionTabSummaries.reduce(
+      (sum, item) =>
+        sum +
+        item.issueCount,
+      0,
     );
 
-  const uniformShortages =
-    currentRows.filter(
-      (row) =>
-        row.kind === 'DRESS' &&
-        Boolean(row.uniformId) &&
-        Number(row.availableQty) >= 0 &&
-        Number(row.quantity) > Number(row.availableQty),
+  const executionBlockers =
+    functions.flatMap(
+      (fn) => {
+        const rows =
+          plan[fn.key] ||
+          seedRows(
+            fn,
+            work,
+          );
+
+        return rows.flatMap(
+          (row) => {
+            const blockers: Array<{
+              key: string;
+              functionKey: string;
+              functionLabel: string;
+              kind: RequirementKind;
+              label: string;
+              detail: string;
+              severity: 'BLOCKED' | 'WARNING';
+            }> = [];
+
+            const functionLabel =
+              `${fn.dayLabel || 'Event'} · ${fn.mealLabel}`;
+
+            if (
+              !row.assignedTo.trim()
+            ) {
+              blockers.push({
+                key:
+                  `${fn.key}:${row.id}:assignment`,
+                functionKey:
+                  fn.key,
+                functionLabel,
+                kind:
+                  row.kind,
+                label:
+                  `${row.requirement}: partner not assigned`,
+                detail:
+                  functionLabel,
+                severity:
+                  'BLOCKED',
+              });
+            }
+
+            if (
+              hasStockShortage(
+                row,
+              )
+            ) {
+              blockers.push({
+                key:
+                  `${fn.key}:${row.id}:shortage`,
+                functionKey:
+                  fn.key,
+                functionLabel,
+                kind:
+                  row.kind,
+                label:
+                  `${row.requirement}: stock shortage`,
+                detail:
+                  `Selected ${row.quantity} · Available ${row.availableQty || 0}`,
+                severity:
+                  'BLOCKED',
+              });
+            }
+
+            if (
+              requiresExecutionTime(
+                row.kind,
+              ) &&
+              !row.deliveryTime
+            ) {
+              blockers.push({
+                key:
+                  `${fn.key}:${row.id}:time`,
+                functionKey:
+                  fn.key,
+                functionLabel,
+                kind:
+                  row.kind,
+                label:
+                  `${row.requirement}: time not set`,
+                detail:
+                  functionLabel,
+                severity:
+                  'WARNING',
+              });
+            }
+
+            if (
+              row.partnerType !==
+                'IN_HOUSE' &&
+              Boolean(
+                row.assignedTo.trim(),
+              ) &&
+              !(Number(row.rate) > 0)
+            ) {
+              blockers.push({
+                key:
+                  `${fn.key}:${row.id}:rate`,
+                functionKey:
+                  fn.key,
+                functionLabel,
+                kind:
+                  row.kind,
+                label:
+                  `${row.requirement}: vendor rate missing`,
+                detail:
+                  row.assignedTo,
+                severity:
+                  'WARNING',
+              });
+            }
+
+            if (
+              Boolean(
+                row.assignedTo.trim(),
+              ) &&
+              !assignmentReady(
+                row,
+              )
+            ) {
+              blockers.push({
+                key:
+                  `${fn.key}:${row.id}:confirm`,
+                functionKey:
+                  fn.key,
+                functionLabel,
+                kind:
+                  row.kind,
+                label:
+                  `${row.requirement}: confirmation pending`,
+                detail:
+                  row.assignedTo,
+                severity:
+                  'WARNING',
+              });
+            }
+
+            return blockers;
+          },
+        );
+      },
+    );
+
+  const currentFunctionBlockers =
+    executionBlockers.filter(
+      (item) =>
+        item.functionKey ===
+        currentFunction.key,
+    );
+
+  const currentFunctionExecutionReadiness =
+    operationalReadiness(
+      currentRows,
     );
 
   function queueServerSave(next: StoredPlan) {
@@ -4161,6 +4559,57 @@ export default function EventPlanningPage() {
           .ep-readiness-item.needs-work .ep-readiness-item-top strong{color:#f3b45d}
           .ep-readiness-item.blocked .ep-readiness-item-top strong{color:#ff8c84}
           .ep-readiness-loading{color:#7f8c9c;font-size:8px;font-weight:800}
+          .ep-operations-board{display:grid;gap:12px;padding:14px;border:1px solid #2a323d;border-radius:15px;background:linear-gradient(145deg,#101720,#0c1219)}
+          .ep-operations-board-head{display:flex;align-items:center;justify-content:space-between;gap:18px}
+          .ep-operations-board-head h2{margin:4px 0 4px;font-size:20px;letter-spacing:-.035em}
+          .ep-operations-board-head p{margin:0;color:#7d8b9d;font-size:9px}
+          .ep-operations-board-score{display:grid;grid-template-columns:72px minmax(130px,1fr);gap:10px;align-items:center;min-width:250px;padding:8px;border:1px solid rgba(148,163,184,.09);border-radius:12px;background:rgba(255,255,255,.02)}
+          .ep-operations-score-ring{display:grid;width:66px;height:66px;padding:5px;place-items:center;border-radius:50%}
+          .ep-operations-score-ring>span{display:grid;width:100%;height:100%;place-items:center;border-radius:50%;background:#101720}
+          .ep-operations-score-ring b,.ep-operations-score-ring small{display:block;line-height:1}
+          .ep-operations-score-ring b{font-size:16px}
+          .ep-operations-score-ring small{margin-top:-8px;color:#718094;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-operations-board-score>div:last-child span,.ep-operations-board-score>div:last-child b,.ep-operations-board-score>div:last-child small{display:block}
+          .ep-operations-board-score>div:last-child span{color:#718094;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-operations-board-score>div:last-child b{margin-top:3px;font-size:17px}
+          .ep-operations-board-score>div:last-child small{margin-top:3px;color:#69788b;font-size:7px;line-height:1.35}
+          .ep-operations-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+          .ep-operation-card{display:grid;gap:7px;min-width:0;padding:10px;border:1px solid #29333f;border-radius:11px;color:inherit;background:#0f151c;font:inherit;text-align:left;cursor:pointer}
+          .ep-operation-card:hover{border-color:#3b4856;background:#111a24}
+          .ep-operation-card.ready{border-color:rgba(85,217,143,.16)}
+          .ep-operation-card.warning{border-color:rgba(244,173,84,.22)}
+          .ep-operation-card.blocked{border-color:rgba(255,126,118,.24)}
+          .ep-operation-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+          .ep-operation-card-top span{color:#91a2b6;font-size:7px;font-weight:900;text-transform:uppercase}
+          .ep-operation-card-top b{font-size:10px}
+          .ep-operation-card.ready .ep-operation-card-top b{color:#6edb9f}
+          .ep-operation-card.warning .ep-operation-card-top b{color:#efb05e}
+          .ep-operation-card.blocked .ep-operation-card-top b{color:#ff918a}
+          .ep-operation-card>strong{color:#e5edf6;font-size:11px}
+          .ep-operation-card-meta{display:flex;gap:5px;flex-wrap:wrap}
+          .ep-operation-card-meta span{padding:4px 6px;border-radius:999px;color:#748397;background:rgba(148,163,184,.05);font-size:6px;font-weight:800}
+          .ep-operation-card-issues{display:flex;gap:4px;flex-wrap:wrap;min-height:18px}
+          .ep-operation-card-issues span{padding:4px 6px;border-radius:999px;color:#d2a061;background:rgba(244,173,84,.06);font-size:6px;font-weight:850}
+          .ep-operation-card-issues span.blocked{color:#e58d87;background:rgba(255,126,118,.06)}
+          .ep-operation-card-issues span.ready{color:#70d99d;background:rgba(85,217,143,.06)}
+          .ep-operations-blockers{display:grid;gap:8px;padding-top:10px;border-top:1px solid rgba(148,163,184,.08)}
+          .ep-operations-blockers-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+          .ep-operations-blockers-head b,.ep-operations-blockers-head span{display:block}
+          .ep-operations-blockers-head b{font-size:10px}
+          .ep-operations-blockers-head span{margin-top:2px;color:#718095;font-size:7px}
+          .ep-operations-blocker-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+          .ep-operation-blocker{display:grid;gap:3px;padding:8px;border:1px solid rgba(244,173,84,.16);border-radius:9px;color:inherit;background:rgba(244,173,84,.035);font:inherit;text-align:left;cursor:pointer}
+          .ep-operation-blocker.blocked{border-color:rgba(255,126,118,.18);background:rgba(255,126,118,.035)}
+          .ep-operation-blocker span{color:#d7a660;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-operation-blocker.blocked span{color:#eb8e88}
+          .ep-operation-blocker b{overflow:hidden;color:#dfe8f2;font-size:8px;text-overflow:ellipsis;white-space:nowrap}
+          .ep-operation-blocker small{color:#69788b;font-size:6px}
+          .ep-operations-all-ready{padding:10px;border:1px solid rgba(85,217,143,.12);border-radius:9px;color:#78dda4;background:rgba(85,217,143,.035);font-size:8px}
+          .ep-progress-button{width:100%;border:0;color:inherit;background:transparent;font:inherit;cursor:pointer;text-align:left}
+          .ep-pending-button{width:100%;border:1px solid transparent;color:inherit;background:transparent;font:inherit;text-align:left;cursor:pointer}
+          .ep-pending-button.blocked{border-color:rgba(255,126,118,.11);background:rgba(255,126,118,.025)}
+          @media(max-width:1100px){.ep-operations-grid,.ep-operations-blocker-list{grid-template-columns:1fr 1fr}}
+          @media(max-width:700px){.ep-operations-board-head{align-items:stretch;flex-direction:column}.ep-operations-board-score{min-width:0;width:100%}.ep-operations-grid,.ep-operations-blocker-list{grid-template-columns:1fr}}
           .ep-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:15px 2px 4px}
           .ep-kicker{color:#78b5ff;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
           .ep-hero h1{margin:5px 0 5px;font-size:clamp(30px,4vw,45px);line-height:1;letter-spacing:-.05em}
@@ -4871,6 +5320,167 @@ export default function EventPlanningPage() {
           </div>
         </section>
 
+        <section
+          className="ep-operations-board"
+          aria-label="Event operations readiness"
+        >
+          <div className="ep-operations-board-head">
+            <div>
+              <span className="ep-kicker">
+                Execution readiness
+              </span>
+              <h2>
+                Event Operations Board
+              </h2>
+              <p>
+                Live execution health across every Event Planning tab. Click any section to open it for the selected function.
+              </p>
+            </div>
+
+            <div className="ep-operations-board-score">
+              <div
+                className="ep-operations-score-ring"
+                style={{
+                  background:
+                    `conic-gradient(${eventExecutionReadiness >= 80 ? '#55d98f' : eventExecutionReadiness >= 50 ? '#f4ad54' : '#ff7e76'} ${eventExecutionReadiness * 3.6}deg, #25303d 0deg)`,
+                }}
+              >
+                <span>
+                  <b>{eventExecutionReadiness}%</b>
+                  <small>Execution</small>
+                </span>
+              </div>
+
+              <div>
+                <span>Open issues</span>
+                <b>{eventExecutionIssues}</b>
+                <small>{executionBlockers.filter((item) => item.severity === 'BLOCKED').length} blockers across {functions.length} function{functions.length === 1 ? '' : 's'}</small>
+              </div>
+            </div>
+          </div>
+
+          <div className="ep-operations-grid">
+            {executionTabSummaries.map((item) => {
+              const state =
+                item.score >= 80
+                  ? 'ready'
+                  : item.score >= 50
+                    ? 'warning'
+                    : 'blocked';
+
+              return (
+                <button
+                  key={item.kind}
+                  type="button"
+                  className={`ep-operation-card ${state}`}
+                  onClick={() =>
+                    setTab(item.kind)
+                  }
+                >
+                  <div className="ep-operation-card-top">
+                    <span>{item.label}</span>
+                    <b>{item.score}%</b>
+                  </div>
+
+                  <strong>
+                    {item.rows.length} requirement{item.rows.length === 1 ? '' : 's'}
+                  </strong>
+
+                  <div className="ep-operation-card-meta">
+                    <span>{item.assigned}/{item.rows.length} assigned</span>
+                    <span>{item.confirmed} confirmed</span>
+                    <span>{currency(item.cost)}</span>
+                  </div>
+
+                  <div className="ep-operation-card-issues">
+                    {item.shortages > 0 ? (
+                      <span className="blocked">
+                        {item.shortages} shortage{item.shortages === 1 ? '' : 's'}
+                      </span>
+                    ) : null}
+                    {item.unassigned > 0 ? (
+                      <span className="blocked">
+                        {item.unassigned} unassigned
+                      </span>
+                    ) : null}
+                    {item.missingTiming > 0 ? (
+                      <span>
+                        {item.missingTiming} time missing
+                      </span>
+                    ) : null}
+                    {item.missingRates > 0 ? (
+                      <span>
+                        {item.missingRates} rate missing
+                      </span>
+                    ) : null}
+                    {!item.issueCount ? (
+                      <span className="ready">
+                        No open issues
+                      </span>
+                    ) : null}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="ep-operations-blockers">
+            <div className="ep-operations-blockers-head">
+              <div>
+                <b>Priority attention</b>
+                <span>
+                  Highest-impact execution issues across the full event.
+                </span>
+              </div>
+
+              <Link
+                className="ep-button"
+                href="/app/work-orders"
+              >
+                Open Work Orders
+              </Link>
+            </div>
+
+            {executionBlockers.length ? (
+              <div className="ep-operations-blocker-list">
+                {executionBlockers
+                  .slice(0, 8)
+                  .map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={
+                        item.severity === 'BLOCKED'
+                          ? 'ep-operation-blocker blocked'
+                          : 'ep-operation-blocker'
+                      }
+                      onClick={() => {
+                        setSelectedFunction(
+                          item.functionKey,
+                        );
+                        setTab(
+                          item.kind,
+                        );
+                      }}
+                    >
+                      <span>
+                        {item.severity === 'BLOCKED'
+                          ? 'Blocker'
+                          : 'Action'}
+                      </span>
+                      <b>{item.label}</b>
+                      <small>{item.detail}</small>
+                    </button>
+                  ))}
+              </div>
+            ) : (
+              <div className="ep-operations-all-ready">
+                No open execution issues. All planned requirements are assigned, timed and confirmed.
+              </div>
+            )}
+          </div>
+        </section>
+
         <section className="ep-stats">
           <article className="ep-stat">
             <small>Functions</small>
@@ -4909,10 +5519,10 @@ export default function EventPlanningPage() {
             <span>Based on assignment rates</span>
           </article>
 
-          <article className="ep-stat ready">
-            <small>Overall Readiness</small>
-            <strong>{overallReadiness}%</strong>
-            <span>All event requirements</span>
+          <article className={eventExecutionIssues ? 'ep-stat attention' : 'ep-stat ready'}>
+            <small>Execution Readiness</small>
+            <strong>{eventExecutionReadiness}%</strong>
+            <span>{eventExecutionIssues} open operational issue{eventExecutionIssues === 1 ? '' : 's'}</span>
           </article>
         </section>
 
@@ -4924,7 +5534,10 @@ export default function EventPlanningPage() {
             const rows =
               plan[fn.key] ||
               seedRows(fn, work);
-            const score = readiness(rows);
+            const score =
+              operationalReadiness(
+                rows,
+              );
 
             return (
               <button
@@ -4979,8 +5592,8 @@ export default function EventPlanningPage() {
               <span className="ep-chip">
                 {currentFunction.menu.length} dishes
               </span>
-              <span className="ep-chip ready">
-                {functionReadiness}% ready
+              <span className={currentFunctionExecutionReadiness >= 80 ? 'ep-chip ready' : 'ep-chip'}>
+                {currentFunctionExecutionReadiness}% execution ready
               </span>
               <span
                 className={
@@ -7353,12 +7966,21 @@ export default function EventPlanningPage() {
                   const rows = currentRows.filter(
                     (row) => row.kind === item.kind,
                   );
-                  const score = readiness(rows);
+                  const score =
+                    operationalReadiness(
+                      rows,
+                    );
 
                   return (
-                    <div
-                      className="ep-progress-row"
+                    <button
+                      type="button"
+                      className="ep-progress-row ep-progress-button"
                       key={item.kind}
+                      onClick={() =>
+                        setTab(
+                          item.kind,
+                        )
+                      }
                     >
                       <span>{item.label}</span>
                       <div className="ep-progress-track">
@@ -7374,7 +7996,7 @@ export default function EventPlanningPage() {
                         />
                       </div>
                       <b>{score}%</b>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -7383,73 +8005,31 @@ export default function EventPlanningPage() {
             <section className="ep-side-card">
               <h3>Pending Attention</h3>
               <div className="ep-pending">
-                {equipmentShortages.map((row) => (
-                  <div
-                    className="ep-pending-row"
-                    key={`shortage:${row.id}`}
-                  >
-                    <b>{row.requirement} shortage</b>
-                    <span>
-                      Selected {row.quantity} · Available {row.availableQty}
-                    </span>
-                  </div>
-                ))}
-
-                {crockeryShortages.map((row) => (
-                  <div
-                    className="ep-pending-row"
-                    key={`shortage:${row.id}`}
-                  >
-                    <b>{row.requirement} shortage</b>
-                    <span>
-                      Selected {row.quantity} · Available {row.availableQty}
-                    </span>
-                  </div>
-                ))}
-
-                {uniformShortages.map((row) => (
-                  <div
-                    className="ep-pending-row"
-                    key={`uniform-shortage:${row.id}`}
-                  >
-                    <b>{row.requirement} shortage</b>
-                    <span>
-                      Required {row.quantity} · Available {row.availableQty}
-                    </span>
-                  </div>
-                ))}
-
-                {currentRows
-                  .filter(
-                    (row) =>
-                      row.status === 'PENDING' ||
-                      !row.assignedTo.trim(),
-                  )
-                  .slice(0, 7)
-                  .map((row) => (
-                    <div
-                      className="ep-pending-row"
-                      key={row.id}
+                {currentFunctionBlockers
+                  .slice(0, 9)
+                  .map((item) => (
+                    <button
+                      type="button"
+                      className={
+                        item.severity === 'BLOCKED'
+                          ? 'ep-pending-row ep-pending-button blocked'
+                          : 'ep-pending-row ep-pending-button'
+                      }
+                      key={item.key}
+                      onClick={() =>
+                        setTab(
+                          item.kind,
+                        )
+                      }
                     >
-                      <b>{row.requirement}</b>
-                      <span>
-                        {!row.assignedTo.trim()
-                          ? 'Not assigned'
-                          : 'Assigned but not confirmed'}
-                      </span>
-                    </div>
+                      <b>{item.label}</b>
+                      <span>{item.detail}</span>
+                    </button>
                   ))}
 
-                {!equipmentShortages.length &&
-                !crockeryShortages.length &&
-                !uniformShortages.length &&
-                !currentRows.some(
-                  (row) =>
-                    row.status === 'PENDING' ||
-                    !row.assignedTo.trim(),
-                ) ? (
+                {!currentFunctionBlockers.length ? (
                   <div className="ep-hint">
-                    No pending assignments for this function.
+                    No open execution issues for this function.
                   </div>
                 ) : null}
               </div>
