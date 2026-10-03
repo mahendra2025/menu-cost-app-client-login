@@ -915,6 +915,64 @@ export default function GroceryPage() {
       ),
     ).size;
 
+
+  const activeDishCount =
+    new Set(
+      work.menu
+        .filter(
+          (item) =>
+            item.coverageStatus !==
+            'REJECTED',
+        )
+        .map(
+          (item) =>
+            normalize(item.name),
+        ),
+    ).size;
+
+  const matchedDishCount =
+    plan?.matchedDishes.length ||
+    0;
+
+  const recipeCoveragePercent =
+    activeDishCount > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (
+              matchedDishCount /
+              activeDishCount
+            ) *
+              100,
+          ),
+        )
+      : 0;
+
+  const rateCoveragePercent =
+    totalIngredientCount > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (
+              pricedIngredientCount /
+              totalIngredientCount
+            ) *
+              100,
+          ),
+        )
+      : 0;
+
+  const groceryReadinessPercent =
+    activeDishCount > 0
+      ? Math.round(
+          (
+            recipeCoveragePercent +
+            rateCoveragePercent
+          ) /
+            2,
+        )
+      : 0;
+
   async function saveIngredientRate(
     item: FunctionGroceryItem,
     displayRate: number,
@@ -1192,6 +1250,7 @@ export default function GroceryPage() {
     <AppShell
       title="Grocery"
       subtitle="See what to buy, how much you need, and the estimated ingredient cost"
+      hidePageTitle
     >
       <section className="content-grid grocery-workspace-page">
         <div className="grocery-overview-card">
@@ -1223,7 +1282,62 @@ export default function GroceryPage() {
             </p>
           </div>
 
-          <div className="grocery-overview-actions no-print">
+          <div className="grocery-overview-kpis">
+            <article>
+              <span>Ingredients</span>
+              <b>{totalIngredientCount}</b>
+              <small>
+                {categoryCount} categories
+              </small>
+            </article>
+
+            <article>
+              <span>Recipes</span>
+              <b>
+                {matchedDishCount}/{activeDishCount}
+              </b>
+              <small>
+                {recipeCoveragePercent}% linked
+              </small>
+            </article>
+
+            <article className={missingIngredientCount > 0 ? 'attention' : 'ready'}>
+              <span>Missing rates</span>
+              <b>{missingIngredientCount}</b>
+              <small>
+                {rateCoveragePercent}% priced
+              </small>
+            </article>
+
+            <article>
+              <span>Grocery total</span>
+              <b>{money(groceryTotal)}</b>
+              <small>
+                {money(groceryPerCover)} / cover
+              </small>
+            </article>
+          </div>
+
+          <div className="grocery-overview-side">
+            <div
+              className="grocery-readiness-ring"
+              style={{
+                background:
+                  `conic-gradient(${groceryReadinessPercent === 100 ? '#55d98f' : '#4a9cff'} ${groceryReadinessPercent * 3.6}deg, #25303d 0deg)`,
+              }}
+              aria-label={`Grocery readiness ${groceryReadinessPercent}%`}
+            >
+              <span>
+                <b>
+                  {groceryReadinessPercent}%
+                </b>
+                <small>
+                  Ready
+                </small>
+              </span>
+            </div>
+
+            <div className="grocery-overview-actions no-print">
             <button
               type="button"
               className="ghost-button"
@@ -1271,6 +1385,7 @@ export default function GroceryPage() {
             >
               Grocery PDF
             </button>
+            </div>
           </div>
         </div>
 
@@ -2261,6 +2376,17 @@ export default function GroceryPage() {
                 </small>
               </div>
 
+              <div className="grocery-summary-readiness">
+                <div>
+                  <span>Recipe coverage</span>
+                  <b>{recipeCoveragePercent}%</b>
+                </div>
+                <div>
+                  <span>Rate coverage</span>
+                  <b>{rateCoveragePercent}%</b>
+                </div>
+              </div>
+
               <div className="grocery-summary-grid">
                 <div>
                   <span>
@@ -2383,7 +2509,13 @@ export default function GroceryPage() {
                     Missing recipes
                   </span>
 
-                  <b>
+                  <b
+                    className={
+                      (plan?.unmatchedDishes.length || 0) > 0
+                        ? 'needs-attention'
+                        : ''
+                    }
+                  >
                     {
                       plan
                         ?.unmatchedDishes
@@ -2392,6 +2524,21 @@ export default function GroceryPage() {
                   </b>
                 </div>
               </div>
+
+              {(plan?.unmatchedDishes.length || 0) > 0 ? (
+                <button
+                  type="button"
+                  className="grocery-review-recipes"
+                  disabled={repairingRecipes}
+                  onClick={() =>
+                    void generateMissingRecipes()
+                  }
+                >
+                  {repairingRecipes
+                    ? 'Creating recipes…'
+                    : `Create ${plan?.unmatchedDishes.length || 0} missing ${(plan?.unmatchedDishes.length || 0) === 1 ? 'recipe' : 'recipes'}`}
+                </button>
+              ) : null}
 
               {missingIngredientCount >
               0 ? (
