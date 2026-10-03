@@ -30096,3 +30096,274 @@ body.client-sheet-open {
     width: 100%;
   }
 }
+
+
+/* Unified client UI system v2 --------------------------------------------- */
+.client-theme .client-ui-system-v2 {
+  --mc-surface-0: #0b1016;
+  --mc-surface-1: #0f151c;
+  --mc-surface-2: #141b24;
+  --mc-surface-3: #19222d;
+  --mc-line: #29323d;
+  --mc-line-soft: rgba(148, 163, 184, .10);
+  --mc-text: #eef3f8;
+  --mc-text-2: #a8b3c1;
+  --mc-text-3: #768496;
+  --mc-blue: #4a9cff;
+  --mc-blue-soft: rgba(74, 156, 255, .09);
+  --mc-green: #55d98f;
+  --mc-orange: #f4ad54;
+  --mc-red: #ff7e76;
+  --mc-radius-lg: 15px;
+  --mc-radius-md: 11px;
+  --mc-radius-sm: 8px;
+  --mc-shadow: 0 12px 30px rgba(0, 0, 0, .16);
+  --mc-focus: 0 0 0 3px rgba(74, 156, 255, .10);
+  color: var(--mc-text);
+}
+
+.client-theme .client-ui-system-v2 > :first-child {
+  width: 100%;
+}
+
+.client-theme .client-ui-system-v2 h1,
+.client-theme .client-ui-system-v2 h2,
+.client-theme .client-ui-system-v2 h3 {
+  color: var(--mc-text);
+  letter-spacing: -.025em;
+}
+
+.client-theme .client-ui-system-v2 p {
+  color: var(--mc-text-2);
+}
+
+.client-theme .client-ui-system-v2 :where(
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea
+) {
+  border-color: #303a46;
+  border-radius: var(--mc-radius-md);
+  color: #e8eef5;
+  background: var(--mc-surface-2);
+  transition:
+    border-color .16s ease,
+    box-shadow .16s ease,
+    background .16s ease;
+}
+
+.client-theme .client-ui-system-v2 :where(
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea
+)::placeholder {
+  color: #667486;
+}
+
+.client-theme .client-ui-system-v2 :where(
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea
+):focus {
+  border-color: rgba(74, 156, 255, .64);
+  box-shadow: var(--mc-focus);
+}
+
+.client-theme .client-ui-system-v2 :where(
+  .primary-button,
+  .secondary-button,
+  .ghost-button,
+  button[class$="-button"],
+  a[class$="-button"]
+) {
+  border-radius: 10px;
+  font-weight: 850;
+  transition:
+    transform .15s ease,
+    border-color .15s ease,
+    background .15s ease,
+    box-shadow .15s ease;
+}
+
+.client-theme .client-ui-system-v2 :where(
+  .primary-button,
+  button[class$="-button"].primary,
+  a[class$="-button"].primary
+) {
+  border-color: #2d86f1;
+  color: #fff;
+  background: linear-gradient(180deg, #2f8df7, #2376d9);
+  box-shadow: 0 8px 20px rgba(37, 118, 217, .18);
+}
+
+.client-theme .client-ui-system-v2 :where(
+  .ghost-button,
+  .secondary-button,
+  button[class$="-button"]:not(.primary),
+  a[class$="-button"]:not(.primary)
+) {
+  border-color: #303a46;
+  color: #bcc7d4;
+  background: var(--mc-surface-2);
+}
+
+.client-theme .client-ui-system-v2 :where(
+  .primary-button,
+  .secondary-button,
+  .ghost-button,
+  button[class$="-button"],
+  a[class$="-button"]
+):not(:disabled):hover {
+  transform: translateY(-1px);
+  border-color: #45607f;
+}
+
+.client-theme .client-ui-system-v2 :where(
+  .primary-button,
+  button[class$="-button"].primary,
+  a[class$="-button"].primary
+):not(:disabled):hover {
+  border-color: #3d95fb;
+  background: linear-gradient(180deg, #3997ff, #287fe8);
+}
+
+.client-theme .client-ui-system-v2 :where(
+  .glass-card,
+  .content-card,
+  [class$="-panel"],
+  [class$="-stat"],
+  [class$="-toolbar"]
+) {
+  border-color: var(--mc-line);
+  border-radius: var(--mc-radius-lg);
+  background: var(--mc-surface-1);
+  box-shadow: none;
+}
+
+.client-theme .client-ui-system-v2 :where(
+  [class$="-panel"],
+  .glass-card,
+  .content-card
+) {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .10);
+}
+
+.client-theme .client-ui-system-v2 :where(
+  [class*="-badge"],
+  [class*="-chip"]
+) {
+  border-radius: 999px;
+  font-weight: 850;
+}
+
+.client-theme .client-ui-system-v2 table {
+  border-collapse: collapse;
+  color: var(--mc-text);
+}
+
+.client-theme .client-ui-system-v2 thead th {
+  color: #7f8c9e;
+  background: #0c1218;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.client-theme .client-ui-system-v2 tbody td {
+  border-color: var(--mc-line-soft);
+}
+
+.client-theme .client-ui-system-v2 tbody tr {
+  transition: background .14s ease;
+}
+
+.client-theme .client-ui-system-v2 tbody tr:hover {
+  background: rgba(74, 156, 255, .025);
+}
+
+.client-theme .client-ui-system-v2 :where(
+  [class*="-empty"],
+  .empty-state,
+  .loader-card
+) {
+  border-color: var(--mc-line);
+  border-radius: var(--mc-radius-lg);
+  color: var(--mc-text-3);
+  background: var(--mc-surface-1);
+}
+
+.client-theme .client-ui-system-v2 :where(
+  [class*="-msg"],
+  [class*="-message"],
+  [class*="-alert"],
+  [class*="-warning"]
+) {
+  border-radius: var(--mc-radius-md);
+}
+
+.client-theme .client-ui-system-v2 :where(
+  .action-row,
+  [class*="-tabs"]
+) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, .24) transparent;
+}
+
+.client-theme .client-ui-system-v2 :where(
+  .action-row,
+  [class*="-tabs"]
+)::-webkit-scrollbar {
+  height: 5px;
+}
+
+.client-theme .client-ui-system-v2 :where(
+  .action-row,
+  [class*="-tabs"]
+)::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(148, 163, 184, .24);
+}
+
+.client-theme .client-ui-system-v2 * {
+  scrollbar-color: rgba(148, 163, 184, .22) transparent;
+}
+
+.client-theme .client-ui-system-v2 :focus-visible {
+  outline: 2px solid rgba(102, 169, 255, .78);
+  outline-offset: 2px;
+}
+
+@media (min-width: 821px) {
+  .client-theme .client-ui-system-v2 {
+    padding-bottom: 12px;
+  }
+
+  .client-theme .client-ui-system-v2 > :where(section, div)[class$="-page"] {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 820px) {
+  .client-theme .client-ui-system-v2 {
+    padding-inline: 12px;
+  }
+
+  .client-theme .client-ui-system-v2 :where(
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea
+  ) {
+    min-height: 44px;
+  }
+
+  .client-theme .client-ui-system-v2 :where(
+    .primary-button,
+    .secondary-button,
+    .ghost-button,
+    button[class$="-button"],
+    a[class$="-button"]
+  ) {
+    min-height: 42px;
+  }
+}
