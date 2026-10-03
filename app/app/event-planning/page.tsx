@@ -200,6 +200,60 @@ const TABS: Array<{
   { kind: 'TRANSPORT', label: 'Transport' },
 ];
 
+type GrocerySupplierGroupKey =
+  | 'GROCERY'
+  | 'DAIRY'
+  | 'VEGETABLE_FRUIT';
+
+const GROCERY_SUPPLIER_GROUPS: Array<{
+  key: GrocerySupplierGroupKey;
+  label: string;
+  detail: string;
+}> = [
+  {
+    key: 'GROCERY',
+    label: 'Grocery',
+    detail: 'Grains, pulses, flour, spices, oil and dry grocery',
+  },
+  {
+    key: 'DAIRY',
+    label: 'Dairy',
+    detail: 'Paneer, milk, curd, butter, cream and dairy products',
+  },
+  {
+    key: 'VEGETABLE_FRUIT',
+    label: 'Vegetables & Fruits',
+    detail: 'Fresh vegetables, herbs, fruits and fresh produce',
+  },
+];
+
+function grocerySupplierGroup(
+  row: AssignmentRow,
+): GrocerySupplierGroupKey {
+  const value =
+    normalized(
+      `${row.requirement} ${row.detail}`,
+    );
+
+  if (
+    /dairy|milk|paneer|curd|butter|cream/.test(
+      value,
+    )
+  ) {
+    return 'DAIRY';
+  }
+
+  if (
+    /vegetable|fruit|herb|fresh produce/.test(
+      value,
+    )
+  ) {
+    return 'VEGETABLE_FRUIT';
+  }
+
+  return 'GROCERY';
+}
+
 function planKey(costingId: string) {
   return `menu_cost_event_planning_${costingId}_v1`;
 }
@@ -389,10 +443,18 @@ function seedRows(
   });
 
   [
-    ['Vegetables', 'Fresh vegetables and herbs'],
-    ['Dairy', 'Paneer, milk, curd, butter and dairy'],
-    ['Dry Grocery', 'Grains, pulses, spices, oil and grocery'],
-    ['Fruits & Dry Fruits', 'Fruit, nuts and premium garnish'],
+    [
+      'Grocery',
+      'Grains, pulses, flour, spices, oil and dry grocery',
+    ],
+    [
+      'Dairy',
+      'Paneer, milk, curd, butter, cream and dairy products',
+    ],
+    [
+      'Vegetables & Fruits',
+      'Fresh vegetables, herbs, fruits and fresh produce',
+    ],
   ].forEach(([name, detail]) => {
     rows.push(
       newRow(
@@ -1388,6 +1450,90 @@ export default function EventPlanningPage() {
     [currentRows, tab],
   );
 
+
+  const grocerySupplierSummary =
+    useMemo(
+      () =>
+        GROCERY_SUPPLIER_GROUPS.map(
+          (group) => {
+            const rows =
+              currentRows.filter(
+                (row) =>
+                  row.kind ===
+                    'GROCERY' &&
+                  grocerySupplierGroup(
+                    row,
+                  ) === group.key,
+              );
+
+            const assigned =
+              rows.filter(
+                (row) =>
+                  Boolean(
+                    row.assignedTo.trim(),
+                  ),
+              );
+
+            const confirmed =
+              rows.filter(
+                (row) =>
+                  [
+                    'CONFIRMED',
+                    'DELIVERED',
+                    'CLOSED',
+                  ].includes(
+                    row.status,
+                  ),
+              );
+
+            const suppliers =
+              Array.from(
+                new Set(
+                  assigned
+                    .map(
+                      (row) =>
+                        row.assignedTo.trim(),
+                    )
+                    .filter(Boolean),
+                ),
+              );
+
+            return {
+              ...group,
+              rows,
+              assignedCount:
+                assigned.length,
+              confirmedCount:
+                confirmed.length,
+              suppliers,
+              cost:
+                rows.reduce(
+                  (sum, row) =>
+                    sum +
+                    Math.max(
+                      0,
+                      Number(
+                        row.quantity,
+                      ) || 0,
+                    ) *
+                      Math.max(
+                        0,
+                        Number(
+                          row.rate,
+                        ) || 0,
+                      ),
+                  0,
+                ),
+              readiness:
+                readiness(
+                  rows,
+                ),
+            };
+          },
+        ),
+      [currentRows],
+    );
+
   const allRows = useMemo(() => {
     if (!work) return [];
 
@@ -1773,6 +1919,44 @@ export default function EventPlanningPage() {
           ? { ...row, ...patch }
           : row,
       ),
+    );
+  }
+
+  function vendorMatchesGroceryGroup(
+    vendor: Vendor,
+    row: AssignmentRow,
+  ) {
+    if (row.kind !== 'GROCERY') {
+      return false;
+    }
+
+    const category =
+      normalized(
+        vendor.category,
+      );
+
+    const group =
+      grocerySupplierGroup(
+        row,
+      );
+
+    if (group === 'DAIRY') {
+      return /dairy|milk|paneer/.test(
+        category,
+      );
+    }
+
+    if (
+      group ===
+      'VEGETABLE_FRUIT'
+    ) {
+      return /vegetable|fruit|fresh|produce/.test(
+        category,
+      );
+    }
+
+    return /grocery|provision|dry|kirana/.test(
+      category,
     );
   }
 
@@ -2464,6 +2648,24 @@ export default function EventPlanningPage() {
           .ep-tabs{display:flex;gap:4px;overflow:auto;padding:8px 10px;border-bottom:1px solid #252c35;background:#0e1319}
           .ep-tab{min-height:33px;padding:0 10px;border:0;border-radius:8px;color:#8290a0;background:transparent;font:inherit;font-size:9px;font-weight:850;white-space:nowrap;cursor:pointer}
           .ep-tab.active{color:#9bc8ff;background:rgba(74,156,255,.11)}
+          .ep-grocery-supplier-panel{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-grocery-supplier-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+          .ep-grocery-supplier-head b,.ep-grocery-supplier-head span{display:block}
+          .ep-grocery-supplier-head b{color:#e6edf5;font-size:11px}
+          .ep-grocery-supplier-head span{margin-top:3px;color:#758397;font-size:8px}
+          .ep-grocery-supplier-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+          .ep-grocery-supplier-card{padding:10px;border:1px solid #29333f;border-radius:11px;background:linear-gradient(180deg,#101720,#0d141b)}
+          .ep-grocery-supplier-card.ready{border-color:rgba(85,217,143,.16);background:rgba(85,217,143,.035)}
+          .ep-grocery-supplier-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-grocery-supplier-card-top span,.ep-grocery-supplier-card-top b{display:block}
+          .ep-grocery-supplier-card-top span{color:#8fc2ff;font-size:7px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+          .ep-grocery-supplier-card-top b{margin-top:4px;color:#e4edf6;font-size:10px;line-height:1.3}
+          .ep-grocery-supplier-card-top strong{padding:4px 6px;border-radius:999px;color:#91a0b2;background:rgba(148,163,184,.08);font-size:7px}
+          .ep-grocery-supplier-card.ready .ep-grocery-supplier-card-top strong{color:#7fe0a8;background:rgba(85,217,143,.08)}
+          .ep-grocery-supplier-card p{min-height:28px;margin:8px 0;color:#6f7d8e;font-size:7px;line-height:1.45}
+          .ep-grocery-supplier-card-meta{display:flex;gap:5px;flex-wrap:wrap}
+          .ep-grocery-supplier-card-meta span{padding:4px 6px;border-radius:999px;color:#7f8ea1;background:rgba(148,163,184,.06);font-size:6px;font-weight:800}
+          @media(max-width:900px){.ep-grocery-supplier-grid{grid-template-columns:1fr}.ep-grocery-supplier-head{align-items:stretch;flex-direction:column}}
           .ep-table-wrap{overflow:auto}
           .ep-table{width:100%;min-width:980px;border-collapse:collapse}
           .ep-table th{padding:8px 9px;border-bottom:1px solid #28313c;color:#718094;background:#0c1117;font-size:7px;font-weight:900;letter-spacing:.04em;text-align:left;text-transform:uppercase}
@@ -2917,9 +3119,16 @@ export default function EventPlanningPage() {
 
             <nav className="ep-tabs">
               {TABS.map((item) => {
-                const count = currentRows.filter(
-                  (row) => row.kind === item.kind,
-                ).length;
+                const count =
+                  item.kind === 'GROCERY'
+                    ? grocerySupplierSummary.filter(
+                        (group) =>
+                          group.rows.length > 0,
+                      ).length
+                    : currentRows.filter(
+                        (row) =>
+                          row.kind === item.kind,
+                      ).length;
 
                 return (
                   <button
@@ -2937,6 +3146,74 @@ export default function EventPlanningPage() {
                 );
               })}
             </nav>
+
+            {tab === 'GROCERY' ? (
+              <section className="ep-grocery-supplier-panel">
+                <div className="ep-grocery-supplier-head">
+                  <div>
+                    <b>Grocery supplier categories</b>
+                    <span>
+                      Assign separate suppliers for Grocery, Dairy, and Vegetables & Fruits.
+                    </span>
+                  </div>
+
+                  <Link
+                    className="ep-button"
+                    href="/app/vendors"
+                  >
+                    Manage Suppliers
+                  </Link>
+                </div>
+
+                <div className="ep-grocery-supplier-grid">
+                  {grocerySupplierSummary.map(
+                    (group) => (
+                      <article
+                        className={
+                          group.readiness >= 80
+                            ? 'ep-grocery-supplier-card ready'
+                            : 'ep-grocery-supplier-card'
+                        }
+                        key={group.key}
+                      >
+                        <div className="ep-grocery-supplier-card-top">
+                          <div>
+                            <span>
+                              {group.label}
+                            </span>
+                            <b>
+                              {group.suppliers.length
+                                ? group.suppliers.join(', ')
+                                : 'Supplier not assigned'}
+                            </b>
+                          </div>
+
+                          <strong>
+                            {group.readiness}%
+                          </strong>
+                        </div>
+
+                        <p>
+                          {group.detail}
+                        </p>
+
+                        <div className="ep-grocery-supplier-card-meta">
+                          <span>
+                            {group.assignedCount}/{group.rows.length || 1} assigned
+                          </span>
+                          <span>
+                            {group.confirmedCount} confirmed
+                          </span>
+                          <span>
+                            {currency(group.cost)}
+                          </span>
+                        </div>
+                      </article>
+                    ),
+                  )}
+                </div>
+              </section>
+            ) : null}
 
             {tab === 'DISPOSABLE' ? (
               <section className="ep-equipment-picker">
@@ -3386,16 +3663,71 @@ export default function EventPlanningPage() {
                             <option value="__in_house">
                               In-house
                             </option>
-                            {vendors
-                              .filter((vendor) => vendor.active)
-                              .map((vendor) => (
-                                <option
-                                  key={vendor.id}
-                                  value={vendor.id}
-                                >
-                                  {vendor.name} · {vendor.type}
-                                </option>
-                              ))}
+                            {row.kind === 'GROCERY' &&
+                            vendors.some(
+                              (vendor) =>
+                                vendor.active &&
+                                vendorMatchesGroceryGroup(
+                                  vendor,
+                                  row,
+                                ),
+                            ) ? (
+                              <>
+                                <optgroup label="Matching supplier category">
+                                  {vendors
+                                    .filter(
+                                      (vendor) =>
+                                        vendor.active &&
+                                        vendorMatchesGroceryGroup(
+                                          vendor,
+                                          row,
+                                        ),
+                                    )
+                                    .map((vendor) => (
+                                      <option
+                                        key={vendor.id}
+                                        value={vendor.id}
+                                      >
+                                        {vendor.name} · {vendor.category || vendor.type}
+                                      </option>
+                                    ))}
+                                </optgroup>
+
+                                <optgroup label="Other active partners">
+                                  {vendors
+                                    .filter(
+                                      (vendor) =>
+                                        vendor.active &&
+                                        !vendorMatchesGroceryGroup(
+                                          vendor,
+                                          row,
+                                        ),
+                                    )
+                                    .map((vendor) => (
+                                      <option
+                                        key={vendor.id}
+                                        value={vendor.id}
+                                      >
+                                        {vendor.name} · {vendor.category || vendor.type}
+                                      </option>
+                                    ))}
+                                </optgroup>
+                              </>
+                            ) : (
+                              vendors
+                                .filter(
+                                  (vendor) =>
+                                    vendor.active,
+                                )
+                                .map((vendor) => (
+                                  <option
+                                    key={vendor.id}
+                                    value={vendor.id}
+                                  >
+                                    {vendor.name} · {vendor.type}
+                                  </option>
+                                ))
+                            )}
                           </select>
                           <input
                             className="ep-field"
@@ -3541,9 +3873,9 @@ export default function EventPlanningPage() {
 
             <footer className="ep-table-actions">
               <span className="ep-hint">
-                Suggestions come from the current menu,
-                manpower and disposable data. Saved partners
-                can auto-fill rates, and edits sync to PostgreSQL.
+                {tab === 'GROCERY'
+                  ? 'Grocery suppliers are separated into Grocery, Dairy, and Vegetables & Fruits. Matching vendor categories are shown first.'
+                  : 'Suggestions come from the current menu, manpower and disposable data. Saved partners can auto-fill rates, and edits sync to PostgreSQL.'}
               </span>
 
               <button
