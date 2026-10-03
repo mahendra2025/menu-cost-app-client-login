@@ -370,6 +370,19 @@ export type BusinessProfile = {
   phone: string;
   city: string;
   logoText: string;
+
+  /** Optional client-facing brand and contact details. */
+  tagline?: string;
+  email?: string;
+  address?: string;
+  gstin?: string;
+
+  /** Defaults used when a brand-new client quotation is created. */
+  quotationValidityDays?: number;
+  quotationAdvancePercent?: number;
+  quotationGstPercent?: number;
+  quotationPaymentTerms?: string;
+  quotationIncludeTotal?: boolean;
 };
 
 export type WorkState = {
