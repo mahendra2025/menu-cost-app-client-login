@@ -30367,3 +30367,368 @@ body.client-sheet-open {
     min-height: 42px;
   }
 }
+
+
+/* Dish Cost visual system v2 ---------------------------------------------- */
+.client-theme .client-ui-system-v2 .cost-command-page {
+  gap: 14px;
+}
+
+.client-theme .client-ui-system-v2 .cost-command-sheet {
+  border-color: #2a3542;
+  border-radius: 18px;
+  background: #10171f;
+  box-shadow: 0 14px 34px rgba(0,0,0,.16);
+}
+
+.client-theme .client-ui-system-v2 .cost-command-main {
+  padding: clamp(20px, 3vw, 30px);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(74,156,255,.12), transparent 20rem),
+    linear-gradient(145deg,#111923,#0d141c);
+}
+
+.client-theme .client-ui-system-v2 .cost-command-step {
+  color: #7eb8ff;
+  font-size: 8px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.client-theme .client-ui-system-v2 .cost-command-step i {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  color: #dbeafe;
+  background: rgba(74,156,255,.14);
+}
+
+.client-theme .client-ui-system-v2 .cost-command-heading h2 {
+  margin-top: 10px;
+  font-size: clamp(28px, 3.8vw, 42px);
+}
+
+.client-theme .client-ui-system-v2 .cost-command-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.client-theme .client-ui-system-v2 .cost-command-meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 0 8px;
+  border: 1px solid rgba(148,163,184,.10);
+  border-radius: 999px;
+  color: #8694a6;
+  background: rgba(255,255,255,.025);
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.client-theme .client-ui-system-v2 .cost-command-meta span.ready {
+  color: #91ddb0;
+  border-color: rgba(85,217,143,.18);
+  background: rgba(85,217,143,.055);
+}
+
+.client-theme .client-ui-system-v2 .cost-command-meta span.attention {
+  color: #edbd72;
+  border-color: rgba(244,173,84,.20);
+  background: rgba(244,173,84,.055);
+}
+
+.client-theme .client-ui-system-v2 .cost-command-total {
+  margin-top: 23px;
+}
+
+.client-theme .client-ui-system-v2 .cost-command-total strong {
+  font-size: clamp(40px,5vw,58px);
+}
+
+.client-theme .client-ui-system-v2 .cost-command-breakdown > div {
+  border-color: rgba(148,163,184,.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,.022);
+}
+
+.client-theme .client-ui-system-v2 .cost-command-actions {
+  gap: 9px;
+  padding: 16px;
+  border-left-color: rgba(148,163,184,.10);
+  background: #0c131b;
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health {
+  display: grid;
+  grid-template-columns: 66px minmax(0,1fr);
+  gap: 11px;
+  align-items: center;
+  padding: 11px;
+  border: 1px solid rgba(74,156,255,.15);
+  border-radius: 13px;
+  background: rgba(74,156,255,.045);
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health-ring {
+  display: grid;
+  width: 60px;
+  height: 60px;
+  padding: 5px;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health-ring > span {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 50%;
+  background: #0f161e;
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health-ring b,
+.client-theme .client-ui-system-v2 .cost-rate-health-ring small {
+  display: block;
+  line-height: 1;
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health-ring b {
+  color: #edf5ff;
+  font-size: 14px;
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health-ring small {
+  margin-top: -9px;
+  color: #748397;
+  font-size: 6px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health > div:last-child > span,
+.client-theme .client-ui-system-v2 .cost-rate-health > div:last-child > b,
+.client-theme .client-ui-system-v2 .cost-rate-health > div:last-child > small {
+  display: block;
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health > div:last-child > span {
+  color: #728196;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health > div:last-child > b {
+  margin-top: 4px;
+  color: #e4ebf3;
+  font-size: 11px;
+}
+
+.client-theme .client-ui-system-v2 .cost-rate-health > div:last-child > small {
+  margin-top: 4px;
+  color: #768496;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+.client-theme .client-ui-system-v2 .cost-command-actions > div.needs-attention,
+.client-theme .client-ui-system-v2 .cost-command-actions > div.is-ready {
+  border-radius: 12px;
+}
+
+.client-theme .client-ui-system-v2 .cost-function-sheet {
+  border-color: #29333f;
+  border-radius: 15px;
+  background: #0f151c;
+}
+
+.client-theme .client-ui-system-v2 .cost-function-row {
+  border-color: rgba(148,163,184,.08);
+}
+
+.client-theme .client-ui-system-v2 .cost-function-row:hover {
+  background: rgba(74,156,255,.025);
+}
+
+.client-theme .client-ui-system-v2 .cost-function-total {
+  border: 1px solid rgba(74,156,255,.12);
+  background: rgba(74,156,255,.055);
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-panel {
+  border-color: #29333f;
+  background: #0f151c;
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-heading {
+  gap: 16px;
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-heading h2 {
+  color: #eef3f8;
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-summary span {
+  border-color: rgba(148,163,184,.10);
+  color: #8593a5;
+  background: rgba(255,255,255,.025);
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-summary b {
+  color: #edf3f9;
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-summary .needs-attention {
+  color: #edbd72;
+  border-color: rgba(244,173,84,.18);
+  background: rgba(244,173,84,.055);
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-summary .needs-attention b {
+  color: #f0c780;
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-summary .is-complete {
+  color: #91ddb0;
+  border-color: rgba(85,217,143,.17);
+  background: rgba(85,217,143,.055);
+}
+
+.client-theme .client-ui-system-v2 .dish-manual-rate-alert {
+  border-color: rgba(244,173,84,.20);
+  color: #dfb66f;
+  background: rgba(244,173,84,.055);
+}
+
+.client-theme .client-ui-system-v2 .dish-manual-rate-alert b {
+  color: #f0c780;
+}
+
+.client-theme .client-ui-system-v2 .dish-manual-rate-alert span {
+  color: #9a8c75;
+}
+
+.client-theme .client-ui-system-v2 .dish-manual-rate-alert .ghost-button {
+  border-color: rgba(244,173,84,.18);
+  color: #efc67d;
+  background: rgba(244,173,84,.05);
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-toolbar {
+  border-color: #29333f;
+  border-radius: 13px;
+  background: #10171f;
+}
+
+.client-theme .client-ui-system-v2 .dish-portion-note {
+  border-left-color: rgba(74,156,255,.48);
+  color: #8391a2;
+  background: rgba(74,156,255,.045);
+}
+
+.client-theme .client-ui-system-v2 .dish-portion-note b {
+  color: #89bfff;
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-table-wrap {
+  border: 1px solid #29333f;
+  border-radius: 13px;
+  overflow: auto;
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-table {
+  background: #0e141b;
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-table tr.dish-rate-missing td {
+  border-color: rgba(244,173,84,.12);
+  background: rgba(244,173,84,.025);
+}
+
+.client-theme .client-ui-system-v2 .dish-cost-name b,
+.client-theme .client-ui-system-v2 .dish-serving-quantity,
+.client-theme .client-ui-system-v2 .dish-total-cost {
+  color: #e8eef5;
+}
+
+.client-theme .client-ui-system-v2 .dish-category-chip {
+  color: #8ec3ff;
+  background: rgba(74,156,255,.075);
+}
+
+.client-theme .client-ui-system-v2 .portion-chip {
+  color: #9aa7b7;
+  background: rgba(148,163,184,.07);
+}
+
+.client-theme .client-ui-system-v2 .dish-rate-input {
+  border-color: #303a46;
+  background: #141b24;
+}
+
+.client-theme .client-ui-system-v2 .dish-rate-input > span {
+  color: #8290a1;
+}
+
+.client-theme .client-ui-system-v2 .dish-rate-input input {
+  color: #e8eef5;
+}
+
+.client-theme .client-ui-system-v2 .dish-rate-missing .dish-rate-input {
+  border-color: rgba(244,173,84,.35);
+  background: rgba(244,173,84,.035);
+}
+
+.client-theme .client-ui-system-v2 .dish-manual-rate-label {
+  color: #e8b969;
+}
+
+.client-theme .client-ui-system-v2 .dish-remove-button {
+  color: #ff9a93;
+  border-color: rgba(255,126,118,.18);
+  background: rgba(255,126,118,.045);
+}
+
+@media (max-width: 900px) {
+  .client-theme .client-ui-system-v2 .cost-command-actions {
+    border-top-color: rgba(148,163,184,.10);
+  }
+}
+
+@media (max-width: 650px) {
+  .client-theme .client-ui-system-v2 .cost-command-sheet {
+    border-radius: 15px;
+  }
+
+  .client-theme .client-ui-system-v2 .cost-command-main {
+    padding: 16px;
+  }
+
+  .client-theme .client-ui-system-v2 .cost-command-breakdown {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .client-theme .client-ui-system-v2 .cost-rate-health {
+    grid-template-columns: 58px minmax(0,1fr);
+  }
+
+  .client-theme .client-ui-system-v2 .cost-rate-health-ring {
+    width: 54px;
+    height: 54px;
+  }
+
+  .client-theme .client-ui-system-v2 .dish-cost-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .client-theme .client-ui-system-v2 .dish-cost-toolbar {
+    padding: 11px;
+  }
+}
