@@ -115,6 +115,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const existingUser = await prisma.tenant.findUnique({
+      where: { email: userId },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'This User ID is already in use' },
+        { status: 409 },
+      );
+    }
+
     const tenant = await prisma.tenant.create({
       data: {
         name,
@@ -149,19 +161,52 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
+    const prismaCode =
+      error && typeof error === 'object' && 'code' in error
+        ? String((error as { code?: unknown }).code || '')
+        : '';
+
+    if (prismaCode === 'P2002') {
       return NextResponse.json(
         { error: 'This User ID is already in use' },
         { status: 409 },
       );
     }
 
+    if (prismaCode === 'P2022') {
+      return NextResponse.json(
+        {
+          error:
+            'Database schema is missing a required caterer-account column. Redeploy the latest main branch so Prisma migrations run.',
+          code: prismaCode,
+        },
+        { status: 500 },
+      );
+    }
+
+    if (prismaCode === 'P2021') {
+      return NextResponse.json(
+        {
+          error:
+            'Database table is missing. Redeploy the latest main branch and run Prisma migrations.',
+          code: prismaCode,
+        },
+        { status: 500 },
+      );
+    }
+
     console.error('Admin users POST failed:', error);
+
+    const details =
+      error instanceof Error
+        ? error.message.slice(0, 500)
+        : 'Unknown server error';
+
     return NextResponse.json(
-      { error: 'Could not create caterer account' },
+      {
+        error: `Could not create caterer account: ${details}`,
+        code: prismaCode || 'SERVER_ERROR',
+      },
       { status: 500 },
     );
   }
