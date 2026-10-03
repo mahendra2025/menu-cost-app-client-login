@@ -1656,6 +1656,38 @@ export default function EventPlanningPage() {
         );
     }, [crockery]);
 
+  const uniformRoleGroups =
+    useMemo(() => {
+      const groups =
+        new Map<string, UniformItem[]>();
+
+      uniforms.forEach((item) => {
+        const role =
+          item.staffRole.trim() ||
+          'Other Staff';
+
+        const current =
+          groups.get(role) || [];
+
+        current.push(item);
+        groups.set(role, current);
+      });
+
+      return Array.from(groups.entries())
+        .map(([role, items]) => ({
+          role,
+          items: [...items].sort((a, b) => {
+            if (a.active !== b.active) {
+              return a.active ? -1 : 1;
+            }
+            return a.name.localeCompare(b.name);
+          }),
+        }))
+        .sort((a, b) =>
+          a.role.localeCompare(b.role),
+        );
+    }, [uniforms]);
+
   const allRows = useMemo(() => {
     if (!work) return [];
 
@@ -2664,53 +2696,153 @@ export default function EventPlanningPage() {
   function selectedUniformQty(
     uniformId: string,
   ) {
+    const masterItem =
+      uniforms.find(
+        (item) =>
+          item.id === uniformId,
+      );
+
     return currentRows
       .filter(
         (row) =>
           row.kind === 'DRESS' &&
-          row.uniformId === uniformId,
+          (
+            row.uniformId === uniformId ||
+            (
+              !row.uniformId &&
+              masterItem &&
+              normalized(
+                row.requirement,
+              ) ===
+                normalized(
+                  masterItem.name,
+                )
+            )
+          ),
       )
       .reduce(
         (sum, row) =>
           sum +
-          Math.max(0, Number(row.quantity) || 0),
+          Math.max(
+            0,
+            Number(row.quantity) || 0,
+          ),
         0,
       );
   }
 
-  function addUniformFromMaster(
+  function setUniformQuantity(
     item: UniformItem,
+    quantity: number,
   ) {
     if (!currentFunction) return;
 
+    const nextQuantity =
+      Math.max(
+        0,
+        Math.round(
+          Number(quantity) || 0,
+        ),
+      );
+
     const baseRows =
-      plan[currentFunction.key] || defaultRows;
-    const suggestedQty =
-      requiredUniformQty(item);
+      plan[currentFunction.key] ||
+      defaultRows;
 
     const existing =
       baseRows.find(
         (row) =>
           row.kind === 'DRESS' &&
-          row.uniformId === item.id,
+          (
+            row.uniformId === item.id ||
+            (
+              !row.uniformId &&
+              normalized(
+                row.requirement,
+              ) === normalized(
+                item.name,
+              )
+            )
+          ),
       );
 
-    if (existing) {
+    if (existing && nextQuantity <= 0) {
       persistRows(
         currentFunction.key,
-        baseRows.map((row) =>
-          row.id === existing.id
-            ? {
-                ...row,
-                quantity:
-                  suggestedQty ||
-                  row.quantity,
-              }
-            : row,
+        baseRows.filter(
+          (row) =>
+            row.id !== existing.id,
         ),
       );
       return;
     }
+
+    if (existing) {
+      persistRows(
+        currentFunction.key,
+        baseRows.map(
+          (row) =>
+            row.id === existing.id
+              ? {
+                  ...row,
+                  uniformId: item.id,
+                  requirement: item.name,
+                  detail: [
+                    item.staffRole,
+                    item.components,
+                    item.sizes
+                      ? `Sizes: ${item.sizes}`
+                      : '',
+                    item.laundryStatus
+                      ? `Laundry: ${item.laundryStatus.replace(/_/g, ' ')}`
+                      : '',
+                    item.notes,
+                  ]
+                    .filter(Boolean)
+                    .join(' · '),
+                  quantity:
+                    nextQuantity,
+                  unit:
+                    item.unit ||
+                    row.unit ||
+                    'set',
+                  photoUrl:
+                    item.photoUrl ||
+                    row.photoUrl,
+                  availableQty:
+                    item.availableQty,
+                  rate:
+                    Number(row.rate) > 0
+                      ? row.rate
+                      : item.defaultRate,
+                  partnerId:
+                    row.partnerId ||
+                    (
+                      item.ownership === 'RENTAL'
+                        ? item.vendorId
+                        : ''
+                    ),
+                  assignedTo:
+                    row.assignedTo ||
+                    (
+                      item.ownership === 'RENTAL'
+                        ? item.vendorName
+                        : 'In-house'
+                    ),
+                  partnerType:
+                    row.assignedTo
+                      ? row.partnerType
+                      : item.ownership === 'RENTAL'
+                        ? 'VENDOR'
+                        : 'IN_HOUSE',
+                }
+              : row,
+        ),
+      );
+      return;
+    }
+
+    if (nextQuantity <= 0) return;
 
     const row = newRow(
       'DRESS',
@@ -2724,10 +2856,11 @@ export default function EventPlanningPage() {
         item.laundryStatus
           ? `Laundry: ${item.laundryStatus.replace(/_/g, ' ')}`
           : '',
+        item.notes,
       ]
         .filter(Boolean)
         .join(' · '),
-      suggestedQty,
+      nextQuantity,
       item.unit || 'set',
       item.defaultRate,
     );
@@ -2755,6 +2888,24 @@ export default function EventPlanningPage() {
               : 'IN_HOUSE',
         },
       ],
+    );
+  }
+
+  function addUniformFromMaster(
+    item: UniformItem,
+  ) {
+    setUniformQuantity(
+      item,
+      selectedUniformQty(item.id) + 1,
+    );
+  }
+
+  function useRequiredUniformQty(
+    item: UniformItem,
+  ) {
+    setUniformQuantity(
+      item,
+      requiredUniformQty(item),
     );
   }
 
@@ -3225,6 +3376,56 @@ export default function EventPlanningPage() {
           .ep-crockery-inactive-note{color:#c28e53}
           @media(max-width:760px){.ep-crockery-master-head{align-items:stretch;flex-direction:column}.ep-crockery-master-head-actions{justify-content:space-between}.ep-crockery-master-grid{grid-template-columns:1fr 1fr}}
           @media(max-width:520px){.ep-crockery-master-grid{grid-template-columns:1fr}}
+          .ep-uniform-master{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-uniform-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-uniform-master-head b,.ep-uniform-master-head span{display:block}
+          .ep-uniform-master-head b{color:#e6edf5;font-size:11px}
+          .ep-uniform-master-head span{margin-top:3px;max-width:700px;color:#748294;font-size:8px;line-height:1.45}
+          .ep-uniform-master-head-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}
+          .ep-uniform-master-head-actions>span{margin:0;color:#718095;font-size:7px;font-weight:850}
+          .ep-uniform-role-list{display:grid;gap:10px}
+          .ep-uniform-role{overflow:hidden;border:1px solid rgba(148,163,184,.09);border-radius:12px;background:#0f151c}
+          .ep-uniform-role-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.08);background:rgba(255,255,255,.018)}
+          .ep-uniform-role-head>div:first-child b,.ep-uniform-role-head>div:first-child span{display:block}
+          .ep-uniform-role-head>div:first-child b{color:#dfe8f2;font-size:10px}
+          .ep-uniform-role-head>div:first-child span{margin-top:2px;color:#718095;font-size:7px}
+          .ep-uniform-role-summary{display:flex;gap:6px;flex-wrap:wrap}
+          .ep-uniform-role-summary span{padding:5px 7px;border-radius:999px;color:#718095;background:rgba(148,163,184,.06);font-size:6px;font-weight:800}
+          .ep-uniform-role-summary b{color:#a8cffc;font-size:7px}
+          .ep-uniform-master-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;padding:9px}
+          .ep-uniform-master-card{overflow:hidden;border:1px solid #2b3440;border-radius:11px;background:#111820;transition:border-color .18s ease,transform .18s ease}
+          .ep-uniform-master-card:hover{border-color:#3b4755;transform:translateY(-1px)}
+          .ep-uniform-master-card.selected{border-color:rgba(74,156,255,.48);box-shadow:inset 0 0 0 1px rgba(74,156,255,.08)}
+          .ep-uniform-master-card.over{border-color:rgba(244,173,84,.42)}
+          .ep-uniform-master-card.inactive{opacity:.62}
+          .ep-uniform-master-photo{position:relative;aspect-ratio:16/8;overflow:hidden;background:#18202a}
+          .ep-uniform-master-photo img{width:100%;height:100%;display:block;object-fit:cover}
+          .ep-uniform-master-status{position:absolute;top:7px;right:7px;padding:4px 6px;border-radius:999px;color:#c3d0df;background:rgba(8,13,19,.78);font-size:6px;font-weight:900}
+          .ep-uniform-master-body{padding:9px}
+          .ep-uniform-master-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-uniform-master-title b,.ep-uniform-master-title span{display:block}
+          .ep-uniform-master-title b{color:#e7eef6;font-size:9px}
+          .ep-uniform-master-title span{margin-top:2px;color:#758397;font-size:7px}
+          .ep-uniform-master-title>strong{color:#d3deea;font-size:8px;white-space:nowrap}
+          .ep-uniform-master-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
+          .ep-uniform-master-meta>span{padding:5px 6px;border-radius:7px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
+          .ep-uniform-master-meta>span b{display:block;margin-top:2px;color:#d7e1ec;font-size:8px}
+          .ep-uniform-master-meta>span.warn{color:#e7a653;background:rgba(244,173,84,.06)}
+          .ep-uniform-master-meta>span.warn b{color:#f1b361}
+          .ep-uniform-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+          .ep-uniform-tags span{padding:4px 6px;border-radius:999px;color:#72849a;background:rgba(74,156,255,.04);font-size:6px;font-weight:800}
+          .ep-uniform-qty-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end;margin-top:9px}
+          .ep-uniform-qty-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
+          .ep-uniform-qty-editor>button:disabled{opacity:.35;cursor:not-allowed}
+          .ep-uniform-qty-editor label{display:grid;gap:3px}
+          .ep-uniform-qty-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-uniform-qty-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
+          .ep-uniform-required{width:100%;min-height:30px;margin-top:6px;border:1px solid rgba(74,156,255,.16);border-radius:8px;color:#92c3fb;background:rgba(74,156,255,.045);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
+          .ep-uniform-required:disabled{opacity:.35;cursor:not-allowed}
+          .ep-uniform-note{display:block;margin-top:7px;color:#69788b;font-size:6px;line-height:1.4}
+          .ep-uniform-note.warn{color:#c28e53}
+          @media(max-width:760px){.ep-uniform-master-head{align-items:stretch;flex-direction:column}.ep-uniform-master-head-actions{justify-content:space-between}.ep-uniform-master-grid{grid-template-columns:1fr 1fr}}
+          @media(max-width:520px){.ep-uniform-master-grid{grid-template-columns:1fr}}
           .ep-empty{padding:40px 15px;color:#748294;font-size:10px;text-align:center}
           @media(max-width:1180px){.ep-readiness-grid{grid-template-columns:repeat(4,1fr)}.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
           @media(max-width:720px){.ep-event-selector{grid-template-columns:1fr}.ep-readiness-head{align-items:flex-start}.ep-readiness-grid{grid-template-columns:1fr 1fr}.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
@@ -3797,85 +3998,238 @@ export default function EventPlanningPage() {
             ) : null}
 
             {tab === 'DRESS' ? (
-              <section className="ep-equipment-picker">
-                <div className="ep-equipment-picker-head">
+              <section className="ep-uniform-master">
+                <div className="ep-uniform-master-head">
                   <div>
-                    <b>Choose staff dress by photo</b>
+                    <b>Saved Dress & Uniform Master</b>
                     <span>
-                      Required sets are calculated from the assigned manpower role.
+                      All saved uniforms are grouped by staff role. Required quantity comes from manpower assigned to this function, and you can override it anytime.
                     </span>
                   </div>
 
-                  <Link className="ep-button" href="/app/uniforms">
-                    Manage Uniforms
-                  </Link>
+                  <div className="ep-uniform-master-head-actions">
+                    <span>
+                      {uniforms.length} saved · {uniforms.filter((item) => item.active).length} active
+                    </span>
+                    <Link className="ep-button" href="/app/uniforms">
+                      Manage Uniforms
+                    </Link>
+                  </div>
                 </div>
 
-                {uniforms.filter((item) => item.active).length ? (
-                  <div className="ep-equipment-grid">
-                    {uniforms
-                      .filter((item) => item.active)
-                      .map((item) => {
-                        const required =
-                          requiredUniformQty(item);
-                        const selected =
-                          selectedUniformQty(item.id);
-                        const shortage =
-                          Math.max(
-                            0,
-                            selected - item.availableQty,
-                          );
-
-                        return (
-                          <button
-                            key={item.id}
-                            className={
-                              shortage > 0
-                                ? 'ep-equipment-card over'
-                                : 'ep-equipment-card'
-                            }
-                            type="button"
-                            onClick={() =>
-                              addUniformFromMaster(item)
-                            }
-                          >
-                            <div className="ep-equipment-photo">
-                              {item.photoUrl ? (
-                                <img
-                                  src={item.photoUrl}
-                                  alt={item.name}
-                                />
-                              ) : (
-                                <div className="ep-equipment-fallback">
-                                  <b>
-                                    {item.name
-                                      .slice(0, 2)
-                                      .toUpperCase() || 'UF'}
-                                  </b>
-                                  <small>No photo</small>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="ep-equipment-card-body">
-                              <b>{item.name}</b>
-                              <span>
-                                {item.staffRole || 'No role'}
-                                {item.components
-                                  ? ` · ${item.components}`
-                                  : ''}
-                              </span>
-                              <small>
-                                Required {required} · Selected {selected} · Available {item.availableQty}
-                              </small>
-                            </div>
-                          </button>
+                {uniformRoleGroups.length ? (
+                  <div className="ep-uniform-role-list">
+                    {uniformRoleGroups.map((group) => {
+                      const roleRequired =
+                        group.items.reduce(
+                          (max, item) =>
+                            Math.max(
+                              max,
+                              requiredUniformQty(item),
+                            ),
+                          0,
                         );
-                      })}
+
+                      const roleSelected =
+                        group.items.reduce(
+                          (sum, item) =>
+                            sum +
+                            selectedUniformQty(item.id),
+                          0,
+                        );
+
+                      return (
+                        <section
+                          className="ep-uniform-role"
+                          key={group.role}
+                        >
+                          <div className="ep-uniform-role-head">
+                            <div>
+                              <b>{group.role}</b>
+                              <span>
+                                {group.items.length} uniform option{group.items.length === 1 ? '' : 's'}
+                              </span>
+                            </div>
+
+                            <div className="ep-uniform-role-summary">
+                              <span>Required <b>{roleRequired}</b></span>
+                              <span>Selected <b>{roleSelected}</b></span>
+                            </div>
+                          </div>
+
+                          <div className="ep-uniform-master-grid">
+                            {group.items.map((item) => {
+                              const required =
+                                requiredUniformQty(item);
+                              const selected =
+                                selectedUniformQty(item.id);
+                              const shortage =
+                                item.availableQty > 0
+                                  ? Math.max(
+                                      0,
+                                      selected -
+                                        item.availableQty,
+                                    )
+                                  : 0;
+                              const disabled =
+                                !item.active &&
+                                selected <= 0;
+
+                              return (
+                                <article
+                                  key={item.id}
+                                  className={
+                                    [
+                                      'ep-uniform-master-card',
+                                      selected > 0
+                                        ? 'selected'
+                                        : '',
+                                      shortage > 0
+                                        ? 'over'
+                                        : '',
+                                      !item.active
+                                        ? 'inactive'
+                                        : '',
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' ')
+                                  }
+                                >
+                                  <div className="ep-uniform-master-photo">
+                                    {item.photoUrl ? (
+                                      <img
+                                        src={item.photoUrl}
+                                        alt={item.name}
+                                      />
+                                    ) : (
+                                      <div className="ep-equipment-fallback">
+                                        <b>
+                                          {item.name
+                                            .slice(0, 2)
+                                            .toUpperCase() || 'UF'}
+                                        </b>
+                                        <small>No photo</small>
+                                      </div>
+                                    )}
+
+                                    <span className="ep-uniform-master-status">
+                                      {item.active
+                                        ? item.ownership === 'RENTAL'
+                                          ? 'Rental'
+                                          : 'In-house'
+                                        : 'Inactive'}
+                                    </span>
+                                  </div>
+
+                                  <div className="ep-uniform-master-body">
+                                    <div className="ep-uniform-master-title">
+                                      <div>
+                                        <b>{item.name}</b>
+                                        <span>
+                                          {item.components || item.unit || 'Uniform set'}
+                                        </span>
+                                      </div>
+                                      <strong>{currency(item.defaultRate)}</strong>
+                                    </div>
+
+                                    <div className="ep-uniform-master-meta">
+                                      <span>Required <b>{required}</b></span>
+                                      <span>Available <b>{item.availableQty}</b></span>
+                                      {shortage > 0 ? (
+                                        <span className="warn">
+                                          Shortage <b>{shortage}</b>
+                                        </span>
+                                      ) : (
+                                        <span>
+                                          Selected <b>{selected}</b>
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="ep-uniform-tags">
+                                      {item.sizes ? <span>Sizes {item.sizes}</span> : null}
+                                      {item.laundryStatus ? (
+                                        <span>
+                                          Laundry {item.laundryStatus.replace(/_/g, ' ')}
+                                        </span>
+                                      ) : null}
+                                      <span>{item.unit || 'set'}</span>
+                                    </div>
+
+                                    <div className="ep-uniform-qty-editor">
+                                      <button
+                                        type="button"
+                                        disabled={selected <= 0}
+                                        onClick={() =>
+                                          setUniformQuantity(
+                                            item,
+                                            selected - 1,
+                                          )
+                                        }
+                                      >
+                                        −
+                                      </button>
+
+                                      <label>
+                                        <span>Qty</span>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          step="1"
+                                          value={selected}
+                                          disabled={disabled}
+                                          onChange={(event) =>
+                                            setUniformQuantity(
+                                              item,
+                                              Number(event.target.value),
+                                            )
+                                          }
+                                        />
+                                      </label>
+
+                                      <button
+                                        type="button"
+                                        disabled={disabled}
+                                        onClick={() =>
+                                          addUniformFromMaster(item)
+                                        }
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+
+                                    <button
+                                      className="ep-uniform-required"
+                                      type="button"
+                                      disabled={disabled || required <= 0}
+                                      onClick={() =>
+                                        useRequiredUniformQty(item)
+                                      }
+                                    >
+                                      Use Required {required}
+                                    </button>
+
+                                    {!item.active ? (
+                                      <small className="ep-uniform-note warn">
+                                        Inactive in Uniform Master. Reactivate it there to add new quantity.
+                                      </small>
+                                    ) : item.vendorName ? (
+                                      <small className="ep-uniform-note">
+                                        {item.vendorName}
+                                      </small>
+                                    ) : null}
+                                  </div>
+                                </article>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="ep-empty">
-                    No uniform photos saved yet. Open Dress Master and add staff uniforms first.
+                    No uniforms saved yet. Open Uniform Master and add staff dress first.
                   </div>
                 )}
               </section>
