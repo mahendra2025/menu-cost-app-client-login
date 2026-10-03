@@ -7,7 +7,7 @@ import {
 } from 'react';
 
 import AppShell from '../../components/AppShell';
-import { getSession, uid } from '../../../lib/store';
+import { getSession, loadWork, uid } from '../../../lib/store';
 
 type RequirementKind =
   | 'MENU'
@@ -27,6 +27,23 @@ type VendorRate = {
   rate: number;
 };
 
+type AssignmentStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'DELIVERED'
+  | 'CLOSED';
+
+type PlanningAssignment = {
+  id: string;
+  assignedTo: string;
+  partnerId?: string;
+  partnerType: 'IN_HOUSE' | 'VENDOR' | 'AGENCY';
+  status: AssignmentStatus;
+};
+
+type PlanningPlan =
+  Record<string, PlanningAssignment[]>;
+
 type Vendor = {
   id: string;
   name: string;
@@ -39,6 +56,11 @@ type Vendor = {
   paymentTerms: string;
   notes: string;
   active: boolean;
+  preferred: boolean;
+  reliability: 'NEW' | 'RELIABLE' | 'EXCELLENT';
+  serviceArea: string;
+  confirmationStatus: 'OPEN' | 'CONFIRMED' | 'ON_HOLD';
+  paymentStatus: 'NOT_SET' | 'PENDING' | 'PARTIAL' | 'PAID';
   rates: VendorRate[];
 };
 
@@ -69,6 +91,11 @@ function blankVendor(): Vendor {
     paymentTerms: '',
     notes: '',
     active: true,
+    preferred: false,
+    reliability: 'NEW',
+    serviceArea: '',
+    confirmationStatus: 'OPEN',
+    paymentStatus: 'NOT_SET',
     rates: [],
   };
 }
@@ -99,6 +126,11 @@ export default function VendorsPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'PREFERRED'>('ALL');
+  const [planningPlan, setPlanningPlan] = useState<PlanningPlan>({});
+  const [currentEventName, setCurrentEventName] = useState('');
+  const [planningLoading, setPlanningLoading] = useState(false);
 
   useEffect(() => {
     const session = getSession();
@@ -108,6 +140,51 @@ export default function VendorsPage() {
     }
 
     void loadVendors();
+
+    const currentWork =
+      loadWork(session.tenantId);
+
+    setCurrentEventName(
+      currentWork.event.eventName ||
+      currentWork.event.clientName ||
+      'Current event',
+    );
+
+    if (currentWork.costingId) {
+      setPlanningLoading(true);
+      void fetch(
+        `/api/client/event-planning?costingId=${encodeURIComponent(
+          currentWork.costingId,
+        )}`,
+        {
+          cache: 'no-store',
+        },
+      )
+        .then(async (response) => {
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error ||
+                'Could not load event assignments.',
+            );
+          }
+
+          setPlanningPlan(
+            data.plan &&
+            typeof data.plan === 'object' &&
+            !Array.isArray(data.plan)
+              ? data.plan as PlanningPlan
+              : {},
+          );
+        })
+        .catch(() => {
+          setPlanningPlan({});
+        })
+        .finally(() => {
+          setPlanningLoading(false);
+        });
+    }
   }, []);
 
   async function loadVendors() {
@@ -271,24 +348,72 @@ export default function VendorsPage() {
     setMessage('');
   }
 
+  const categories =
+    useMemo(
+      () =>
+        Array.from(
+          new Set(
+            vendors
+              .map((vendor) => vendor.category.trim())
+              .filter(Boolean),
+          ),
+        ).sort((a, b) => a.localeCompare(b)),
+      [vendors],
+    );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return vendors;
 
-    return vendors.filter((vendor) =>
-      [
+    return vendors.filter((vendor) => {
+      if (
+        categoryFilter !== 'ALL' &&
+        vendor.category !== categoryFilter
+      ) {
+        return false;
+      }
+
+      if (
+        statusFilter === 'ACTIVE' &&
+        !vendor.active
+      ) {
+        return false;
+      }
+
+      if (
+        statusFilter === 'INACTIVE' &&
+        vendor.active
+      ) {
+        return false;
+      }
+
+      if (
+        statusFilter === 'PREFERRED' &&
+        !vendor.preferred
+      ) {
+        return false;
+      }
+
+      if (!q) return true;
+
+      return [
         vendor.name,
         vendor.type,
         vendor.category,
         vendor.contactPerson,
         vendor.phone,
         vendor.city,
+        vendor.serviceArea,
       ]
         .join(' ')
         .toLowerCase()
-        .includes(q),
-    );
-  }, [query, vendors]);
+        .includes(q);
+    });
+  }, [
+    categoryFilter,
+    query,
+    statusFilter,
+    vendors,
+  ]);
 
   const selected =
     vendors.find((vendor) => vendor.id === selectedId) ||
@@ -299,6 +424,74 @@ export default function VendorsPage() {
     0,
   );
 
+  const planningAssignments =
+    Object.values(planningPlan).flat();
+
+  const vendorAssignmentCount =
+    planningAssignments.filter(
+      (row) =>
+        row.partnerType === 'VENDOR' ||
+        row.partnerType === 'AGENCY',
+    ).length;
+
+  const confirmedAssignmentCount =
+    planningAssignments.filter(
+      (row) =>
+        ['CONFIRMED', 'DELIVERED', 'CLOSED'].includes(row.status),
+    ).length;
+
+  const assignmentCountForVendor = (
+    vendor: Vendor,
+  ) =>
+    planningAssignments.filter(
+      (row) =>
+        row.partnerId === vendor.id ||
+        (
+          row.assignedTo.trim().toLowerCase() ===
+          vendor.name.trim().toLowerCase()
+        ),
+    ).length;
+
+  const confirmedCountForVendor = (
+    vendor: Vendor,
+  ) =>
+    planningAssignments.filter(
+      (row) =>
+        (
+          row.partnerId === vendor.id ||
+          row.assignedTo.trim().toLowerCase() ===
+            vendor.name.trim().toLowerCase()
+        ) &&
+        ['CONFIRMED', 'DELIVERED', 'CLOSED'].includes(row.status),
+    ).length;
+
+  const preferredCount =
+    vendors.filter((vendor) => vendor.preferred).length;
+
+  const missingPhoneCount =
+    vendors.filter(
+      (vendor) =>
+        vendor.active &&
+        !vendor.phone.trim(),
+    ).length;
+
+  function openWhatsApp(vendor: Vendor) {
+    const phone =
+      vendor.phone.replace(/\D/g, '');
+
+    if (!phone) return;
+
+    const text = encodeURIComponent(
+      `Hello ${vendor.contactPerson || vendor.name}, regarding ${currentEventName || 'our upcoming event'}.`,
+    );
+
+    window.open(
+      `https://wa.me/${phone}?text=${text}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  }
+
   return (
     <AppShell
       title="Vendors & Agencies"
@@ -308,6 +501,17 @@ export default function VendorsPage() {
       <section className="vm-page">
         <style>{`
           .vm-page{display:grid;gap:14px;color:#edf2f8}
+          .vm-command{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.62fr);gap:18px;align-items:center;padding:18px 20px;border:1px solid #2a3542;border-radius:18px;background:radial-gradient(circle at 96% 10%,rgba(74,156,255,.13),transparent 22rem),linear-gradient(145deg,#111923,#0d141c);box-shadow:0 14px 34px rgba(0,0,0,.16)}
+          .vm-command small{display:block;color:#78b5ff;font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+          .vm-command h1{margin:7px 0 6px;font-size:clamp(28px,3.4vw,40px);line-height:1.04;letter-spacing:-.045em}
+          .vm-command p{max-width:700px;margin:0;color:#8b98a9;font-size:10px;line-height:1.55}
+          .vm-command-side{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+          .vm-command-side>div{min-width:0;padding:10px;border:1px solid rgba(148,163,184,.10);border-radius:11px;background:rgba(255,255,255,.022)}
+          .vm-command-side span,.vm-command-side b,.vm-command-side small{display:block}
+          .vm-command-side span{color:#718094;font-size:7px;font-weight:900;text-transform:uppercase}
+          .vm-command-side b{margin-top:4px;color:#e7eef6;font-size:15px}
+          .vm-command-side small{margin-top:3px;color:#68778a;font-size:7px;letter-spacing:0;text-transform:none}
+          .vm-command-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:0!important;border:0!important;background:transparent!important}
           .vm-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:16px 2px 3px}
           .vm-head small{display:block;color:#78b5ff;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
           .vm-head h1{margin:6px 0 5px;font-size:clamp(30px,4vw,44px);line-height:1;letter-spacing:-.05em}
@@ -326,7 +530,8 @@ export default function VendorsPage() {
           .vm-msg.error{border-color:rgba(255,98,89,.2);color:#ff948e;background:rgba(255,98,89,.06)}
           .vm-layout{display:grid;grid-template-columns:330px minmax(0,1fr);gap:12px;align-items:start}
           .vm-panel{border:1px solid #282f39;border-radius:15px;background:#10151c}
-          .vm-search{padding:10px;border-bottom:1px solid #252c35}
+          .vm-search{display:grid;gap:7px;padding:10px;border-bottom:1px solid #252c35}
+          .vm-filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
           .vm-input,.vm-select,.vm-textarea{width:100%;min-height:38px;padding:0 10px;border:1px solid #303945;border-radius:8px;outline:0;color:#dfe7f0;background:#151c25;font:inherit;font-size:10px}
           .vm-textarea{min-height:78px;padding:9px;resize:vertical}
           .vm-input:focus,.vm-select:focus,.vm-textarea:focus{border-color:rgba(74,156,255,.6);box-shadow:0 0 0 3px rgba(74,156,255,.08)}
@@ -337,12 +542,26 @@ export default function VendorsPage() {
           .vm-card b{color:#e6edf5;font-size:11px}
           .vm-card span{margin-top:3px;color:#7d8a9a;font-size:8px}
           .vm-card small{margin-top:5px;color:#6edb9a;font-size:8px;font-weight:850}
+          .vm-card-side{display:grid;justify-items:end;gap:5px}
           .vm-badge{align-self:start;padding:4px 6px;border-radius:999px;color:#9bc8ff;background:rgba(74,156,255,.09);font-size:7px;font-weight:900}
+          .vm-status{font-size:7px;color:#8491a1}
+          .vm-status.active{color:#6fdc9e}
           .vm-empty{padding:36px 14px;color:#748192;font-size:10px;text-align:center}
           .vm-editor{padding:15px}
           .vm-editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:13px;border-bottom:1px solid #252c35}
           .vm-editor-head h2{margin:0;font-size:18px}
           .vm-editor-head p{margin:4px 0 0;color:#7f8b9a;font-size:9px}
+          .vm-editor-status{display:flex;flex-wrap:wrap;gap:8px}
+          .vm-editor-status label{display:flex;align-items:center;gap:6px;color:#9aa6b4;font-size:8px}
+          .vm-partner-command{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:13px;padding:9px;border:1px solid rgba(148,163,184,.09);border-radius:12px;background:#0d141b}
+          .vm-partner-command>div{min-width:0;padding:8px;border-radius:9px;background:rgba(255,255,255,.02)}
+          .vm-partner-command span,.vm-partner-command b,.vm-partner-command small{display:block}
+          .vm-partner-command span{color:#718094;font-size:7px;font-weight:900;text-transform:uppercase}
+          .vm-partner-command b{margin-top:4px;color:#e5edf6;font-size:11px;text-transform:capitalize}
+          .vm-partner-command small{margin-top:2px;color:#68778a;font-size:7px}
+          .vm-partner-actions{grid-column:1/-1!important;display:flex!important;gap:7px!important;padding:0!important;background:transparent!important}
+          .vm-link-button{text-decoration:none}
+          .vm-link-button.disabled{pointer-events:none;opacity:.45}
           .vm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:13px}
           .vm-field{display:grid;gap:5px}
           .vm-field.full{grid-column:1/-1}
@@ -357,35 +576,58 @@ export default function VendorsPage() {
           .vm-mini{min-height:34px;padding:0 7px;font-size:9px}
           .vm-delete{width:30px;height:30px;border:1px solid rgba(255,98,89,.2);border-radius:7px;color:#ff928b;background:rgba(255,98,89,.05);cursor:pointer}
           .vm-foot{display:flex;justify-content:flex-end;gap:7px;margin-top:14px;padding-top:13px;border-top:1px solid #252c35}
-          @media(max-width:980px){.vm-layout{grid-template-columns:1fr}.vm-list{max-height:300px}.vm-stats{grid-template-columns:1fr 1fr}}
-          @media(max-width:680px){.vm-head{align-items:stretch;flex-direction:column}.vm-actions{display:grid;grid-template-columns:1fr 1fr}.vm-grid{grid-template-columns:1fr}.vm-field.full{grid-column:auto}}
+          @media(max-width:1100px){.vm-command{grid-template-columns:1fr}.vm-command-side{grid-template-columns:repeat(4,minmax(0,1fr))}.vm-command-actions{grid-column:1/-1}}
+          @media(max-width:980px){.vm-layout{grid-template-columns:1fr}.vm-list{max-height:300px}.vm-stats{grid-template-columns:1fr 1fr}.vm-partner-command{grid-template-columns:1fr 1fr}}
+          @media(max-width:680px){.vm-command{padding:16px}.vm-command-side{grid-template-columns:1fr 1fr}.vm-command-actions{grid-template-columns:1fr}.vm-head{align-items:stretch;flex-direction:column}.vm-actions{display:grid;grid-template-columns:1fr 1fr}.vm-grid{grid-template-columns:1fr}.vm-field.full{grid-column:auto}.vm-filter-grid{grid-template-columns:1fr}.vm-partner-actions{display:grid!important;grid-template-columns:1fr 1fr}.vm-partner-actions .primary{grid-column:1/-1}}
         `}</style>
 
-        <header className="vm-head">
+        <header className="vm-command">
           <div>
-            <small>Supplier control</small>
+            <small>Supplier & agency control center</small>
             <h1>Vendors & Agencies</h1>
             <p>
-              Save partners once, then reuse their rates in every event plan.
+              Keep reliable partners, reusable rates and current-event assignment context in one place.
             </p>
           </div>
 
-          <div className="vm-actions">
-            <button
-              className="vm-button"
-              type="button"
-              onClick={addVendor}
-            >
-              + Add Partner
-            </button>
-            <button
-              className="vm-button primary"
-              type="button"
-              disabled={saving}
-              onClick={() => void saveVendors()}
-            >
-              {saving ? 'Saving…' : 'Save Master'}
-            </button>
+          <div className="vm-command-side">
+            <div>
+              <span>Active partners</span>
+              <b>{vendors.filter((vendor) => vendor.active).length}</b>
+              <small>{vendors.length} total in master</small>
+            </div>
+            <div>
+              <span>Preferred</span>
+              <b>{preferredCount}</b>
+              <small>Trusted first-choice partners</small>
+            </div>
+            <div>
+              <span>Current assignments</span>
+              <b>{planningLoading ? '—' : vendorAssignmentCount}</b>
+              <small>{currentEventName || 'Current event'}</small>
+            </div>
+            <div>
+              <span>Confirmed</span>
+              <b>{planningLoading ? '—' : confirmedAssignmentCount}</b>
+              <small>Confirmed / delivered / closed</small>
+            </div>
+            <div className="vm-command-actions">
+              <button
+                className="vm-button"
+                type="button"
+                onClick={addVendor}
+              >
+                + Add Partner
+              </button>
+              <button
+                className="vm-button primary"
+                type="button"
+                disabled={saving}
+                onClick={() => void saveVendors()}
+              >
+                {saving ? 'Saving…' : 'Save Master'}
+              </button>
+            </div>
           </div>
         </header>
 
@@ -393,14 +635,12 @@ export default function VendorsPage() {
           <article className="vm-stat">
             <small>Total partners</small>
             <b>{vendors.length}</b>
-            <span>Vendors, agencies and individuals</span>
+            <span>{vendors.filter((vendor) => vendor.active).length} active · {vendors.filter((vendor) => !vendor.active).length} inactive</span>
           </article>
           <article className="vm-stat">
-            <small>Active</small>
-            <b>
-              {vendors.filter((vendor) => vendor.active).length}
-            </b>
-            <span>Available for assignment</span>
+            <small>Preferred partners</small>
+            <b>{preferredCount}</b>
+            <span>First-choice suppliers & agencies</span>
           </article>
           <article className="vm-stat">
             <small>Rate entries</small>
@@ -408,11 +648,9 @@ export default function VendorsPage() {
             <span>Reusable item and service rates</span>
           </article>
           <article className="vm-stat">
-            <small>Agency partners</small>
-            <b>
-              {vendors.filter((vendor) => vendor.type === 'AGENCY').length}
-            </b>
-            <span>Manpower and service agencies</span>
+            <small>Needs attention</small>
+            <b>{missingPhoneCount}</b>
+            <span>Active partners missing phone</span>
           </article>
         </section>
 
@@ -430,9 +668,45 @@ export default function VendorsPage() {
               <input
                 className="vm-input"
                 value={query}
-                placeholder="Search partner, city, phone…"
+                placeholder="Search partner, city, service area…"
                 onChange={(event) => setQuery(event.target.value)}
               />
+
+              <div className="vm-filter-grid">
+                <select
+                  className="vm-select"
+                  value={categoryFilter}
+                  onChange={(event) =>
+                    setCategoryFilter(event.target.value)
+                  }
+                >
+                  <option value="ALL">All categories</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  className="vm-select"
+                  value={statusFilter}
+                  onChange={(event) =>
+                    setStatusFilter(
+                      event.target.value as
+                        | 'ALL'
+                        | 'ACTIVE'
+                        | 'INACTIVE'
+                        | 'PREFERRED',
+                    )
+                  }
+                >
+                  <option value="ALL">All partners</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="PREFERRED">Preferred</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </div>
             </div>
 
             <div className="vm-list">
@@ -457,13 +731,20 @@ export default function VendorsPage() {
                         {vendor.city ? ` · ${vendor.city}` : ''}
                       </span>
                       <small>
-                        {vendor.rates.length} saved rate
-                        {vendor.rates.length === 1 ? '' : 's'}
+                        {vendor.rates.length} rate{vendor.rates.length === 1 ? '' : 's'}
+                        {' · '}
+                        {assignmentCountForVendor(vendor)} current assignment{assignmentCountForVendor(vendor) === 1 ? '' : 's'}
+                        {vendor.preferred ? ' · Preferred' : ''}
                       </small>
                     </span>
 
-                    <span className="vm-badge">
-                      {vendor.type}
+                    <span className="vm-card-side">
+                      <span className="vm-badge">
+                        {vendor.type}
+                      </span>
+                      <span className={vendor.active ? 'vm-status active' : 'vm-status'}>
+                        {vendor.active ? 'Active' : 'Inactive'}
+                      </span>
                     </span>
                   </button>
                 ))
@@ -488,26 +769,78 @@ export default function VendorsPage() {
                     </p>
                   </div>
 
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 7,
-                      color: '#9aa6b4',
-                      fontSize: 9,
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selected.active}
-                      onChange={(event) =>
-                        updateVendor(selected.id, {
-                          active: event.target.checked,
-                        })
-                      }
-                    />
-                    Active
-                  </label>
+                  <div className="vm-editor-status">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={selected.active}
+                        onChange={(event) =>
+                          updateVendor(selected.id, {
+                            active: event.target.checked,
+                          })
+                        }
+                      />
+                      Active
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={selected.preferred}
+                        onChange={(event) =>
+                          updateVendor(selected.id, {
+                            preferred: event.target.checked,
+                          })
+                        }
+                      />
+                      Preferred
+                    </label>
+                  </div>
+                </div>
+
+                <div className="vm-partner-command">
+                  <div>
+                    <span>Current assignments</span>
+                    <b>{assignmentCountForVendor(selected)}</b>
+                    <small>{confirmedCountForVendor(selected)} confirmed+</small>
+                  </div>
+                  <div>
+                    <span>Reliability</span>
+                    <b>{selected.reliability}</b>
+                    <small>{selected.preferred ? 'Preferred partner' : 'Standard priority'}</small>
+                  </div>
+                  <div>
+                    <span>Confirmation</span>
+                    <b>{selected.confirmationStatus.replace('_', ' ')}</b>
+                    <small>Partner master status</small>
+                  </div>
+                  <div>
+                    <span>Payment</span>
+                    <b>{selected.paymentStatus.replace('_', ' ')}</b>
+                    <small>Partner payment status</small>
+                  </div>
+                  <div className="vm-partner-actions">
+                    <button
+                      className="vm-button"
+                      type="button"
+                      disabled={!selected.phone.trim()}
+                      onClick={() => openWhatsApp(selected)}
+                    >
+                      WhatsApp
+                    </button>
+                    <a
+                      className={selected.phone.trim() ? 'vm-button vm-link-button' : 'vm-button vm-link-button disabled'}
+                      href={selected.phone.trim() ? `tel:${selected.phone}` : undefined}
+                    >
+                      Call
+                    </a>
+                    <button
+                      className="vm-button primary"
+                      type="button"
+                      onClick={() => window.location.assign('/app/event-planning')}
+                    >
+                      Assign to Event
+                    </button>
+                  </div>
                 </div>
 
                 <div className="vm-grid">
@@ -620,6 +953,75 @@ export default function VendorsPage() {
                         })
                       }
                     />
+                  </label>
+
+                  <label className="vm-field">
+                    <span>Service Area</span>
+                    <input
+                      className="vm-input"
+                      value={selected.serviceArea}
+                      placeholder="Silvassa, Vapi, Daman…"
+                      onChange={(event) =>
+                        updateVendor(selected.id, {
+                          serviceArea: event.target.value,
+                        })
+                      }
+                    />
+                  </label>
+
+                  <label className="vm-field">
+                    <span>Reliability</span>
+                    <select
+                      className="vm-select"
+                      value={selected.reliability}
+                      onChange={(event) =>
+                        updateVendor(selected.id, {
+                          reliability:
+                            event.target.value as Vendor['reliability'],
+                        })
+                      }
+                    >
+                      <option value="NEW">New</option>
+                      <option value="RELIABLE">Reliable</option>
+                      <option value="EXCELLENT">Excellent</option>
+                    </select>
+                  </label>
+
+                  <label className="vm-field">
+                    <span>Confirmation Status</span>
+                    <select
+                      className="vm-select"
+                      value={selected.confirmationStatus}
+                      onChange={(event) =>
+                        updateVendor(selected.id, {
+                          confirmationStatus:
+                            event.target.value as Vendor['confirmationStatus'],
+                        })
+                      }
+                    >
+                      <option value="OPEN">Open</option>
+                      <option value="CONFIRMED">Confirmed</option>
+                      <option value="ON_HOLD">On Hold</option>
+                    </select>
+                  </label>
+
+                  <label className="vm-field">
+                    <span>Payment Status</span>
+                    <select
+                      className="vm-select"
+                      value={selected.paymentStatus}
+                      onChange={(event) =>
+                        updateVendor(selected.id, {
+                          paymentStatus:
+                            event.target.value as Vendor['paymentStatus'],
+                        })
+                      }
+                    >
+                      <option value="NOT_SET">Not Set</option>
+                      <option value="PENDING">Pending</option>
+                      <option value="PARTIAL">Partial</option>
+                      <option value="PAID">Paid</option>
+                    </select>
                   </label>
 
                   <label className="vm-field full">
