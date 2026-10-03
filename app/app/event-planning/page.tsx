@@ -1595,6 +1595,67 @@ export default function EventPlanningPage() {
         );
     }, [equipment]);
 
+  const crockeryCategoryGroups =
+    useMemo(() => {
+      const groups =
+        new Map<
+          string,
+          CrockeryItem[]
+        >();
+
+      crockery.forEach(
+        (item) => {
+          const category =
+            item.category.trim() ||
+            'Other';
+
+          const current =
+            groups.get(category) ||
+            [];
+
+          current.push(item);
+          groups.set(
+            category,
+            current,
+          );
+        },
+      );
+
+      return Array.from(
+        groups.entries(),
+      )
+        .map(
+          ([
+            category,
+            items,
+          ]) => ({
+            category,
+            items: [...items].sort(
+              (a, b) => {
+                if (
+                  a.active !==
+                  b.active
+                ) {
+                  return a.active
+                    ? -1
+                    : 1;
+                }
+
+                return a.name.localeCompare(
+                  b.name,
+                );
+              },
+            ),
+          }),
+        )
+        .sort(
+          (a, b) =>
+            a.category.localeCompare(
+              b.category,
+            ),
+        );
+    }, [crockery]);
+
   const allRows = useMemo(() => {
     if (!work) return [];
 
@@ -2325,38 +2386,138 @@ export default function EventPlanningPage() {
     );
   }
 
-  function addCrockeryFromMaster(
+  function setCrockeryQuantity(
     item: CrockeryItem,
+    quantity: number,
   ) {
     if (!currentFunction) return;
 
-    const baseRows =
-      plan[currentFunction.key] || defaultRows;
+    const nextQuantity =
+      Math.max(
+        0,
+        Math.round(
+          Number(
+            quantity,
+          ) || 0,
+        ),
+      );
 
-    const suggestedQty =
-      recommendedCrockeryQty(item);
+    const baseRows =
+      plan[currentFunction.key] ||
+      defaultRows;
 
     const existing =
       baseRows.find(
         (row) =>
-          row.kind === 'CROCKERY' &&
-          row.crockeryId === item.id,
+          row.kind ===
+            'CROCKERY' &&
+          (
+            row.crockeryId ===
+              item.id ||
+            (
+              !row.crockeryId &&
+              normalized(
+                row.requirement,
+              ) ===
+                normalized(
+                  item.name,
+                )
+            )
+          ),
       );
+
+    if (
+      existing &&
+      nextQuantity <= 0
+    ) {
+      persistRows(
+        currentFunction.key,
+        baseRows.filter(
+          (row) =>
+            row.id !==
+            existing.id,
+        ),
+      );
+      return;
+    }
 
     if (existing) {
       persistRows(
         currentFunction.key,
-        baseRows.map((row) =>
-          row.id === existing.id
-            ? {
-                ...row,
-                quantity:
-                  suggestedQty ||
-                  row.quantity,
-              }
-            : row,
+        baseRows.map(
+          (row) =>
+            row.id ===
+            existing.id
+              ? {
+                  ...row,
+                  crockeryId:
+                    item.id,
+                  requirement:
+                    item.name,
+                  detail:
+                    [
+                      item.category,
+                      item.sizeType,
+                      `${item.unitsPerGuest || 0} / guest`,
+                      `${item.bufferPercent || 0}% buffer`,
+                      item.notes,
+                    ]
+                      .filter(Boolean)
+                      .join(
+                        ' · ',
+                      ),
+                  quantity:
+                    nextQuantity,
+                  unit:
+                    item.unit ||
+                    row.unit ||
+                    'pcs',
+                  photoUrl:
+                    item.photoUrl ||
+                    row.photoUrl,
+                  availableQty:
+                    item.availableQty,
+                  unitsPerGuest:
+                    item.unitsPerGuest,
+                  bufferPercent:
+                    item.bufferPercent,
+                  rate:
+                    Number(
+                      row.rate,
+                    ) > 0
+                      ? row.rate
+                      : item.defaultRate,
+                  partnerId:
+                    row.partnerId ||
+                    (
+                      item.ownership ===
+                        'RENTAL'
+                        ? item.vendorId
+                        : ''
+                    ),
+                  assignedTo:
+                    row.assignedTo ||
+                    (
+                      item.ownership ===
+                        'RENTAL'
+                        ? item.vendorName
+                        : 'In-house'
+                    ),
+                  partnerType:
+                    row.assignedTo
+                      ? row.partnerType
+                      : item.ownership ===
+                          'RENTAL'
+                        ? 'VENDOR'
+                        : 'IN_HOUSE',
+                }
+              : row,
         ),
       );
+      return;
+    }
+
+    if (nextQuantity <= 0) {
       return;
     }
 
@@ -2368,10 +2529,11 @@ export default function EventPlanningPage() {
         item.sizeType,
         `${item.unitsPerGuest || 0} / guest`,
         `${item.bufferPercent || 0}% buffer`,
+        item.notes,
       ]
         .filter(Boolean)
         .join(' · '),
-      suggestedQty,
+      nextQuantity,
       item.unit || 'pcs',
       item.defaultRate,
     );
@@ -2382,21 +2544,29 @@ export default function EventPlanningPage() {
         ...baseRows,
         {
           ...row,
-          crockeryId: item.id,
-          photoUrl: item.photoUrl,
-          availableQty: item.availableQty,
-          unitsPerGuest: item.unitsPerGuest,
-          bufferPercent: item.bufferPercent,
+          crockeryId:
+            item.id,
+          photoUrl:
+            item.photoUrl,
+          availableQty:
+            item.availableQty,
+          unitsPerGuest:
+            item.unitsPerGuest,
+          bufferPercent:
+            item.bufferPercent,
           partnerId:
-            item.ownership === 'RENTAL'
+            item.ownership ===
+              'RENTAL'
               ? item.vendorId
               : '',
           assignedTo:
-            item.ownership === 'RENTAL'
+            item.ownership ===
+              'RENTAL'
               ? item.vendorName
               : 'In-house',
           partnerType:
-            item.ownership === 'RENTAL'
+            item.ownership ===
+              'RENTAL'
               ? 'VENDOR'
               : 'IN_HOUSE',
         },
@@ -2404,14 +2574,57 @@ export default function EventPlanningPage() {
     );
   }
 
+  function addCrockeryFromMaster(
+    item: CrockeryItem,
+  ) {
+    setCrockeryQuantity(
+      item,
+      selectedCrockeryQty(
+        item.id,
+      ) + 1,
+    );
+  }
+
+  function useRecommendedCrockeryQty(
+    item: CrockeryItem,
+  ) {
+    setCrockeryQuantity(
+      item,
+      recommendedCrockeryQty(
+        item,
+      ),
+    );
+  }
+
   function selectedCrockeryQty(
     crockeryId: string,
   ) {
+    const masterItem =
+      crockery.find(
+        (item) =>
+          item.id ===
+          crockeryId,
+      );
+
     return currentRows
       .filter(
         (row) =>
-          row.kind === 'CROCKERY' &&
-          row.crockeryId === crockeryId,
+          row.kind ===
+            'CROCKERY' &&
+          (
+            row.crockeryId ===
+              crockeryId ||
+            (
+              !row.crockeryId &&
+              masterItem &&
+              normalized(
+                row.requirement,
+              ) ===
+                normalized(
+                  masterItem.name,
+                )
+            )
+          ),
       )
       .reduce(
         (sum, row) =>
@@ -2959,6 +3172,59 @@ export default function EventPlanningPage() {
           .ep-equipment-inactive-note{color:#c28e53}
           @media(max-width:760px){.ep-equipment-master-head{align-items:stretch;flex-direction:column}.ep-equipment-master-head-actions{justify-content:space-between}.ep-equipment-master-grid{grid-template-columns:1fr 1fr}}
           @media(max-width:520px){.ep-equipment-master-grid{grid-template-columns:1fr}}
+          .ep-crockery-master{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-crockery-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-crockery-master-head b,.ep-crockery-master-head span{display:block}
+          .ep-crockery-master-head b{color:#e6edf5;font-size:11px}
+          .ep-crockery-master-head span{margin-top:3px;max-width:700px;color:#748294;font-size:8px;line-height:1.45}
+          .ep-crockery-master-head-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}
+          .ep-crockery-master-head-actions>span{margin:0;color:#718095;font-size:7px;font-weight:850}
+          .ep-crockery-category-list{display:grid;gap:10px}
+          .ep-crockery-category{overflow:hidden;border:1px solid rgba(148,163,184,.09);border-radius:12px;background:#0f151c}
+          .ep-crockery-category-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.08);background:rgba(255,255,255,.018)}
+          .ep-crockery-category-head b,.ep-crockery-category-head span{display:block}
+          .ep-crockery-category-head>div:first-child>b{color:#dfe8f2;font-size:10px}
+          .ep-crockery-category-head>div:first-child>span{margin-top:2px;color:#718095;font-size:7px}
+          .ep-crockery-category-summary{display:flex;gap:6px;flex-wrap:wrap}
+          .ep-crockery-category-summary>span{padding:5px 7px;border-radius:999px;color:#718095;background:rgba(148,163,184,.06);font-size:6px;font-weight:800}
+          .ep-crockery-category-summary b{display:inline;color:#a8cffc;font-size:7px}
+          .ep-crockery-master-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;padding:9px}
+          .ep-crockery-master-card{overflow:hidden;border:1px solid #2b3440;border-radius:11px;background:#111820;transition:border-color .18s ease,transform .18s ease}
+          .ep-crockery-master-card:hover{border-color:#3b4755;transform:translateY(-1px)}
+          .ep-crockery-master-card.selected{border-color:rgba(74,156,255,.48);box-shadow:inset 0 0 0 1px rgba(74,156,255,.08)}
+          .ep-crockery-master-card.over{border-color:rgba(244,173,84,.42)}
+          .ep-crockery-master-card.inactive{opacity:.62}
+          .ep-crockery-master-photo{position:relative;aspect-ratio:16/8;overflow:hidden;background:#18202a}
+          .ep-crockery-master-photo img{width:100%;height:100%;display:block;object-fit:cover}
+          .ep-crockery-master-status{position:absolute;top:7px;right:7px;padding:4px 6px;border-radius:999px;color:#c3d0df;background:rgba(8,13,19,.78);font-size:6px;font-weight:900;backdrop-filter:blur(8px)}
+          .ep-crockery-master-body{padding:9px}
+          .ep-crockery-master-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-crockery-master-title b,.ep-crockery-master-title span{display:block}
+          .ep-crockery-master-title b{color:#e7eef6;font-size:9px}
+          .ep-crockery-master-title span{margin-top:2px;color:#758397;font-size:7px}
+          .ep-crockery-master-title>strong{color:#d3deea;font-size:8px;white-space:nowrap}
+          .ep-crockery-master-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
+          .ep-crockery-master-meta>span{padding:5px 6px;border-radius:7px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
+          .ep-crockery-master-meta>span b{display:block;margin-top:2px;color:#d7e1ec;font-size:8px}
+          .ep-crockery-master-meta>span.warn{color:#e7a653;background:rgba(244,173,84,.06)}
+          .ep-crockery-master-meta>span.warn b{color:#f1b361}
+          .ep-crockery-rule{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+          .ep-crockery-rule span{padding:4px 6px;border-radius:999px;color:#72849a;background:rgba(74,156,255,.04);font-size:6px;font-weight:800}
+          .ep-crockery-qty-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end;margin-top:9px}
+          .ep-crockery-qty-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
+          .ep-crockery-qty-editor>button:hover:not(:disabled){border-color:rgba(74,156,255,.45);color:#9dc9fa;background:rgba(74,156,255,.06)}
+          .ep-crockery-qty-editor>button:disabled{opacity:.35;cursor:not-allowed}
+          .ep-crockery-qty-editor label{display:grid;gap:3px}
+          .ep-crockery-qty-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-crockery-qty-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
+          .ep-crockery-qty-editor input:focus{border-color:rgba(74,156,255,.55);box-shadow:0 0 0 3px rgba(74,156,255,.08)}
+          .ep-crockery-recommended{width:100%;min-height:30px;margin-top:6px;border:1px solid rgba(74,156,255,.16);border-radius:8px;color:#92c3fb;background:rgba(74,156,255,.045);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
+          .ep-crockery-recommended:hover:not(:disabled){border-color:rgba(74,156,255,.38);background:rgba(74,156,255,.08)}
+          .ep-crockery-recommended:disabled{opacity:.35;cursor:not-allowed}
+          .ep-crockery-inactive-note,.ep-crockery-vendor-note{display:block;margin-top:7px;color:#69788b;font-size:6px;line-height:1.4}
+          .ep-crockery-inactive-note{color:#c28e53}
+          @media(max-width:760px){.ep-crockery-master-head{align-items:stretch;flex-direction:column}.ep-crockery-master-head-actions{justify-content:space-between}.ep-crockery-master-grid{grid-template-columns:1fr 1fr}}
+          @media(max-width:520px){.ep-crockery-master-grid{grid-template-columns:1fr}}
           .ep-empty{padding:40px 15px;color:#748294;font-size:10px;text-align:center}
           @media(max-width:1180px){.ep-readiness-grid{grid-template-columns:repeat(4,1fr)}.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
           @media(max-width:720px){.ep-event-selector{grid-template-columns:1fr}.ep-readiness-head{align-items:flex-start}.ep-readiness-grid{grid-template-columns:1fr 1fr}.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
@@ -3844,83 +4110,273 @@ export default function EventPlanningPage() {
             ) : null}
 
             {tab === 'CROCKERY' ? (
-              <section className="ep-equipment-picker">
-                <div className="ep-equipment-picker-head">
+              <section className="ep-crockery-master">
+                <div className="ep-crockery-master-head">
                   <div>
-                    <b>Choose crockery & cutlery by photo</b>
+                    <b>Saved Crockery & Cutlery Master</b>
                     <span>
-                      Quantity is suggested from guests × units per guest + buffer.
+                      All saved master items are shown by category. Recommended quantity uses guests × units per guest + buffer, and you can override it anytime.
                     </span>
                   </div>
 
-                  <Link className="ep-button" href="/app/crockery">
-                    Manage Photos
-                  </Link>
+                  <div className="ep-crockery-master-head-actions">
+                    <span>
+                      {crockery.length} saved · {crockery.filter((item) => item.active).length} active
+                    </span>
+                    <Link
+                      className="ep-button"
+                      href="/app/crockery"
+                    >
+                      Manage Crockery
+                    </Link>
+                  </div>
                 </div>
 
-                {crockery.filter((item) => item.active).length ? (
-                  <div className="ep-equipment-grid">
-                    {crockery
-                      .filter((item) => item.active)
-                      .map((item) => {
-                        const selected =
-                          selectedCrockeryQty(item.id);
-                        const suggested =
-                          recommendedCrockeryQty(item);
-                        const over =
-                          item.availableQty > 0 &&
-                          selected > item.availableQty;
+                {crockeryCategoryGroups.length ? (
+                  <div className="ep-crockery-category-list">
+                    {crockeryCategoryGroups.map(
+                      (group) => {
+                        const categorySelected =
+                          group.items.reduce(
+                            (sum, item) =>
+                              sum +
+                              selectedCrockeryQty(
+                                item.id,
+                              ),
+                            0,
+                          );
+
+                        const categoryRecommended =
+                          group.items.reduce(
+                            (sum, item) =>
+                              sum +
+                              recommendedCrockeryQty(
+                                item,
+                              ),
+                            0,
+                          );
 
                         return (
-                          <button
-                            key={item.id}
-                            className={
-                              over
-                                ? 'ep-equipment-card over'
-                                : 'ep-equipment-card'
-                            }
-                            type="button"
-                            onClick={() =>
-                              addCrockeryFromMaster(item)
-                            }
+                          <section
+                            className="ep-crockery-category"
+                            key={group.category}
                           >
-                            <div className="ep-equipment-photo">
-                              {item.photoUrl ? (
-                                <img
-                                  src={item.photoUrl}
-                                  alt={item.name}
-                                />
-                              ) : (
-                                <div className="ep-equipment-fallback">
-                                  <b>
-                                    {item.name
-                                      .slice(0, 2)
-                                      .toUpperCase() || 'CK'}
-                                  </b>
-                                  <small>No photo</small>
-                                </div>
-                              )}
+                            <div className="ep-crockery-category-head">
+                              <div>
+                                <b>{group.category}</b>
+                                <span>
+                                  {group.items.length} item{group.items.length === 1 ? '' : 's'}
+                                </span>
+                              </div>
+
+                              <div className="ep-crockery-category-summary">
+                                <span>
+                                  Recommended <b>{categoryRecommended}</b>
+                                </span>
+                                <span>
+                                  Selected <b>{categorySelected}</b>
+                                </span>
+                              </div>
                             </div>
 
-                            <div className="ep-equipment-card-body">
-                              <b>{item.name}</b>
-                              <span>
-                                {item.category}
-                                {item.sizeType
-                                  ? ` · ${item.sizeType}`
-                                  : ''}
-                              </span>
-                              <small>
-                                Suggested {suggested} · Selected {selected} · Available {item.availableQty}
-                              </small>
+                            <div className="ep-crockery-master-grid">
+                              {group.items.map(
+                                (item) => {
+                                  const selected =
+                                    selectedCrockeryQty(
+                                      item.id,
+                                    );
+
+                                  const recommended =
+                                    recommendedCrockeryQty(
+                                      item,
+                                    );
+
+                                  const shortage =
+                                    item.availableQty > 0
+                                      ? Math.max(
+                                          0,
+                                          selected -
+                                            item.availableQty,
+                                        )
+                                      : 0;
+
+                                  const disabled =
+                                    !item.active &&
+                                    selected <= 0;
+
+                                  return (
+                                    <article
+                                      key={item.id}
+                                      className={
+                                        [
+                                          'ep-crockery-master-card',
+                                          selected > 0
+                                            ? 'selected'
+                                            : '',
+                                          shortage > 0
+                                            ? 'over'
+                                            : '',
+                                          !item.active
+                                            ? 'inactive'
+                                            : '',
+                                        ]
+                                          .filter(Boolean)
+                                          .join(' ')
+                                      }
+                                    >
+                                      <div className="ep-crockery-master-photo">
+                                        {item.photoUrl ? (
+                                          <img
+                                            src={item.photoUrl}
+                                            alt={item.name}
+                                          />
+                                        ) : (
+                                          <div className="ep-equipment-fallback">
+                                            <b>
+                                              {item.name
+                                                .slice(0, 2)
+                                                .toUpperCase() || 'CK'}
+                                            </b>
+                                            <small>No photo</small>
+                                          </div>
+                                        )}
+
+                                        <span className="ep-crockery-master-status">
+                                          {item.active
+                                            ? item.ownership === 'RENTAL'
+                                              ? 'Rental'
+                                              : 'In-house'
+                                            : 'Inactive'}
+                                        </span>
+                                      </div>
+
+                                      <div className="ep-crockery-master-body">
+                                        <div className="ep-crockery-master-title">
+                                          <div>
+                                            <b>{item.name}</b>
+                                            <span>
+                                              {item.sizeType || item.unit || 'Crockery'}
+                                            </span>
+                                          </div>
+
+                                          <strong>
+                                            {currency(item.defaultRate)}
+                                          </strong>
+                                        </div>
+
+                                        <div className="ep-crockery-master-meta">
+                                          <span>
+                                            Recommended <b>{recommended}</b>
+                                          </span>
+                                          <span>
+                                            Available <b>{item.availableQty}</b>
+                                          </span>
+                                          {shortage > 0 ? (
+                                            <span className="warn">
+                                              Shortage <b>{shortage}</b>
+                                            </span>
+                                          ) : (
+                                            <span>
+                                              Selected <b>{selected}</b>
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div className="ep-crockery-rule">
+                                          <span>
+                                            {item.unitsPerGuest || 0} / guest
+                                          </span>
+                                          <span>
+                                            +{item.bufferPercent || 0}% buffer
+                                          </span>
+                                          <span>
+                                            {item.unit || 'pcs'}
+                                          </span>
+                                        </div>
+
+                                        <div className="ep-crockery-qty-editor">
+                                          <button
+                                            type="button"
+                                            aria-label={`Decrease ${item.name} quantity`}
+                                            disabled={selected <= 0}
+                                            onClick={() =>
+                                              setCrockeryQuantity(
+                                                item,
+                                                selected - 1,
+                                              )
+                                            }
+                                          >
+                                            −
+                                          </button>
+
+                                          <label>
+                                            <span>Qty</span>
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              step="1"
+                                              value={selected}
+                                              disabled={disabled}
+                                              onChange={(event) =>
+                                                setCrockeryQuantity(
+                                                  item,
+                                                  Number(event.target.value),
+                                                )
+                                              }
+                                            />
+                                          </label>
+
+                                          <button
+                                            type="button"
+                                            aria-label={`Increase ${item.name} quantity`}
+                                            disabled={disabled}
+                                            onClick={() =>
+                                              addCrockeryFromMaster(
+                                                item,
+                                              )
+                                            }
+                                          >
+                                            +
+                                          </button>
+                                        </div>
+
+                                        <button
+                                          className="ep-crockery-recommended"
+                                          type="button"
+                                          disabled={disabled || recommended <= 0}
+                                          onClick={() =>
+                                            useRecommendedCrockeryQty(
+                                              item,
+                                            )
+                                          }
+                                        >
+                                          Use Recommended {recommended}
+                                        </button>
+
+                                        {!item.active ? (
+                                          <small className="ep-crockery-inactive-note">
+                                            Inactive in Crockery Master. Reactivate it there to add new quantity.
+                                          </small>
+                                        ) : item.vendorName ? (
+                                          <small className="ep-crockery-vendor-note">
+                                            {item.vendorName}
+                                          </small>
+                                        ) : null}
+                                      </div>
+                                    </article>
+                                  );
+                                },
+                              )}
                             </div>
-                          </button>
+                          </section>
                         );
-                      })}
+                      },
+                    )}
                   </div>
                 ) : (
                   <div className="ep-empty">
-                    No crockery photos saved yet. Open Crockery Master and add items first.
+                    No crockery or cutlery saved yet. Open Crockery Master and add your items first.
                   </div>
                 )}
               </section>
