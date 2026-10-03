@@ -12,8 +12,10 @@ import Link from 'next/link';
 import AppShell from '../../components/AppShell';
 
 import {
+  flushWorkSave,
   getSession,
   loadWork,
+  saveWork,
   uid,
 } from '../../../lib/store';
 
@@ -78,6 +80,16 @@ type FunctionPlan = {
 };
 
 type StoredPlan = Record<string, AssignmentRow[]>;
+
+type PlanningEventOption = {
+  costingId: string;
+  source: 'CURRENT' | 'DRAFT' | 'COMPLETED';
+  eventName: string;
+  clientName: string;
+  eventDate: string;
+  totalCovers: number;
+  timestamp: string;
+};
 
 type VendorRate = {
   id: string;
@@ -533,10 +545,229 @@ export default function EventPlanningPage() {
     useState<UniformItem[]>([]);
   const [disposableMaster, setDisposableMaster] =
     useState<DisposableMasterItem[]>([]);
+  const [eventOptions, setEventOptions] =
+    useState<PlanningEventOption[]>([]);
+  const [selectedEventId, setSelectedEventId] =
+    useState('');
+  const [eventLoading, setEventLoading] =
+    useState(false);
+  const [eventError, setEventError] =
+    useState('');
   const [saveState, setSaveState] =
     useState<'SAVED' | 'SAVING' | 'ERROR'>('SAVED');
   const saveTimer =
     useRef<number | undefined>(undefined);
+  const eventLoadSequence =
+    useRef(0);
+
+  async function loadPlanningPlan(
+    nextWork: WorkState,
+  ) {
+    const sequence =
+      ++eventLoadSequence.current;
+    const localPlan =
+      safeReadPlan(nextWork.costingId);
+
+    setPlan(localPlan);
+    setSelectedFunction(
+      buildFunctions(nextWork)[0]?.key ||
+        'event',
+    );
+
+    try {
+      const response =
+        await fetch(
+          `/api/client/event-planning?costingId=${encodeURIComponent(
+            nextWork.costingId,
+          )}`,
+          { cache: 'no-store' },
+        );
+
+      if (
+        sequence !==
+        eventLoadSequence.current ||
+        !response.ok
+      ) {
+        return;
+      }
+
+      const data =
+        await response.json();
+      const serverPlan =
+        data.plan &&
+        typeof data.plan === 'object' &&
+        !Array.isArray(data.plan)
+          ? data.plan as StoredPlan
+          : {};
+
+      if (
+        data.exists &&
+        Object.keys(serverPlan).length
+      ) {
+        setPlan(serverPlan);
+        writePlan(
+          nextWork.costingId,
+          serverPlan,
+        );
+      }
+    } catch {
+      // Keep the local plan available if the server is temporarily unavailable.
+    }
+  }
+
+  async function activatePlanningEvent(
+    nextWork: WorkState,
+    syncWorkspace = true,
+  ) {
+    setWork(nextWork);
+    setSelectedEventId(
+      nextWork.costingId,
+    );
+    setEventError('');
+
+    if (syncWorkspace) {
+      const session =
+        getSession();
+
+      if (session) {
+        saveWork(
+          session.tenantId,
+          nextWork,
+        );
+        flushWorkSave(
+          session.tenantId,
+        );
+      }
+    }
+
+    await loadPlanningPlan(
+      nextWork,
+    );
+  }
+
+  async function switchPlanningEvent(
+    costingId: string,
+  ) {
+    if (!costingId) {
+      return;
+    }
+
+    if (
+      costingId ===
+      work?.costingId
+    ) {
+      setSelectedEventId(
+        costingId,
+      );
+      return;
+    }
+
+    const option =
+      eventOptions.find(
+        (item) =>
+          item.costingId ===
+          costingId,
+      );
+
+    if (!option) {
+      return;
+    }
+
+    setEventLoading(true);
+    setEventError('');
+
+    try {
+      let nextWork:
+        WorkState | null =
+          null;
+
+      if (
+        option.source ===
+        'DRAFT'
+      ) {
+        const response =
+          await fetch(
+            `/api/client/drafts?costingId=${encodeURIComponent(
+              costingId,
+            )}`,
+            { cache: 'no-store' },
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              'Could not load draft event',
+          );
+        }
+
+        nextWork =
+          data.draft
+            ?.workData as
+            WorkState;
+      } else if (
+        option.source ===
+        'COMPLETED'
+      ) {
+        const response =
+          await fetch(
+            `/api/client/costings?costingId=${encodeURIComponent(
+              costingId,
+            )}`,
+            { cache: 'no-store' },
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error ||
+              'Could not load completed event',
+          );
+        }
+
+        nextWork =
+          data.costing
+            ?.snapshot as
+            WorkState;
+      } else {
+        const session =
+          getSession();
+
+        if (session) {
+          nextWork =
+            loadWork(
+              session.tenantId,
+            );
+        }
+      }
+
+      if (
+        !nextWork ||
+        !nextWork.costingId
+      ) {
+        throw new Error(
+          'Saved event data is unavailable',
+        );
+      }
+
+      await activatePlanningEvent(
+        nextWork,
+        true,
+      );
+    } catch (error) {
+      setEventError(
+        error instanceof Error
+          ? error.message
+          : 'Could not load this event.',
+      );
+    } finally {
+      setEventLoading(false);
+    }
+  }
 
   useEffect(() => {
     const session = getSession();
@@ -546,13 +777,13 @@ export default function EventPlanningPage() {
       return;
     }
 
-    const currentWork = loadWork(session.tenantId);
-    const functions = buildFunctions(currentWork);
-    const localPlan = safeReadPlan(currentWork.costingId);
+    const currentWork =
+      loadWork(session.tenantId);
 
-    setWork(currentWork);
-    setPlan(localPlan);
-    setSelectedFunction(functions[0]?.key || 'event');
+    void activatePlanningEvent(
+      currentWork,
+      false,
+    );
 
     void Promise.all([
       fetch('/api/client/vendors', {
@@ -570,18 +801,25 @@ export default function EventPlanningPage() {
       fetch('/api/client/disposable-master', {
         cache: 'no-store',
       }),
-      fetch(
-        `/api/client/event-planning?costingId=${encodeURIComponent(
-          currentWork.costingId,
-        )}`,
-        {
-          cache: 'no-store',
-        },
-      ),
+      fetch('/api/client/drafts?limit=100', {
+        cache: 'no-store',
+      }),
+      fetch('/api/client/costings?limit=100', {
+        cache: 'no-store',
+      }),
     ])
-      .then(async ([vendorResponse, equipmentResponse, crockeryResponse, uniformResponse, disposableResponse, planningResponse]) => {
+      .then(async ([
+        vendorResponse,
+        equipmentResponse,
+        crockeryResponse,
+        uniformResponse,
+        disposableResponse,
+        draftsResponse,
+        costingsResponse,
+      ]) => {
         if (vendorResponse.ok) {
-          const vendorData = await vendorResponse.json();
+          const vendorData =
+            await vendorResponse.json();
           setVendors(
             Array.isArray(vendorData.vendors)
               ? vendorData.vendors as Vendor[]
@@ -590,7 +828,8 @@ export default function EventPlanningPage() {
         }
 
         if (equipmentResponse.ok) {
-          const equipmentData = await equipmentResponse.json();
+          const equipmentData =
+            await equipmentResponse.json();
           setEquipment(
             Array.isArray(equipmentData.equipment)
               ? equipmentData.equipment as EquipmentItem[]
@@ -599,7 +838,8 @@ export default function EventPlanningPage() {
         }
 
         if (crockeryResponse.ok) {
-          const crockeryData = await crockeryResponse.json();
+          const crockeryData =
+            await crockeryResponse.json();
           setCrockery(
             Array.isArray(crockeryData.crockery)
               ? crockeryData.crockery as CrockeryItem[]
@@ -608,7 +848,8 @@ export default function EventPlanningPage() {
         }
 
         if (uniformResponse.ok) {
-          const uniformData = await uniformResponse.json();
+          const uniformData =
+            await uniformResponse.json();
           setUniforms(
             Array.isArray(uniformData.uniforms)
               ? uniformData.uniforms as UniformItem[]
@@ -617,7 +858,8 @@ export default function EventPlanningPage() {
         }
 
         if (disposableResponse.ok) {
-          const disposableData = await disposableResponse.json();
+          const disposableData =
+            await disposableResponse.json();
           setDisposableMaster(
             Array.isArray(disposableData.items)
               ? disposableData.items as DisposableMasterItem[]
@@ -625,26 +867,244 @@ export default function EventPlanningPage() {
           );
         }
 
-        if (planningResponse.ok) {
-          const planningData = await planningResponse.json();
-          const serverPlan =
-            planningData.plan &&
-            typeof planningData.plan === 'object' &&
-            !Array.isArray(planningData.plan)
-              ? planningData.plan as StoredPlan
-              : {};
+        const options =
+          new Map<
+            string,
+            PlanningEventOption
+          >();
 
-          if (
-            planningData.exists &&
-            Object.keys(serverPlan).length
-          ) {
-            setPlan(serverPlan);
-            writePlan(currentWork.costingId, serverPlan);
+        if (costingsResponse.ok) {
+          const data =
+            await costingsResponse.json();
+
+          const rows =
+            Array.isArray(data.costings)
+              ? data.costings
+              : [];
+
+          for (const item of rows) {
+            const costingId =
+              String(
+                item.costingId || '',
+              );
+
+            if (!costingId) {
+              continue;
+            }
+
+            options.set(
+              costingId,
+              {
+                costingId,
+                source:
+                  'COMPLETED',
+                eventName:
+                  String(
+                    item.eventName ||
+                      '',
+                  ),
+                clientName:
+                  String(
+                    item.clientName ||
+                      '',
+                  ),
+                eventDate:
+                  String(
+                    item.eventDate ||
+                      '',
+                  ),
+                totalCovers:
+                  Math.max(
+                    0,
+                    Number(
+                      item.totalCovers,
+                    ) || 0,
+                  ),
+                timestamp:
+                  String(
+                    item.updatedAt ||
+                      item.completedAt ||
+                      '',
+                  ),
+              },
+            );
           }
         }
+
+        if (draftsResponse.ok) {
+          const data =
+            await draftsResponse.json();
+
+          const rows =
+            Array.isArray(data.drafts)
+              ? data.drafts
+              : [];
+
+          for (const item of rows) {
+            const costingId =
+              String(
+                item.costingId || '',
+              );
+
+            if (!costingId) {
+              continue;
+            }
+
+            options.set(
+              costingId,
+              {
+                costingId,
+                source:
+                  'DRAFT',
+                eventName:
+                  String(
+                    item.eventName ||
+                      '',
+                  ),
+                clientName:
+                  String(
+                    item.clientName ||
+                      '',
+                  ),
+                eventDate:
+                  String(
+                    item.eventDate ||
+                      '',
+                  ),
+                totalCovers:
+                  Math.max(
+                    0,
+                    Number(
+                      item.totalCovers,
+                    ) || 0,
+                  ),
+                timestamp:
+                  String(
+                    item.updatedAt ||
+                      '',
+                  ),
+              },
+            );
+          }
+        }
+
+        const currentId =
+          currentWork.costingId;
+
+        if (
+          currentId &&
+          !options.has(currentId)
+        ) {
+          options.set(
+            currentId,
+            {
+              costingId:
+                currentId,
+              source:
+                'CURRENT',
+              eventName:
+                currentWork.event
+                  .eventName,
+              clientName:
+                currentWork.event
+                  .clientName,
+              eventDate:
+                currentWork.event
+                  .eventDate,
+              totalCovers:
+                Math.max(
+                  0,
+                  Number(
+                    currentWork.event
+                      .pax,
+                  ) || 0,
+                ),
+              timestamp:
+                currentWork.updatedAt ||
+                '',
+            },
+          );
+        }
+
+        const list =
+          Array.from(
+            options.values(),
+          )
+            .filter(
+              (item) =>
+                Boolean(
+                  item.costingId,
+                ),
+            )
+            .sort(
+              (left, right) => {
+                if (
+                  left.costingId ===
+                  currentId
+                ) {
+                  return -1;
+                }
+
+                if (
+                  right.costingId ===
+                  currentId
+                ) {
+                  return 1;
+                }
+
+                return (
+                  new Date(
+                    right.timestamp ||
+                      right.eventDate ||
+                      0,
+                  ).getTime() -
+                  new Date(
+                    left.timestamp ||
+                      left.eventDate ||
+                      0,
+                  ).getTime()
+                );
+              },
+            );
+
+        setEventOptions(list);
+        setSelectedEventId(
+          currentId,
+        );
       })
       .catch(() => {
-        // Local fallback remains usable if the server is temporarily unavailable.
+        if (
+          currentWork.costingId
+        ) {
+          setEventOptions([
+            {
+              costingId:
+                currentWork.costingId,
+              source:
+                'CURRENT',
+              eventName:
+                currentWork.event
+                  .eventName,
+              clientName:
+                currentWork.event
+                  .clientName,
+              eventDate:
+                currentWork.event
+                  .eventDate,
+              totalCovers:
+                Math.max(
+                  0,
+                  Number(
+                    currentWork.event
+                      .pax,
+                  ) || 0,
+                ),
+              timestamp:
+                currentWork.updatedAt ||
+                '',
+            },
+          ]);
+        }
       });
   }, []);
 
@@ -1428,6 +1888,17 @@ export default function EventPlanningPage() {
         <style>{`
           .ep-page{display:grid;gap:14px;color:#eaf0f7}
           .ep-loading{display:grid;min-height:420px;place-items:center;color:#8b98a8}
+          .ep-event-selector{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,420px);gap:14px;align-items:center;padding:14px;border:1px solid #2a323d;border-radius:15px;background:#10151c}
+          .ep-event-selector-copy span,.ep-event-selector-copy b,.ep-event-selector-copy small{display:block}
+          .ep-event-selector-copy>span{color:#78b5ff;font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+          .ep-event-selector-copy>b{margin-top:4px;font-size:15px}
+          .ep-event-selector-copy>small{margin-top:4px;color:#7f8c9c;font-size:9px;line-height:1.45}
+          .ep-event-select{width:100%;min-height:44px;padding:0 12px;border:1px solid #34404d;border-radius:10px;outline:0;color:#e7edf5;background:#151c25;font:inherit;font-size:11px;font-weight:800;color-scheme:dark}
+          .ep-event-select:focus{border-color:rgba(74,156,255,.65);box-shadow:0 0 0 3px rgba(74,156,255,.08)}
+          .ep-event-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+          .ep-event-meta span{padding:5px 8px;border-radius:999px;color:#9aa8b8;background:#18202a;font-size:8px;font-weight:800}
+          .ep-event-meta span.status{color:#8fc2ff;background:rgba(74,156,255,.09)}
+          .ep-event-error{margin:0;padding:9px 11px;border:1px solid rgba(255,98,89,.2);border-radius:9px;color:#ff9891;background:rgba(255,98,89,.06);font-size:9px}
           .ep-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:15px 2px 4px}
           .ep-kicker{color:#78b5ff;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
           .ep-hero h1{margin:5px 0 5px;font-size:clamp(30px,4vw,45px);line-height:1;letter-spacing:-.05em}
@@ -1518,8 +1989,119 @@ export default function EventPlanningPage() {
           .ep-equipment-card.over small{color:#ffb35a}
           .ep-empty{padding:40px 15px;color:#748294;font-size:10px;text-align:center}
           @media(max-width:1180px){.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
-          @media(max-width:720px){.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
+          @media(max-width:720px){.ep-event-selector{grid-template-columns:1fr}.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
         `}</style>
+
+        <section
+          className="ep-event-selector"
+          aria-label="Select event to plan"
+        >
+          <div className="ep-event-selector-copy">
+            <span>Select Event</span>
+            <b>Which event are you planning?</b>
+            <small>
+              Choose a saved event first. Its menu, functions and planning assignments will load here.
+            </small>
+
+            <div className="ep-event-meta">
+              <span>
+                {work.event.clientName ||
+                  'Client not set'}
+              </span>
+              <span>
+                {work.event.eventDate ||
+                  'Date not set'}
+              </span>
+              <span>
+                {Math.max(
+                  0,
+                  Number(
+                    work.event.pax,
+                  ) || 0,
+                ).toLocaleString('en-IN')}{' '}
+                guests
+              </span>
+              <span className="status">
+                {eventOptions.find(
+                  (item) =>
+                    item.costingId ===
+                    selectedEventId,
+                )?.source ||
+                  'CURRENT'}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <select
+              className="ep-event-select"
+              value={selectedEventId}
+              disabled={
+                eventLoading ||
+                !eventOptions.length
+              }
+              onChange={(event) =>
+                void switchPlanningEvent(
+                  event.target.value,
+                )
+              }
+              aria-label="Select event"
+            >
+              {!eventOptions.length ? (
+                <option value="">
+                  No saved events available
+                </option>
+              ) : null}
+
+              {eventOptions.map(
+                (item) => (
+                  <option
+                    key={
+                      item.costingId
+                    }
+                    value={
+                      item.costingId
+                    }
+                  >
+                    {[
+                      item.eventName ||
+                        'Unnamed event',
+                      item.clientName,
+                      item.eventDate,
+                      item.totalCovers > 0
+                        ? `${item.totalCovers.toLocaleString('en-IN')} guests`
+                        : '',
+                      item.source === 'COMPLETED'
+                        ? 'Completed'
+                        : item.source === 'DRAFT'
+                          ? 'Draft'
+                          : 'Current',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </option>
+                ),
+              )}
+            </select>
+
+            {eventLoading ? (
+              <div className="ep-event-meta">
+                <span className="status">
+                  Loading event…
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        {eventError ? (
+          <p
+            className="ep-event-error"
+            role="alert"
+          >
+            {eventError}
+          </p>
+        ) : null}
 
         <header className="ep-hero">
           <div>
