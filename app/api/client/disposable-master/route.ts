@@ -39,6 +39,7 @@ function cleanItems(value: unknown) {
       category: cleanText(row.category, 80) || 'Other',
       photoUrl: cleanPhoto(row.photoUrl),
       unit: cleanText(row.unit, 40) || 'pcs',
+      availableQty: Math.max(0, Number(row.availableQty) || 0),
       defaultRate: Math.max(0, Number(row.defaultRate) || 0),
       supplierId: cleanText(row.supplierId, 160),
       supplierName: cleanText(row.supplierName, 140),
