@@ -55,7 +55,9 @@ type Item = {
   menuCount: number;
   totalCovers: number;
   totalCost: number;
+  totalSelling: number;
   totalProfit: number;
+  sellingPricePerPlate: number;
   timestamp: string;
 };
 
@@ -181,7 +183,9 @@ export default function HistoryPage() {
       menuCount: x.menuCount,
       totalCovers: x.totalCovers,
       totalCost: x.totalCost,
+      totalSelling: x.totalSelling,
       totalProfit: x.totalProfit,
+      sellingPricePerPlate: x.sellingPricePerPlate,
       timestamp: x.updatedAt,
     }));
 
@@ -195,7 +199,9 @@ export default function HistoryPage() {
       menuCount: x.menuCount,
       totalCovers: x.totalCovers,
       totalCost: x.totalCost,
+      totalSelling: x.totalSelling,
       totalProfit: x.totalProfit,
+      sellingPricePerPlate: x.sellingPricePerPlate,
       timestamp: x.completedAt,
     }));
 
@@ -209,7 +215,9 @@ export default function HistoryPage() {
       menuCount: x.menuCount,
       totalCovers: x.totalCovers,
       totalCost: x.totalCost,
+      totalSelling: x.totalSelling,
       totalProfit: x.totalProfit,
+      sellingPricePerPlate: x.sellingPricePerPlate,
       timestamp: x.completedAt,
     }));
 
@@ -233,6 +241,8 @@ export default function HistoryPage() {
 
     return list.sort((a, b) => {
       if (sort === 'COST') return b.totalCost - a.totalCost;
+      if (sort === 'PROFIT') return b.totalProfit - a.totalProfit;
+      if (sort === 'VALUE') return b.totalSelling - a.totalSelling;
       if (sort === 'CLIENT') return (a.clientName || a.eventName).localeCompare(b.clientName || b.eventName);
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     });
@@ -486,12 +496,37 @@ export default function HistoryPage() {
   const hasFilters = Boolean(query.trim() || days !== 'ALL');
   const resetFilters = () => { setQuery(''); setDays('ALL'); };
   const totalValue = completed.reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
+  const totalQuotedValue = completed.reduce((sum, item) => sum + Number(item.totalSelling || 0), 0);
+  const totalProfitValue = completed.reduce((sum, item) => sum + Number(item.totalProfit || 0), 0);
+  const profitMarginPercent =
+    totalQuotedValue > 0
+      ? (totalProfitValue / totalQuotedValue) * 100
+      : 0;
+  const profitableCompletedCount =
+    completed.filter((item) => Number(item.totalProfit || 0) > 0).length;
+  const averageCompletedValue =
+    completed.length > 0
+      ? totalQuotedValue / completed.length
+      : 0;
 
   return (
     <AppShell title="History" subtitle="Drafts, completed costings and reusable event records" hidePageTitle>
       <section className="hist-page">
         <style>{`
           .hist-page { display: grid; gap: 20px; --hist-muted: #a2adbb; }
+          .hist-command { display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.5fr);gap:18px;align-items:center;padding:18px 20px;border:1px solid #2a3542;border-radius:18px;background:radial-gradient(circle at 96% 10%,rgba(74,156,255,.13),transparent 22rem),linear-gradient(145deg,#111923,#0d141c);box-shadow:0 14px 34px rgba(0,0,0,.16); }
+          .hist-command h1 { margin:7px 0 6px;font-size:clamp(28px,3.4vw,40px);line-height:1.04;letter-spacing:-.045em; }
+          .hist-command p { max-width:680px;margin:0;color:#8b98a9;font-size:10px;line-height:1.55; }
+          .hist-command-side { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+          .hist-command-side>div { min-width:0;padding:11px;border:1px solid rgba(148,163,184,.10);border-radius:11px;background:rgba(255,255,255,.022); }
+          .hist-command-side span,.hist-command-side b,.hist-command-side small { display:block; }
+          .hist-command-side span { color:#718094;font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.05em; }
+          .hist-command-side b { margin-top:5px;color:#e7eef6;font-size:15px; }
+          .hist-command-side small { margin-top:3px;color:#68778a;font-size:7px; }
+          .hist-command-side .is-profit b { color:#77dca4; }
+          .hist-command-actions { grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:7px; }
+          .hist-command-actions .hist-new { width:100%; }
+          .hist-command-actions .hist-secondary { min-height:44px;border:1px solid #34404e;border-radius:10px;color:#b9c7d6;background:#151c25;font:inherit;font-size:11px;font-weight:800;cursor:pointer; }
           .hist-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0 8px; }
           .hist-hero h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; letter-spacing: -.04em; }
           .hist-hero p { max-width: 560px; margin: 0; color: var(--hist-muted); font-size: 14px; line-height: 1.6; }
@@ -516,7 +551,7 @@ export default function HistoryPage() {
           .hist-results { display: flex; align-items: center; justify-content: space-between; min-height: 24px; margin-top: -8px; color: var(--hist-muted); font-size: 12px; }
           .hist-clear { border: 0; background: transparent; color: #8fc2ff; font: inherit; cursor: pointer; min-height: 32px; }
           .hist-list { display: grid; gap: 12px; }
-          .hist-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, minmax(85px, .23fr)); gap: 20px; align-items: center; padding: 20px; border: 1px solid #282f39; border-radius: 12px; background: #10151c; }
+          .hist-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(4, minmax(82px, .2fr)); gap: 18px; align-items: center; padding: 20px; border: 1px solid #282f39; border-radius: 12px; background: #10151c; }
           .hist-main { min-width: 0; }
           .hist-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
           .hist-title b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 650; }
@@ -530,6 +565,11 @@ export default function HistoryPage() {
           .hist-metric b { margin-top: 7px; color: #e4ebf4; font-size: 16px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
           .hist-metric .hist-positive { color: #6bdea2; }
           .hist-metric .hist-negative { color: #ff9d97; }
+          .hist-margin { display:block;margin-top:4px;color:#718095;font-size:9px; }
+          .hist-row { transition:border-color .18s ease,transform .18s ease,box-shadow .18s ease; }
+          .hist-row:hover { border-color:#354454;transform:translateY(-1px);box-shadow:0 10px 26px rgba(0,0,0,.12); }
+          .hist-actions .hist-action.primary { min-width:92px; }
+          .hist-actions .hist-action[href*="quotation"] { border-color:rgba(74,156,255,.22);color:#9ec9fa;background:rgba(74,156,255,.05); }
           .hist-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 14px; border-top: 1px solid #252d38; }
           .hist-action { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border: 1px solid #34404e; border-radius: 8px; color: #c8d2df; background: #151c25; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; }
           .hist-action:hover { background: #222f40; }
@@ -569,11 +609,18 @@ export default function HistoryPage() {
           .hist-modal-confirm { min-width: 160px; border: 0; color: #fff; background: #1478f2; }
           .hist-modal-actions button:disabled { opacity: .5; cursor: wait; }
           @media (max-width: 1050px) {
+            .hist-command { grid-template-columns:1fr; }
+            .hist-command-side { max-width:none;grid-template-columns:repeat(4,minmax(0,1fr)); }
+            .hist-command-actions { grid-column:1/-1; }
             .hist-row { grid-template-columns: 1fr 1fr 1fr; }
             .hist-main { grid-column: 1 / -1; }
             .hist-actions { grid-column: 1 / -1; justify-content: flex-start; }
           }
           @media (max-width: 720px) {
+            .hist-command { padding:16px; }
+            .hist-command-side { grid-template-columns:1fr 1fr; }
+            .hist-command-actions { grid-template-columns:1fr; }
+            .hist-command h1 { font-size:28px; }
             .hist-page { gap: 10px; }
             .hist-hero { align-items: stretch; flex-direction: column; gap: 12px; padding-top: 10px; }
             .hist-hero h1 { font-size: 28px; }
@@ -588,7 +635,7 @@ export default function HistoryPage() {
             .hist-tabs { gap: 16px; }
             .hist-tabs button { font-size: 12px; }
             .hist-input { min-height: 44px; font-size: 16px; }
-            .hist-row { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 16px; gap: 16px 10px; }
+            .hist-row { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; gap: 16px 10px; }
             .hist-actions { display: grid; grid-template-columns: 1fr 1fr; }
             .hist-action { width: 100%; min-height: 40px; font-size: 11px; }
             .hist-alert { flex-direction: column; }
@@ -602,19 +649,52 @@ export default function HistoryPage() {
           }
         `}</style>
 
-        <div className="hist-hero">
+        <div className="hist-command">
           <div>
-            <h1>Costing history</h1>
-            <p>Pick up where you left off, or turn a past event into your next booking.</p>
+            <span className="page-eyebrow">Event archive & repeat-booking library</span>
+            <h1>History</h1>
+            <p>
+              Continue unfinished costings, review completed event performance, open quotations, or duplicate a past event into a new booking.
+            </p>
           </div>
-          <button className="hist-new" type="button" disabled={loading || Boolean(busy)} onClick={() => void startNew()}>+ New costing</button>
+
+          <div className="hist-command-side">
+            <div>
+              <span>Completed value</span>
+              <b>{loading ? '—' : money(totalQuotedValue)}</b>
+              <small>{completed.length} completed event{completed.length === 1 ? '' : 's'}</small>
+            </div>
+            <div className="is-profit">
+              <span>Total profit</span>
+              <b>{loading ? '—' : money(totalProfitValue)}</b>
+              <small>{profitMarginPercent.toFixed(1)}% gross margin</small>
+            </div>
+            <div>
+              <span>Average booking</span>
+              <b>{loading ? '—' : money(averageCompletedValue)}</b>
+              <small>Completed events</small>
+            </div>
+            <div>
+              <span>Profitable events</span>
+              <b>{loading ? '—' : profitableCompletedCount}</b>
+              <small>Positive event profit</small>
+            </div>
+            <div className="hist-command-actions">
+              <button className="hist-new" type="button" disabled={loading || Boolean(busy)} onClick={() => void startNew()}>
+                + New Costing
+              </button>
+              <button className="hist-secondary" type="button" disabled={loading || Boolean(busy)} onClick={() => setTab('COMPLETED')}>
+                View Completed
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="hist-stats">
           <div className="hist-stat"><small>Drafts</small><strong>{loading ? '—' : drafts.length}</strong><span>Ready to continue</span></div>
           <div className="hist-stat"><small>Completed</small><strong>{loading ? '—' : completed.length}</strong><span>Saved event costings</span></div>
-          <div className="hist-stat"><small>Costed value</small><strong>{loading ? '—' : money(totalValue)}</strong><span>Completed events only</span></div>
-          <div className="hist-stat"><small>Archived</small><strong>{loading ? '—' : archived.length}</strong><span>Available to restore</span></div>
+          <div className="hist-stat"><small>Quoted value</small><strong>{loading ? '—' : money(totalQuotedValue)}</strong><span>{money(totalValue)} internal cost</span></div>
+          <div className="hist-stat"><small>Total profit</small><strong className={totalProfitValue < 0 ? 'hist-negative' : 'hist-positive'}>{loading ? '—' : money(totalProfitValue)}</strong><span>{profitMarginPercent.toFixed(1)}% completed margin</span></div>
         </div>
 
         {error ? (
@@ -629,7 +709,7 @@ export default function HistoryPage() {
             <option value="ALL">All dates</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option>
           </select></label>
           <label className="hist-filter"><span>Sort by</span><select className="hist-input" value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="RECENT">Most recent</option><option value="COST">Highest cost</option><option value="CLIENT">Client A–Z</option>
+            <option value="RECENT">Most recent</option><option value="VALUE">Highest quotation</option><option value="PROFIT">Highest profit</option><option value="COST">Highest cost</option><option value="CLIENT">Client A–Z</option>
           </select></label>
         </div>
 
@@ -670,7 +750,16 @@ export default function HistoryPage() {
 
                   <div className="hist-metric"><small>Covers</small><b>{item.totalCovers.toLocaleString('en-IN')}</b></div>
                   <div className="hist-metric"><small>Total cost</small><b>{money(item.totalCost)}</b></div>
-                  <div className="hist-metric"><small>{item.totalProfit < 0 ? 'Loss' : 'Profit'}</small><b className={item.totalProfit < 0 ? 'hist-negative' : item.totalProfit > 0 ? 'hist-positive' : ''}>{money(item.totalProfit)}</b></div>
+                  <div className="hist-metric"><small>Quotation</small><b>{money(item.totalSelling)}</b></div>
+                  <div className="hist-metric">
+                    <small>{item.totalProfit < 0 ? 'Loss' : 'Profit'}</small>
+                    <b className={item.totalProfit < 0 ? 'hist-negative' : item.totalProfit > 0 ? 'hist-positive' : ''}>{money(item.totalProfit)}</b>
+                    <span className="hist-margin">
+                      {item.totalSelling > 0
+                        ? `${((item.totalProfit / item.totalSelling) * 100).toFixed(1)}% margin`
+                        : 'No selling price'}
+                    </span>
+                  </div>
 
                   <div className="hist-actions">
                     {item.kind === 'DRAFT' ? (
