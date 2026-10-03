@@ -1406,7 +1406,10 @@ export function downloadClientQuotationPdf(
         data.section ===
           'body' &&
         String(
-          data.row.raw?.[0] ||
+          (
+            data.row.raw as
+              unknown[]
+          )?.[0] ||
           '',
         ) ===
           'Grand Total'
