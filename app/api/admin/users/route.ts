@@ -19,11 +19,29 @@ async function ensureCatererAccountSchema() {
     catererAccountSchemaPromise = (async () => {
       await prisma.$executeRawUnsafe(`
         ALTER TABLE "Tenant"
+        ADD COLUMN IF NOT EXISTS "plan" TEXT NOT NULL DEFAULT 'PRO',
+        ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'ACTIVE',
         ADD COLUMN IF NOT EXISTS "ownerName" TEXT NOT NULL DEFAULT '',
         ADD COLUMN IF NOT EXISTS "phone" TEXT NOT NULL DEFAULT '',
         ADD COLUMN IF NOT EXISTS "city" TEXT NOT NULL DEFAULT '',
-        ADD COLUMN IF NOT EXISTS "onboardingCompleted" BOOLEAN NOT NULL DEFAULT true
+        ADD COLUMN IF NOT EXISTS "onboardingCompleted" BOOLEAN NOT NULL DEFAULT true,
+        ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS "razorpayCustomerId" TEXT,
+        ADD COLUMN IF NOT EXISTS "razorpaySubscriptionId" TEXT,
+        ADD COLUMN IF NOT EXISTS "subscriptionStatus" TEXT,
+        ADD COLUMN IF NOT EXISTS "currentPeriodEnd" TIMESTAMP(3),
+        ADD COLUMN IF NOT EXISTS "cancelAtPeriodEnd" BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS "caterersOsWorkspaceId" TEXT,
+        ADD COLUMN IF NOT EXISTS "caterersOsSyncEnabled" BOOLEAN NOT NULL DEFAULT false,
+        ADD COLUMN IF NOT EXISTS "caterersOsLinkedAt" TIMESTAMP(3)
       `);
+
+      await prisma.$executeRawUnsafe(
+        'CREATE UNIQUE INDEX IF NOT EXISTS "Tenant_razorpaySubscriptionId_key" ON "Tenant"("razorpaySubscriptionId")',
+      );
+      await prisma.$executeRawUnsafe(
+        'CREATE UNIQUE INDEX IF NOT EXISTS "Tenant_caterersOsWorkspaceId_key" ON "Tenant"("caterersOsWorkspaceId")',
+      );
       catererAccountSchemaReady = true;
     })().catch((error) => {
       catererAccountSchemaPromise = null;
