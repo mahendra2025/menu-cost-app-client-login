@@ -870,6 +870,17 @@ export function createEmptyWorkState(
       ownerName: '',
       phone: '',
       city: '',
+      tagline:
+        'Premium Event Catering',
+      email: '',
+      address: '',
+      gstin: '',
+      quotationValidityDays: 7,
+      quotationAdvancePercent: 50,
+      quotationGstPercent: 0,
+      quotationPaymentTerms:
+        'Balance payment as mutually agreed before or on the event date.',
+      quotationIncludeTotal: true,
 
       logoText:
         session?.businessName
