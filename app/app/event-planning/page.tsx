@@ -2259,11 +2259,32 @@ export default function EventPlanningPage() {
   function selectedEquipmentQty(
     equipmentId: string,
   ) {
+    const masterItem =
+      equipment.find(
+        (item) =>
+          item.id ===
+          equipmentId,
+      );
+
     return currentRows
       .filter(
         (row) =>
-          row.kind === 'EQUIPMENT' &&
-          row.equipmentId === equipmentId,
+          row.kind ===
+            'EQUIPMENT' &&
+          (
+            row.equipmentId ===
+              equipmentId ||
+            (
+              !row.equipmentId &&
+              masterItem &&
+              normalized(
+                row.requirement,
+              ) ===
+                normalized(
+                  masterItem.name,
+                )
+            )
+          ),
       )
       .reduce(
         (sum, row) =>
