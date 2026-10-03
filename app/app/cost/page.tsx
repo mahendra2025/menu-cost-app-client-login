@@ -938,8 +938,22 @@ export default function CostPage() {
         )
       : 0;
 
+  const rateReadyPercent =
+    work.menu.length > 0
+      ? Math.round(
+          (
+            costedDishCount /
+            work.menu.length
+          ) * 100,
+        )
+      : 0;
+
   return (
-    <AppShell title="Dish Cost" subtitle="Review food cost, portions and dish rates before grocery planning">
+    <AppShell
+      title="Dish Cost"
+      subtitle="Review food cost, portions and dish rates before grocery planning"
+      hidePageTitle
+    >
       <section className="content-grid cost-command-page">
         <section className="cost-command-sheet" aria-labelledby="cost-command-title">
           <div className="cost-command-main">
@@ -950,6 +964,20 @@ export default function CostPage() {
                 {work.event.clientName ? `${work.event.clientName} · ` : ''}
                 {result.serviceSummaries.length} {result.serviceSummaries.length === 1 ? 'function' : 'functions'} · {result.totalCovers.toLocaleString('en-IN')} meal covers
               </p>
+
+              <div className="cost-command-meta">
+                <span>
+                  {work.menu.length} dishes
+                </span>
+                <span className={missingRateCount > 0 ? 'attention' : 'ready'}>
+                  {missingRateCount > 0
+                    ? `${missingRateCount} rates missing`
+                    : 'All rates ready'}
+                </span>
+                <span>
+                  {money(result.menuCostPerPlate)} food / cover
+                </span>
+              </div>
             </div>
 
             <div className="cost-command-total">
@@ -977,6 +1005,34 @@ export default function CostPage() {
           </div>
 
           <aside className="cost-command-actions" aria-label="Costing next steps">
+            <div className="cost-rate-health">
+              <div
+                className="cost-rate-health-ring"
+                style={{
+                  background:
+                    `conic-gradient(${rateReadyPercent === 100 ? '#55d98f' : '#4a9cff'} ${rateReadyPercent * 3.6}deg, #25303d 0deg)`,
+                }}
+                aria-label={`Dish rate readiness ${rateReadyPercent}%`}
+              >
+                <span>
+                  <b>{rateReadyPercent}%</b>
+                  <small>Ready</small>
+                </span>
+              </div>
+
+              <div>
+                <span>Dish rate readiness</span>
+                <b>
+                  {costedDishCount}/{work.menu.length} costed
+                </b>
+                <small>
+                  {missingRateCount > 0
+                    ? 'Complete missing rates before final pricing.'
+                    : 'All dish rates are ready for the next step.'}
+                </small>
+              </div>
+            </div>
+
             <div className={missingRateCount > 0 ? 'needs-attention' : 'is-ready'}>
               <span aria-hidden="true">{missingRateCount > 0 ? '!' : '✓'}</span>
               <div>
