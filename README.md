@@ -199,3 +199,21 @@ http://localhost:3000
 - Admin login is configured through environment variables.
 - Client accounts are stored in PostgreSQL and managed from `/admin/users`.
 - Client-side work data is still stored in browser `localStorage`, so each browser keeps its own event/menu/cost draft data.
+
+
+## Event Manager
+
+Open `/app/event-manager` from the workspace navigation to browse the latest
+100 drafts and 100 saved costings, search by event/client/date, and filter by
+planning status. Select an event to review its menu and calculated costs, edit
+client contacts and planning notes, or continue in the existing event, costing,
+and quotation screens. Planning status is independent of costing completion.
+
+Attachments are stored in PostgreSQL and downloaded through authenticated,
+tenant-scoped endpoints. Each file must be non-empty and at most 5 MB; supported
+formats are PDF, PNG, JPEG, WebP, DOCX, XLSX, CSV and TXT.
+
+Deployment requires the `20261003163000_add_event_files` Prisma migration and
+regenerating the Prisma client. This adds two tables without changing existing
+event or costing records. Follow the environment's normal migration workflow;
+if it has a divergent migration history, reconcile that history before deployment.
