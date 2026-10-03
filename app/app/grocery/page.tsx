@@ -384,6 +384,19 @@ export default function GroceryPage() {
       'error'
     >('success');
 
+
+  const [
+    repairingRecipes,
+    setRepairingRecipes,
+  ] =
+    useState(false);
+
+  const [
+    recipeRepairMessage,
+    setRecipeRepairMessage,
+  ] =
+    useState('');
+
   useEffect(() => {
     const current =
       getSession();
@@ -702,6 +715,136 @@ export default function GroceryPage() {
       ],
     );
 
+  async function generateMissingRecipes() {
+    if (!work || !plan || plan.unmatchedDishes.length === 0) {
+      return;
+    }
+
+    const missingNames = new Set(
+      plan.unmatchedDishes.map((name) => normalize(name)),
+    );
+
+    const missingDishes = Array.from(
+      new Map(
+        work.menu
+          .filter(
+            (item) =>
+              item.coverageStatus !== 'REJECTED' &&
+              missingNames.has(normalize(item.name)),
+          )
+          .map((item) => [
+            normalize(item.name),
+            {
+              name: item.name,
+              category: item.category || 'Other',
+              modifiers: item.dishModifiers,
+            },
+          ]),
+      ).values(),
+    );
+
+    if (missingDishes.length === 0) {
+      setRecipeRepairMessage(
+        'No missing recipe dishes were found in the current menu.',
+      );
+      return;
+    }
+
+    setRepairingRecipes(true);
+    setRecipeRepairMessage(
+      'Creating ' + missingDishes.length + ' missing ' +
+        (missingDishes.length === 1 ? 'recipe' : 'recipes') + '…',
+    );
+
+    try {
+      const generationResponse = await fetch(
+        '/api/client/auto-recipe-costs',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dishes: missingDishes,
+            city: work.event.city || work.profile.city || '',
+            forceRecipeGeneration: true,
+          }),
+        },
+      );
+
+      const generationData = await generationResponse.json();
+
+      if (!generationResponse.ok) {
+        throw new Error(
+          generationData.error || 'Could not create missing recipes.',
+        );
+      }
+
+      const allDishNames = Array.from(
+        new Set(
+          work.menu
+            .filter((item) => item.coverageStatus !== 'REJECTED')
+            .map((item) => item.name)
+            .filter(Boolean),
+        ),
+      );
+
+      const recipeResponse = await fetch(
+        '/api/recipe-ingredients',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dishNames: allDishNames }),
+        },
+      );
+
+      const recipeData = await recipeResponse.json();
+
+      if (!recipeResponse.ok) {
+        throw new Error(
+          recipeData.error ||
+            'Recipes were created, but Grocery could not refresh them.',
+        );
+      }
+
+      const refreshedRecipes = Array.isArray(recipeData.recipes)
+        ? (recipeData.recipes as GroceryRecipe[])
+        : [];
+
+      setRecipes(refreshedRecipes);
+
+      const refreshedRecipeNames = new Set(
+        refreshedRecipes.map((recipe) => normalize(recipe.name)),
+      );
+
+      const unresolved = missingDishes.filter(
+        (dish) => !refreshedRecipeNames.has(normalize(dish.name)),
+      );
+
+      if (unresolved.length === 0) {
+        setRecipeRepairMessage(
+          missingDishes.length + ' ' +
+            (missingDishes.length === 1 ? 'recipe is' : 'recipes are') +
+            ' ready. Grocery quantities have been refreshed.',
+        );
+      } else {
+        setRecipeRepairMessage(
+          (missingDishes.length - unresolved.length) +
+            ' recipe(s) created. ' +
+            unresolved.length +
+            ' still need manual recipe setup: ' +
+            unresolved.map((dish) => dish.name).join(', ') +
+            '.',
+        );
+      }
+    } catch (error) {
+      setRecipeRepairMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not create missing recipes.',
+      );
+    } finally {
+      setRepairingRecipes(false);
+    }
+  }
   if (
     !session ||
     !work
@@ -1433,21 +1576,82 @@ export default function GroceryPage() {
                     </b>
 
                     <span>
-                      These dishes cannot contribute ingredient quantities until a recipe is available.
+                      Create the missing recipes here so Grocery can calculate ingredient quantities.
                     </span>
+
+                    <small
+                      style={{
+                        display:
+                          'block',
+                        marginTop:
+                          6,
+                        opacity:
+                          0.8,
+                      }}
+                    >
+                      {plan.unmatchedDishes.join(
+                        ' · ',
+                      )}
+                    </small>
+
+                    {recipeRepairMessage ? (
+                      <small
+                        role="status"
+                        style={{
+                          display:
+                            'block',
+                          marginTop:
+                            8,
+                          fontWeight:
+                            800,
+                        }}
+                      >
+                        {recipeRepairMessage}
+                      </small>
+                    ) : null}
                   </div>
 
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={() =>
-                      router.push(
-                        '/app/cost',
-                      )
-                    }
+                  <div
+                    style={{
+                      display:
+                        'flex',
+                      gap:
+                        8,
+                      flexWrap:
+                        'wrap',
+                    }}
                   >
-                    Review dishes
-                  </button>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={
+                        repairingRecipes
+                      }
+                      onClick={() =>
+                        void generateMissingRecipes()
+                      }
+                    >
+                      {repairingRecipes
+                        ? 'Creating recipes…'
+                        : 'Create ' +
+                          plan.unmatchedDishes.length +
+                          (plan.unmatchedDishes.length === 1
+                            ? ' Recipe'
+                            : ' Recipes')}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      onClick={() =>
+                        router.push(
+                          '/app/cost',
+                        )
+                      }
+                    >
+                      Review dishes
+                    </button>
+                  </div>
                 </div>
               ) : null}
 
