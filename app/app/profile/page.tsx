@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import {
   useEffect,
   useState,
@@ -498,64 +497,6 @@ export default function ProfilePage() {
                 {message}
               </div>
             ) : null}
-          </div>
-        </div>
-
-        <div className="glass-card">
-          <div className="section-kicker">
-            Master data
-          </div>
-
-          <h2>
-            Costing Masters
-          </h2>
-
-          <p className="muted">
-            The same owner account manages all business master data.
-          </p>
-
-          <div className="action-row">
-            <Link
-              href="/admin/dishes"
-              className="ghost-button"
-            >
-              Dish Master
-            </Link>
-
-            <Link
-              href="/admin/recipes"
-              className="ghost-button"
-            >
-              Recipes
-            </Link>
-
-            <Link
-              href="/admin/ingredients"
-              className="ghost-button"
-            >
-              Ingredients
-            </Link>
-
-            <Link
-              href="/app/ingredients"
-              className="ghost-button"
-            >
-              Ingredient Rates
-            </Link>
-
-            <Link
-              href="/admin/gas"
-              className="ghost-button"
-            >
-              Gas Cost
-            </Link>
-
-            <Link
-              href="/admin/manpower"
-              className="ghost-button"
-            >
-              Manpower
-            </Link>
           </div>
         </div>
 
