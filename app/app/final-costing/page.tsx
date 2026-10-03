@@ -23,6 +23,29 @@ import {
   type GasCostMaster,
 } from '../../../lib/gasCost';
 import { assessCostingHealth } from '../../../lib/costingHealth';
+import {
+  buildFunctionGroceryPlan,
+  type FunctionGroceryPlan,
+  type GroceryIngredientRate,
+  type GroceryRecipe,
+} from '../../../lib/functionGrocery';
+
+type FinalPlanningRow = {
+  kind:
+    | 'MENU'
+    | 'MANPOWER'
+    | 'DRESS'
+    | 'GROCERY'
+    | 'DISPOSABLE'
+    | 'EQUIPMENT'
+    | 'CROCKERY'
+    | 'TRANSPORT';
+  quantity: number;
+  rate: number;
+};
+
+type FinalPlanningPlan =
+  Record<string, FinalPlanningRow[]>;
 
 const PRICE_PRESETS = [10, 20, 30, 40];
 
@@ -63,6 +86,26 @@ export default function FinalCostingPage() {
   const [manualPrice, setManualPrice] = useState(0);
   const [message, setMessage] = useState('');
   const [
+    groceryPlan,
+    setGroceryPlan,
+  ] = useState<FunctionGroceryPlan | null>(null);
+  const [
+    groceryAuditLoading,
+    setGroceryAuditLoading,
+  ] = useState(false);
+  const [
+    groceryAuditWarning,
+    setGroceryAuditWarning,
+  ] = useState('');
+  const [
+    planningPlan,
+    setPlanningPlan,
+  ] = useState<FinalPlanningPlan>({});
+  const [
+    planningAuditLoading,
+    setPlanningAuditLoading,
+  ] = useState(false);
+  const [
     gasMaster,
     setGasMaster,
   ] = useState<GasCostMaster>(
@@ -97,6 +140,147 @@ export default function FinalCostingPage() {
     if (cleanWork.sellingPricePerPlate > 0) {
       setMode('MANUAL');
       setManualPrice(cleanWork.sellingPricePerPlate);
+    }
+
+    const dishNames =
+      Array.from(
+        new Set(
+          cleanWork.menu
+            .filter(
+              (item) =>
+                item.coverageStatus !==
+                'REJECTED',
+            )
+            .map(
+              (item) =>
+                item.name,
+            )
+            .filter(Boolean),
+        ),
+      );
+
+    setGroceryAuditLoading(true);
+    void Promise.all([
+      fetch(
+        '/api/recipe-ingredients',
+        {
+          method: 'POST',
+          cache: 'no-store',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body:
+            JSON.stringify({
+              dishNames,
+            }),
+        },
+      ),
+      fetch(
+        `/api/client/ingredients?city=${encodeURIComponent(
+          cleanWork.event.city ||
+            cleanWork.profile.city ||
+            '',
+        )}`,
+        {
+          cache: 'no-store',
+        },
+      ),
+    ])
+      .then(
+        async ([
+          recipeResponse,
+          rateResponse,
+        ]) => {
+          const [
+            recipeData,
+            rateData,
+          ] =
+            await Promise.all([
+              recipeResponse.json(),
+              rateResponse.json(),
+            ]);
+
+          if (
+            !recipeResponse.ok ||
+            !rateResponse.ok
+          ) {
+            throw new Error(
+              'Could not load Grocery audit.',
+            );
+          }
+
+          setGroceryPlan(
+            buildFunctionGroceryPlan(
+              cleanWork,
+              Array.isArray(
+                recipeData.recipes,
+              )
+                ? recipeData.recipes as
+                    GroceryRecipe[]
+                : [],
+              Array.isArray(
+                rateData.rates,
+              )
+                ? rateData.rates as
+                    GroceryIngredientRate[]
+                : [],
+            ),
+          );
+          setGroceryAuditWarning('');
+        },
+      )
+      .catch(() => {
+        setGroceryPlan(null);
+        setGroceryAuditWarning(
+          'Grocery audit could not be loaded.',
+        );
+      })
+      .finally(() => {
+        setGroceryAuditLoading(false);
+      });
+
+    if (cleanWork.costingId) {
+      setPlanningAuditLoading(true);
+      void fetch(
+        `/api/client/event-planning?costingId=${encodeURIComponent(
+          cleanWork.costingId,
+        )}`,
+        {
+          cache: 'no-store',
+        },
+      )
+        .then(
+          async (response) => {
+            const data =
+              await response.json();
+
+            if (!response.ok) {
+              throw new Error(
+                data.error ||
+                  'Could not load Event Planning.',
+              );
+            }
+
+            setPlanningPlan(
+              data.plan &&
+              typeof data.plan ===
+                'object' &&
+              !Array.isArray(
+                data.plan,
+              )
+                ? data.plan as
+                    FinalPlanningPlan
+                : {},
+            );
+          },
+        )
+        .catch(() => {
+          setPlanningPlan({});
+        })
+        .finally(() => {
+          setPlanningAuditLoading(false);
+        });
     }
 
     void fetch(
@@ -239,6 +423,200 @@ export default function FinalCostingPage() {
     (value) =>
       Number(value) > 0,
   ).length;
+
+
+  const breakEvenPricePerCover =
+    Math.ceil(
+      Math.max(
+        0,
+        pricing.costPerCover,
+      ),
+    );
+
+  const groceryIngredientCost =
+    groceryPlan
+      ?.combinedIngredientCost ||
+    0;
+
+  const groceryIngredientCount =
+    (
+      groceryPlan?.pricedIngredientCount ||
+      0
+    ) +
+    (
+      groceryPlan?.unpricedIngredientCount ||
+      0
+    );
+
+  const groceryRateCoveragePercent =
+    groceryIngredientCount > 0
+      ? Math.round(
+          (
+            (
+              groceryPlan?.pricedIngredientCount ||
+              0
+            ) /
+            groceryIngredientCount
+          ) *
+            100,
+        )
+      : 0;
+
+  const planningRows =
+    Object.values(
+      planningPlan,
+    ).flat();
+
+  const equipmentRows =
+    planningRows.filter(
+      (row) =>
+        row.kind ===
+        'EQUIPMENT',
+    );
+
+  const crockeryRows =
+    planningRows.filter(
+      (row) =>
+        row.kind ===
+        'CROCKERY',
+    );
+
+  const equipmentPlannedCost =
+    equipmentRows.reduce(
+      (sum, row) =>
+        sum +
+        Math.max(
+          0,
+          Number(
+            row.quantity,
+          ) || 0,
+        ) *
+          Math.max(
+            0,
+            Number(
+              row.rate,
+            ) || 0,
+          ),
+      0,
+    );
+
+  const crockeryPlannedCost =
+    crockeryRows.reduce(
+      (sum, row) =>
+        sum +
+        Math.max(
+          0,
+          Number(
+            row.quantity,
+          ) || 0,
+        ) *
+          Math.max(
+            0,
+            Number(
+              row.rate,
+            ) || 0,
+          ),
+      0,
+    );
+
+  const costingIssueCodes =
+    new Set(
+      costingHealth?.issues.map(
+        (issue) =>
+          issue.code,
+      ) || [],
+    );
+
+  const activeManpowerPeople =
+    work.manpower.reduce(
+      (sum, row) =>
+        sum +
+        Math.max(
+          0,
+          Number(
+            row.quantity,
+          ) || 0,
+        ),
+      0,
+    );
+
+  const gasRows =
+    gasBreakdown?.rows || [];
+
+  const gasResolved =
+    gasRows.length === 0 ||
+    (gasBreakdown?.totalGasCost || 0) > 0 ||
+    gasRows.every(
+      (row) =>
+        [
+          'NO_GAS_CATEGORY',
+          'DISH_NO_GAS',
+        ].includes(
+          row.source,
+        ),
+    );
+
+  const finalReadinessChecks = [
+    work.menu.length > 0 &&
+      costing.totalCovers > 0,
+    Boolean(
+      costingHealth?.canPrice,
+    ),
+    !groceryAuditLoading &&
+      Boolean(groceryPlan) &&
+      (groceryPlan?.unmatchedDishes.length || 0) === 0 &&
+      (groceryPlan?.unpricedIngredientCount || 0) === 0,
+    activeManpowerPeople === 0 ||
+      work.extras.staff > 0,
+    gasResolved,
+    !costingIssueCodes.has(
+      'TRANSPORT_RATE_MISSING',
+    ),
+    !costingIssueCodes.has(
+      'ZERO_DISPOSABLE_RATE',
+    ),
+  ];
+
+  const finalCostReadinessPercent =
+    Math.round(
+      (
+        finalReadinessChecks.filter(
+          Boolean,
+        ).length /
+        finalReadinessChecks.length
+      ) *
+        100,
+    );
+
+  const functionCostRows =
+    costing.serviceSummaries.map(
+      (service) => {
+        const coverShare =
+          costing.totalCovers > 0
+            ? service.pax /
+              costing.totalCovers
+            : 0;
+
+        const allocatedExtras =
+          costing.extrasTotal *
+          coverShare;
+
+        const allocatedTotal =
+          service.totalCost +
+          allocatedExtras;
+
+        return {
+          ...service,
+          allocatedExtras,
+          allocatedTotal,
+          allocatedCostPerCover:
+            service.pax > 0
+              ? allocatedTotal /
+                service.pax
+              : 0,
+        };
+      },
+    );
 
   async function downloadInternalCostingPdf() {
     const currentWork = work;
@@ -398,32 +776,142 @@ export default function FinalCostingPage() {
     <AppShell
       title="Final Cost"
       subtitle="See the real cost per cover, set selling price and move to quotation"
+      hidePageTitle
     >
       <section className="content-grid">
-        <div className={`final-costing-overview ${priceReady ? 'is-ready' : ''}`}>
-          <div>
-            <span className="page-eyebrow">Final event costing</span>
-            <h2>{priceReady ? 'Real cost and selling price are ready' : 'Review the real event cost before pricing'}</h2>
+        <div className="final-cost-command-overview">
+          <div className="final-cost-command-copy">
+            <span className="page-eyebrow">
+              Pricing & profit command center
+            </span>
+            <h2>
+              What does this event really cost, what should you charge, and what will you earn?
+            </h2>
             <p>
-              Food, manpower, LPG, transport and plastic/disposable cost form the real event cost. This page converts that into cost per cover, selling price and profit.
+              Official event cost combines food, manpower, LPG, transport and disposable. Grocery, equipment and crockery are shown as audit/planning signals so they are not double-counted.
             </p>
+
+            <div className="final-cost-command-kpis">
+              <article>
+                <span>Real event cost</span>
+                <b>{money(pricing.totalCost)}</b>
+                <small>{activeCostItems} active cost groups</small>
+              </article>
+
+              <article>
+                <span>Cost / cover</span>
+                <b>{money(pricing.costPerCover)}</b>
+                <small>{pricing.totalCovers.toLocaleString('en-IN')} covers</small>
+              </article>
+
+              <article>
+                <span>Break-even / cover</span>
+                <b>{money(breakEvenPricePerCover)}</b>
+                <small>Rounded minimum rate</small>
+              </article>
+
+              <article className={pricing.profit >= 0 ? 'ready' : 'attention'}>
+                <span>Expected profit</span>
+                <b>{money(pricing.profit)}</b>
+                <small>{money(profitPerCover)} / cover</small>
+              </article>
+
+              <article className={pricing.marginPercent >= 0 ? 'ready' : 'attention'}>
+                <span>Gross margin</span>
+                <b>{displayPercent(pricing.marginPercent)}</b>
+                <small>{displayPercent(pricing.markupPercent)} markup</small>
+              </article>
+            </div>
           </div>
-          <div className="final-costing-overview-total">
-            <span>Total event cost</span>
-            <b>{money(pricing.totalCost)}</b>
-            <small>
-              {pricing.totalCovers.toLocaleString('en-IN')} meal covers · {money(pricing.costPerCover)} cost / cover
-            </small>
-            <button
-              className="primary-button workflow-overview-button"
-              type="button"
-              onClick={createQuotation}
-              disabled={!priceReady}
+
+          <aside className="final-cost-command-side">
+            <div
+              className="final-cost-readiness-ring"
+              style={{
+                background:
+                  `conic-gradient(${finalCostReadinessPercent === 100 ? '#55d98f' : '#4a9cff'} ${finalCostReadinessPercent * 3.6}deg, #25303d 0deg)`,
+              }}
+              aria-label={`Final cost readiness ${finalCostReadinessPercent}%`}
             >
-              Continue to Quotation
-            </button>
-          </div>
+              <span>
+                <b>{finalCostReadinessPercent}%</b>
+                <small>Ready</small>
+              </span>
+            </div>
+
+            <div className="final-cost-command-price">
+              <span>Selling price / cover</span>
+              <b>{money(pricing.sellingPricePerCover)}</b>
+              <small>
+                {priceReady
+                  ? `${money(pricing.totalSelling)} quotation · ${displayPercent(pricing.marginPercent)} margin`
+                  : 'Complete blockers, then set the selling rate.'}
+              </small>
+              <button
+                className="primary-button"
+                type="button"
+                onClick={createQuotation}
+                disabled={!priceReady}
+              >
+                Create Quotation
+              </button>
+            </div>
+          </aside>
         </div>
+
+        <section className="final-cost-readiness-strip no-print">
+          <article className={work.menu.length > 0 && costing.totalCovers > 0 ? 'ready' : 'attention'}>
+            <span>Menu & covers</span>
+            <b>{work.menu.length > 0 && costing.totalCovers > 0 ? 'Ready' : 'Missing'}</b>
+            <small>{work.menu.length} dishes · {costing.totalCovers.toLocaleString('en-IN')} covers</small>
+          </article>
+
+          <article className={costingHealth?.canPrice ? 'ready' : 'attention'}>
+            <span>Cost blockers</span>
+            <b>{costingHealth?.blockerCount || 0}</b>
+            <small>{costingHealth?.warningCount || 0} warnings</small>
+          </article>
+
+          <article className={groceryPlan && groceryRateCoveragePercent === 100 && groceryPlan.unmatchedDishes.length === 0 ? 'ready' : 'attention'}>
+            <span>Grocery audit</span>
+            <b>
+              {groceryAuditLoading
+                ? 'Loading'
+                : groceryPlan
+                  ? `${groceryRateCoveragePercent}%`
+                  : 'Unavailable'}
+            </b>
+            <small>
+              {groceryPlan
+                ? `${groceryPlan.unmatchedDishes.length} missing recipe · ${groceryPlan.unpricedIngredientCount} missing rate`
+                : groceryAuditWarning || 'No grocery audit'}
+            </small>
+          </article>
+
+          <article className={activeManpowerPeople === 0 || work.extras.staff > 0 ? 'ready' : 'attention'}>
+            <span>Manpower</span>
+            <b>{money(work.extras.staff)}</b>
+            <small>{activeManpowerPeople} people planned</small>
+          </article>
+
+          <article className={gasResolved ? 'ready' : 'attention'}>
+            <span>LPG</span>
+            <b>{money(gasBreakdown?.totalGasCost || 0)}</b>
+            <small>{(gasBreakdown?.totalGasKg || 0).toFixed(2)} kg LPG</small>
+          </article>
+
+          <article className={!costingIssueCodes.has('TRANSPORT_RATE_MISSING') ? 'ready' : 'attention'}>
+            <span>Transport</span>
+            <b>{money(work.extras.transport)}</b>
+            <small>{costingIssueCodes.has('TRANSPORT_NOT_SET') ? 'Confirm ₹0 transport' : 'Cost checked'}</small>
+          </article>
+
+          <article className={!costingIssueCodes.has('ZERO_DISPOSABLE_RATE') ? 'ready' : 'attention'}>
+            <span>Disposable</span>
+            <b>{money(work.extras.disposable)}</b>
+            <small>{costingIssueCodes.has('ZERO_DISPOSABLE_RATE') ? 'Missing item rates' : 'Cost checked'}</small>
+          </article>
+        </section>
 
         {costingHealth ? (
           <div className="glass-card" style={{ borderLeft: costingHealth.blockerCount > 0 ? '4px solid #dc2626' : costingHealth.warningCount > 0 ? '4px solid #d97706' : '4px solid #16a34a' }}>
@@ -481,7 +969,32 @@ export default function FinalCostingPage() {
           </div>
         ) : null}
 
-        <div className="final-cost-desktop-kpis">
+        <section className="final-cost-audit-panel no-print">
+          <div>
+            <span>Grocery ingredient audit</span>
+            <b>{groceryAuditLoading ? 'Loading…' : money(groceryIngredientCost)}</b>
+            <small>
+              {groceryPlan
+                ? `${groceryRateCoveragePercent}% ingredient rates covered`
+                : 'Audit unavailable'}
+            </small>
+          </div>
+          <div>
+            <span>Equipment planning</span>
+            <b>{planningAuditLoading ? 'Loading…' : money(equipmentPlannedCost)}</b>
+            <small>{equipmentRows.length} planned requirement{equipmentRows.length === 1 ? '' : 's'}</small>
+          </div>
+          <div>
+            <span>Crockery planning</span>
+            <b>{planningAuditLoading ? 'Loading…' : money(crockeryPlannedCost)}</b>
+            <small>{crockeryRows.length} planned requirement{crockeryRows.length === 1 ? '' : 's'}</small>
+          </div>
+          <p>
+            Audit/planning values above are visibility only. They are not added again to the official total cost unless represented in the saved costing inputs.
+          </p>
+        </section>
+
+                <div className="final-cost-desktop-kpis">
           <div>
             <span>Total covers</span>
             <strong>{pricing.totalCovers.toLocaleString('en-IN')}</strong>
@@ -682,6 +1195,16 @@ export default function FinalCostingPage() {
               <b>{money(work.extras.transport)}</b>
               <button type="button" onClick={() => router.push('/app/operations')}>Edit</button>
             </div>
+            <div className="final-cost-audit-row">
+              <span>Grocery Ingredient Audit</span>
+              <b>{money(groceryIngredientCost)}</b>
+              <small>Audit only · already represented through food costing</small>
+            </div>
+            <div className="final-cost-audit-row">
+              <span>Equipment + Crockery Plan</span>
+              <b>{money(equipmentPlannedCost + crockeryPlannedCost)}</b>
+              <small>Planning only · not double-counted in official total</small>
+            </div>
             <div className="final-cost-breakdown-total">
               <span>TOTAL COST</span>
               <b>{money(pricing.totalCost)}</b>
@@ -782,6 +1305,50 @@ export default function FinalCostingPage() {
           ) : null}
         </div>
 
+        <div className="glass-card final-function-cost-card">
+          <div className="final-costing-section-heading">
+            <div>
+              <span className="section-kicker">Function cost contribution</span>
+              <h2>See which functions are driving the event cost</h2>
+              <p>
+                Shared event extras are allocated by function covers for planning visibility.
+              </p>
+            </div>
+          </div>
+
+          <div className="final-function-cost-table">
+            <div className="is-head">
+              <span>Function</span>
+              <span>Covers</span>
+              <span>Food</span>
+              <span>Allocated extras</span>
+              <span>Total</span>
+              <span>Cost / cover</span>
+            </div>
+
+            {functionCostRows.map(
+              (row) => (
+                <div key={row.serviceKey}>
+                  <span>
+                    {[
+                      row.dayLabel,
+                      row.mealLabel,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') ||
+                      'Event Menu'}
+                  </span>
+                  <b>{row.pax.toLocaleString('en-IN')}</b>
+                  <b>{money(row.totalCost)}</b>
+                  <b>{money(row.allocatedExtras)}</b>
+                  <strong>{money(row.allocatedTotal)}</strong>
+                  <strong>{money(row.allocatedCostPerCover)}</strong>
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+
         {!costReady ? (
           <div className="readiness-card" role="status">
             <div><span className="section-kicker">Pricing checklist</span><h3>Complete the missing cost details</h3></div>
@@ -805,7 +1372,7 @@ export default function FinalCostingPage() {
 
         <div className="action-row page-actions">
           <button className="primary-button" type="button" disabled={!priceReady} onClick={createQuotation}>
-            Continue to Quotation
+            Create Quotation
           </button>
           <button className="secondary-button" type="button" disabled={!priceReady} onClick={() => { savePrice(); }}>
             Save Selling Price
@@ -845,6 +1412,14 @@ export default function FinalCostingPage() {
               <div>
                 <span>Gross margin</span>
                 <b>{displayPercent(pricing.marginPercent)}</b>
+              </div>
+              <div>
+                <span>Break-even / cover</span>
+                <b>{money(breakEvenPricePerCover)}</b>
+              </div>
+              <div>
+                <span>Readiness</span>
+                <b>{finalCostReadinessPercent}%</b>
               </div>
             </div>
 
@@ -897,7 +1472,7 @@ export default function FinalCostingPage() {
               disabled={!priceReady}
               onClick={createQuotation}
             >
-              Continue to Quotation
+              Create Quotation
               <span aria-hidden="true">→</span>
             </button>
 
