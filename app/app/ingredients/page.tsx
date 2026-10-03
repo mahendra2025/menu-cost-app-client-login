@@ -57,6 +57,12 @@ type RateFilter =
   | 'CITY'
   | 'GLOBAL';
 
+type UsageFilter =
+  | 'ALL'
+  | 'EVENT'
+  | 'MISSING'
+  | 'RECENT';
+
 function money(
   value:
     | number
@@ -225,6 +231,23 @@ export default function IngredientRatesPage() {
     useState<RateFilter>(
       'ALL',
     );
+
+  const [
+    usageFilter,
+    setUsageFilter,
+  ] = useState<UsageFilter>(
+    'ALL',
+  );
+
+  const [
+    currentEventDishNames,
+    setCurrentEventDishNames,
+  ] = useState<string[]>([]);
+
+  const [
+    currentEventName,
+    setCurrentEventName,
+  ] = useState('');
 
   const [ready, setReady] =
     useState(false);
@@ -438,6 +461,42 @@ export default function IngredientRatesPage() {
   }
 
   useEffect(() => {
+    const session =
+      getSession();
+
+    if (session) {
+      const work =
+        loadWork(
+          session.tenantId,
+        );
+
+      setCurrentEventName(
+        work.event.eventName ||
+          work.event.clientName ||
+          'Current event',
+      );
+
+      setCurrentEventDishNames(
+        Array.from(
+          new Set(
+            work.menu
+              .filter(
+                (item) =>
+                  item.coverageStatus !==
+                  'REJECTED',
+              )
+              .map(
+                (item) =>
+                  normalize(
+                    item.name,
+                  ),
+              )
+              .filter(Boolean),
+          ),
+        ),
+      );
+    }
+
     void loadIngredients(
       'Silvassa',
     );
@@ -458,6 +517,100 @@ export default function IngredientRatesPage() {
         ).sort(),
       [rows],
     );
+
+  const currentEventDishSet =
+    useMemo(
+      () =>
+        new Set(
+          currentEventDishNames,
+        ),
+      [currentEventDishNames],
+    );
+
+  function currentEventRecipes(
+    row: UnifiedIngredientRate,
+  ) {
+    return (
+      usage[row.id] || []
+    ).filter(
+      (recipe) =>
+        currentEventDishSet.has(
+          normalize(
+            recipe.name,
+          ),
+        ),
+    );
+  }
+
+  function isCurrentEventIngredient(
+    row: UnifiedIngredientRate,
+  ) {
+    return (
+      currentEventRecipes(
+        row,
+      ).length > 0
+    );
+  }
+
+  function rateUpdatedAt(
+    row: UnifiedIngredientRate,
+  ) {
+    const source =
+      activeSource(row);
+
+    if (
+      source === 'BUSINESS'
+    ) {
+      return (
+        row.customUpdatedAt ||
+        ''
+      );
+    }
+
+    if (source === 'CITY') {
+      return (
+        row.cityRateEffectiveDate ||
+        ''
+      );
+    }
+
+    return (
+      row.updatedAt ||
+      ''
+    );
+  }
+
+  function isRecentRate(
+    row: UnifiedIngredientRate,
+  ) {
+    const value =
+      rateUpdatedAt(row);
+
+    if (!value) return false;
+
+    const timestamp =
+      new Date(
+        value,
+      ).getTime();
+
+    if (
+      !Number.isFinite(
+        timestamp,
+      )
+    ) {
+      return false;
+    }
+
+    return (
+      Date.now() -
+        timestamp <=
+      30 *
+        24 *
+        60 *
+        60 *
+        1000
+    );
+  }
 
   const filteredRows =
     useMemo(() => {
@@ -494,10 +647,37 @@ export default function IngredientRatesPage() {
               search,
             );
 
+          const currentRate =
+            activeRate(row);
+
+          const matchesUsage =
+            usageFilter ===
+              'ALL' ||
+            (
+              usageFilter ===
+                'EVENT' &&
+              isCurrentEventIngredient(
+                row,
+              )
+            ) ||
+            (
+              usageFilter ===
+                'MISSING' &&
+              !(currentRate > 0)
+            ) ||
+            (
+              usageFilter ===
+                'RECENT' &&
+              isRecentRate(
+                row,
+              )
+            );
+
           return (
             matchesFilter &&
             matchesCategory &&
-            matchesSearch
+            matchesSearch &&
+            matchesUsage
           );
         })
         .sort((a, b) =>
@@ -515,6 +695,9 @@ export default function IngredientRatesPage() {
       query,
       category,
       filter,
+      usageFilter,
+      currentEventDishSet,
+      usage,
     ]);
 
   const businessRateCount =
@@ -544,6 +727,47 @@ export default function IngredientRatesPage() {
       (row) =>
         activeSource(row) ===
         'GLOBAL',
+    ).length;
+
+  const currentEventRows =
+    rows.filter(
+      isCurrentEventIngredient,
+    );
+
+  const currentEventRateReadyCount =
+    currentEventRows.filter(
+      (row) =>
+        activeRate(row) > 0,
+    ).length;
+
+  const currentEventMissingRateCount =
+    Math.max(
+      0,
+      currentEventRows.length -
+        currentEventRateReadyCount,
+    );
+
+  const currentEventRateCoveragePercent =
+    currentEventRows.length > 0
+      ? Math.round(
+          (
+            currentEventRateReadyCount /
+            currentEventRows.length
+          ) *
+            100,
+        )
+      : 100;
+
+  const currentEventBusinessRateCount =
+    currentEventRows.filter(
+      (row) =>
+        activeSource(row) ===
+        'BUSINESS',
+    ).length;
+
+  const recentlyUpdatedCount =
+    rows.filter(
+      isRecentRate,
     ).length;
 
   const changedCityCount =
@@ -709,6 +933,7 @@ export default function IngredientRatesPage() {
     setQuery('');
     setCategory('ALL');
     setFilter('ALL');
+    setUsageFilter('ALL');
   }
 
   async function refreshCurrentMenuCosts() {
@@ -1457,14 +1682,81 @@ export default function IngredientRatesPage() {
   const hasFilters =
     Boolean(query) ||
     category !== 'ALL' ||
-    filter !== 'ALL';
+    filter !== 'ALL' ||
+    usageFilter !== 'ALL';
 
   return (
     <AppShell
       title="Ingredient Rates"
       subtitle="Control the exact ingredient rate used in every event costing"
+      hidePageTitle
     >
       <section className="content-grid ingredient-rates-page">
+        <div className="ingredient-event-command">
+          <div className="ingredient-event-command-copy">
+            <span className="ingredient-rate-eyebrow">
+              Current event rate control
+            </span>
+            <h2>
+              Price the ingredients that matter for this event first
+            </h2>
+            <p>
+              {currentEventName || 'Current event'} uses {currentEventRows.length} master ingredient{currentEventRows.length === 1 ? '' : 's'} across its selected recipes. Business rates override {loadedCity || 'city'} rates, then Global is the fallback.
+            </p>
+
+            <div className="ingredient-event-command-kpis">
+              <div>
+                <span>Event ingredients</span>
+                <b>{currentEventRows.length}</b>
+                <small>{currentEventBusinessRateCount} business-priced</small>
+              </div>
+              <div className={currentEventMissingRateCount ? 'attention' : 'ready'}>
+                <span>Missing rate</span>
+                <b>{currentEventMissingRateCount}</b>
+                <small>{currentEventMissingRateCount ? 'Fix before final grocery' : 'Rate coverage complete'}</small>
+              </div>
+              <div>
+                <span>Updated ≤30 days</span>
+                <b>{recentlyUpdatedCount}</b>
+                <small>Across ingredient master</small>
+              </div>
+            </div>
+          </div>
+
+          <aside className="ingredient-event-command-side">
+            <div
+              className="ingredient-event-readiness-ring"
+              style={{
+                background:
+                  `conic-gradient(${currentEventRateCoveragePercent === 100 ? '#55d98f' : '#4a9cff'} ${currentEventRateCoveragePercent * 3.6}deg, #25303d 0deg)`,
+              }}
+              aria-label={`Current event rate coverage ${currentEventRateCoveragePercent}%`}
+            >
+              <span>
+                <b>{currentEventRateCoveragePercent}%</b>
+                <small>Rate ready</small>
+              </span>
+            </div>
+
+            <div>
+              <span className="ingredient-event-side-label">Next actions</span>
+              <b className="ingredient-event-side-value">{loadedCity || 'City'}</b>
+              <small className="ingredient-event-side-note">
+                {currentEventRateReadyCount}/{currentEventRows.length} event ingredients have an active rate
+              </small>
+
+              <div className="ingredient-event-command-actions">
+                <button className="secondary-button" type="button" onClick={() => window.location.assign('/app/grocery')}>
+                  Open Grocery
+                </button>
+                <button className="secondary-button" type="button" onClick={() => window.location.assign('/app/vendors')}>
+                  Suppliers
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+
         <div className="ingredient-rate-hero">
           <div>
             <span className="ingredient-rate-eyebrow">
@@ -1921,6 +2213,26 @@ export default function IngredientRatesPage() {
               )}
             </div>
 
+            <div className="ingredient-rate-usage-chips">
+              {(
+                [
+                  ['ALL', 'All usage'],
+                  ['EVENT', 'Current Event'],
+                  ['MISSING', 'Missing Rate'],
+                  ['RECENT', 'Updated 30d'],
+                ] as Array<[UsageFilter, string]>
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={usageFilter === value ? 'active' : ''}
+                  onClick={() => setUsageFilter(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
             {hasFilters ? (
               <button
                 className="ingredient-rate-clear"
@@ -2047,6 +2359,9 @@ export default function IngredientRatesPage() {
                       Market details
                     </th>
                     <th>
+                      Event
+                    </th>
+                    <th>
                       Recipes
                     </th>
                   </tr>
@@ -2078,6 +2393,11 @@ export default function IngredientRatesPage() {
                           row.id
                         ] || [];
 
+                      const eventRecipes =
+                        currentEventRecipes(
+                          row,
+                        );
+
                       const changed =
                         rowHasChanges(
                           row,
@@ -2087,9 +2407,13 @@ export default function IngredientRatesPage() {
                         <tr
                           key={row.id}
                           className={
-                            changed
-                              ? 'is-edited'
-                              : ''
+                            [
+                              changed ? 'is-edited' : '',
+                              eventRecipes.length ? 'is-event-used' : '',
+                              !(currentRate > 0) ? 'is-missing-rate' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')
                           }
                         >
                           <td className="ingredient-rate-name-cell">
@@ -2351,6 +2675,17 @@ export default function IngredientRatesPage() {
                           </td>
 
                           <td>
+                            <div className={eventRecipes.length ? 'ingredient-event-usage active' : 'ingredient-event-usage'}>
+                              <strong>{eventRecipes.length}</strong>
+                              <span>
+                                {eventRecipes.length
+                                  ? `${eventRecipes.length} event dish${eventRecipes.length === 1 ? '' : 'es'}`
+                                  : 'not used now'}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td>
                             <div className="ingredient-recipe-count">
                               <strong>
                                 {recipes.length}
@@ -2368,7 +2703,7 @@ export default function IngredientRatesPage() {
                   {!filteredRows.length ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={8}
                       >
                         <div className="ingredient-rate-empty">
                           <b>
