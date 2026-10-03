@@ -54,6 +54,16 @@ type OperationsPlanningRow = {
 type OperationsPlanningPlan =
   Record<string, OperationsPlanningRow[]>;
 
+function operationsPlanningKey(
+  row: FunctionOperationsRow,
+) {
+  if (row.serviceId?.trim()) {
+    return row.serviceId.trim();
+  }
+
+  return `${row.dayLabel || 'Event'}::${row.mealLabel || 'Event Menu'}`;
+}
+
 function money(value: number) {
   return `₹${Math.round(value).toLocaleString('en-IN')}`;
 }
@@ -762,7 +772,7 @@ export default function OperationsCostPage() {
       : 0;
 
   const transportReady =
-    totals.transportTotal > 0
+    (totals?.transportTotal || 0) > 0
       ? 100
       : 0;
 
@@ -1129,7 +1139,11 @@ export default function OperationsCostPage() {
 
               {(() => {
                 const functionPlanRows =
-                  planningPlan[row.id] || [];
+                  planningPlan[
+                    operationsPlanningKey(
+                      row,
+                    )
+                  ] || [];
                 const functionOperationalRows =
                   functionPlanRows.filter(
                     (item) =>
