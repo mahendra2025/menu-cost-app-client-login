@@ -705,10 +705,59 @@ export default function QuotationPage() {
       Boolean,
     ).length;
 
+  const quotationReadinessPercent =
+    Math.round(
+      (
+        quotationReadyCount /
+        Math.max(
+          1,
+          quotationReadyChecks.length,
+        )
+      ) *
+        100,
+    );
+
   const quotationReady =
     quotationReadyCount ===
       quotationReadyChecks.length &&
     !detailsLoading;
+
+  const advanceAmount =
+    quotation
+      ? (
+          quotation.grandTotal *
+          Math.min(
+            100,
+            Math.max(
+              0,
+              Number(
+                quotation.advancePercent,
+              ) || 0,
+            ),
+          )
+        ) /
+        100
+      : 0;
+
+  const balanceAmount =
+    quotation
+      ? Math.max(
+          0,
+          quotation.grandTotal -
+            advanceAmount,
+        )
+      : 0;
+
+  const quotationStatusStep =
+    quotation?.status === 'ACCEPTED'
+      ? 3
+      : quotation?.status === 'SENT'
+        ? 2
+        : quotation?.status === 'REJECTED'
+          ? 2
+          : quotation?.quotationNumber
+            ? 1
+            : 0;
 
   const totalManpowerPeople =
     activeManpower.reduce(
@@ -1123,15 +1172,18 @@ export default function QuotationPage() {
     <AppShell
       title="Quotation"
       subtitle="Prepare, review and send the final client quotation"
+      hidePageTitle
     >
       <section className="quote-page">
-        <div className="quotation-desktop-overview no-print">
-          <div>
-            <span className="page-eyebrow">Final client quotation</span>
+        <div className="quotation-command-overview no-print">
+          <div className="quotation-command-copy">
+            <span className="page-eyebrow">
+              Client quotation command center
+            </span>
             <h2>
               {quotation.quotationNumber
                 ? `Quotation ${quotation.quotationNumber}`
-                : 'Draft quotation'}
+                : 'Prepare a client-ready quotation'}
             </h2>
             <p>
               {quotation.clientName || 'Client name pending'}
@@ -1140,48 +1192,151 @@ export default function QuotationPage() {
               {' · '}
               {menuGroups.length} {menuGroups.length === 1 ? 'function' : 'functions'}
             </p>
+
+            <div className="quotation-command-kpis">
+              <article>
+                <span>Covers</span>
+                <b>{quotation.totalCovers.toLocaleString('en-IN')}</b>
+                <small>{menuGroups.length} functions</small>
+              </article>
+
+              <article>
+                <span>Rate / cover</span>
+                <b>{money(quotation.pricePerCover)}</b>
+                <small>Client selling rate</small>
+              </article>
+
+              <article>
+                <span>Grand total</span>
+                <b>{money(quotation.grandTotal)}</b>
+                <small>
+                  {quotation.includeTotal
+                    ? 'Shown to client'
+                    : 'Hidden from client'}
+                </small>
+              </article>
+
+              <article>
+                <span>Advance</span>
+                <b>{money(advanceAmount)}</b>
+                <small>{quotation.advancePercent}% booking advance</small>
+              </article>
+
+              <article>
+                <span>Balance</span>
+                <b>{money(balanceAmount)}</b>
+                <small>After advance</small>
+              </article>
+            </div>
           </div>
 
-          <div className="quotation-desktop-overview-total">
-            <span>{quotation.status || 'DRAFT'}</span>
-            <b>
-              {quotation.includeTotal
-                ? money(quotation.grandTotal)
-                : money(quotation.pricePerCover)}
-            </b>
-            <small>
-              {quotation.includeTotal
-                ? 'Client quotation total'
-                : 'Rate / cover · total hidden'}
-            </small>
-          </div>
+          <aside className="quotation-command-side">
+            <div
+              className="quotation-readiness-ring"
+              style={{
+                background:
+                  `conic-gradient(${quotationReadinessPercent === 100 ? '#55d98f' : '#4a9cff'} ${quotationReadinessPercent * 3.6}deg, #25303d 0deg)`,
+              }}
+              aria-label={`Quotation readiness ${quotationReadinessPercent}%`}
+            >
+              <span>
+                <b>{quotationReadinessPercent}%</b>
+                <small>Ready</small>
+              </span>
+            </div>
+
+            <div className="quotation-command-total">
+              <span>{quotation.status || 'DRAFT'}</span>
+              <b>
+                {quotation.includeTotal
+                  ? money(quotation.grandTotal)
+                  : money(quotation.pricePerCover)}
+              </b>
+              <small>
+                {quotation.includeTotal
+                  ? 'Client quotation total'
+                  : 'Rate / cover · total hidden'}
+              </small>
+
+              <button
+                className="primary-button"
+                type="button"
+                disabled={saving || !quotationReady}
+                onClick={() =>
+                  void shareWhatsApp()
+                }
+              >
+                Share on WhatsApp
+              </button>
+            </div>
+          </aside>
         </div>
 
-        <div className="quotation-desktop-kpis no-print">
-          <div>
-            <span>Total covers</span>
-            <strong>{quotation.totalCovers.toLocaleString('en-IN')}</strong>
-            <small>{menuGroups.length} functions</small>
-          </div>
-          <div>
-            <span>Rate / cover</span>
-            <strong>{money(quotation.pricePerCover)}</strong>
-            <small>Client selling rate</small>
-          </div>
-          <div>
-            <span>Subtotal</span>
-            <strong>{money(quotation.subtotal)}</strong>
-            <small>Before GST / extras</small>
-          </div>
-          <div className="is-primary">
-            <span>Grand total</span>
-            <strong>{money(quotation.grandTotal)}</strong>
-            <small>{quotation.includeTotal ? 'Shown to client' : 'Hidden from client'}</small>
-          </div>
-        </div>
+        <section className="quotation-status-flow no-print">
+          {[
+            ['Draft', 0],
+            ['Saved', 1],
+            ['Sent', 2],
+            ['Accepted', 3],
+          ].map(([label, step]) => (
+            <div
+              className={
+                quotationStatusStep >= Number(step)
+                  ? 'is-complete'
+                  : ''
+              }
+              key={String(label)}
+            >
+              <i aria-hidden="true">
+                {quotationStatusStep > Number(step)
+                  ? '✓'
+                  : Number(step) + 1}
+              </i>
+              <span>{label}</span>
+            </div>
+          ))}
+        </section>
+
+        <section className="quotation-readiness-strip no-print">
+          <article className={quotation.clientName.trim() ? 'ready' : 'attention'}>
+            <span>Client</span>
+            <b>{quotation.clientName.trim() ? 'Ready' : 'Missing'}</b>
+            <small>{quotation.clientName || 'Add client name'}</small>
+          </article>
+
+          <article className={quotation.eventName.trim() ? 'ready' : 'attention'}>
+            <span>Event</span>
+            <b>{quotation.eventName.trim() ? 'Ready' : 'Missing'}</b>
+            <small>{quotation.eventName || 'Add event name'}</small>
+          </article>
+
+          <article className={quotation.totalCovers > 0 ? 'ready' : 'attention'}>
+            <span>Covers</span>
+            <b>{quotation.totalCovers.toLocaleString('en-IN')}</b>
+            <small>Guest / meal covers</small>
+          </article>
+
+          <article className={quotation.pricePerCover > 0 ? 'ready' : 'attention'}>
+            <span>Selling rate</span>
+            <b>{money(quotation.pricePerCover)}</b>
+            <small>Per cover</small>
+          </article>
+
+          <article className={quotation.clientPhone.trim() ? 'ready' : ''}>
+            <span>WhatsApp</span>
+            <b>{quotation.clientPhone.trim() ? 'Added' : 'Optional'}</b>
+            <small>{quotation.clientPhone || 'No number added'}</small>
+          </article>
+
+          <article className={quotation.terms.filter((term) => term.trim()).length > 0 ? 'ready' : 'attention'}>
+            <span>Terms</span>
+            <b>{quotation.terms.filter((term) => term.trim()).length}</b>
+            <small>Client terms</small>
+          </article>
+        </section>
 
         <style>{`
-          .quote-page{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:14px;align-items:start}.quote-main,.quote-preview{display:grid;gap:14px}.quote-preview{position:sticky;top:86px}.quote-card{padding:19px;border:1px solid #29313c;border-radius:17px;background:#10151c}.quote-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.quote-heading h2{margin:4px 0 5px;font-size:19px;letter-spacing:-.03em}.quote-heading p{margin:0;color:#929dac;font-size:11px;line-height:1.5}.quote-number{padding:6px 8px;border-radius:999px;color:#8fc2ff;background:rgba(74,156,255,.1);font-size:9px;font-weight:900}.quote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.quote-field{display:grid;gap:6px}.quote-field.full{grid-column:1/-1}.quote-field label{color:#aeb8c5;font-size:10px;font-weight:850}.quote-input,.quote-textarea,.quote-select{width:100%;border:1px solid #303844;border-radius:10px;outline:0;color:#eef2f6;background:#151b23;font:inherit;font-size:13px;color-scheme:dark}.quote-input,.quote-select{min-height:43px;padding:0 11px}.quote-textarea{min-height:90px;padding:11px;resize:vertical}.quote-input:focus,.quote-textarea:focus,.quote-select:focus{border-color:rgba(74,156,255,.6);box-shadow:0 0 0 4px rgba(74,156,255,.07)}.quote-commercial{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.quote-total{padding:13px;border:1px solid rgba(74,156,255,.17);border-radius:12px;background:rgba(74,156,255,.05)}.quote-total small,.quote-total strong{display:block}.quote-total small{color:#8492a3;font-size:9px;text-transform:uppercase}.quote-total strong{margin-top:4px;font-size:17px}.quote-term{display:flex;gap:8px;margin-top:8px}.quote-term input{flex:1}.quote-term button{width:38px;border:1px solid #3a3034;border-radius:9px;color:#ff8d86;background:rgba(255,98,89,.06);cursor:pointer}.quote-actions{display:flex;flex-wrap:wrap;gap:7px}.quote-actions button,.quote-actions a{min-height:42px;font-size:11px}.quote-preview-sheet{padding:24px;border:1px solid #dfe5ec;border-radius:15px;color:#172033;background:#fff;box-shadow:0 20px 55px rgba(0,0,0,.24)}.quote-preview-head{display:flex;justify-content:space-between;gap:16px;padding-bottom:15px;border-bottom:1px solid #e7ebf0}.quote-preview-head b{font-size:16px}.quote-preview-head span{display:block;margin-top:3px;color:#758195;font-size:8px}.quote-preview-head>div:last-child{text-align:right}.quote-preview-client{display:grid;grid-template-columns:1fr 1fr;gap:15px;padding:15px 0}.quote-preview-client small{display:block;color:#8792a2;font-size:7px;text-transform:uppercase}.quote-preview-client b{display:block;margin-top:3px;font-size:10px}.quote-preview-menu{border-top:1px solid #e7ebf0;padding-top:12px}.quote-preview-menu h3,.quote-preview-commercial h3{margin:0 0 8px;font-size:10px}.quote-preview-group{margin-bottom:8px}.quote-preview-group b{font-size:9px}.quote-preview-group p{margin:3px 0 0;color:#596579;font-size:8px;line-height:1.45}.quote-preview-commercial{margin-top:12px;padding-top:12px;border-top:1px solid #e7ebf0}.quote-preview-price{display:flex;justify-content:space-between;gap:10px;margin-top:5px;color:#526074;font-size:8px}.quote-preview-price.total{margin-top:8px;padding-top:7px;border-top:1px solid #dfe5ec;color:#172033;font-size:10px;font-weight:900}.quote-detail-section{display:grid;gap:9px;margin-top:18px;padding-top:16px;border-top:1px solid #29313c}.quote-detail-section h3{margin:0;font-size:13px}.quote-detail-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.quote-detail-section-head>span{color:#8fc2ff;font-size:10px;font-weight:800}.quote-detail-block{padding:10px 11px;border:1px solid #29313c;border-radius:11px;background:#151b23}.quote-detail-block-head{display:flex;justify-content:space-between;gap:10px}.quote-detail-block-head>b{font-size:12px}.quote-detail-block-head>span{color:#8fc2ff;font-size:9px}.quote-detail-block p{margin:6px 0 0;color:#aab4c2;font-size:10px;line-height:1.5}.quote-detail-table{display:grid;border:1px solid #29313c;border-radius:11px;overflow:hidden}.quote-detail-row{display:grid;grid-template-columns:minmax(140px,.8fr) minmax(100px,.45fr) minmax(180px,1.2fr);gap:10px;align-items:start;padding:8px 10px;border-top:1px solid #252d37;font-size:10px}.quote-detail-row:first-child{border-top:0}.quote-detail-row.is-head{color:#9eabba;background:#151b23;font-size:9px;text-transform:uppercase}.quote-detail-row>span,.quote-detail-row>b{min-width:0;overflow-wrap:anywhere}.quote-detail-row.manpower{grid-template-columns:minmax(150px,1fr) minmax(120px,.75fr) 55px}.quote-detail-row.disposable{grid-template-columns:minmax(180px,1fr) 100px}.quote-detail-row.operations{grid-template-columns:minmax(140px,.8fr) minmax(110px,.6fr) minmax(180px,1.1fr)}.quote-detail-warning{padding:9px 10px;border:1px solid rgba(245,158,11,.18);border-radius:10px;color:#facc15;background:rgba(245,158,11,.06);font-size:10px;line-height:1.45}.quote-safe{padding:11px 12px;border:1px solid rgba(61,220,132,.16);border-radius:10px;color:#8ed7aa;background:rgba(61,220,132,.05);font-size:10px;line-height:1.45}.quote-message{padding:10px;border-radius:10px;font-size:10px}.quote-message.ok{color:#79c99a;background:rgba(61,220,132,.06)}.quote-message.error{color:#ff938c;background:rgba(255,98,89,.06)}@media(max-width:1050px){.quote-page{grid-template-columns:1fr}.quote-preview{position:static}}@media(max-width:650px){.quote-detail-row,.quote-detail-row.manpower,.quote-detail-row.operations{grid-template-columns:1fr}.quote-detail-row.disposable{grid-template-columns:minmax(0,1fr) 90px}.quote-detail-section-head{align-items:flex-start;flex-direction:column}.quote-page,.quote-main,.quote-preview{gap:10px}.quote-card{padding:13px;border-radius:13px}.quote-grid,.quote-commercial{grid-template-columns:1fr;gap:8px;margin-top:12px}.quote-field.full{grid-column:auto}.quote-input,.quote-textarea,.quote-select{font-size:16px}.quote-preview-client{grid-template-columns:1fr}.quote-actions{display:grid;grid-template-columns:1fr 1fr}.quote-actions button,.quote-actions a{width:100%;min-height:44px}}
+          .quotation-command-overview{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.48fr);gap:18px;align-items:center;padding:18px 20px;border:1px solid #2a3542;border-radius:18px;background:radial-gradient(circle at 96% 10%,rgba(74,156,255,.13),transparent 22rem),linear-gradient(145deg,#111923,#0d141c);box-shadow:0 14px 34px rgba(0,0,0,.16)}.quotation-command-copy h2{margin:7px 0 6px;font-size:clamp(28px,3.4vw,40px);line-height:1.04;letter-spacing:-.045em}.quotation-command-copy>p{margin:0;color:#8b98a9;font-size:10px}.quotation-command-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:14px}.quotation-command-kpis article{min-width:0;padding:10px;border:1px solid rgba(148,163,184,.10);border-radius:11px;background:rgba(255,255,255,.022)}.quotation-command-kpis span,.quotation-command-kpis b,.quotation-command-kpis small{display:block}.quotation-command-kpis span{color:#718094;font-size:7px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}.quotation-command-kpis b{overflow:hidden;margin-top:5px;color:#e7eef6;font-size:14px;text-overflow:ellipsis;white-space:nowrap}.quotation-command-kpis small{margin-top:3px;color:#68778a;font-size:7px}.quotation-command-side{display:grid;grid-template-columns:78px minmax(0,1fr);gap:13px;align-items:center;padding:13px;border:1px solid rgba(74,156,255,.15);border-radius:15px;background:rgba(74,156,255,.04)}.quotation-readiness-ring{display:grid;width:74px;height:74px;padding:6px;place-items:center;border-radius:50%}.quotation-readiness-ring>span{display:grid;width:100%;height:100%;place-items:center;border:1px solid rgba(255,255,255,.05);border-radius:50%;background:#0f161e}.quotation-readiness-ring b,.quotation-readiness-ring small{display:block;line-height:1}.quotation-readiness-ring b{color:#eef5fc;font-size:17px}.quotation-readiness-ring small{margin-top:-10px;color:#748397;font-size:6px;font-weight:900;text-transform:uppercase}.quotation-command-total>span,.quotation-command-total>b,.quotation-command-total>small{display:block}.quotation-command-total>span{color:#8fc2ff;font-size:7px;font-weight:900;text-transform:uppercase}.quotation-command-total>b{margin:4px 0;color:#f4f8fc;font-size:24px;letter-spacing:-.04em}.quotation-command-total>small{color:#7d8b9d;font-size:8px}.quotation-command-total .primary-button{width:100%;margin-top:9px}.quotation-status-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.quotation-status-flow>div{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #29333f;border-radius:11px;color:#69778a;background:#0f151c;font-size:8px;font-weight:850}.quotation-status-flow i{display:grid;width:21px;height:21px;place-items:center;border:1px solid #34404d;border-radius:50%;font-style:normal;font-size:7px}.quotation-status-flow .is-complete{color:#9ce4bb;border-color:rgba(85,217,143,.15);background:rgba(85,217,143,.035)}.quotation-status-flow .is-complete i{border-color:rgba(85,217,143,.25);color:#9ce4bb}.quotation-readiness-strip{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.quotation-readiness-strip article{min-width:0;padding:10px;border:1px solid #29333f;border-radius:11px;background:linear-gradient(180deg,#101720,#0d141b)}.quotation-readiness-strip article.ready{border-color:rgba(85,217,143,.15);background:rgba(85,217,143,.035)}.quotation-readiness-strip article.attention{border-color:rgba(244,173,84,.18);background:rgba(244,173,84,.045)}.quotation-readiness-strip span,.quotation-readiness-strip b,.quotation-readiness-strip small{display:block}.quotation-readiness-strip span{color:#718094;font-size:7px;font-weight:900;text-transform:uppercase}.quotation-readiness-strip b{margin:4px 0;color:#e8eef5;font-size:12px}.quotation-readiness-strip small{overflow:hidden;color:#68778a;font-size:7px;text-overflow:ellipsis;white-space:nowrap}          .quote-page{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:14px;align-items:start}.quote-main,.quote-preview{display:grid;gap:14px}.quote-preview{position:sticky;top:86px}.quote-card{padding:19px;border:1px solid #29313c;border-radius:17px;background:#10151c}.quote-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.quote-heading h2{margin:4px 0 5px;font-size:19px;letter-spacing:-.03em}.quote-heading p{margin:0;color:#929dac;font-size:11px;line-height:1.5}.quote-number{padding:6px 8px;border-radius:999px;color:#8fc2ff;background:rgba(74,156,255,.1);font-size:9px;font-weight:900}.quote-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.quote-field{display:grid;gap:6px}.quote-field.full{grid-column:1/-1}.quote-field label{color:#aeb8c5;font-size:10px;font-weight:850}.quote-input,.quote-textarea,.quote-select{width:100%;border:1px solid #303844;border-radius:10px;outline:0;color:#eef2f6;background:#151b23;font:inherit;font-size:13px;color-scheme:dark}.quote-input,.quote-select{min-height:43px;padding:0 11px}.quote-textarea{min-height:90px;padding:11px;resize:vertical}.quote-input:focus,.quote-textarea:focus,.quote-select:focus{border-color:rgba(74,156,255,.6);box-shadow:0 0 0 4px rgba(74,156,255,.07)}.quote-commercial{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.quote-total{padding:13px;border:1px solid rgba(74,156,255,.17);border-radius:12px;background:rgba(74,156,255,.05)}.quote-total small,.quote-total strong{display:block}.quote-total small{color:#8492a3;font-size:9px;text-transform:uppercase}.quote-total strong{margin-top:4px;font-size:17px}.quote-term{display:flex;gap:8px;margin-top:8px}.quote-term input{flex:1}.quote-term button{width:38px;border:1px solid #3a3034;border-radius:9px;color:#ff8d86;background:rgba(255,98,89,.06);cursor:pointer}.quote-actions{display:flex;flex-wrap:wrap;gap:7px}.quote-actions button,.quote-actions a{min-height:42px;font-size:11px}.quote-preview-sheet{padding:24px;border:1px solid #dfe5ec;border-radius:15px;color:#172033;background:#fff;box-shadow:0 20px 55px rgba(0,0,0,.24)}.quote-preview-head{display:flex;justify-content:space-between;gap:16px;padding-bottom:15px;border-bottom:1px solid #e7ebf0}.quote-preview-head b{font-size:16px}.quote-preview-head span{display:block;margin-top:3px;color:#758195;font-size:8px}.quote-preview-head>div:last-child{text-align:right}.quote-preview-client{display:grid;grid-template-columns:1fr 1fr;gap:15px;padding:15px 0}.quote-preview-client small{display:block;color:#8792a2;font-size:7px;text-transform:uppercase}.quote-preview-client b{display:block;margin-top:3px;font-size:10px}.quote-preview-menu{border-top:1px solid #e7ebf0;padding-top:12px}.quote-preview-menu h3,.quote-preview-commercial h3{margin:0 0 8px;font-size:10px}.quote-preview-group{margin-bottom:8px}.quote-preview-group b{font-size:9px}.quote-preview-group p{margin:3px 0 0;color:#596579;font-size:8px;line-height:1.45}.quote-preview-commercial{margin-top:12px;padding-top:12px;border-top:1px solid #e7ebf0}.quote-preview-price{display:flex;justify-content:space-between;gap:10px;margin-top:5px;color:#526074;font-size:8px}.quote-preview-price.total{margin-top:8px;padding-top:7px;border-top:1px solid #dfe5ec;color:#172033;font-size:10px;font-weight:900}.quote-detail-section{display:grid;gap:9px;margin-top:18px;padding-top:16px;border-top:1px solid #29313c}.quote-detail-section h3{margin:0;font-size:13px}.quote-detail-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.quote-detail-section-head>span{color:#8fc2ff;font-size:10px;font-weight:800}.quote-detail-block{padding:10px 11px;border:1px solid #29313c;border-radius:11px;background:#151b23}.quote-detail-block-head{display:flex;justify-content:space-between;gap:10px}.quote-detail-block-head>b{font-size:12px}.quote-detail-block-head>span{color:#8fc2ff;font-size:9px}.quote-detail-block p{margin:6px 0 0;color:#aab4c2;font-size:10px;line-height:1.5}.quote-detail-table{display:grid;border:1px solid #29313c;border-radius:11px;overflow:hidden}.quote-detail-row{display:grid;grid-template-columns:minmax(140px,.8fr) minmax(100px,.45fr) minmax(180px,1.2fr);gap:10px;align-items:start;padding:8px 10px;border-top:1px solid #252d37;font-size:10px}.quote-detail-row:first-child{border-top:0}.quote-detail-row.is-head{color:#9eabba;background:#151b23;font-size:9px;text-transform:uppercase}.quote-detail-row>span,.quote-detail-row>b{min-width:0;overflow-wrap:anywhere}.quote-detail-row.manpower{grid-template-columns:minmax(150px,1fr) minmax(120px,.75fr) 55px}.quote-detail-row.disposable{grid-template-columns:minmax(180px,1fr) 100px}.quote-detail-row.operations{grid-template-columns:minmax(140px,.8fr) minmax(110px,.6fr) minmax(180px,1.1fr)}.quote-detail-warning{padding:9px 10px;border:1px solid rgba(245,158,11,.18);border-radius:10px;color:#facc15;background:rgba(245,158,11,.06);font-size:10px;line-height:1.45}.quote-safe{padding:11px 12px;border:1px solid rgba(61,220,132,.16);border-radius:10px;color:#8ed7aa;background:rgba(61,220,132,.05);font-size:10px;line-height:1.45}.quote-message{padding:10px;border-radius:10px;font-size:10px}.quote-message.ok{color:#79c99a;background:rgba(61,220,132,.06)}.quote-message.error{color:#ff938c;background:rgba(255,98,89,.06)}@media(max-width:1180px){.quotation-command-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.quotation-readiness-strip{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:1050px){.quotation-command-overview{grid-template-columns:1fr}.quotation-command-side{max-width:430px}.quote-page{grid-template-columns:1fr}.quote-preview{position:static}}@media(max-width:650px){.quotation-command-overview{padding:16px}.quotation-command-kpis{grid-template-columns:1fr 1fr}.quotation-command-side{grid-template-columns:62px minmax(0,1fr)}.quotation-readiness-ring{width:58px;height:58px}.quotation-status-flow{grid-template-columns:1fr 1fr}.quotation-readiness-strip{grid-template-columns:1fr 1fr}.quote-detail-row,.quote-detail-row.manpower,.quote-detail-row.operations{grid-template-columns:1fr}.quote-detail-row.disposable{grid-template-columns:minmax(0,1fr) 90px}.quote-detail-section-head{align-items:flex-start;flex-direction:column}.quote-page,.quote-main,.quote-preview{gap:10px}.quote-card{padding:13px;border-radius:13px}.quote-grid,.quote-commercial{grid-template-columns:1fr;gap:8px;margin-top:12px}.quote-field.full{grid-column:auto}.quote-input,.quote-textarea,.quote-select{font-size:16px}.quote-preview-client{grid-template-columns:1fr}.quote-actions{display:grid;grid-template-columns:1fr 1fr}.quote-actions button,.quote-actions a{width:100%;min-height:44px}}
         `}</style>
 
         <div className="quote-main">
@@ -2073,7 +2228,10 @@ export default function QuotationPage() {
             <button
               className="primary-button"
               type="button"
-              disabled={saving}
+              disabled={
+                saving ||
+                !quotationReady
+              }
               onClick={() =>
                 void shareWhatsApp()
               }
@@ -2150,7 +2308,10 @@ export default function QuotationPage() {
             <button
               className="primary-button quotation-desktop-primary"
               type="button"
-              disabled={saving}
+              disabled={
+                saving ||
+                !quotationReady
+              }
               onClick={() =>
                 void shareWhatsApp()
               }
