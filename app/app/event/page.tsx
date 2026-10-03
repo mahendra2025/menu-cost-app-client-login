@@ -9305,9 +9305,37 @@ export default function EventPage() {
 
   return (
     <AppShell
-      title="Create Event"
+      title="Menu Selection"
       hidePageTitle
     >
+      <style>{`
+        .event-page-topbar,
+        .new-event-modal-layer,
+        .first-menu-guide,
+        .event-desktop-summary,
+        .event-add-dish-functions,
+        .event-desktop-saved-menu,
+        .menu-source-workspace-heading,
+        .event-import-step-heading,
+        .event-function-details,
+        .event-menu-source-grid,
+        .event-menu-detect-inline,
+        .menu-upload-status,
+        .menu-detection-preview,
+        .event-detected-details,
+        .event-detection-error {
+          display: none !important;
+        }
+
+        .event-upload-only-page {
+          max-width: 1180px;
+          margin: 0 auto;
+        }
+
+        .event-menu-card {
+          width: 100%;
+        }
+      `}</style>
       <section className="content-grid event-simple-flow event-upload-only-page">
         <div className="event-page-topbar no-print">
           <div className="event-page-heading">
@@ -10033,666 +10061,63 @@ export default function EventPage() {
 
             <div className={`menu-source-workspace${detectionPreview ? ' is-detected' : ''}${showManualDishSelector ? ' is-manual-selection' : ''}`}>
               <div className="event-upload-simple">
-                {!detectionPreview ? (
-                  <section className="event-upload-simple-card" aria-labelledby="simple-upload-title">
-                    <div className="event-upload-copy">
-                      <span className="event-upload-index" aria-hidden="true">Menu</span>
-                      <div>
-                        <h2 id="simple-upload-title">{t('Bring in the menu')}</h2>
-                        <p>{t('Upload a PDF or a clear photo. We will find the dishes and organise them by function for you.')}</p>
-                      </div>
+                <section
+                  className="event-upload-simple-card"
+                  aria-labelledby="menu-selection-title"
+                >
+                  <div className="event-upload-copy">
+                    <span className="event-upload-index" aria-hidden="true">
+                      Menu
+                    </span>
+                    <div>
+                      <h2 id="menu-selection-title">
+                        Menu Selection
+                      </h2>
+                      <p>
+                        Select dishes directly from your Dish Master.
+                      </p>
                     </div>
+                  </div>
 
-                    <input
-                      id="simpleMenuFileUpload"
-                      className="visually-hidden-file"
-                      type="file"
-                      accept="application/pdf,image/jpeg,image/png,image/webp"
-                      disabled={Boolean(uploading) || detecting}
-                      onChange={(event) => {
-                        const file = event.currentTarget.files?.[0];
-                        event.currentTarget.value = '';
-                        if (file) void uploadMenuFile(file);
-                      }}
-                    />
-                    <label
-                      className={`primary-button event-upload-simple-button${uploading || detecting ? ' is-loading' : ''}`}
-                      htmlFor="simpleMenuFileUpload"
-                      aria-disabled={Boolean(uploading) || detecting}
+                  <button
+                    className="event-manual-entry"
+                    type="button"
+                    onClick={() =>
+                      void openManualDishSelector()
+                    }
+                  >
+                    <span
+                      className="event-manual-entry-icon"
+                      aria-hidden="true"
                     >
-                      <span className="event-upload-button-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" />
-                        </svg>
-                      </span>
-                      <span>
-                        <b>{uploading || detecting ? t('Detecting dishes…') : t('Choose PDF or photo')}</b>
-                        <small>{t('PDF, JPG, PNG or WebP')}</small>
-                      </span>
-                    </label>
-
-                    <div className="event-menu-choice" aria-hidden="true"><span>or</span></div>
-
-                    <button
-                      className="event-manual-entry event-paste-entry"
-                      type="button"
-                      disabled={Boolean(uploading) || detecting}
-                      aria-expanded={showPasteMenu}
-                      aria-controls="pasteMenuPanel"
-                      onClick={() => setShowPasteMenu((current) => !current)}
-                    >
-                      <span className="event-manual-entry-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M9 5.5h6M9 3h6v5H9z" />
-                          <path d="M7 6H5.5A1.5 1.5 0 0 0 4 7.5v12A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 18.5 6H17" />
-                        </svg>
-                      </span>
-                      <span className="event-manual-entry-copy">
-                        <b>Paste menu text</b>
-                        <small>Copy a WhatsApp, email or document menu</small>
-                      </span>
-                      <span className="event-manual-entry-arrow" aria-hidden="true">{showPasteMenu ? '⌃' : '›'}</span>
-                    </button>
-
-                    {showPasteMenu ? (
-                      <div className="event-paste-panel" id="pasteMenuPanel">
-                        <label htmlFor="pastedMenuText">Paste your complete menu</label>
-                        <textarea
-                          id="pastedMenuText"
-                          className="textarea event-paste-textarea"
-                          value={work.event.rawMenuText}
-                          onChange={(event) => {
-                            updateEvent('rawMenuText', event.target.value);
-                            setError('');
-                          }}
-                          placeholder={SAMPLE_MENU}
-                          rows={10}
-                          autoFocus
-                        />
-                        <div className="event-paste-details">
-                          <label
-                            className="field"
-                            htmlFor="pastedMenuGuests"
-                          >
-                            <span>Guests</span>
-                            <input
-                              id="pastedMenuGuests"
-                              className="input"
-                              type="number"
-                              min="1"
-                              step="1"
-                              inputMode="numeric"
-                              value={importFunctionPax}
-                              onChange={(event) => {
-                                const value = event.target.value;
-                                const guests = Math.max(
-                                  0,
-                                  Math.round(Number(value) || 0),
-                                );
-
-                                setImportFunctionPax(value);
-                                updateEvent('pax', guests);
-                                setError('');
-                              }}
-                              placeholder="e.g. 300"
-                            />
-                            <small>
-                              Enter it here, or include it in the pasted menu.
-                            </small>
-                          </label>
-                        </div>
-                        <div className="event-paste-actions">
-                          <small>{work.event.rawMenuText.trim() ? `${work.event.rawMenuText.trim().split(/\n+/).length} menu lines ready` : 'Paste dish names and category headings.'}</small>
-                          <button
-                            className="primary-button"
-                            type="button"
-                            disabled={!work.event.rawMenuText.trim() || detecting}
-                            onClick={() => void detectAndNext()}
-                          >
-                            {detecting ? 'Detecting dishes…' : 'Detect pasted menu'}
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    <button
-                      className="event-manual-entry"
-                      type="button"
-                      disabled={Boolean(uploading) || detecting}
-                      onClick={() => void openManualDishSelector()}
-                    >
-                      <span className="event-manual-entry-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M6 6h14M6 12h14M6 18h14" />
-                          <path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
-                        </svg>
-                      </span>
-                      <span className="event-manual-entry-copy">
-                        <b>Select dishes manually</b>
-                        <small>Build this menu directly from your Dish Master</small>
-                      </span>
-                      <span className="event-manual-entry-arrow" aria-hidden="true">›</span>
-                    </button>
-
-                    <div className="event-upload-assurance" aria-label="Upload information">
-                      <span><i aria-hidden="true">✓</i> PDF up to 15 MB</span>
-                      <span><i aria-hidden="true">✓</i> Photos up to 20 MB</span>
-                      <span><i aria-hidden="true">✓</i> Review before saving</span>
-                    </div>
-
-                    {uploadStatus ? (
-                      <div className="event-upload-simple-status" role="status" aria-live="polite">
-                        <span className="upload-spinner" aria-hidden="true" />
-                        <p>{uploadStatus}</p>
-                      </div>
-                    ) : null}
-                    {error ? <p className="event-upload-simple-error" role="alert">{error}</p> : null}
-                  </section>
-                ) : (
-                  <section className="event-detected-simple" id="detectedDishesSimple" aria-labelledby="detected-dishes-title">
-                    <div className="event-detected-simple-head">
-                      <div>
-                        <span className="event-review-step">Review</span>
-                        <h2 id="detected-dishes-title">Check the detected menu</h2>
-                        <p>Correct any dish or category. Your corrections are remembered for future PDF uploads.</p>
-                      </div>
-                      <div className="event-review-count" aria-label={`${simpleDetectedDishCount} dishes detected`}>
-                        <b>{simpleDetectedDishCount}</b>
-                        <span>dishes</span>
-                      </div>
-                    </div>
-
-                    <div className="menu-detection-intelligence">
-                      <div className="menu-detection-intelligence-head">
-                        <div>
-                          <span>Detection Intelligence</span>
-                          <b>Source understood before costing</b>
-                        </div>
-                        <strong>
-                          {detectionPreview.possibleMissed.length > 0
-                            ? `${detectionPreview.possibleMissed.length} possible missed`
-                            : '✓ Source clean'}
-                        </strong>
-                      </div>
-
-                      <div className="menu-detection-intelligence-stats">
-                        <div>
-                          <b>{menuSourceIntelligence.sectionHeadings.length}</b>
-                          <span>Sections</span>
-                        </div>
-                        <div>
-                          <b>{detectionSourceCounts.catalog}</b>
-                          <span>Dish Master matches</span>
-                        </div>
-                        <div>
-                          <b>{menuSourceIntelligence.ignoredMetadataLines.length}</b>
-                          <span>Quote lines filtered</span>
-                        </div>
-                        <div>
-                          <b>
-                            {menuSourceIntelligence.guestCount
-                              ? menuSourceIntelligence.guestCount.toLocaleString('en-IN')
-                              : '—'}
-                          </b>
-                          <span>Guests read</span>
-                        </div>
-                        <div>
-                          <b>
-                            {menuSourceIntelligence.ratePerPlate
-                              ? `₹${menuSourceIntelligence.ratePerPlate.toLocaleString('en-IN')}`
-                              : '—'}
-                          </b>
-                          <span>Quoted / plate</span>
-                        </div>
-                      </div>
-
-                      {menuSourceIntelligence.sectionHeadings.length ? (
-                        <div className="menu-detection-section-chips" aria-label="Detected menu sections">
-                          {menuSourceIntelligence.sectionHeadings.map((section) => (
-                            <span key={section}>{section}</span>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      {menuSourceIntelligence.commercialCheck !== 'UNKNOWN' ? (
-                        <div className={`menu-detection-commercial-check ${menuSourceIntelligence.commercialCheck === 'MATCH' ? 'match' : 'mismatch'}`}>
-                          <span aria-hidden="true">
-                            {menuSourceIntelligence.commercialCheck === 'MATCH' ? '✓' : '⚠'}
-                          </span>
-                          <div>
-                            <b>
-                              {menuSourceIntelligence.commercialCheck === 'MATCH'
-                                ? 'Quotation math matches'
-                                : 'Quotation math needs review'}
-                            </b>
-                            <small>
-                              {menuSourceIntelligence.guestCount?.toLocaleString('en-IN')} guests × ₹{menuSourceIntelligence.ratePerPlate?.toLocaleString('en-IN')} = ₹{menuSourceIntelligence.expectedQuotation?.toLocaleString('en-IN')}
-                              {menuSourceIntelligence.totalQuotation
-                                ? ` · source total ₹${menuSourceIntelligence.totalQuotation.toLocaleString('en-IN')}`
-                                : ''}
-                            </small>
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {menuSourceIntelligence.ratePerPlate ? (
-                        <div className="menu-detection-intelligence-action">
-                          <div>
-                            <b>Quotation selling rate found</b>
-                            <span>Use the detected client rate without typing it again.</span>
-                          </div>
-                          <button
-                            type="button"
-                            className={quotationRateApplied ? 'is-applied' : ''}
-                            disabled={quotationRateApplied}
-                            onClick={() => {
-                              persistWork({
-                                ...work,
-                                sellingPricePerPlate:
-                                  Number(menuSourceIntelligence.ratePerPlate) || 0,
-                              });
-                            }}
-                          >
-                            {quotationRateApplied
-                              ? '✓ Rate applied'
-                              : `Use ₹${menuSourceIntelligence.ratePerPlate.toLocaleString('en-IN')}`}
-                          </button>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="event-review-toolbar">
-                      <button type="button" className="event-review-back" onClick={returnToMenuUpload}>
-                        <span aria-hidden="true">←</span> Upload again
-                      </button>
-                      <button
-                        type="button"
-                        className="event-review-add"
-                        onClick={() => {
-                          setShowAddMissedDish((current) => !current);
-                          void loadManualDishCatalog();
-                          if (!newDetectionDishGroupKey && simpleDetectedGroups[0]) {
-                            setNewDetectionDishGroupKey(simpleDetectedGroups[0].key);
-                          }
-                        }}
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                       >
-                        <span aria-hidden="true">＋</span> Add missed dish
-                      </button>
-                    </div>
-
-                    {showAddMissedDish ? (
-                      <div className="event-review-add-form">
-                        <div className="event-review-picker-field">
-                          <label htmlFor="newDetectionDishName">
-                            <span>Dish name</span>
-                            <input
-                              id="newDetectionDishName"
-                              className="input"
-                              value={newDetectionDishName}
-                              onChange={(event) => setNewDetectionDishName(event.target.value)}
-                              onFocus={() => void loadManualDishCatalog()}
-                              placeholder="Search Dish Master or type a new dish"
-                              autoComplete="off"
-                              autoFocus
-                            />
-                          </label>
-
-                          {manualDishLoading ? (
-                            <small className="event-review-picker-help">Loading Dish Master…</small>
-                          ) : newDetectionDishSuggestions.length ? (
-                            <div className="event-review-dish-suggestions" role="listbox" aria-label="Dish Master suggestions">
-                              {newDetectionDishSuggestions.map((dish) => {
-                                const active =
-                                  dishNameKey(dish.name) ===
-                                  dishNameKey(newDetectionDishName);
-
-                                return (
-                                  <button
-                                    type="button"
-                                    key={`${dish.category}::${dish.name}`}
-                                    className={active ? 'is-selected' : ''}
-                                    onClick={() => {
-                                      setNewDetectionDishName(dish.name);
-                                      setNewDetectionDishCategory(
-                                        availableDishCategories.includes(dish.category)
-                                          ? dish.category as Category
-                                          : defaultDishCategory,
-                                      );
-                                      setError('');
-                                    }}
-                                  >
-                                    <span>
-                                      <b>{dish.name}</b>
-                                      <small>{dish.category}{dish.subcategory ? ` · ${dish.subcategory}` : ''}</small>
-                                    </span>
-                                    <strong>{dish.rate > 0 ? `₹${dish.rate.toFixed(2)} / plate` : 'Rate needed'}</strong>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          ) : newDetectionDishName.trim() ? (
-                            <div className="event-review-new-dish-note">
-                              <b>New dish</b>
-                              <span>Not found in Dish Master. It will be added to this event and checked for a cost.</span>
-                            </div>
-                          ) : (
-                            <small className="event-review-picker-help">Start typing to choose an existing Dish Master item.</small>
-                          )}
-
-                          {exactNewDetectionCatalogDish ? (
-                            <div className="event-review-existing-dish-note">
-                              <span aria-hidden="true">✓</span>
-                              <b>Using Dish Master</b>
-                              <small>
-                                {exactNewDetectionCatalogDish.rate > 0
-                                  ? `Saved rate ₹${exactNewDetectionCatalogDish.rate.toFixed(2)} / plate`
-                                  : 'Existing dish found · rate still required'}
-                              </small>
-                            </div>
-                          ) : null}
-                        </div>
-
-                        <label>
-                          <span>Category</span>
-                          <select
-                            className="select"
-                            value={newDetectionDishCategory}
-                            onChange={(event) => setNewDetectionDishCategory(event.target.value as Category)}
-                          >
-                            {availableDishCategories.map((category) => <option key={category} value={category}>{category}</option>)}
-                          </select>
-                        </label>
-                        {simpleDetectedGroups.length > 1 ? (
-                          <label>
-                            <span>Function</span>
-                            <select
-                              className="select"
-                              value={newDetectionDishGroupKey}
-                              onChange={(event) => setNewDetectionDishGroupKey(event.target.value)}
-                            >
-                              {simpleDetectedGroups.map((group) => <option key={group.key} value={group.key}>{group.label}</option>)}
-                            </select>
-                          </label>
-                        ) : null}
-                        <div className="event-review-add-actions">
-                          <button type="button" className="ghost-button" onClick={() => setShowAddMissedDish(false)}>Cancel</button>
-                          <button type="button" className="primary-button" onClick={addMissedDetectedDish}>
-                            {exactNewDetectionCatalogDish ? 'Add existing dish' : 'Add new dish'}
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {smartDraftDetectedItems.length > 0 ? (
-                      <div className="event-review-add-actions no-print">
-                        <button
-                          type="button"
-                          className="ghost-button"
-                          onClick={() =>
-                            openDetectedDishRecipe(
-                              smartDraftDetectedItems[0],
-                            )
-                          }
-                        >
-                          Review {smartDraftDetectedItems.length} Smart Recipe {smartDraftDetectedItems.length === 1 ? 'Draft' : 'Drafts'}
-                        </button>
-                      </div>
-                    ) : null}
-
-                    {missingDetectedRecipeItems.length > 0 ? (
-                      <div className="event-review-add-actions no-print">
-                        <button
-                          type="button"
-                          className="ghost-button"
-                          onClick={() =>
-                            openMissingDetectedRecipes(
-                              missingDetectedRecipeItems,
-                            )
-                          }
-                        >
-                          Create {missingDetectedRecipeItems.length} Missing {missingDetectedRecipeItems.length === 1 ? 'Recipe' : 'Recipes'}
-                        </button>
-                      </div>
-                    ) : null}
-
-                    <div className="event-review-groups">
-                      {simpleDetectedGroups.map((group) => (
-                        <section className="event-review-group" key={group.key}>
-                          <div className="event-review-group-head">
-                            <div>
-                              <h3>{group.label}</h3>
-                              <span>{group.items.length} {group.items.length === 1 ? 'dish' : 'dishes'}</span>
-                            </div>
-                            <label>
-                              <span>Guests</span>
-                              <input
-                                type="number"
-                                min="1"
-                                step="1"
-                                inputMode="numeric"
-                                value={group.servicePax > 0 ? String(group.servicePax) : ''}
-                                onChange={(event) => updateDetectionGroupPax(group.key, event.target.value)}
-                                placeholder="Required"
-                                aria-label={`Guests for ${group.label}`}
-                              />
-                            </label>
-                          </div>
-
-                          <div className="event-review-categories">
-                            {group.categoryGroups.map((categoryGroup) => (
-                              <section className="event-review-category" key={`${group.key}::${categoryGroup.category}`}>
-                                <div className="event-review-category-head">
-                                  <h4>{categoryGroup.category}</h4>
-                                  <span>{categoryGroup.items.length} {categoryGroup.items.length === 1 ? 'dish' : 'dishes'}</span>
-                                </div>
-                                <div className="event-review-dishes">
-                            {categoryGroup.items.map((item, index) => {
-                              const needsManualRate = manualRateIds.has(item.id);
-                              const isEditing = editingDetectionId === item.id;
-                              const personalDishKey = dishNameKey(item.name);
-                              const isSavedToDishMaster =
-                                savedPersonalDishKeys.has(personalDishKey) ||
-                                String(item.coverageReason || '').includes('your Dish Master');
-                              const canSaveToDishMaster =
-                                needsManualRate &&
-                                item.detectionSource !== 'catalog' &&
-                                Number(item.costPerPlate) > 0;
-                              const isSavingToDishMaster =
-                                savingDishMasterIds.has(item.id);
-
-                              return (
-                                <div className={`event-review-dish${needsManualRate ? ' needs-rate' : ''}`} key={item.id}>
-                                  <span className="event-review-dish-number">{index + 1}</span>
-
-                                  {isEditing ? (
-                                    <div className="event-review-edit-fields">
-                                      <input
-                                        className="input"
-                                        value={editDetectionName}
-                                        onChange={(event) => setEditDetectionName(event.target.value)}
-                                        aria-label="Dish name"
-                                        autoFocus
-                                      />
-                                      {manualDishLoading ? (
-                                        <small className="event-review-picker-help">Loading Dish Master…</small>
-                                      ) : editDetectionDishSuggestions.length ? (
-                                        <div className="event-review-edit-master">
-                                          <small>Match existing Dish Master dish</small>
-                                          <div className="event-review-dish-suggestions" role="listbox" aria-label="Existing Dish Master matches">
-                                            {editDetectionDishSuggestions.map((dish) => (
-                                              <button
-                                                type="button"
-                                                key={`edit-simple-${dish.category}::${dish.name}`}
-                                                className={dishNameKey(dish.name) === dishNameKey(editDetectionName) ? 'is-selected' : ''}
-                                                onClick={() => {
-                                                  setEditDetectionName(dish.name);
-                                                  setEditDetectionCategory(
-                                                    availableDishCategories.includes(dish.category)
-                                                      ? dish.category as Category
-                                                      : defaultDishCategory,
-                                                  );
-                                                  setError('');
-                                                }}
-                                              >
-                                                <span><b>{dish.name}</b><small>{dish.category}</small></span>
-                                                <strong>{dish.rate > 0 ? `₹${dish.rate.toFixed(2)} / plate` : 'Rate needed'}</strong>
-                                              </button>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      ) : null}
-                                      <select
-                                        className="select"
-                                        value={editDetectionCategory}
-                                        onChange={(event) => setEditDetectionCategory(event.target.value as Category)}
-                                        aria-label="Dish category"
-                                      >
-                                        {availableDishCategories.map((category) => <option key={category} value={category}>{category}</option>)}
-                                      </select>
-                                      <div>
-                                        <button type="button" onClick={cancelDetectionEdit}>Cancel</button>
-                                        <button type="button" onClick={() => saveDetectionEdit(item.id)}>Save</button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <div className="event-review-dish-copy">
-                                        <b>{item.name}</b>
-                                        <span>{item.category || 'Other'}</span>
-                                        {menuDishModifierLabels(item.dishModifiers).length ? (
-                                          <div className="event-review-modifiers">
-                                            {menuDishModifierLabels(item.dishModifiers).map((label) => (
-                                              <small key={label}>{label}</small>
-                                            ))}
-                                          </div>
-                                        ) : null}
-                                        {recostingDishIds.has(item.id) ? <small>Checking rate…</small> : null}
-                                      </div>
-
-                                      {needsManualRate ? (
-                                        <label className="event-review-rate">
-                                          <span>₹</span>
-                                          <input
-                                            type="number"
-                                            min="0"
-                                            step="0.01"
-                                            inputMode="decimal"
-                                            value={item.costPerPlate || ''}
-                                            onChange={(event) => setDetectedManualRate(item.id, event.target.value)}
-                                            placeholder="Rate"
-                                            aria-label={`Per-plate rate for ${item.name}`}
-                                          />
-                                          <small>/ plate</small>
-                                        </label>
-                                      ) : (
-                                        <span className="event-review-ready" aria-label="Rate ready">✓</span>
-                                      )}
-
-                                      <div className="event-review-dish-actions">
-                                        {(
-                                          item.detectionSource !== 'catalog' ||
-                                          menuDishModifiersRequireRecipeVariant(
-                                            item.dishModifiers,
-                                          )
-                                        ) ? (
-                                          (
-                                            item.costSource === 'ai_recipe' ||
-                                            smartDraftRecipeKeys.has(
-                                              dishNameKey(
-                                                menuDishVariantName(item.name, item.dishModifiers),
-                                              ),
-                                            )
-                                          ) ? (
-                                            <button
-                                              type="button"
-                                              className="make-recipe"
-                                              onClick={() => openDetectedDishRecipe(item)}
-                                            >
-                                              ✦ Smart draft ready
-                                            </button>
-                                          ) : availableRecipeKeys.has(
-                                            dishNameKey(
-                                              menuDishVariantName(item.name, item.dishModifiers),
-                                            ),
-                                          ) ? (
-                                            <span className="event-review-master-saved">
-                                              <span aria-hidden="true">✓</span> Recipe available
-                                            </span>
-                                          ) : (
-                                            <button
-                                              type="button"
-                                              className="make-recipe"
-                                              onClick={() => openDetectedDishRecipe(item)}
-                                              aria-label={`Make recipe for ${item.name}`}
-                                            >
-                                              Make recipe
-                                            </button>
-                                          )
-                                        ) : null}
-                                        {canSaveToDishMaster ? (
-                                          isSavedToDishMaster ? (
-                                            <span className="event-review-master-saved">
-                                              <span aria-hidden="true">✓</span> Saved
-                                            </span>
-                                          ) : (
-                                            <button
-                                              type="button"
-                                              className="save-master"
-                                              disabled={isSavingToDishMaster}
-                                              onClick={() => void saveDetectedDishToMaster(item)}
-                                              aria-label={`Save ${item.name} to Dish Master`}
-                                            >
-                                              {isSavingToDishMaster ? 'Saving…' : 'Save to Dish Master'}
-                                            </button>
-                                          )
-                                        ) : null}
-                                        <button type="button" onClick={() => beginDetectionEdit(item)} aria-label={`Edit ${item.name}`}>Edit</button>
-                                        <button type="button" className="remove" onClick={() => toggleDetectedDishRejection(item)} aria-label={`Remove ${item.name}`}>Remove</button>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              );
-                            })}
-                                </div>
-                              </section>
-                            ))}
-                          </div>
-                        </section>
-                      ))}
-                    </div>
-
-                    {(simpleMissingManualRateCount > 0 || simpleMissingGuestCount > 0) ? (
-                      <div className="event-review-attention" role="status">
-                        <b>Complete before saving</b>
-                        <span>
-                          {[
-                            simpleMissingManualRateCount > 0 ? `${simpleMissingManualRateCount} missing ${simpleMissingManualRateCount === 1 ? 'rate' : 'rates'}` : '',
-                            simpleMissingGuestCount > 0 ? `${simpleMissingGuestCount} missing guest ${simpleMissingGuestCount === 1 ? 'count' : 'counts'}` : '',
-                          ].filter(Boolean).join(' · ')}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="event-review-ready-note"><span aria-hidden="true">✓</span> Menu is ready to save</div>
-                    )}
-
-                    {error ? <p className="event-upload-simple-error" role="alert">{error}</p> : null}
-                    <button
-                      className="primary-button event-detected-done"
-                      type="button"
-                      disabled={
-                        !simpleDetectedDishCount ||
-                        detecting ||
-                        simpleMissingManualRateCount > 0 ||
-                        simpleMissingGuestCount > 0
-                      }
-                      onClick={() => void applyDetectionPreview(work.menu.length > 0 ? 'merge' : 'replace', true)}
+                        <path d="M6 6h14M6 12h14M6 18h14" />
+                        <path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+                      </svg>
+                    </span>
+                    <span className="event-manual-entry-copy">
+                      <b>Select Menu</b>
+                      <small>
+                        Choose dishes by category from Dish Master
+                      </small>
+                    </span>
+                    <span
+                      className="event-manual-entry-arrow"
+                      aria-hidden="true"
                     >
-                      Save menu and continue
-                    </button>
-                  </section>
-                )}
+                      ›
+                    </span>
+                  </button>
+                </section>
               </div>
+
               {work.menu.length > 0 ? (
                 <div className="menu-source-workspace-heading">
                   <small>{work.menu.length} dishes already saved</small>
