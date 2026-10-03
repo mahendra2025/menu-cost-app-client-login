@@ -179,6 +179,7 @@ type DisposableMasterItem = {
   category: string;
   photoUrl: string;
   unit: string;
+  availableQty: number;
   defaultRate: number;
   supplierId: string;
   supplierName: string;
@@ -1688,6 +1689,67 @@ export default function EventPlanningPage() {
         );
     }, [uniforms]);
 
+  const disposableCategoryGroups =
+    useMemo(() => {
+      const groups =
+        new Map<
+          string,
+          DisposableMasterItem[]
+        >();
+
+      disposableMaster.forEach(
+        (item) => {
+          const category =
+            item.category.trim() ||
+            'Other';
+
+          const current =
+            groups.get(category) ||
+            [];
+
+          current.push(item);
+          groups.set(
+            category,
+            current,
+          );
+        },
+      );
+
+      return Array.from(
+        groups.entries(),
+      )
+        .map(
+          ([
+            category,
+            items,
+          ]) => ({
+            category,
+            items: [...items].sort(
+              (a, b) => {
+                if (
+                  a.active !==
+                  b.active
+                ) {
+                  return a.active
+                    ? -1
+                    : 1;
+                }
+
+                return a.name.localeCompare(
+                  b.name,
+                );
+              },
+            ),
+          }),
+        )
+        .sort(
+          (a, b) =>
+            a.category.localeCompare(
+              b.category,
+            ),
+        );
+    }, [disposableMaster]);
+
   const allRows = useMemo(() => {
     if (!work) return [];
 
@@ -2958,68 +3020,185 @@ export default function EventPlanningPage() {
   function selectedDisposableQty(
     masterId: string,
   ) {
+    const masterItem =
+      disposableMaster.find(
+        (item) =>
+          item.id === masterId,
+      );
+
     return currentRows
       .filter(
         (row) =>
-          row.kind === 'DISPOSABLE' &&
-          row.disposableMasterId === masterId,
+          row.kind ===
+            'DISPOSABLE' &&
+          (
+            row.disposableMasterId ===
+              masterId ||
+            (
+              !row.disposableMasterId &&
+              masterItem &&
+              normalized(
+                row.requirement,
+              ) ===
+                normalized(
+                  masterItem.name,
+                )
+            )
+          ),
       )
       .reduce(
         (sum, row) =>
           sum +
-          Math.max(0, Number(row.quantity) || 0),
+          Math.max(
+            0,
+            Number(row.quantity) || 0,
+          ),
         0,
       );
   }
 
-  function addDisposableFromMaster(
+  function eventDisposableQty(
     item: DisposableMasterItem,
+  ) {
+    if (!work) return 0;
+
+    return work.disposableItems
+      .filter(
+        (row) =>
+          normalized(
+            row.name,
+          ) ===
+          normalized(
+            item.name,
+          ),
+      )
+      .reduce(
+        (sum, row) =>
+          sum +
+          Math.max(
+            0,
+            Number(
+              row.quantity,
+            ) || 0,
+          ),
+        0,
+      );
+  }
+
+  function setDisposableQuantity(
+    item: DisposableMasterItem,
+    quantity: number,
   ) {
     if (!currentFunction) return;
 
+    const nextQuantity =
+      Math.max(
+        0,
+        Math.round(
+          Number(
+            quantity,
+          ) || 0,
+        ),
+      );
+
     const baseRows =
-      plan[currentFunction.key] || defaultRows;
+      plan[currentFunction.key] ||
+      defaultRows;
 
     const existing =
       baseRows.find(
         (row) =>
-          row.kind === 'DISPOSABLE' &&
+          row.kind ===
+            'DISPOSABLE' &&
           (
-            row.disposableMasterId === item.id ||
-            normalized(row.requirement) === normalized(item.name)
+            row.disposableMasterId ===
+              item.id ||
+            (
+              !row.disposableMasterId &&
+              normalized(
+                row.requirement,
+              ) ===
+                normalized(
+                  item.name,
+                )
+            )
           ),
       );
+
+    if (
+      existing &&
+      nextQuantity <= 0
+    ) {
+      persistRows(
+        currentFunction.key,
+        baseRows.filter(
+          (row) =>
+            row.id !==
+            existing.id,
+        ),
+      );
+      return;
+    }
 
     if (existing) {
       persistRows(
         currentFunction.key,
-        baseRows.map((row) =>
-          row.id === existing.id
-            ? {
-                ...row,
-                disposableMasterId: item.id,
-                photoUrl: item.photoUrl || row.photoUrl,
-                unit: item.unit || row.unit,
-                rate:
-                  Number(row.rate) > 0
-                    ? row.rate
-                    : item.defaultRate,
-                partnerId:
-                  row.partnerId ||
-                  item.supplierId,
-                assignedTo:
-                  row.assignedTo ||
-                  item.supplierName,
-                partnerType:
-                  row.assignedTo
-                    ? row.partnerType
-                    : item.supplierName
-                      ? 'VENDOR'
-                      : row.partnerType,
-              }
-            : row,
+        baseRows.map(
+          (row) =>
+            row.id ===
+            existing.id
+              ? {
+                  ...row,
+                  disposableMasterId:
+                    item.id,
+                  requirement:
+                    item.name,
+                  detail:
+                    [
+                      item.category,
+                      item.notes,
+                    ]
+                      .filter(Boolean)
+                      .join(
+                        ' · ',
+                      ),
+                  quantity:
+                    nextQuantity,
+                  unit:
+                    item.unit ||
+                    row.unit ||
+                    'pcs',
+                  photoUrl:
+                    item.photoUrl ||
+                    row.photoUrl,
+                  availableQty:
+                    item.availableQty,
+                  rate:
+                    Number(
+                      row.rate,
+                    ) > 0
+                      ? row.rate
+                      : item.defaultRate,
+                  partnerId:
+                    row.partnerId ||
+                    item.supplierId,
+                  assignedTo:
+                    row.assignedTo ||
+                    item.supplierName,
+                  partnerType:
+                    row.assignedTo
+                      ? row.partnerType
+                      : item.supplierName
+                        ? 'VENDOR'
+                        : 'IN_HOUSE',
+                }
+              : row,
         ),
       );
+      return;
+    }
+
+    if (nextQuantity <= 0) {
       return;
     }
 
@@ -3032,7 +3211,7 @@ export default function EventPlanningPage() {
       ]
         .filter(Boolean)
         .join(' · '),
-      0,
+      nextQuantity,
       item.unit || 'pcs',
       item.defaultRate,
     );
@@ -3043,16 +3222,44 @@ export default function EventPlanningPage() {
         ...baseRows,
         {
           ...row,
-          disposableMasterId: item.id,
-          photoUrl: item.photoUrl,
-          partnerId: item.supplierId,
-          assignedTo: item.supplierName,
+          disposableMasterId:
+            item.id,
+          photoUrl:
+            item.photoUrl,
+          availableQty:
+            item.availableQty,
+          partnerId:
+            item.supplierId,
+          assignedTo:
+            item.supplierName,
           partnerType:
             item.supplierName
               ? 'VENDOR'
               : 'IN_HOUSE',
         },
       ],
+    );
+  }
+
+  function addDisposableFromMaster(
+    item: DisposableMasterItem,
+  ) {
+    setDisposableQuantity(
+      item,
+      selectedDisposableQty(
+        item.id,
+      ) + 1,
+    );
+  }
+
+  function useEventDisposableQty(
+    item: DisposableMasterItem,
+  ) {
+    setDisposableQuantity(
+      item,
+      eventDisposableQty(
+        item,
+      ),
     );
   }
 
@@ -3426,6 +3633,54 @@ export default function EventPlanningPage() {
           .ep-uniform-note.warn{color:#c28e53}
           @media(max-width:760px){.ep-uniform-master-head{align-items:stretch;flex-direction:column}.ep-uniform-master-head-actions{justify-content:space-between}.ep-uniform-master-grid{grid-template-columns:1fr 1fr}}
           @media(max-width:520px){.ep-uniform-master-grid{grid-template-columns:1fr}}
+          .ep-disposable-master{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-disposable-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-disposable-master-head b,.ep-disposable-master-head span{display:block}
+          .ep-disposable-master-head b{color:#e6edf5;font-size:11px}
+          .ep-disposable-master-head span{margin-top:3px;max-width:700px;color:#748294;font-size:8px;line-height:1.45}
+          .ep-disposable-master-head-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}
+          .ep-disposable-master-head-actions>span{margin:0;color:#718095;font-size:7px;font-weight:850}
+          .ep-disposable-category-list{display:grid;gap:10px}
+          .ep-disposable-category{overflow:hidden;border:1px solid rgba(148,163,184,.09);border-radius:12px;background:#0f151c}
+          .ep-disposable-category-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.08);background:rgba(255,255,255,.018)}
+          .ep-disposable-category-head b,.ep-disposable-category-head span{display:block}
+          .ep-disposable-category-head b{color:#dfe8f2;font-size:10px}
+          .ep-disposable-category-head span{margin-top:2px;color:#718095;font-size:7px}
+          .ep-disposable-category-head strong{padding:4px 7px;border-radius:999px;color:#9dc9fa;background:rgba(74,156,255,.07);font-size:7px}
+          .ep-disposable-master-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;padding:9px}
+          .ep-disposable-master-card{overflow:hidden;border:1px solid #2b3440;border-radius:11px;background:#111820;transition:border-color .18s ease,transform .18s ease}
+          .ep-disposable-master-card:hover{border-color:#3b4755;transform:translateY(-1px)}
+          .ep-disposable-master-card.selected{border-color:rgba(74,156,255,.48);box-shadow:inset 0 0 0 1px rgba(74,156,255,.08)}
+          .ep-disposable-master-card.over{border-color:rgba(244,173,84,.42)}
+          .ep-disposable-master-card.inactive{opacity:.62}
+          .ep-disposable-master-photo{position:relative;aspect-ratio:16/8;overflow:hidden;background:#18202a}
+          .ep-disposable-master-photo img{width:100%;height:100%;display:block;object-fit:cover}
+          .ep-disposable-master-status{position:absolute;top:7px;right:7px;padding:4px 6px;border-radius:999px;color:#c3d0df;background:rgba(8,13,19,.78);font-size:6px;font-weight:900}
+          .ep-disposable-master-body{padding:9px}
+          .ep-disposable-master-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-disposable-master-title b,.ep-disposable-master-title span{display:block}
+          .ep-disposable-master-title b{color:#e7eef6;font-size:9px}
+          .ep-disposable-master-title span{margin-top:2px;color:#758397;font-size:7px}
+          .ep-disposable-master-title>strong{color:#d3deea;font-size:8px;white-space:nowrap}
+          .ep-disposable-master-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
+          .ep-disposable-master-meta>span{padding:5px 6px;border-radius:7px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
+          .ep-disposable-master-meta>span b{display:block;margin-top:2px;color:#d7e1ec;font-size:8px}
+          .ep-disposable-master-meta>span.warn{color:#e7a653;background:rgba(244,173,84,.06)}
+          .ep-disposable-master-meta>span.warn b{color:#f1b361}
+          .ep-disposable-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+          .ep-disposable-tags span{padding:4px 6px;border-radius:999px;color:#72849a;background:rgba(74,156,255,.04);font-size:6px;font-weight:800}
+          .ep-disposable-qty-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end;margin-top:9px}
+          .ep-disposable-qty-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
+          .ep-disposable-qty-editor>button:disabled{opacity:.35;cursor:not-allowed}
+          .ep-disposable-qty-editor label{display:grid;gap:3px}
+          .ep-disposable-qty-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-disposable-qty-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
+          .ep-disposable-event-qty{width:100%;min-height:30px;margin-top:6px;border:1px solid rgba(74,156,255,.16);border-radius:8px;color:#92c3fb;background:rgba(74,156,255,.045);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
+          .ep-disposable-event-qty:disabled{opacity:.35;cursor:not-allowed}
+          .ep-disposable-note{display:block;margin-top:7px;color:#69788b;font-size:6px;line-height:1.4}
+          .ep-disposable-note.warn{color:#c28e53}
+          @media(max-width:760px){.ep-disposable-master-head{align-items:stretch;flex-direction:column}.ep-disposable-master-head-actions{justify-content:space-between}.ep-disposable-master-grid{grid-template-columns:1fr 1fr}}
+          @media(max-width:520px){.ep-disposable-master-grid{grid-template-columns:1fr}}
           .ep-empty{padding:40px 15px;color:#748294;font-size:10px;text-align:center}
           @media(max-width:1180px){.ep-readiness-grid{grid-template-columns:repeat(4,1fr)}.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
           @media(max-width:720px){.ep-event-selector{grid-template-columns:1fr}.ep-readiness-head{align-items:flex-start}.ep-readiness-grid{grid-template-columns:1fr 1fr}.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
@@ -3921,77 +4176,257 @@ export default function EventPlanningPage() {
             ) : null}
 
             {tab === 'DISPOSABLE' ? (
-              <section className="ep-equipment-picker">
-                <div className="ep-equipment-picker-head">
+              <section className="ep-disposable-master">
+                <div className="ep-disposable-master-head">
                   <div>
-                    <b>Choose disposable by photo</b>
+                    <b>Saved Disposable Master</b>
                     <span>
-                      Tap a saved item to attach its photo, unit, supplier and default rate.
+                      All saved disposable items are shown by category. Edit required quantity directly for this function and keep supplier, stock and rate linked to the master.
                     </span>
                   </div>
 
-                  <Link className="ep-button" href="/app/disposable-master">
-                    Manage Photos
-                  </Link>
+                  <div className="ep-disposable-master-head-actions">
+                    <span>
+                      {disposableMaster.length} saved · {disposableMaster.filter((item) => item.active).length} active
+                    </span>
+                    <Link
+                      className="ep-button"
+                      href="/app/disposable-master"
+                    >
+                      Manage Disposables
+                    </Link>
+                  </div>
                 </div>
 
-                {disposableMaster.filter((item) => item.active).length ? (
-                  <div className="ep-equipment-grid">
-                    {disposableMaster
-                      .filter((item) => item.active)
-                      .map((item) => {
-                        const selected =
-                          selectedDisposableQty(item.id);
+                {disposableCategoryGroups.length ? (
+                  <div className="ep-disposable-category-list">
+                    {disposableCategoryGroups.map(
+                      (group) => {
+                        const categorySelected =
+                          group.items.reduce(
+                            (sum, item) =>
+                              sum +
+                              selectedDisposableQty(
+                                item.id,
+                              ),
+                            0,
+                          );
 
                         return (
-                          <button
-                            key={item.id}
-                            className={
-                              selected > 0
-                                ? 'ep-equipment-card selected'
-                                : 'ep-equipment-card'
-                            }
-                            type="button"
-                            onClick={() =>
-                              addDisposableFromMaster(item)
-                            }
+                          <section
+                            className="ep-disposable-category"
+                            key={group.category}
                           >
-                            <div className="ep-equipment-photo">
-                              {item.photoUrl ? (
-                                <img
-                                  src={item.photoUrl}
-                                  alt={item.name}
-                                />
-                              ) : (
-                                <div className="ep-equipment-fallback">
-                                  <b>
-                                    {item.name
-                                      .slice(0, 2)
-                                      .toUpperCase() || 'DP'}
-                                  </b>
-                                  <small>No photo</small>
-                                </div>
-                              )}
+                            <div className="ep-disposable-category-head">
+                              <div>
+                                <b>{group.category}</b>
+                                <span>
+                                  {group.items.length} item{group.items.length === 1 ? '' : 's'}
+                                </span>
+                              </div>
+
+                              <strong>
+                                {categorySelected} selected
+                              </strong>
                             </div>
 
-                            <div className="ep-equipment-card-body">
-                              <b>{item.name}</b>
-                              <span>
-                                {item.category} · {item.unit}
-                              </span>
-                              <small>
-                                {selected > 0
-                                  ? `Selected ${selected} ${item.unit}`
-                                  : `${currency(item.defaultRate)} / ${item.unit}`}
-                              </small>
+                            <div className="ep-disposable-master-grid">
+                              {group.items.map(
+                                (item) => {
+                                  const selected =
+                                    selectedDisposableQty(
+                                      item.id,
+                                    );
+
+                                  const eventQty =
+                                    eventDisposableQty(
+                                      item,
+                                    );
+
+                                  const shortage =
+                                    item.availableQty > 0
+                                      ? Math.max(
+                                          0,
+                                          selected -
+                                            item.availableQty,
+                                        )
+                                      : 0;
+
+                                  const disabled =
+                                    !item.active &&
+                                    selected <= 0;
+
+                                  return (
+                                    <article
+                                      key={item.id}
+                                      className={
+                                        [
+                                          'ep-disposable-master-card',
+                                          selected > 0
+                                            ? 'selected'
+                                            : '',
+                                          shortage > 0
+                                            ? 'over'
+                                            : '',
+                                          !item.active
+                                            ? 'inactive'
+                                            : '',
+                                        ]
+                                          .filter(Boolean)
+                                          .join(' ')
+                                      }
+                                    >
+                                      <div className="ep-disposable-master-photo">
+                                        {item.photoUrl ? (
+                                          <img
+                                            src={item.photoUrl}
+                                            alt={item.name}
+                                          />
+                                        ) : (
+                                          <div className="ep-equipment-fallback">
+                                            <b>
+                                              {item.name
+                                                .slice(0, 2)
+                                                .toUpperCase() || 'DP'}
+                                            </b>
+                                            <small>No photo</small>
+                                          </div>
+                                        )}
+
+                                        <span className="ep-disposable-master-status">
+                                          {item.active
+                                            ? 'Active'
+                                            : 'Inactive'}
+                                        </span>
+                                      </div>
+
+                                      <div className="ep-disposable-master-body">
+                                        <div className="ep-disposable-master-title">
+                                          <div>
+                                            <b>{item.name}</b>
+                                            <span>
+                                              {item.unit || 'pcs'}
+                                            </span>
+                                          </div>
+
+                                          <strong>
+                                            {currency(item.defaultRate)}
+                                          </strong>
+                                        </div>
+
+                                        <div className="ep-disposable-master-meta">
+                                          <span>
+                                            Event Qty <b>{eventQty}</b>
+                                          </span>
+                                          <span>
+                                            Available <b>{item.availableQty}</b>
+                                          </span>
+                                          {shortage > 0 ? (
+                                            <span className="warn">
+                                              Shortage <b>{shortage}</b>
+                                            </span>
+                                          ) : (
+                                            <span>
+                                              Selected <b>{selected}</b>
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        <div className="ep-disposable-tags">
+                                          <span>
+                                            {item.supplierName || 'No supplier'}
+                                          </span>
+                                          <span>
+                                            {currency(item.defaultRate)} / {item.unit || 'pcs'}
+                                          </span>
+                                        </div>
+
+                                        <div className="ep-disposable-qty-editor">
+                                          <button
+                                            type="button"
+                                            disabled={selected <= 0}
+                                            onClick={() =>
+                                              setDisposableQuantity(
+                                                item,
+                                                selected - 1,
+                                              )
+                                            }
+                                          >
+                                            −
+                                          </button>
+
+                                          <label>
+                                            <span>Qty</span>
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              step="1"
+                                              value={selected}
+                                              disabled={disabled}
+                                              onChange={(event) =>
+                                                setDisposableQuantity(
+                                                  item,
+                                                  Number(event.target.value),
+                                                )
+                                              }
+                                            />
+                                          </label>
+
+                                          <button
+                                            type="button"
+                                            disabled={disabled}
+                                            onClick={() =>
+                                              addDisposableFromMaster(
+                                                item,
+                                              )
+                                            }
+                                          >
+                                            +
+                                          </button>
+                                        </div>
+
+                                        {eventQty > 0 ? (
+                                          <button
+                                            className="ep-disposable-event-qty"
+                                            type="button"
+                                            disabled={disabled}
+                                            onClick={() =>
+                                              useEventDisposableQty(
+                                                item,
+                                              )
+                                            }
+                                          >
+                                            Use Event Qty {eventQty}
+                                          </button>
+                                        ) : null}
+
+                                        {!item.active ? (
+                                          <small className="ep-disposable-note warn">
+                                            Inactive in Disposable Master. Reactivate it there to add new quantity.
+                                          </small>
+                                        ) : item.supplierName ? (
+                                          <small className="ep-disposable-note">
+                                            Supplier: {item.supplierName}
+                                          </small>
+                                        ) : (
+                                          <small className="ep-disposable-note warn">
+                                            Supplier not assigned
+                                          </small>
+                                        )}
+                                      </div>
+                                    </article>
+                                  );
+                                },
+                              )}
                             </div>
-                          </button>
+                          </section>
                         );
-                      })}
+                      },
+                    )}
                   </div>
                 ) : (
                   <div className="ep-empty">
-                    No disposable photos saved yet. Open Disposable Master and add items first.
+                    No disposable items saved yet. Open Disposable Master and add your items first.
                   </div>
                 )}
               </section>
