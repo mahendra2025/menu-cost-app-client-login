@@ -483,52 +483,61 @@ export default function HistoryPage() {
     }
   }
 
+  const hasFilters = Boolean(query.trim() || days !== 'ALL');
+  const resetFilters = () => { setQuery(''); setDays('ALL'); };
   const totalValue = completed.reduce((sum, item) => sum + Number(item.totalCost || 0), 0);
 
   return (
     <AppShell title="History" subtitle="Drafts, completed costings and reusable event records" hidePageTitle>
       <section className="hist-page">
         <style>{`
-          .hist-page { display: grid; gap: 14px; }
-          .hist-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 18px 2px 8px; }
-          .hist-kicker { color: #78b5ff; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
-          .hist-hero h1 { margin: 7px 0 6px; font-size: clamp(32px, 4vw, 46px); line-height: 1; letter-spacing: -.05em; }
-          .hist-hero p { max-width: 700px; margin: 0; color: #929dac; font-size: 13px; line-height: 1.55; }
-          .hist-new { min-height: 44px; padding: 0 16px; border: 0; border-radius: 11px; color: #fff; background: #1478f2; font: inherit; font-size: 12px; font-weight: 900; cursor: pointer; }
-          .hist-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
-          .hist-stat { padding: 15px; border: 1px solid #282f39; border-radius: 15px; background: #10151c; }
+          .hist-page { display: grid; gap: 20px; --hist-muted: #a2adbb; }
+          .hist-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0 8px; }
+          .hist-hero h1 { margin: 0 0 10px; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; letter-spacing: -.04em; }
+          .hist-hero p { max-width: 560px; margin: 0; color: var(--hist-muted); font-size: 14px; line-height: 1.6; }
+          .hist-new { flex-shrink: 0; min-height: 44px; padding: 0 20px; border: 0; border-radius: 10px; color: #fff; background: #1478f2; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+          .hist-new:disabled { opacity: .5; cursor: wait; }
+          .hist-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid #282f39; border-radius: 14px; background: #10151c; overflow: hidden; }
+          .hist-stat { padding: 20px; min-width: 0; }
+          .hist-stat + .hist-stat { border-left: 1px solid #282f39; }
           .hist-stat small, .hist-stat strong, .hist-stat span { display: block; }
-          .hist-stat small { color: #8390a0; font-size: 9px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
-          .hist-stat strong { margin: 6px 0 3px; font-size: 22px; }
-          .hist-stat span { color: #7d8998; font-size: 10px; }
-          .hist-alert { display: flex; justify-content: space-between; gap: 12px; padding: 12px 13px; border: 1px solid rgba(255,173,66,.23); border-radius: 11px; color: #ffc16b; background: rgba(255,173,66,.07); font-size: 11px; line-height: 1.45; }
-          .hist-alert a { color: #fff; font-weight: 900; }
-          .hist-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) auto auto; gap: 8px; padding: 12px; border: 1px solid #282f39; border-radius: 15px; background: #10151c; }
-          .hist-input { min-height: 42px; padding: 0 12px; border: 1px solid #303844; border-radius: 10px; outline: 0; color: #e9edf3; background: #151b23; font: inherit; font-size: 13px; color-scheme: dark; }
-          .hist-input:focus { border-color: rgba(74,156,255,.58); box-shadow: 0 0 0 3px rgba(74,156,255,.1); }
-          .hist-tabs { display: flex; gap: 4px; overflow: auto; padding: 4px; border: 1px solid #252c35; border-radius: 11px; background: #0d1117; }
-          .hist-tabs button { min-height: 34px; padding: 0 10px; border: 0; border-radius: 8px; color: #919cab; background: transparent; font: inherit; font-size: 10px; font-weight: 850; cursor: pointer; white-space: nowrap; }
-          .hist-tabs button.active { color: #eaf1f8; background: #242c36; }
-          .hist-list { display: grid; gap: 8px; }
-          .hist-row { display: grid; grid-template-columns: minmax(220px, 1.2fr) repeat(3, minmax(95px, .5fr)) auto; gap: 12px; align-items: center; padding: 14px; border: 1px solid #272e38; border-radius: 14px; background: #0e1319; }
+          .hist-stat small { color: #b6c0cc; font-size: 12px; font-weight: 600; }
+          .hist-stat strong { margin: 9px 0 5px; font-size: clamp(20px, 2.3vw, 28px); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+          .hist-stat span { color: var(--hist-muted); font-size: 11px; }
+          .hist-alert { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid #71552e; border-radius: 10px; color: #ffc16b; background: #241d14; font-size: 13px; }
+          .hist-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 180px 160px; align-items: end; gap: 12px; }
+          .hist-filter { display: grid; min-width: 0; gap: 8px; }
+          .hist-filter > span { color: var(--hist-muted); font-size: 12px; }
+          .hist-input { width: 100%; min-width: 0; min-height: 44px; padding: 0 12px; border: 1px solid #303844; border-radius: 9px; color: #e9edf3; background: #10151c; font: inherit; font-size: 13px; color-scheme: dark; }
+          .hist-page :is(button, a, input, select):focus-visible { outline: 2px solid #8fc2ff; outline-offset: 3px; }
+          .hist-tabs { display: flex; gap: 20px; overflow-x: auto; border-bottom: 1px solid #282f39; }
+          .hist-tabs button { min-height: 44px; padding: 0 2px; border: 0; border-bottom: 2px solid transparent; color: var(--hist-muted); background: transparent; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+          .hist-tabs button.active { color: #8fc2ff; border-bottom-color: #4a9cff; }
+          .hist-results { display: flex; align-items: center; justify-content: space-between; min-height: 24px; margin-top: -8px; color: var(--hist-muted); font-size: 12px; }
+          .hist-clear { border: 0; background: transparent; color: #8fc2ff; font: inherit; cursor: pointer; min-height: 32px; }
+          .hist-list { display: grid; gap: 12px; }
+          .hist-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, minmax(85px, .23fr)); gap: 20px; align-items: center; padding: 20px; border: 1px solid #282f39; border-radius: 12px; background: #10151c; }
           .hist-main { min-width: 0; }
-          .hist-title { display: flex; align-items: center; gap: 7px; }
-          .hist-main b, .hist-main span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-          .hist-main b { font-size: 13px; }
-          .hist-main > span { margin-top: 4px; color: #8a96a5; font-size: 10px; }
-          .hist-chip { padding: 4px 7px; border-radius: 999px; color: #8fc2ff; background: rgba(74,156,255,.1); font-size: 8px; font-weight: 900; }
-          .hist-chip.draft { color: #ffc16b; background: rgba(255,173,66,.1); }
-          .hist-chip.archived { color: #a3adba; background: #202731; }
+          .hist-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+          .hist-title b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 650; }
+          .hist-main > span { display: block; margin-top: 6px; color: #bdc7d4; font-size: 13px; overflow-wrap: anywhere; }
+          .hist-event-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 9px; color: var(--hist-muted); font-size: 12px; }
+          .hist-chip { flex-shrink: 0; padding: 4px 8px; border-radius: 6px; color: #8fc2ff; background: #172b42; font-size: 10px; font-weight: 600; }
+          .hist-chip.draft { color: #ffc16b; background: #302618; }
+          .hist-chip.archived { color: #bcc6d3; background: #252c35; }
           .hist-metric small, .hist-metric b { display: block; }
-          .hist-metric small { color: #7e8a9a; font-size: 8px; letter-spacing: .04em; text-transform: uppercase; }
-          .hist-metric b { margin-top: 4px; color: #d3dbe5; font-size: 12px; }
-          .hist-actions { display: flex; gap: 5px; }
-          .hist-action { min-height: 36px; padding: 0 10px; border: 1px solid #303844; border-radius: 8px; color: #bec7d2; background: #151b23; font: inherit; font-size: 10px; font-weight: 850; cursor: pointer; }
-          .hist-action.primary { color: #8fc2ff; background: rgba(74,156,255,.08); }
-          .hist-action.danger { color: #ff8d86; background: rgba(255,98,89,.06); }
+          .hist-metric small { color: var(--hist-muted); font-size: 11px; }
+          .hist-metric b { margin-top: 7px; color: #e4ebf4; font-size: 16px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+          .hist-metric .hist-positive { color: #6bdea2; }
+          .hist-metric .hist-negative { color: #ff9d97; }
+          .hist-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 14px; border-top: 1px solid #252d38; }
+          .hist-action { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border: 1px solid #34404e; border-radius: 8px; color: #c8d2df; background: #151c25; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-decoration: none; }
+          .hist-action:hover { background: #222f40; }
+          .hist-action.primary { color: #b8d9ff; border-color: #345e8b; background: #172b42; }
+          .hist-action.danger { color: #ff9d97; }
           .hist-action:disabled { opacity: .5; cursor: wait; }
-          .hist-empty { display: grid; min-height: 250px; place-items: center; align-content: center; gap: 6px; border: 1px dashed #303844; border-radius: 15px; color: #8793a2; background: #0d1117; font-size: 11px; text-align: center; }
-          .hist-empty b { color: #d3dbe5; font-size: 14px; }
+          .hist-empty { display: grid; min-height: 260px; padding: 24px; place-items: center; align-content: center; gap: 12px; border: 1px dashed #34404e; border-radius: 14px; color: var(--hist-muted); background: #10151c; font-size: 13px; line-height: 1.6; text-align: center; }
+          .hist-empty b { color: #e4ebf4; font-size: 18px; }
           .hist-modal-backdrop { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 20px; background: rgba(4,8,13,.76); backdrop-filter: blur(10px); }
           .hist-modal { width: min(620px, 100%); max-height: min(760px, calc(100vh - 32px)); overflow: auto; padding: 18px; border: 1px solid #303a47; border-radius: 18px; background: #10161e; box-shadow: 0 28px 80px rgba(0,0,0,.42); }
           .hist-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
@@ -570,11 +579,16 @@ export default function HistoryPage() {
             .hist-hero h1 { font-size: 28px; }
             .hist-hero p { font-size: 12px; }
             .hist-new { width: 100%; }
-            .hist-stats { grid-template-columns: 1fr 1fr; gap: 7px; }
-            .hist-stat { padding: 11px; border-radius: 12px; }
-            .hist-toolbar { grid-template-columns: 1fr; padding: 9px; border-radius: 12px; }
+            .hist-stats { grid-template-columns: 1fr 1fr; }
+            .hist-stat { padding: 16px; }
+            .hist-stat:nth-child(3) { border-left: 0; }
+            .hist-stat:nth-child(n+3) { border-top: 1px solid #282f39; }
+            .hist-toolbar { grid-template-columns: 1fr 1fr; }
+            .hist-filter:first-child { grid-column: 1 / -1; }
+            .hist-tabs { gap: 16px; }
+            .hist-tabs button { font-size: 12px; }
             .hist-input { min-height: 44px; font-size: 16px; }
-            .hist-row { grid-template-columns: 1fr 1fr; padding: 11px; }
+            .hist-row { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 16px; gap: 16px 10px; }
             .hist-actions { display: grid; grid-template-columns: 1fr 1fr; }
             .hist-action { width: 100%; min-height: 40px; font-size: 11px; }
             .hist-alert { flex-direction: column; }
@@ -590,71 +604,78 @@ export default function HistoryPage() {
 
         <div className="hist-hero">
           <div>
-            <span className="hist-kicker">Menu Costing Library</span>
-            <h1>Costing History</h1>
-            <p>Continue drafts, reopen completed events, duplicate repeat jobs, export PDFs and archive old records.</p>
+            <h1>Costing history</h1>
+            <p>Pick up where you left off, or turn a past event into your next booking.</p>
           </div>
-          <button className="hist-new" type="button" onClick={() => void startNew()}>+ New Costing</button>
+          <button className="hist-new" type="button" disabled={loading || Boolean(busy)} onClick={() => void startNew()}>+ New costing</button>
         </div>
 
         <div className="hist-stats">
-          <div className="hist-stat"><small>Drafts</small><strong>{drafts.length}</strong><span>Server auto-saved</span></div>
-          <div className="hist-stat"><small>Completed</small><strong>{completed.length}</strong><span>Active records</span></div>
-          <div className="hist-stat"><small>Costed value</small><strong>{money(totalValue)}</strong><span>Active completed total</span></div>
-          <div className="hist-stat"><small>Workspace</small><strong>Unlimited</strong><span>Single business</span></div>
+          <div className="hist-stat"><small>Drafts</small><strong>{loading ? '—' : drafts.length}</strong><span>Ready to continue</span></div>
+          <div className="hist-stat"><small>Completed</small><strong>{loading ? '—' : completed.length}</strong><span>Saved event costings</span></div>
+          <div className="hist-stat"><small>Costed value</small><strong>{loading ? '—' : money(totalValue)}</strong><span>Completed events only</span></div>
+          <div className="hist-stat"><small>Archived</small><strong>{loading ? '—' : archived.length}</strong><span>Available to restore</span></div>
         </div>
 
         {error ? (
-          <div className="hist-alert">
-            <span>{error}</span>
+          <div className="hist-alert" role="alert">
+            <span>{error}</span><button className="hist-action" disabled={loading || Boolean(busy)} onClick={() => session && void bootstrap(session)}>Try again</button>
           </div>
         ) : null}
 
         <div className="hist-toolbar">
-          <input className="hist-input" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search client, event or date" />
-          <select className="hist-input" value={days} onChange={(e) => setDays(e.target.value)}>
+          <label className="hist-filter"><span>Find a costing</span><input className="hist-input" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search client, event or date…" /></label>
+          <label className="hist-filter"><span>Saved or completed</span><select className="hist-input" value={days} onChange={(e) => setDays(e.target.value)}>
             <option value="ALL">All dates</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option>
-          </select>
-          <select className="hist-input" value={sort} onChange={(e) => setSort(e.target.value)}>
+          </select></label>
+          <label className="hist-filter"><span>Sort by</span><select className="hist-input" value={sort} onChange={(e) => setSort(e.target.value)}>
             <option value="RECENT">Most recent</option><option value="COST">Highest cost</option><option value="CLIENT">Client A–Z</option>
-          </select>
+          </select></label>
         </div>
 
-        <div className="hist-tabs">
+        <div className="hist-tabs" role="group" aria-label="Costing status">
           {([
-            ['ALL', `All ${drafts.length + completed.length}`],
+            ['ALL', `Active ${drafts.length + completed.length}`],
             ['DRAFTS', `Drafts ${drafts.length}`],
             ['COMPLETED', `Completed ${completed.length}`],
             ['ARCHIVED', `Archived ${archived.length}`],
           ] as const).map(([value, label]) => (
-            <button key={value} className={tab === value ? 'active' : ''} type="button" onClick={() => setTab(value)}>{label}</button>
+            <button key={value} className={tab === value ? 'active' : ''} type="button" aria-pressed={tab === value} onClick={() => setTab(value)}>{label}</button>
           ))}
         </div>
 
-        {loading ? <div className="hist-empty">Loading costing library…</div> : items.length === 0 ? (
-          <div className="hist-empty"><b>No matching costings</b><span>Start a new costing or change the filters.</span></div>
+        <div className="hist-results" role="status" aria-live="polite">
+          <span>{loading ? 'Loading your costings…' : `${items.length} ${items.length === 1 ? 'costing' : 'costings'}${tab === 'ARCHIVED' ? ' in archive' : ' in view'}`}</span>
+          {hasFilters && <button className="hist-clear" onClick={resetFilters}>Clear filters</button>}
+        </div>
+        {loading ? <div className="hist-empty" role="status">Loading costing library…</div> : items.length === 0 ? (
+          <div className="hist-empty">
+            <b>{error ? 'Costings could not be loaded' : hasFilters ? 'No costings match your search' : tab === 'ARCHIVED' ? 'No archived costings' : tab === 'DRAFTS' ? 'No drafts to continue' : tab === 'COMPLETED' ? 'No completed costings yet' : 'Your next event starts here'}</b>
+            <span>{error ? 'Try loading your saved records again.' : hasFilters ? 'Try another client or event name, or clear your filters.' : tab === 'ARCHIVED' ? 'Events you archive will stay here until you need them again.' : 'Create an event and save its costing to find it here.'}</span>
+            {hasFilters ? <button className="hist-action" onClick={resetFilters}>Clear filters</button> : !error && tab !== 'ARCHIVED' ? <button className="hist-new" disabled={Boolean(busy)} onClick={() => void startNew()}>+ New costing</button> : null}
+          </div>
         ) : (
           <div className="hist-list">
             {items.map((item) => {
-              const isBusy = busy.includes(item.costingId);
+              const isBusy = Boolean(busy);
               return (
                 <article className="hist-row" key={item.key}>
                   <div className="hist-main">
                     <div className="hist-title">
-                      <b>{item.eventName || item.clientName || 'Untitled Costing'}</b>
-                      <span className={`hist-chip ${item.kind === 'DRAFT' ? 'draft' : item.kind === 'ARCHIVED' ? 'archived' : ''}`}>{item.kind}</span>
+                      <b title={item.eventName || item.clientName || 'Untitled costing'}>{item.eventName || item.clientName || 'Untitled costing'}</b>
+                      <span className={`hist-chip ${item.kind === 'DRAFT' ? 'draft' : item.kind === 'ARCHIVED' ? 'archived' : ''}`}>{item.kind === 'DRAFT' ? 'Draft' : item.kind === 'ARCHIVED' ? 'Archived' : 'Completed'}</span>
                     </div>
-                    <span>{item.clientName || 'Client not set'} · {dateLabel(item.eventDate)} · {item.menuCount} dishes</span>
+                    <span>{item.clientName || 'Client not set'}</span><div className="hist-event-meta"><span>{dateLabel(item.eventDate)}</span><span>{item.menuCount} dishes</span></div>
                   </div>
 
                   <div className="hist-metric"><small>Covers</small><b>{item.totalCovers.toLocaleString('en-IN')}</b></div>
                   <div className="hist-metric"><small>Total cost</small><b>{money(item.totalCost)}</b></div>
-                  <div className="hist-metric"><small>Profit</small><b>{money(item.totalProfit)}</b></div>
+                  <div className="hist-metric"><small>{item.totalProfit < 0 ? 'Loss' : 'Profit'}</small><b className={item.totalProfit < 0 ? 'hist-negative' : item.totalProfit > 0 ? 'hist-positive' : ''}>{money(item.totalProfit)}</b></div>
 
                   <div className="hist-actions">
                     {item.kind === 'DRAFT' ? (
                       <>
-                        <button className="hist-action primary" disabled={isBusy} onClick={() => void openDraft(item.costingId)}>Open</button>
+                        <button className="hist-action primary" disabled={isBusy} onClick={() => void openDraft(item.costingId)}>Continue</button>
                         <button className="hist-action danger" disabled={isBusy} onClick={() => void deleteDraft(item.costingId)}>Delete</button>
                       </>
                     ) : (
