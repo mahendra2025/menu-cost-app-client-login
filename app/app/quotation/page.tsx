@@ -106,16 +106,50 @@ function emptyQuotation(
       work.event.city,
     totalCovers,
     pricePerCover,
-    includeTotal: true,
+    includeTotal:
+      work.profile.quotationIncludeTotal !== false,
     subtotal,
-    gstPercent: 0,
-    gstAmount: 0,
+    gstPercent:
+      numberValue(
+        work.profile.quotationGstPercent,
+      ),
+    gstAmount:
+      subtotal *
+      (
+        numberValue(
+          work.profile.quotationGstPercent,
+        ) /
+        100
+      ),
     extraLabel: '',
     extraAmount: 0,
-    grandTotal: subtotal,
-    validityDays: 7,
-    advancePercent: 50,
+    grandTotal:
+      subtotal +
+      subtotal *
+        (
+          numberValue(
+            work.profile.quotationGstPercent,
+          ) /
+          100
+        ),
+    validityDays:
+      Math.max(
+        1,
+        Math.round(
+          numberValue(
+            work.profile.quotationValidityDays,
+          ) || 7,
+        ),
+      ),
+    advancePercent:
+      Math.min(
+        100,
+        numberValue(
+          work.profile.quotationAdvancePercent,
+        ) || 50,
+      ),
     paymentTerms:
+      work.profile.quotationPaymentTerms?.trim() ||
       'Balance payment as mutually agreed before or on the event date.',
     terms:
       DEFAULT_TERMS,
