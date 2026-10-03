@@ -861,6 +861,11 @@ export default function ManpowerPage() {
       'KITCHEN',
     );
 
+  const counterPeople =
+    peopleForGroup(
+      'COUNTER',
+    );
+
   const utilityPeople =
     peopleForGroup(
       'UTILITY',
@@ -945,6 +950,71 @@ export default function ManpowerPage() {
     zeroQuantityAssignedRoleCount +
     missingRateRoleCount +
     recommendationGapCount;
+
+
+  const rateReadyRoleCount =
+    activeManpowerRows.filter(
+      (row) =>
+        Math.max(
+          0,
+          Number(row.rate) || 0,
+        ) > 0,
+    ).length;
+
+  const manpowerRateCoveragePercent =
+    activeManpowerRows.length > 0
+      ? Math.round(
+          (
+            rateReadyRoleCount /
+            activeManpowerRows.length
+          ) *
+            100,
+        )
+      : work.menu.length > 0
+        ? 0
+        : 100;
+
+  const dishAssignedRows =
+    (work?.manpower ?? []).filter(
+      (row) =>
+        canAssignDishes(row) &&
+        (
+          row.assignedDishIds ??
+          []
+        ).length > 0,
+    );
+
+  const positiveDishAssignedRows =
+    dishAssignedRows.filter(
+      (row) =>
+        Math.max(
+          0,
+          Number(row.quantity) || 0,
+        ) > 0,
+    ).length;
+
+  const manpowerQuantityCoveragePercent =
+    dishAssignedRows.length > 0
+      ? Math.round(
+          (
+            positiveDishAssignedRows /
+            dishAssignedRows.length
+          ) *
+            100,
+        )
+      : work.menu.length > 0
+        ? 0
+        : 100;
+
+  const manpowerReadinessPercent =
+    Math.round(
+      (
+        dishCoveragePercent +
+        manpowerRateCoveragePercent +
+        manpowerQuantityCoveragePercent
+      ) /
+        3,
+    );
 
   function rowsForMeal(meal: MealPlan) {
     return work?.manpower.filter((row) => rowBelongsToMeal(row, meal)) ?? [];
@@ -1233,6 +1303,7 @@ export default function ManpowerPage() {
     <AppShell
       title="Manpower"
       subtitle="Select manpower manually for each meal. Nothing is added automatically."
+      hidePageTitle
     >
       <section className="content-grid manpower-page">
         <div className="manpower-overview manpower-overview-v2">
@@ -1245,12 +1316,35 @@ export default function ManpowerPage() {
           </div>
 
           <div className="manpower-overview-total">
-            <span>Total manpower cost</span>
-            <b>{money(manpowerTotal)}</b>
-            <small>
-              {meals.length} meal{meals.length === 1 ? '' : 's'} · {totalPeople} manpower assignments
-              {billingSummary.savings > 0 ? ` · ${money(billingSummary.savings)} saved by shared staffing` : ''}
-            </small>
+            <div className="manpower-overview-metric-row">
+              <div
+                className="manpower-readiness-ring"
+                style={{
+                  background:
+                    `conic-gradient(${manpowerReadinessPercent === 100 ? '#55d98f' : '#4a9cff'} ${manpowerReadinessPercent * 3.6}deg, #25303d 0deg)`,
+                }}
+                aria-label={`Manpower readiness ${manpowerReadinessPercent}%`}
+              >
+                <span>
+                  <b>
+                    {manpowerReadinessPercent}%
+                  </b>
+                  <small>
+                    Ready
+                  </small>
+                </span>
+              </div>
+
+              <div className="manpower-overview-cost">
+                <span>Total manpower cost</span>
+                <b>{money(manpowerTotal)}</b>
+                <small>
+                  {meals.length} meal{meals.length === 1 ? '' : 's'} · {totalPeople} people · {money(manpowerPerCover)} / cover
+                  {billingSummary.savings > 0 ? ` · ${money(billingSummary.savings)} saved` : ''}
+                </small>
+              </div>
+            </div>
+
             <div className="manpower-overview-actions">
               <button
                 className="secondary-button"
@@ -1271,7 +1365,7 @@ export default function ManpowerPage() {
                 type="button"
                 onClick={() => router.push('/app/event-planning')}
               >
-                Event Planning
+                Assign Agency
               </button>
               <button
                 className="secondary-button"
@@ -1298,14 +1392,24 @@ export default function ManpowerPage() {
             <small>{activeManpowerRows.length} active roles</small>
           </article>
           <article>
-            <span>Service team</span>
+            <span>Service</span>
             <b>{servicePeople}</b>
             <small>Waiters, captains & service</small>
           </article>
           <article>
-            <span>Kitchen team</span>
+            <span>Counter</span>
+            <b>{counterPeople}</b>
+            <small>Live & buffet counter staff</small>
+          </article>
+          <article>
+            <span>Kitchen</span>
             <b>{kitchenPeople}</b>
             <small>Cooks, chefs & helpers</small>
+          </article>
+          <article>
+            <span>Utility</span>
+            <b>{utilityPeople}</b>
+            <small>Cleaning & dishwashing</small>
           </article>
           <article>
             <span>Dish coverage</span>
@@ -1314,10 +1418,10 @@ export default function ManpowerPage() {
             </b>
             <small>{staffedMenuDishCount}/{work.menu.length} dishes staffed</small>
           </article>
-          <article>
-            <span>Cost / cover</span>
-            <b>{money(manpowerPerCover)}</b>
-            <small>{money(manpowerTotal)} total</small>
+          <article className={manpowerRateCoveragePercent < 100 ? 'attention' : 'ready'}>
+            <span>Rate coverage</span>
+            <b>{manpowerRateCoveragePercent}%</b>
+            <small>{rateReadyRoleCount}/{activeManpowerRows.length} active roles priced</small>
           </article>
           <article className={manpowerAttentionCount > 0 ? 'attention' : 'ready'}>
             <span>Needs attention</span>
@@ -2376,6 +2480,17 @@ export default function ManpowerPage() {
               ) : null}
             </div>
 
+            <div className="manpower-desktop-readiness">
+              <div>
+                <span>Overall readiness</span>
+                <b>{manpowerReadinessPercent}%</b>
+              </div>
+              <div>
+                <span>Rate coverage</span>
+                <b>{manpowerRateCoveragePercent}%</b>
+              </div>
+            </div>
+
             <div className="manpower-desktop-summary-grid">
               <div>
                 <span>People</span>
@@ -2427,6 +2542,10 @@ export default function ManpowerPage() {
               <div>
                 <span>Service</span>
                 <b>{servicePeople}</b>
+              </div>
+              <div>
+                <span>Counter</span>
+                <b>{counterPeople}</b>
               </div>
               <div>
                 <span>Kitchen</span>
