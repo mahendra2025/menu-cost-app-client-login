@@ -27,6 +27,11 @@ type Vendor = {
   paymentTerms: string;
   notes: string;
   active: boolean;
+  preferred: boolean;
+  reliability: 'NEW' | 'RELIABLE' | 'EXCELLENT';
+  serviceArea: string;
+  confirmationStatus: 'OPEN' | 'CONFIRMED' | 'ON_HOLD';
+  paymentStatus: 'NOT_SET' | 'PENDING' | 'PARTIAL' | 'PAID';
   rates: VendorRate[];
 };
 
@@ -74,6 +79,35 @@ function cleanVendors(value: unknown): Vendor[] {
         ? rawType
         : 'VENDOR';
 
+    const rawReliability =
+      text(row.reliability, 30).toUpperCase();
+    const reliability: Vendor['reliability'] =
+      rawReliability === 'EXCELLENT'
+        ? 'EXCELLENT'
+        : rawReliability === 'RELIABLE'
+          ? 'RELIABLE'
+          : 'NEW';
+
+    const rawConfirmation =
+      text(row.confirmationStatus, 30).toUpperCase();
+    const confirmationStatus: Vendor['confirmationStatus'] =
+      rawConfirmation === 'CONFIRMED'
+        ? 'CONFIRMED'
+        : rawConfirmation === 'ON_HOLD'
+          ? 'ON_HOLD'
+          : 'OPEN';
+
+    const rawPayment =
+      text(row.paymentStatus, 30).toUpperCase();
+    const paymentStatus: Vendor['paymentStatus'] =
+      rawPayment === 'PAID'
+        ? 'PAID'
+        : rawPayment === 'PARTIAL'
+          ? 'PARTIAL'
+          : rawPayment === 'PENDING'
+            ? 'PENDING'
+            : 'NOT_SET';
+
     return [{
       id: text(row.id, 160) || `vendor_${index + 1}`,
       name,
@@ -86,6 +120,11 @@ function cleanVendors(value: unknown): Vendor[] {
       paymentTerms: text(row.paymentTerms, 160),
       notes: text(row.notes, 500),
       active: row.active !== false,
+      preferred: row.preferred === true,
+      reliability,
+      serviceArea: text(row.serviceArea, 180),
+      confirmationStatus,
+      paymentStatus,
       rates: cleanRates(row.rates),
     }];
   });
