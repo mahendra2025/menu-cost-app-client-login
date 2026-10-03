@@ -238,12 +238,49 @@ export default function ManpowerRateMasterPage() {
         )
       : 0;
 
+  const editedRateByRole =
+    new Map(
+      items.map(
+        (item) => [
+          normalizeRole(
+            item.role,
+          ),
+          Math.max(
+            0,
+            Number(
+              item.rate,
+            ) || 0,
+          ),
+        ] as const,
+      ),
+    );
+
   const projectedRows =
-    work && session
-      ? applyManpowerRateMaster(
-          session.tenantId,
-          work.manpower,
-          false,
+    work
+      ? work.manpower.map(
+          (row) => {
+            if (
+              row.rateManualOverride
+            ) {
+              return row;
+            }
+
+            const masterRate =
+              editedRateByRole.get(
+                normalizeRole(
+                  row.role,
+                ),
+              );
+
+            return masterRate ===
+              undefined
+              ? row
+              : {
+                  ...row,
+                  rate:
+                    masterRate,
+                };
+          },
         )
       : [];
 
