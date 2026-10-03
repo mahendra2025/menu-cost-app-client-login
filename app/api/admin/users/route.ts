@@ -9,6 +9,31 @@ import {
 import { hashPassword } from '../../../../lib/passwords';
 import { prisma } from '../../../../lib/prisma';
 
+let catererAccountSchemaReady = false;
+let catererAccountSchemaPromise: Promise<void> | null = null;
+
+async function ensureCatererAccountSchema() {
+  if (catererAccountSchemaReady) return;
+
+  if (!catererAccountSchemaPromise) {
+    catererAccountSchemaPromise = (async () => {
+      await prisma.$executeRawUnsafe(`
+        ALTER TABLE "Tenant"
+        ADD COLUMN IF NOT EXISTS "ownerName" TEXT NOT NULL DEFAULT '',
+        ADD COLUMN IF NOT EXISTS "phone" TEXT NOT NULL DEFAULT '',
+        ADD COLUMN IF NOT EXISTS "city" TEXT NOT NULL DEFAULT '',
+        ADD COLUMN IF NOT EXISTS "onboardingCompleted" BOOLEAN NOT NULL DEFAULT true
+      `);
+      catererAccountSchemaReady = true;
+    })().catch((error) => {
+      catererAccountSchemaPromise = null;
+      throw error;
+    });
+  }
+
+  await catererAccountSchemaPromise;
+}
+
 async function requireAdmin() {
   const cookieStore = await cookies();
   const token = cookieStore.get(getAdminCookieName())?.value;
@@ -38,6 +63,8 @@ export async function GET() {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
+
+    await ensureCatererAccountSchema();
 
     const tenants = await prisma.tenant.findMany({
       orderBy: { createdAt: 'desc' },
@@ -83,6 +110,8 @@ export async function POST(request: Request) {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
+
+    await ensureCatererAccountSchema();
 
     const body = await request.json();
 
@@ -177,7 +206,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            'Database schema is missing a required caterer-account column. Redeploy the latest main branch so Prisma migrations run.',
+            'Caterer-account schema repair could not complete. Check the production database user has ALTER TABLE permission, then redeploy main.',
           code: prismaCode,
         },
         { status: 500 },
@@ -216,6 +245,8 @@ export async function PATCH(request: Request) {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
+
+    await ensureCatererAccountSchema();
 
     const body = await request.json();
     const id = cleanText(body.id, 180);
@@ -352,6 +383,8 @@ export async function DELETE(request: Request) {
   try {
     const authError = await requireAdmin();
     if (authError) return authError;
+
+    await ensureCatererAccountSchema();
 
     const body = await request.json();
     const id = cleanText(body.id, 180);
