@@ -645,6 +645,40 @@ export default function AppShell({
       ],
     );
 
+  const activeEventDate =
+    activeWork?.event.eventDate
+      ? new Date(
+          `${activeWork.event.eventDate}T00:00:00`,
+        )
+      : null;
+
+  const validActiveEventDate =
+    activeEventDate &&
+    !Number.isNaN(
+      activeEventDate.getTime(),
+    )
+      ? activeEventDate
+      : null;
+
+  const activeEventDay =
+    validActiveEventDate
+      ? String(
+          validActiveEventDate.getDate(),
+        ).padStart(2, '0')
+      : '—';
+
+  const activeEventMonth =
+    validActiveEventDate
+      ? validActiveEventDate
+          .toLocaleString(
+            'en-IN',
+            {
+              month: 'short',
+            },
+          )
+          .toUpperCase()
+      : 'DATE';
+
   const signOut = () => {
     cachedShellSession = null;
     logout();
@@ -719,12 +753,44 @@ export default function AppShell({
           <style>{`
             .global-active-event {
               display: grid;
-              grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+              grid-template-columns: 58px minmax(0, 1fr) minmax(260px, 420px);
               gap: 14px;
               align-items: center;
-              padding: 10px 18px;
+              padding: 12px 18px;
               border-bottom: 1px solid rgba(148, 163, 184, .12);
-              background: rgba(13, 18, 25, .96);
+              background:
+                radial-gradient(circle at 8% 50%, rgba(74, 156, 255, .09), transparent 28%),
+                rgba(13, 18, 25, .96);
+            }
+
+            .global-event-date-tile {
+              display: grid;
+              height: 54px;
+              place-items: center;
+              border: 1px solid rgba(111, 184, 255, .22);
+              border-radius: 14px;
+              background: linear-gradient(180deg, rgba(74, 156, 255, .14), rgba(74, 156, 255, .04));
+              box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+            }
+
+            .global-event-date-tile b,
+            .global-event-date-tile small {
+              display: block;
+              line-height: 1;
+            }
+
+            .global-event-date-tile b {
+              color: #f6f9fc;
+              font-size: 20px;
+              letter-spacing: -.04em;
+            }
+
+            .global-event-date-tile small {
+              margin-top: -6px;
+              color: #78b5ff;
+              font-size: 8px;
+              font-weight: 900;
+              letter-spacing: .08em;
             }
 
             .global-active-event-copy {
@@ -755,9 +821,31 @@ export default function AppShell({
               display: flex;
               gap: 6px;
               flex-wrap: wrap;
-              margin-top: 4px;
+              margin-top: 7px;
               color: #8290a0;
               font-size: 9px;
+            }
+
+            .global-active-event-meta span {
+              display: inline-flex;
+              gap: 5px;
+              align-items: center;
+              padding: 4px 7px;
+              border: 1px solid rgba(148, 163, 184, .10);
+              border-radius: 999px;
+              background: rgba(255, 255, 255, .025);
+            }
+
+            .global-active-event-meta svg {
+              width: 11px;
+              height: 11px;
+              color: #6faeff;
+            }
+
+            .global-active-event-meta .event-state {
+              color: #8fd8a9;
+              border-color: rgba(56, 201, 121, .16);
+              background: rgba(56, 201, 121, .06);
             }
 
             .global-active-event-select {
@@ -789,12 +877,23 @@ export default function AppShell({
 
             @media (max-width: 760px) {
               .global-active-event {
-                grid-template-columns: 1fr;
-                gap: 8px;
+                grid-template-columns: 48px minmax(0, 1fr);
+                gap: 9px;
                 padding: 9px 12px;
               }
 
+              .global-event-date-tile {
+                height: 48px;
+                border-radius: 12px;
+              }
+
+              .global-active-event-select,
+              .global-active-event-error {
+                grid-column: 1 / -1;
+              }
+
               .global-active-event-meta {
+                gap: 4px;
                 font-size: 8px;
               }
             }
@@ -804,6 +903,14 @@ export default function AppShell({
             className="global-active-event no-print"
             aria-label="Global active event"
           >
+            <div
+              className="global-event-date-tile"
+              aria-hidden="true"
+            >
+              <b>{activeEventDay}</b>
+              <small>{activeEventMonth}</small>
+            </div>
+
             <div className="global-active-event-copy">
               <span className="global-active-event-label">
                 Active Event
@@ -811,18 +918,35 @@ export default function AppShell({
               <b className="global-active-event-title">
                 {activeEventLabel(activeWork)}
               </b>
+
               <div className="global-active-event-meta">
                 <span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="8" r="3" />
+                    <path d="M5.5 19c.6-4 2.8-6 6.5-6s5.9 2 6.5 6" />
+                  </svg>
                   {activeWork?.event.clientName ||
                     'Client not set'}
                 </span>
-                <span>·</span>
+
                 <span>
-                  {activeWork?.event.eventDate ||
-                    'Date not set'}
-                </span>
-                <span>·</span>
-                <span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden="true"
+                  >
+                    <circle cx="9" cy="9" r="3" />
+                    <circle cx="17" cy="10" r="2.3" />
+                    <path d="M3.5 19c.5-3.6 2.3-5.4 5.5-5.4s5 1.8 5.5 5.4M15 15c2.8.1 4.4 1.5 4.8 4" />
+                  </svg>
                   {Math.max(
                     0,
                     Number(
@@ -831,17 +955,42 @@ export default function AppShell({
                   ).toLocaleString('en-IN')}{' '}
                   guests
                 </span>
+
+                {(activeWork?.event.venue ||
+                  activeWork?.event.city) ? (
+                  <span>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 21s6-5.3 6-11a6 6 0 1 0-12 0c0 5.7 6 11 6 11Z" />
+                      <circle cx="12" cy="10" r="2" />
+                    </svg>
+                    {activeWork?.event.venue ||
+                      activeWork?.event.city}
+                  </span>
+                ) : null}
+
                 {selectedActiveEvent ? (
-                  <>
-                    <span>·</span>
-                    <span>
-                      {selectedActiveEvent.source === 'COMPLETED'
-                        ? 'Completed'
-                        : selectedActiveEvent.source === 'DRAFT'
-                          ? 'Draft'
-                          : 'Current'}
-                    </span>
-                  </>
+                  <span className="event-state">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 12 4 4 8-9" />
+                    </svg>
+                    {selectedActiveEvent.source === 'COMPLETED'
+                      ? 'Completed'
+                      : selectedActiveEvent.source === 'DRAFT'
+                        ? 'Draft'
+                        : 'Current'}
+                  </span>
                 ) : null}
               </div>
             </div>
