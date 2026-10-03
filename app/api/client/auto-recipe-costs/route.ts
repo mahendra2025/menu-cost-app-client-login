@@ -267,6 +267,8 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json() as Record<string, unknown>;
+    const forceRecipeGeneration =
+      body.forceRecipeGeneration === true;
     const requestedCity =
       normalizeCityName(
         body.city,
@@ -571,7 +573,10 @@ export async function POST(request: Request) {
     const missing = Array.from(unique.entries())
       .filter(
         ([key]) =>
-          !tenantDishRateMap.has(key) &&
+          (
+            forceRecipeGeneration ||
+            !tenantDishRateMap.has(key)
+          ) &&
           !catalogMap.has(key) &&
           !savedMap.has(key),
       )
