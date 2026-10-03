@@ -24,6 +24,12 @@ import type {
   WorkState,
 } from '../../../lib/types';
 
+import {
+  buildFunctionGroceryPlan,
+  type GroceryIngredientRate,
+  type GroceryRecipe,
+} from '../../../lib/functionGrocery';
+
 type RequirementKind =
   | 'MENU'
   | 'MANPOWER'
@@ -553,11 +559,21 @@ export default function EventPlanningPage() {
     useState(false);
   const [eventError, setEventError] =
     useState('');
+  const [readinessRecipes, setReadinessRecipes] =
+    useState<GroceryRecipe[]>([]);
+  const [readinessRates, setReadinessRates] =
+    useState<GroceryIngredientRate[]>([]);
+  const [quotationStatus, setQuotationStatus] =
+    useState('');
+  const [readinessLoading, setReadinessLoading] =
+    useState(false);
   const [saveState, setSaveState] =
     useState<'SAVED' | 'SAVING' | 'ERROR'>('SAVED');
   const saveTimer =
     useRef<number | undefined>(undefined);
   const eventLoadSequence =
+    useRef(0);
+  const readinessLoadSequence =
     useRef(0);
 
   async function loadPlanningPlan(
@@ -615,6 +631,146 @@ export default function EventPlanningPage() {
     }
   }
 
+  async function loadReadinessData(
+    nextWork: WorkState,
+  ) {
+    const sequence =
+      ++readinessLoadSequence.current;
+
+    setReadinessLoading(true);
+
+    const dishNames =
+      Array.from(
+        new Set(
+          nextWork.menu
+            .filter(
+              (item) =>
+                item.coverageStatus !==
+                'REJECTED',
+            )
+            .map(
+              (item) =>
+                item.name,
+            )
+            .filter(Boolean),
+        ),
+      );
+
+    try {
+      const [
+        recipeResponse,
+        rateResponse,
+        quotationResponse,
+      ] =
+        await Promise.all([
+          fetch(
+            '/api/recipe-ingredients',
+            {
+              method:
+                'POST',
+              cache:
+                'no-store',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body:
+                JSON.stringify({
+                  dishNames,
+                }),
+            },
+          ),
+          fetch(
+            `/api/client/ingredients?city=${encodeURIComponent(
+              nextWork.event.city ||
+                nextWork.profile.city ||
+                '',
+            )}`,
+            {
+              cache:
+                'no-store',
+            },
+          ),
+          fetch(
+            `/api/client/quotations?costingId=${encodeURIComponent(
+              nextWork.costingId,
+            )}`,
+            {
+              cache:
+                'no-store',
+            },
+          ),
+        ]);
+
+      if (
+        sequence !==
+        readinessLoadSequence.current
+      ) {
+        return;
+      }
+
+      const [
+        recipeData,
+        rateData,
+        quotationData,
+      ] =
+        await Promise.all([
+          recipeResponse.json(),
+          rateResponse.json(),
+          quotationResponse.json(),
+        ]);
+
+      setReadinessRecipes(
+        recipeResponse.ok &&
+        Array.isArray(
+          recipeData.recipes,
+        )
+          ? recipeData.recipes as
+              GroceryRecipe[]
+          : [],
+      );
+
+      setReadinessRates(
+        rateResponse.ok &&
+        Array.isArray(
+          rateData.rates,
+        )
+          ? rateData.rates as
+              GroceryIngredientRate[]
+          : [],
+      );
+
+      setQuotationStatus(
+        quotationResponse.ok &&
+        quotationData.quotation
+          ? String(
+              quotationData.quotation
+                .status ||
+                'DRAFT',
+            ).toUpperCase()
+          : '',
+      );
+    } catch {
+      if (
+        sequence !==
+        readinessLoadSequence.current
+      ) {
+        return;
+      }
+
+      setReadinessRecipes([]);
+      setReadinessRates([]);
+      setQuotationStatus('');
+    } finally {
+      if (
+        sequence ===
+        readinessLoadSequence.current
+      ) {
+        setReadinessLoading(false);
+      }
+    }
+  }
+
   async function activatePlanningEvent(
     nextWork: WorkState,
     syncWorkspace = true,
@@ -640,9 +796,14 @@ export default function EventPlanningPage() {
       }
     }
 
-    await loadPlanningPlan(
-      nextWork,
-    );
+    await Promise.all([
+      loadPlanningPlan(
+        nextWork,
+      ),
+      loadReadinessData(
+        nextWork,
+      ),
+    ]);
   }
 
   async function switchPlanningEvent(
@@ -1172,6 +1333,267 @@ export default function EventPlanningPage() {
 
   const overallReadiness = readiness(allRows);
   const functionReadiness = readiness(currentRows);
+
+  const activeMenuItems =
+    work
+      ? work.menu.filter(
+          (item) =>
+            item.coverageStatus !==
+            'REJECTED',
+        )
+      : [];
+
+  const uniqueMenuDishCount =
+    new Set(
+      activeMenuItems.map(
+        (item) =>
+          normalized(
+            item.name,
+          ),
+      ),
+    ).size;
+
+  const eventGroceryPlan =
+    useMemo(
+      () =>
+        work
+          ? buildFunctionGroceryPlan(
+              work,
+              readinessRecipes,
+              readinessRates,
+            )
+          : null,
+      [
+        work,
+        readinessRecipes,
+        readinessRates,
+      ],
+    );
+
+  const recipeMatchedCount =
+    eventGroceryPlan
+      ?.matchedDishes.length ||
+    0;
+
+  const recipeCoverage =
+    uniqueMenuDishCount > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (
+              recipeMatchedCount /
+              uniqueMenuDishCount
+            ) * 100,
+          ),
+        )
+      : 0;
+
+  const ingredientCount =
+    eventGroceryPlan
+      ?.combinedItems.length ||
+    0;
+
+  const groceryRateCoverage =
+    ingredientCount > 0
+      ? Math.min(
+          100,
+          Math.round(
+            (
+              (
+                eventGroceryPlan
+                  ?.pricedIngredientCount ||
+                0
+              ) /
+              ingredientCount
+            ) * 100,
+          ),
+        )
+      : 0;
+
+  const groceryReadinessScore =
+    uniqueMenuDishCount > 0
+      ? Math.round(
+          (
+            recipeCoverage +
+            groceryRateCoverage
+          ) / 2,
+        )
+      : 0;
+
+  const manpowerPositiveRows =
+    work
+      ? work.manpower.filter(
+          (row) =>
+            Number(
+              row.quantity,
+            ) > 0,
+        )
+      : [];
+
+  const manpowerScore =
+    activeMenuItems.length > 0 &&
+    manpowerPositiveRows.length > 0
+      ? 100
+      : 0;
+
+  const equipmentRows =
+    allRows.filter(
+      (row) =>
+        row.kind ===
+        'EQUIPMENT',
+    );
+
+  const equipmentScore =
+    readiness(
+      equipmentRows,
+    );
+
+  const vendorRows =
+    allRows.filter(
+      (row) =>
+        row.partnerType !==
+          'IN_HOUSE' &&
+        [
+          'MENU',
+          'MANPOWER',
+          'GROCERY',
+          'DISPOSABLE',
+          'TRANSPORT',
+        ].includes(
+          row.kind,
+        ),
+    );
+
+  const assignedVendorRows =
+    vendorRows.filter(
+      (row) =>
+        Boolean(
+          row.assignedTo.trim(),
+        ),
+    ).length;
+
+  const vendorScore =
+    vendorRows.length > 0
+      ? Math.round(
+          (
+            assignedVendorRows /
+            vendorRows.length
+          ) * 100,
+        )
+      : 0;
+
+  const quotationScore =
+    quotationStatus
+      ? 100
+      : 0;
+
+  const eventReadinessItems =
+    [
+      {
+        key: 'menu',
+        label: 'Menu',
+        score:
+          activeMenuItems.length > 0
+            ? 100
+            : 0,
+        detail:
+          activeMenuItems.length > 0
+            ? `${activeMenuItems.length} dishes`
+            : 'Add menu',
+      },
+      {
+        key: 'recipes',
+        label: 'Recipes',
+        score:
+          recipeCoverage,
+        detail:
+          uniqueMenuDishCount > 0
+            ? `${recipeMatchedCount}/${uniqueMenuDishCount} linked`
+            : 'No dishes',
+      },
+      {
+        key: 'grocery',
+        label: 'Grocery',
+        score:
+          groceryReadinessScore,
+        detail:
+          ingredientCount > 0
+            ? `${eventGroceryPlan?.pricedIngredientCount || 0}/${ingredientCount} rates`
+            : 'No ingredients',
+      },
+      {
+        key: 'manpower',
+        label: 'Manpower',
+        score:
+          manpowerScore,
+        detail:
+          manpowerPositiveRows.length > 0
+            ? `${manpowerPositiveRows.reduce(
+                (sum, row) =>
+                  sum +
+                  Math.max(
+                    0,
+                    Number(
+                      row.quantity,
+                    ) || 0,
+                  ),
+                0,
+              )} staff planned`
+            : 'Plan team',
+      },
+      {
+        key: 'equipment',
+        label: 'Equipment',
+        score:
+          equipmentScore,
+        detail:
+          equipmentRows.length > 0
+            ? `${equipmentRows.filter(
+                (row) =>
+                  [
+                    'CONFIRMED',
+                    'DELIVERED',
+                    'CLOSED',
+                  ].includes(
+                    row.status,
+                  ),
+              ).length}/${equipmentRows.length} confirmed`
+            : 'No plan',
+      },
+      {
+        key: 'vendors',
+        label: 'Vendors',
+        score:
+          vendorScore,
+        detail:
+          vendorRows.length > 0
+            ? `${assignedVendorRows}/${vendorRows.length} assigned`
+            : 'No assignments',
+      },
+      {
+        key: 'quotation',
+        label: 'Quotation',
+        score:
+          quotationScore,
+        detail:
+          quotationStatus
+            ? quotationStatus
+            : 'Not saved',
+      },
+    ];
+
+  const eventReadinessScore =
+    eventReadinessItems.length
+      ? Math.round(
+          eventReadinessItems.reduce(
+            (sum, item) =>
+              sum +
+              item.score,
+            0,
+          ) /
+            eventReadinessItems.length,
+        )
+      : 0;
 
   const equipmentShortages =
     currentRows.filter(
@@ -1899,6 +2321,28 @@ export default function EventPlanningPage() {
           .ep-event-meta span{padding:5px 8px;border-radius:999px;color:#9aa8b8;background:#18202a;font-size:8px;font-weight:800}
           .ep-event-meta span.status{color:#8fc2ff;background:rgba(74,156,255,.09)}
           .ep-event-error{margin:0;padding:9px 11px;border:1px solid rgba(255,98,89,.2);border-radius:9px;color:#ff9891;background:rgba(255,98,89,.06);font-size:9px}
+          .ep-readiness{display:grid;gap:11px;padding:14px;border:1px solid #2a323d;border-radius:15px;background:#10151c}
+          .ep-readiness-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+          .ep-readiness-title span,.ep-readiness-title b,.ep-readiness-title small{display:block}
+          .ep-readiness-title span{color:#78b5ff;font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+          .ep-readiness-title b{margin-top:4px;font-size:15px}
+          .ep-readiness-title small{margin-top:3px;color:#7f8c9c;font-size:9px}
+          .ep-readiness-score{display:grid;min-width:76px;height:64px;place-items:center;border:1px solid rgba(74,156,255,.2);border-radius:13px;background:rgba(74,156,255,.06)}
+          .ep-readiness-score b{font-size:21px;letter-spacing:-.03em}
+          .ep-readiness-score small{margin-top:-8px;color:#8392a4;font-size:7px;font-weight:900;text-transform:uppercase}
+          .ep-readiness-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
+          .ep-readiness-item{padding:10px;border:1px solid #28313c;border-radius:11px;background:#0d1319}
+          .ep-readiness-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+          .ep-readiness-item-top b{font-size:9px}
+          .ep-readiness-item-top strong{font-size:9px}
+          .ep-readiness-item small{display:block;margin-top:5px;color:#718094;font-size:7px;line-height:1.35}
+          .ep-readiness-track{height:5px;overflow:hidden;margin-top:8px;border-radius:999px;background:#202833}
+          .ep-readiness-fill{height:100%;border-radius:999px;background:#38c979}
+          .ep-readiness-item.needs-work .ep-readiness-fill{background:#f2a12b}
+          .ep-readiness-item.blocked .ep-readiness-fill{background:#ef6b63}
+          .ep-readiness-item.needs-work .ep-readiness-item-top strong{color:#f3b45d}
+          .ep-readiness-item.blocked .ep-readiness-item-top strong{color:#ff8c84}
+          .ep-readiness-loading{color:#7f8c9c;font-size:8px;font-weight:800}
           .ep-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;padding:15px 2px 4px}
           .ep-kicker{color:#78b5ff;font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
           .ep-hero h1{margin:5px 0 5px;font-size:clamp(30px,4vw,45px);line-height:1;letter-spacing:-.05em}
@@ -1988,8 +2432,8 @@ export default function EventPlanningPage() {
           .ep-equipment-card-body small{margin-top:5px;color:#71d99d;font-size:7px;font-weight:900}
           .ep-equipment-card.over small{color:#ffb35a}
           .ep-empty{padding:40px 15px;color:#748294;font-size:10px;text-align:center}
-          @media(max-width:1180px){.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
-          @media(max-width:720px){.ep-event-selector{grid-template-columns:1fr}.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
+          @media(max-width:1180px){.ep-readiness-grid{grid-template-columns:repeat(4,1fr)}.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
+          @media(max-width:720px){.ep-event-selector{grid-template-columns:1fr}.ep-readiness-head{align-items:flex-start}.ep-readiness-grid{grid-template-columns:1fr 1fr}.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
         `}</style>
 
         <section
@@ -2145,6 +2589,93 @@ export default function EventPlanningPage() {
             </Link>
           </div>
         </header>
+
+        <section
+          className="ep-readiness"
+          aria-label="Event readiness"
+        >
+          <div className="ep-readiness-head">
+            <div className="ep-readiness-title">
+              <span>
+                Event Readiness
+              </span>
+              <b>
+                What still needs attention?
+              </b>
+              <small>
+                Live readiness for the selected event across costing and execution.
+              </small>
+              {readinessLoading ? (
+                <div className="ep-readiness-loading">
+                  Refreshing readiness…
+                </div>
+              ) : null}
+            </div>
+
+            <div className="ep-readiness-score">
+              <b>
+                {eventReadinessScore}%
+              </b>
+              <small>
+                Overall
+              </small>
+            </div>
+          </div>
+
+          <div className="ep-readiness-grid">
+            {eventReadinessItems.map(
+              (item) => {
+                const state =
+                  item.score >= 100
+                    ? 'ready'
+                    : item.score > 0
+                      ? 'needs-work'
+                      : 'blocked';
+
+                return (
+                  <article
+                    key={item.key}
+                    className={
+                      `ep-readiness-item ${state}`
+                    }
+                  >
+                    <div className="ep-readiness-item-top">
+                      <b>
+                        {item.label}
+                      </b>
+                      <strong>
+                        {item.score}%
+                      </strong>
+                    </div>
+
+                    <small>
+                      {item.detail}
+                    </small>
+
+                    <div
+                      className="ep-readiness-track"
+                      aria-hidden="true"
+                    >
+                      <div
+                        className="ep-readiness-fill"
+                        style={{
+                          width:
+                            `${Math.max(
+                              0,
+                              Math.min(
+                                100,
+                                item.score,
+                              ),
+                            )}%`,
+                        }}
+                      />
+                    </div>
+                  </article>
+                );
+              },
+            )}
+          </div>
+        </section>
 
         <section className="ep-stats">
           <article className="ep-stat">
