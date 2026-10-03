@@ -142,12 +142,15 @@ function emptyQuotation(
         ),
       ),
     advancePercent:
-      Math.min(
-        100,
-        numberValue(
-          work.profile.quotationAdvancePercent,
-        ) || 50,
-      ),
+      work.profile.quotationAdvancePercent ===
+        undefined
+        ? 50
+        : Math.min(
+            100,
+            numberValue(
+              work.profile.quotationAdvancePercent,
+            ),
+          ),
     paymentTerms:
       work.profile.quotationPaymentTerms?.trim() ||
       'Balance payment as mutually agreed before or on the event date.',
