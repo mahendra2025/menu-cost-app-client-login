@@ -1171,7 +1171,13 @@ export default function AppShell({
           </aside>
         ) : null}
 
-        <div className="app-workspace">
+        <div
+          className={
+            isAdmin
+              ? 'app-workspace'
+              : 'app-workspace client-ui-system-v2'
+          }
+        >
           {isAdmin && !hidePageTitle ? (
             <section className="page-title admin-page-head no-print">
               <div className="admin-page-head-copy">
