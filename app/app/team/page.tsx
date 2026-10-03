@@ -970,7 +970,7 @@ export default function ManpowerPage() {
           ) *
             100,
         )
-      : work.menu.length > 0
+      : (work?.menu.length ?? 0) > 0
         ? 0
         : 100;
 
@@ -1002,7 +1002,7 @@ export default function ManpowerPage() {
           ) *
             100,
         )
-      : work.menu.length > 0
+      : (work?.menu.length ?? 0) > 0
         ? 0
         : 100;
 
