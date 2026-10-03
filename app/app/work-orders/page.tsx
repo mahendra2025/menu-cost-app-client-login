@@ -856,11 +856,16 @@ export default function WorkOrdersPage() {
       return;
     }
 
-    const phone =
+    const rawPhone =
       String(
         selected.vendor?.phone ||
           '',
       ).replace(/\D/g, '');
+
+    const phone =
+      rawPhone.length === 10
+        ? `91${rawPhone}`
+        : rawPhone;
 
     if (!phone) {
       setError(
