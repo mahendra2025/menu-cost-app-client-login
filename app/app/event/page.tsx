@@ -9310,7 +9310,6 @@ export default function EventPage() {
     >
       <style>{`
         .event-page-topbar,
-        .new-event-modal-layer,
         .first-menu-guide,
         .event-desktop-summary,
         .event-add-dish-functions,
@@ -9337,6 +9336,23 @@ export default function EventPage() {
         }
       `}</style>
       <section className="content-grid event-simple-flow event-upload-only-page">
+        <div
+          className="no-print"
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: 16,
+          }}
+        >
+          <button
+            className="primary-button event-new-button"
+            type="button"
+            onClick={openNewEventForm}
+          >
+            <span aria-hidden="true">＋</span>
+            New Event
+          </button>
+        </div>
         <div className="event-page-topbar no-print">
           <div className="event-page-heading">
             <span className="event-page-step">
