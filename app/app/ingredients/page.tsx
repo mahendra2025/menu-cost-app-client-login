@@ -3734,6 +3734,274 @@ export default function IngredientRatesPage() {
               bottom:76px;
             }
           }
+
+          .ingredient-event-command {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) minmax(320px,.52fr);
+            gap:18px;
+            align-items:center;
+            padding:18px 20px;
+            border:1px solid rgba(74,156,255,.14);
+            border-radius:18px;
+            background:
+              radial-gradient(circle at 95% 0%,rgba(74,156,255,.13),transparent 21rem),
+              linear-gradient(145deg,#111923,#0d141c);
+            box-shadow:0 14px 34px rgba(0,0,0,.16);
+          }
+
+          .ingredient-event-command-copy h2 {
+            margin:7px 0 6px;
+            max-width:790px;
+            color:#f4f8fc;
+            font-size:clamp(28px,3.4vw,40px);
+            line-height:1.04;
+            letter-spacing:-.045em;
+          }
+
+          .ingredient-event-command-copy > p {
+            max-width:780px;
+            margin:0;
+            color:#8795a7;
+            font-size:10px;
+            line-height:1.55;
+          }
+
+          .ingredient-event-command-kpis {
+            display:grid;
+            grid-template-columns:repeat(3,minmax(0,1fr));
+            gap:7px;
+            margin-top:13px;
+          }
+
+          .ingredient-event-command-kpis > div {
+            min-width:0;
+            padding:9px 10px;
+            border:1px solid rgba(148,163,184,.09);
+            border-radius:10px;
+            background:rgba(255,255,255,.02);
+          }
+
+          .ingredient-event-command-kpis > div.attention {
+            border-color:rgba(244,173,84,.18);
+            background:rgba(244,173,84,.045);
+          }
+
+          .ingredient-event-command-kpis > div.ready {
+            border-color:rgba(85,217,143,.15);
+            background:rgba(85,217,143,.035);
+          }
+
+          .ingredient-event-command-kpis span,
+          .ingredient-event-command-kpis b,
+          .ingredient-event-command-kpis small {
+            display:block;
+          }
+
+          .ingredient-event-command-kpis span {
+            color:#718094;
+            font-size:7px;
+            font-weight:900;
+            text-transform:uppercase;
+          }
+
+          .ingredient-event-command-kpis b {
+            margin-top:4px;
+            color:#e7eef6;
+            font-size:15px;
+          }
+
+          .ingredient-event-command-kpis small {
+            margin-top:2px;
+            color:#68778a;
+            font-size:7px;
+          }
+
+          .ingredient-event-command-side {
+            display:grid;
+            grid-template-columns:80px minmax(0,1fr);
+            gap:13px;
+            align-items:center;
+            padding:13px;
+            border:1px solid rgba(74,156,255,.15);
+            border-radius:15px;
+            background:rgba(74,156,255,.04);
+          }
+
+          .ingredient-event-readiness-ring {
+            display:grid;
+            width:76px;
+            height:76px;
+            padding:6px;
+            place-items:center;
+            border-radius:50%;
+          }
+
+          .ingredient-event-readiness-ring > span {
+            display:grid;
+            width:100%;
+            height:100%;
+            place-items:center;
+            border:1px solid rgba(255,255,255,.05);
+            border-radius:50%;
+            background:#0f161e;
+          }
+
+          .ingredient-event-readiness-ring b,
+          .ingredient-event-readiness-ring small {
+            display:block;
+            line-height:1;
+          }
+
+          .ingredient-event-readiness-ring b {
+            color:#eef5fc;
+            font-size:17px;
+          }
+
+          .ingredient-event-readiness-ring small {
+            margin-top:-10px;
+            color:#748397;
+            font-size:6px;
+            font-weight:900;
+            text-transform:uppercase;
+          }
+
+          .ingredient-event-side-label,
+          .ingredient-event-side-value,
+          .ingredient-event-side-note {
+            display:block;
+          }
+
+          .ingredient-event-side-label {
+            color:#8190a2;
+            font-size:7px;
+            font-weight:900;
+            text-transform:uppercase;
+          }
+
+          .ingredient-event-side-value {
+            margin:4px 0;
+            color:#f4f8fc;
+            font-size:18px;
+          }
+
+          .ingredient-event-side-note {
+            color:#7d8b9d;
+            font-size:8px;
+            line-height:1.35;
+          }
+
+          .ingredient-event-command-actions {
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:6px;
+            margin-top:9px;
+          }
+
+          .ingredient-event-command-actions button {
+            min-height:34px;
+            padding:0 8px;
+            font-size:8px;
+          }
+
+          .ingredient-rate-usage-chips {
+            display:flex;
+            gap:5px;
+            flex-wrap:wrap;
+          }
+
+          .ingredient-rate-usage-chips button {
+            min-height:32px;
+            padding:0 9px;
+            border:1px solid rgba(148,163,184,.10);
+            border-radius:8px;
+            color:#8090a4;
+            background:rgba(255,255,255,.018);
+            font:inherit;
+            font-size:8px;
+            font-weight:850;
+            cursor:pointer;
+          }
+
+          .ingredient-rate-usage-chips button.active {
+            border-color:rgba(74,156,255,.30);
+            color:#bddcff;
+            background:rgba(74,156,255,.075);
+          }
+
+          .ingredient-rate-table tbody tr.is-event-used {
+            box-shadow:inset 3px 0 0 rgba(74,156,255,.55);
+          }
+
+          .ingredient-rate-table tbody tr.is-missing-rate {
+            box-shadow:inset 3px 0 0 rgba(255,126,118,.65);
+          }
+
+          .ingredient-event-usage {
+            display:grid;
+            gap:2px;
+            min-width:78px;
+          }
+
+          .ingredient-event-usage strong {
+            color:#718095;
+            font-size:12px;
+          }
+
+          .ingredient-event-usage span {
+            color:#657386;
+            font-size:7px;
+          }
+
+          .ingredient-event-usage.active strong {
+            color:#8fc2ff;
+          }
+
+          .ingredient-event-usage.active span {
+            color:#7daee8;
+          }
+
+          @media(max-width:1180px) {
+            .ingredient-event-command {
+              grid-template-columns:1fr;
+            }
+
+            .ingredient-event-command-side {
+              max-width:430px;
+            }
+          }
+
+          @media(max-width:700px) {
+            .ingredient-event-command {
+              padding:16px;
+            }
+
+            .ingredient-event-command-kpis {
+              grid-template-columns:1fr 1fr;
+            }
+
+            .ingredient-event-command-side {
+              grid-template-columns:62px minmax(0,1fr);
+            }
+
+            .ingredient-event-readiness-ring {
+              width:58px;
+              height:58px;
+            }
+
+            .ingredient-event-command-actions {
+              grid-template-columns:1fr;
+            }
+
+            .ingredient-rate-usage-chips {
+              width:100%;
+              overflow:auto;
+            }
+
+            .ingredient-rate-usage-chips button {
+              flex:1 0 auto;
+            }
+          }
+
         `}</style>
       </section>
     </AppShell>
