@@ -9303,6 +9303,53 @@ export default function EventPage() {
       0,
     );
 
+
+  const savedMenuCategoryCount =
+    new Set(
+      work.menu
+        .map(
+          (item) =>
+            String(
+              item.category ||
+                'Other',
+            ).trim(),
+        )
+        .filter(Boolean),
+    ).size;
+
+  const eventSetupChecks = [
+    Boolean(
+      work.event.clientName
+        .trim(),
+    ),
+    Number(
+      work.event.pax,
+    ) > 0,
+    savedMenuDishCount > 0,
+  ];
+
+  const eventSetupReadinessPercent =
+    Math.round(
+      (
+        eventSetupChecks.filter(
+          Boolean,
+        ).length /
+        eventSetupChecks.length
+      ) *
+        100,
+    );
+
+  const menuRateReadinessPercent =
+    savedMenuDishCount > 0
+      ? Math.round(
+          (
+            savedMenuPricedCount /
+            savedMenuDishCount
+          ) *
+            100,
+        )
+      : 0;
+
   return (
     <AppShell
       title="Menu Selection"
@@ -9627,6 +9674,143 @@ export default function EventPage() {
           line-height: 1;
         }
 
+        .event-home-readiness {
+          display: grid;
+          grid-template-columns: 58px minmax(0,1fr);
+          gap: 10px;
+          align-items: center;
+          padding: 10px;
+          border: 1px solid rgba(74,156,255,.14);
+          border-radius: 14px;
+          background: rgba(74,156,255,.035);
+        }
+
+        .event-home-readiness-ring {
+          display: grid;
+          width: 56px;
+          height: 56px;
+          padding: 5px;
+          place-items: center;
+          border-radius: 50%;
+        }
+
+        .event-home-readiness-ring > span {
+          display: grid;
+          width: 100%;
+          height: 100%;
+          place-items: center;
+          border-radius: 50%;
+          background: #0f161e;
+        }
+
+        .event-home-readiness-ring b,
+        .event-home-readiness-ring small,
+        .event-home-readiness > div:last-child span,
+        .event-home-readiness > div:last-child b,
+        .event-home-readiness > div:last-child small {
+          display: block;
+        }
+
+        .event-home-readiness-ring b {
+          color: #eef5fc;
+          font-size: 13px;
+          line-height: 1;
+        }
+
+        .event-home-readiness-ring small {
+          margin-top: -7px;
+          color: #748397;
+          font-size: 5px;
+          font-weight: 900;
+          line-height: 1;
+          text-transform: uppercase;
+        }
+
+        .event-home-readiness > div:last-child span {
+          color: #738196;
+          font-size: 7px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+
+        .event-home-readiness > div:last-child b {
+          margin-top: 3px;
+          color: #e7eef6;
+          font-size: 10px;
+        }
+
+        .event-home-readiness > div:last-child small {
+          margin-top: 2px;
+          color: #68778a;
+          font-size: 7px;
+        }
+
+        .event-menu-selection-summary {
+          display: grid;
+          grid-template-columns: repeat(4,minmax(0,1fr));
+          gap: 6px;
+          margin-top: 12px;
+        }
+
+        .event-menu-selection-summary > div {
+          min-width: 0;
+          padding: 8px 9px;
+          border: 1px solid rgba(148,163,184,.09);
+          border-radius: 9px;
+          background: rgba(255,255,255,.018);
+        }
+
+        .event-menu-selection-summary > div.ready {
+          border-color: rgba(85,217,143,.14);
+          background: rgba(85,217,143,.03);
+        }
+
+        .event-menu-selection-summary > div.attention {
+          border-color: rgba(244,173,84,.18);
+          background: rgba(244,173,84,.04);
+        }
+
+        .event-menu-selection-summary span,
+        .event-menu-selection-summary b {
+          display: block;
+        }
+
+        .event-menu-selection-summary span {
+          color: #6f7d90;
+          font-size: 6px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+
+        .event-menu-selection-summary b {
+          margin-top: 4px;
+          color: #dfe8f2;
+          font-size: 11px;
+        }
+
+        .event-menu-action-panel {
+          display: grid;
+          gap: 8px;
+        }
+
+        .event-cost-continue {
+          display: flex;
+          min-height: 42px;
+          align-items: center;
+          justify-content: space-between;
+          text-decoration: none;
+        }
+
+        .event-menu-next-hint {
+          padding: 9px 11px;
+          border: 1px dashed rgba(148,163,184,.12);
+          border-radius: 10px;
+          color: #718094;
+          background: rgba(255,255,255,.015);
+          font-size: 8px;
+          text-align: center;
+        }
+
         @media (max-width: 760px) {
           .event-home-hero {
             grid-template-columns: 1fr;
@@ -9646,6 +9830,10 @@ export default function EventPage() {
             grid-template-columns: 1fr;
             min-height: 0;
             padding: 16px;
+          }
+
+          .event-menu-selection-summary {
+            grid-template-columns: 1fr 1fr;
           }
 
           .event-upload-copy {
@@ -9681,6 +9869,40 @@ export default function EventPage() {
           </div>
 
           <div className="event-home-actions">
+            <div className="event-home-readiness">
+              <div
+                className="event-home-readiness-ring"
+                style={{
+                  background:
+                    `conic-gradient(${eventSetupReadinessPercent === 100 ? '#55d98f' : '#4a9cff'} ${eventSetupReadinessPercent * 3.6}deg, #25303d 0deg)`,
+                }}
+                aria-label={`Event setup readiness ${eventSetupReadinessPercent}%`}
+              >
+                <span>
+                  <b>
+                    {eventSetupReadinessPercent}%
+                  </b>
+                  <small>
+                    Ready
+                  </small>
+                </span>
+              </div>
+
+              <div>
+                <span>
+                  Event setup
+                </span>
+                <b>
+                  {eventSetupReadinessPercent === 100
+                    ? 'Ready for costing'
+                    : 'Complete setup'}
+                </b>
+                <small>
+                  Client · guests · menu
+                </small>
+              </div>
+            </div>
+
             <button
               className="primary-button event-new-button"
               type="button"
@@ -9723,7 +9945,7 @@ export default function EventPage() {
               <span>Menu</span>
               <b>
                 {work.menu.length > 0
-                  ? `${work.menu.length} dishes selected`
+                  ? `${work.menu.length} dishes · ${savedMenuCategoryCount} categories`
                   : 'Not selected'}
               </b>
             </article>
@@ -10461,12 +10683,14 @@ export default function EventPage() {
                     <span className="event-upload-index" aria-hidden="true">
                       Menu
                     </span>
+
                     <div>
                       <h2 id="menu-selection-title">
                         Menu Selection
                       </h2>
+
                       <p>
-                        Choose dishes directly from Dish Master. Search by dish or category, select what you need, and save it to this event.
+                        Choose dishes directly from Dish Master. Keep the menu category-wise, review the selected functions, then continue to Dish Cost.
                       </p>
 
                       <div className="event-selection-status">
@@ -10486,51 +10710,93 @@ export default function EventPage() {
                           </span>
                         )}
                       </div>
+
+                      {work.menu.length > 0 ? (
+                        <div className="event-menu-selection-summary">
+                          <div>
+                            <span>Dishes</span>
+                            <b>{savedMenuDishCount}</b>
+                          </div>
+                          <div>
+                            <span>Categories</span>
+                            <b>{savedMenuCategoryCount}</b>
+                          </div>
+                          <div>
+                            <span>Functions</span>
+                            <b>{savedMenuFunctionGroups.length || 1}</b>
+                          </div>
+                          <div className={savedMenuMissingRateCount > 0 ? 'attention' : 'ready'}>
+                            <span>Rate status</span>
+                            <b>{menuRateReadinessPercent}%</b>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 
-                  <button
-                    className="event-manual-entry"
-                    type="button"
-                    onClick={() =>
-                      void openManualDishSelector()
-                    }
-                  >
-                    <span
-                      className="event-manual-entry-icon"
-                      aria-hidden="true"
+                  <div className="event-menu-action-panel">
+                    <button
+                      className="event-manual-entry"
+                      type="button"
+                      onClick={() =>
+                        void openManualDishSelector()
+                      }
                     >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      <span
+                        className="event-manual-entry-icon"
+                        aria-hidden="true"
                       >
-                        <path d="M6 6h14M6 12h14M6 18h14" />
-                        <path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
-                      </svg>
-                    </span>
-                    <span className="event-manual-entry-copy">
-                      <b>
-                        {work.menu.length > 0
-                          ? 'Edit Menu Selection'
-                          : 'Select Menu'}
-                      </b>
-                      <small>
-                        {work.menu.length > 0
-                          ? `${work.menu.length} dishes currently selected`
-                          : 'Choose dishes by category from Dish Master'}
-                      </small>
-                    </span>
-                    <span
-                      className="event-manual-entry-arrow"
-                      aria-hidden="true"
-                    >
-                      ›
-                    </span>
-                  </button>
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M6 6h14M6 12h14M6 18h14" />
+                          <path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+                        </svg>
+                      </span>
+
+                      <span className="event-manual-entry-copy">
+                        <b>
+                          {work.menu.length > 0
+                            ? 'Edit Menu Selection'
+                            : 'Select Menu'}
+                        </b>
+
+                        <small>
+                          {work.menu.length > 0
+                            ? `${work.menu.length} dishes selected · ${savedMenuMissingRateCount} rates need review`
+                            : 'Choose dishes by category from Dish Master'}
+                        </small>
+                      </span>
+
+                      <span
+                        className="event-manual-entry-arrow"
+                        aria-hidden="true"
+                      >
+                        ›
+                      </span>
+                    </button>
+
+                    {work.menu.length > 0 ? (
+                      <a
+                        className="primary-button event-cost-continue"
+                        href="/app/cost"
+                      >
+                        Continue to Dish Cost
+                        <span aria-hidden="true">
+                          →
+                        </span>
+                      </a>
+                    ) : (
+                      <div className="event-menu-next-hint">
+                        Select at least one dish to continue.
+                      </div>
+                    )}
+                  </div>
                 </section>
               </div>
 
