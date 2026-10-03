@@ -34,13 +34,6 @@ function cleanUserId(value: unknown) {
   return cleanText(value, 180).toLowerCase();
 }
 
-function publicTenant<T extends {
-  password?: string;
-}>(tenant: T) {
-  const { password: _password, ...safe } = tenant;
-  return safe;
-}
-
 export async function GET() {
   try {
     const authError = await requireAdmin();
@@ -289,7 +282,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      user: publicTenant(tenant),
+      user: tenant,
     });
   } catch (error) {
     if (
