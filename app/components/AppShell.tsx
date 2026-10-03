@@ -2,9 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
-import { getSession, logout, refreshSessionFromClient } from '../../lib/store';
-import type { Session } from '../../lib/types';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
+import {
+  flushWorkSave,
+  getSession,
+  loadWork,
+  logout,
+  refreshSessionFromClient,
+  saveWork,
+} from '../../lib/store';
+import type { Session, WorkState } from '../../lib/types';
 import { useLanguage } from './LanguageProvider';
 
 type NavIcon = 'profile' | 'clients' | 'dishes' | 'ingredients';
@@ -153,6 +160,16 @@ const clientWorkspaceNav = [
   { href: '/app/profile', match: '/app/profile', label: 'Profile', description: 'Business settings', icon: 'profile' as ClientNavIcon },
 ];
 
+type ActiveEventOption = {
+  costingId: string;
+  source: 'CURRENT' | 'DRAFT' | 'COMPLETED';
+  eventName: string;
+  clientName: string;
+  eventDate: string;
+  totalCovers: number;
+  timestamp: string;
+};
+
 let cachedShellSession: Session | null = null;
 
 function ClientNavIconMark({ icon }: { icon: ClientNavIcon }) {
@@ -277,6 +294,214 @@ export default function AppShell({
   const [session, setSession] = useState<Session | null>(() => cachedShellSession);
   const [ready, setReady] = useState(() => cachedShellSession !== null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [activeWork, setActiveWork] = useState<WorkState | null>(null);
+  const [activeEventOptions, setActiveEventOptions] = useState<ActiveEventOption[]>([]);
+  const [activeEventId, setActiveEventId] = useState('');
+  const [activeEventLoading, setActiveEventLoading] = useState(false);
+  const [activeEventError, setActiveEventError] = useState('');
+
+  function activeEventLabel(work: WorkState | null) {
+    if (!work) return 'No active event';
+
+    return (
+      work.event.eventName ||
+      work.event.clientName ||
+      'Current Event'
+    );
+  }
+
+  async function loadActiveEventOptions(current: Session) {
+    if (current.role !== 'CLIENT') return;
+
+    const currentWork = loadWork(current.tenantId);
+    setActiveWork(currentWork);
+    setActiveEventId(currentWork.costingId);
+
+    try {
+      const [draftsResponse, costingsResponse] = await Promise.all([
+        fetch('/api/client/drafts?limit=100', { cache: 'no-store' }),
+        fetch('/api/client/costings?limit=100', { cache: 'no-store' }),
+      ]);
+
+      const options = new Map<string, ActiveEventOption>();
+
+      if (costingsResponse.ok) {
+        const data = await costingsResponse.json();
+        const rows = Array.isArray(data.costings) ? data.costings : [];
+
+        for (const item of rows) {
+          const costingId = String(item.costingId || '');
+          if (!costingId) continue;
+
+          options.set(costingId, {
+            costingId,
+            source: 'COMPLETED',
+            eventName: String(item.eventName || ''),
+            clientName: String(item.clientName || ''),
+            eventDate: String(item.eventDate || ''),
+            totalCovers: Math.max(0, Number(item.totalCovers) || 0),
+            timestamp: String(item.updatedAt || item.completedAt || ''),
+          });
+        }
+      }
+
+      if (draftsResponse.ok) {
+        const data = await draftsResponse.json();
+        const rows = Array.isArray(data.drafts) ? data.drafts : [];
+
+        for (const item of rows) {
+          const costingId = String(item.costingId || '');
+          if (!costingId) continue;
+
+          options.set(costingId, {
+            costingId,
+            source: 'DRAFT',
+            eventName: String(item.eventName || ''),
+            clientName: String(item.clientName || ''),
+            eventDate: String(item.eventDate || ''),
+            totalCovers: Math.max(0, Number(item.totalCovers) || 0),
+            timestamp: String(item.updatedAt || ''),
+          });
+        }
+      }
+
+      if (currentWork.costingId) {
+        const existing = options.get(currentWork.costingId);
+
+        options.set(currentWork.costingId, {
+          costingId: currentWork.costingId,
+          source: existing?.source || 'CURRENT',
+          eventName:
+            currentWork.event.eventName ||
+            existing?.eventName ||
+            '',
+          clientName:
+            currentWork.event.clientName ||
+            existing?.clientName ||
+            '',
+          eventDate:
+            currentWork.event.eventDate ||
+            existing?.eventDate ||
+            '',
+          totalCovers:
+            Math.max(
+              0,
+              Number(currentWork.event.pax) ||
+                existing?.totalCovers ||
+                0,
+            ),
+          timestamp:
+            currentWork.updatedAt ||
+            existing?.timestamp ||
+            '',
+        });
+      }
+
+      const list = Array.from(options.values())
+        .filter((item) => Boolean(item.costingId))
+        .sort((left, right) => {
+          if (left.costingId === currentWork.costingId) return -1;
+          if (right.costingId === currentWork.costingId) return 1;
+
+          return (
+            new Date(
+              right.timestamp ||
+                right.eventDate ||
+                0,
+            ).getTime() -
+            new Date(
+              left.timestamp ||
+                left.eventDate ||
+                0,
+            ).getTime()
+          );
+        });
+
+      setActiveEventOptions(list);
+    } catch {
+      if (currentWork.costingId) {
+        setActiveEventOptions([
+          {
+            costingId: currentWork.costingId,
+            source: 'CURRENT',
+            eventName: currentWork.event.eventName,
+            clientName: currentWork.event.clientName,
+            eventDate: currentWork.event.eventDate,
+            totalCovers: Math.max(0, Number(currentWork.event.pax) || 0),
+            timestamp: currentWork.updatedAt || '',
+          },
+        ]);
+      }
+    }
+  }
+
+  async function switchActiveEvent(costingId: string) {
+    if (
+      !session ||
+      session.role !== 'CLIENT' ||
+      !costingId ||
+      costingId === activeEventId
+    ) {
+      return;
+    }
+
+    const option = activeEventOptions.find(
+      (item) => item.costingId === costingId,
+    );
+
+    if (!option) return;
+
+    setActiveEventLoading(true);
+    setActiveEventError('');
+
+    try {
+      let nextWork: WorkState | null = null;
+
+      if (option.source === 'DRAFT') {
+        const response = await fetch(
+          `/api/client/drafts?costingId=${encodeURIComponent(costingId)}`,
+          { cache: 'no-store' },
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Could not load draft event');
+        }
+
+        nextWork = data.draft?.workData as WorkState;
+      } else if (option.source === 'COMPLETED') {
+        const response = await fetch(
+          `/api/client/costings?costingId=${encodeURIComponent(costingId)}`,
+          { cache: 'no-store' },
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Could not load completed event');
+        }
+
+        nextWork = data.costing?.snapshot as WorkState;
+      }
+
+      if (!nextWork || !nextWork.costingId) {
+        throw new Error('Saved event data is unavailable');
+      }
+
+      saveWork(session.tenantId, nextWork);
+      flushWorkSave(session.tenantId);
+      setActiveWork(nextWork);
+      setActiveEventId(nextWork.costingId);
+
+      window.location.reload();
+    } catch (error) {
+      setActiveEventError(
+        error instanceof Error
+          ? error.message
+          : 'Could not switch active event.',
+      );
+      setActiveEventLoading(false);
+    }
+  }
 
   useEffect(() => {
     const current = refreshSessionFromClient() ?? getSession();
@@ -295,6 +520,8 @@ export default function AppShell({
     if (current.role === 'ADMIN') {
       return;
     }
+
+    void loadActiveEventOptions(current);
 
     /*
      * Existing browsers from the former SaaS model may not yet
@@ -404,6 +631,20 @@ export default function AppShell({
     pathname === '/app/manpower-rates' ||
     pathname === '/app/profile';
 
+  const selectedActiveEvent =
+    useMemo(
+      () =>
+        activeEventOptions.find(
+          (item) =>
+            item.costingId ===
+            activeEventId,
+        ),
+      [
+        activeEventOptions,
+        activeEventId,
+      ],
+    );
+
   const signOut = () => {
     cachedShellSession = null;
     logout();
@@ -472,6 +713,197 @@ export default function AppShell({
           </button>
         </div>
       </header>
+
+      {!isAdmin ? (
+        <>
+          <style>{`
+            .global-active-event {
+              display: grid;
+              grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
+              gap: 14px;
+              align-items: center;
+              padding: 10px 18px;
+              border-bottom: 1px solid rgba(148, 163, 184, .12);
+              background: rgba(13, 18, 25, .96);
+            }
+
+            .global-active-event-copy {
+              min-width: 0;
+            }
+
+            .global-active-event-label {
+              display: block;
+              color: #78b5ff;
+              font-size: 8px;
+              font-weight: 900;
+              letter-spacing: .09em;
+              text-transform: uppercase;
+            }
+
+            .global-active-event-title {
+              display: block;
+              margin-top: 3px;
+              overflow: hidden;
+              color: #eef4fb;
+              font-size: 13px;
+              font-weight: 900;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+
+            .global-active-event-meta {
+              display: flex;
+              gap: 6px;
+              flex-wrap: wrap;
+              margin-top: 4px;
+              color: #8290a0;
+              font-size: 9px;
+            }
+
+            .global-active-event-select {
+              width: 100%;
+              min-height: 38px;
+              padding: 0 11px;
+              border: 1px solid #303a46;
+              border-radius: 9px;
+              outline: 0;
+              color: #e9eff6;
+              background: #151c25;
+              font: inherit;
+              font-size: 10px;
+              font-weight: 800;
+              color-scheme: dark;
+            }
+
+            .global-active-event-select:focus {
+              border-color: rgba(74, 156, 255, .62);
+              box-shadow: 0 0 0 3px rgba(74, 156, 255, .08);
+            }
+
+            .global-active-event-error {
+              grid-column: 1 / -1;
+              margin: -4px 0 0;
+              color: #ff9c95;
+              font-size: 9px;
+            }
+
+            @media (max-width: 760px) {
+              .global-active-event {
+                grid-template-columns: 1fr;
+                gap: 8px;
+                padding: 9px 12px;
+              }
+
+              .global-active-event-meta {
+                font-size: 8px;
+              }
+            }
+          `}</style>
+
+          <section
+            className="global-active-event no-print"
+            aria-label="Global active event"
+          >
+            <div className="global-active-event-copy">
+              <span className="global-active-event-label">
+                Active Event
+              </span>
+              <b className="global-active-event-title">
+                {activeEventLabel(activeWork)}
+              </b>
+              <div className="global-active-event-meta">
+                <span>
+                  {activeWork?.event.clientName ||
+                    'Client not set'}
+                </span>
+                <span>·</span>
+                <span>
+                  {activeWork?.event.eventDate ||
+                    'Date not set'}
+                </span>
+                <span>·</span>
+                <span>
+                  {Math.max(
+                    0,
+                    Number(
+                      activeWork?.event.pax,
+                    ) || 0,
+                  ).toLocaleString('en-IN')}{' '}
+                  guests
+                </span>
+                {selectedActiveEvent ? (
+                  <>
+                    <span>·</span>
+                    <span>
+                      {selectedActiveEvent.source === 'COMPLETED'
+                        ? 'Completed'
+                        : selectedActiveEvent.source === 'DRAFT'
+                          ? 'Draft'
+                          : 'Current'}
+                    </span>
+                  </>
+                ) : null}
+              </div>
+            </div>
+
+            <select
+              className="global-active-event-select"
+              value={activeEventId}
+              disabled={
+                activeEventLoading ||
+                !activeEventOptions.length
+              }
+              onChange={(event) =>
+                void switchActiveEvent(
+                  event.target.value,
+                )
+              }
+              aria-label="Change active event"
+            >
+              {!activeEventOptions.length ? (
+                <option value="">
+                  No saved events available
+                </option>
+              ) : null}
+
+              {activeEventOptions.map(
+                (item) => (
+                  <option
+                    key={item.costingId}
+                    value={item.costingId}
+                  >
+                    {[
+                      item.eventName ||
+                        'Unnamed event',
+                      item.clientName,
+                      item.eventDate,
+                      item.totalCovers > 0
+                        ? `${item.totalCovers.toLocaleString('en-IN')} guests`
+                        : '',
+                      item.source === 'COMPLETED'
+                        ? 'Completed'
+                        : item.source === 'DRAFT'
+                          ? 'Draft'
+                          : 'Current',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </option>
+                ),
+              )}
+            </select>
+
+            {activeEventError ? (
+              <p
+                className="global-active-event-error"
+                role="alert"
+              >
+                {activeEventError}
+              </p>
+            ) : null}
+          </section>
+        </>
+      ) : null}
 
       <div className="app-layout">
         {isAdmin ? (
