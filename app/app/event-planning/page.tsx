@@ -2376,8 +2376,6 @@ export default function EventPlanningPage() {
     ),
   ).length;
 
-  const overallReadiness = readiness(allRows);
-
   const activeMenuItems =
     work
       ? work.menu.filter(
@@ -2758,14 +2756,15 @@ export default function EventPlanningPage() {
     );
 
   const executionBlockers =
-    functions.flatMap(
-      (fn) => {
-        const rows =
-          plan[fn.key] ||
-          seedRows(
-            fn,
-            work,
-          );
+    work
+      ? functions.flatMap(
+          (fn) => {
+            const rows =
+              plan[fn.key] ||
+              seedRows(
+                fn,
+                work,
+              );
 
         return rows.flatMap(
           (row) => {
@@ -2900,15 +2899,18 @@ export default function EventPlanningPage() {
             return blockers;
           },
         );
-      },
-    );
+          },
+        )
+      : [];
 
   const currentFunctionBlockers =
-    executionBlockers.filter(
-      (item) =>
-        item.functionKey ===
-        currentFunction.key,
-    );
+    currentFunction
+      ? executionBlockers.filter(
+          (item) =>
+            item.functionKey ===
+            currentFunction.key,
+        )
+      : [];
 
   const currentFunctionExecutionReadiness =
     operationalReadiness(
