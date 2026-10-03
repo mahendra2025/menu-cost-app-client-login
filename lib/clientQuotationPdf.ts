@@ -625,6 +625,7 @@ export function downloadClientQuotationPdf(
   const businessContact =
     [
       work.profile.phone,
+      work.profile.email,
       work.profile.city,
     ]
       .filter(Boolean)
@@ -765,7 +766,8 @@ export function downloadClientQuotationPdf(
     255,
   );
   doc.text(
-    'PREMIUM EVENT CATERING',
+    work.profile.tagline?.trim() ||
+      'PREMIUM EVENT CATERING',
     40,
     33,
   );
@@ -1010,6 +1012,14 @@ export function downloadClientQuotationPdf(
         '-',
       'Validity',
       `${quotation.validityDays || 0} days`,
+    ],
+    [
+      'Business Address',
+      work.profile.address?.trim() ||
+        '-',
+      'GSTIN',
+      work.profile.gstin?.trim() ||
+        '-',
     ],
   ];
 
