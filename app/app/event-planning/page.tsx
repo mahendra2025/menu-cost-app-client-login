@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  type ReactNode,
   useEffect,
   useMemo,
   useRef,
@@ -530,6 +531,88 @@ function readiness(rows: AssignmentRow[]) {
   ).length;
 
   return Math.round((done / rows.length) * 100);
+}
+
+function ReadinessIcon({
+  kind,
+}: {
+  kind:
+    | 'menu'
+    | 'recipes'
+    | 'grocery'
+    | 'manpower'
+    | 'equipment'
+    | 'vendors'
+    | 'quotation';
+}) {
+  const paths: Record<
+    typeof kind,
+    ReactNode
+  > = {
+    menu: (
+      <>
+        <path d="M5 6h14M5 12h14M5 18h9" />
+        <circle cx="3" cy="6" r=".8" />
+        <circle cx="3" cy="12" r=".8" />
+        <circle cx="3" cy="18" r=".8" />
+      </>
+    ),
+    recipes: (
+      <>
+        <path d="M7 4h10v16H7z" />
+        <path d="M10 8h4M10 12h4M10 16h3" />
+      </>
+    ),
+    grocery: (
+      <>
+        <path d="M5 7h14l-1.4 10H6.4z" />
+        <path d="M8 7V5h8v2M9 11h6M9 14h4" />
+      </>
+    ),
+    manpower: (
+      <>
+        <circle cx="9" cy="8" r="3" />
+        <circle cx="17" cy="9" r="2.4" />
+        <path d="M3.5 19c.5-3.6 2.3-5.4 5.5-5.4s5 1.8 5.5 5.4M15 15c2.8.1 4.4 1.5 4.8 4" />
+      </>
+    ),
+    equipment: (
+      <>
+        <path d="M5 18h14M7 18V9h10v9" />
+        <path d="M9 9V6h6v3M10 13h4" />
+      </>
+    ),
+    vendors: (
+      <>
+        <path d="M4 9h16v10H4zM6 9l2-4h8l2 4" />
+        <path d="M8 13h3M15 13h1" />
+      </>
+    ),
+    quotation: (
+      <>
+        <path d="M6 3h9l3 3v15H6z" />
+        <path d="M15 3v4h4M9 11h6M9 15h6" />
+      </>
+    ),
+  };
+
+  return (
+    <span
+      className="ep-readiness-icon"
+      aria-hidden="true"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {paths[kind]}
+      </svg>
+    </span>
+  );
 }
 
 export default function EventPlanningPage() {
@@ -2327,12 +2410,17 @@ export default function EventPlanningPage() {
           .ep-readiness-title span{color:#78b5ff;font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
           .ep-readiness-title b{margin-top:4px;font-size:15px}
           .ep-readiness-title small{margin-top:3px;color:#7f8c9c;font-size:9px}
-          .ep-readiness-score{display:grid;min-width:76px;height:64px;place-items:center;border:1px solid rgba(74,156,255,.2);border-radius:13px;background:rgba(74,156,255,.06)}
-          .ep-readiness-score b{font-size:21px;letter-spacing:-.03em}
-          .ep-readiness-score small{margin-top:-8px;color:#8392a4;font-size:7px;font-weight:900;text-transform:uppercase}
+          .ep-readiness-score{display:grid;width:72px;height:72px;place-items:center;border-radius:50%;padding:6px;box-shadow:0 8px 22px rgba(0,0,0,.18)}
+          .ep-readiness-score-inner{display:grid;width:100%;height:100%;place-items:center;border:1px solid rgba(255,255,255,.06);border-radius:50%;background:#10151c}
+          .ep-readiness-score b{font-size:18px;letter-spacing:-.03em}
+          .ep-readiness-score small{margin-top:-9px;color:#8392a4;font-size:6px;font-weight:900;text-transform:uppercase}
           .ep-readiness-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px}
-          .ep-readiness-item{padding:10px;border:1px solid #28313c;border-radius:11px;background:#0d1319}
+          .ep-readiness-item{position:relative;overflow:hidden;padding:10px;border:1px solid #28313c;border-radius:12px;background:linear-gradient(180deg,#10161d,#0c1117)}
+          .ep-readiness-item::after{position:absolute;right:-18px;bottom:-22px;width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.02);content:""}
           .ep-readiness-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+          .ep-readiness-item-heading{display:flex;align-items:center;gap:7px;min-width:0}
+          .ep-readiness-icon{display:grid;flex:0 0 auto;width:25px;height:25px;place-items:center;border:1px solid rgba(120,181,255,.16);border-radius:8px;color:#78b5ff;background:rgba(74,156,255,.07)}
+          .ep-readiness-icon svg{width:14px;height:14px}
           .ep-readiness-item-top b{font-size:9px}
           .ep-readiness-item-top strong{font-size:9px}
           .ep-readiness-item small{display:block;margin-top:5px;color:#718094;font-size:7px;line-height:1.35}
@@ -2612,13 +2700,22 @@ export default function EventPlanningPage() {
               ) : null}
             </div>
 
-            <div className="ep-readiness-score">
-              <b>
-                {eventReadinessScore}%
-              </b>
-              <small>
-                Overall
-              </small>
+            <div
+              className="ep-readiness-score"
+              style={{
+                background:
+                  `conic-gradient(#4a9cff ${eventReadinessScore * 3.6}deg, #202833 0deg)`,
+              }}
+              aria-label={`Overall event readiness ${eventReadinessScore}%`}
+            >
+              <div className="ep-readiness-score-inner">
+                <b>
+                  {eventReadinessScore}%
+                </b>
+                <small>
+                  Overall
+                </small>
+              </div>
             </div>
           </div>
 
@@ -2640,9 +2737,24 @@ export default function EventPlanningPage() {
                     }
                   >
                     <div className="ep-readiness-item-top">
-                      <b>
-                        {item.label}
-                      </b>
+                      <div className="ep-readiness-item-heading">
+                        <ReadinessIcon
+                          kind={
+                            item.key as
+                              | 'menu'
+                              | 'recipes'
+                              | 'grocery'
+                              | 'manpower'
+                              | 'equipment'
+                              | 'vendors'
+                              | 'quotation'
+                          }
+                        />
+                        <b>
+                          {item.label}
+                        </b>
+                      </div>
+
                       <strong>
                         {item.score}%
                       </strong>
