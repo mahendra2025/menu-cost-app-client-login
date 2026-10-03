@@ -238,6 +238,13 @@ export async function POST(
           email:
             userId,
         },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          password: true,
+          status: true,
+        },
       });
 
     if (workspace) {
