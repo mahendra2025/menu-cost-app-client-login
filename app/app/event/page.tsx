@@ -9327,32 +9327,408 @@ export default function EventPage() {
         }
 
         .event-upload-only-page {
+          width: 100%;
           max-width: 1180px;
           margin: 0 auto;
+          gap: 14px;
+        }
+
+        .event-home-hero {
+          position: relative;
+          overflow: hidden;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 20px;
+          align-items: center;
+          padding: 20px;
+          border: 1px solid #29333f;
+          border-radius: 18px;
+          background:
+            radial-gradient(circle at 92% 12%, rgba(74,156,255,.14), transparent 24rem),
+            linear-gradient(145deg, #111923, #0d141c);
+          box-shadow: 0 14px 34px rgba(0,0,0,.16);
+        }
+
+        .event-home-hero::after {
+          position: absolute;
+          right: -46px;
+          bottom: -64px;
+          width: 180px;
+          height: 180px;
+          border: 1px solid rgba(120,181,255,.08);
+          border-radius: 50%;
+          content: "";
+        }
+
+        .event-home-copy {
+          position: relative;
+          z-index: 1;
+          min-width: 0;
+        }
+
+        .event-home-kicker {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          color: #7eb8ff;
+          font-size: 8px;
+          font-weight: 900;
+          letter-spacing: .10em;
+          text-transform: uppercase;
+        }
+
+        .event-home-kicker i {
+          display: block;
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #55d98f;
+          box-shadow: 0 0 0 4px rgba(85,217,143,.08);
+        }
+
+        .event-home-hero h1 {
+          margin: 8px 0 5px;
+          font-size: clamp(28px, 4vw, 42px);
+          line-height: 1;
+          letter-spacing: -.045em;
+        }
+
+        .event-home-hero p {
+          max-width: 680px;
+          margin: 0;
+          color: #8c99aa;
+          font-size: 11px;
+          line-height: 1.55;
+        }
+
+        .event-home-actions {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          gap: 8px;
+          min-width: 170px;
+        }
+
+        .event-home-actions .event-new-button {
+          min-height: 44px;
+          justify-content: center;
+        }
+
+        .event-home-stats {
+          position: relative;
+          z-index: 1;
+          grid-column: 1 / -1;
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0,1fr));
+          gap: 8px;
+          margin-top: 2px;
+        }
+
+        .event-home-stat {
+          min-width: 0;
+          padding: 11px 12px;
+          border: 1px solid rgba(148,163,184,.10);
+          border-radius: 12px;
+          background: rgba(255,255,255,.022);
+        }
+
+        .event-home-stat span,
+        .event-home-stat b {
+          display: block;
+        }
+
+        .event-home-stat span {
+          color: #728094;
+          font-size: 7px;
+          font-weight: 900;
+          letter-spacing: .055em;
+          text-transform: uppercase;
+        }
+
+        .event-home-stat b {
+          overflow: hidden;
+          margin-top: 5px;
+          color: #e7eef6;
+          font-size: 11px;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .event-menu-card {
           width: 100%;
+          padding: 0 !important;
+          border: 0 !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+
+        .event-menu-card > .form-grid {
+          gap: 0;
+        }
+
+        .menu-source-workspace {
+          padding: 0 !important;
+          border: 0 !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+
+        .event-upload-simple {
+          width: 100%;
+        }
+
+        .event-upload-simple-card {
+          position: relative;
+          overflow: hidden;
+          display: grid;
+          grid-template-columns: minmax(0,1fr) minmax(300px, .72fr);
+          gap: 18px;
+          align-items: center;
+          min-height: 210px;
+          padding: 22px;
+          border: 1px solid #29333f;
+          border-radius: 18px;
+          background:
+            radial-gradient(circle at 100% 0%, rgba(74,156,255,.11), transparent 22rem),
+            #10171f;
+          box-shadow: 0 12px 30px rgba(0,0,0,.12);
+        }
+
+        .event-upload-simple-card::before {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 4px;
+          height: 100%;
+          background: linear-gradient(180deg,#4a9cff,#7dbdff);
+          content: "";
+        }
+
+        .event-upload-copy {
+          display: grid;
+          grid-template-columns: 48px minmax(0,1fr);
+          gap: 14px;
+          align-items: center;
+        }
+
+        .event-upload-index {
+          display: grid;
+          width: 48px;
+          height: 48px;
+          place-items: center;
+          border: 1px solid rgba(120,181,255,.18);
+          border-radius: 14px;
+          color: #8bc0ff;
+          background: rgba(74,156,255,.08);
+          font-size: 9px;
+          font-weight: 900;
+          letter-spacing: .04em;
+          text-transform: uppercase;
+        }
+
+        .event-upload-copy h2 {
+          margin: 0;
+          font-size: 22px;
+          letter-spacing: -.035em;
+        }
+
+        .event-upload-copy p {
+          max-width: 520px;
+          margin: 6px 0 0;
+          color: #8492a3;
+          font-size: 10px;
+          line-height: 1.55;
+        }
+
+        .event-selection-status {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+          margin-top: 12px;
+        }
+
+        .event-selection-status span {
+          display: inline-flex;
+          align-items: center;
+          min-height: 24px;
+          padding: 0 8px;
+          border: 1px solid rgba(148,163,184,.11);
+          border-radius: 999px;
+          color: #8f9cad;
+          background: rgba(255,255,255,.025);
+          font-size: 8px;
+          font-weight: 800;
+        }
+
+        .event-selection-status span.ready {
+          color: #91ddb0;
+          border-color: rgba(85,217,143,.17);
+          background: rgba(85,217,143,.055);
+        }
+
+        .event-manual-entry {
+          display: grid;
+          grid-template-columns: 42px minmax(0,1fr) auto;
+          gap: 11px;
+          align-items: center;
+          width: 100%;
+          min-height: 76px;
+          padding: 12px;
+          border: 1px solid #334152;
+          border-radius: 14px;
+          color: #eaf1f8;
+          background: linear-gradient(180deg,#17212c,#131b24);
+          text-align: left;
+          cursor: pointer;
+          transition: .16s ease;
+        }
+
+        .event-manual-entry:hover {
+          transform: translateY(-2px);
+          border-color: #4c7fb8;
+          background: linear-gradient(180deg,#192736,#14202b);
+          box-shadow: 0 10px 24px rgba(0,0,0,.16);
+        }
+
+        .event-manual-entry-icon {
+          display: grid;
+          width: 42px;
+          height: 42px;
+          place-items: center;
+          border-radius: 12px;
+          color: #8ec3ff;
+          background: rgba(74,156,255,.10);
+        }
+
+        .event-manual-entry-icon svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        .event-manual-entry-copy b,
+        .event-manual-entry-copy small {
+          display: block;
+        }
+
+        .event-manual-entry-copy b {
+          font-size: 12px;
+        }
+
+        .event-manual-entry-copy small {
+          margin-top: 4px;
+          color: #7f8c9c;
+          font-size: 8px;
+          line-height: 1.4;
+        }
+
+        .event-manual-entry-arrow {
+          color: #78b5ff;
+          font-size: 24px;
+          line-height: 1;
+        }
+
+        @media (max-width: 760px) {
+          .event-home-hero {
+            grid-template-columns: 1fr;
+            padding: 16px;
+          }
+
+          .event-home-actions {
+            width: 100%;
+            min-width: 0;
+          }
+
+          .event-home-stats {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .event-upload-simple-card {
+            grid-template-columns: 1fr;
+            min-height: 0;
+            padding: 16px;
+          }
+
+          .event-upload-copy {
+            grid-template-columns: 42px minmax(0,1fr);
+          }
+
+          .event-upload-index {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+          }
         }
       `}</style>
       <section className="content-grid event-simple-flow event-upload-only-page">
-        <div
-          className="no-print"
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginBottom: 16,
-          }}
-        >
-          <button
-            className="primary-button event-new-button"
-            type="button"
-            onClick={openNewEventForm}
-          >
-            <span aria-hidden="true">＋</span>
-            New Event
-          </button>
-        </div>
+        <section className="event-home-hero no-print">
+          <div className="event-home-copy">
+            <span className="event-home-kicker">
+              <i aria-hidden="true" />
+              Event Workspace
+            </span>
+
+            <h1>
+              {work.event.eventName ||
+                work.event.clientName ||
+                'Create your next event'}
+            </h1>
+
+            <p>
+              {work.event.clientName
+                ? `Build the menu for ${work.event.clientName}. Keep this page simple: event details first, then choose dishes from Dish Master.`
+                : 'Start a new event, add the client details, then select the menu directly from Dish Master.'}
+            </p>
+          </div>
+
+          <div className="event-home-actions">
+            <button
+              className="primary-button event-new-button"
+              type="button"
+              onClick={openNewEventForm}
+            >
+              <span aria-hidden="true">＋</span>
+              New Event
+            </button>
+          </div>
+
+          <div className="event-home-stats">
+            <article className="event-home-stat">
+              <span>Client</span>
+              <b>
+                {work.event.clientName ||
+                  'Not added'}
+              </b>
+            </article>
+
+            <article className="event-home-stat">
+              <span>Date</span>
+              <b>
+                {work.event.eventDate ||
+                  'Not added'}
+              </b>
+            </article>
+
+            <article className="event-home-stat">
+              <span>Guests</span>
+              <b>
+                {Number(work.event.pax) > 0
+                  ? Number(
+                      work.event.pax,
+                    ).toLocaleString('en-IN')
+                  : 'Not added'}
+              </b>
+            </article>
+
+            <article className="event-home-stat">
+              <span>Menu</span>
+              <b>
+                {work.menu.length > 0
+                  ? `${work.menu.length} dishes selected`
+                  : 'Not selected'}
+              </b>
+            </article>
+          </div>
+        </section>
         <div className="event-page-topbar no-print">
           <div className="event-page-heading">
             <span className="event-page-step">
@@ -10090,8 +10466,26 @@ export default function EventPage() {
                         Menu Selection
                       </h2>
                       <p>
-                        Select dishes directly from your Dish Master.
+                        Choose dishes directly from Dish Master. Search by dish or category, select what you need, and save it to this event.
                       </p>
+
+                      <div className="event-selection-status">
+                        <span>
+                          Dish Master
+                        </span>
+                        <span>
+                          Category-wise
+                        </span>
+                        {work.menu.length > 0 ? (
+                          <span className="ready">
+                            ✓ {work.menu.length} selected
+                          </span>
+                        ) : (
+                          <span>
+                            No dishes selected
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -10119,9 +10513,15 @@ export default function EventPage() {
                       </svg>
                     </span>
                     <span className="event-manual-entry-copy">
-                      <b>Select Menu</b>
+                      <b>
+                        {work.menu.length > 0
+                          ? 'Edit Menu Selection'
+                          : 'Select Menu'}
+                      </b>
                       <small>
-                        Choose dishes by category from Dish Master
+                        {work.menu.length > 0
+                          ? `${work.menu.length} dishes currently selected`
+                          : 'Choose dishes by category from Dish Master'}
                       </small>
                     </span>
                     <span
