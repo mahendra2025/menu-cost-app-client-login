@@ -2313,7 +2313,6 @@ export default function QuotationPage() {
             </div>
 
             </div>
-          </div>
         </aside>
       </section>
     </AppShell>
