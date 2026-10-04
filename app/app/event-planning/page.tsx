@@ -5012,49 +5012,99 @@ export default function EventPlanningPage() {
           .ep-manpower-role-footer small{color:#637285;font-size:6px}
           @media(max-width:1100px){.ep-manpower-agency-summary{grid-template-columns:repeat(3,1fr)}}
           @media(max-width:680px){.ep-manpower-agency-head{align-items:stretch;flex-direction:column}.ep-manpower-agency-summary{grid-template-columns:1fr 1fr}.ep-manpower-role-grid{grid-template-columns:1fr}}
-          .ep-menu-vendor-control{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
-          .ep-menu-vendor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-menu-vendor-control{display:grid;gap:14px;padding:14px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-menu-vendor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
           .ep-menu-vendor-head b,.ep-menu-vendor-head span{display:block}
-          .ep-menu-vendor-head b{color:#e6edf5;font-size:11px}
-          .ep-menu-vendor-head span{margin-top:3px;max-width:760px;color:#748294;font-size:8px;line-height:1.45}
-          .ep-menu-vendor-head-actions{display:flex;gap:6px;flex-wrap:wrap}
-          .ep-menu-vendor-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
-          .ep-menu-vendor-summary article{padding:9px 10px;border:1px solid rgba(148,163,184,.09);border-radius:10px;background:rgba(255,255,255,.018)}
+          .ep-menu-vendor-head b{color:#edf4fb;font-size:14px;letter-spacing:-.01em}
+          .ep-menu-vendor-head span{margin-top:4px;max-width:760px;color:#8290a2;font-size:9px;line-height:1.55}
+          .ep-menu-vendor-head-actions{display:flex;gap:7px;flex-wrap:wrap}
+          .ep-menu-function-context{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;border:1px solid rgba(74,156,255,.18);border-radius:13px;background:linear-gradient(135deg,rgba(74,156,255,.08),rgba(74,156,255,.025))}
+          .ep-menu-function-context>div:first-child span,.ep-menu-function-context>div:first-child b,.ep-menu-function-context>div:first-child small{display:block}
+          .ep-menu-function-context>div:first-child span{color:#78b5ff;font-size:7px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+          .ep-menu-function-context>div:first-child b{margin-top:4px;color:#f1f6fb;font-size:13px}
+          .ep-menu-function-context>div:first-child small{margin-top:3px;color:#8290a2;font-size:8px;line-height:1.4}
+          .ep-menu-function-chips{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+          .ep-menu-function-chips span{min-width:86px;padding:7px 9px;border:1px solid rgba(148,163,184,.09);border-radius:9px;color:#78889b;background:rgba(9,14,20,.55);font-size:7px;font-weight:800;text-align:center}
+          .ep-menu-function-chips b{display:block;margin-bottom:2px;color:#e5eef7;font-size:11px}
+          .ep-menu-vendor-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+          .ep-menu-vendor-summary article{padding:10px 11px;border:1px solid rgba(148,163,184,.10);border-radius:11px;background:#10171f}
           .ep-menu-vendor-summary span,.ep-menu-vendor-summary b,.ep-menu-vendor-summary small{display:block}
-          .ep-menu-vendor-summary span{color:#718094;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-menu-vendor-summary b{margin-top:4px;color:#e1eaf3;font-size:12px}
-          .ep-menu-vendor-summary small{margin-top:2px;color:#657487;font-size:6px}
-          .ep-menu-vendor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
-          .ep-menu-vendor-card{padding:10px;border:1px solid #2b3440;border-radius:11px;background:#111820}
+          .ep-menu-vendor-summary span{color:#748397;font-size:7px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+          .ep-menu-vendor-summary b{margin-top:5px;color:#edf4fb;font-size:14px}
+          .ep-menu-vendor-summary small{margin-top:3px;color:#69788b;font-size:7px;line-height:1.35}
+          .ep-menu-vendor-progress{display:grid;gap:6px;padding:10px 11px;border:1px solid rgba(148,163,184,.08);border-radius:10px;background:rgba(255,255,255,.015)}
+          .ep-menu-vendor-progress>div{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#7c8b9e;font-size:8px;font-weight:800}
+          .ep-menu-vendor-progress>div b{color:#a8cffc;font-size:9px}
+          .ep-menu-vendor-progress>span{display:block;height:5px;overflow:hidden;border-radius:999px;background:#1a232d}
+          .ep-menu-vendor-progress>span i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#4a9cff,#63d7a0)}
+          .ep-menu-vendor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px}
+          .ep-menu-vendor-card{overflow:hidden;border:1px solid #2b3541;border-radius:14px;background:#10171f;box-shadow:0 10px 28px rgba(0,0,0,.12)}
           .ep-menu-vendor-card.assigned{border-color:rgba(74,156,255,.28)}
-          .ep-menu-vendor-card.ready{border-color:rgba(85,217,143,.20)}
-          .ep-menu-vendor-card.attention{border-color:rgba(244,173,84,.35)}
-          .ep-menu-vendor-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-menu-vendor-card.ready{border-color:rgba(85,217,143,.30)}
+          .ep-menu-vendor-card.attention{border-color:rgba(244,173,84,.42)}
+          .ep-menu-vendor-card-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 11px;border-bottom:1px solid rgba(148,163,184,.08);background:#0d131a}
+          .ep-menu-vendor-station span,.ep-menu-vendor-station b{display:block}
+          .ep-menu-vendor-station span{color:#627287;font-size:6px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+          .ep-menu-vendor-station b{margin-top:2px;color:#9fc9f8;font-size:8px}
+          .ep-menu-status{padding:5px 8px;border-radius:999px;color:#f1b361;background:rgba(244,173,84,.09);font-size:6px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+          .ep-menu-status.confirmed{color:#8ec4ff;background:rgba(74,156,255,.10)}
+          .ep-menu-status.delivered,.ep-menu-status.closed{color:#76dda2;background:rgba(85,217,143,.09)}
+          .ep-menu-vendor-card-main{display:grid;gap:11px;padding:12px}
+          .ep-menu-vendor-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
           .ep-menu-vendor-card-top span,.ep-menu-vendor-card-top b,.ep-menu-vendor-card-top small{display:block}
-          .ep-menu-vendor-card-top span{color:#78b5ff;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-menu-vendor-card-top b{margin-top:3px;color:#e6edf5;font-size:9px}
-          .ep-menu-vendor-card-top small{margin-top:3px;color:#6e7c8e;font-size:6px}
-          .ep-menu-vendor-card-top>strong{color:#d9e4ef;font-size:9px;white-space:nowrap}
-          .ep-menu-dishes{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-          .ep-menu-dishes span{padding:4px 6px;border-radius:999px;color:#8295aa;background:rgba(74,156,255,.045);font-size:6px;font-weight:750}
-          .ep-menu-vendor-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
-          .ep-menu-vendor-meta>span{padding:5px 6px;border-radius:7px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
-          .ep-menu-vendor-meta>span b{display:block;margin-top:2px;color:#d7e1ec;font-size:8px}
-          .ep-menu-vendor-meta>span.warn{color:#e7a653;background:rgba(244,173,84,.06)}
-          .ep-menu-vendor-meta>span.warn b{color:#f1b361}
-          .ep-menu-cover-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end;margin-top:8px}
-          .ep-menu-cover-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
+          .ep-menu-vendor-card-top span{color:#718095;font-size:7px;font-weight:900;text-transform:uppercase}
+          .ep-menu-vendor-card-top b{margin-top:3px;color:#eef4fa;font-size:12px;line-height:1.3}
+          .ep-menu-vendor-card-top small{margin-top:4px;color:#6f7f92;font-size:7px;line-height:1.4}
+          .ep-menu-vendor-cost{text-align:right;white-space:nowrap}
+          .ep-menu-vendor-cost strong,.ep-menu-vendor-cost small{display:block}
+          .ep-menu-vendor-cost strong{color:#eef5fb;font-size:12px}
+          .ep-menu-vendor-cost small{margin-top:2px;color:#667589;font-size:6px;font-weight:800;text-transform:uppercase}
+          .ep-menu-dishes{display:flex;gap:5px;flex-wrap:wrap}
+          .ep-menu-dishes span{padding:5px 7px;border-radius:999px;color:#8fa2b7;background:rgba(74,156,255,.055);font-size:7px;font-weight:750}
+          .ep-menu-dishes span.more{color:#78b5ff;background:rgba(74,156,255,.10)}
+          .ep-menu-assignment-block{display:grid;gap:8px;padding:10px;border:1px solid rgba(148,163,184,.09);border-radius:11px;background:#0d141b}
+          .ep-menu-block-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
+          .ep-menu-block-title span{color:#7f8ea1;font-size:7px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+          .ep-menu-block-title small{color:#667589;font-size:7px}
+          .ep-menu-field{display:grid;gap:4px}
+          .ep-menu-field>span{color:#728196;font-size:6px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+          .ep-menu-field select,.ep-menu-field input{width:100%;min-height:40px;padding:0 10px;border:1px solid #33404d;border-radius:9px;outline:0;color:#e5edf6;background:#151d26;font:inherit;font-size:9px;color-scheme:dark}
+          .ep-menu-field select:focus,.ep-menu-field input:focus{border-color:rgba(74,156,255,.65);box-shadow:0 0 0 3px rgba(74,156,255,.08)}
+          .ep-menu-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+          .ep-menu-contact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 9px;border:1px solid rgba(148,163,184,.07);border-radius:9px;background:rgba(255,255,255,.02)}
+          .ep-menu-contact>div span,.ep-menu-contact>div b,.ep-menu-contact>div small{display:block}
+          .ep-menu-contact>div span{color:#6f7f92;font-size:6px;font-weight:900;text-transform:uppercase}
+          .ep-menu-contact>div b{margin-top:2px;color:#dce6ef;font-size:8px}
+          .ep-menu-contact>div small{margin-top:2px;color:#6b7b8e;font-size:7px}
+          .ep-menu-contact a{padding:6px 8px;border:1px solid rgba(74,156,255,.18);border-radius:8px;color:#8ec4ff;background:rgba(74,156,255,.05);font-size:7px;font-weight:900;text-decoration:none}
+          .ep-menu-commercial{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:8px}
+          .ep-menu-cover-box,.ep-menu-rate-box{padding:9px;border:1px solid rgba(148,163,184,.09);border-radius:10px;background:rgba(255,255,255,.018)}
+          .ep-menu-cover-box>span,.ep-menu-rate-box>span{display:block;color:#728196;font-size:6px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+          .ep-menu-cover-editor{display:grid;grid-template-columns:38px minmax(0,1fr) 38px;gap:6px;align-items:center;margin-top:6px}
+          .ep-menu-cover-editor>button{height:40px;border:1px solid #34404d;border-radius:9px;color:#d3deea;background:#161f29;font-size:18px;font-weight:800;cursor:pointer}
           .ep-menu-cover-editor>button:disabled{opacity:.35;cursor:not-allowed}
-          .ep-menu-cover-editor label{display:grid;gap:3px}
-          .ep-menu-cover-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-menu-cover-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
-          .ep-menu-use-covers{width:100%;min-height:30px;margin-top:6px;border:1px solid rgba(74,156,255,.16);border-radius:8px;color:#92c3fb;background:rgba(74,156,255,.045);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
-          .ep-menu-vendor-card-footer{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.07)}
-          .ep-menu-vendor-card-footer>span{padding:4px 7px;border-radius:999px;color:#f0b15f;background:rgba(244,173,84,.07);font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-menu-vendor-card-footer>span.confirmed,.ep-menu-vendor-card-footer>span.delivered,.ep-menu-vendor-card-footer>span.closed{color:#76dda2;background:rgba(85,217,143,.07)}
-          .ep-menu-vendor-card-footer small{color:#637285;font-size:6px}
-          @media(max-width:1100px){.ep-menu-vendor-summary{grid-template-columns:repeat(3,1fr)}}
-          @media(max-width:680px){.ep-menu-vendor-head{align-items:stretch;flex-direction:column}.ep-menu-vendor-summary{grid-template-columns:1fr 1fr}.ep-menu-vendor-grid{grid-template-columns:1fr}}
+          .ep-menu-cover-editor input{width:100%;height:40px;border:1px solid #34404d;border-radius:9px;outline:0;color:#e6eef7;background:#151d26;font:inherit;font-size:11px;font-weight:900;text-align:center}
+          .ep-menu-cover-note{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:6px;color:#6d7c8f;font-size:7px}
+          .ep-menu-cover-note b{color:#d8e3ed;font-size:8px}
+          .ep-menu-cover-note b.warn{color:#f1b361}
+          .ep-menu-use-covers{width:100%;min-height:32px;margin-top:6px;border:1px solid rgba(74,156,255,.18);border-radius:8px;color:#92c3fb;background:rgba(74,156,255,.05);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
+          .ep-menu-rate-box input{width:100%;height:40px;margin-top:6px;padding:0 9px;border:1px solid #34404d;border-radius:9px;outline:0;color:#e6eef7;background:#151d26;font:inherit;font-size:11px;font-weight:900}
+          .ep-menu-rate-box small{display:block;margin-top:6px;color:#6d7c8f;font-size:7px}
+          .ep-menu-rate-box small b{color:#dce7f1}
+          .ep-menu-time-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+          .ep-menu-status-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+          .ep-menu-status-actions button{min-height:34px;padding:5px 7px;border:1px solid #303b47;border-radius:8px;color:#77879a;background:#131b24;font:inherit;font-size:6px;font-weight:900;text-transform:uppercase;cursor:pointer}
+          .ep-menu-status-actions button.active{border-color:rgba(74,156,255,.35);color:#a9d0ff;background:rgba(74,156,255,.08)}
+          .ep-menu-status-actions button.done.active{border-color:rgba(85,217,143,.30);color:#82e0aa;background:rgba(85,217,143,.07)}
+          .ep-menu-quick-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:2px}
+          .ep-menu-quick-row>div{display:flex;gap:6px;flex-wrap:wrap}
+          .ep-menu-mini-action{min-height:30px;padding:0 9px;border:1px solid #303b47;border-radius:8px;color:#8798aa;background:#131b24;font:inherit;font-size:7px;font-weight:850;cursor:pointer}
+          .ep-menu-mini-action.primary{border-color:rgba(74,156,255,.20);color:#8ec4ff;background:rgba(74,156,255,.05)}
+          .ep-menu-mini-action.danger{border-color:rgba(255,98,89,.16);color:#e28c87;background:rgba(255,98,89,.04)}
+          .ep-menu-ready-copy{color:#667589;font-size:7px;text-align:right}
+          .ep-menu-ready-copy b{display:block;margin-bottom:2px;color:#dce7f1;font-size:8px}
+          @media(max-width:1100px){.ep-menu-vendor-summary{grid-template-columns:repeat(3,1fr)}.ep-menu-vendor-grid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}}
+          @media(max-width:720px){.ep-menu-vendor-control{padding:10px}.ep-menu-vendor-head{align-items:stretch;flex-direction:column}.ep-menu-vendor-head-actions .ep-button{flex:1}.ep-menu-function-context{align-items:stretch;flex-direction:column}.ep-menu-function-chips{justify-content:flex-start}.ep-menu-function-chips span{flex:1;min-width:78px}.ep-menu-vendor-summary{grid-template-columns:1fr 1fr}.ep-menu-vendor-grid{grid-template-columns:1fr}.ep-menu-field-grid,.ep-menu-commercial,.ep-menu-time-grid{grid-template-columns:1fr}.ep-menu-status-actions{grid-template-columns:1fr 1fr}.ep-menu-contact{align-items:flex-start}.ep-menu-quick-row{align-items:stretch;flex-direction:column}.ep-menu-ready-copy{text-align:left}}
           .ep-empty{padding:40px 15px;color:#748294;font-size:10px;text-align:center}
           @media(max-width:1180px){.ep-readiness-grid{grid-template-columns:repeat(4,1fr)}.ep-stats{grid-template-columns:repeat(3,1fr)}.ep-layout{grid-template-columns:1fr}.ep-side{grid-template-columns:repeat(3,1fr)}}
           @media(max-width:720px){.ep-event-selector{grid-template-columns:1fr}.ep-readiness-head{align-items:flex-start}.ep-readiness-grid{grid-template-columns:1fr 1fr}.ep-page{gap:10px}.ep-hero{align-items:stretch;flex-direction:column;padding-top:8px}.ep-hero h1{font-size:28px}.ep-stats{grid-template-columns:1fr 1fr}.ep-layout{display:block}.ep-side{display:grid;grid-template-columns:1fr;margin-top:10px}.ep-function{min-width:145px}.ep-panel-head{align-items:stretch;flex-direction:column}.ep-panel-head .ep-button{width:100%}}
@@ -6552,9 +6602,9 @@ export default function EventPlanningPage() {
               <section className="ep-menu-vendor-control">
                 <div className="ep-menu-vendor-head">
                   <div>
-                    <b>Menu Vendor Planning</b>
+                    <b>Vendor Assignment Workspace</b>
                     <span>
-                      Categories and dishes come directly from the selected menu for this function. Assign an in-house team or external food vendor per category/station.
+                      Plan every menu category as an execution station. Assign a saved food vendor or in-house team, set covers and rate, confirm reporting time, and track status without leaving this function.
                     </span>
                   </div>
 
@@ -6570,49 +6620,92 @@ export default function EventPlanningPage() {
                       className="ep-button"
                       href="/app/vendors"
                     >
-                      Food Vendors
+                      Vendor Master
                     </Link>
+                  </div>
+                </div>
+
+                <div className="ep-menu-function-context">
+                  <div>
+                    <span>Selected Function</span>
+                    <b>
+                      {currentFunction.dayLabel} · {currentFunction.mealLabel}
+                    </b>
+                    <small>
+                      {work.event.clientName || eventName}
+                      {' · '}
+                      {work.event.venue || work.event.city || 'Venue not set'}
+                    </small>
+                  </div>
+
+                  <div className="ep-menu-function-chips">
+                    <span>
+                      <b>{Math.max(0, Number(currentFunction.pax) || 0).toLocaleString('en-IN')}</b>
+                      covers
+                    </span>
+                    <span>
+                      <b>{currentFunction.menu.length}</b>
+                      dishes
+                    </span>
+                    <span>
+                      <b>{menuVendorRows.length}</b>
+                      stations
+                    </span>
+                    <span>
+                      <b>{menuVendorSummary.assigned}</b>
+                      assigned
+                    </span>
                   </div>
                 </div>
 
                 <div className="ep-menu-vendor-summary">
                   <article>
-                    <span>Menu Categories</span>
+                    <span>Stations</span>
                     <b>{menuVendorRows.length}</b>
-                    <small>{currentFunction?.menu.length || 0} selected dishes</small>
+                    <small>{currentFunction.menu.length} selected dishes</small>
                   </article>
                   <article>
                     <span>Assigned</span>
                     <b>{menuVendorSummary.assigned}/{menuVendorRows.length}</b>
-                    <small>In-house or vendor assigned</small>
+                    <small>Vendor or in-house team selected</small>
                   </article>
                   <article>
-                    <span>Setup Ready</span>
+                    <span>Reporting Ready</span>
                     <b>{menuVendorSummary.withSetupTime}/{menuVendorRows.length}</b>
-                    <small>Reporting/setup time entered</small>
+                    <small>Setup/reporting time entered</small>
                   </article>
                   <article>
                     <span>Confirmed</span>
                     <b>{menuVendorSummary.confirmed}</b>
-                    <small>{menuVendorSummary.readiness}% vendor readiness</small>
+                    <small>Confirmed, delivered or closed</small>
                   </article>
                   <article>
                     <span>Vendor Cost</span>
                     <b>{currency(menuVendorSummary.totalCost)}</b>
-                    <small>Cover × vendor rate</small>
+                    <small>Assigned covers × station rate</small>
                   </article>
+                </div>
+
+                <div className="ep-menu-vendor-progress">
+                  <div>
+                    <span>Function vendor readiness</span>
+                    <b>{menuVendorSummary.readiness}%</b>
+                  </div>
+                  <span>
+                    <i style={{ width: menuVendorSummary.readiness + '%' }} />
+                  </span>
                 </div>
 
                 {menuVendorRows.length ? (
                   <div className="ep-menu-vendor-grid">
-                    {menuVendorRows.map((row) => {
+                    {menuVendorRows.map((row, rowIndex) => {
                       const category =
                         menuCategoryFromRow(
                           row,
                         );
 
                       const dishes =
-                        currentFunction?.menu.filter(
+                        currentFunction.menu.filter(
                           (item) =>
                             normalized(
                               item.category ||
@@ -6621,13 +6714,13 @@ export default function EventPlanningPage() {
                             normalized(
                               category,
                             ),
-                        ) || [];
+                        );
 
                       const functionCovers =
                         Math.max(
                           0,
                           Number(
-                            currentFunction?.pax,
+                            currentFunction.pax,
                           ) || 0,
                         );
 
@@ -6635,19 +6728,70 @@ export default function EventPlanningPage() {
                         row.quantity -
                         functionCovers;
 
+                      const assignedVendor =
+                        row.partnerId
+                          ? vendors.find(
+                              (vendor) =>
+                                vendor.id ===
+                                row.partnerId,
+                            ) || null
+                          : null;
+
+                      const matchingFoodVendors =
+                        vendors.filter(
+                          (vendor) =>
+                            vendor.active &&
+                            vendorMatchesMenuRow(
+                              vendor,
+                              row,
+                            ),
+                        );
+
+                      const otherFoodVendors =
+                        vendors.filter(
+                          (vendor) =>
+                            vendor.active &&
+                            !vendorMatchesMenuRow(
+                              vendor,
+                              row,
+                            ),
+                        );
+
+                      const hasAssignment =
+                        Boolean(
+                          row.assignedTo.trim(),
+                        );
+
+                      const hasReportingTime =
+                        Boolean(
+                          row.deliveryTime,
+                        );
+
+                      const coversReady =
+                        functionCovers <= 0 ||
+                        row.quantity >=
+                          functionCovers;
+
+                      const stationReady =
+                        hasAssignment &&
+                        hasReportingTime &&
+                        coversReady &&
+                        row.status !==
+                          'PENDING';
+
                       return (
                         <article
                           className={
                             [
                               'ep-menu-vendor-card',
-                              row.assignedTo.trim()
+                              hasAssignment
                                 ? 'assigned'
                                 : '',
-                              row.status !== 'PENDING'
+                              stationReady
                                 ? 'ready'
                                 : '',
-                              functionCovers > 0 &&
-                              row.quantity < functionCovers
+                              !hasAssignment ||
+                              !coversReady
                                 ? 'attention'
                                 : '',
                             ]
@@ -6656,132 +6800,470 @@ export default function EventPlanningPage() {
                           }
                           key={row.id}
                         >
-                          <div className="ep-menu-vendor-card-top">
-                            <div>
-                              <span>{category}</span>
-                              <b>{row.requirement}</b>
-                              <small>
-                                {row.assignedTo ||
-                                  'Vendor not assigned'}
-                              </small>
+                          <div className="ep-menu-vendor-card-bar">
+                            <div className="ep-menu-vendor-station">
+                              <span>
+                                {'Station ' + String(rowIndex + 1).padStart(2, '0')}
+                              </span>
+                              <b>{category}</b>
                             </div>
 
-                            <strong>
-                              {currency(
-                                row.quantity *
-                                  row.rate,
-                              )}
-                            </strong>
-                          </div>
-
-                          <div className="ep-menu-dishes">
-                            {dishes.length ? (
-                              dishes.map((dish) => (
-                                <span key={dish.id}>
-                                  {dish.name}
-                                </span>
-                              ))
-                            ) : (
-                              <span>
-                                {row.detail || 'No dish detail'}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="ep-menu-vendor-meta">
-                            <span>
-                              Function Covers
-                              <b>{functionCovers}</b>
-                            </span>
-                            <span>
-                              Vendor Covers
-                              <b>{row.quantity}</b>
-                            </span>
                             <span
                               className={
-                                variance < 0
-                                  ? 'warn'
-                                  : ''
+                                'ep-menu-status ' +
+                                row.status.toLowerCase()
                               }
                             >
-                              Variance
-                              <b>
-                                {variance > 0
-                                  ? `+${variance}`
-                                  : variance}
-                              </b>
+                              {row.status.replace(/_/g, ' ')}
                             </span>
                           </div>
 
-                          <div className="ep-menu-cover-editor">
-                            <button
-                              type="button"
-                              disabled={row.quantity <= 1}
-                              onClick={() =>
-                                setMenuVendorCovers(
-                                  row,
-                                  row.quantity - 1,
-                                )
-                              }
-                            >
-                              −
-                            </button>
+                          <div className="ep-menu-vendor-card-main">
+                            <div className="ep-menu-vendor-card-top">
+                              <div>
+                                <span>Menu Station</span>
+                                <b>{row.requirement}</b>
+                                <small>
+                                  {hasAssignment
+                                    ? row.partnerType === 'IN_HOUSE'
+                                      ? 'Managed by your in-house team'
+                                      : 'Assigned to ' + row.assignedTo
+                                    : 'Assignment required before execution'}
+                                </small>
+                              </div>
 
-                            <label>
-                              <span>Covers</span>
-                              <input
-                                type="number"
-                                min="1"
-                                step="1"
-                                value={row.quantity}
-                                onChange={(event) =>
-                                  setMenuVendorCovers(
-                                    row,
-                                    Number(
+                              <div className="ep-menu-vendor-cost">
+                                <strong>
+                                  {currency(
+                                    row.quantity *
+                                      row.rate,
+                                  )}
+                                </strong>
+                                <small>estimated total</small>
+                              </div>
+                            </div>
+
+                            <div className="ep-menu-dishes">
+                              {dishes.length ? (
+                                <>
+                                  {dishes
+                                    .slice(0, 5)
+                                    .map((dish) => (
+                                      <span key={dish.id}>
+                                        {dish.name}
+                                      </span>
+                                    ))}
+                                  {dishes.length > 5 ? (
+                                    <span className="more">
+                                      {'+' + (dishes.length - 5) + ' more'}
+                                    </span>
+                                  ) : null}
+                                </>
+                              ) : (
+                                <span>
+                                  {row.detail || 'No dish detail'}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="ep-menu-assignment-block">
+                              <div className="ep-menu-block-title">
+                                <span>Assignment</span>
+                                <small>
+                                  {hasAssignment
+                                    ? 'Assigned'
+                                    : 'Choose vendor or team'}
+                                </small>
+                              </div>
+
+                              <label className="ep-menu-field">
+                                <span>Saved Vendor / Team</span>
+                                <select
+                                  value={
+                                    row.partnerType === 'IN_HOUSE'
+                                      ? '__in_house'
+                                      : row.partnerId || ''
+                                  }
+                                  onChange={(event) =>
+                                    assignPartner(
+                                      row,
                                       event.target.value,
-                                    ),
-                                  )
-                                }
-                              />
-                            </label>
+                                    )
+                                  }
+                                  aria-label={'Assign vendor for ' + row.requirement}
+                                >
+                                  <option value="">
+                                    Choose saved vendor
+                                  </option>
+                                  <option value="__in_house">
+                                    In-house team
+                                  </option>
 
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setMenuVendorCovers(
-                                  row,
-                                  row.quantity + 1,
-                                )
-                              }
-                            >
-                              +
-                            </button>
-                          </div>
+                                  {matchingFoodVendors.length ? (
+                                    <optgroup label="Matching food vendors">
+                                      {matchingFoodVendors.map(
+                                        (vendor) => (
+                                          <option
+                                            key={vendor.id}
+                                            value={vendor.id}
+                                          >
+                                            {vendor.name} · {vendor.category || vendor.type}
+                                          </option>
+                                        ),
+                                      )}
+                                    </optgroup>
+                                  ) : null}
 
-                          {functionCovers > 0 ? (
-                            <button
-                              className="ep-menu-use-covers"
-                              type="button"
-                              onClick={() =>
-                                useFunctionCovers(
-                                  row,
-                                )
-                              }
-                            >
-                              Use Function Covers {functionCovers}
-                            </button>
-                          ) : null}
+                                  {otherFoodVendors.length ? (
+                                    <optgroup label="Other active partners">
+                                      {otherFoodVendors.map(
+                                        (vendor) => (
+                                          <option
+                                            key={vendor.id}
+                                            value={vendor.id}
+                                          >
+                                            {vendor.name} · {vendor.category || vendor.type}
+                                          </option>
+                                        ),
+                                      )}
+                                    </optgroup>
+                                  ) : null}
+                                </select>
+                              </label>
 
-                          <div className="ep-menu-vendor-card-footer">
-                            <span className={row.status.toLowerCase()}>
-                              {row.status}
-                            </span>
+                              <div className="ep-menu-field-grid">
+                                <label className="ep-menu-field">
+                                  <span>Manual Assignment</span>
+                                  <input
+                                    value={
+                                      row.partnerId ||
+                                      row.partnerType === 'IN_HOUSE'
+                                        ? ''
+                                        : row.assignedTo
+                                    }
+                                    placeholder="Type vendor/team name"
+                                    onChange={(event) =>
+                                      updateRow(row.id, {
+                                        partnerId: '',
+                                        assignedTo:
+                                          event.target.value,
+                                      })
+                                    }
+                                    aria-label={'Manual vendor for ' + row.requirement}
+                                  />
+                                </label>
 
-                            <small>
-                              {row.deliveryTime
-                                ? `Setup ${row.deliveryTime.replace('T', ' ')}`
-                                : 'Setup/reporting time not set'}
-                            </small>
+                                <label className="ep-menu-field">
+                                  <span>Partner Type</span>
+                                  <select
+                                    value={row.partnerType}
+                                    onChange={(event) =>
+                                      updateRow(row.id, {
+                                        partnerType:
+                                          event.target.value as PartnerType,
+                                      })
+                                    }
+                                    aria-label={'Partner type for ' + row.requirement}
+                                  >
+                                    <option value="IN_HOUSE">
+                                      In-house
+                                    </option>
+                                    <option value="VENDOR">
+                                      Vendor
+                                    </option>
+                                    <option value="AGENCY">
+                                      Agency
+                                    </option>
+                                  </select>
+                                </label>
+                              </div>
+
+                              {assignedVendor ? (
+                                <div className="ep-menu-contact">
+                                  <div>
+                                    <span>Vendor Contact</span>
+                                    <b>
+                                      {assignedVendor.contactPerson ||
+                                        assignedVendor.name}
+                                    </b>
+                                    <small>
+                                      {[
+                                        assignedVendor.phone,
+                                        assignedVendor.city,
+                                        assignedVendor.paymentTerms,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(' · ') || 'No contact details saved'}
+                                    </small>
+                                  </div>
+
+                                  {assignedVendor.phone ? (
+                                    <a
+                                      href={'tel:' + assignedVendor.phone}
+                                    >
+                                      Call
+                                    </a>
+                                  ) : null}
+                                </div>
+                              ) : row.partnerType === 'IN_HOUSE' ? (
+                                <div className="ep-menu-contact">
+                                  <div>
+                                    <span>Team Contact</span>
+                                    <b>In-house execution</b>
+                                    <small>
+                                      Managed internally for this function
+                                    </small>
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+
+                            <div className="ep-menu-commercial">
+                              <div className="ep-menu-cover-box">
+                                <span>Vendor Covers</span>
+
+                                <div className="ep-menu-cover-editor">
+                                  <button
+                                    type="button"
+                                    disabled={row.quantity <= 1}
+                                    onClick={() =>
+                                      setMenuVendorCovers(
+                                        row,
+                                        row.quantity - 1,
+                                      )
+                                    }
+                                    aria-label="Decrease vendor covers"
+                                  >
+                                    −
+                                  </button>
+
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={row.quantity}
+                                    onChange={(event) =>
+                                      setMenuVendorCovers(
+                                        row,
+                                        Number(
+                                          event.target.value,
+                                        ),
+                                      )
+                                    }
+                                    aria-label="Vendor covers"
+                                  />
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setMenuVendorCovers(
+                                        row,
+                                        row.quantity + 1,
+                                      )
+                                    }
+                                    aria-label="Increase vendor covers"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+
+                                <div className="ep-menu-cover-note">
+                                  <span>
+                                    Function {functionCovers.toLocaleString('en-IN')}
+                                  </span>
+                                  <b
+                                    className={
+                                      variance < 0
+                                        ? 'warn'
+                                        : ''
+                                    }
+                                  >
+                                    {variance === 0
+                                      ? 'Matched'
+                                      : variance > 0
+                                        ? '+' + variance + ' extra'
+                                        : Math.abs(variance) + ' short'}
+                                  </b>
+                                </div>
+
+                                {functionCovers > 0 &&
+                                row.quantity !== functionCovers ? (
+                                  <button
+                                    className="ep-menu-use-covers"
+                                    type="button"
+                                    onClick={() =>
+                                      useFunctionCovers(
+                                        row,
+                                      )
+                                    }
+                                  >
+                                    Use Function Covers {functionCovers}
+                                  </button>
+                                ) : null}
+                              </div>
+
+                              <div className="ep-menu-rate-box">
+                                <span>Rate / {row.unit || 'cover'}</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={row.rate}
+                                  onChange={(event) =>
+                                    updateRow(row.id, {
+                                      rate:
+                                        Math.max(
+                                          0,
+                                          Number(
+                                            event.target.value,
+                                          ) || 0,
+                                        ),
+                                    })
+                                  }
+                                  aria-label={'Rate for ' + row.requirement}
+                                />
+                                <small>
+                                  Total{' '}
+                                  <b>
+                                    {currency(
+                                      row.quantity *
+                                        row.rate,
+                                    )}
+                                  </b>
+                                </small>
+                              </div>
+                            </div>
+
+                            <div className="ep-menu-time-grid">
+                              <label className="ep-menu-field">
+                                <span>Reporting / Setup Time</span>
+                                <input
+                                  type="datetime-local"
+                                  value={row.deliveryTime}
+                                  onChange={(event) =>
+                                    updateRow(row.id, {
+                                      deliveryTime:
+                                        event.target.value,
+                                    })
+                                  }
+                                  aria-label={'Reporting time for ' + row.requirement}
+                                />
+                              </label>
+
+                              <label className="ep-menu-field">
+                                <span>Pickup / Return Time</span>
+                                <input
+                                  type="datetime-local"
+                                  value={row.pickupTime || ''}
+                                  onChange={(event) =>
+                                    updateRow(row.id, {
+                                      pickupTime:
+                                        event.target.value,
+                                    })
+                                  }
+                                  aria-label={'Return time for ' + row.requirement}
+                                />
+                              </label>
+                            </div>
+
+                            <div className="ep-menu-status-actions">
+                              {(
+                                [
+                                  'PENDING',
+                                  'CONFIRMED',
+                                  'DELIVERED',
+                                  'CLOSED',
+                                ] as AssignmentStatus[]
+                              ).map((status) => (
+                                <button
+                                  key={status}
+                                  className={
+                                    [
+                                      row.status === status
+                                        ? 'active'
+                                        : '',
+                                      status === 'DELIVERED' ||
+                                      status === 'CLOSED'
+                                        ? 'done'
+                                        : '',
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' ')
+                                  }
+                                  type="button"
+                                  onClick={() =>
+                                    updateRow(row.id, {
+                                      status,
+                                    })
+                                  }
+                                >
+                                  {status}
+                                </button>
+                              ))}
+                            </div>
+
+                            <div className="ep-menu-quick-row">
+                              <div>
+                                {functionCovers > 0 &&
+                                row.quantity !== functionCovers ? (
+                                  <button
+                                    className="ep-menu-mini-action primary"
+                                    type="button"
+                                    onClick={() =>
+                                      useFunctionCovers(
+                                        row,
+                                      )
+                                    }
+                                  >
+                                    Match covers
+                                  </button>
+                                ) : null}
+
+                                {hasAssignment ? (
+                                  <button
+                                    className="ep-menu-mini-action"
+                                    type="button"
+                                    onClick={() =>
+                                      assignPartner(
+                                        row,
+                                        '',
+                                      )
+                                    }
+                                  >
+                                    Clear assignment
+                                  </button>
+                                ) : null}
+
+                                <button
+                                  className="ep-menu-mini-action danger"
+                                  type="button"
+                                  onClick={() =>
+                                    removeRow(
+                                      row.id,
+                                    )
+                                  }
+                                >
+                                  Remove station
+                                </button>
+                              </div>
+
+                              <div className="ep-menu-ready-copy">
+                                <b>
+                                  {stationReady
+                                    ? 'Station ready'
+                                    : !hasAssignment
+                                      ? 'Vendor needed'
+                                      : !coversReady
+                                        ? 'Covers short'
+                                        : !hasReportingTime
+                                          ? 'Set reporting time'
+                                          : 'Confirm assignment'}
+                                </b>
+                                {hasReportingTime
+                                  ? row.deliveryTime.replace('T', ' ')
+                                  : 'No reporting time'}
+                              </div>
+                            </div>
                           </div>
                         </article>
                       );
@@ -6789,7 +7271,7 @@ export default function EventPlanningPage() {
                   </div>
                 ) : (
                   <div className="ep-empty">
-                    No menu categories found for this function. Select the function menu first.
+                    No menu stations found for this function. Select dishes in the menu first, then return here to assign vendors.
                   </div>
                 )}
               </section>
@@ -7305,7 +7787,7 @@ export default function EventPlanningPage() {
               </section>
             ) : null}
 
-            {visibleRows.length ? (
+            {visibleRows.length && tab !== 'MENU' ? (
               <div className="ep-table-wrap">
                 <table className="ep-table">
                   <thead>
