@@ -785,19 +785,19 @@ export default function UnknownDishQueuePage() {
               <small>Needs admin decision</small>
             </div>
             <div className="queue-stat">
-              <span>Matched</span>
-              <b>{statusCounts.MATCHED.toLocaleString('en-IN')}</b>
-              <small>Aliases learned</small>
+              <span>Recipe</span>
+              <b>{statusCounts.RECIPE_IN_PROGRESS.toLocaleString('en-IN')}</b>
+              <small>Currently being built</small>
             </div>
             <div className="queue-stat">
-              <span>Added New</span>
-              <b>{statusCounts.APPROVED.toLocaleString('en-IN')}</b>
-              <small>New master dishes</small>
+              <span>Global Ready</span>
+              <b>{statusCounts.GLOBAL_READY.toLocaleString('en-IN')}</b>
+              <small>Recipe + rate published</small>
             </div>
             <div className="queue-stat">
               <span>Dish Master</span>
               <b>{dishOptions.length.toLocaleString('en-IN')}</b>
-              <small>Available match targets</small>
+              <small>Available global dishes</small>
             </div>
           </div>
         </div>
