@@ -9,6 +9,7 @@ type StaffRole = {
   id: string;
   role: string;
   rate: number;
+  department?: string;
 };
 
 function recordId(tenantId: string) {
@@ -30,10 +31,36 @@ function cleanRoles(value: unknown): StaffRole[] {
     if (!role || seen.has(normalizedRole)) return [];
     seen.add(normalizedRole);
 
+    const departmentRaw =
+      String(
+        candidate.department ||
+        '',
+      )
+        .trim()
+        .toUpperCase();
+
+    const department =
+      [
+        'SERVICE',
+        'COUNTER',
+        'LIVE_COUNTER',
+        'BREAD',
+        'KITCHEN',
+        'PREPARATION',
+        'UTILITY',
+        'LOGISTICS',
+        'MANAGEMENT',
+      ].includes(
+        departmentRaw,
+      )
+        ? departmentRaw
+        : undefined;
+
     return [{
       id: String(candidate.id || '').trim().slice(0, 160) || `staff_${seen.size}`,
       role,
       rate: Math.max(0, Number(candidate.rate) || 0),
+      department,
     }];
   });
 }
