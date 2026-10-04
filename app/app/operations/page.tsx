@@ -854,7 +854,7 @@ export default function OperationsCostPage() {
       subtitle="Review LPG, transport and plastic/disposable costs before final costing"
       hidePageTitle
     >
-      <section className="content-grid operations-page">
+      <section className="content-grid operations-page operations-page-modern">
         <div className="operations-overview-v2">
           <div className="operations-overview-copy">
             <span className="page-eyebrow">
@@ -1005,6 +1005,78 @@ export default function OperationsCostPage() {
           </article>
         </section>
 
+        <nav
+          className="operations-workflow-bar no-print"
+          aria-label="Operations workflow shortcuts"
+        >
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                '/app/event-planning',
+              )
+            }
+          >
+            <span>01</span>
+            <b>Event Planning</b>
+            <small>Vendors & resources</small>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                '/app/team',
+              )
+            }
+          >
+            <span>02</span>
+            <b>Manpower</b>
+            <small>Team & dish duties</small>
+          </button>
+
+          <button
+            type="button"
+            className={
+              savedDisposableTotal > 0
+                ? 'is-complete'
+                : ''
+            }
+            onClick={() =>
+              router.push(
+                '/app/disposable',
+              )
+            }
+          >
+            <span>03</span>
+            <b>Disposable</b>
+            <small>
+              {savedDisposableTotal > 0
+                ? 'Completed'
+                : 'Plan & cost'}
+            </small>
+          </button>
+
+          <button
+            type="button"
+            className={
+              operationsReadinessPercent ===
+              100
+                ? 'is-ready'
+                : ''
+            }
+            onClick={() =>
+              router.push(
+                '/app/final-costing',
+              )
+            }
+          >
+            <span>04</span>
+            <b>Final Cost</b>
+            <small>Review event profit</small>
+          </button>
+        </nav>
+
         {(missingEquipmentAssignmentCount > 0 ||
           missingCrockeryAssignmentCount > 0 ||
           planningWarning) ? (
@@ -1037,7 +1109,7 @@ export default function OperationsCostPage() {
 
         <div className="operations-desktop-workspace">
           <div className="operations-desktop-main">
-        <div className="glass-card">
+        <div className="glass-card operations-transport-card">
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Transport method</span>
@@ -1045,7 +1117,7 @@ export default function OperationsCostPage() {
               <p>Use shared transport for one common event trip, or function-wise for separate meal trips.</p>
             </div>
           </div>
-          <div className="action-row operations-mode-row" role="group" aria-label="Transport method">
+          <div className="operations-mode-row" role="group" aria-label="Transport method">
             <button
               type="button"
               className={operations.transportMode === 'EVENT_SHARED' ? 'primary-button' : 'secondary-button'}
@@ -1124,100 +1196,113 @@ export default function OperationsCostPage() {
               : 0;
           const title = [row.dayLabel, row.mealLabel].filter(Boolean).join(' · ');
 
+          const functionPlanRows =
+            planningPlan[
+              operationsPlanningKey(
+                row,
+              )
+            ] || [];
+          const functionOperationalRows =
+            functionPlanRows.filter(
+              (item) =>
+                [
+                  'EQUIPMENT',
+                  'CROCKERY',
+                  'TRANSPORT',
+                  'DISPOSABLE',
+                  'MANPOWER',
+                ].includes(
+                  item.kind,
+                ),
+            );
+          const functionReadyRows =
+            functionOperationalRows.filter(
+              (item) =>
+                [
+                  'CONFIRMED',
+                  'DELIVERED',
+                  'CLOSED',
+                ].includes(
+                  item.status,
+                ),
+            ).length;
+          const functionReady =
+            functionOperationalRows.length > 0
+              ? Math.round(
+                  (
+                    functionReadyRows /
+                    functionOperationalRows.length
+                  ) *
+                    100,
+                )
+              : 0;
+
           return (
             <article className="glass-card operations-function-card" key={row.id}>
-              <div className="final-costing-section-heading">
+              <div className="operations-function-head">
                 <div>
-                  <span className="section-kicker">Function {index + 1} · {row.pax.toLocaleString('en-IN')} guests</span>
+                  <span className="section-kicker">
+                    Function {index + 1} · {row.pax.toLocaleString('en-IN')} guests
+                  </span>
                   <h2>{title || `Function ${index + 1}`}</h2>
                   <p>
                     Gas {money(gasTotal)}
                     {transportTotal > 0 ? ` · Transport ${money(transportTotal)}` : ''}
                   </p>
                 </div>
+
+                <span
+                  className={
+                    `operations-function-status ${functionReady === 100 ? 'is-ready' : functionReady > 0 ? 'is-progress' : 'needs-attention'}`
+                  }
+                >
+                  <b>{functionReady}%</b>
+                  <small>
+                    {functionReady === 100
+                      ? 'Execution ready'
+                      : 'Execution readiness'}
+                  </small>
+                </span>
               </div>
 
-              {(() => {
-                const functionPlanRows =
-                  planningPlan[
-                    operationsPlanningKey(
-                      row,
-                    )
-                  ] || [];
-                const functionOperationalRows =
-                  functionPlanRows.filter(
-                    (item) =>
-                      [
-                        'EQUIPMENT',
-                        'CROCKERY',
-                        'TRANSPORT',
-                        'DISPOSABLE',
-                        'MANPOWER',
-                      ].includes(
-                        item.kind,
-                      ),
-                  );
-                const functionReadyRows =
-                  functionOperationalRows.filter(
-                    (item) =>
-                      [
-                        'CONFIRMED',
-                        'DELIVERED',
-                        'CLOSED',
-                      ].includes(
-                        item.status,
-                      ),
-                  ).length;
-                const functionReady =
-                  functionOperationalRows.length > 0
-                    ? Math.round(
-                        (
-                          functionReadyRows /
-                          functionOperationalRows.length
-                        ) *
-                          100,
-                      )
-                    : 0;
-
-                return (
-                  <div className="operations-function-readiness no-print">
-                    <div>
-                      <span>Execution readiness</span>
-                      <b>{functionReady}%</b>
-                    </div>
-                    <div>
-                      <span>Assignments</span>
-                      <b>
-                        {functionReadyRows}/{functionOperationalRows.length}
-                      </b>
-                    </div>
-                    <div>
-                      <span>Equipment</span>
-                      <b>
-                        {
-                          functionOperationalRows.filter(
-                            (item) =>
-                              item.kind ===
-                              'EQUIPMENT',
-                          ).length
-                        }
-                      </b>
-                    </div>
-                    <div>
-                      <span>Crockery</span>
-                      <b>
-                        {
-                          functionOperationalRows.filter(
-                            (item) =>
-                              item.kind ===
-                              'CROCKERY',
-                          ).length
-                        }
-                      </b>
-                    </div>
-                  </div>
-                );
-              })()}
+              <div className="operations-function-readiness no-print">
+                <div>
+                  <span>Assignments</span>
+                  <b>
+                    {functionReadyRows}/{functionOperationalRows.length}
+                  </b>
+                </div>
+                <div>
+                  <span>Equipment</span>
+                  <b>
+                    {
+                      functionOperationalRows.filter(
+                        (item) =>
+                          item.kind ===
+                          'EQUIPMENT',
+                      ).length
+                    }
+                  </b>
+                </div>
+                <div>
+                  <span>Crockery</span>
+                  <b>
+                    {
+                      functionOperationalRows.filter(
+                        (item) =>
+                          item.kind ===
+                          'CROCKERY',
+                      ).length
+                    }
+                  </b>
+                </div>
+                <div>
+                  <span>Fallback LPG</span>
+                  <b className={fallbackGasDishCount > 0 ? 'needs-attention' : 'is-ready'}>
+                    {fallbackGasDishCount}
+                  </b>
+                </div>
+              </div>
 
               <div className="operations-section-title">
                 <div>
@@ -1239,6 +1324,21 @@ export default function OperationsCostPage() {
                   {eventGasDishCount} event override · {realGasDishCount} real profile · {measuredGasDishCount} measured · {fallbackGasDishCount} fallback estimate
                 </small>
               </div>
+
+              <details className="operations-gas-details">
+                <summary>
+                  <span>
+                    <b>LPG calculation details</b>
+                    <small>
+                      {gasRows.length} dish{gasRows.length === 1 ? '' : 'es'} · {gasCategories.length} categor{gasCategories.length === 1 ? 'y' : 'ies'}
+                    </small>
+                  </span>
+                  <span className={fallbackGasDishCount > 0 ? 'needs-attention' : 'is-ready'}>
+                    {fallbackGasDishCount > 0
+                      ? `${fallbackGasDishCount} estimate${fallbackGasDishCount === 1 ? '' : 's'}`
+                      : 'All dish-specific'}
+                  </span>
+                </summary>
 
               {gasCategories.length ? (
                 <section
@@ -1462,6 +1562,8 @@ export default function OperationsCostPage() {
                   No menu dishes are available for gas calculation.
                 </p>
               )}
+
+              </details>
 
               {operations.transportMode === 'FUNCTION_WISE' ? (
                 <>
