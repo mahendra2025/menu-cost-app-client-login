@@ -437,7 +437,8 @@ export async function syncUnknownDishLifecycle() {
   let repairedMenuItems = 0;
 
   for (const draft of drafts) {
-    const workRecord =
+    try {
+      const workRecord =
       asRecord(
         draft.workData,
       );
@@ -561,9 +562,16 @@ export async function syncUnknownDishLifecycle() {
       },
     });
 
-    repairedDrafts += 1;
-    repairedMenuItems +=
-      changed;
+      repairedDrafts += 1;
+      repairedMenuItems +=
+        changed;
+    } catch (draftRepairError) {
+      console.error(
+        'Unknown dish draft repair failed:',
+        draft.id,
+        draftRepairError,
+      );
+    }
   }
 
   return {
