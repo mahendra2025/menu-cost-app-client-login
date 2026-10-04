@@ -33,6 +33,7 @@ import {
   MANPOWER_ROLE_MASTER,
 } from '../../../lib/manpowerMaster';
 import type {
+  ManpowerDepartment,
   ManpowerRow,
   MenuItem,
   Session,
@@ -41,6 +42,10 @@ import type {
 
 type NewRoleDraft = {
   role: string;
+  category: Exclude<
+    ManpowerFilterGroup,
+    'ALL'
+  >;
   rate: string;
 };
 
@@ -57,6 +62,21 @@ type DishCoverageFilter =
   | 'ALL'
   | 'UNASSIGNED'
   | 'NEEDS_QTY';
+
+const STAFF_ROLE_CATEGORIES: Array<{
+  value: Exclude<
+    ManpowerFilterGroup,
+    'ALL'
+  >;
+  label: string;
+}> = [
+  { value: 'SERVICE', label: 'Service' },
+  { value: 'KITCHEN', label: 'Kitchen' },
+  { value: 'COUNTER', label: 'Counter' },
+  { value: 'UTILITY', label: 'Utility' },
+  { value: 'LOGISTICS', label: 'Logistics' },
+  { value: 'MANAGEMENT', label: 'Management' },
+];
 
 const MANPOWER_FILTERS: Array<{
   key: ManpowerFilterGroup;
@@ -107,10 +127,6 @@ function isCustomRole(row: ManpowerRow) {
 function manpowerFilterGroup(
   row: ManpowerRow,
 ): Exclude<ManpowerFilterGroup, 'ALL'> | 'CUSTOM' {
-  if (isCustomRole(row)) {
-    return 'CUSTOM';
-  }
-
   if (
     row.department === 'KITCHEN' ||
     row.department === 'BREAD' ||
@@ -126,10 +142,16 @@ function manpowerFilterGroup(
     return 'COUNTER';
   }
 
-  return (
-    row.department ||
-    'CUSTOM'
-  );
+  if (
+    row.department === 'SERVICE' ||
+    row.department === 'UTILITY' ||
+    row.department === 'LOGISTICS' ||
+    row.department === 'MANAGEMENT'
+  ) {
+    return row.department;
+  }
+
+  return 'CUSTOM';
 }
 
 const DISH_ASSIGNABLE_DEPARTMENTS = new Set([
@@ -352,6 +374,8 @@ function buildMealManpowerRows(
         role: template.role,
         quantity: 0,
         rate: template.rate,
+        department:
+          template.department,
         customRole: true,
         manualOverride: true,
         calculationSource: 'MANUAL' as const,
@@ -1001,7 +1025,12 @@ export default function ManpowerPage() {
       isCustomRole(currentRow) &&
       patch.rate !== undefined
     ) {
-      saveCustomManpowerRole(session.tenantId, currentRow.role, patch.rate);
+      saveCustomManpowerRole(
+        session.tenantId,
+        currentRow.role,
+        patch.rate,
+        currentRow.department,
+      );
     }
 
     persistRows(
@@ -1059,7 +1088,7 @@ export default function ManpowerPage() {
     setNewRoleDrafts((current) => ({
       ...current,
       [mealKey]: {
-        ...(current[mealKey] || { role: '', rate: '' }),
+        ...(current[mealKey] || { role: '', category: 'SERVICE', rate: '' }),
         ...patch,
       },
     }));
@@ -1121,7 +1150,7 @@ export default function ManpowerPage() {
   function addStaffRole(meal: MealPlan) {
     if (!work || !session) return;
 
-    const draft = newRoleDrafts[meal.key] || { role: '', rate: '' };
+    const draft = newRoleDrafts[meal.key] || { role: '', category: 'SERVICE', rate: '' };
     const role = draft.role.trim().replace(/\s+/g, ' ');
     const mealRows = rowsForMeal(meal);
 
@@ -1140,6 +1169,9 @@ export default function ManpowerPage() {
       role,
       quantity: 1,
       rate: Math.max(0, Number(draft.rate) || 0),
+      department:
+        draft.category as
+          ManpowerDepartment,
       customRole: true,
       rateMode: 'PER_MEAL',
       serviceId: meal.serviceId,
@@ -1151,11 +1183,16 @@ export default function ManpowerPage() {
       calculationSource: 'MANUAL',
     };
 
-    saveCustomManpowerRole(session.tenantId, role, newRow.rate);
+    saveCustomManpowerRole(
+      session.tenantId,
+      role,
+      newRow.rate,
+      newRow.department,
+    );
     persistRows([...work.manpower, newRow]);
     setNewRoleDrafts((current) => ({
       ...current,
-      [meal.key]: { role: '', rate: '' },
+      [meal.key]: { role: '', category: 'SERVICE', rate: '' },
     }));
     setRoleErrors((current) => ({ ...current, [meal.key]: '' }));
   }
@@ -1466,7 +1503,7 @@ export default function ManpowerPage() {
                 item.recommendedHelpers,
               0,
             );
-          const newRoleDraft = newRoleDrafts[meal.key] || { role: '', rate: '' };
+          const newRoleDraft = newRoleDrafts[meal.key] || { role: '', category: 'SERVICE', rate: '' };
           const mealTotal = calculateManpowerCost(mealRows);
           const mealPeople = mealRows.reduce(
             (sum, row) => sum + Math.max(0, Number(row.quantity) || 0),
@@ -2351,6 +2388,37 @@ export default function ManpowerPage() {
                     onChange={(event) => updateNewRoleDraft(meal.key, { role: event.target.value })}
                     placeholder="e.g. Security"
                   />
+                </label>
+                <label className="field">
+                  <span>Category</span>
+                  <select
+                    className="input"
+                    value={newRoleDraft.category}
+                    onChange={(event) =>
+                      updateNewRoleDraft(
+                        meal.key,
+                        {
+                          category:
+                            event.target.value as
+                              Exclude<
+                                ManpowerFilterGroup,
+                                'ALL'
+                              >,
+                        },
+                      )
+                    }
+                  >
+                    {STAFF_ROLE_CATEGORIES.map(
+                      (category) => (
+                        <option
+                          key={category.value}
+                          value={category.value}
+                        >
+                          {category.label}
+                        </option>
+                      ),
+                    )}
+                  </select>
                 </label>
                 <label className="field">
                   <span>Rate / person</span>
