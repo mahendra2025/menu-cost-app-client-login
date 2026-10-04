@@ -1209,7 +1209,7 @@ export default function QuotationPage() {
       subtitle="Prepare, review and send the final client quotation"
       hidePageTitle
     >
-      <section className="quote-page">
+      <section className="quote-page quotation-page-modern">
         <div className="quotation-command-overview no-print">
           <div className="quotation-command-copy">
             <span className="page-eyebrow">
@@ -1230,37 +1230,33 @@ export default function QuotationPage() {
 
             <div className="quotation-command-kpis">
               <article>
+                <span>Functions</span>
+                <b>{menuGroups.length}</b>
+                <small>Client service schedule</small>
+              </article>
+
+              <article>
+                <span>Dishes</span>
+                <b>{work.menu.length}</b>
+                <small>Across all functions</small>
+              </article>
+
+              <article>
                 <span>Covers</span>
                 <b>{quotation.totalCovers.toLocaleString('en-IN')}</b>
-                <small>{menuGroups.length} functions</small>
+                <small>Guest / meal covers</small>
               </article>
 
               <article>
-                <span>Rate / cover</span>
-                <b>{money(quotation.pricePerCover)}</b>
-                <small>Client selling rate</small>
+                <span>Manpower</span>
+                <b>{totalManpowerPeople}</b>
+                <small>Planned execution team</small>
               </article>
 
               <article>
-                <span>Grand total</span>
-                <b>{money(quotation.grandTotal)}</b>
-                <small>
-                  {quotation.includeTotal
-                    ? 'Shown to client'
-                    : 'Hidden from client'}
-                </small>
-              </article>
-
-              <article>
-                <span>Advance</span>
-                <b>{money(advanceAmount)}</b>
-                <small>{quotation.advancePercent}% booking advance</small>
-              </article>
-
-              <article>
-                <span>Balance</span>
-                <b>{money(balanceAmount)}</b>
-                <small>After advance</small>
+                <span>Disposable</span>
+                <b>{activeDisposable.length}</b>
+                <small>Planned client items</small>
               </article>
             </div>
           </div>
@@ -1281,16 +1277,12 @@ export default function QuotationPage() {
             </div>
 
             <div className="quotation-command-total">
-              <span>{quotation.status || 'DRAFT'}</span>
-              <b>
-                {quotation.includeTotal
-                  ? money(quotation.grandTotal)
-                  : money(quotation.pricePerCover)}
-              </b>
+              <span>Quotation status</span>
+              <b>{quotation.status || 'DRAFT'}</b>
               <small>
-                {quotation.includeTotal
-                  ? 'Client quotation total'
-                  : 'Rate / cover · total hidden'}
+                {quotation.quotationNumber
+                  ? quotation.quotationNumber
+                  : 'Not saved yet'}
               </small>
 
               <button
@@ -1307,7 +1299,7 @@ export default function QuotationPage() {
           </aside>
         </div>
 
-        <section className="quotation-status-flow no-print">
+        <section className="quotation-status-flow quotation-workflow-flow no-print">
           {[
             ['Draft', 0],
             ['Saved', 1],
@@ -1351,12 +1343,6 @@ export default function QuotationPage() {
             <small>Guest / meal covers</small>
           </article>
 
-          <article className={quotation.pricePerCover > 0 ? 'ready' : 'attention'}>
-            <span>Selling rate</span>
-            <b>{money(quotation.pricePerCover)}</b>
-            <small>Per cover</small>
-          </article>
-
           <article className={quotation.clientPhone.trim() ? 'ready' : ''}>
             <span>WhatsApp</span>
             <b>{quotation.clientPhone.trim() ? 'Added' : 'Optional'}</b>
@@ -1375,17 +1361,17 @@ export default function QuotationPage() {
         `}</style>
 
         <div className="quote-main">
-          <div className="quote-card">
+          <div className="quote-card quote-client-card">
             <div className="quote-heading">
               <div>
                 <span className="section-kicker">
-                  Client details
+                  Client & event
                 </span>
                 <h2>
-                  Quotation information
+                  Who is this quotation for?
                 </h2>
                 <p>
-                  These details appear on the client PDF.
+                  Keep only the client and event details that belong on the final PDF.
                 </p>
               </div>
 
@@ -1508,7 +1494,7 @@ export default function QuotationPage() {
             </div>
           </div>
 
-          <div className="quote-card quote-event-details-card">
+          <div className="quote-card quote-event-details-card quote-scope-card">
             <div className="quote-heading">
               <div>
                 <span className="section-kicker">
@@ -1785,7 +1771,7 @@ export default function QuotationPage() {
             </div>
           </div>
 
-          <div className="quote-card">
+          <div className="quote-card quote-terms-card">
             <div className="quote-heading">
               <div>
                 <span className="section-kicker">
@@ -2090,7 +2076,7 @@ export default function QuotationPage() {
           </div>
         </div>
 
-        <aside className="quote-preview">
+        <aside className="quote-preview quotation-preview-modern">
           <div className="quotation-desktop-control no-print">
             <div className="quotation-desktop-control-head">
               <div>
@@ -2283,9 +2269,14 @@ export default function QuotationPage() {
             </div>
 
             <div className="quote-preview-menu">
-              <h3>
-                Menu & Service
-              </h3>
+              <div className="quote-preview-menu-head">
+                <h3>
+                  Menu & Service
+                </h3>
+                <span>
+                  {menuGroups.length} function{menuGroups.length === 1 ? '' : 's'} · {work.menu.length} dishes
+                </span>
+              </div>
 
               {menuGroups.length ? (
                 menuGroups.map(
@@ -2294,9 +2285,14 @@ export default function QuotationPage() {
                       className="quote-preview-group"
                       key={group.label}
                     >
-                      <b>
-                        {group.label}
-                      </b>
+                      <div className="quote-preview-group-head">
+                        <b>
+                          {group.label}
+                        </b>
+                        <span>
+                          {group.dishes.length} dish{group.dishes.length === 1 ? '' : 'es'}
+                        </span>
+                      </div>
                       <p>
                         {group.dishes.join(
                           ' · ',
