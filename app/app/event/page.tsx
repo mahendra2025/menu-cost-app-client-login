@@ -951,6 +951,9 @@ export default function EventPage() {
   const [uploadStatus, setUploadStatus] =
     useState('');
 
+  const [importFunctionDay, setImportFunctionDay] =
+    useState('');
+
   const [importFunctionName, setImportFunctionName] =
     useState('');
 
@@ -1368,6 +1371,11 @@ export default function EventPage() {
         // An unavailable or outdated preview can be detected again from the saved menu.
       }
 
+      setImportFunctionDay(
+        savedWork.menu.length
+          ? ''
+          : savedWork.event.eventDate || '',
+      );
       setImportFunctionName(
         savedWork.menu.length
           ? ''
@@ -1721,10 +1729,14 @@ export default function EventPage() {
 
   async function openManualDishSelector(
     target?: ExistingFunctionDishTarget,
+    resetForNewFunction = false,
   ) {
     if (target) {
       setAddDishFunctionTarget(
         target,
+      );
+      setImportFunctionDay(
+        target.dayLabel || '',
       );
       setImportFunctionName(
         target.mealLabel,
@@ -1744,10 +1756,37 @@ export default function EventPage() {
       setManualSelectionView(
         'ALL',
       );
+    } else if (resetForNewFunction) {
+      setAddDishFunctionTarget(
+        null,
+      );
+      setImportFunctionDay('');
+      setImportFunctionName('');
+      setImportFunctionPax('');
+      setSelectedManualDishKeys(
+        new Set(),
+      );
+      setManualDishSearch('');
+      setManualDishCategory(
+        'ALL',
+      );
+      setManualSelectionView(
+        'ALL',
+      );
     } else {
       setAddDishFunctionTarget(
         null,
       );
+
+      if (
+        !importFunctionDay.trim() &&
+        !work?.menu.length &&
+        work?.event.eventDate
+      ) {
+        setImportFunctionDay(
+          work.event.eventDate,
+        );
+      }
 
       const functionName =
         importFunctionName.trim() ||
@@ -1998,7 +2037,9 @@ export default function EventPage() {
     );
   }
 
-  async function addManualMenuAndContinue() {
+  async function addManualMenuAndContinue(
+    nextAction: 'cost' | 'another' = 'cost',
+  ) {
     if (!work || !session) {
       return;
     }
@@ -2284,6 +2325,9 @@ export default function EventPage() {
 
       functionName,
 
+      functionDay:
+        importFunctionDay.trim(),
+
       functionPax:
         Number(
           importFunctionPax,
@@ -2352,6 +2396,26 @@ export default function EventPage() {
     setManualSelectionView(
       'ALL',
     );
+
+    if (nextAction === 'another') {
+      setShowManualDishSelector(true);
+      setImportFunctionDay('');
+      setImportFunctionName('');
+      setImportFunctionPax('');
+      setError('');
+
+      window.setTimeout(
+        () =>
+          document
+            .getElementById(
+              'manualFunctionDay',
+            )
+            ?.focus(),
+        40,
+      );
+
+      return;
+    }
 
     window.location.assign(
       '/app/cost',
@@ -6871,6 +6935,7 @@ export default function EventPage() {
   async function applyDetectionPreview(
     mode: 'replace' | 'merge',
     skipReview = false,
+    nextAction: 'cost' | 'another' = 'cost',
   ) {
     if (
       !work ||
@@ -7042,6 +7107,8 @@ export default function EventPage() {
         detectedMenu:
           selectedMenu,
         functionName,
+        functionDay:
+          importFunctionDay.trim(),
         functionPax:
           Number(importFunctionPax) || 0,
         defaultPax:
@@ -7131,6 +7198,30 @@ export default function EventPage() {
             `menu_saved:${costingKey}`,
         },
       );
+
+      if (nextAction === 'another') {
+        setDetectionPreview(null);
+        setSelectedPreviewIds(new Set());
+        setDetectedEventDetails({});
+        setImportFunctionDay('');
+        setImportFunctionName('');
+        setImportFunctionPax('');
+        setUploadStatus(
+          'Function saved. Add the next day or function.',
+        );
+
+        window.setTimeout(
+          () =>
+            document
+              .getElementById(
+                'importFunctionDay',
+              )
+              ?.focus(),
+          40,
+        );
+
+        return;
+      }
 
       // Continue directly to cost review.
       window.location.assign('/app/cost');
@@ -10658,6 +10749,7 @@ export default function EventPage() {
                         <th>#</th>
                         <th>Dish</th>
                         <th>Category</th>
+                        <th>Day / Date</th>
                         <th>Function</th>
                         <th>Guests</th>
                         <th>₹ / Plate</th>
@@ -10690,9 +10782,9 @@ export default function EventPage() {
                             <td>{index + 1}</td>
                             <td>
                               <b>{item.name}</b>
-                              <small>{item.dayLabel || 'Event menu'}</small>
                             </td>
                             <td>{item.category || 'Other'}</td>
+                            <td>{item.dayLabel || '—'}</td>
                             <td>{item.mealLabel || work.event.functionType || 'Event Menu'}</td>
                             <td>{guests > 0 ? guests.toLocaleString('en-IN') : '—'}</td>
                             <td>
@@ -10777,7 +10869,10 @@ export default function EventPage() {
                       className="event-manual-entry"
                       type="button"
                       onClick={() =>
-                        void openManualDishSelector()
+                        void openManualDishSelector(
+                          undefined,
+                          work.menu.length > 0,
+                        )
                       }
                     >
                       <span
@@ -10800,13 +10895,13 @@ export default function EventPage() {
                       <span className="event-manual-entry-copy">
                         <b>
                           {work.menu.length > 0
-                            ? 'Edit Menu Selection'
+                            ? 'Add New Function'
                             : 'Select Menu'}
                         </b>
 
                         <small>
                           {work.menu.length > 0
-                            ? `${work.menu.length} dishes selected · ${savedMenuMissingRateCount} rates need review`
+                            ? `${savedMenuFunctionGroups.length || 1} functions · ${work.menu.length} dishes saved`
                             : 'Choose dishes by category from Dish Master'}
                         </small>
                       </span>
@@ -10855,10 +10950,24 @@ export default function EventPage() {
               <div className="event-function-details" aria-label="Function details">
                 <div className="event-function-details-copy">
                   <b>{t('Function details')}</b>
-                  <small>{t('Add the function name and guest count before uploading its menu.')}</small>
+                  <small>{t('Add the day/date, function name and guest count before selecting its menu.')}</small>
                 </div>
 
                 <div className="event-function-details-fields">
+                  <label className="field" htmlFor="importFunctionDay">
+                    <span>{t('Day / date')}</span>
+                    <input
+                      id="importFunctionDay"
+                      className="input"
+                      value={importFunctionDay}
+                      placeholder={t('e.g. Day 1 / 14 Feb 2027')}
+                      onChange={(event) => {
+                        setImportFunctionDay(event.target.value);
+                        setError('');
+                      }}
+                    />
+                  </label>
+
                   <label className="field" htmlFor="importFunctionName">
                     <span>{t('Function name')}</span>
                     <input
@@ -10869,7 +10978,9 @@ export default function EventPage() {
                       onChange={(event) => {
                         const value = event.target.value;
                         setImportFunctionName(value);
-                        updateEvent('functionType', value);
+                        if (!work.menu.length) {
+                          updateEvent('functionType', value);
+                        }
                       }}
                     />
                   </label>
@@ -10890,7 +11001,9 @@ export default function EventPage() {
                         const value = event.target.value;
                         const guests = Math.max(0, Math.round(Number(value) || 0));
                         setImportFunctionPax(value);
-                        updateEvent('pax', guests);
+                        if (!work.menu.length) {
+                          updateEvent('pax', guests);
+                        }
                         setError('');
                       }}
                     />
@@ -11186,6 +11299,28 @@ export default function EventPage() {
                     </div>
                   ) : null}
 
+                  <div className="simple-detected-actions">
+                    <button
+                      className="ghost-button simple-detected-add-another"
+                      type="button"
+                      disabled={
+                        !detectionPreview.menu.length ||
+                        detecting ||
+                        simpleMissingManualRateCount > 0 ||
+                        simpleMissingGuestCount > 0
+                      }
+                      onClick={() =>
+                        void applyDetectionPreview(
+                          work.menu.length > 0
+                            ? 'merge'
+                            : 'replace',
+                          true,
+                          'another',
+                        )
+                      }
+                    >
+                      {t('Save & add another function')}
+                    </button>
                   <button
                     className="primary-button simple-detected-done"
                     type="button"
@@ -11206,6 +11341,7 @@ export default function EventPage() {
                   >
                     {t('Done')}
                   </button>
+                  </div>
                 </section>
               ) : null}
 
@@ -11277,6 +11413,34 @@ export default function EventPage() {
                   </div>
 
                   <div className="event-dish-picker-context">
+                    <label className="event-dish-picker-context-field">
+                      <span>
+                        Day / Date
+                      </span>
+                      <div className="event-dish-picker-context-input">
+                        <input
+                          id="manualFunctionDay"
+                          className="input"
+                          value={importFunctionDay}
+                          readOnly={Boolean(
+                            addDishFunctionTarget,
+                          )}
+                          onChange={(event) => {
+                            setImportFunctionDay(
+                              event.target.value,
+                            );
+                            setError('');
+                          }}
+                          placeholder={t('e.g. Day 1 / 14 Feb 2027')}
+                        />
+                        {addDishFunctionTarget ? (
+                          <small>
+                            From function
+                          </small>
+                        ) : null}
+                      </div>
+                    </label>
+
                     <label className="event-dish-picker-context-field">
                       <span>
                         Function / Meal
@@ -11710,6 +11874,22 @@ export default function EventPage() {
                       >
                         Clear
                       </button>
+                      {!addDishFunctionTarget ? (
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          disabled={
+                            !manualSelectedCount
+                          }
+                          onClick={() =>
+                            void addManualMenuAndContinue(
+                              'another',
+                            )
+                          }
+                        >
+                          Save &amp; add another function
+                        </button>
+                      ) : null}
                       <button
                         className="primary-button"
                         type="button"
@@ -15431,6 +15611,22 @@ export default function EventPage() {
                       Merge with Current
                     </button>
                   ) : null}
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() =>
+                      applyDetectionPreview(
+                        work.menu.length > 0
+                          ? 'merge'
+                          : 'replace',
+                        false,
+                        'another',
+                      )
+                    }
+                    disabled={!selectedPreviewMenu.length || !detectionReviewGateReady}
+                  >
+                    Save &amp; add another function
+                  </button>
                   <button
                     className="primary-button"
                     type="button"
