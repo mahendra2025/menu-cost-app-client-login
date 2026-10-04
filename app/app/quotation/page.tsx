@@ -728,10 +728,8 @@ export default function QuotationPage() {
             quotation.eventName.trim(),
           ),
           quotation.totalCovers > 0,
-          quotation.pricePerCover > 0,
         ]
       : [
-          false,
           false,
           false,
           false,
@@ -1510,199 +1508,6 @@ export default function QuotationPage() {
             </div>
           </div>
 
-          <div className="quote-card">
-            <div className="quote-heading">
-              <div>
-                <span className="section-kicker">
-                  Commercial offer
-                </span>
-                <h2>
-                  Selling price
-                </h2>
-                <p>
-                  Only client selling values are shown here.
-                </p>
-              </div>
-            </div>
-
-            <div className="quote-commercial">
-              <div className="quote-field">
-                <label>
-                  Total covers
-                </label>
-                <input
-                  className="quote-input"
-                  type="number"
-                  min="0"
-                  value={
-                    quotation.totalCovers ||
-                    ''
-                  }
-                  onChange={(event) =>
-                    patch({
-                      totalCovers:
-                        numberValue(
-                          event.target.value,
-                        ),
-                    })
-                  }
-                />
-              </div>
-
-              <div className="quote-field">
-                <label>
-                  Rate / cover
-                </label>
-                <input
-                  className="quote-input"
-                  type="number"
-                  min="0"
-                  value={
-                    quotation.pricePerCover ||
-                    ''
-                  }
-                  onChange={(event) =>
-                    patch({
-                      pricePerCover:
-                        numberValue(
-                          event.target.value,
-                        ),
-                    })
-                  }
-                />
-              </div>
-
-              <div className="quote-field">
-                <label>
-                  Show total amount?
-                </label>
-                <select
-                  className="quote-select"
-                  value={
-                    quotation.includeTotal
-                      ? 'YES'
-                      : 'NO'
-                  }
-                  onChange={(event) =>
-                    patch({
-                      includeTotal:
-                        event.target.value ===
-                        'YES',
-                    })
-                  }
-                >
-                  <option value="YES">
-                    Yes
-                  </option>
-                  <option value="NO">
-                    Rate only
-                  </option>
-                </select>
-              </div>
-
-              <div className="quote-field">
-                <label>
-                  GST %
-                </label>
-                <input
-                  className="quote-input"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={
-                    quotation.gstPercent ||
-                    ''
-                  }
-                  onChange={(event) =>
-                    patch({
-                      gstPercent:
-                        numberValue(
-                          event.target.value,
-                        ),
-                    })
-                  }
-                />
-              </div>
-
-              <div className="quote-field">
-                <label>
-                  Extra charge label
-                </label>
-                <input
-                  className="quote-input"
-                  value={
-                    quotation.extraLabel
-                  }
-                  onChange={(event) =>
-                    patch({
-                      extraLabel:
-                        event.target.value,
-                    })
-                  }
-                  placeholder="Example: Transport"
-                />
-              </div>
-
-              <div className="quote-field">
-                <label>
-                  Extra amount
-                </label>
-                <input
-                  className="quote-input"
-                  type="number"
-                  min="0"
-                  value={
-                    quotation.extraAmount ||
-                    ''
-                  }
-                  onChange={(event) =>
-                    patch({
-                      extraAmount:
-                        numberValue(
-                          event.target.value,
-                        ),
-                    })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="quote-commercial">
-              <div className="quote-total">
-                <small>
-                  Subtotal
-                </small>
-                <strong>
-                  {money(
-                    quotation.subtotal,
-                  )}
-                </strong>
-              </div>
-
-              <div className="quote-total">
-                <small>
-                  GST
-                </small>
-                <strong>
-                  {money(
-                    quotation.gstAmount,
-                  )}
-                </strong>
-              </div>
-
-              <div className="quote-total">
-                <small>
-                  Grand total
-                </small>
-                <strong>
-                  {money(
-                    quotation.grandTotal,
-                  )}
-                </strong>
-              </div>
-            </div>
-          </div>
-
           <div className="quote-card quote-event-details-card">
             <div className="quote-heading">
               <div>
@@ -2333,7 +2138,7 @@ export default function QuotationPage() {
 
             {!quotationReady ? (
               <div className="quotation-desktop-warning">
-                Complete client name, event, covers and selling rate before sending the quotation.
+                Complete client name, event and covers before sending the quotation.
               </div>
             ) : (
               <div className="quotation-desktop-ready">
@@ -2507,69 +2312,6 @@ export default function QuotationPage() {
               )}
             </div>
 
-            <div className="quote-preview-commercial">
-              <h3>
-                Commercial Offer
-              </h3>
-
-              <div className="quote-preview-price">
-                <span>
-                  Rate / cover
-                </span>
-                <b>
-                  {money(
-                    quotation.pricePerCover,
-                  )}
-                </b>
-              </div>
-
-              {quotation.includeTotal ? (
-                <>
-                  {quotation.extraAmount >
-                  0 ? (
-                    <div className="quote-preview-price">
-                      <span>
-                        {quotation.extraLabel ||
-                          'Additional charges'}
-                      </span>
-                      <b>
-                        {money(
-                          quotation.extraAmount,
-                        )}
-                      </b>
-                    </div>
-                  ) : null}
-
-                  {quotation.gstPercent >
-                  0 ? (
-                    <div className="quote-preview-price">
-                      <span>
-                        GST{' '}
-                        {
-                          quotation.gstPercent
-                        }
-                        %
-                      </span>
-                      <b>
-                        {money(
-                          quotation.gstAmount,
-                        )}
-                      </b>
-                    </div>
-                  ) : null}
-
-                  <div className="quote-preview-price total">
-                    <span>
-                      Grand Total
-                    </span>
-                    <b>
-                      {money(
-                        quotation.grandTotal,
-                      )}
-                    </b>
-                  </div>
-                </>
-              ) : null}
             </div>
           </div>
         </aside>
