@@ -1282,6 +1282,32 @@ export default function UnknownDishQueuePage() {
                     <b>Automatic · Global alias</b>
                   </div>
                 ) : null}
+
+                {[
+                  'RECIPE_IN_PROGRESS',
+                  'GLOBAL_READY',
+                  'APPROVED',
+                ].includes(
+                  selected.status,
+                ) ? (
+                  <a
+                    className="secondary-button queue-open-recipe"
+                    href={
+                      `/admin/recipes?newRecipe=${encodeURIComponent(
+                        selected.canonicalName ||
+                          selected.name,
+                      )}&category=${encodeURIComponent(
+                        selected.suggestedCategory ||
+                          selected.categoryHint ||
+                          'Other',
+                      )}`
+                    }
+                  >
+                    {selected.status === 'GLOBAL_READY'
+                      ? 'Open Recipe ✓'
+                      : 'Continue Recipe →'}
+                  </a>
+                ) : null}
               </div>
             ) : (
               <>
@@ -1602,7 +1628,7 @@ export default function UnknownDishQueuePage() {
           .queue-review-card{scroll-margin-top:20px}.queue-fast-review{display:grid;gap:8px;justify-items:end}.queue-fast-progress{display:flex;align-items:baseline;gap:8px}.queue-fast-progress b{font-size:14px}.queue-fast-progress span{color:var(--muted);font-size:11px}.queue-fast-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.queue-analysis-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px}
           .queue-analysis-grid>div,.queue-resolved-summary>div{padding:13px;border:1px solid rgba(148,163,184,.17);border-radius:14px;display:grid;gap:4px}.queue-analysis-grid span,.queue-resolved-summary span{color:var(--muted);font-size:11px}
           .queue-analysis-note{margin-top:12px;padding:14px 15px;border:1px solid rgba(99,102,241,.2);border-radius:14px;background:rgba(99,102,241,.05)}.queue-analysis-note p{margin:5px 0 0;color:var(--muted)}
-          .queue-resolved-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+          .queue-resolved-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}.queue-open-recipe{grid-column:1/-1;justify-content:center}
           .queue-decision-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.queue-decision-card{padding:17px;border:1px solid rgba(148,163,184,.18);border-radius:18px;display:grid;gap:12px}.queue-decision-card.is-match{border-color:rgba(34,197,94,.26);background:rgba(34,197,94,.035)}
           .queue-decision-card h3,.queue-decision-card p{margin:0}.queue-suggestions{display:flex;gap:7px;flex-wrap:wrap}.queue-suggestions button{display:inline-flex;align-items:center;gap:7px}.queue-suggestions small{opacity:.7}
           .queue-match-results{display:grid;gap:6px;max-height:190px;overflow:auto}.queue-match-results button{display:flex;justify-content:space-between;gap:12px;text-align:left;padding:9px 11px;border:1px solid rgba(148,163,184,.16);border-radius:11px;background:transparent;color:inherit}.queue-match-results small{color:var(--muted)}
