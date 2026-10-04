@@ -12,6 +12,7 @@ import type {
   DisposableCostItem,
   EventDetails,
   ExtraCost,
+  ManpowerDepartment,
   ManpowerRow,
   MenuItem,
   Session,
@@ -547,6 +548,7 @@ export type CustomManpowerRole = {
   id: string;
   role: string;
   rate: number;
+  department?: ManpowerDepartment;
 };
 
 function normalizeCustomManpowerRoles(
@@ -561,10 +563,36 @@ function normalizeCustomManpowerRoles(
     if (!role || seen.has(normalizedRole)) return [];
     seen.add(normalizedRole);
 
+    const departmentRaw =
+      String(
+        item?.department ||
+        '',
+      )
+        .trim()
+        .toUpperCase();
+
+    const department =
+      [
+        'SERVICE',
+        'COUNTER',
+        'LIVE_COUNTER',
+        'BREAD',
+        'KITCHEN',
+        'PREPARATION',
+        'UTILITY',
+        'LOGISTICS',
+        'MANAGEMENT',
+      ].includes(
+        departmentRaw,
+      )
+        ? departmentRaw as ManpowerDepartment
+        : undefined;
+
     return [{
       id: String(item?.id || uid('manpower_role')),
       role,
       rate: Math.max(0, Number(item?.rate) || 0),
+      department,
     }];
   });
 }
@@ -658,6 +686,7 @@ export function saveCustomManpowerRole(
   tenantId: string,
   roleName: string,
   rate: number,
+  department?: ManpowerDepartment,
 ): CustomManpowerRole[] {
   if (typeof window === 'undefined') return [];
 
@@ -670,7 +699,18 @@ export function saveCustomManpowerRole(
   const nextRoles = existing
     ? roles.map((item) =>
         item.id === existing.id
-          ? { ...item, role, rate: Math.max(0, Number(rate) || 0) }
+          ? {
+              ...item,
+              role,
+              rate:
+                Math.max(
+                  0,
+                  Number(rate) || 0,
+                ),
+              department:
+                department ??
+                item.department,
+            }
           : item,
       )
     : [
@@ -679,6 +719,7 @@ export function saveCustomManpowerRole(
           id: uid('manpower_role'),
           role,
           rate: Math.max(0, Number(rate) || 0),
+          department,
         },
       ];
 
