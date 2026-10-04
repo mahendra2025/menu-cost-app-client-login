@@ -1469,29 +1469,6 @@ export default function ManpowerPage() {
                 ),
             );
 
-          const zeroQuantityDishIds =
-            new Set(
-              zeroQuantityAssignedRows.flatMap(
-                (row) =>
-                  row.assignedDishIds ??
-                  [],
-              ),
-            );
-
-          const coverageDishes =
-            dishCoverageFilter ===
-              'UNASSIGNED'
-              ? mealUnassignedDishes
-              : dishCoverageFilter ===
-                  'NEEDS_QTY'
-                ? mealDishes.filter(
-                    (dish) =>
-                      zeroQuantityDishIds.has(
-                        dish.id,
-                      ),
-                  )
-                : mealDishes;
-
           const assignedKitchenRows =
             mealRows.filter(
               (row) =>
