@@ -244,6 +244,45 @@ function rowBelongsToMeal(row: ManpowerRow, meal: MealPlan) {
   );
 }
 
+function manpowerRowsShareMeal(
+  left: ManpowerRow,
+  right: ManpowerRow,
+) {
+  const leftServiceId =
+    normalizePart(
+      left.serviceId,
+    );
+  const rightServiceId =
+    normalizePart(
+      right.serviceId,
+    );
+
+  if (
+    leftServiceId &&
+    rightServiceId
+  ) {
+    return (
+      leftServiceId ===
+      rightServiceId
+    );
+  }
+
+  return (
+    normalizePart(
+      left.dayLabel,
+    ) ===
+      normalizePart(
+        right.dayLabel,
+      ) &&
+    normalizePart(
+      left.mealLabel,
+    ) ===
+      normalizePart(
+        right.mealLabel,
+      )
+  );
+}
+
 function isLegacyGlobalRow(row: ManpowerRow) {
   return !(
     normalizePart(
@@ -377,10 +416,12 @@ function QuantityControl({
 function ManpowerMultiDishSelector({
   row,
   dishes,
+  unavailableDishIds,
   onChange,
 }: {
   row: ManpowerRow;
   dishes: MenuItem[];
+  unavailableDishIds: Set<string>;
   onChange: (dishIds: string[]) => void;
 }) {
   const assignedIds =
@@ -389,8 +430,19 @@ function ManpowerMultiDishSelector({
       [],
     );
 
-  const assignedCount =
+  const visibleDishes =
     dishes.filter(
+      (dish) =>
+        assignedIds.has(
+          dish.id,
+        ) ||
+        !unavailableDishIds.has(
+          dish.id,
+        ),
+    );
+
+  const assignedCount =
+    visibleDishes.filter(
       (dish) =>
         assignedIds.has(
           dish.id,
@@ -432,13 +484,13 @@ function ManpowerMultiDishSelector({
           <button
             type="button"
             disabled={
-              dishes.length === 0 ||
+              visibleDishes.length === 0 ||
               assignedCount ===
-                dishes.length
+                visibleDishes.length
             }
             onClick={() =>
               onChange(
-                dishes.map(
+                visibleDishes.map(
                   (dish) =>
                     dish.id,
                 ),
@@ -464,7 +516,7 @@ function ManpowerMultiDishSelector({
         </div>
 
         <div className="manpower-dish-selector-list">
-          {dishes.map(
+          {visibleDishes.map(
             (dish) => {
               const checked =
                 assignedIds.has(
@@ -963,8 +1015,41 @@ export default function ManpowerPage() {
     row: ManpowerRow,
     dishIds: string[],
   ) {
+    if (!work) return;
+
+    const assignedElsewhere =
+      new Set(
+        work.manpower
+          .filter(
+            (otherRow) =>
+              otherRow.id !==
+                row.id &&
+              canAssignDishes(
+                otherRow,
+              ) &&
+              manpowerRowsShareMeal(
+                row,
+                otherRow,
+              ),
+          )
+          .flatMap(
+            (otherRow) =>
+              otherRow.assignedDishIds ??
+              [],
+          ),
+      );
+
+    const uniqueDishIds =
+      dishIds.filter(
+        (dishId) =>
+          !assignedElsewhere.has(
+            dishId,
+          ),
+      );
+
     updateRow(row.id, {
-      assignedDishIds: dishIds,
+      assignedDishIds:
+        uniqueDishIds,
       manualOverride: true,
       calculationSource: 'MANUAL',
     });
@@ -2124,6 +2209,24 @@ export default function ManpowerPage() {
                         <ManpowerMultiDishSelector
                           row={row}
                           dishes={mealDishes}
+                          unavailableDishIds={
+                            new Set(
+                              mealRows
+                                .filter(
+                                  (otherRow) =>
+                                    otherRow.id !==
+                                      row.id &&
+                                    canAssignDishes(
+                                      otherRow,
+                                    ),
+                                )
+                                .flatMap(
+                                  (otherRow) =>
+                                    otherRow.assignedDishIds ??
+                                    [],
+                                ),
+                            )
+                          }
                           onChange={(dishIds) =>
                             setRowDishAssignments(
                               row,
