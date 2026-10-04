@@ -68,6 +68,8 @@ function addAlias(
 
 const ALLOWED_STATUSES = new Set([
   'PENDING',
+  'RECIPE_IN_PROGRESS',
+  'GLOBAL_READY',
   'APPROVED',
   'MATCHED',
   'IGNORED',
@@ -143,6 +145,8 @@ export async function GET(request: Request) {
     const [
       items,
       pendingCount,
+      recipeInProgressCount,
+      globalReadyCount,
       approvedCount,
       matchedCount,
       ignoredCount,
@@ -182,6 +186,12 @@ export async function GET(request: Request) {
         where: { status: 'PENDING' },
       }),
       prisma.pendingDishSuggestion.count({
+        where: { status: 'RECIPE_IN_PROGRESS' },
+      }),
+      prisma.pendingDishSuggestion.count({
+        where: { status: 'GLOBAL_READY' },
+      }),
+      prisma.pendingDishSuggestion.count({
         where: { status: 'APPROVED' },
       }),
       prisma.pendingDishSuggestion.count({
@@ -197,11 +207,17 @@ export async function GET(request: Request) {
       pendingCount,
       statusCounts: {
         PENDING: pendingCount,
+        RECIPE_IN_PROGRESS:
+          recipeInProgressCount,
+        GLOBAL_READY:
+          globalReadyCount,
         APPROVED: approvedCount,
         MATCHED: matchedCount,
         IGNORED: ignoredCount,
         ALL:
           pendingCount +
+          recipeInProgressCount +
+          globalReadyCount +
           approvedCount +
           matchedCount +
           ignoredCount,
@@ -282,6 +298,48 @@ export async function POST(request: Request) {
         { error: 'Unknown dish was not found.' },
         { status: 404 },
       );
+    }
+
+    if (action === 'START_RECIPE') {
+      if (
+        ![
+          'PENDING',
+          'APPROVED',
+          'RECIPE_IN_PROGRESS',
+        ].includes(
+          pending.status,
+        )
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'This dish is already resolved.',
+          },
+          { status: 409 },
+        );
+      }
+
+      const saved =
+        await prisma.pendingDishSuggestion.update({
+          where: {
+            id,
+          },
+          data: {
+            status:
+              'RECIPE_IN_PROGRESS',
+            recommendation:
+              'CREATE_RECIPE',
+            adminNotes,
+            analyzedAt:
+              new Date(),
+          },
+        });
+
+      return NextResponse.json({
+        ok: true,
+        action,
+        suggestion: saved,
+      });
     }
 
     if (pending.status !== 'PENDING') {
