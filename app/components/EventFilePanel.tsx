@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import type { WorkState } from '../../lib/types';
 import type { EventFileFunction, EventFileMetadata } from '../../lib/eventFilePdf';
 
@@ -40,7 +39,6 @@ export default function EventFilePanel({ work, functions, disabled }: { work: Wo
     <button type="button" className="ep-button" disabled={disabled || busy || !file} onClick={download}>{busy ? 'Preparing PDF…' : 'Download complete event PDF'}</button>
     {!file && !error && <p role="status">Loading event file…</p>}
     {error && <p role="alert">{error} <button type="button" className="ep-button" onClick={() => setRetry(n => n + 1)}>Retry</button></p>}
-    <Link className="ep-button" href={`/app/event-manager?costingId=${encodeURIComponent(work.costingId)}`}>Open event file & attachments</Link>
     <style>{`.ep-event-file p{font-size:11px;color:#a4b3c4;line-height:1.6}.ep-event-file dl{display:grid;gap:10px;font-size:11px}.ep-event-file dl div{display:flex;justify-content:space-between;gap:12px}.ep-event-file dt{color:#a4b3c4}.ep-event-file dd{margin:0;text-align:right;overflow-wrap:anywhere}.ep-event-file .ep-button{width:100%;margin-top:9px;white-space:normal;text-align:center;justify-content:center;min-height:42px}.ep-event-file .ep-button:focus-visible{outline:2px solid #78b5ff;outline-offset:3px}`}</style>
   </section>;
 }
