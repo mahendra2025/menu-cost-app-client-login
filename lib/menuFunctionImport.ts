@@ -41,17 +41,22 @@ export function mergeFunctionMenu({
   existingMenu,
   detectedMenu,
   functionName,
+  functionDay,
   functionPax,
   defaultPax,
 }: {
   existingMenu: MenuItem[];
   detectedMenu: MenuItem[];
   functionName: string;
+  functionDay?: string;
   functionPax: number;
   defaultPax: number;
 }) {
   const cleanedFunctionName =
     functionName.trim();
+
+  const cleanedFunctionDay =
+    String(functionDay || '').trim();
 
   const detectedServiceCount =
     new Set(
@@ -87,7 +92,11 @@ export function mergeFunctionMenu({
   const importedMenu =
     detectedMenu.map((item) => {
       const dayLabel =
-        item.dayLabel || '';
+        String(
+          item.dayLabel ||
+          cleanedFunctionDay ||
+          '',
+        ).trim();
 
       if (preserveDetectedServices) {
         const mealLabel =
