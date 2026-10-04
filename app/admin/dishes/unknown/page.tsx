@@ -1421,16 +1421,46 @@ export default function UnknownDishQueuePage() {
                       />
                     </label>
 
-                    <button
-                      className="secondary-button queue-decision-action"
-                      type="button"
-                      disabled={busy}
-                      onClick={() =>
-                        void submitAction('ADD_NEW')
-                      }
-                    >
-                      {nextPending ? 'Add Global Dish & Next' : 'Add Global Dish'}
-                    </button>
+                    <div className="queue-new-dish-actions">
+                      <a
+                        className="ghost-button queue-decision-action"
+                        aria-disabled={!draft.name.trim()}
+                        href={
+                          draft.name.trim()
+                            ? `/admin/recipes?newRecipe=${encodeURIComponent(
+                                draft.name.trim(),
+                              )}&category=${encodeURIComponent(
+                                draft.category ||
+                                  'Other',
+                              )}`
+                            : undefined
+                        }
+                        onClick={(event) => {
+                          if (
+                            !draft.name.trim()
+                          ) {
+                            event.preventDefault();
+                          }
+                        }}
+                      >
+                        Create New Recipe
+                      </a>
+
+                      <button
+                        className="secondary-button queue-decision-action"
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                          void submitAction('ADD_NEW')
+                        }
+                      >
+                        {nextPending ? 'Add Global Dish & Next' : 'Add Global Dish'}
+                      </button>
+                    </div>
+
+                    <small className="queue-recipe-hint">
+                      Recipe Master opens in All with “{draft.name || selected.name}” ready to edit.
+                    </small>
                   </section>
                 </div>
 
@@ -1477,6 +1507,7 @@ export default function UnknownDishQueuePage() {
           .queue-stat{padding:16px;border:1px solid rgba(148,163,184,.18);border-radius:16px;background:rgba(148,163,184,.05);display:grid;gap:4px}
           .queue-stat span,.queue-stat small{color:var(--muted);font-size:12px}.queue-stat b{font-size:26px}
           .queue-message{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.queue-message span{color:var(--muted);flex:1 1 280px}.queue-message .secondary-button{margin-left:auto}
+          .queue-new-dish-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.queue-new-dish-actions .queue-decision-action{width:100%;justify-content:center}.queue-new-dish-actions a[aria-disabled="true"]{pointer-events:none;opacity:.5}.queue-recipe-hint{display:block;margin-top:8px;color:var(--muted);font-size:11px}
           .queue-toolbar-card{display:grid;gap:16px}.queue-tabs{display:flex;gap:8px;flex-wrap:wrap}.queue-tabs button{display:inline-flex;align-items:center;gap:8px}
           .queue-tab-count{min-width:22px;padding:2px 6px;border-radius:999px;background:rgba(148,163,184,.14);font-size:11px}
           .queue-filter-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}.queue-view-summary{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:13px}.queue-view-summary b{color:inherit}
@@ -1500,7 +1531,7 @@ export default function UnknownDishQueuePage() {
           .queue-admin-notes{margin-top:14px}.queue-admin-notes textarea{width:100%;resize:vertical}
           .queue-ignore-zone{margin-top:14px;padding:14px 15px;border:1px dashed rgba(148,163,184,.25);border-radius:15px;display:flex;align-items:center;justify-content:space-between;gap:14px}.queue-ignore-zone>div{display:grid;gap:3px}.queue-ignore-zone span{color:var(--muted);font-size:12px}
           @media(max-width:900px){.queue-stat-grid{grid-template-columns:1fr 1fr}.queue-filter-grid{grid-template-columns:1fr 1fr}.queue-filter-grid .field:first-child{grid-column:1/-1}.queue-decision-grid{grid-template-columns:1fr}}
-          @media(max-width:620px){.queue-stat-grid,.queue-analysis-grid,.queue-resolved-summary,.queue-add-grid,.queue-filter-grid{grid-template-columns:1fr}.queue-filter-grid .field:first-child{grid-column:auto}.queue-row{grid-template-columns:auto minmax(0,1fr)}.queue-row>button{grid-column:1/-1;width:100%}.queue-fast-review{justify-items:stretch}.queue-fast-progress{justify-content:space-between}.queue-fast-actions{display:grid;grid-template-columns:1fr 1fr}.queue-fast-actions button:last-child{grid-column:1/-1}.queue-bulk-bar,.queue-ignore-zone{align-items:stretch;flex-direction:column}.queue-tabs{display:grid;grid-template-columns:1fr 1fr}.queue-tabs button{justify-content:center}.queue-stat b{font-size:22px}}
+          @media(max-width:620px){.queue-stat-grid,.queue-analysis-grid,.queue-resolved-summary,.queue-add-grid,.queue-filter-grid,.queue-new-dish-actions{grid-template-columns:1fr}.queue-filter-grid .field:first-child{grid-column:auto}.queue-row{grid-template-columns:auto minmax(0,1fr)}.queue-row>button{grid-column:1/-1;width:100%}.queue-fast-review{justify-items:stretch}.queue-fast-progress{justify-content:space-between}.queue-fast-actions{display:grid;grid-template-columns:1fr 1fr}.queue-fast-actions button:last-child{grid-column:1/-1}.queue-bulk-bar,.queue-ignore-zone{align-items:stretch;flex-direction:column}.queue-tabs{display:grid;grid-template-columns:1fr 1fr}.queue-tabs button{justify-content:center}.queue-stat b{font-size:22px}}
         `}</style>
       </section>
     </AppShell>
