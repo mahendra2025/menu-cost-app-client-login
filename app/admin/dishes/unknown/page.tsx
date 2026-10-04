@@ -174,6 +174,15 @@ export default function UnknownDishQueuePage() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] =
     useState<'success' | 'error'>('success');
+
+  const [
+    recipeNext,
+    setRecipeNext,
+  ] = useState<{
+    name: string;
+    category: string;
+  } | null>(null);
+
   const reviewRef = useRef<HTMLDivElement | null>(null);
 
   const selected = useMemo(
@@ -600,12 +609,32 @@ export default function UnknownDishQueuePage() {
 
       const successMessage =
         action === 'ADD_NEW'
-          ? 'Dish added to Dish Master.'
+          ? 'Dish added to Global Dish Master. Create its recipe next.'
           : action === 'MATCH_EXISTING'
             ? 'Unknown name saved as an alias of the existing dish.'
             : 'Dish suggestion ignored.';
 
       setMessageType('success');
+
+      if (
+        action === 'ADD_NEW' &&
+        data.dish?.name
+      ) {
+        setRecipeNext({
+          name:
+            String(
+              data.dish.name,
+            ),
+          category:
+            String(
+              data.dish.category ||
+              draft.category ||
+              'Other',
+            ),
+        });
+      } else {
+        setRecipeNext(null);
+      }
 
       await loadQueue();
 
@@ -667,7 +696,7 @@ export default function UnknownDishQueuePage() {
               <h2>Unknown Dish Queue</h2>
               <p className="muted">
                 Prioritize repeated or risky names, match spelling variants to Dish Master,
-                add genuinely new dishes, and ignore only non-dish text.
+                add genuinely new dishes globally, then complete their recipes before final sync.
               </p>
             </div>
             <button
@@ -723,6 +752,23 @@ export default function UnknownDishQueuePage() {
                 : 'Saved'}
             </b>
             <span>{message}</span>
+
+            {messageType ===
+              'success' &&
+            recipeNext ? (
+              <a
+                className="secondary-button"
+                href={
+                  `/admin/recipes?newRecipe=${encodeURIComponent(
+                    recipeNext.name,
+                  )}&category=${encodeURIComponent(
+                    recipeNext.category,
+                  )}`
+                }
+              >
+                Create Recipe →
+              </a>
+            ) : null}
           </div>
         ) : null}
 
@@ -1383,7 +1429,7 @@ export default function UnknownDishQueuePage() {
                         void submitAction('ADD_NEW')
                       }
                     >
-                      {nextPending ? 'Add New & Next' : 'Add New & Finish'}
+                      {nextPending ? 'Add Global Dish & Next' : 'Add Global Dish'}
                     </button>
                   </section>
                 </div>
@@ -1430,7 +1476,7 @@ export default function UnknownDishQueuePage() {
           .queue-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
           .queue-stat{padding:16px;border:1px solid rgba(148,163,184,.18);border-radius:16px;background:rgba(148,163,184,.05);display:grid;gap:4px}
           .queue-stat span,.queue-stat small{color:var(--muted);font-size:12px}.queue-stat b{font-size:26px}
-          .queue-message{display:flex;align-items:center;gap:10px}.queue-message span{color:var(--muted)}
+          .queue-message{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.queue-message span{color:var(--muted);flex:1 1 280px}.queue-message .secondary-button{margin-left:auto}
           .queue-toolbar-card{display:grid;gap:16px}.queue-tabs{display:flex;gap:8px;flex-wrap:wrap}.queue-tabs button{display:inline-flex;align-items:center;gap:8px}
           .queue-tab-count{min-width:22px;padding:2px 6px;border-radius:999px;background:rgba(148,163,184,.14);font-size:11px}
           .queue-filter-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}.queue-view-summary{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:13px}.queue-view-summary b{color:inherit}
