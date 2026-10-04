@@ -19523,7 +19523,10 @@ body.client-sheet-open {
 
 .event-function-details-fields {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(150px, .65fr);
+  grid-template-columns:
+    minmax(150px, .75fr)
+    minmax(0, 1.25fr)
+    minmax(150px, .65fr);
   gap: 10px;
 }
 
@@ -19725,7 +19728,6 @@ body.client-sheet-open {
 .event-simple-flow > .first-menu-guide,
 .event-simple-flow .menu-source-workspace-heading,
 .event-simple-flow .event-import-step-heading,
-.event-simple-flow .event-function-details,
 .event-simple-flow .event-menu-detect-inline,
 .event-simple-flow .event-detected-details {
   display: none !important;
@@ -20115,6 +20117,22 @@ body.client-sheet-open {
   font-weight: 900;
 }
 
+.simple-detected-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: min(760px, 100%);
+  margin-inline: auto;
+}
+
+.simple-detected-actions > button {
+  min-height: 52px;
+}
+
+.simple-detected-add-another {
+  flex: 1 1 0;
+}
+
 .simple-detected-done {
   width: min(420px, 100%);
   min-height: 52px;
@@ -20195,8 +20213,18 @@ body.client-sheet-open {
     text-align: left;
   }
 
-  .simple-detected-done {
+  .simple-detected-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .simple-detected-done,
+  .simple-detected-add-another {
+    width: 100%;
     min-height: 54px;
+  }
+
+  .simple-detected-done {
     font-size: 16px;
   }
 }
@@ -27224,7 +27252,10 @@ body.client-sheet-open {
 
 .event-dish-picker-context {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(160px, .6fr);
+  grid-template-columns:
+    minmax(150px, .75fr)
+    minmax(0, 1.25fr)
+    minmax(160px, .6fr);
   gap: 10px;
   padding: 12px;
   border: 1px solid rgba(148, 163, 184, .10);
@@ -27750,7 +27781,7 @@ body.client-sheet-open {
 
   .event-dish-picker-footer-actions {
     display: grid;
-    grid-template-columns: 90px minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .event-dish-picker-footer-actions .ghost-button,
