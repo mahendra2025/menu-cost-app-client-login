@@ -10,11 +10,83 @@ export type EventFileAssignment = {
   kind: string; requirement: string; detail: string; quantity: number; unit: string;
   assignedTo: string; partnerType: string; rate: number; status: string;
   deliveryTime: string; pickupTime?: string; paymentTerms?: string; contactDetails?: string;
+  photoUrl?: string;
 };
 export type EventFileFunction = { key: string; dayLabel: string; mealLabel: string; pax: number; menu: MenuItem[]; rows: EventFileAssignment[] };
 export type EventFileMetadata = { status: string; phone: string; email: string; notes: string; attachments: { name: string; size: number }[] };
 const amount = (n: number) => `INR ${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const label = (s: string) => s.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ');
+
+type PhotoTableRow = {
+  photoUrl?: string;
+  cells: (string | number)[];
+};
+
+function photoFormat(photoUrl: string) {
+  const match =
+    /^data:image\/(jpeg|jpg|png|webp);/i.exec(
+      photoUrl,
+    );
+
+  if (!match) return null;
+
+  const format =
+    match[1].toLowerCase();
+
+  if (
+    format === 'jpeg' ||
+    format === 'jpg'
+  ) {
+    return 'JPEG';
+  }
+
+  if (format === 'png') {
+    return 'PNG';
+  }
+
+  if (format === 'webp') {
+    return 'WEBP';
+  }
+
+  return null;
+}
+
+function canEmbedPhoto(photoUrl?: string) {
+  return Boolean(
+    photoUrl &&
+      photoFormat(photoUrl),
+  );
+}
+
+function drawPhoto(
+  doc: jsPDF,
+  photoUrl: string | undefined,
+  x: number,
+  y: number,
+  size = 16,
+) {
+  if (!photoUrl) return;
+
+  const format =
+    photoFormat(photoUrl);
+
+  if (!format) return;
+
+  try {
+    doc.addImage(
+      photoUrl,
+      format,
+      x,
+      y,
+      size,
+      size,
+      undefined,
+      'FAST',
+    );
+  } catch {
+    // Keep PDF generation resilient if an individual saved photo is invalid.
+  }
+}
 
 export function createEventFilePdf(work: WorkState, functions: EventFileFunction[], file: EventFileMetadata) {
   const doc = new jsPDF();
@@ -31,6 +103,178 @@ export function createEventFilePdf(work: WorkState, functions: EventFileFunction
     });
     y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
   }
+
+  function photoTable(
+    title: string,
+    head: string[],
+    rows: PhotoTableRow[],
+  ) {
+    const hasPhotos =
+      rows.some((row) =>
+        canEmbedPhoto(
+          row.photoUrl,
+        ),
+      );
+
+    if (!hasPhotos) {
+      table(
+        title,
+        head,
+        rows.map(
+          (row) =>
+            row.cells,
+        ),
+      );
+      return;
+    }
+
+    if (
+      y > 235 ||
+      (
+        rows.length <= 12 &&
+        y +
+          Math.max(
+            1,
+            rows.length,
+          ) *
+            21 +
+          20 >
+          279
+      )
+    ) {
+      doc.addPage();
+      y = 18;
+    }
+
+    doc.setFont(
+      'helvetica',
+      'bold',
+    );
+    doc.setFontSize(13);
+    doc.setTextColor(
+      24,
+      49,
+      77,
+    );
+    doc.text(
+      title,
+      14,
+      y,
+    );
+    y += 5;
+
+    const body =
+      rows.length
+        ? rows.map(
+            (row) => [
+              '',
+              ...row.cells,
+            ],
+          )
+        : [[
+            '',
+            'Not recorded',
+            ...head
+              .slice(1)
+              .map(() => ''),
+          ]];
+
+    autoTable(doc, {
+      startY: y,
+      head: [[
+        'Photo',
+        ...head,
+      ]],
+      body,
+      margin: {
+        left: 14,
+        right: 14,
+        top: 18,
+        bottom: 18,
+      },
+      styles: {
+        fontSize: 8.6,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        textColor: [
+          30,
+          40,
+          50,
+        ],
+        minCellHeight: 20,
+        valign: 'middle',
+      },
+      headStyles: {
+        fillColor: [
+          24,
+          49,
+          77,
+        ],
+        textColor: [
+          255,
+          255,
+          255,
+        ],
+      },
+      alternateRowStyles: {
+        fillColor: [
+          244,
+          247,
+          250,
+        ],
+      },
+      columnStyles: {
+        0: {
+          cellWidth: 22,
+        },
+      },
+      rowPageBreak:
+        'avoid',
+      didDrawCell(data) {
+        if (
+          data.section !==
+            'body' ||
+          data.column.index !==
+            0
+        ) {
+          return;
+        }
+
+        const row =
+          rows[
+            data.row.index
+          ];
+
+        if (
+          !row ||
+          !canEmbedPhoto(
+            row.photoUrl,
+          )
+        ) {
+          return;
+        }
+
+        drawPhoto(
+          doc,
+          row.photoUrl,
+          data.cell.x + 3,
+          data.cell.y + 2,
+          16,
+        );
+      },
+    });
+
+    y =
+      (
+        doc as jsPDF & {
+          lastAutoTable: {
+            finalY: number;
+          };
+        }
+      ).lastAutoTable
+        .finalY + 12;
+  }
+
   doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.text('Complete Event File', 14, y); y += 10;
   table('Event & client', ['Detail', 'Value'], [
     ['Business', work.profile.businessName || '-'], ['Business contact', [work.profile.ownerName, work.profile.phone, work.profile.email].filter(Boolean).join(' / ') || '-'],
@@ -48,23 +292,91 @@ export function createEventFilePdf(work: WorkState, functions: EventFileFunction
     doc.addPage(); y = 18;
     const title = [fn.dayLabel, fn.mealLabel].filter(Boolean).join(' / ') || 'Event function';
     table(title, ['Function detail', 'Value'], [['Guests', fn.pax], ['Menu dishes', fn.menu.length]]);
-    table('Menu', ['Dish', 'Category', 'Rate per cover'], fn.menu.map(d => [d.name, d.category, amount(d.costPerPlate)]));
+    photoTable(
+      'Menu',
+      ['Dish', 'Category', 'Rate per cover'],
+      fn.menu.map((dish) => ({
+        photoUrl:
+          dish.photoUrl,
+        cells: [
+          dish.name,
+          dish.category,
+          amount(
+            dish.costPerPlate,
+          ),
+        ],
+      })),
+    );
     for (const kind of ['MENU', 'MANPOWER', 'DRESS', 'GROCERY', 'DISPOSABLE', 'EQUIPMENT', 'CROCKERY', 'TRANSPORT']) {
       const rows = fn.rows.filter(r => r.kind === kind);
       if (!rows.length) continue;
-      table(label(kind), ['Requirement / details', 'Partner / status', 'Quantity / rate / total', 'Schedule / terms'], rows.map(r => [
-        [r.requirement, r.detail].filter(Boolean).join('\n'),
-        [r.assignedTo || 'Unassigned', r.contactDetails, label(r.partnerType), label(r.status)].join('\n'),
-        `${r.quantity} ${r.unit}\n${amount(r.rate)}\n${amount(r.quantity * r.rate)}`,
-        [`Delivery: ${r.deliveryTime || 'Not set'}`, `Pickup: ${r.pickupTime || 'Not set'}`, r.paymentTerms].filter(Boolean).join('\n'),
-      ]));
+      photoTable(
+        label(kind),
+        [
+          'Requirement / details',
+          'Partner / status',
+          'Quantity / rate / total',
+          'Schedule / terms',
+        ],
+        rows.map((row) => ({
+          photoUrl:
+            row.photoUrl,
+          cells: [
+            [
+              row.requirement,
+              row.detail,
+            ]
+              .filter(Boolean)
+              .join('\n'),
+            [
+              row.assignedTo ||
+                'Unassigned',
+              row.contactDetails,
+              label(
+                row.partnerType,
+              ),
+              label(
+                row.status,
+              ),
+            ].join('\n'),
+            `${row.quantity} ${row.unit}\n${amount(row.rate)}\n${amount(row.quantity * row.rate)}`,
+            [
+              `Delivery: ${row.deliveryTime || 'Not set'}`,
+              `Pickup: ${row.pickupTime || 'Not set'}`,
+              row.paymentTerms,
+            ]
+              .filter(Boolean)
+              .join('\n'),
+          ],
+        })),
+      );
     }
     const missing = ['MENU', 'MANPOWER', 'DRESS', 'GROCERY', 'DISPOSABLE', 'EQUIPMENT', 'CROCKERY', 'TRANSPORT'].filter(kind => !fn.rows.some(row => row.kind === kind));
     if (missing.length) table('Categories without assignments', ['Not recorded'], [[missing.map(label).join(', ')]]);
     table('Assignment estimate', ['Item', 'Amount'], [['Function assignments', amount(fn.rows.reduce((sum, r) => sum + r.quantity * r.rate, 0))], ['Costing note', 'Planning assignments are separate estimates and are not added again to the event costing summary.']]);
   }
   table('Staffing cost inputs', ['Role / department', 'Quantity', 'Rate / billing basis'], work.manpower.map(r => [r.role + (r.department ? ` / ${r.department}` : ''), r.quantity, `${amount(r.rate)} / ${r.rateMode || 'PER_MEAL'}`]));
-  table('Disposable cost inputs', ['Item', 'Quantity / unit', 'Unit cost'], work.disposableItems.map(r => [r.name, `${r.quantity} ${r.unit || 'pcs'}`, amount(r.unitCost)]));
+  photoTable(
+    'Disposable cost inputs',
+    [
+      'Item',
+      'Quantity / unit',
+      'Unit cost',
+    ],
+    work.disposableItems.map(
+      (row) => ({
+        photoUrl:
+          row.photoUrl,
+        cells: [
+          row.name,
+          `${row.quantity} ${row.unit || 'pcs'}`,
+          amount(
+            row.unitCost,
+          ),
+        ],
+      }),
+    ),
+  );
   if ((work as WorkWithOperations).operations) {
     const operations = normalizeOperationsState(work as WorkWithOperations);
     table('Transport mode', ['Mode'], [[label(operations.transportMode)]]);
@@ -114,6 +426,175 @@ export function createManagerEventFilePdf(work: WorkState, functions: EventFileF
     y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
   }
 
+  function photoTable(
+    title: string,
+    head: string[],
+    rows: PhotoTableRow[],
+  ) {
+    const hasPhotos =
+      rows.some((row) =>
+        canEmbedPhoto(
+          row.photoUrl,
+        ),
+      );
+
+    if (!hasPhotos) {
+      table(
+        title,
+        head,
+        rows.map(
+          (row) =>
+            row.cells,
+        ),
+      );
+      return;
+    }
+
+    if (
+      y > 235 ||
+      (
+        rows.length <= 12 &&
+        y +
+          Math.max(
+            1,
+            rows.length,
+          ) *
+            21 +
+          20 >
+          279
+      )
+    ) {
+      doc.addPage();
+      y = 18;
+    }
+
+    doc.setFont(
+      'helvetica',
+      'bold',
+    );
+    doc.setFontSize(13);
+    doc.setTextColor(
+      24,
+      49,
+      77,
+    );
+    doc.text(
+      title,
+      14,
+      y,
+    );
+    y += 5;
+
+    autoTable(doc, {
+      startY: y,
+      head: [[
+        'Photo',
+        ...head,
+      ]],
+      body:
+        rows.length
+          ? rows.map(
+              (row) => [
+                '',
+                ...row.cells,
+              ],
+            )
+          : [[
+              '',
+              'Not recorded',
+              ...head
+                .slice(1)
+                .map(() => ''),
+            ]],
+      margin: {
+        left: 14,
+        right: 14,
+        top: 18,
+        bottom: 18,
+      },
+      styles: {
+        fontSize: 8.6,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        textColor: [
+          30,
+          40,
+          50,
+        ],
+        minCellHeight: 20,
+        valign: 'middle',
+      },
+      headStyles: {
+        fillColor: [
+          24,
+          49,
+          77,
+        ],
+        textColor: [
+          255,
+          255,
+          255,
+        ],
+      },
+      alternateRowStyles: {
+        fillColor: [
+          244,
+          247,
+          250,
+        ],
+      },
+      columnStyles: {
+        0: {
+          cellWidth: 22,
+        },
+      },
+      rowPageBreak:
+        'avoid',
+      didDrawCell(data) {
+        if (
+          data.section !==
+            'body' ||
+          data.column.index !==
+            0
+        ) {
+          return;
+        }
+
+        const row =
+          rows[
+            data.row.index
+          ];
+
+        if (
+          !row ||
+          !canEmbedPhoto(
+            row.photoUrl,
+          )
+        ) {
+          return;
+        }
+
+        drawPhoto(
+          doc,
+          row.photoUrl,
+          data.cell.x + 3,
+          data.cell.y + 2,
+          16,
+        );
+      },
+    });
+
+    y =
+      (
+        doc as jsPDF & {
+          lastAutoTable: {
+            finalY: number;
+          };
+        }
+      ).lastAutoTable
+        .finalY + 12;
+  }
+
   const safeInputs = (value: Record<string, unknown>) =>
     Object.entries(value)
       .filter(([key]) => !MANAGER_HIDDEN_INPUT.test(key))
@@ -149,17 +630,69 @@ export function createManagerEventFilePdf(work: WorkState, functions: EventFileF
       ['Guests', fn.pax],
       ['Menu dishes', fn.menu.length],
     ]);
-    table('Menu', ['Dish', 'Category'], fn.menu.map(d => [d.name, d.category]));
+    photoTable(
+      'Menu',
+      [
+        'Dish',
+        'Category',
+      ],
+      fn.menu.map(
+        (dish) => ({
+          photoUrl:
+            dish.photoUrl,
+          cells: [
+            dish.name,
+            dish.category,
+          ],
+        }),
+      ),
+    );
 
     for (const kind of ['MENU', 'MANPOWER', 'DRESS', 'GROCERY', 'DISPOSABLE', 'EQUIPMENT', 'CROCKERY', 'TRANSPORT']) {
       const rows = fn.rows.filter(r => r.kind === kind);
       if (!rows.length) continue;
-      table(label(kind), ['Requirement / details', 'Partner / status', 'Quantity', 'Schedule / terms'], rows.map(r => [
-        [r.requirement, r.detail].filter(Boolean).join('\n'),
-        [r.assignedTo || 'Unassigned', r.contactDetails, label(r.partnerType), label(r.status)].filter(Boolean).join('\n'),
-        `${r.quantity} ${r.unit}`,
-        [`Delivery: ${r.deliveryTime || 'Not set'}`, `Pickup: ${r.pickupTime || 'Not set'}`, r.paymentTerms].filter(Boolean).join('\n'),
-      ]));
+      photoTable(
+        label(kind),
+        [
+          'Requirement / details',
+          'Partner / status',
+          'Quantity',
+          'Schedule / terms',
+        ],
+        rows.map((row) => ({
+          photoUrl:
+            row.photoUrl,
+          cells: [
+            [
+              row.requirement,
+              row.detail,
+            ]
+              .filter(Boolean)
+              .join('\n'),
+            [
+              row.assignedTo ||
+                'Unassigned',
+              row.contactDetails,
+              label(
+                row.partnerType,
+              ),
+              label(
+                row.status,
+              ),
+            ]
+              .filter(Boolean)
+              .join('\n'),
+            `${row.quantity} ${row.unit}`,
+            [
+              `Delivery: ${row.deliveryTime || 'Not set'}`,
+              `Pickup: ${row.pickupTime || 'Not set'}`,
+              row.paymentTerms,
+            ]
+              .filter(Boolean)
+              .join('\n'),
+          ],
+        })),
+      );
     }
 
     const missing = ['MENU', 'MANPOWER', 'DRESS', 'GROCERY', 'DISPOSABLE', 'EQUIPMENT', 'CROCKERY', 'TRANSPORT']
@@ -172,10 +705,23 @@ export function createManagerEventFilePdf(work: WorkState, functions: EventFileF
     r.quantity,
   ]));
 
-  table('Disposable plan', ['Item', 'Quantity / unit'], work.disposableItems.map(r => [
-    r.name,
-    `${r.quantity} ${r.unit || 'pcs'}`,
-  ]));
+  photoTable(
+    'Disposable plan',
+    [
+      'Item',
+      'Quantity / unit',
+    ],
+    work.disposableItems.map(
+      (row) => ({
+        photoUrl:
+          row.photoUrl,
+        cells: [
+          row.name,
+          `${row.quantity} ${row.unit || 'pcs'}`,
+        ],
+      }),
+    ),
+  );
 
   if ((work as WorkWithOperations).operations) {
     const operations = normalizeOperationsState(work as WorkWithOperations);
