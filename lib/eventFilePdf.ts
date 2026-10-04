@@ -84,6 +84,140 @@ export function createEventFilePdf(work: WorkState, functions: EventFileFunction
   }
   return doc;
 }
+
+const MANAGER_HIDDEN_INPUT = /(rate|cost|price|amount|charge|total|profit|margin|selling|billing)/i;
+
+export function createManagerEventFilePdf(work: WorkState, functions: EventFileFunction[], file: EventFileMetadata) {
+  const doc = new jsPDF();
+  let y = 18;
+
+  function table(title: string, head: string[], body: (string | number)[][]) {
+    if (y > 245 || (body.length <= 18 && y + Math.max(1, body.length) * 10 + 20 > 279)) {
+      doc.addPage();
+      y = 18;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(24, 49, 77);
+    doc.text(title, 14, y);
+    y += 5;
+    autoTable(doc, {
+      startY: y,
+      head: [head],
+      body: body.length ? body : [['Not recorded', ...head.slice(1).map(() => '')]],
+      margin: { left: 14, right: 14, top: 18, bottom: 18 },
+      styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak', textColor: [30, 40, 50] },
+      headStyles: { fillColor: [24, 49, 77], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [244, 247, 250] },
+      rowPageBreak: 'avoid',
+    });
+    y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+  }
+
+  const safeInputs = (value: Record<string, unknown>) =>
+    Object.entries(value)
+      .filter(([key]) => !MANAGER_HIDDEN_INPUT.test(key))
+      .map(([key, input]) => `${label(key)}: ${input}`)
+      .join('\n') || 'Not recorded';
+
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Manager Event File', 14, y);
+  y += 10;
+
+  table('Event & client', ['Detail', 'Value'], [
+    ['Business', work.profile.businessName || '-'],
+    ['Business contact', [work.profile.ownerName, work.profile.phone, work.profile.email].filter(Boolean).join(' / ') || '-'],
+    ['Event', work.event.eventName || '-'],
+    ['Client', work.event.clientName || '-'],
+    ['Date', work.event.eventDate || '-'],
+    ['Venue', work.event.venue || '-'],
+    ['City', work.event.city || '-'],
+    ['Guests', work.event.pax],
+    ['Function type', work.event.functionType || '-'],
+    ['Planning status', file.status],
+    ['Client phone', file.phone || '-'],
+    ['Client email', file.email || '-'],
+    ['Generated', new Date().toLocaleString('en-IN')],
+  ]);
+
+  for (const fn of functions) {
+    doc.addPage();
+    y = 18;
+    const title = [fn.dayLabel, fn.mealLabel].filter(Boolean).join(' / ') || 'Event function';
+    table(title, ['Function detail', 'Value'], [
+      ['Guests', fn.pax],
+      ['Menu dishes', fn.menu.length],
+    ]);
+    table('Menu', ['Dish', 'Category'], fn.menu.map(d => [d.name, d.category]));
+
+    for (const kind of ['MENU', 'MANPOWER', 'DRESS', 'GROCERY', 'DISPOSABLE', 'EQUIPMENT', 'CROCKERY', 'TRANSPORT']) {
+      const rows = fn.rows.filter(r => r.kind === kind);
+      if (!rows.length) continue;
+      table(label(kind), ['Requirement / details', 'Partner / status', 'Quantity', 'Schedule / terms'], rows.map(r => [
+        [r.requirement, r.detail].filter(Boolean).join('\n'),
+        [r.assignedTo || 'Unassigned', r.contactDetails, label(r.partnerType), label(r.status)].filter(Boolean).join('\n'),
+        `${r.quantity} ${r.unit}`,
+        [`Delivery: ${r.deliveryTime || 'Not set'}`, `Pickup: ${r.pickupTime || 'Not set'}`, r.paymentTerms].filter(Boolean).join('\n'),
+      ]));
+    }
+
+    const missing = ['MENU', 'MANPOWER', 'DRESS', 'GROCERY', 'DISPOSABLE', 'EQUIPMENT', 'CROCKERY', 'TRANSPORT']
+      .filter(kind => !fn.rows.some(row => row.kind === kind));
+    if (missing.length) table('Categories without assignments', ['Not recorded'], [[missing.map(label).join(', ')]]);
+  }
+
+  table('Staffing plan', ['Role / department', 'Quantity'], work.manpower.map(r => [
+    r.role + (r.department ? ` / ${r.department}` : ''),
+    r.quantity,
+  ]));
+
+  table('Disposable plan', ['Item', 'Quantity / unit'], work.disposableItems.map(r => [
+    r.name,
+    `${r.quantity} ${r.unit || 'pcs'}`,
+  ]));
+
+  if ((work as WorkWithOperations).operations) {
+    const operations = normalizeOperationsState(work as WorkWithOperations);
+    table('Transport mode', ['Mode'], [[label(operations.transportMode)]]);
+    if (operations.transportMode === 'EVENT_SHARED') {
+      table('Shared transport plan', ['Details'], [[safeInputs(operations.sharedTransport as unknown as Record<string, unknown>)]]);
+    }
+    for (const row of operations.functions) {
+      table(`Operations: ${row.dayLabel} / ${row.mealLabel}`, ['Gas plan', 'Transport plan'], [[
+        safeInputs(row.gas as unknown as Record<string, unknown>),
+        operations.transportMode === 'FUNCTION_WISE'
+          ? safeInputs(row.transport as unknown as Record<string, unknown>)
+          : 'Shared event transport',
+      ]]);
+    }
+  }
+
+  table('Planning notes', ['Notes'], [[file.notes || 'No planning notes recorded.']]);
+  table('Attachment register', ['File name', 'Size'], file.attachments.map(a => [
+    a.name,
+    `${Math.ceil(a.size / 1024)} KB`,
+  ]));
+  table('Document contents', ['Note'], [[
+    'Manager copy for event execution. Financial rates, costs, selling values, profit and payment amounts are intentionally excluded.',
+  ]]);
+
+  const pages = doc.getNumberOfPages();
+  for (let page = 1; page <= pages; page++) {
+    doc.setPage(page);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text('Manager event file - operations only - no rates or costs', 14, 288);
+    doc.text(`${page} / ${pages}`, 196, 288, { align: 'right' });
+  }
+  return doc;
+}
+
+export function managerEventFilePdfName(work: WorkState) {
+  return `${(work.event.eventName || 'event').replace(/[^a-z0-9]+/gi, '-').slice(0, 70)}-manager-event-file.pdf`;
+}
+
 export function eventFilePdfName(work: WorkState) {
   return `${(work.event.eventName || 'event').replace(/[^a-z0-9]+/gi, '-').slice(0, 70)}-complete-event-file.pdf`;
 }
