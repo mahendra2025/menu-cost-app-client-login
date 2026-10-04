@@ -103,6 +103,8 @@ export type MenuItem = {
   name: string;
   category: string;
   costPerPlate: number;
+  /** Optional visual reference shown in event execution files when available. */
+  photoUrl?: string;
   portionQuantity?: number;
   portionUnit?: string;
 
