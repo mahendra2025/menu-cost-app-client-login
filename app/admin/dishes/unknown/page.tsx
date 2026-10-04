@@ -15,6 +15,8 @@ import {
 
 type QueueStatus =
   | 'PENDING'
+  | 'RECIPE_IN_PROGRESS'
+  | 'GLOBAL_READY'
   | 'APPROVED'
   | 'MATCHED'
   | 'IGNORED'
@@ -67,6 +69,8 @@ type ReviewDraft = {
 
 type StatusCounts = {
   PENDING: number;
+  RECIPE_IN_PROGRESS: number;
+  GLOBAL_READY: number;
   APPROVED: number;
   MATCHED: number;
   IGNORED: number;
@@ -75,6 +79,8 @@ type StatusCounts = {
 
 const EMPTY_COUNTS: StatusCounts = {
   PENDING: 0,
+  RECIPE_IN_PROGRESS: 0,
+  GLOBAL_READY: 0,
   APPROVED: 0,
   MATCHED: 0,
   IGNORED: 0,
@@ -122,7 +128,9 @@ function riskLabel(item: PendingDish) {
 
 function statusLabel(status: string) {
   if (status === 'ALL') return 'All';
-  if (status === 'APPROVED') return 'Added';
+  if (status === 'RECIPE_IN_PROGRESS') return 'Recipe in progress';
+  if (status === 'GLOBAL_READY') return 'Global ready';
+  if (status === 'APPROVED') return 'Recipe needed';
   if (status === 'MATCHED') return 'Matched';
   if (status === 'IGNORED') return 'Ignored';
   return 'Pending';
@@ -527,6 +535,60 @@ export default function UnknownDishQueuePage() {
     }
   }
 
+  async function startRecipeFromReview() {
+    if (!selected || !draft.name.trim()) return;
+
+    setBusy(true);
+    setMessage('');
+
+    try {
+      const response = await fetch(
+        '/api/admin/dishes/pending',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify({
+            id: selected.id,
+            action:
+              'START_RECIPE',
+            adminNotes:
+              draft.adminNotes,
+          }),
+        },
+      );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not start recipe creation.',
+        );
+      }
+
+      window.location.assign(
+        `/admin/recipes?newRecipe=${encodeURIComponent(
+          draft.name.trim(),
+        )}&category=${encodeURIComponent(
+          draft.category ||
+            'Other',
+        )}`,
+      );
+    } catch (error) {
+      setMessageType('error');
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not start recipe creation.',
+      );
+      setBusy(false);
+    }
+  }
+
   async function submitAction(
     action: 'ADD_NEW' | 'MATCH_EXISTING' | 'IGNORE',
     advance = true,
@@ -671,8 +733,10 @@ export default function UnknownDishQueuePage() {
     label: string;
   }> = [
     { value: 'PENDING', label: 'Pending' },
+    { value: 'RECIPE_IN_PROGRESS', label: 'Recipe' },
+    { value: 'GLOBAL_READY', label: 'Global Ready' },
     { value: 'MATCHED', label: 'Matched' },
-    { value: 'APPROVED', label: 'Added New' },
+    { value: 'APPROVED', label: 'Recipe Needed' },
     { value: 'IGNORED', label: 'Ignored' },
     { value: 'ALL', label: 'All' },
   ];
@@ -1125,6 +1189,32 @@ export default function UnknownDishQueuePage() {
                 <b>{selected.occurrences}</b>
               </div>
               <div>
+                <span>Recipe status</span>
+                <b>
+                  {selected.status === 'GLOBAL_READY'
+                    ? 'Ready ✓'
+                    : selected.status === 'RECIPE_IN_PROGRESS'
+                      ? 'In progress'
+                      : selected.status === 'APPROVED'
+                        ? 'Needed'
+                        : selected.status === 'MATCHED'
+                          ? 'Existing recipe path'
+                          : 'Not started'}
+                </b>
+              </div>
+              <div>
+                <span>Global status</span>
+                <b>
+                  {selected.status === 'GLOBAL_READY'
+                    ? 'Global ready ✓'
+                    : selected.status === 'MATCHED'
+                      ? 'Matched existing'
+                      : selected.status === 'APPROVED'
+                        ? 'Dish added'
+                        : 'Pending'}
+                </b>
+              </div>
+              <div>
                 <span>Risk</span>
                 <b>{riskLabel(selected)}</b>
               </div>
@@ -1422,29 +1512,19 @@ export default function UnknownDishQueuePage() {
                     </label>
 
                     <div className="queue-new-dish-actions">
-                      <a
+                      <button
                         className="ghost-button queue-decision-action"
-                        aria-disabled={!draft.name.trim()}
-                        href={
-                          draft.name.trim()
-                            ? `/admin/recipes?newRecipe=${encodeURIComponent(
-                                draft.name.trim(),
-                              )}&category=${encodeURIComponent(
-                                draft.category ||
-                                  'Other',
-                              )}`
-                            : undefined
+                        type="button"
+                        disabled={
+                          busy ||
+                          !draft.name.trim()
                         }
-                        onClick={(event) => {
-                          if (
-                            !draft.name.trim()
-                          ) {
-                            event.preventDefault();
-                          }
-                        }}
+                        onClick={() =>
+                          void startRecipeFromReview()
+                        }
                       >
                         Create New Recipe
-                      </a>
+                      </button>
 
                       <button
                         className="secondary-button queue-decision-action"
@@ -1507,7 +1587,7 @@ export default function UnknownDishQueuePage() {
           .queue-stat{padding:16px;border:1px solid rgba(148,163,184,.18);border-radius:16px;background:rgba(148,163,184,.05);display:grid;gap:4px}
           .queue-stat span,.queue-stat small{color:var(--muted);font-size:12px}.queue-stat b{font-size:26px}
           .queue-message{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.queue-message span{color:var(--muted);flex:1 1 280px}.queue-message .secondary-button{margin-left:auto}
-          .queue-new-dish-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.queue-new-dish-actions .queue-decision-action{width:100%;justify-content:center}.queue-new-dish-actions a[aria-disabled="true"]{pointer-events:none;opacity:.5}.queue-recipe-hint{display:block;margin-top:8px;color:var(--muted);font-size:11px}
+          .queue-new-dish-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.queue-new-dish-actions .queue-decision-action{width:100%;justify-content:center}.queue-new-dish-actions button:disabled{opacity:.5}.queue-recipe-hint{display:block;margin-top:8px;color:var(--muted);font-size:11px}
           .queue-toolbar-card{display:grid;gap:16px}.queue-tabs{display:flex;gap:8px;flex-wrap:wrap}.queue-tabs button{display:inline-flex;align-items:center;gap:8px}
           .queue-tab-count{min-width:22px;padding:2px 6px;border-radius:999px;background:rgba(148,163,184,.14);font-size:11px}
           .queue-filter-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}.queue-view-summary{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:13px}.queue-view-summary b{color:inherit}
