@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createEventFilePdf, eventFilePdfName, type EventFileFunction } from '../lib/eventFilePdf';
+import { createEventFilePdf, createManagerEventFilePdf, eventFilePdfName, managerEventFilePdfName, type EventFileFunction } from '../lib/eventFilePdf';
 import type { WorkState } from '../lib/types';
 
 export const exampleWork: WorkState = {
@@ -22,4 +22,16 @@ test('complete event PDF contains both functions, last assignment, notes and att
 });
 test('empty event exports without crashing', () => {
   assert.ok(createEventFilePdf(exampleWork, [], { ...exampleMetadata, attachments: [], notes: '' }).getNumberOfPages() > 0);
+});
+
+test('manager event PDF keeps operations but excludes every rate and costing section', () => {
+  const doc = createManagerEventFilePdf(exampleWork, exampleFunctions, exampleMetadata);
+  const output = doc.output();
+  for (const value of ['Manager Event File', 'Lunch', 'Reception', 'Function 2 equipment 24', 'Example Rentals', 'Keep the entrance clear.', 'venue-plan.pdf']) {
+    assert.ok(output.includes(value), value);
+  }
+  for (const hidden of ['Costing summary', 'Rate per cover', 'Estimated profit', 'INR 100', 'INR 500']) {
+    assert.ok(!output.includes(hidden), hidden);
+  }
+  assert.equal(managerEventFilePdfName(exampleWork), 'Reception-and-Lunch-manager-event-file.pdf');
 });
