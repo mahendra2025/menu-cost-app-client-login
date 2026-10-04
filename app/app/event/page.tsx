@@ -136,6 +136,7 @@ type ManualDishOption = {
   name: string;
   category: string;
   subcategory?: string;
+  aliases?: string[];
   rate: number;
   source?: 'global' | 'tenant';
   servingQuantity?: number;
@@ -1280,6 +1281,31 @@ export default function EventPage() {
   ] = useState(false);
 
   const [
+    manualDishDatabaseChecking,
+    setManualDishDatabaseChecking,
+  ] = useState(false);
+
+  const [
+    showUnknownDishForm,
+    setShowUnknownDishForm,
+  ] = useState(false);
+
+  const [
+    unknownDishCategory,
+    setUnknownDishCategory,
+  ] = useState('Other');
+
+  const [
+    addingUnknownDish,
+    setAddingUnknownDish,
+  ] = useState(false);
+
+  const [
+    manualDishNotice,
+    setManualDishNotice,
+  ] = useState('');
+
+  const [
     manualDishCatalog,
     setManualDishCatalog,
   ] = useState<ManualDishOption[]>(
@@ -1528,12 +1554,20 @@ export default function EventPage() {
     );
   }
 
-  async function loadManualDishCatalog() {
-    if (manualDishCatalog.length) {
+  async function loadManualDishCatalog(
+    forceRefresh = false,
+    silent = false,
+  ) {
+    if (
+      !forceRefresh &&
+      manualDishCatalog.length
+    ) {
       return manualDishCatalog;
     }
 
-    setManualDishLoading(true);
+    if (!silent) {
+      setManualDishLoading(true);
+    }
 
     try {
       const response =
@@ -1617,6 +1651,21 @@ export default function EventPage() {
                     row.subcategory ||
                       '',
                   ).trim(),
+
+                aliases:
+                  Array.isArray(
+                    row.aliases,
+                  )
+                    ? row.aliases
+                        .map(
+                          (alias) =>
+                            String(
+                              alias ||
+                              '',
+                            ).trim(),
+                        )
+                        .filter(Boolean)
+                    : [],
 
                 rate:
                   Math.max(
@@ -1714,18 +1763,299 @@ export default function EventPage() {
       return cleaned;
 
     } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : 'Could not load Dish Master.',
-      );
+      if (!silent) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : 'Could not load Dish Master.',
+        );
+      }
 
       return [];
 
     } finally {
-      setManualDishLoading(false);
+      if (!silent) {
+        setManualDishLoading(false);
+      }
     }
   }
+
+  async function queueUnknownDishSuggestion(
+    name: string,
+    categoryHint: string,
+  ) {
+    const response =
+      await fetch(
+        '/api/dish-suggestions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body:
+            JSON.stringify({
+              sourceFileName:
+                work?.event.eventName
+                  ? `Manual Dish Picker · ${work.event.eventName}`
+                  : 'Manual Dish Picker',
+              candidates: [
+                {
+                  name,
+                  categoryHint,
+                },
+              ],
+            }),
+        },
+      );
+
+    const data =
+      await response
+        .json()
+        .catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          'Could not send this dish for Super Admin review.',
+      );
+    }
+  }
+
+  function findManualDishMatch(
+    dishes: ManualDishOption[],
+    rawName: string,
+  ) {
+    const key =
+      dishNameKey(
+        rawName,
+      );
+
+    if (!key) {
+      return undefined;
+    }
+
+    return dishes.find(
+      (dish) =>
+        dishNameKey(
+          dish.name,
+        ) === key ||
+        (
+          dish.aliases ||
+          []
+        ).some(
+          (alias) =>
+            dishNameKey(
+              alias,
+            ) === key,
+        ),
+    );
+  }
+
+  async function addUnknownDishToCurrentSelection() {
+    if (
+      !session ||
+      !work
+    ) {
+      return;
+    }
+
+    const name =
+      manualDishSearch
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    if (!name) {
+      setError(
+        'Enter a dish name first.',
+      );
+      return;
+    }
+
+    setAddingUnknownDish(true);
+    setManualDishNotice('');
+    setError('');
+
+    try {
+      /*
+       * One last live database check prevents a stale picker
+       * from creating an "unknown" dish that Super Admin
+       * already published globally.
+       */
+      const refreshed =
+        await loadManualDishCatalog(
+          true,
+          true,
+        );
+
+      const existing =
+        findManualDishMatch(
+          refreshed,
+          name,
+        );
+
+      if (existing) {
+        setManualDishCatalog(
+          refreshed,
+        );
+        setSelectedManualDishKeys(
+          (current) =>
+            new Set([
+              ...current,
+              dishNameKey(
+                existing.name,
+              ),
+            ]),
+        );
+        setManualDishSearch(
+          existing.name,
+        );
+        setShowUnknownDishForm(
+          false,
+        );
+        setManualDishNotice(
+          `Found in Dish Master as “${existing.name}”. It is selected now.`,
+        );
+        return;
+      }
+
+      const category =
+        String(
+          unknownDishCategory ||
+          defaultDishCategory ||
+          'Other',
+        ).trim() ||
+        'Other';
+
+      await queueUnknownDishSuggestion(
+        name,
+        category,
+      );
+
+      const provisional:
+        ManualDishOption = {
+          name,
+          category,
+          subcategory: '',
+          rate: 0,
+          servingQuantity: 1,
+          servingUnit: 'serving',
+        };
+
+      setManualDishCatalog(
+        (current) =>
+          current.some(
+            (dish) =>
+              dishNameKey(
+                dish.name,
+              ) ===
+              dishNameKey(
+                name,
+              ),
+          )
+            ? current
+            : [
+                provisional,
+                ...current,
+              ],
+      );
+
+      setSelectedManualDishKeys(
+        (current) =>
+          new Set([
+            ...current,
+            dishNameKey(
+              name,
+            ),
+          ]),
+      );
+
+      setManualDishCategory(
+        'ALL',
+      );
+      setShowUnknownDishForm(
+        false,
+      );
+      setManualDishNotice(
+        'Added to this event with cost pending and sent to Super Admin → Unknown Dish Queue.',
+      );
+    } catch (unknownDishError) {
+      setError(
+        unknownDishError instanceof Error
+          ? unknownDishError.message
+          : 'Could not add the unknown dish.',
+      );
+    } finally {
+      setAddingUnknownDish(
+        false,
+      );
+    }
+  }
+
+  useEffect(() => {
+    if (
+      !showManualDishSelector
+    ) {
+      return;
+    }
+
+    const query =
+      manualDishSearch.trim();
+
+    if (
+      dishNameKey(
+        query,
+      ).length < 2
+    ) {
+      setManualDishDatabaseChecking(
+        false,
+      );
+      setShowUnknownDishForm(
+        false,
+      );
+      return;
+    }
+
+    if (
+      findManualDishMatch(
+        manualDishCatalog,
+        query,
+      )
+    ) {
+      setManualDishDatabaseChecking(
+        false,
+      );
+      return;
+    }
+
+    setManualDishDatabaseChecking(
+      true,
+    );
+
+    const timer =
+      window.setTimeout(
+        () => {
+          void loadManualDishCatalog(
+            true,
+            true,
+          ).finally(
+            () =>
+              setManualDishDatabaseChecking(
+                false,
+              ),
+          );
+        },
+        350,
+      );
+
+    return () =>
+      window.clearTimeout(
+        timer,
+      );
+  }, [
+    manualDishSearch,
+    showManualDishSelector,
+  ]);
 
   async function openManualDishSelector(
     target?: ExistingFunctionDishTarget,
@@ -1909,7 +2239,24 @@ export default function EventPage() {
         manualDishCategory,
       )
         ? manualDishCategory as Category
-        : defaultDishCategory;
+        : (
+            unknownDishCategory ||
+            defaultDishCategory
+          ) as Category;
+
+    try {
+      await queueUnknownDishSuggestion(
+        name,
+        category,
+      );
+    } catch (queueError) {
+      setError(
+        queueError instanceof Error
+          ? queueError.message
+          : 'Could not send this dish for Super Admin review.',
+      );
+      return;
+    }
 
     const newItem:
       MenuItem = {
@@ -7830,6 +8177,7 @@ export default function EventPage() {
             dish.name,
             dish.category,
             dish.subcategory,
+            ...(dish.aliases || []),
           ]
             .filter(Boolean)
             .join(' ')
@@ -8001,14 +8349,9 @@ export default function EventPage() {
 
   const exactManualCatalogDish =
     manualDishSearch.trim()
-      ? manualDishCatalog.find(
-          (dish) =>
-            dishNameKey(
-              dish.name,
-            ) ===
-            dishNameKey(
-              manualDishSearch,
-            ),
+      ? findManualDishMatch(
+          manualDishCatalog,
+          manualDishSearch,
         )
       : undefined;
 
@@ -11514,11 +11857,17 @@ export default function EventPage() {
                         className="input"
                         type="search"
                         value={manualDishSearch}
-                        onChange={(event) =>
+                        onChange={(event) => {
                           setManualDishSearch(
                             event.target.value,
-                          )
-                        }
+                          );
+                          setShowUnknownDishForm(
+                            false,
+                          );
+                          setManualDishNotice(
+                            '',
+                          );
+                        }}
                         placeholder="Search paneer, starter, sweet..."
                         aria-label="Search dishes"
                         autoFocus
@@ -11628,10 +11977,12 @@ export default function EventPage() {
                         {manualSelectionView ===
                         'SELECTED'
                           ? 'Review your choices before adding them.'
-                          : filteredManualDishes.length ===
-                              100
-                            ? 'Showing first 100 matches. Use search to narrow the list.'
-                            : 'Tap a dish card to select or remove it.'}
+                          : manualDishDatabaseChecking
+                            ? 'Checking the latest Dish Master database…'
+                            : filteredManualDishes.length ===
+                                100
+                              ? 'Showing first 100 matches. Use search to narrow the list.'
+                              : 'Tap a dish card to select or remove it.'}
                       </small>
                     </div>
 
@@ -11813,29 +12164,112 @@ export default function EventPage() {
                     </div>
                   )}
 
-                  {addDishFunctionTarget &&
-                  manualSelectionView ===
+                  {manualDishNotice ? (
+                    <div
+                      className="event-create-dish-inline"
+                      role="status"
+                    >
+                      <div>
+                        <b>
+                          Dish ready
+                        </b>
+                        <small>
+                          {manualDishNotice}
+                        </small>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {manualSelectionView ===
                     'ALL' &&
                   manualDishSearch.trim() &&
+                  !manualDishDatabaseChecking &&
+                  filteredManualDishes.length ===
+                    0 &&
                   !exactManualCatalogDish ? (
                     <div className="event-create-dish-inline">
                       <div>
                         <b>
-                          New dish: {manualDishSearch.trim()}
+                          Not in Dish Master: {manualDishSearch.trim()}
                         </b>
                         <small>
-                          Add it to {addDishFunctionTarget.mealLabel} now. Its rate and recipe can be completed in Dish Cost.
+                          Add it to this event now. It will also go to Super Admin → Unknown Dish Queue for recipe, costing and Global Dish Master approval.
                         </small>
                       </div>
-                      <button
-                        className="secondary-button"
-                        type="button"
-                        onClick={() =>
-                          void addNewDishToExistingFunction()
-                        }
-                      >
-                        + Create New Dish
-                      </button>
+
+                      {showUnknownDishForm ? (
+                        <div className="event-create-dish-form">
+                          <select
+                            className="select"
+                            value={
+                              unknownDishCategory
+                            }
+                            onChange={(event) =>
+                              setUnknownDishCategory(
+                                event.target.value,
+                              )
+                            }
+                            aria-label="New dish category"
+                          >
+                            {(
+                              availableDishCategories.length
+                                ? availableDishCategories
+                                : ['Other']
+                            ).map(
+                              (category) => (
+                                <option
+                                  key={
+                                    category
+                                  }
+                                  value={
+                                    category
+                                  }
+                                >
+                                  {
+                                    category
+                                  }
+                                </option>
+                              ),
+                            )}
+                          </select>
+
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            disabled={
+                              addingUnknownDish
+                            }
+                            onClick={() =>
+                              addDishFunctionTarget
+                                ? void addNewDishToExistingFunction()
+                                : void addUnknownDishToCurrentSelection()
+                            }
+                          >
+                            {addingUnknownDish
+                              ? 'Adding…'
+                              : 'Add to Event & Send to Admin'}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          onClick={() => {
+                            setUnknownDishCategory(
+                              manualDishCategory !==
+                                'ALL'
+                                ? manualDishCategory
+                                : defaultDishCategory ||
+                                    'Other',
+                            );
+                            setShowUnknownDishForm(
+                              true,
+                            );
+                          }}
+                        >
+                          + Add New Dish
+                        </button>
+                      )}
                     </div>
                   ) : null}
 
