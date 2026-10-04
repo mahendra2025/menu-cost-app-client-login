@@ -5091,6 +5091,48 @@ export default function RecipesPage() {
           ) || 0,
         );
 
+      const unknownDishLifecycle =
+        data.unknownDishLifecycle &&
+        typeof data.unknownDishLifecycle ===
+          'object'
+          ? data.unknownDishLifecycle as
+              Record<string, unknown>
+          : null;
+
+      const readyUnknownDishCount =
+        Math.max(
+          0,
+          Number(
+            unknownDishLifecycle
+              ?.readySuggestions,
+          ) || 0,
+        );
+
+      const repairedDraftCount =
+        Math.max(
+          0,
+          Number(
+            unknownDishLifecycle
+              ?.repairedDrafts,
+          ) || 0,
+        );
+
+      const repairedMenuItemCount =
+        Math.max(
+          0,
+          Number(
+            unknownDishLifecycle
+              ?.repairedMenuItems,
+          ) || 0,
+        );
+
+      const unknownDishSyncSuffix =
+        readyUnknownDishCount ||
+        repairedDraftCount ||
+        repairedMenuItemCount
+          ? ` · ${readyUnknownDishCount} unknown dish${readyUnknownDishCount === 1 ? '' : 'es'} Global Ready · ${repairedDraftCount} event draft${repairedDraftCount === 1 ? '' : 's'} repaired`
+          : '';
+
       const activeDish =
         selectedIndex === null
           ? null
@@ -5232,7 +5274,7 @@ export default function RecipesPage() {
             syncedDishes === 1
               ? ''
               : 's'
-          } synced to Dish Master${caterersOsSuffix}`,
+          } synced to Dish Master${caterersOsSuffix}${unknownDishSyncSuffix}`,
         );
 
         setMessage(
