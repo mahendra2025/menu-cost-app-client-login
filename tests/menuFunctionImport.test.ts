@@ -187,3 +187,60 @@ test(
     );
   },
 );
+
+
+test(
+  'applies a manual day label to a single imported function',
+  () => {
+    const result =
+      mergeFunctionMenu({
+        existingMenu: [],
+        detectedMenu: [
+          dish('day1-paneer', 'Paneer Tikka', 'Event Menu'),
+        ],
+        functionName: 'Dinner',
+        functionDay: 'Day 1 / 14 Feb 2027',
+        functionPax: 300,
+        defaultPax: 0,
+      });
+
+    assert.equal(result.menu.length, 1);
+    assert.equal(result.newItems[0].dayLabel, 'Day 1 / 14 Feb 2027');
+    assert.equal(result.newItems[0].mealLabel, 'Dinner');
+    assert.equal(result.newItems[0].servicePax, 300);
+  },
+);
+
+test(
+  'keeps the same dish and function separate on different days',
+  () => {
+    const first =
+      mergeFunctionMenu({
+        existingMenu: [],
+        detectedMenu: [
+          dish('day1-paneer', 'Paneer Tikka', 'Event Menu'),
+        ],
+        functionName: 'Dinner',
+        functionDay: 'Day 1',
+        functionPax: 200,
+        defaultPax: 0,
+      });
+
+    const second =
+      mergeFunctionMenu({
+        existingMenu: first.menu,
+        detectedMenu: [
+          dish('day2-paneer', 'Paneer Tikka', 'Event Menu'),
+        ],
+        functionName: 'Dinner',
+        functionDay: 'Day 2',
+        functionPax: 250,
+        defaultPax: 0,
+      });
+
+    assert.equal(second.menu.length, 2);
+    assert.equal(second.newItems.length, 1);
+    assert.equal(second.newItems[0].dayLabel, 'Day 2');
+    assert.equal(second.newItems[0].servicePax, 250);
+  },
+);
