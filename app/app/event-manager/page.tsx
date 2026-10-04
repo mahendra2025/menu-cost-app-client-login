@@ -60,7 +60,7 @@ export default function EventManager() {
     } catch (e) { setError((e as Error).message); }
     finally { setLoading(false); }
   }
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { void refresh(); const id = new URLSearchParams(window.location.search).get('costingId'); if (id) void open(id); }, []);
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => { if (dirty) e.preventDefault(); };
     window.addEventListener('beforeunload', warn);

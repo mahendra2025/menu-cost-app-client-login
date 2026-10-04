@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 
 import AppShell from '../../components/AppShell';
+import EventFilePanel from '../../components/EventFilePanel';
 
 import {
   flushWorkSave,
@@ -7961,6 +7962,7 @@ export default function EventPlanningPage() {
           </section>
 
           <aside className="ep-side">
+            <EventFilePanel key={work.costingId} work={work} disabled={eventLoading} functions={functions.map(fn => ({ ...fn, rows: (plan[fn.key] || seedRows(fn, work)).map(row => { const vendor = vendors.find(v => v.id === row.partnerId); return { ...row, contactDetails: vendor ? [vendor.contactPerson, vendor.phone, vendor.city].filter(Boolean).join(' / ') : '' }; }) }))} />
             <section className="ep-side-card">
               <h3>Function Readiness</h3>
               <div className="ep-progress">
