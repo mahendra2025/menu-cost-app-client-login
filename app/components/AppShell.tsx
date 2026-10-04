@@ -147,7 +147,6 @@ const clientWorkflowNav = [
 
 const clientWorkspaceNav = [
   { href: '/app/event-planning', match: '/app/event-planning', label: 'Event Planning', description: 'Vendors, agencies and readiness', icon: 'event' as ClientNavIcon },
-  { href: '/app/event-manager', match: '/app/event-manager', label: 'Event Manager', description: 'Event files and planning', icon: 'event' as ClientNavIcon },
   { href: '/app/history', match: '/app/history', label: 'History', description: 'Saved events', icon: 'history' as ClientNavIcon },
   { href: '/app/vendors', match: '/app/vendors', label: 'Vendors & Agencies', description: 'Supplier and rate master', icon: 'team' as ClientNavIcon },
   { href: '/app/equipment', match: '/app/equipment', label: 'Equipment Master', description: 'Photo catalog and availability', icon: 'expenses' as ClientNavIcon },
