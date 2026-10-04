@@ -27179,11 +27179,30 @@ body.client-sheet-open {
   flex: 0 0 auto;
 }
 
+.event-create-dish-form {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.event-create-dish-form .select {
+  min-width: 170px;
+  min-height: 40px;
+}
+
 @media (max-width: 620px) {
   .event-create-dish-inline {
     display: grid;
   }
 
+  .event-create-dish-form {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .event-create-dish-form .select,
   .event-create-dish-inline .secondary-button {
     width: 100%;
   }
