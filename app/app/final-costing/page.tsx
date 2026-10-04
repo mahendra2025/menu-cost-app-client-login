@@ -778,7 +778,7 @@ export default function FinalCostingPage() {
       subtitle="See the real cost per cover, set selling price and move to quotation"
       hidePageTitle
     >
-      <section className="content-grid">
+      <section className="content-grid final-cost-page-modern">
         <div className="final-cost-command-overview">
           <div className="final-cost-command-copy">
             <span className="page-eyebrow">
@@ -913,8 +913,98 @@ export default function FinalCostingPage() {
           </article>
         </section>
 
+        <section
+          className={
+            `final-cost-profit-signal ${!costReady ? 'is-blocked' : pricing.profit < 0 ? 'is-loss' : 'is-profit'}`
+          }
+          role="status"
+        >
+          <div>
+            <span>
+              {!costReady
+                ? 'Pricing blocked'
+                : pricing.profit < 0
+                  ? 'Current price is below cost'
+                  : 'Current pricing result'}
+            </span>
+            <b>
+              {!costReady
+                ? `${costingHealth?.blockerCount || 0} blocker${(costingHealth?.blockerCount || 0) === 1 ? '' : 's'} must be fixed`
+                : pricing.profit < 0
+                  ? `Loss ${money(Math.abs(pricing.profit))}`
+                  : `Profit ${money(pricing.profit)}`}
+            </b>
+            <small>
+              {!costReady
+                ? 'Complete missing cost inputs before setting the final client rate.'
+                : `${money(profitPerCover)} profit / cover · ${displayPercent(pricing.marginPercent)} gross margin`}
+            </small>
+          </div>
+
+          <div className="final-cost-profit-signal-rate">
+            <span>Sell / cover</span>
+            <b>{money(pricing.sellingPricePerCover)}</b>
+            <small>Break-even {money(breakEvenPricePerCover)}</small>
+          </div>
+        </section>
+
+        <nav
+          className="final-cost-workflow-bar no-print"
+          aria-label="Final costing workflow"
+        >
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                '/app/operations',
+              )
+            }
+          >
+            <span>01</span>
+            <b>Operations</b>
+            <small>Gas & transport</small>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                '/app/disposable',
+              )
+            }
+          >
+            <span>02</span>
+            <b>Disposable</b>
+            <small>Plastic & supplies</small>
+          </button>
+
+          <button
+            type="button"
+            className="is-active"
+          >
+            <span>03</span>
+            <b>Final Cost</b>
+            <small>Price & profit</small>
+          </button>
+
+          <button
+            type="button"
+            className={priceReady ? 'is-ready' : ''}
+            disabled={!priceReady}
+            onClick={createQuotation}
+          >
+            <span>04</span>
+            <b>Quotation</b>
+            <small>
+              {priceReady
+                ? 'Create client quote'
+                : 'Complete blockers'}
+            </small>
+          </button>
+        </nav>
+
         {costingHealth ? (
-          <div className="glass-card" style={{ borderLeft: costingHealth.blockerCount > 0 ? '4px solid #dc2626' : costingHealth.warningCount > 0 ? '4px solid #d97706' : '4px solid #16a34a' }}>
+          <div className={`glass-card final-cost-health-card ${costingHealth.blockerCount > 0 ? 'has-blockers' : costingHealth.warningCount > 0 ? 'has-warnings' : 'is-ready'}`}>
             <div className="final-costing-section-heading">
               <div>
                 <span className="section-kicker">Costing health check</span>
@@ -1044,7 +1134,7 @@ export default function FinalCostingPage() {
           </button>
         </div>
 
-        <div className="glass-card final-selling-card">
+        <div className="glass-card final-selling-card final-pricing-card">
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Pricing method</span>
@@ -1053,26 +1143,26 @@ export default function FinalCostingPage() {
             </div>
           </div>
 
-          <div className="action-row">
-            <button type="button" className={mode === 'MARKUP' ? 'primary-button' : 'secondary-button'} onClick={() => selectMode('MARKUP')}>
+          <div className="final-pricing-mode-switch">
+            <button type="button" className={mode === 'MARKUP' ? 'is-active' : ''} onClick={() => selectMode('MARKUP')}>
               Markup on Cost
             </button>
-            <button type="button" className={mode === 'MARGIN' ? 'primary-button' : 'secondary-button'} onClick={() => selectMode('MARGIN')}>
+            <button type="button" className={mode === 'MARGIN' ? 'is-active' : ''} onClick={() => selectMode('MARGIN')}>
               Gross Margin
             </button>
-            <button type="button" className={mode === 'MANUAL' ? 'primary-button' : 'secondary-button'} onClick={() => selectMode('MANUAL')}>
+            <button type="button" className={mode === 'MANUAL' ? 'is-active' : ''} onClick={() => selectMode('MANUAL')}>
               Manual Rate
             </button>
           </div>
 
           {mode !== 'MANUAL' ? (
             <>
-              <div className="action-row" style={{ marginTop: 16 }}>
+              <div className="final-price-presets">
                 {PRICE_PRESETS.map((value) => (
                   <button
                     key={value}
                     type="button"
-                    className={pricingPercent === value ? 'primary-button' : 'ghost-button'}
+                    className={pricingPercent === value ? 'is-active' : ''}
                     onClick={() => {
                       setPricingPercent(value);
                       setMessage('');
@@ -1082,7 +1172,7 @@ export default function FinalCostingPage() {
                   </button>
                 ))}
               </div>
-              <div className="two-grid" style={{ marginTop: 16 }}>
+              <div className="final-pricing-input-grid">
                 <div className="field">
                   <label htmlFor="pricingPercent">
                     {mode === 'MARKUP' ? 'Markup on cost' : 'Target gross margin'}
@@ -1109,7 +1199,7 @@ export default function FinalCostingPage() {
               </div>
             </>
           ) : (
-            <div className="two-grid" style={{ marginTop: 16 }}>
+            <div className="final-pricing-input-grid">
               <div className="field">
                 <label htmlFor="manualSellingPrice">Selling price / cover</label>
                 <input
@@ -1151,7 +1241,7 @@ export default function FinalCostingPage() {
           {message ? <div className="admin-message" style={{ marginTop: 12 }}>{message}</div> : null}
         </div>
 
-        <div className="glass-card">
+        <div className="glass-card final-cost-basis-card">
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Cost basis</span>
@@ -1305,7 +1395,7 @@ export default function FinalCostingPage() {
           ) : null}
         </div>
 
-        <div className="glass-card final-function-cost-card">
+        <div className="glass-card final-function-cost-card final-function-cost-card-modern">
           <div className="final-costing-section-heading">
             <div>
               <span className="section-kicker">Function cost contribution</span>
