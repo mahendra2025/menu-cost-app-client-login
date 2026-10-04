@@ -597,8 +597,8 @@ function seedRows(
   work.disposableItems
     .filter((item) => Number(item.quantity) > 0)
     .forEach((item) => {
-      rows.push(
-        newRow(
+      rows.push({
+        ...newRow(
           'DISPOSABLE',
           item.name,
           'Event disposable requirement',
@@ -606,7 +606,9 @@ function seedRows(
           item.unit || 'pcs',
           Number(item.unitCost) || 0,
         ),
-      );
+        photoUrl:
+          item.photoUrl,
+      });
     });
 
   const categories = new Set(
