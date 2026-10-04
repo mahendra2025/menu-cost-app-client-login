@@ -3140,7 +3140,7 @@ td:last-child { border-right: 1px solid var(--border); border-radius: 0 16px 16p
 .manpower-role-name-cell { display: flex; align-items: center; gap: 8px; }
 .manpower-add-role {
   display: grid;
-  grid-template-columns: minmax(150px, .8fr) minmax(180px, 1fr) 150px auto;
+  grid-template-columns: minmax(150px, .8fr) minmax(160px, 1fr) minmax(130px, .75fr) 140px auto;
   align-items: end;
   gap: 10px;
   margin-top: 14px;
