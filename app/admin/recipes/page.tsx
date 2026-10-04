@@ -1832,6 +1832,9 @@ export default function RecipesPage() {
   const bulkCoverageCreateHandled =
     useRef(false);
 
+  const newRecipeRequestHandled =
+    useRef(false);
+
   const [
     recipePage,
     setRecipePage,
@@ -2221,6 +2224,105 @@ export default function RecipesPage() {
       new URLSearchParams(
         window.location.search,
       );
+
+    const requestedNewRecipe =
+      params
+        .get('newRecipe')
+        ?.replace(/\s+/g, ' ')
+        .trim();
+
+    if (
+      requestedNewRecipe &&
+      !newRecipeRequestHandled.current
+    ) {
+      newRecipeRequestHandled.current =
+        true;
+
+      const normalizedRequested =
+        requestedNewRecipe
+          .toLocaleLowerCase(
+            'en-IN',
+          );
+
+      const existingIndex =
+        catalog.dishes.findIndex(
+          (dish) =>
+            recipeName(
+              dish,
+            )
+              .toLocaleLowerCase(
+                'en-IN',
+              ) ===
+            normalizedRequested,
+        );
+
+      if (
+        existingIndex >= 0
+      ) {
+        setSelectedIndex(
+          existingIndex,
+        );
+        setQuery('');
+        setCategory('ALL');
+        setRecipePage(
+          recipePageForIndex(
+            existingIndex,
+          ),
+        );
+        setMessage(
+          `Recipe already exists for ${requestedNewRecipe}. Review it and Save & Sync if you make changes.`,
+        );
+        return;
+      }
+
+      const requestedCategory =
+        params
+          .get('category')
+          ?.replace(/\s+/g, ' ')
+          .trim() ||
+        'Other';
+
+      const index =
+        catalog.dishes.length;
+
+      const newDish = {
+        dishName:
+          requestedNewRecipe,
+        category:
+          requestedCategory,
+        subcategory: '',
+        baseGuests: 100,
+        servingSize: 1,
+        servingUnit:
+          'serving',
+        pieceWeightGrams: 0,
+        dishRate: 0,
+        ingredients: [],
+      };
+
+      setCatalog({
+        ...catalog,
+        dishes: [
+          ...catalog.dishes,
+          newDish,
+        ],
+      });
+      setQuery('');
+      setCategory('ALL');
+      setSelectedIndex(
+        index,
+      );
+      setRecipePage(
+        recipePageForIndex(
+          index,
+        ),
+      );
+      setMessage(
+        `Recipe draft opened for ${requestedNewRecipe}. Add ingredients and serving details, then Save & Sync to publish globally.`,
+      );
+
+      return;
+    }
 
     const bulkRequested =
       params.get('bulkCreate') ===
