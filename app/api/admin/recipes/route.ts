@@ -23,6 +23,9 @@ import {
 import {
   syncRecipeCatalogToCaterersOsWorkspaces,
 } from '../../../../lib/caterersOsSync';
+import {
+  syncUnknownDishLifecycle,
+} from '../../../../lib/unknownDishLifecycle';
 
 import {
   extractMenuDishModifiers,
@@ -1129,6 +1132,18 @@ export async function POST() {
         },
       );
 
+    const unknownDishLifecycle =
+      await syncUnknownDishLifecycle();
+
+    const unknownDishLifecycle =
+      syncWarning
+        ? {
+            readySuggestions: 0,
+            repairedDrafts: 0,
+            repairedMenuItems: 0,
+          }
+        : await syncUnknownDishLifecycle();
+
     const caterersOsCatalog =
       await catalogForCaterersOsSync(
         catalog,
@@ -1146,6 +1161,7 @@ export async function POST() {
       updatedAt:
         stored.updatedAt,
       caterersOsSync,
+      unknownDishLifecycle,
     });
   } catch {
     return NextResponse.json(
@@ -1223,6 +1239,7 @@ export async function PUT(request: Request) {
       syncedDishes,
       syncWarning: syncWarning || null,
       caterersOsSync,
+      unknownDishLifecycle,
     });
   } catch (error) {
     console.error(
