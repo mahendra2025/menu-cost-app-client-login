@@ -1325,6 +1325,17 @@ export function downloadClientQuotationPdf(
     y,
   );
 
+  const advancePercent =
+    Math.min(
+      100,
+      Math.max(
+        0,
+        Number(
+          quotation.advancePercent,
+        ) || 0,
+      ),
+    );
+
   const terms =
     [
       `Quotation validity: ${quotation.validityDays} days from issue date.`,
