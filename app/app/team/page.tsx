@@ -539,135 +539,6 @@ function ManpowerMultiDishSelector({
   );
 }
 
-function DishManpowerBoard({
-  dishes,
-  rows,
-  onToggle,
-  emptyTitle = 'No menu dishes found',
-  emptyText = 'Add dishes to this meal before assigning cooks and helpers.',
-}: {
-  dishes: MenuItem[];
-  rows: ManpowerRow[];
-  onToggle: (row: ManpowerRow, dishId: string, assigned: boolean) => void;
-  emptyTitle?: string;
-  emptyText?: string;
-}) {
-  if (dishes.length === 0) {
-    return (
-      <div className="manpower-menu-empty">
-        <b>{emptyTitle}</b>
-        <span>{emptyText}</span>
-      </div>
-    );
-  }
-
-  const kitchenRows = rows.filter(canAssignDishes);
-  const staffedDishCount = dishes.filter((dish) =>
-    kitchenRows.some(
-      (row) =>
-        Math.max(0, Number(row.quantity) || 0) > 0 &&
-        (row.assignedDishIds ?? []).includes(dish.id),
-    ),
-  ).length;
-
-  return (
-    <section className="manpower-menu-board" aria-label="Dish-wise kitchen manpower">
-      <div className="manpower-menu-board-heading">
-        <div>
-          <h3>Menu &amp; kitchen manpower</h3>
-          <p>One cook or helper can cover multiple dishes. Set quantity once, then assign as many dishes as needed.</p>
-        </div>
-        <span className={staffedDishCount === dishes.length ? 'is-complete' : ''}>
-          {staffedDishCount}/{dishes.length} staffed
-        </span>
-      </div>
-
-      <div className="manpower-dish-grid">
-        {dishes.map((dish, dishIndex) => {
-          const assignedRows = kitchenRows.filter(
-            (row) =>
-              (row.assignedDishIds ?? []).includes(dish.id),
-          );
-
-          return (
-            <article className="manpower-dish-card" key={dish.id}>
-              <div className="manpower-dish-card-head">
-                <span className="manpower-dish-number">{dishIndex + 1}</span>
-                <div>
-                  <small>{dish.category || 'Uncategorised'}</small>
-                  <h4>{dish.name}</h4>
-                </div>
-              </div>
-
-              <div className="manpower-dish-team">
-                {assignedRows.length > 0 ? (
-                  assignedRows.map((row) => (
-                    <span key={row.id}>
-                      {Math.max(0, Number(row.quantity) || 0) > 0 ? (
-                        <>
-                          <b>{row.quantity}</b> {row.role}
-                        </>
-                      ) : (
-                        <>
-                          {row.role} · <small>set qty</small>
-                        </>
-                      )}
-                    </span>
-                  ))
-                ) : (
-                  <span className="is-empty">No kitchen manpower assigned</span>
-                )}
-              </div>
-
-              <details className="manpower-dish-add">
-                <summary>Assign manpower</summary>
-                <div className="manpower-dish-add-panel">
-                  {kitchenRows.map((row) => {
-                    const quantity = Math.max(0, Number(row.quantity) || 0);
-                    const assigned =
-                      (row.assignedDishIds ?? []).includes(dish.id);
-
-                    return (
-                      <div
-                        className={`manpower-dish-role ${assigned ? 'is-assigned' : ''}`}
-                        key={row.id}
-                      >
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={assigned}
-                            onChange={(event) =>
-                              onToggle(row, dish.id, event.target.checked)
-                            }
-                          />
-                          <span>
-                            <b>{row.role}</b>
-                            <small>
-                              Manual selection
-                            </small>
-                          </span>
-                        </label>
-
-                        <div className="manpower-dish-role-quantity">
-                          <small>Meal qty</small>
-                          <b>{quantity}</b>
-                          <span>
-                            Set once in Meal team &amp; rates
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </details>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 export default function ManpowerPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
@@ -1086,26 +957,6 @@ export default function ManpowerPage() {
         row.id === id ? { ...row, ...patch } : row,
       ),
     );
-  }
-
-  function toggleDishManpower(
-    row: ManpowerRow,
-    dishId: string,
-    assigned: boolean,
-  ) {
-    const currentIds = new Set(row.assignedDishIds ?? []);
-
-    if (assigned) {
-      currentIds.add(dishId);
-    } else {
-      currentIds.delete(dishId);
-    }
-
-    updateRow(row.id, {
-      assignedDishIds: Array.from(currentIds),
-      manualOverride: true,
-      calculationSource: 'MANUAL',
-    });
   }
 
   function setRowDishAssignments(
@@ -1992,26 +1843,6 @@ export default function ManpowerPage() {
                   </div>
                 ) : null}
               </section>
-
-              <DishManpowerBoard
-                dishes={coverageDishes}
-                rows={mealRows}
-                onToggle={toggleDishManpower}
-                emptyTitle={
-                  dishCoverageFilter === 'UNASSIGNED'
-                    ? 'No unassigned dishes'
-                    : dishCoverageFilter === 'NEEDS_QTY'
-                      ? 'No dishes linked to zero-quantity roles'
-                      : 'No menu dishes found'
-                }
-                emptyText={
-                  dishCoverageFilter === 'UNASSIGNED'
-                    ? 'Every dish has at least one manpower assignment.'
-                    : dishCoverageFilter === 'NEEDS_QTY'
-                      ? 'All dish-assigned roles have a manpower quantity.'
-                      : 'Add dishes to this meal before assigning cooks and helpers.'
-                }
-              />
 
               <div className="manpower-roster-heading">
                 <div>
