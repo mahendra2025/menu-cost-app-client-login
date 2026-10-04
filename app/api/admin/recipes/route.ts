@@ -1132,17 +1132,21 @@ export async function POST() {
         },
       );
 
-    const unknownDishLifecycle =
-      await syncUnknownDishLifecycle();
+    let unknownDishLifecycle = {
+      readySuggestions: 0,
+      repairedDrafts: 0,
+      repairedMenuItems: 0,
+    };
 
-    const unknownDishLifecycle =
-      syncWarning
-        ? {
-            readySuggestions: 0,
-            repairedDrafts: 0,
-            repairedMenuItems: 0,
-          }
-        : await syncUnknownDishLifecycle();
+    try {
+      unknownDishLifecycle =
+        await syncUnknownDishLifecycle();
+    } catch (lifecycleError) {
+      console.error(
+        'Unknown dish lifecycle sync failed:',
+        lifecycleError,
+      );
+    }
 
     const caterersOsCatalog =
       await catalogForCaterersOsSync(
@@ -1220,6 +1224,24 @@ export async function PUT(request: Request) {
         dishSyncWarning(
           syncError,
         );
+    }
+
+    let unknownDishLifecycle = {
+      readySuggestions: 0,
+      repairedDrafts: 0,
+      repairedMenuItems: 0,
+    };
+
+    if (!syncWarning) {
+      try {
+        unknownDishLifecycle =
+          await syncUnknownDishLifecycle();
+      } catch (lifecycleError) {
+        console.error(
+          'Unknown dish lifecycle sync failed:',
+          lifecycleError,
+        );
+      }
     }
 
     const caterersOsCatalog =
