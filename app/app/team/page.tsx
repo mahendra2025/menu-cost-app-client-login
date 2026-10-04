@@ -1278,7 +1278,7 @@ export default function ManpowerPage() {
       subtitle="Select manpower manually for each meal. Nothing is added automatically."
       hidePageTitle
     >
-      <section className="content-grid manpower-page">
+      <section className="content-grid manpower-page manpower-page-modern">
         <div className="manpower-overview manpower-overview-v2">
           <div className="manpower-overview-copy">
             <span className="page-eyebrow">Manpower control center</span>
@@ -1982,14 +1982,7 @@ export default function ManpowerPage() {
               </div>
 
               <div
-                className="no-print"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(220px, 1fr) auto auto',
-                  gap: 10,
-                  alignItems: 'end',
-                  marginBottom: 12,
-                }}
+                className="no-print manpower-role-toolbar"
               >
                 <label className="field">
                   <span>Find manpower role</span>
@@ -2055,7 +2048,7 @@ export default function ManpowerPage() {
                                   {row.calculationReason ? ` · ${row.calculationReason}` : ''}
                                 </small>
                               ) : null}
-                              {!isCustomRole(row) && row.department ? (
+                              {row.department ? (
                                 <span className="manpower-department-badge">
                                   {row.department.replace(/_/g, ' ')}
                                 </span>
@@ -2082,6 +2075,24 @@ export default function ManpowerPage() {
                             <ManpowerMultiDishSelector
                               row={row}
                               dishes={mealDishes}
+                              unavailableDishIds={
+                                new Set(
+                                  mealRows
+                                    .filter(
+                                      (otherRow) =>
+                                        otherRow.id !==
+                                          row.id &&
+                                        canAssignDishes(
+                                          otherRow,
+                                        ),
+                                    )
+                                    .flatMap(
+                                      (otherRow) =>
+                                        otherRow.assignedDishIds ??
+                                        [],
+                                    ),
+                                )
+                              }
                               onChange={(dishIds) =>
                                 setRowDishAssignments(
                                   row,
@@ -2211,7 +2222,7 @@ export default function ManpowerPage() {
                       <div>
                         <small>
                           #{index + 1}
-                          {!isCustomRole(row) && row.department ? ` · ${row.department.replace(/_/g, ' ')}` : ''}
+                          {row.department ? ` · ${row.department.replace(/_/g, ' ')}` : ''}
                         </small>
                         <b>{row.role}</b>
                         {!isCustomRole(row) ? (
