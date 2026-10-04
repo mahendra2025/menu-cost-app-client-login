@@ -901,6 +901,8 @@ export default function EventPage() {
     useRef<number | null>(null);
   const cityRecostSequenceRef =
     useRef(0);
+  const globalDishRefreshInFlightRef =
+    useRef(false);
   const [creatingEvent, setCreatingEvent] = useState(false);
 
   useEffect(() => {
@@ -1171,6 +1173,36 @@ export default function EventPage() {
       );
     };
   }, []);
+
+  useEffect(() => {
+    if (!session?.tenantId) {
+      return;
+    }
+
+    const tenantId =
+      session.tenantId;
+
+    const refresh = () => {
+      void refreshGlobalDishUpdates(
+        tenantId,
+      );
+    };
+
+    refresh();
+
+    window.addEventListener(
+      'focus',
+      refresh,
+    );
+
+    return () =>
+      window.removeEventListener(
+        'focus',
+        refresh,
+      );
+  }, [
+    session?.tenantId,
+  ]);
 
   const [
     detectionReviewFilter,
@@ -1552,6 +1584,303 @@ export default function EventPage() {
       session.tenantId,
       nextWork,
     );
+  }
+
+  async function refreshGlobalDishUpdates(
+    tenantId: string,
+  ) {
+    if (
+      globalDishRefreshInFlightRef.current
+    ) {
+      return;
+    }
+
+    const latestWork =
+      loadWork(
+        tenantId,
+      );
+
+    const pendingItems =
+      latestWork.menu.filter(
+        (item) => {
+          const status =
+            String(
+              item.coverageStatus ||
+              '',
+            ).toUpperCase();
+
+          return (
+            Number(
+              item.costPerPlate,
+            ) <= 0 ||
+            status ===
+              'NEW_DISH_PENDING' ||
+            status ===
+              'UNRESOLVED' ||
+            status ===
+              'REVIEW'
+          );
+        },
+      );
+
+    if (!pendingItems.length) {
+      return;
+    }
+
+    globalDishRefreshInFlightRef.current =
+      true;
+
+    try {
+      const response =
+        await fetch(
+          '/api/dishes',
+          {
+            cache:
+              'no-store',
+          },
+        );
+
+      const data =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !Array.isArray(
+          data.items,
+        )
+      ) {
+        return;
+      }
+
+      const masterByKey =
+        new Map<
+          string,
+          Record<
+            string,
+            unknown
+          >
+        >();
+
+      data.items.forEach(
+        (value: unknown) => {
+          if (
+            !value ||
+            typeof value !==
+              'object' ||
+            Array.isArray(
+              value,
+            )
+          ) {
+            return;
+          }
+
+          const row =
+            value as Record<
+              string,
+              unknown
+            >;
+
+          const names = [
+            row.name,
+            ...(
+              Array.isArray(
+                row.aliases,
+              )
+                ? row.aliases
+                : []
+            ),
+          ];
+
+          names.forEach(
+            (name) => {
+              const key =
+                dishNameKey(
+                  String(
+                    name ||
+                    '',
+                  ),
+                );
+
+              if (key) {
+                masterByKey.set(
+                  key,
+                  row,
+                );
+              }
+            },
+          );
+        },
+      );
+
+      let changed = 0;
+
+      const menu =
+        latestWork.menu.map(
+          (item) => {
+            const status =
+              String(
+                item.coverageStatus ||
+                '',
+              ).toUpperCase();
+
+            const needsRefresh =
+              Number(
+                item.costPerPlate,
+              ) <= 0 ||
+              status ===
+                'NEW_DISH_PENDING' ||
+              status ===
+                'UNRESOLVED' ||
+              status ===
+                'REVIEW';
+
+            if (!needsRefresh) {
+              return item;
+            }
+
+            const master =
+              masterByKey.get(
+                dishNameKey(
+                  item.name,
+                ),
+              );
+
+            const rate =
+              Math.max(
+                0,
+                Number(
+                  master?.rate,
+                ) || 0,
+              );
+
+            if (
+              !master ||
+              !(rate > 0)
+            ) {
+              return item;
+            }
+
+            const refresh =
+              buildCatalogCostRefresh(
+                rate,
+              );
+
+            const servingQuantity =
+              Math.max(
+                0.01,
+                Number(
+                  master
+                    .servingQuantity,
+                ) || 1,
+              );
+
+            changed += 1;
+
+            return {
+              ...item,
+              name:
+                String(
+                  master.name ||
+                  item.name,
+                ).trim() ||
+                item.name,
+              category:
+                (
+                  String(
+                    master.category ||
+                    item.category,
+                  ).trim() ||
+                  item.category
+                ) as Category,
+              portionQuantity:
+                Number(
+                  item.portionQuantity,
+                ) > 0
+                  ? item.portionQuantity
+                  : servingQuantity,
+              portionBaseQuantity:
+                Number(
+                  item.portionBaseQuantity,
+                ) > 0
+                  ? item.portionBaseQuantity
+                  : servingQuantity,
+              portionUnit:
+                String(
+                  item.portionUnit ||
+                  master.servingUnit ||
+                  'serving',
+                ),
+              pieceWeightGrams:
+                Number(
+                  master
+                    .pieceWeightGrams,
+                ) > 0
+                  ? Number(
+                      master
+                        .pieceWeightGrams,
+                    )
+                  : item
+                      .pieceWeightGrams,
+              ...refresh.patch,
+              costSource:
+                'catalog_recipe' as const,
+              coverageReason:
+                'Global recipe published by Super Admin and synced automatically.',
+              detectionSource:
+                'catalog' as const,
+              detectionConfidence:
+                100,
+              detectionReason:
+                'Unknown dish resolved from Global Dish Master.',
+            };
+          },
+        );
+
+      if (!changed) {
+        return;
+      }
+
+      const nextWork:
+        WorkState = {
+          ...latestWork,
+          menu,
+          updatedAt:
+            new Date()
+              .toISOString(),
+        };
+
+      setWork(
+        nextWork,
+      );
+
+      saveWork(
+        tenantId,
+        nextWork,
+      );
+
+      flushWorkSave(
+        tenantId,
+      );
+
+      await flushDraftToServer(
+        tenantId,
+        nextWork,
+      );
+
+      setUploadStatus(
+        `${changed} previously unknown dish${changed === 1 ? '' : 'es'} updated from Global Dish Master. Costing and grocery are ready to refresh.`,
+      );
+    } catch (
+      refreshError
+    ) {
+      console.warn(
+        'Global dish refresh failed:',
+        refreshError,
+      );
+    } finally {
+      globalDishRefreshInFlightRef.current =
+        false;
+    }
   }
 
   async function loadManualDishCatalog(
