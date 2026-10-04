@@ -1350,6 +1350,14 @@ export default function EventPage() {
       );
 
       setWork(savedWork);
+      if (new URLSearchParams(window.location.search).get('new') === '1') {
+        setNewEventDraft({
+          clientName: '', eventName: '', eventDate: '', venue: '',
+          city: savedWork.profile.city || '', functionType: '', pax: '',
+        });
+        setShowNewEventForm(true);
+        window.history.replaceState(window.history.state, '', '/app/event?resume=1');
+      }
       try {
         const cached = JSON.parse(sessionStorage.getItem(`menu-detection:${currentSession.tenantId}`) || 'null');
         if (cached?.rawMenuText === savedWork.event.rawMenuText && Array.isArray(cached?.preview?.menu)) {
@@ -7601,8 +7609,10 @@ export default function EventPage() {
         // A fresh event can continue even when session storage is unavailable.
       }
 
+      await flushDraftToServer(session.tenantId, nextWork);
+
       window.location.assign(
-        '/app/event?new=1',
+        '/app/event?resume=1',
       );
     } catch {
       setNewEventError('Could not create the event. Please try again.');
@@ -9990,6 +10000,34 @@ export default function EventPage() {
             </button>
           </div>
         </div>
+
+        <section className="glass-card event-details-card" aria-labelledby="active-event-details-title" style={{ order: 0 }}>
+          <div className="event-section-heading">
+            <div>
+              <h2 id="active-event-details-title">Event details</h2>
+              <p>Review or update your event details. Changes save automatically.</p>
+            </div>
+          </div>
+          <div className="new-event-form-grid">
+            {([
+              ['clientName', 'Client name', 'text'],
+              ['eventName', 'Event name', 'text'],
+              ['eventDate', 'Event date', 'date'],
+              ['venue', 'Venue', 'text'],
+              ['city', 'City', 'text'],
+              ['functionType', 'Function type', 'text'],
+            ] as const).map(([key, label, type]) => (
+              <label className="field" key={key}>
+                <span>{label}</span>
+                <input className="input" type={type} value={work.event[key]} onChange={event => updateEvent(key, event.target.value)} />
+              </label>
+            ))}
+            <label className="field">
+              <span>Guests</span>
+              <input className="input" type="number" min="0" step="1" value={work.event.pax || ''} onChange={event => updateEvent('pax', Math.max(0, Math.round(Number(event.target.value) || 0)))} />
+            </label>
+          </div>
+        </section>
 
         {showNewEventForm ? (
           <div
