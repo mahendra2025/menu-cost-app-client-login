@@ -884,6 +884,19 @@ export default function VendorsPage() {
           .vm-station-add .vm-input{min-height:34px}
           .vm-station-add .vm-button{min-height:34px}
           .vm-rate-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #252c35}
+          .vm-rate-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+          .vm-rate-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px}
+          .vm-rate-summary>div{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:38px;padding:7px 9px;border:1px solid #29323c;border-radius:9px;background:#101720}
+          .vm-rate-summary span{color:#738398;font-size:7px;font-weight:850;text-transform:uppercase}
+          .vm-rate-summary b{color:#e0e9f2;font-size:12px}
+          .vm-food-rate-table{min-width:1040px}
+          .vm-rate-chip{display:inline-flex;align-items:center;min-height:25px;padding:0 7px;border:1px solid rgba(74,156,255,.18);border-radius:7px;color:#91bdf6;background:rgba(74,156,255,.05);font-size:7px;font-weight:850;white-space:nowrap}
+          .vm-rate-muted{color:#607186;font-size:9px}
+          .vm-rate-station-copy{display:inline-flex;align-items:center;min-height:34px;color:#91a1b4;font-size:8px;font-weight:750;white-space:nowrap}
+          .vm-rate-preview{min-width:130px}
+          .vm-rate-preview b,.vm-rate-preview span{display:block}
+          .vm-rate-preview b{color:#dce5ef;font-size:8px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+          .vm-rate-preview span{margin-top:2px;color:#8fa2b7;font-size:8px;white-space:nowrap}
           .vm-rate-head h3{margin:0;font-size:13px}
           .vm-rate-table-wrap{overflow:auto;margin-top:9px;border:1px solid #29313b;border-radius:11px}
           .vm-rate-table{width:100%;min-width:720px;border-collapse:collapse}
@@ -895,7 +908,7 @@ export default function VendorsPage() {
           .vm-foot{display:flex;justify-content:flex-end;gap:7px;margin-top:14px;padding-top:13px;border-top:1px solid #252c35}
           @media(max-width:1100px){.vm-command{grid-template-columns:1fr}.vm-command-side{grid-template-columns:repeat(4,minmax(0,1fr))}.vm-command-actions{grid-column:1/-1}}
           @media(max-width:980px){.vm-layout{grid-template-columns:1fr}.vm-list{max-height:300px}.vm-stats{grid-template-columns:1fr 1fr}.vm-partner-command{grid-template-columns:1fr 1fr}}
-          @media(max-width:680px){.vm-command{padding:16px}.vm-command-side{grid-template-columns:1fr 1fr}.vm-command-actions{grid-template-columns:1fr}.vm-head{align-items:stretch;flex-direction:column}.vm-actions{display:grid;grid-template-columns:1fr 1fr}.vm-grid{grid-template-columns:1fr}.vm-field.full{grid-column:auto}.vm-filter-grid{grid-template-columns:1fr}.vm-partner-actions{display:grid!important;grid-template-columns:1fr 1fr}.vm-partner-actions .primary{grid-column:1/-1}}
+          @media(max-width:680px){.vm-command{padding:16px}.vm-command-side{grid-template-columns:1fr 1fr}.vm-command-actions{grid-template-columns:1fr}.vm-head{align-items:stretch;flex-direction:column}.vm-actions{display:grid;grid-template-columns:1fr 1fr}.vm-grid{grid-template-columns:1fr}.vm-field.full{grid-column:auto}.vm-filter-grid{grid-template-columns:1fr}.vm-partner-actions{display:grid!important;grid-template-columns:1fr 1fr}.vm-partner-actions .primary{grid-column:1/-1}.vm-rate-head{align-items:flex-start;flex-direction:column}.vm-rate-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.vm-rate-actions .vm-button:last-child{grid-column:1/-1}.vm-rate-summary{grid-template-columns:1fr}}
         `}</style>
 
         <header className="vm-command">
@@ -1438,7 +1451,7 @@ export default function VendorsPage() {
 
                 <div className="vm-rate-head">
                   <div>
-                    <h3>Rate Master</h3>
+                    <h3>Food & Service Rate Master</h3>
                     <div
                       style={{
                         marginTop: 3,
@@ -1446,140 +1459,581 @@ export default function VendorsPage() {
                         fontSize: 8,
                       }}
                     >
-                      Event Planning uses these rates when this partner is selected.
+                      Save whole-station rates and individual dish rates. Dish rate is used first; station rate is the fallback.
                     </div>
                   </div>
 
-                  <button
-                    className="vm-button"
-                    type="button"
-                    onClick={() => addRate(selected.id)}
-                  >
-                    + Add Rate
-                  </button>
+                  <div className="vm-rate-actions">
+                    <button
+                      className="vm-button"
+                      type="button"
+                      onClick={() =>
+                        addStationRate(
+                          selected.id,
+                        )
+                      }
+                    >
+                      + Station Rate
+                    </button>
+
+                    <button
+                      className="vm-button"
+                      type="button"
+                      onClick={() =>
+                        addDishRate(
+                          selected.id,
+                        )
+                      }
+                    >
+                      + Dish Rate
+                    </button>
+
+                    <button
+                      className="vm-button"
+                      type="button"
+                      onClick={() =>
+                        addRate(
+                          selected.id,
+                        )
+                      }
+                    >
+                      + Other Rate
+                    </button>
+                  </div>
                 </div>
 
+                <div className="vm-rate-summary">
+                  <div>
+                    <span>Station rates</span>
+                    <b>
+                      {
+                        selected.rates.filter(
+                          (rate) =>
+                            rate.scope ===
+                            'STATION',
+                        ).length
+                      }
+                    </b>
+                  </div>
+
+                  <div>
+                    <span>Dish rates</span>
+                    <b>
+                      {
+                        selected.rates.filter(
+                          (rate) =>
+                            rate.scope ===
+                            'DISH',
+                        ).length
+                      }
+                    </b>
+                  </div>
+
+                  <div>
+                    <span>Other rates</span>
+                    <b>
+                      {
+                        selected.rates.filter(
+                          (rate) =>
+                            !rate.scope ||
+                            rate.scope ===
+                            'OTHER',
+                        ).length
+                      }
+                    </b>
+                  </div>
+                </div>
+
+                <datalist
+                  id={`vendor-dish-options-${selected.id}`}
+                >
+                  {vendorDishOptions.map(
+                    (dish) => (
+                      <option
+                        key={`${dish.category}::${dish.name}`}
+                        value={dish.name}
+                      >
+                        {dish.category}
+                      </option>
+                    ),
+                  )}
+                </datalist>
+
                 <div className="vm-rate-table-wrap">
-                  <table className="vm-rate-table">
+                  <table className="vm-rate-table vm-food-rate-table">
                     <thead>
                       <tr>
+                        <th>Type</th>
                         <th>Area</th>
-                        <th>Item / Service</th>
+                        <th>Station</th>
+                        <th>Dish / Service</th>
                         <th>Unit</th>
                         <th>Rate</th>
                         <th>Preview</th>
                         <th />
                       </tr>
                     </thead>
+
                     <tbody>
                       {selected.rates.length ? (
-                        selected.rates.map((rate) => (
-                          <tr key={rate.id}>
-                            <td>
-                              <select
-                                className="vm-select vm-mini"
-                                value={rate.kind}
-                                onChange={(event) =>
-                                  updateRate(
-                                    selected.id,
-                                    rate.id,
-                                    {
-                                      kind:
-                                        event.target.value as RequirementKind,
-                                    },
-                                  )
+                        selected.rates.map(
+                          (rate) => {
+                            const scope =
+                              rate.scope ||
+                              'OTHER';
+
+                            const vendorStationChoices =
+                              Array.from(
+                                new Set([
+                                  ...(selected.menuStations ||
+                                    []),
+                                  ...stationOptions,
+                                ]),
+                              );
+
+                            return (
+                              <tr
+                                key={
+                                  rate.id
                                 }
                               >
-                                {KIND_OPTIONS.map((option) => (
-                                  <option
-                                    key={option.value}
-                                    value={option.value}
+                                <td>
+                                  <select
+                                    className="vm-select vm-mini"
+                                    value={
+                                      scope
+                                    }
+                                    onChange={(event) => {
+                                      const nextScope =
+                                        event.target
+                                          .value as
+                                          | 'STATION'
+                                          | 'DISH'
+                                          | 'OTHER';
+
+                                      const firstStation =
+                                        rate.station ||
+                                        selected
+                                          .menuStations?.[0] ||
+                                        stationOptions[0] ||
+                                        '';
+
+                                      updateRate(
+                                        selected.id,
+                                        rate.id,
+                                        nextScope ===
+                                          'STATION'
+                                          ? {
+                                              scope:
+                                                nextScope,
+                                              kind:
+                                                'MENU',
+                                              station:
+                                                firstStation,
+                                              item:
+                                                firstStation,
+                                              unit:
+                                                'plate',
+                                            }
+                                          : nextScope ===
+                                              'DISH'
+                                            ? {
+                                                scope:
+                                                  nextScope,
+                                                kind:
+                                                  'MENU',
+                                                station:
+                                                  firstStation,
+                                                item:
+                                                  scope ===
+                                                  'DISH'
+                                                    ? rate.item
+                                                    : '',
+                                                unit:
+                                                  'plate',
+                                              }
+                                            : {
+                                                scope:
+                                                  'OTHER',
+                                                station:
+                                                  '',
+                                                kind:
+                                                  scope ===
+                                                  'OTHER'
+                                                    ? rate.kind
+                                                    : 'GENERAL',
+                                                item:
+                                                  scope ===
+                                                  'OTHER'
+                                                    ? rate.item
+                                                    : '',
+                                                unit:
+                                                  scope ===
+                                                  'OTHER'
+                                                    ? rate.unit
+                                                    : 'unit',
+                                              },
+                                      );
+                                    }}
                                   >
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td>
-                              <input
-                                className="vm-input vm-mini"
-                                value={rate.item}
-                                placeholder="Waiter, paneer, tandoor…"
-                                onChange={(event) =>
-                                  updateRate(
-                                    selected.id,
-                                    rate.id,
-                                    { item: event.target.value },
-                                  )
-                                }
-                              />
-                            </td>
-                            <td>
-                              <input
-                                className="vm-input vm-mini"
-                                value={rate.unit}
-                                onChange={(event) =>
-                                  updateRate(
-                                    selected.id,
-                                    rate.id,
-                                    { unit: event.target.value },
-                                  )
-                                }
-                              />
-                            </td>
-                            <td>
-                              <input
-                                className="vm-input vm-mini"
-                                type="number"
-                                min="0"
-                                value={rate.rate}
-                                onChange={(event) =>
-                                  updateRate(
-                                    selected.id,
-                                    rate.id,
-                                    {
-                                      rate:
-                                        Math.max(
-                                          0,
-                                          Number(event.target.value) || 0,
+                                    <option value="STATION">
+                                      Station
+                                    </option>
+                                    <option value="DISH">
+                                      Dish
+                                    </option>
+                                    <option value="OTHER">
+                                      Other
+                                    </option>
+                                  </select>
+                                </td>
+
+                                <td>
+                                  {scope ===
+                                  'OTHER' ? (
+                                    <select
+                                      className="vm-select vm-mini"
+                                      value={
+                                        rate.kind
+                                      }
+                                      onChange={(event) =>
+                                        updateRate(
+                                          selected.id,
+                                          rate.id,
+                                          {
+                                            kind:
+                                              event
+                                                .target
+                                                .value as RequirementKind,
+                                          },
+                                        )
+                                      }
+                                    >
+                                      {KIND_OPTIONS.map(
+                                        (
+                                          option,
+                                        ) => (
+                                          <option
+                                            key={
+                                              option.value
+                                            }
+                                            value={
+                                              option.value
+                                            }
+                                          >
+                                            {
+                                              option.label
+                                            }
+                                          </option>
                                         ),
-                                    },
-                                  )
-                                }
-                              />
-                            </td>
-                            <td
-                              style={{
-                                color: '#dce5ef',
-                                fontSize: 9,
-                                fontWeight: 850,
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {currency(rate.rate)} / {rate.unit || 'unit'}
-                            </td>
-                            <td>
-                              <button
-                                className="vm-delete"
-                                type="button"
-                                onClick={() =>
-                                  removeRate(
-                                    selected.id,
-                                    rate.id,
-                                  )
-                                }
-                                aria-label="Remove rate"
-                              >
-                                ×
-                              </button>
-                            </td>
-                          </tr>
-                        ))
+                                      )}
+                                    </select>
+                                  ) : (
+                                    <span className="vm-rate-chip">
+                                      Menu / Food
+                                    </span>
+                                  )}
+                                </td>
+
+                                <td>
+                                  {scope ===
+                                  'STATION' ? (
+                                    <select
+                                      className="vm-select vm-mini"
+                                      value={
+                                        rate.station ||
+                                        rate.item ||
+                                        ''
+                                      }
+                                      onChange={(event) => {
+                                        const station =
+                                          event
+                                            .target
+                                            .value;
+
+                                        updateRate(
+                                          selected.id,
+                                          rate.id,
+                                          {
+                                            scope:
+                                              'STATION',
+                                            kind:
+                                              'MENU',
+                                            station,
+                                            item:
+                                              station,
+                                            unit:
+                                              rate.unit ||
+                                              'plate',
+                                          },
+                                        );
+                                      }}
+                                    >
+                                      <option value="">
+                                        Select station
+                                      </option>
+                                      {vendorStationChoices.map(
+                                        (
+                                          station,
+                                        ) => (
+                                          <option
+                                            key={
+                                              station
+                                            }
+                                            value={
+                                              station
+                                            }
+                                          >
+                                            {
+                                              station
+                                            }
+                                          </option>
+                                        ),
+                                      )}
+                                    </select>
+                                  ) : scope ===
+                                    'DISH' ? (
+                                    <select
+                                      className="vm-select vm-mini"
+                                      value={
+                                        rate.station ||
+                                        ''
+                                      }
+                                      onChange={(event) =>
+                                        updateRate(
+                                          selected.id,
+                                          rate.id,
+                                          {
+                                            scope:
+                                              'DISH',
+                                            kind:
+                                              'MENU',
+                                            station:
+                                              event
+                                                .target
+                                                .value,
+                                          },
+                                        )
+                                      }
+                                    >
+                                      <option value="">
+                                        Any station
+                                      </option>
+                                      {vendorStationChoices.map(
+                                        (
+                                          station,
+                                        ) => (
+                                          <option
+                                            key={
+                                              station
+                                            }
+                                            value={
+                                              station
+                                            }
+                                          >
+                                            {
+                                              station
+                                            }
+                                          </option>
+                                        ),
+                                      )}
+                                    </select>
+                                  ) : (
+                                    <span className="vm-rate-muted">
+                                      —
+                                    </span>
+                                  )}
+                                </td>
+
+                                <td>
+                                  {scope ===
+                                  'STATION' ? (
+                                    <span className="vm-rate-station-copy">
+                                      Whole station / package rate
+                                    </span>
+                                  ) : (
+                                    <input
+                                      className="vm-input vm-mini"
+                                      value={
+                                        rate.item
+                                      }
+                                      list={
+                                        scope ===
+                                        'DISH'
+                                          ? `vendor-dish-options-${selected.id}`
+                                          : undefined
+                                      }
+                                      placeholder={
+                                        scope ===
+                                        'DISH'
+                                          ? 'Dish name e.g. Paneer Tikka'
+                                          : 'Waiter, transport, equipment…'
+                                      }
+                                      onChange={(event) => {
+                                        const item =
+                                          event
+                                            .target
+                                            .value;
+
+                                        const matchedDish =
+                                          scope ===
+                                          'DISH'
+                                            ? vendorDishOptions.find(
+                                                (
+                                                  dish,
+                                                ) =>
+                                                  dish.name
+                                                    .trim()
+                                                    .toLocaleLowerCase(
+                                                      'en-IN',
+                                                    ) ===
+                                                  item
+                                                    .trim()
+                                                    .toLocaleLowerCase(
+                                                      'en-IN',
+                                                    ),
+                                              )
+                                            : undefined;
+
+                                        updateRate(
+                                          selected.id,
+                                          rate.id,
+                                          {
+                                            item,
+                                            ...(scope ===
+                                              'DISH' &&
+                                            matchedDish &&
+                                            !rate.station
+                                              ? {
+                                                  station:
+                                                    matchedDish.category,
+                                                }
+                                              : {}),
+                                          },
+                                        );
+                                      }}
+                                    />
+                                  )}
+                                </td>
+
+                                <td>
+                                  <input
+                                    className="vm-input vm-mini"
+                                    value={
+                                      rate.unit
+                                    }
+                                    placeholder={
+                                      scope ===
+                                        'STATION' ||
+                                      scope ===
+                                        'DISH'
+                                        ? 'plate'
+                                        : 'unit'
+                                    }
+                                    onChange={(event) =>
+                                      updateRate(
+                                        selected.id,
+                                        rate.id,
+                                        {
+                                          unit:
+                                            event
+                                              .target
+                                              .value,
+                                        },
+                                      )
+                                    }
+                                  />
+                                </td>
+
+                                <td>
+                                  <input
+                                    className="vm-input vm-mini"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={
+                                      rate.rate
+                                    }
+                                    placeholder="0"
+                                    onChange={(event) =>
+                                      updateRate(
+                                        selected.id,
+                                        rate.id,
+                                        {
+                                          rate:
+                                            Math.max(
+                                              0,
+                                              Number(
+                                                event
+                                                  .target
+                                                  .value,
+                                              ) ||
+                                                0,
+                                            ),
+                                        },
+                                      )
+                                    }
+                                  />
+                                </td>
+
+                                <td className="vm-rate-preview">
+                                  <b>
+                                    {
+                                      scope ===
+                                      'STATION'
+                                        ? rate.station ||
+                                          rate.item ||
+                                          'Station'
+                                        : rate.item ||
+                                          (
+                                            scope ===
+                                            'DISH'
+                                              ? 'Dish'
+                                              : 'Service'
+                                          )
+                                    }
+                                  </b>
+                                  <span>
+                                    {currency(
+                                      rate.rate,
+                                    )}{' '}
+                                    /{' '}
+                                    {rate.unit ||
+                                      (
+                                        scope ===
+                                          'STATION' ||
+                                        scope ===
+                                          'DISH'
+                                          ? 'plate'
+                                          : 'unit'
+                                      )}
+                                  </span>
+                                </td>
+
+                                <td>
+                                  <button
+                                    className="vm-delete"
+                                    type="button"
+                                    onClick={() =>
+                                      removeRate(
+                                        selected.id,
+                                        rate.id,
+                                      )
+                                    }
+                                    aria-label="Remove rate"
+                                  >
+                                    ×
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          },
+                        )
                       ) : (
                         <tr>
-                          <td colSpan={6}>
+                          <td colSpan={8}>
                             <div className="vm-empty">
-                              No rates yet. Add reusable rates for this partner.
+                              No rates yet. Add a station rate or a dish rate for this partner.
                             </div>
                           </td>
                         </tr>
