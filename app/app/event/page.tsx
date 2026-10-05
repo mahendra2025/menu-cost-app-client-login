@@ -8286,7 +8286,9 @@ export default function EventPage() {
     setShowNewEventForm(true);
   }
 
-  async function createNewEvent() {
+  async function createNewEvent(
+    draft: NewEventDraft,
+  ) {
     if (
       !session ||
       !work
@@ -8295,7 +8297,7 @@ export default function EventPage() {
     }
 
     const clientName =
-      newEventDraft.clientName.trim();
+      draft.clientName.trim();
 
     if (!clientName) {
       setNewEventError(
@@ -8464,21 +8466,21 @@ export default function EventPage() {
             ...fresh.event,
             clientName,
             eventName:
-              newEventDraft.eventName.trim(),
+              draft.eventName.trim(),
             eventDate:
-              newEventDraft.eventDate,
+              draft.eventDate,
             venue:
-              newEventDraft.venue.trim(),
+              draft.venue.trim(),
             city:
-              newEventDraft.city.trim(),
+              draft.city.trim(),
             functionType:
-              newEventDraft.functionType.trim(),
+              draft.functionType.trim(),
             pax:
               Math.max(
                 0,
                 Math.round(
                   Number(
-                    newEventDraft.pax,
+                    draft.pax,
                   ) || 0,
                 ),
               ),
@@ -10842,6 +10844,34 @@ export default function EventPage() {
           display: none;
         }
 
+        .event-fast-entry-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 7px;
+        }
+
+        .event-fast-entry-grid .field {
+          gap: 4px;
+        }
+
+        .event-fast-entry-grid .field > span {
+          font-size: 7px;
+          font-weight: 850;
+          text-transform: uppercase;
+          letter-spacing: .04em;
+        }
+
+        .event-fast-entry-grid .input {
+          min-height: 38px;
+          padding: 0 9px;
+        }
+
+        .event-fast-entry-note {
+          display: block;
+          margin-top: 7px;
+          color: #68798d;
+          font-size: 7px;
+        }
+
         .event-upload-simple-card {
           min-height: 170px;
           padding: 17px;
@@ -10869,6 +10899,10 @@ export default function EventPage() {
 
           .event-import-topbar-actions button {
             width: 100%;
+          }
+
+          .event-fast-entry-grid {
+            grid-template-columns: 1fr 1fr;
           }
 
           .event-home-hero {
@@ -10997,25 +11031,72 @@ export default function EventPage() {
               <p>Review or update your event details. Changes save automatically.</p>
             </div>
           </div>
-          <div className="new-event-form-grid">
+          <div className="new-event-form-grid event-fast-entry-grid">
             {([
-              ['clientName', 'Client name', 'text'],
-              ['eventName', 'Event name', 'text'],
-              ['eventDate', 'Event date', 'date'],
-              ['venue', 'Venue', 'text'],
-              ['city', 'City', 'text'],
-              ['functionType', 'Function type', 'text'],
-            ] as const).map(([key, label, type]) => (
+              ['clientName', 'Client name', 'text', 'Client or company'],
+              ['eventName', 'Event name', 'text', 'Wedding, Birthday, Corporate'],
+              ['eventDate', 'Event date', 'date', ''],
+              ['functionType', 'Function / meal', 'text', 'Lunch, Dinner, Reception'],
+              ['venue', 'Venue', 'text', 'Venue name'],
+              ['city', 'City', 'text', 'City'],
+            ] as const).map(([key, label, type, placeholder]) => (
               <label className="field" key={key}>
                 <span>{label}</span>
-                <input className="input" type={type} value={work.event[key]} onChange={event => updateEvent(key, event.target.value)} />
+                <input
+                  key={`${work.costingId}:${key}:${String(work.event[key] || '')}`}
+                  className="input"
+                  type={type}
+                  defaultValue={work.event[key]}
+                  placeholder={placeholder}
+                  autoComplete="off"
+                  onBlur={(event) => {
+                    if (event.currentTarget.value !== String(work.event[key] || '')) {
+                      updateEvent(key, event.currentTarget.value);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      event.currentTarget.blur();
+                    }
+                  }}
+                />
               </label>
             ))}
             <label className="field">
               <span>Guests</span>
-              <input className="input" type="number" min="0" step="1" value={work.event.pax || ''} onChange={event => updateEvent('pax', Math.max(0, Math.round(Number(event.target.value) || 0)))} />
+              <input
+                key={`${work.costingId}:pax:${work.event.pax || 0}`}
+                className="input"
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                defaultValue={work.event.pax || ''}
+                placeholder="250"
+                onBlur={(event) => {
+                  const nextPax = Math.max(
+                    0,
+                    Math.round(
+                      Number(event.currentTarget.value) || 0,
+                    ),
+                  );
+                  if (nextPax !== Number(work.event.pax || 0)) {
+                    updateEvent('pax', nextPax);
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.currentTarget.blur();
+                  }
+                }}
+              />
             </label>
           </div>
+          <small className="event-fast-entry-note">
+            Fast entry · type freely, then Tab/Enter/click outside to save.
+          </small>
         </section>
 
         {showNewEventForm ? (
@@ -11070,7 +11151,32 @@ export default function EventPage() {
 
               <form onSubmit={(event) => {
                 event.preventDefault();
-                void createNewEvent();
+
+                const formData =
+                  new FormData(
+                    event.currentTarget,
+                  );
+
+                const draft: NewEventDraft = {
+                  clientName:
+                    String(formData.get('clientName') || ''),
+                  eventName:
+                    String(formData.get('eventName') || ''),
+                  eventDate:
+                    String(formData.get('eventDate') || ''),
+                  venue:
+                    String(formData.get('venue') || ''),
+                  city:
+                    String(formData.get('city') || ''),
+                  functionType:
+                    String(formData.get('functionType') || ''),
+                  pax:
+                    String(formData.get('pax') || ''),
+                };
+
+                void createNewEvent(
+                  draft,
+                );
               }}>
               <fieldset className="new-event-fields" disabled={creatingEvent}>
               <legend>Client &amp; occasion</legend>
@@ -11086,21 +11192,15 @@ export default function EventPage() {
                     className="input"
                     required
                     autoComplete="organization"
-                    value={
+                    name="clientName"
+                    defaultValue={
                       newEventDraft.clientName
                     }
-                    onChange={(event) => {
-                      setNewEventDraft(
-                        (current) => ({
-                          ...current,
-                          clientName:
-                            event.target.value,
-                        }),
-                      );
+                    onInput={() =>
                       setNewEventError(
                         '',
-                      );
-                    }}
+                      )
+                    }
                     placeholder="Client or company name"
                   />
                 </label>
@@ -11112,17 +11212,9 @@ export default function EventPage() {
 
                   <input
                     className="input"
-                    value={
+                    name="eventName"
+                    defaultValue={
                       newEventDraft.eventName
-                    }
-                    onChange={(event) =>
-                      setNewEventDraft(
-                        (current) => ({
-                          ...current,
-                          eventName:
-                            event.target.value,
-                        }),
-                      )
                     }
                     placeholder="Wedding, Birthday, Corporate Event"
                   />
@@ -11141,17 +11233,9 @@ export default function EventPage() {
                   <input
                     className="input"
                     type="date"
-                    value={
+                    name="eventDate"
+                    defaultValue={
                       newEventDraft.eventDate
-                    }
-                    onChange={(event) =>
-                      setNewEventDraft(
-                        (current) => ({
-                          ...current,
-                          eventDate:
-                            event.target.value,
-                        }),
-                      )
                     }
                   />
                 </label>
@@ -11163,17 +11247,9 @@ export default function EventPage() {
 
                   <input
                     className="input"
-                    value={
+                    name="functionType"
+                    defaultValue={
                       newEventDraft.functionType
-                    }
-                    onChange={(event) =>
-                      setNewEventDraft(
-                        (current) => ({
-                          ...current,
-                          functionType:
-                            event.target.value,
-                        }),
-                      )
                     }
                     placeholder="Breakfast, Lunch, Dinner, Reception"
                   />
@@ -11190,17 +11266,9 @@ export default function EventPage() {
                     min="1"
                     step="1"
                     inputMode="numeric"
-                    value={
+                    name="pax"
+                    defaultValue={
                       newEventDraft.pax
-                    }
-                    onChange={(event) =>
-                      setNewEventDraft(
-                        (current) => ({
-                          ...current,
-                          pax:
-                            event.target.value,
-                        }),
-                      )
                     }
                     placeholder="e.g. 250"
                   />
@@ -11218,17 +11286,9 @@ export default function EventPage() {
 
                   <input
                     className="input"
-                    value={
+                    name="venue"
+                    defaultValue={
                       newEventDraft.venue
-                    }
-                    onChange={(event) =>
-                      setNewEventDraft(
-                        (current) => ({
-                          ...current,
-                          venue:
-                            event.target.value,
-                        }),
-                      )
                     }
                     placeholder="Venue name"
                   />
@@ -11241,17 +11301,9 @@ export default function EventPage() {
 
                   <input
                     className="input"
-                    value={
+                    name="city"
+                    defaultValue={
                       newEventDraft.city
-                    }
-                    onChange={(event) =>
-                      setNewEventDraft(
-                        (current) => ({
-                          ...current,
-                          city:
-                            event.target.value,
-                        }),
-                      )
                     }
                     placeholder="City"
                   />
