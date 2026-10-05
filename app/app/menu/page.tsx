@@ -968,6 +968,78 @@ export default function MenuCreationPage() {
       120,
     );
 
+  async function updateDishRate(
+    itemId: string,
+    rawRate: number,
+  ) {
+    if (!work) {
+      return;
+    }
+
+    const rate =
+      Math.max(
+        0,
+        Number(rawRate) || 0,
+      );
+
+    const nextWork: WorkState = {
+      ...work,
+      menu:
+        work.menu.map(
+          (item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  costPerPlate:
+                    rate,
+                  costSource:
+                    'manual',
+                  coverageStatus:
+                    rate > 0
+                      ? 'COSTED'
+                      : 'UNRESOLVED',
+                  costQualityStatus:
+                    rate > 0
+                      ? 'READY'
+                      : 'BLOCKED',
+                  costConfidence:
+                    rate > 0
+                      ? 100
+                      : 0,
+                  rateCoveragePercent:
+                    rate > 0
+                      ? 100
+                      : 0,
+                  coverageReason:
+                    rate > 0
+                      ? 'Manual event rate entered in Event & Menu.'
+                      : 'Manual event rate required.',
+                  costApprovalStatus:
+                    rate > 0
+                      ? 'APPROVED'
+                      : 'PENDING',
+                  costApprovalReason:
+                    rate > 0
+                      ? 'Manual event rate.'
+                      : 'Manual rate required.',
+                }
+              : item,
+        ),
+    };
+
+    await persist(
+      nextWork,
+    );
+
+    setMessage(
+      rate > 0
+        ? `Dish rate updated to ₹${rate.toLocaleString('en-IN')} / plate.`
+        : 'Dish rate cleared.',
+    );
+
+    setError('');
+  }
+
   async function persist(
     nextWork: WorkState,
   ) {
@@ -2419,58 +2491,131 @@ export default function MenuCreationPage() {
                         ),
                       );
 
+                    const selectedItem =
+                      activeFunction
+                        ?.items.find(
+                          (item) =>
+                            normalize(
+                              item.name,
+                            ) ===
+                            normalize(
+                              dish.name,
+                            ),
+                        );
+
+                    const shownRate =
+                      selectedItem
+                        ? Math.max(
+                            0,
+                            Number(
+                              selectedItem.costPerPlate,
+                            ) || 0,
+                          )
+                        : Math.max(
+                            0,
+                            Number(
+                              dish.rate,
+                            ) || 0,
+                          );
+
                     return (
-                      <button
+                      <article
                         key={
                           `${dish.category}::${dish.name}`
                         }
-                        type="button"
                         className={
-                          selected
-                            ? 'selected'
-                            : ''
-                        }
-                        disabled={
-                          !activeFunction
-                        }
-                        onClick={() =>
-                          void toggleDish(
-                            dish,
-                          )
+                          `menu-create-dish-card ${selected ? 'selected' : ''}`
                         }
                       >
-                        <span className="menu-create-dish-icon">
-                          {dish.name
-                            .charAt(
-                              0,
+                        <button
+                          type="button"
+                          className="menu-create-dish-select"
+                          disabled={
+                            !activeFunction
+                          }
+                          onClick={() =>
+                            void toggleDish(
+                              dish,
                             )
-                            .toUpperCase()}
-                        </span>
+                          }
+                        >
+                          <span className="menu-create-dish-icon">
+                            {dish.name
+                              .charAt(
+                                0,
+                              )
+                              .toUpperCase()}
+                          </span>
 
-                        <span className="menu-create-dish-copy">
-                          <b>
-                            {dish.name}
-                          </b>
+                          <span className="menu-create-dish-copy">
+                            <b>
+                              {dish.name}
+                            </b>
 
-                          <small>
-                            {stationForCategory(
-                              dish.category,
-                            ).label}
-                          </small>
+                            <small>
+                              {stationForCategory(
+                                dish.category,
+                              ).label}
+                            </small>
 
-                          <em>
-                            {dish.hasRecipe
-                              ? 'Recipe ready'
-                              : 'Dish Master'}
-                          </em>
-                        </span>
+                            <em>
+                              {shownRate > 0
+                                ? `₹${shownRate.toLocaleString('en-IN')} / plate`
+                                : dish.hasRecipe
+                                  ? 'Recipe ready · rate not set'
+                                  : 'Rate not set'}
+                            </em>
+                          </span>
 
-                        <i>
-                          {selected
-                            ? '✓'
-                            : '+'}
-                        </i>
-                      </button>
+                          <i>
+                            {selected
+                              ? '✓'
+                              : '+'}
+                          </i>
+                        </button>
+
+                        {selected &&
+                        selectedItem ? (
+                          <label className="menu-create-dish-rate">
+                            <span>
+                              Event rate / plate
+                            </span>
+
+                            <div>
+                              <span aria-hidden="true">
+                                ₹
+                              </span>
+
+                              <input
+                                key={
+                                  `${selectedItem.id}:${selectedItem.costPerPlate}`
+                                }
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                inputMode="decimal"
+                                defaultValue={
+                                  selectedItem.costPerPlate ||
+                                  ''
+                                }
+                                placeholder="50"
+                                onFocus={(event) =>
+                                  event.currentTarget.select()
+                                }
+                                onBlur={(event) =>
+                                  void updateDishRate(
+                                    selectedItem.id,
+                                    Number(
+                                      event.target.value,
+                                    ),
+                                  )
+                                }
+                                aria-label={`Rate per plate for ${dish.name}`}
+                              />
+                            </div>
+                          </label>
+                        ) : null}
+                      </article>
                     );
                   },
                 )}
@@ -2832,16 +2977,23 @@ export default function MenuCreationPage() {
           .menu-create-station-nav h3{margin:2px 0;color:#e7eef6;font-size:13px}
           .menu-create-station-nav small{color:#65768a;font-size:7px}
           .menu-create-dish-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
-          .menu-create-dish-grid>button{display:grid;grid-template-columns:36px minmax(0,1fr) 26px;gap:9px;align-items:center;min-height:70px;padding:10px;border:1px solid rgba(148,163,184,.11);border-radius:12px;color:inherit;background:#101720;text-align:left;font:inherit;cursor:pointer}
-          .menu-create-dish-grid>button:hover{border-color:rgba(74,156,255,.22)}
-          .menu-create-dish-grid>button.selected{border-color:rgba(85,217,143,.28);background:rgba(85,217,143,.05)}
+          .menu-create-dish-card{overflow:hidden;border:1px solid rgba(148,163,184,.11);border-radius:12px;background:#101720}
+          .menu-create-dish-card:hover{border-color:rgba(74,156,255,.22)}
+          .menu-create-dish-card.selected{border-color:rgba(85,217,143,.28);background:rgba(85,217,143,.035)}
+          .menu-create-dish-select{display:grid;grid-template-columns:36px minmax(0,1fr) 26px;gap:9px;align-items:center;width:100%;min-height:70px;padding:10px;border:0;color:inherit;background:transparent;text-align:left;font:inherit;cursor:pointer}
+          .menu-create-dish-select:disabled{opacity:.5;cursor:not-allowed}
           .menu-create-dish-icon{display:grid;place-items:center;width:36px;height:36px;border:1px solid rgba(148,163,184,.12);border-radius:10px;color:#a9c5e4;background:rgba(255,255,255,.025);font-size:12px;font-weight:900}
           .menu-create-dish-copy b,.menu-create-dish-copy small,.menu-create-dish-copy em{display:block}
           .menu-create-dish-copy b{color:#dfe8f1;font-size:9px}
           .menu-create-dish-copy small{margin-top:2px;color:#6f8093;font-size:7px}
           .menu-create-dish-copy em{margin-top:3px;color:#5f8fc7;font-size:6px;font-style:normal;font-weight:850;text-transform:uppercase}
-          .menu-create-dish-grid i{display:grid;place-items:center;width:25px;height:25px;border:1px solid #33404d;border-radius:8px;color:#8ca0b5;font-style:normal;font-weight:900}
-          .menu-create-dish-grid>button.selected i{border-color:rgba(85,217,143,.24);color:#7edfa7;background:rgba(85,217,143,.05)}
+          .menu-create-dish-select>i{display:grid;place-items:center;width:25px;height:25px;border:1px solid #33404d;border-radius:8px;color:#8ca0b5;font-style:normal;font-weight:900}
+          .menu-create-dish-card.selected .menu-create-dish-select>i{border-color:rgba(85,217,143,.24);color:#7edfa7;background:rgba(85,217,143,.05)}
+          .menu-create-dish-rate{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-top:1px solid rgba(85,217,143,.12);background:rgba(6,12,17,.28)}
+          .menu-create-dish-rate>span{color:#7890a6;font-size:6px;font-weight:900;text-transform:uppercase}
+          .menu-create-dish-rate>div{display:flex;align-items:center;gap:4px;min-width:92px;padding:0 7px;border:1px solid rgba(85,217,143,.20);border-radius:8px;background:#0d151d}
+          .menu-create-dish-rate>div>span{color:#8edcaf;font-size:9px;font-weight:900}
+          .menu-create-dish-rate input{width:72px;min-height:30px;border:0;outline:0;color:#e9f4ee;background:transparent;font:inherit;font-size:9px;font-weight:850}
           .menu-create-empty{padding:36px;color:#748499;text-align:center}
           .menu-create-selected{position:sticky;top:64px;padding:0;overflow:hidden}
           .menu-create-selected-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 15px;border-bottom:1px solid rgba(148,163,184,.09)}
@@ -2884,7 +3036,7 @@ export default function MenuCreationPage() {
           .menu-create-day-board{gap:7px}.menu-create-day-group{padding:9px;border-radius:12px}.menu-create-day-group>header{margin-bottom:7px}.menu-create-function-strip>button{flex-basis:180px;padding:9px 10px;border-radius:10px}
           .menu-create-function-editor{padding:10px 12px}.menu-create-function-editor-head h2{font-size:14px}.menu-create-function-fields{margin-top:8px}.menu-create-function-fields input{min-height:36px}
           .menu-create-toolbar{top:72px;padding:10px 11px;gap:7px}.menu-create-toolbar h2{font-size:14px}.menu-create-search{min-height:36px}.menu-create-category-tabs button{min-height:29px}
-          .menu-create-station-nav{padding:8px 10px}.menu-create-dish-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}.menu-create-dish-grid>button{min-height:62px;padding:8px;border-radius:10px}.menu-create-dish-icon{width:32px;height:32px;border-radius:9px}
+          .menu-create-station-nav{padding:8px 10px}.menu-create-dish-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}.menu-create-dish-card{border-radius:10px}.menu-create-dish-select{min-height:62px;padding:8px}.menu-create-dish-icon{width:32px;height:32px;border-radius:9px}
           .menu-create-result-note{padding:7px 9px;border:1px dashed rgba(148,163,184,.10);border-radius:9px;color:#687b90;background:rgba(255,255,255,.012);font-size:7px}
           @media(max-width:980px){.menu-create-topbar{grid-template-columns:1fr}.menu-create-topbar-actions{grid-template-columns:repeat(4,minmax(0,1fr));min-width:0}.menu-create-download-compact{grid-column:auto}.menu-create-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
           @media(max-width:700px){.menu-create-topbar{position:static;padding:12px}.menu-create-topbar-actions{grid-template-columns:1fr 1fr}.menu-create-topbar-actions>*{width:100%}.menu-create-download-compact{grid-column:1/-1}.menu-create-event-head{align-items:stretch;flex-direction:column}.menu-create-event-grid{grid-template-columns:1fr}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-hero-actions>*{width:100%}}
