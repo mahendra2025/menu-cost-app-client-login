@@ -41,15 +41,111 @@ export default function EventFilePanel({ work, functions, disabled }: { work: Wo
     } catch { setError('Could not create the manager event PDF. Please retry.'); }
     finally { setBusy(null); }
   }
-  return <section className="ep-side-card ep-event-file">
-    <h3>Event File</h3>
-    <p>All event details in one PDF.</p>
-    <dl><div><dt>Client</dt><dd>{work.event.clientName || 'Not set'}</dd></div><div><dt>Date</dt><dd>{work.event.eventDate || 'Not set'}</dd></div><div><dt>Venue</dt><dd>{work.event.venue || work.event.city || 'Not set'}</dd></div><div><dt>Functions</dt><dd>{functions.length}</dd></div></dl>
-    <p>Includes menus, vendors, staffing, supplies, transport, costs, notes and the attachment list for every function.</p>
-    <button type="button" className="ep-button" disabled={disabled || !!busy || !file} onClick={downloadComplete}>{busy === 'complete' ? 'Preparing PDF…' : 'Download complete event PDF'}</button>
-    <button type="button" className="ep-button" disabled={disabled || !!busy || !file} onClick={downloadManager}>{busy === 'manager' ? 'Preparing manager PDF…' : 'Download manager event PDF'}</button>
-    {!file && !error && <p role="status">Loading event file…</p>}
-    {error && <p role="alert">{error} <button type="button" className="ep-button" onClick={() => setRetry(n => n + 1)}>Retry</button></p>}
-    <style>{`.ep-event-file p{font-size:11px;color:#a4b3c4;line-height:1.6}.ep-event-file dl{display:grid;gap:10px;font-size:11px}.ep-event-file dl div{display:flex;justify-content:space-between;gap:12px}.ep-event-file dt{color:#a4b3c4}.ep-event-file dd{margin:0;text-align:right;overflow-wrap:anywhere}.ep-event-file .ep-button{width:100%;margin-top:9px;white-space:normal;text-align:center;justify-content:center;min-height:42px}.ep-event-file .ep-button:focus-visible{outline:2px solid #78b5ff;outline-offset:3px}`}</style>
-  </section>;
+  return (
+    <div className="ep-event-file-actions" aria-label="Event file PDF downloads">
+      <span className="ep-event-file-label">PDF Files</span>
+      <button
+        type="button"
+        className="ep-event-file-button"
+        disabled={disabled || !!busy || !file}
+        onClick={downloadComplete}
+        title="Download complete event file with internal costs"
+      >
+        {busy === 'complete' ? 'Preparing…' : 'Event File PDF'}
+      </button>
+      <button
+        type="button"
+        className="ep-event-file-button"
+        disabled={disabled || !!busy || !file}
+        onClick={downloadManager}
+        title="Download manager event file without rates or costs"
+      >
+        {busy === 'manager' ? 'Preparing…' : 'Manager File PDF'}
+      </button>
+      {!file && !error ? (
+        <small className="ep-event-file-status">Loading…</small>
+      ) : null}
+      {error ? (
+        <small className="ep-event-file-status error">
+          {error}{' '}
+          <button
+            type="button"
+            className="ep-event-file-retry"
+            onClick={() => setRetry((n) => n + 1)}
+          >
+            Retry
+          </button>
+        </small>
+      ) : null}
+      <style>{`
+        .ep-event-file-actions{
+          display:flex;
+          flex:1 1 100%;
+          align-items:center;
+          justify-content:flex-end;
+          gap:6px;
+          min-width:0;
+        }
+        .ep-event-file-label{
+          color:#718196;
+          font-size:9px;
+          font-weight:900;
+          letter-spacing:.08em;
+          text-transform:uppercase;
+        }
+        .ep-event-file-button{
+          min-height:32px;
+          padding:6px 9px;
+          border:1px solid rgba(74,156,255,.24);
+          border-radius:8px;
+          color:#b9d9ff;
+          background:rgba(74,156,255,.07);
+          font:inherit;
+          font-size:9px;
+          font-weight:850;
+          white-space:nowrap;
+          cursor:pointer;
+        }
+        .ep-event-file-button:hover:not(:disabled){
+          border-color:rgba(74,156,255,.42);
+          background:rgba(74,156,255,.12);
+        }
+        .ep-event-file-button:disabled{
+          cursor:not-allowed;
+          opacity:.55;
+        }
+        .ep-event-file-button:focus-visible,
+        .ep-event-file-retry:focus-visible{
+          outline:2px solid #78b5ff;
+          outline-offset:2px;
+        }
+        .ep-event-file-status{
+          color:#7f8da0;
+          font-size:9px;
+        }
+        .ep-event-file-status.error{
+          color:#ff9c95;
+        }
+        .ep-event-file-retry{
+          min-height:0;
+          padding:0;
+          border:0;
+          color:#a9d0ff;
+          background:transparent;
+          font:inherit;
+          font-weight:850;
+          cursor:pointer;
+        }
+        @media(max-width:720px){
+          .ep-event-file-actions{
+            justify-content:flex-start;
+            flex-wrap:wrap;
+          }
+          .ep-event-file-label{
+            flex-basis:100%;
+          }
+        }
+      `}</style>
+    </div>
+  );
 }
