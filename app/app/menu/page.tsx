@@ -1,19 +1,2208 @@
 'use client';
 
-import { useEffect } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
-export default function LegacyMenuRedirect() {
-  useEffect(() => {
-    window.location.replace(
-      '/app/event?resume=1#menuDetectionPreview',
+import AppShell from '../../components/AppShell';
+
+import {
+  flushDraftToServer,
+  flushWorkSave,
+  getSession,
+  loadWork,
+  saveWork,
+  uid,
+} from '../../../lib/store';
+
+import type {
+  MenuItem,
+  Session,
+  WorkState,
+} from '../../../lib/types';
+
+import {
+  CATEGORIES,
+  type Category,
+} from '../../../lib/menuCategories';
+
+import {
+  sortMenuItemsByCategoryPriority,
+} from '../../../lib/menuCategoryPriority';
+
+type DishOption = {
+  name: string;
+  category: string;
+  subcategory?: string;
+  rate: number;
+  servingQuantity?: number;
+  servingUnit?: string;
+  pieceWeightGrams?: number;
+  hasRecipe?: boolean;
+  source?: 'global' | 'tenant';
+};
+
+type MenuFunction = {
+  key: string;
+  serviceId: string;
+  dayLabel: string;
+  mealLabel: string;
+  pax: number;
+  items: MenuItem[];
+};
+
+type FunctionDraft = {
+  id: string;
+  dayLabel: string;
+  mealLabel: string;
+  pax: string;
+};
+
+type CustomDishDraft = {
+  name: string;
+  category: Category;
+};
+
+function normalize(
+  value: unknown,
+) {
+  return String(value || '')
+    .normalize('NFKC')
+    .trim()
+    .toLocaleLowerCase('en-IN')
+    .replace(/\s+/g, ' ');
+}
+
+function functionKey(
+  item: MenuItem,
+) {
+  if (
+    item.serviceId?.trim()
+  ) {
+    return item.serviceId.trim();
+  }
+
+  return [
+    normalize(
+      item.dayLabel,
+    ),
+    normalize(
+      item.mealLabel ||
+        'Event Menu',
+    ),
+  ].join('::');
+}
+
+function buildFunctions(
+  work: WorkState,
+) {
+  const map =
+    new Map<
+      string,
+      MenuFunction
+    >();
+
+  work.menu
+    .filter(
+      (item) =>
+        item.coverageStatus !==
+        'REJECTED',
+    )
+    .forEach(
+      (item) => {
+        const key =
+          functionKey(item);
+
+        const serviceId =
+          item.serviceId?.trim() ||
+          key;
+
+        const existing =
+          map.get(key);
+
+        if (existing) {
+          existing.items.push(
+            item,
+          );
+
+          existing.pax =
+            Math.max(
+              existing.pax,
+              Number(
+                item.servicePax,
+              ) || 0,
+            );
+
+          return;
+        }
+
+        map.set(key, {
+          key,
+          serviceId,
+          dayLabel:
+            item.dayLabel?.trim() ||
+            work.event.eventDate ||
+            '',
+          mealLabel:
+            item.mealLabel?.trim() ||
+            work.event.functionType ||
+            'Event Menu',
+          pax:
+            Math.max(
+              0,
+              Number(
+                item.servicePax,
+              ) ||
+                Number(
+                  work.event.pax,
+                ) ||
+                0,
+            ),
+          items: [
+            item,
+          ],
+        });
+      },
     );
+
+  return Array.from(
+    map.values(),
+  ).map(
+    (fn) => ({
+      ...fn,
+      items:
+        sortMenuItemsByCategoryPriority(
+          fn.items,
+        ),
+    }),
+  );
+}
+
+export default function MenuCreationPage() {
+  const [
+    session,
+    setSession,
+  ] =
+    useState<
+      Session | null
+    >(null);
+
+  const [
+    work,
+    setWork,
+  ] =
+    useState<
+      WorkState | null
+    >(null);
+
+  const [
+    dishCatalog,
+    setDishCatalog,
+  ] =
+    useState<
+      DishOption[]
+    >([]);
+
+  const [
+    loadingCatalog,
+    setLoadingCatalog,
+  ] =
+    useState(true);
+
+  const [
+    activeFunctionId,
+    setActiveFunctionId,
+  ] =
+    useState('');
+
+  const [
+    emptyFunctions,
+    setEmptyFunctions,
+  ] =
+    useState<
+      FunctionDraft[]
+    >([]);
+
+  const [
+    search,
+    setSearch,
+  ] =
+    useState('');
+
+  const [
+    category,
+    setCategory,
+  ] =
+    useState('ALL');
+
+  const [
+    showFunctionForm,
+    setShowFunctionForm,
+  ] =
+    useState(false);
+
+  const [
+    functionDraft,
+    setFunctionDraft,
+  ] =
+    useState<FunctionDraft>({
+      id: '',
+      dayLabel: '',
+      mealLabel: '',
+      pax: '',
+    });
+
+  const [
+    showCustomDish,
+    setShowCustomDish,
+  ] =
+    useState(false);
+
+  const [
+    customDish,
+    setCustomDish,
+  ] =
+    useState<
+      CustomDishDraft
+    >({
+      name: '',
+      category: 'Other',
+    });
+
+  const [
+    message,
+    setMessage,
+  ] =
+    useState('');
+
+  const [
+    error,
+    setError,
+  ] =
+    useState('');
+
+  useEffect(() => {
+    const current =
+      getSession();
+
+    if (!current) {
+      window.location.assign(
+        '/login',
+      );
+      return;
+    }
+
+    const currentWork =
+      loadWork(
+        current.tenantId,
+      );
+
+    setSession(current);
+    setWork(
+      currentWork,
+    );
+
+    const existing =
+      buildFunctions(
+        currentWork,
+      );
+
+    if (
+      existing.length
+    ) {
+      setActiveFunctionId(
+        existing[0]
+          .serviceId,
+      );
+    } else {
+      const id =
+        uid('service');
+
+      const initial:
+        FunctionDraft = {
+          id,
+          dayLabel:
+            currentWork.event
+              .eventDate ||
+            '',
+          mealLabel:
+            currentWork.event
+              .functionType ||
+            'Event Menu',
+          pax:
+            String(
+              Math.max(
+                0,
+                Number(
+                  currentWork.event
+                    .pax,
+                ) || 0,
+              ) ||
+              '',
+            ),
+        };
+
+      setEmptyFunctions([
+        initial,
+      ]);
+
+      setActiveFunctionId(
+        id,
+      );
+    }
+
+    void fetch(
+      '/api/dishes',
+      {
+        cache:
+          'no-store',
+      },
+    )
+      .then(
+        async (
+          response,
+        ) => {
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error ||
+                'Could not load Dish Master.',
+            );
+          }
+
+          const items =
+            Array.isArray(
+              data.items,
+            )
+              ? data.items
+              : [];
+
+          const cleaned:
+            DishOption[] =
+            items.flatMap(
+              (
+                value:
+                  unknown,
+              ) => {
+                if (
+                  !value ||
+                  typeof value !==
+                    'object' ||
+                  Array.isArray(
+                    value,
+                  )
+                ) {
+                  return [];
+                }
+
+                const row =
+                  value as
+                    Record<
+                      string,
+                      unknown
+                    >;
+
+                const name =
+                  String(
+                    row.name ||
+                      '',
+                  ).trim();
+
+                if (!name) {
+                  return [];
+                }
+
+                return [
+                  {
+                    name,
+                    category:
+                      String(
+                        row.category ||
+                          'Other',
+                      ).trim() ||
+                      'Other',
+                    subcategory:
+                      String(
+                        row.subcategory ||
+                          '',
+                      ).trim(),
+                    rate:
+                      Math.max(
+                        0,
+                        Number(
+                          row.rate,
+                        ) || 0,
+                      ),
+                    servingQuantity:
+                      Math.max(
+                        0.01,
+                        Number(
+                          row.servingQuantity,
+                        ) || 1,
+                      ),
+                    servingUnit:
+                      String(
+                        row.servingUnit ||
+                          'serving',
+                      ).trim() ||
+                      'serving',
+                    pieceWeightGrams:
+                      Math.max(
+                        0,
+                        Number(
+                          row.pieceWeightGrams,
+                        ) || 0,
+                      ) ||
+                      undefined,
+                    hasRecipe:
+                      row.hasRecipe ===
+                      true,
+                    source:
+                      String(
+                        row.source ||
+                          'global',
+                      ) ===
+                      'tenant'
+                        ? 'tenant'
+                        : 'global',
+                  },
+                ];
+              },
+            );
+
+          setDishCatalog(
+            cleaned,
+          );
+        },
+      )
+      .catch(
+        (
+          loadError,
+        ) => {
+          setError(
+            loadError instanceof
+            Error
+              ? loadError.message
+              : 'Could not load Dish Master.',
+          );
+        },
+      )
+      .finally(
+        () => {
+          setLoadingCatalog(
+            false,
+          );
+        },
+      );
   }, []);
 
+  const functions =
+    useMemo(
+      () => {
+        if (!work) {
+          return [];
+        }
+
+        const saved =
+          buildFunctions(
+            work,
+          );
+
+        const savedIds =
+          new Set(
+            saved.map(
+              (fn) =>
+                fn.serviceId,
+            ),
+          );
+
+        const empties =
+          emptyFunctions
+            .filter(
+              (fn) =>
+                !savedIds.has(
+                  fn.id,
+                ),
+            )
+            .map(
+              (
+                fn,
+              ):
+                MenuFunction => ({
+                key: fn.id,
+                serviceId:
+                  fn.id,
+                dayLabel:
+                  fn.dayLabel,
+                mealLabel:
+                  fn.mealLabel ||
+                  'Event Menu',
+                pax:
+                  Math.max(
+                    0,
+                    Number(
+                      fn.pax,
+                    ) || 0,
+                  ),
+                items: [],
+              }),
+            );
+
+        return [
+          ...saved,
+          ...empties,
+        ];
+      },
+      [
+        work,
+        emptyFunctions,
+      ],
+    );
+
+  useEffect(() => {
+    if (
+      functions.length &&
+      !functions.some(
+        (fn) =>
+          fn.serviceId ===
+          activeFunctionId,
+      )
+    ) {
+      setActiveFunctionId(
+        functions[0]
+          .serviceId,
+      );
+    }
+  }, [
+    functions,
+    activeFunctionId,
+  ]);
+
+  const activeFunction =
+    functions.find(
+      (fn) =>
+        fn.serviceId ===
+        activeFunctionId,
+    ) ||
+    functions[0] ||
+    null;
+
+  const selectedNameKeys =
+    useMemo(
+      () =>
+        new Set(
+          (
+            activeFunction
+              ?.items ||
+            []
+          ).map(
+            (item) =>
+              normalize(
+                item.name,
+              ),
+          ),
+        ),
+      [
+        activeFunction,
+      ],
+    );
+
+  const categories =
+    useMemo(
+      () =>
+        Array.from(
+          new Set(
+            dishCatalog
+              .map(
+                (dish) =>
+                  dish.category,
+              )
+              .filter(Boolean),
+          ),
+        ).sort(
+          (
+            left,
+            right,
+          ) =>
+            left.localeCompare(
+              right,
+            ),
+        ),
+      [dishCatalog],
+    );
+
+  const visibleDishes =
+    useMemo(
+      () => {
+        const query =
+          normalize(
+            search,
+          );
+
+        return dishCatalog
+          .filter(
+            (dish) => {
+              const matchesCategory =
+                category ===
+                  'ALL' ||
+                dish.category ===
+                  category;
+
+              const matchesSearch =
+                !query ||
+                normalize(
+                  dish.name,
+                ).includes(
+                  query,
+                ) ||
+                normalize(
+                  dish.category,
+                ).includes(
+                  query,
+                ) ||
+                normalize(
+                  dish.subcategory,
+                ).includes(
+                  query,
+                );
+
+              return (
+                matchesCategory &&
+                matchesSearch
+              );
+            },
+          )
+          .sort(
+            (
+              left,
+              right,
+            ) =>
+              left.category.localeCompare(
+                right.category,
+              ) ||
+              left.name.localeCompare(
+                right.name,
+              ),
+          );
+      },
+      [
+        dishCatalog,
+        search,
+        category,
+      ],
+    );
+
+  async function persist(
+    nextWork: WorkState,
+  ) {
+    if (!session) {
+      return;
+    }
+
+    setWork(
+      nextWork,
+    );
+
+    saveWork(
+      session.tenantId,
+      nextWork,
+    );
+
+    flushWorkSave(
+      session.tenantId,
+    );
+
+    await flushDraftToServer(
+      session.tenantId,
+      nextWork,
+    );
+  }
+
+  function activeMetadata() {
+    if (!activeFunction) {
+      return null;
+    }
+
+    return {
+      serviceId:
+        activeFunction
+          .serviceId,
+      dayLabel:
+        activeFunction
+          .dayLabel,
+      mealLabel:
+        activeFunction
+          .mealLabel,
+      pax:
+        Math.max(
+          0,
+          Number(
+            activeFunction
+              .pax,
+          ) || 0,
+        ),
+    };
+  }
+
+  async function toggleDish(
+    dish: DishOption,
+  ) {
+    if (
+      !work ||
+      !activeFunction
+    ) {
+      return;
+    }
+
+    const metadata =
+      activeMetadata();
+
+    if (!metadata) {
+      return;
+    }
+
+    const key =
+      normalize(
+        dish.name,
+      );
+
+    const exists =
+      activeFunction.items.find(
+        (item) =>
+          normalize(
+            item.name,
+          ) === key,
+      );
+
+    let menu:
+      MenuItem[];
+
+    if (exists) {
+      menu =
+        work.menu.filter(
+          (item) =>
+            item.id !==
+            exists.id,
+        );
+
+      setMessage(
+        `${dish.name} removed from ${activeFunction.mealLabel}.`,
+      );
+    } else {
+      const item:
+        MenuItem = {
+          id:
+            uid(
+              'menu',
+            ),
+          name:
+            dish.name,
+          category:
+            dish.category,
+          costPerPlate:
+            dish.rate,
+          portionQuantity:
+            dish.servingQuantity ||
+            1,
+          portionBaseQuantity:
+            dish.servingQuantity ||
+            1,
+          portionUnit:
+            dish.servingUnit ||
+            'serving',
+          pieceWeightGrams:
+            dish.pieceWeightGrams,
+          serviceId:
+            metadata.serviceId,
+          dayLabel:
+            metadata.dayLabel,
+          mealLabel:
+            metadata.mealLabel,
+          servicePax:
+            metadata.pax,
+          portionPercent:
+            100,
+          portionMode:
+            'AUTO',
+          detectionSource:
+            'catalog',
+          detectionConfidence:
+            100,
+          detectionReason:
+            'Selected manually from Dish Master in Menu Creation.',
+          costSource:
+            dish.hasRecipe
+              ? 'catalog_recipe'
+              : 'catalog',
+          coverageStatus:
+            dish.rate > 0
+              ? 'COSTED'
+              : 'UNRESOLVED',
+          costQualityStatus:
+            dish.rate > 0
+              ? 'READY'
+              : 'BLOCKED',
+          costConfidence:
+            dish.rate > 0
+              ? 100
+              : 0,
+          rateCoveragePercent:
+            dish.rate > 0
+              ? 100
+              : 0,
+          coverageReason:
+            dish.hasRecipe
+              ? 'Linked to Global Recipe Master.'
+              : 'Selected from Dish Master.',
+          groceryResponsibility:
+            'CATERER',
+        };
+
+      menu = [
+        ...work.menu,
+        item,
+      ];
+
+      setEmptyFunctions(
+        (current) =>
+          current.filter(
+            (fn) =>
+              fn.id !==
+              metadata.serviceId,
+          ),
+      );
+
+      setMessage(
+        `${dish.name} added to ${activeFunction.mealLabel}.`,
+      );
+    }
+
+    setError('');
+
+    await persist({
+      ...work,
+      menu,
+      updatedAt:
+        new Date()
+          .toISOString(),
+    });
+  }
+
+  async function addCustomDish() {
+    if (
+      !work ||
+      !activeFunction
+    ) {
+      return;
+    }
+
+    const name =
+      customDish.name
+        .trim()
+        .replace(
+          /\s+/g,
+          ' ',
+        );
+
+    if (!name) {
+      setError(
+        'Enter a dish name.',
+      );
+      return;
+    }
+
+    if (
+      selectedNameKeys.has(
+        normalize(name),
+      )
+    ) {
+      setError(
+        'This dish is already in the selected function.',
+      );
+      return;
+    }
+
+    const metadata =
+      activeMetadata();
+
+    if (!metadata) {
+      return;
+    }
+
+    const item:
+      MenuItem = {
+        id:
+          uid('menu'),
+        name,
+        category:
+          customDish.category,
+        costPerPlate: 0,
+        portionQuantity: 1,
+        portionBaseQuantity: 1,
+        portionUnit:
+          'serving',
+        serviceId:
+          metadata.serviceId,
+        dayLabel:
+          metadata.dayLabel,
+        mealLabel:
+          metadata.mealLabel,
+        servicePax:
+          metadata.pax,
+        portionPercent: 100,
+        portionMode:
+          'AUTO',
+        detectionSource:
+          'manual',
+        detectionConfidence:
+          100,
+        detectionReason:
+          'Custom dish added manually in Menu Creation.',
+        costSource:
+          'manual',
+        coverageStatus:
+          'UNRESOLVED',
+        costQualityStatus:
+          'BLOCKED',
+        costConfidence: 0,
+        rateCoveragePercent: 0,
+        coverageReason:
+          'Custom dish needs a Dish Master rate or recipe.',
+        groceryResponsibility:
+          'CATERER',
+      };
+
+    setEmptyFunctions(
+      (current) =>
+        current.filter(
+          (fn) =>
+            fn.id !==
+            metadata.serviceId,
+        ),
+    );
+
+    await persist({
+      ...work,
+      menu: [
+        ...work.menu,
+        item,
+      ],
+      updatedAt:
+        new Date()
+          .toISOString(),
+    });
+
+    setCustomDish({
+      name: '',
+      category: 'Other',
+    });
+
+    setShowCustomDish(
+      false,
+    );
+
+    setError('');
+
+    setMessage(
+      `${name} added as a custom dish. Add its recipe/rate later if needed.`,
+    );
+  }
+
+  function openNewFunction() {
+    setFunctionDraft({
+      id:
+        uid('service'),
+      dayLabel:
+        work?.event
+          .eventDate ||
+        '',
+      mealLabel: '',
+      pax:
+        String(
+          Math.max(
+            0,
+            Number(
+              work?.event
+                .pax,
+            ) || 0,
+          ) ||
+          '',
+        ),
+    });
+
+    setShowFunctionForm(
+      true,
+    );
+
+    setError('');
+  }
+
+  function addFunction() {
+    const name =
+      functionDraft
+        .mealLabel
+        .trim()
+        .replace(
+          /\s+/g,
+          ' ',
+        );
+
+    const pax =
+      Math.max(
+        0,
+        Number(
+          functionDraft.pax,
+        ) || 0,
+      );
+
+    if (!name) {
+      setError(
+        'Enter a function name such as Breakfast, Lunch or Reception.',
+      );
+      return;
+    }
+
+    if (!(pax > 0)) {
+      setError(
+        'Enter guest count for this function.',
+      );
+      return;
+    }
+
+    const next = {
+      ...functionDraft,
+      id:
+        functionDraft.id ||
+        uid(
+          'service',
+        ),
+      mealLabel:
+        name,
+      pax:
+        String(pax),
+    };
+
+    setEmptyFunctions(
+      (current) => [
+        ...current,
+        next,
+      ],
+    );
+
+    setActiveFunctionId(
+      next.id,
+    );
+
+    setShowFunctionForm(
+      false,
+    );
+
+    setMessage(
+      `${name} function ready. Select dishes to save it into the event.`,
+    );
+
+    setError('');
+  }
+
+  async function updateActiveFunction(
+    patch: {
+      dayLabel?: string;
+      mealLabel?: string;
+      pax?: number;
+    },
+  ) {
+    if (
+      !work ||
+      !activeFunction
+    ) {
+      return;
+    }
+
+    const nextDay =
+      patch.dayLabel ??
+      activeFunction.dayLabel;
+
+    const nextMeal =
+      patch.mealLabel ??
+      activeFunction.mealLabel;
+
+    const nextPax =
+      patch.pax ??
+      activeFunction.pax;
+
+    if (
+      !activeFunction
+        .items.length
+    ) {
+      setEmptyFunctions(
+        (current) =>
+          current.map(
+            (fn) =>
+              fn.id ===
+              activeFunction
+                .serviceId
+                ? {
+                    ...fn,
+                    dayLabel:
+                      nextDay,
+                    mealLabel:
+                      nextMeal,
+                    pax:
+                      String(
+                        nextPax,
+                      ),
+                  }
+                : fn,
+          ),
+      );
+
+      return;
+    }
+
+    const menu =
+      work.menu.map(
+        (item) =>
+          item.serviceId ===
+            activeFunction
+              .serviceId
+            ? {
+                ...item,
+                dayLabel:
+                  nextDay,
+                mealLabel:
+                  nextMeal,
+                servicePax:
+                  nextPax,
+              }
+            : item,
+      );
+
+    await persist({
+      ...work,
+      menu,
+      updatedAt:
+        new Date()
+          .toISOString(),
+    });
+  }
+
+  async function removeFunction(
+    fn: MenuFunction,
+  ) {
+    if (!work) {
+      return;
+    }
+
+    if (
+      fn.items.length &&
+      !window.confirm(
+        `Remove ${fn.mealLabel} and all ${fn.items.length} selected dishes?`,
+      )
+    ) {
+      return;
+    }
+
+    if (
+      fn.items.length
+    ) {
+      await persist({
+        ...work,
+        menu:
+          work.menu.filter(
+            (item) =>
+              item.serviceId !==
+              fn.serviceId,
+          ),
+        updatedAt:
+          new Date()
+            .toISOString(),
+      });
+    }
+
+    setEmptyFunctions(
+      (current) =>
+        current.filter(
+          (draft) =>
+            draft.id !==
+            fn.serviceId,
+        ),
+    );
+
+    const next =
+      functions.find(
+        (item) =>
+          item.serviceId !==
+          fn.serviceId,
+      );
+
+    setActiveFunctionId(
+      next?.serviceId ||
+      '',
+    );
+
+    setMessage(
+      `${fn.mealLabel} removed.`,
+    );
+  }
+
+  const selectedByCategory =
+    useMemo(
+      () => {
+        const groups =
+          new Map<
+            string,
+            MenuItem[]
+          >();
+
+        (
+          activeFunction
+            ?.items ||
+          []
+        ).forEach(
+          (item) => {
+            const group =
+              item.category ||
+              'Other';
+
+            groups.set(
+              group,
+              [
+                ...(
+                  groups.get(
+                    group,
+                  ) ||
+                  []
+                ),
+                item,
+              ],
+            );
+          },
+        );
+
+        return Array.from(
+          groups.entries(),
+        );
+      },
+      [
+        activeFunction,
+      ],
+    );
+
+  if (!work) {
+    return (
+      <AppShell
+        title="Menu Creation"
+        subtitle="Build function-wise menus"
+      >
+        <div className="glass-card menu-create-loading">
+          Loading event menu…
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
-    <main className="page-shell center-screen">
-      <div className="loader-card">
-        Opening detected menu…
-      </div>
-    </main>
+    <AppShell
+      title="Menu Creation"
+      subtitle="Build and edit every event function from Dish Master"
+      hidePageTitle
+    >
+      <section className="content-grid menu-create-page">
+        <section className="menu-create-hero">
+          <div>
+            <span className="menu-create-eyebrow">
+              Event menu builder
+            </span>
+            <h1>
+              Build function-wise menus
+            </h1>
+            <p>
+              {work.event.eventName ||
+                'Current event'} · {work.event.clientName ||
+                'Client'} · {functions.length} function{functions.length === 1 ? '' : 's'} · {work.menu.filter((item) => item.coverageStatus !== 'REJECTED').length} dishes
+            </p>
+          </div>
+
+          <div className="menu-create-hero-actions">
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() =>
+                window.location.assign(
+                  '/app/event?resume=1#menuDetectionPreview',
+                )
+              }
+            >
+              Import PDF / Photo
+            </button>
+
+            <button
+              className="primary-button"
+              type="button"
+              onClick={
+                openNewFunction
+              }
+            >
+              + Add Function
+            </button>
+          </div>
+        </section>
+
+        {message ? (
+          <div className="menu-create-message">
+            {message}
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="menu-create-message error">
+            {error}
+          </div>
+        ) : null}
+
+        <section className="menu-create-function-strip">
+          {functions.map(
+            (
+              fn,
+              index,
+            ) => (
+              <button
+                key={
+                  fn.serviceId
+                }
+                type="button"
+                className={
+                  fn.serviceId ===
+                  activeFunction
+                    ?.serviceId
+                    ? 'active'
+                    : ''
+                }
+                onClick={() => {
+                  setActiveFunctionId(
+                    fn.serviceId,
+                  );
+                  setMessage(
+                    '',
+                  );
+                  setError('');
+                }}
+              >
+                <span>
+                  Function {index + 1}
+                </span>
+
+                <b>
+                  {fn.mealLabel ||
+                    'Event Menu'}
+                </b>
+
+                <small>
+                  {fn.dayLabel ||
+                    'No date'} · {fn.pax.toLocaleString('en-IN')} guests · {fn.items.length} dishes
+                </small>
+              </button>
+            ),
+          )}
+
+          <button
+            type="button"
+            className="add"
+            onClick={
+              openNewFunction
+            }
+          >
+            <span>＋</span>
+            <b>Add function</b>
+            <small>
+              Breakfast, Lunch, Dinner…
+            </small>
+          </button>
+        </section>
+
+        {activeFunction ? (
+          <section className="glass-card menu-create-function-editor">
+            <div className="menu-create-function-editor-head">
+              <div>
+                <span>
+                  Selected function
+                </span>
+                <h2>
+                  {activeFunction.mealLabel}
+                </h2>
+              </div>
+
+              <button
+                className="menu-create-danger"
+                type="button"
+                onClick={() =>
+                  void removeFunction(
+                    activeFunction,
+                  )
+                }
+              >
+                Remove Function
+              </button>
+            </div>
+
+            <div className="menu-create-function-fields">
+              <label>
+                <span>Date / Day</span>
+                <input
+                  value={
+                    activeFunction
+                      .dayLabel
+                  }
+                  placeholder="e.g. 14.02.2027 or Day 1"
+                  onChange={(
+                    event,
+                  ) =>
+                    void updateActiveFunction(
+                      {
+                        dayLabel:
+                          event
+                            .target
+                            .value,
+                      },
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                <span>Function</span>
+                <input
+                  value={
+                    activeFunction
+                      .mealLabel
+                  }
+                  placeholder="Breakfast / Lunch / Reception"
+                  onChange={(
+                    event,
+                  ) =>
+                    void updateActiveFunction(
+                      {
+                        mealLabel:
+                          event
+                            .target
+                            .value,
+                      },
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                <span>Guests</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={
+                    activeFunction
+                      .pax ||
+                    ''
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    void updateActiveFunction(
+                      {
+                        pax:
+                          Math.max(
+                            0,
+                            Number(
+                              event
+                                .target
+                                .value,
+                            ) ||
+                              0,
+                          ),
+                      },
+                    )
+                  }
+                />
+              </label>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="menu-create-layout">
+          <div className="menu-create-catalog">
+            <section className="glass-card menu-create-toolbar">
+              <div>
+                <span className="menu-create-eyebrow">
+                  Dish Master
+                </span>
+                <h2>
+                  Add dishes
+                </h2>
+              </div>
+
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={
+                  !activeFunction
+                }
+                onClick={() => {
+                  setShowCustomDish(
+                    true,
+                  );
+                  setError('');
+                }}
+              >
+                + Custom Dish
+              </button>
+
+              <label className="menu-create-search">
+                <span aria-hidden="true">
+                  ⌕
+                </span>
+                <input
+                  value={search}
+                  placeholder="Search dish…"
+                  onChange={(
+                    event,
+                  ) =>
+                    setSearch(
+                      event.target
+                        .value,
+                    )
+                  }
+                />
+              </label>
+
+              <div className="menu-create-category-tabs">
+                <button
+                  type="button"
+                  className={
+                    category ===
+                    'ALL'
+                      ? 'active'
+                      : ''
+                  }
+                  onClick={() =>
+                    setCategory(
+                      'ALL',
+                    )
+                  }
+                >
+                  All
+                </button>
+
+                {categories.map(
+                  (item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={
+                        category ===
+                        item
+                          ? 'active'
+                          : ''
+                      }
+                      onClick={() =>
+                        setCategory(
+                          item,
+                        )
+                      }
+                    >
+                      {item}
+                    </button>
+                  ),
+                )}
+              </div>
+            </section>
+
+            {loadingCatalog ? (
+              <div className="glass-card menu-create-empty">
+                Loading Dish Master…
+              </div>
+            ) : !visibleDishes.length ? (
+              <div className="glass-card menu-create-empty">
+                No dishes match this search.
+              </div>
+            ) : (
+              <section className="menu-create-dish-grid">
+                {visibleDishes.map(
+                  (
+                    dish,
+                  ) => {
+                    const selected =
+                      selectedNameKeys.has(
+                        normalize(
+                          dish.name,
+                        ),
+                      );
+
+                    return (
+                      <button
+                        key={
+                          `${dish.category}::${dish.name}`
+                        }
+                        type="button"
+                        className={
+                          selected
+                            ? 'selected'
+                            : ''
+                        }
+                        disabled={
+                          !activeFunction
+                        }
+                        onClick={() =>
+                          void toggleDish(
+                            dish,
+                          )
+                        }
+                      >
+                        <span className="menu-create-dish-icon">
+                          {dish.name
+                            .charAt(
+                              0,
+                            )
+                            .toUpperCase()}
+                        </span>
+
+                        <span className="menu-create-dish-copy">
+                          <b>
+                            {dish.name}
+                          </b>
+
+                          <small>
+                            {dish.category}
+                          </small>
+
+                          <em>
+                            {dish.hasRecipe
+                              ? 'Recipe ready'
+                              : 'Dish Master'}
+                          </em>
+                        </span>
+
+                        <i>
+                          {selected
+                            ? '✓'
+                            : '+'}
+                        </i>
+                      </button>
+                    );
+                  },
+                )}
+              </section>
+            )}
+          </div>
+
+          <aside className="glass-card menu-create-selected">
+            <div className="menu-create-selected-head">
+              <div>
+                <span>
+                  Current menu
+                </span>
+                <h2>
+                  {activeFunction
+                    ?.mealLabel ||
+                    'Select function'}
+                </h2>
+              </div>
+
+              <b>
+                {activeFunction
+                  ?.items.length ||
+                  0}
+              </b>
+            </div>
+
+            {!activeFunction
+              ?.items.length ? (
+              <div className="menu-create-selected-empty">
+                <strong>
+                  Menu is empty
+                </strong>
+                <span>
+                  Select dishes from Dish Master.
+                </span>
+              </div>
+            ) : (
+              <div className="menu-create-selected-groups">
+                {selectedByCategory.map(
+                  ([
+                    group,
+                    items,
+                  ]) => (
+                    <section
+                      key={
+                        group
+                      }
+                    >
+                      <div>
+                        <b>
+                          {group}
+                        </b>
+                        <span>
+                          {items.length}
+                        </span>
+                      </div>
+
+                      {items.map(
+                        (item) => (
+                          <article
+                            key={
+                              item.id
+                            }
+                          >
+                            <span>
+                              <b>
+                                {item.name}
+                              </b>
+                              <small>
+                                {item.costSource ===
+                                'catalog_recipe'
+                                  ? 'Recipe linked'
+                                  : item.coverageStatus ===
+                                      'UNRESOLVED'
+                                    ? 'Needs recipe/rate'
+                                    : 'Selected'}
+                              </small>
+                            </span>
+
+                            <button
+                              type="button"
+                              aria-label={
+                                `Remove ${item.name}`
+                              }
+                              onClick={() => {
+                                const catalogDish =
+                                  dishCatalog.find(
+                                    (dish) =>
+                                      normalize(
+                                        dish.name,
+                                      ) ===
+                                      normalize(
+                                        item.name,
+                                      ),
+                                  );
+
+                                if (
+                                  catalogDish
+                                ) {
+                                  void toggleDish(
+                                    catalogDish,
+                                  );
+                                  return;
+                                }
+
+                                if (
+                                  !work
+                                ) {
+                                  return;
+                                }
+
+                                void persist({
+                                  ...work,
+                                  menu:
+                                    work.menu.filter(
+                                      (
+                                        candidate,
+                                      ) =>
+                                        candidate.id !==
+                                        item.id,
+                                    ),
+                                  updatedAt:
+                                    new Date()
+                                      .toISOString(),
+                                });
+                              }}
+                            >
+                              ×
+                            </button>
+                          </article>
+                        ),
+                      )}
+                    </section>
+                  ),
+                )}
+              </div>
+            )}
+
+            <div className="menu-create-selected-actions">
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() =>
+                  window.location.assign(
+                    '/app/event-planning',
+                  )
+                }
+              >
+                Event Planning
+              </button>
+
+              <button
+                className="primary-button"
+                type="button"
+                disabled={
+                  !work.menu.length
+                }
+                onClick={() =>
+                  window.location.assign(
+                    '/app/grocery',
+                  )
+                }
+              >
+                Generate Grocery →
+              </button>
+            </div>
+          </aside>
+        </section>
+
+        {showFunctionForm ? (
+          <div
+            className="menu-create-modal-backdrop"
+            role="presentation"
+            onClick={() =>
+              setShowFunctionForm(
+                false,
+              )
+            }
+          >
+            <section
+              className="menu-create-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Add menu function"
+              onClick={(
+                event,
+              ) =>
+                event.stopPropagation()
+              }
+            >
+              <div className="menu-create-modal-head">
+                <div>
+                  <span>
+                    New function
+                  </span>
+                  <h2>
+                    Add menu function
+                  </h2>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowFunctionForm(
+                      false,
+                    )
+                  }
+                >
+                  ×
+                </button>
+              </div>
+
+              <label>
+                <span>
+                  Date / Day
+                </span>
+                <input
+                  value={
+                    functionDraft
+                      .dayLabel
+                  }
+                  placeholder="14.02.2027 or Day 1"
+                  onChange={(
+                    event,
+                  ) =>
+                    setFunctionDraft(
+                      (
+                        current,
+                      ) => ({
+                        ...current,
+                        dayLabel:
+                          event
+                            .target
+                            .value,
+                      }),
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                <span>
+                  Function name
+                </span>
+                <input
+                  autoFocus
+                  value={
+                    functionDraft
+                      .mealLabel
+                  }
+                  placeholder="Breakfast / Lunch / Dinner / Reception"
+                  onChange={(
+                    event,
+                  ) =>
+                    setFunctionDraft(
+                      (
+                        current,
+                      ) => ({
+                        ...current,
+                        mealLabel:
+                          event
+                            .target
+                            .value,
+                      }),
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                <span>
+                  Guests
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  value={
+                    functionDraft
+                      .pax
+                  }
+                  placeholder="400"
+                  onChange={(
+                    event,
+                  ) =>
+                    setFunctionDraft(
+                      (
+                        current,
+                      ) => ({
+                        ...current,
+                        pax:
+                          event
+                            .target
+                            .value,
+                      }),
+                    )
+                  }
+                />
+              </label>
+
+              <button
+                className="primary-button"
+                type="button"
+                onClick={
+                  addFunction
+                }
+              >
+                Create Function
+              </button>
+            </section>
+          </div>
+        ) : null}
+
+        {showCustomDish ? (
+          <div
+            className="menu-create-modal-backdrop"
+            role="presentation"
+            onClick={() =>
+              setShowCustomDish(
+                false,
+              )
+            }
+          >
+            <section
+              className="menu-create-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Add custom dish"
+              onClick={(
+                event,
+              ) =>
+                event.stopPropagation()
+              }
+            >
+              <div className="menu-create-modal-head">
+                <div>
+                  <span>
+                    Event-only dish
+                  </span>
+                  <h2>
+                    Add custom dish
+                  </h2>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowCustomDish(
+                      false,
+                    )
+                  }
+                >
+                  ×
+                </button>
+              </div>
+
+              <label>
+                <span>
+                  Dish name
+                </span>
+                <input
+                  autoFocus
+                  value={
+                    customDish
+                      .name
+                  }
+                  placeholder="Enter dish name"
+                  onChange={(
+                    event,
+                  ) =>
+                    setCustomDish(
+                      (
+                        current,
+                      ) => ({
+                        ...current,
+                        name:
+                          event
+                            .target
+                            .value,
+                      }),
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                <span>
+                  Category
+                </span>
+                <select
+                  value={
+                    customDish
+                      .category
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setCustomDish(
+                      (
+                        current,
+                      ) => ({
+                        ...current,
+                        category:
+                          event
+                            .target
+                            .value as
+                            Category,
+                      }),
+                    )
+                  }
+                >
+                  {CATEGORIES.map(
+                    (item) => (
+                      <option
+                        key={item}
+                        value={item}
+                      >
+                        {item}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() =>
+                  void addCustomDish()
+                }
+              >
+                Add to Menu
+              </button>
+            </section>
+          </div>
+        ) : null}
+
+        <style>{`
+          .menu-create-page{gap:12px}
+          .menu-create-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px;border:1px solid rgba(74,156,255,.15);border-radius:18px;background:linear-gradient(135deg,rgba(18,28,42,.98),rgba(10,14,20,.98));box-shadow:0 16px 38px rgba(0,0,0,.2)}
+          .menu-create-eyebrow{display:block;color:#75adf1;font-size:8px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+          .menu-create-hero h1{margin:5px 0;color:#f4f8fc;font-size:27px;letter-spacing:-.035em}
+          .menu-create-hero p{margin:0;color:#7d8da1;font-size:10px}
+          .menu-create-hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+          .menu-create-message{padding:10px 12px;border:1px solid rgba(85,217,143,.18);border-radius:10px;color:#8bdbad;background:rgba(85,217,143,.05);font-size:9px}
+          .menu-create-message.error{border-color:rgba(255,98,89,.2);color:#ef9a95;background:rgba(255,98,89,.05)}
+          .menu-create-function-strip{display:flex;gap:8px;overflow:auto;padding-bottom:2px}
+          .menu-create-function-strip>button{flex:0 0 210px;display:grid;gap:3px;padding:12px 13px;border:1px solid rgba(148,163,184,.12);border-radius:13px;color:#7c8da1;background:#101720;text-align:left;font:inherit;cursor:pointer}
+          .menu-create-function-strip>button.active{border-color:rgba(74,156,255,.35);background:rgba(74,156,255,.07);box-shadow:inset 0 0 0 1px rgba(74,156,255,.08)}
+          .menu-create-function-strip>button.add{border-style:dashed}
+          .menu-create-function-strip span{color:#6d7d91;font-size:7px;font-weight:900;text-transform:uppercase}
+          .menu-create-function-strip b{color:#e3ebf4;font-size:11px}
+          .menu-create-function-strip small{color:#67778b;font-size:7px}
+          .menu-create-function-editor{padding:14px 15px}
+          .menu-create-function-editor-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+          .menu-create-function-editor-head span{color:#718196;font-size:7px;font-weight:900;text-transform:uppercase}
+          .menu-create-function-editor-head h2{margin:2px 0 0;color:#eaf1f8;font-size:16px}
+          .menu-create-danger{padding:7px 9px;border:1px solid rgba(255,98,89,.16);border-radius:8px;color:#df8d88;background:rgba(255,98,89,.04);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
+          .menu-create-function-fields{display:grid;grid-template-columns:1fr 1fr 160px;gap:8px;margin-top:12px}
+          .menu-create-function-fields label,.menu-create-modal label{display:grid;gap:4px}
+          .menu-create-function-fields label>span,.menu-create-modal label>span{color:#718196;font-size:7px;font-weight:900;text-transform:uppercase}
+          .menu-create-function-fields input,.menu-create-modal input,.menu-create-modal select{width:100%;min-height:40px;padding:0 10px;border:1px solid #33404d;border-radius:9px;outline:0;color:#e8eff7;background:#121a23;font:inherit;font-size:9px}
+          .menu-create-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,.7fr);gap:12px;align-items:start}
+          .menu-create-catalog{display:grid;gap:10px}
+          .menu-create-toolbar{position:sticky;top:64px;z-index:8;display:grid;grid-template-columns:1fr auto;gap:10px;padding:13px 14px;background:rgba(10,14,20,.95);backdrop-filter:blur(16px)}
+          .menu-create-toolbar h2{margin:2px 0;color:#eaf1f8;font-size:16px}
+          .menu-create-search{grid-column:1/-1;display:flex;align-items:center;gap:7px;min-height:40px;padding:0 10px;border:1px solid #303b47;border-radius:10px;background:#111820}
+          .menu-create-search span{color:#708196}
+          .menu-create-search input{width:100%;border:0;outline:0;color:#e8eff7;background:transparent;font:inherit}
+          .menu-create-category-tabs{grid-column:1/-1;display:flex;gap:5px;overflow:auto;padding-bottom:2px}
+          .menu-create-category-tabs button{flex:0 0 auto;min-height:31px;padding:0 9px;border:1px solid #303b47;border-radius:8px;color:#7b8ca1;background:#121a23;font:inherit;font-size:7px;font-weight:850;cursor:pointer}
+          .menu-create-category-tabs button.active{border-color:rgba(74,156,255,.32);color:#a8d0ff;background:rgba(74,156,255,.08)}
+          .menu-create-dish-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+          .menu-create-dish-grid>button{display:grid;grid-template-columns:36px minmax(0,1fr) 26px;gap:9px;align-items:center;min-height:70px;padding:10px;border:1px solid rgba(148,163,184,.11);border-radius:12px;color:inherit;background:#101720;text-align:left;font:inherit;cursor:pointer}
+          .menu-create-dish-grid>button:hover{border-color:rgba(74,156,255,.22)}
+          .menu-create-dish-grid>button.selected{border-color:rgba(85,217,143,.28);background:rgba(85,217,143,.05)}
+          .menu-create-dish-icon{display:grid;place-items:center;width:36px;height:36px;border:1px solid rgba(148,163,184,.12);border-radius:10px;color:#a9c5e4;background:rgba(255,255,255,.025);font-size:12px;font-weight:900}
+          .menu-create-dish-copy b,.menu-create-dish-copy small,.menu-create-dish-copy em{display:block}
+          .menu-create-dish-copy b{color:#dfe8f1;font-size:9px}
+          .menu-create-dish-copy small{margin-top:2px;color:#6f8093;font-size:7px}
+          .menu-create-dish-copy em{margin-top:3px;color:#5f8fc7;font-size:6px;font-style:normal;font-weight:850;text-transform:uppercase}
+          .menu-create-dish-grid i{display:grid;place-items:center;width:25px;height:25px;border:1px solid #33404d;border-radius:8px;color:#8ca0b5;font-style:normal;font-weight:900}
+          .menu-create-dish-grid>button.selected i{border-color:rgba(85,217,143,.24);color:#7edfa7;background:rgba(85,217,143,.05)}
+          .menu-create-empty{padding:36px;color:#748499;text-align:center}
+          .menu-create-selected{position:sticky;top:64px;padding:0;overflow:hidden}
+          .menu-create-selected-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 15px;border-bottom:1px solid rgba(148,163,184,.09)}
+          .menu-create-selected-head span{color:#718196;font-size:7px;font-weight:900;text-transform:uppercase}
+          .menu-create-selected-head h2{margin:2px 0 0;color:#e7eef6;font-size:15px}
+          .menu-create-selected-head>b{display:grid;place-items:center;min-width:34px;height:34px;border:1px solid rgba(74,156,255,.2);border-radius:10px;color:#9fc8f5;background:rgba(74,156,255,.05);font-size:11px}
+          .menu-create-selected-empty{display:grid;gap:4px;padding:32px 15px;color:#6e7e91;text-align:center}
+          .menu-create-selected-empty strong{color:#b8c4d1;font-size:10px}
+          .menu-create-selected-empty span{font-size:8px}
+          .menu-create-selected-groups{max-height:62vh;overflow:auto;padding:10px}
+          .menu-create-selected-groups section{margin-bottom:10px}
+          .menu-create-selected-groups section>div{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px 5px}
+          .menu-create-selected-groups section>div b{color:#7f91a5;font-size:7px;text-transform:uppercase}
+          .menu-create-selected-groups section>div span{color:#617286;font-size:7px}
+          .menu-create-selected-groups article{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 9px;border:1px solid rgba(148,163,184,.08);border-radius:9px;background:rgba(255,255,255,.018);margin-bottom:5px}
+          .menu-create-selected-groups article span b,.menu-create-selected-groups article span small{display:block}
+          .menu-create-selected-groups article span b{color:#dce5ee;font-size:8px}
+          .menu-create-selected-groups article span small{margin-top:2px;color:#68798c;font-size:6px}
+          .menu-create-selected-groups article button{width:25px;height:25px;border:1px solid rgba(255,98,89,.13);border-radius:7px;color:#d98782;background:rgba(255,98,89,.03);cursor:pointer}
+          .menu-create-selected-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:11px;border-top:1px solid rgba(148,163,184,.09)}
+          .menu-create-modal-backdrop{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:18px;background:rgba(3,6,10,.76);backdrop-filter:blur(8px)}
+          .menu-create-modal{display:grid;gap:11px;width:min(460px,100%);padding:17px;border:1px solid rgba(148,163,184,.16);border-radius:16px;background:#101720;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+          .menu-create-modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+          .menu-create-modal-head span{color:#75adf1;font-size:7px;font-weight:900;text-transform:uppercase}
+          .menu-create-modal-head h2{margin:3px 0;color:#edf3f9;font-size:17px}
+          .menu-create-modal-head button{width:32px;height:32px;border:1px solid #303b47;border-radius:9px;color:#93a3b5;background:#121a23;font-size:18px;cursor:pointer}
+          .menu-create-loading{padding:40px;text-align:center}
+          @media(max-width:1050px){.menu-create-layout{grid-template-columns:1fr}.menu-create-selected{position:static}.menu-create-selected-groups{max-height:none}}
+          @media(max-width:700px){.menu-create-hero{align-items:stretch;flex-direction:column}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-function-fields{grid-template-columns:1fr}.menu-create-dish-grid{grid-template-columns:1fr}.menu-create-selected-actions{grid-template-columns:1fr}.menu-create-toolbar{position:static}.menu-create-selected{position:static}.menu-create-function-strip>button{flex-basis:185px}}
+        `}</style>
+      </section>
+    </AppShell>
   );
 }
