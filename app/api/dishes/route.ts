@@ -410,6 +410,16 @@ export async function GET() {
     const recipePieceWeightByName =
       new Map<string, number>();
 
+    /*
+     * Global Recipe Master is shared by every caterer.
+     *
+     * We do not copy recipes into each tenant. Instead the
+     * Event manual picker reads this flag from the live global
+     * catalog and keeps the selected dish recipe-linked.
+     */
+    const globalRecipeDishKeys =
+      new Set<string>();
+
     if (
       Array.isArray(
         recipeCatalog?.dishes,
@@ -446,6 +456,14 @@ export async function GET() {
                 row.pieceWeightGrams,
               ) || 0,
             );
+
+          if (name) {
+            globalRecipeDishKeys.add(
+              normalizeName(
+                name,
+              ),
+            );
+          }
 
           if (
             name &&
@@ -505,6 +523,13 @@ export async function GET() {
 
           pieceWeightGrams:
             recipePieceWeightByName.get(
+              normalizeName(
+                item.name,
+              ),
+            ),
+
+          hasRecipe:
+            globalRecipeDishKeys.has(
               normalizeName(
                 item.name,
               ),
@@ -637,7 +662,17 @@ export async function GET() {
             saved.gasKgPer100 ??
             undefined,
           pieceWeightGrams:
-            undefined,
+            recipePieceWeightByName.get(
+              normalizeName(
+                saved.name,
+              ),
+            ),
+          hasRecipe:
+            globalRecipeDishKeys.has(
+              normalizeName(
+                saved.name,
+              ),
+            ),
           aliases:
             [],
           source:
