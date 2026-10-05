@@ -527,29 +527,19 @@ export async function POST(request: Request) {
         continue;
       }
 
-      const cityRate =
-        cityRateMap.get(
-          rate.id,
-        );
-
-      if (
-        Number(
-          cityRate,
-        ) > 0
-      ) {
-        effectiveRateMap.set(
-          rate.id,
+      effectiveRateMap.set(
+        rate.id,
+        Math.max(
+          0,
           Number(
-            cityRate,
-          ),
-        );
-        effectiveRateSourceMap.set(
-          rate.id,
-          effectiveCity
-            ? `${effectiveCity} city`
-            : 'city',
-        );
-      }
+            rate.rate,
+          ) || 0,
+        ),
+      );
+      effectiveRateSourceMap.set(
+        rate.id,
+        'global',
+      );
     }
     const catalogMap = buildRecipeMap([
       ...(Array.isArray(defaultRecipesData) ? defaultRecipesData : []),
@@ -875,7 +865,6 @@ export async function POST(request: Request) {
         effectiveCity || '',
       ratePriority: [
         'BUSINESS',
-        'CITY',
         'GLOBAL',
       ],
     });
