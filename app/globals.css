@@ -34972,3 +34972,50 @@ body.client-sheet-open {
     display: none !important;
   }
 }
+
+
+/* Dish Cost vendor / agency rate assignment ------------------------------ */
+.client-theme .client-ui-system-v2 .dish-vendor-rate-control {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(148,163,184,.08);
+}
+
+.client-theme .client-ui-system-v2 .dish-vendor-rate-control > span {
+  color: #728196;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.client-theme .client-ui-system-v2 .dish-vendor-rate-control select {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid #33404d;
+  border-radius: 8px;
+  outline: 0;
+  color: #dce7f2;
+  background: #111820;
+  font: inherit;
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.client-theme .client-ui-system-v2 .dish-vendor-rate-control select:focus {
+  border-color: rgba(74,156,255,.5);
+  box-shadow: 0 0 0 3px rgba(74,156,255,.06);
+}
+
+.client-theme .client-ui-system-v2 .dish-vendor-rate-control > small {
+  color: #68788d;
+  font-size: 7px;
+  line-height: 1.35;
+}
+
+.client-theme .client-ui-system-v2 .dish-vendor-rate-control.mobile {
+  margin-top: 10px;
+}
