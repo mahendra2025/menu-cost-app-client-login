@@ -1587,15 +1587,6 @@ export default function MenuCreationPage() {
       return;
     }
 
-    const categoryName =
-      customDish.category
-        .replace(
-          /\s+/g,
-          ' ',
-        )
-        .trim() ||
-      'Other';
-
     const duplicate =
       activeFunction.items.some(
         (item) =>
