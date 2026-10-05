@@ -2118,7 +2118,7 @@ export default function CostPage() {
                                     });
                                   }}
                                 >
-                                  <option value="AUTO">Auto split</option>
+                                  <option value="AUTO">Full 100%</option>
                                   <option value="CUSTOM">Custom</option>
                                 </select>
                                 {item.portionMode === 'CUSTOM' ? (
@@ -2310,7 +2310,7 @@ export default function CostPage() {
                               }}
                             >
                               <option value="AUTO">
-                                Automatic portion
+                                Full 100% portion
                               </option>
                               <option value="CUSTOM">
                                 Custom portion
@@ -2344,9 +2344,7 @@ export default function CostPage() {
                               </label>
                             ) : (
                               <span className="portion-chip">
-                                {item.categoryCount > 1
-                                  ? `1/${item.categoryCount}`
-                                  : 'Full'}
+                                100%
                               </span>
                             )}
                           </div>
