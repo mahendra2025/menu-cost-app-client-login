@@ -45,6 +45,18 @@ type Draft = {
   updatedAt: string;
 };
 
+type MenuPdfHistory = {
+  id: string;
+  costingId: string;
+  eventName: string;
+  clientName: string;
+  eventDate: string;
+  menuCount: number;
+  functionCount: number;
+  fileName: string;
+  downloadedAt: string;
+};
+
 type Item = {
   key: string;
   kind: 'DRAFT' | 'COMPLETED' | 'ARCHIVED';
@@ -102,6 +114,7 @@ export default function HistoryPage() {
   const [completed, setCompleted] = useState<Completed[]>([]);
   const [archived, setArchived] = useState<Completed[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [menuHistory, setMenuHistory] = useState<MenuPdfHistory[]>([]);
   const [tab, setTab] = useState<'ALL' | 'DRAFTS' | 'COMPLETED' | 'ARCHIVED'>('ALL');
   const [query, setQuery] = useState('');
   const [days, setDays] = useState('ALL');
@@ -154,17 +167,19 @@ export default function HistoryPage() {
     setError('');
 
     try {
-      const [a, b, c] = await Promise.all([
+      const [a, b, c, d] = await Promise.all([
         fetch('/api/client/costings?limit=100', { cache: 'no-store' }),
         fetch('/api/client/costings?limit=100&archived=1', { cache: 'no-store' }),
         fetch('/api/client/drafts?limit=100', { cache: 'no-store' }),
+        fetch('/api/client/menu-history', { cache: 'no-store' }),
       ]);
 
       if (a.ok) setCompleted((await a.json()).costings || []);
       if (b.ok) setArchived((await b.json()).costings || []);
       if (c.ok) setDrafts((await c.json()).drafts || []);
+      if (d.ok) setMenuHistory((await d.json()).items || []);
 
-      if (!a.ok || !b.ok || !c.ok) {
+      if (!a.ok || !b.ok || !c.ok || !d.ok) {
         setError('Some history data could not be loaded.');
       }
     } catch {
@@ -452,6 +467,56 @@ export default function HistoryPage() {
     }
   }
 
+  async function redownloadMenu(historyId: string) {
+    setBusy(`menu-pdf:${historyId}`);
+    setError('');
+
+    try {
+      const response = await fetch(
+        `/api/client/menu-history?id=${encodeURIComponent(historyId)}`,
+        { cache: 'no-store' },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            'Could not load saved menu.',
+        );
+      }
+
+      const work =
+        data.record?.work as
+          | WorkState
+          | undefined;
+
+      if (!work) {
+        throw new Error(
+          'Saved menu snapshot is missing.',
+        );
+      }
+
+      const {
+        downloadMenuCreationPdf,
+      } = await import(
+        '../../../lib/menuCreationPdf'
+      );
+
+      downloadMenuCreationPdf(
+        work,
+      );
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : 'Could not re-download menu.',
+      );
+    } finally {
+      setBusy('');
+    }
+  }
+
   async function archiveCosting(costingId: string, archivedValue: boolean) {
     setBusy(`archive:${costingId}`);
     try {
@@ -540,6 +605,19 @@ export default function HistoryPage() {
           .hist-stat strong { margin: 9px 0 5px; font-size: clamp(20px, 2.3vw, 28px); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
           .hist-stat span { color: var(--hist-muted); font-size: 11px; }
           .hist-alert { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid #71552e; border-radius: 10px; color: #ffc16b; background: #241d14; font-size: 13px; }
+          .hist-menu-library { display:grid;gap:10px;padding:16px;border:1px solid #2b3541;border-radius:14px;background:linear-gradient(145deg,#111820,#0f151c); }
+          .hist-menu-library-head { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+          .hist-menu-library-head span { color:#c7a563;font-size:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase; }
+          .hist-menu-library-head h2 { margin:3px 0 0;color:#edf2f7;font-size:17px; }
+          .hist-menu-library-head small { color:#778699;font-size:9px; }
+          .hist-menu-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px; }
+          .hist-menu-card { display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px;border:1px solid rgba(193,157,87,.16);border-radius:11px;background:rgba(255,255,255,.018); }
+          .hist-menu-card b,.hist-menu-card span,.hist-menu-card small { display:block; }
+          .hist-menu-card b { color:#e7edf4;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+          .hist-menu-card span { margin-top:4px;color:#aeb9c6;font-size:9px; }
+          .hist-menu-card small { margin-top:4px;color:#708095;font-size:8px; }
+          .hist-menu-card button { min-height:36px;padding:0 11px;border:1px solid rgba(193,157,87,.28);border-radius:8px;color:#dbc28c;background:rgba(193,157,87,.06);font:inherit;font-size:9px;font-weight:800;cursor:pointer; }
+          .hist-menu-card button:disabled { opacity:.5;cursor:wait; }
           .hist-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 180px 160px; align-items: end; gap: 12px; }
           .hist-filter { display: grid; min-width: 0; gap: 8px; }
           .hist-filter > span { color: var(--hist-muted); font-size: 12px; }
@@ -630,6 +708,10 @@ export default function HistoryPage() {
             .hist-stat { padding: 16px; }
             .hist-stat:nth-child(3) { border-left: 0; }
             .hist-stat:nth-child(n+3) { border-top: 1px solid #282f39; }
+            .hist-menu-library-head { align-items:flex-start;flex-direction:column; }
+            .hist-menu-grid { grid-template-columns:1fr; }
+            .hist-menu-card { grid-template-columns:1fr; }
+            .hist-menu-card button { width:100%; }
             .hist-toolbar { grid-template-columns: 1fr 1fr; }
             .hist-filter:first-child { grid-column: 1 / -1; }
             .hist-tabs { gap: 16px; }
@@ -702,6 +784,72 @@ export default function HistoryPage() {
             <span>{error}</span><button className="hist-action" disabled={loading || Boolean(busy)} onClick={() => session && void bootstrap(session)}>Try again</button>
           </div>
         ) : null}
+
+        <section className="hist-menu-library">
+          <div className="hist-menu-library-head">
+            <div>
+              <span>Premium menu archive</span>
+              <h2>Downloaded Menu PDFs</h2>
+            </div>
+            <small>
+              {loading
+                ? 'Loading…'
+                : `${menuHistory.length} saved menu${menuHistory.length === 1 ? '' : 's'}`}
+            </small>
+          </div>
+
+          {loading ? (
+            <div className="hist-empty">
+              Loading downloaded menus…
+            </div>
+          ) : menuHistory.length ? (
+            <div className="hist-menu-grid">
+              {menuHistory.map((menu) => (
+                <article
+                  className="hist-menu-card"
+                  key={menu.id}
+                >
+                  <div>
+                    <b>
+                      {menu.eventName ||
+                        menu.clientName ||
+                        'Premium Menu'}
+                    </b>
+                    <span>
+                      {menu.clientName ||
+                        'Client not set'}
+                    </span>
+                    <small>
+                      {dateLabel(menu.eventDate)} · {menu.functionCount} function{menu.functionCount === 1 ? '' : 's'} · {menu.menuCount} dishes · downloaded {dateLabel(menu.downloadedAt)}
+                    </small>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={Boolean(busy)}
+                    onClick={() =>
+                      void redownloadMenu(
+                        menu.id,
+                      )
+                    }
+                  >
+                    {busy ===
+                    `menu-pdf:${menu.id}`
+                      ? 'Preparing…'
+                      : 'Re-download Premium Menu'}
+                  </button>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="hist-empty">
+              <b>No downloaded menus yet</b>
+              <span>
+                Download a Premium Menu from Menu Creation and it will appear here automatically.
+              </span>
+            </div>
+          )}
+        </section>
 
         <div className="hist-toolbar">
           <label className="hist-filter"><span>Find a costing</span><input className="hist-input" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search client, event or date…" /></label>
