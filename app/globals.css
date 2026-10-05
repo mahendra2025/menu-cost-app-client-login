@@ -23608,7 +23608,7 @@ body.client-sheet-open {
 
   .cost-desktop-workspace {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 286px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 18px;
     align-items: start;
   }
