@@ -175,19 +175,26 @@ export default function IngredientRatesPage() {
                     unknown
                   >,
               ) => {
-                const rate =
-                  Math.max(
-                    0,
-                    Number(
-                      value.rate,
-                    ) || 0,
-                  );
+                const ownRate =
+                  value.isCustomRate
+                    ? Math.max(
+                        0,
+                        Number(
+                          value.rate,
+                        ) || 0,
+                      )
+                    : Math.max(
+                        0,
+                        Number(
+                          value.cityRate,
+                        ) || 0,
+                      );
 
                 return {
                   ...value,
                   myCityRate:
-                    rate > 0
-                      ? rate
+                    ownRate > 0
+                      ? ownRate
                       : null,
                 } as
                   ClientIngredientRate;
