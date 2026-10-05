@@ -30158,7 +30158,7 @@ body.client-sheet-open {
   --mc-line-soft: rgba(148, 163, 184, .10);
   --mc-text: #eef3f8;
   --mc-text-2: #a8b3c1;
-  --mc-text-3: #768496;
+  --mc-text-3: #93a0b1;
   --mc-blue: #4a9cff;
   --mc-blue-soft: rgba(74, 156, 255, .09);
   --mc-green: #55d98f;
@@ -30314,7 +30314,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 thead th {
   color: #7f8c9e;
   background: #0c1218;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 900;
   letter-spacing: .045em;
   text-transform: uppercase;
@@ -30440,7 +30440,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .cost-command-step {
   color: #7eb8ff;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -30474,7 +30474,7 @@ body.client-sheet-open {
   border-radius: 999px;
   color: #8694a6;
   background: rgba(255,255,255,.025);
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 850;
 }
 
@@ -30583,7 +30583,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .cost-rate-health > div:last-child > small {
   margin-top: 4px;
   color: #768496;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -31026,7 +31026,7 @@ body.client-sheet-open {
   color: #a8cffb;
   background: rgba(74,156,255,.055);
   font: inherit;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 850;
   cursor: pointer;
 }
@@ -31119,7 +31119,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .manpower-overview-v2 p {
   max-width: 720px;
   color: #8b98a9;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-overview-total {
@@ -31202,7 +31202,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .manpower-overview-cost > small {
   color: #7d8b9d;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
@@ -31413,7 +31413,7 @@ body.client-sheet-open {
   max-width: 760px;
   margin: 0;
   color: #8b98a9;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -31545,7 +31545,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .operations-overview-total > small {
   color: #7d8b9d;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .operations-overview-total .primary-button {
@@ -31631,13 +31631,13 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .operations-attention-banner b {
   margin-top: 2px;
   color: #eaf0f6;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .operations-attention-banner small {
   margin-top: 3px;
   color: #8b7f6e;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .operations-planning-loading {
@@ -31646,7 +31646,7 @@ body.client-sheet-open {
   border-radius: 11px;
   color: #748397;
   background: #0f151c;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .operations-function-card {
@@ -31785,7 +31785,7 @@ body.client-sheet-open {
   max-width: 820px;
   margin: 0;
   color: #8b98a9;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -31917,7 +31917,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-command-price > small {
   color: #7d8b9d;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -32073,7 +32073,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-audit-row small {
   color: #6f7d8e;
-  font-size: 8px;
+  font-size: 12px;
   text-align: right;
 }
 
@@ -32093,7 +32093,7 @@ body.client-sheet-open {
   min-width: 760px;
   padding: 9px 11px;
   border-top: 1px solid rgba(148,163,184,.08);
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-function-cost-table > div:first-child {
@@ -32228,7 +32228,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .manpower-page-modern .page-eyebrow,
 .client-theme .client-ui-system-v2 .manpower-page-modern .section-kicker {
   color: #78afff;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 850;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -32273,7 +32273,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-overview-cost > span {
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-overview-cost > b {
@@ -32282,7 +32282,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-overview-cost > small {
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -32294,7 +32294,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-overview-actions button {
   min-height: 41px;
   border-radius: 11px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 780;
 }
 
@@ -32320,7 +32320,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-command-strip span {
   color: #7f8ea1;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 850;
   letter-spacing: .045em;
   text-transform: uppercase;
@@ -32335,7 +32335,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-command-strip small {
   color: #718095;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -32394,11 +32394,11 @@ body.client-sheet-open {
   height: 29px;
   border-radius: 10px;
   background: rgba(74,156,255,.10);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-meal-tab-copy small {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-meal-tab-copy b {
@@ -32409,7 +32409,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-meal-tab-copy em {
   color: #78879a;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-desktop-workspace {
@@ -32441,7 +32441,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-planner-heading p {
   margin: 0;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-meal-health {
@@ -32530,7 +32530,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-quick-add-copy small {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-quick-add-actions button {
@@ -32539,7 +32539,7 @@ body.client-sheet-open {
   border: 1px solid rgba(148,163,184,.12);
   border-radius: 10px;
   background: #131d28;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-coverage-review {
@@ -32555,7 +32555,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-coverage-review-head p {
   margin: 0;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-coverage-metrics button {
@@ -32576,7 +32576,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-roster-heading p {
   margin: 0;
   color: #79889b;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-department-filters {
@@ -32595,7 +32595,7 @@ body.client-sheet-open {
   min-height: 32px;
   padding: 6px 10px;
   border-radius: 9px;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-department-filters button.active {
@@ -32613,7 +32613,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-role-toolbar .field > span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-role-toolbar .input {
@@ -32673,7 +32673,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-role-name-cell > div > b {
   color: #e4edf7;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-department-badge {
@@ -32696,13 +32696,13 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-quantity-control input {
   min-width: 42px;
   height: 31px;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-dish-selector summary {
   min-height: 34px;
   border-radius: 9px;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-dish-selector-panel {
@@ -32734,7 +32734,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-add-role-copy small,
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-add-role .field > span {
   color: #7d8c9f;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .manpower-page-modern .manpower-add-role .input,
@@ -33001,7 +33001,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .operations-page-modern .page-eyebrow,
 .client-theme .client-ui-system-v2 .operations-page-modern .section-kicker {
   color: #78afff;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 850;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -33029,7 +33029,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-overview-kpis span {
   color: #758499;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -33043,7 +33043,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-overview-kpis small {
   color: #718095;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -33066,7 +33066,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-overview-total > span {
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-overview-total > b {
@@ -33075,7 +33075,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-overview-total > small {
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-overview-total .primary-button {
@@ -33105,7 +33105,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-readiness-strip span {
   color: #78879a;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -33118,7 +33118,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-readiness-strip small {
   color: #6f7e90;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-workflow-bar {
@@ -33160,18 +33160,18 @@ body.client-sheet-open {
   border-radius: 9px;
   color: #8fc0ff;
   background: rgba(74,156,255,.10);
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 900;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-workflow-bar b {
   color: #e4edf7;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-workflow-bar small {
   color: #748397;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-workflow-bar button.is-complete,
@@ -33211,7 +33211,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-transport-card .final-costing-section-heading p {
   margin: 0;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-mode-row {
@@ -33229,7 +33229,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-mode-row button {
   min-height: 37px;
   border-radius: 9px;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-function-card {
@@ -33257,7 +33257,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-function-head p {
   margin: 0;
   color: #7d8b9d;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-function-status {
@@ -33335,7 +33335,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-section-title small {
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -33381,18 +33381,18 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-gas-details > summary b {
   color: #dfe8f2;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-gas-details > summary small {
   color: #748397;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .operations-page-modern .operations-gas-details > summary > span:last-child {
   padding: 6px 8px;
   border-radius: 999px;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -33602,7 +33602,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .final-cost-page-modern .page-eyebrow,
 .client-theme .client-ui-system-v2 .final-cost-page-modern .section-kicker {
   color: #78afff;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 850;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -33646,7 +33646,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-command-kpis span {
   color: #78879a;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-command-kpis b {
@@ -33658,7 +33658,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-command-kpis small {
   color: #718095;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-command-side {
@@ -33680,7 +33680,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-command-price > span {
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-command-price > b {
@@ -33689,7 +33689,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-command-price > small {
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -33713,7 +33713,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-readiness-strip span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-readiness-strip b {
@@ -33722,7 +33722,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-readiness-strip small {
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -33756,7 +33756,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-profit-signal > div:first-child > span {
   color: #7e8da0;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 850;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -33771,7 +33771,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-profit-signal > div:first-child > small {
   color: #8291a4;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-profit-signal-rate {
@@ -33782,7 +33782,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-profit-signal-rate span {
   color: #8190a2;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -33796,7 +33796,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-profit-signal-rate small {
   color: #758498;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-workflow-bar {
@@ -33843,18 +33843,18 @@ body.client-sheet-open {
   border-radius: 9px;
   color: #8fc0ff;
   background: rgba(74,156,255,.10);
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 900;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-workflow-bar b {
   color: #e4edf7;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-workflow-bar small {
   color: #748397;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-workflow-bar button.is-active {
@@ -33894,7 +33894,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-health-card .final-costing-section-heading p {
   margin: 0;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-health-card .final-cost-breakdown {
@@ -33921,7 +33921,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-audit-panel span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-audit-panel b {
@@ -33930,7 +33930,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-audit-panel small,
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-audit-panel > p {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-desktop-kpis {
@@ -33951,7 +33951,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-desktop-actions button {
   min-height: 37px;
   border-radius: 10px;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-selling-card,
@@ -33974,7 +33974,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-costing-section-heading p {
   margin: 0;
   color: #7d8b9d;
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -34002,7 +34002,7 @@ body.client-sheet-open {
   border-radius: 9px;
   color: #8796a8;
   background: transparent;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -34028,7 +34028,7 @@ body.client-sheet-open {
   border-radius: 10px;
   color: #9dacbe;
   background: rgba(255,255,255,.018);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -34055,7 +34055,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-pricing-input-grid label {
   color: #8090a3;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -34082,7 +34082,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-profit-strip span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-profit-strip b {
@@ -34104,7 +34104,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-breakdown span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-breakdown b {
@@ -34115,7 +34115,7 @@ body.client-sheet-open {
   min-height: 29px;
   padding: 5px 8px;
   border-radius: 8px;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-cost-breakdown-total {
@@ -34133,7 +34133,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-function-cost-table > div {
   min-height: 46px;
   padding: 9px 11px;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .final-cost-page-modern .final-function-cost-table .is-head {
@@ -34395,7 +34395,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-command-kpis span {
   color: #78879a;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-command-kpis b {
@@ -34407,7 +34407,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-command-kpis small {
   color: #718095;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -34427,7 +34427,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-command-total > span {
   color: #8fc2ff;
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-command-total > b {
@@ -34437,7 +34437,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-command-total > small {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-command-total .primary-button {
@@ -34456,7 +34456,7 @@ body.client-sheet-open {
   border: 1px solid var(--qt-border);
   border-radius: 13px;
   background: #0f151d;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-workflow-flow i {
@@ -34479,7 +34479,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-readiness-strip span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-readiness-strip b {
@@ -34488,7 +34488,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-readiness-strip small {
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -34525,7 +34525,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-heading p {
   color: #7c8b9d;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-number {
@@ -34534,7 +34534,7 @@ body.client-sheet-open {
   border-radius: 999px;
   color: #9bc9ff;
   background: rgba(74,156,255,.07);
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-grid {
@@ -34548,7 +34548,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-field label {
   color: #8796a8 !important;
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -34590,7 +34590,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-detail-section-head > span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-detail-block,
@@ -34610,19 +34610,19 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-detail-block-head > span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-detail-block p {
   color: #96a4b5;
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-detail-row {
   padding: 8px 10px;
   border-top-color: rgba(148,163,184,.07);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-detail-row.is-head {
@@ -34647,7 +34647,7 @@ body.client-sheet-open {
   border-radius: 12px;
   color: #9acbab !important;
   background: rgba(85,217,143,.035) !important;
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -34668,7 +34668,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-actions a {
   min-height: 39px;
   border-radius: 10px;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quotation-preview-modern {
@@ -34727,7 +34727,7 @@ body.client-sheet-open {
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-preview-head span {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-preview-client {
@@ -34786,7 +34786,7 @@ body.client-sheet-open {
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-preview-group-head b {
   color: #263247;
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-preview-group-head span {
@@ -34797,7 +34797,7 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .quotation-page-modern .quote-preview-group p {
   margin-top: 5px;
   color: #596579;
-  font-size: 8px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -34919,4 +34919,24 @@ body.client-sheet-open {
     align-items: flex-start;
     flex-direction: column;
   }
+}
+
+
+/* Text clarity patch — keep Menu Costing labels sharp and readable ------- */
+.client-theme .client-ui-system-v2 {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+}
+
+.client-theme .client-ui-system-v2 :where(
+  p, span, small, label, button, a, input, textarea, select, th, td, dt, dd, b, strong
+) {
+  text-rendering: optimizeLegibility;
+  text-shadow: none;
+}
+
+.client-theme .client-ui-system-v2 :where(input, textarea, select, button) {
+  -webkit-font-smoothing: antialiased;
 }
