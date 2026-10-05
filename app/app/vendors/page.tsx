@@ -535,6 +535,7 @@ export default function VendorsPage() {
 
   function addStationRate(
     vendorId: string,
+    stationOverride = '',
   ) {
     setVendors((current) =>
       current.map((vendor) => {
@@ -543,6 +544,7 @@ export default function VendorsPage() {
         }
 
         const firstStation =
+          stationOverride ||
           vendor.menuStations?.[0] ||
           stationOptions[0] ||
           '';
@@ -663,6 +665,67 @@ export default function VendorsPage() {
             a.localeCompare(b),
         ),
       [vendors],
+    );
+
+  const dishCategoryGroups =
+    useMemo(
+      () => {
+        const groups =
+          new Map<
+            string,
+            VendorDishOption[]
+          >();
+
+        vendorDishOptions.forEach(
+          (dish) => {
+            const category =
+              dish.category.trim() ||
+              'Other';
+
+            const current =
+              groups.get(
+                category,
+              ) || [];
+
+            current.push(
+              dish,
+            );
+
+            groups.set(
+              category,
+              current,
+            );
+          },
+        );
+
+        return Array.from(
+          groups.entries(),
+        )
+          .map(
+            ([
+              category,
+              dishes,
+            ]) => ({
+              category,
+              dishes:
+                dishes.sort(
+                  (a, b) =>
+                    a.name.localeCompare(
+                      b.name,
+                    ),
+                ),
+            }),
+          )
+          .sort(
+            (a, b) =>
+              a.category.localeCompare(
+                b.category,
+              ),
+          );
+      },
+      [
+        vendorDishOptions,
+      ],
     );
 
   const filtered = useMemo(() => {
@@ -889,6 +952,19 @@ export default function VendorsPage() {
           .vm-rate-summary>div{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:38px;padding:7px 9px;border:1px solid #29323c;border-radius:9px;background:#101720}
           .vm-rate-summary span{color:#738398;font-size:7px;font-weight:850;text-transform:uppercase}
           .vm-rate-summary b{color:#e0e9f2;font-size:12px}
+          .vm-all-stations{margin-top:10px;padding:10px;border:1px solid #29323c;border-radius:10px;background:#0f161e}
+          .vm-all-stations-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+          .vm-all-stations-head b,.vm-all-stations-head small{display:block}
+          .vm-all-stations-head b{color:#dce6f1;font-size:10px}
+          .vm-all-stations-head small{margin-top:2px;color:#6f8094;font-size:7px;line-height:1.4}
+          .vm-all-stations-head>span{flex:0 0 auto;padding:4px 7px;border-radius:7px;color:#8fa3b8;background:#151f29;font-size:7px;font-weight:850}
+          .vm-all-stations-grid{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+          .vm-all-stations-grid button{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 8px;border:1px solid #303945;border-radius:8px;color:#94a5b8;background:#121a23;font:inherit;font-size:7px;font-weight:850;cursor:pointer}
+          .vm-all-stations-grid button small{color:#65768a;font-size:6px}
+          .vm-all-stations-grid button:hover{border-color:rgba(74,156,255,.28);color:#dce8f4}
+          .vm-all-stations-grid button.has-rate{border-color:rgba(85,217,143,.24);color:#afe6c5;background:rgba(85,217,143,.055)}
+          .vm-all-stations-grid button.has-rate small{color:#71c897}
+          .vm-dish-selector{min-width:220px}
           .vm-food-rate-table{min-width:1040px}
           .vm-rate-chip{display:inline-flex;align-items:center;min-height:25px;padding:0 7px;border:1px solid rgba(74,156,255,.18);border-radius:7px;color:#91bdf6;background:rgba(74,156,255,.05);font-size:7px;font-weight:850;white-space:nowrap}
           .vm-rate-muted{color:#607186;font-size:9px}
@@ -908,7 +984,7 @@ export default function VendorsPage() {
           .vm-foot{display:flex;justify-content:flex-end;gap:7px;margin-top:14px;padding-top:13px;border-top:1px solid #252c35}
           @media(max-width:1100px){.vm-command{grid-template-columns:1fr}.vm-command-side{grid-template-columns:repeat(4,minmax(0,1fr))}.vm-command-actions{grid-column:1/-1}}
           @media(max-width:980px){.vm-layout{grid-template-columns:1fr}.vm-list{max-height:300px}.vm-stats{grid-template-columns:1fr 1fr}.vm-partner-command{grid-template-columns:1fr 1fr}}
-          @media(max-width:680px){.vm-command{padding:16px}.vm-command-side{grid-template-columns:1fr 1fr}.vm-command-actions{grid-template-columns:1fr}.vm-head{align-items:stretch;flex-direction:column}.vm-actions{display:grid;grid-template-columns:1fr 1fr}.vm-grid{grid-template-columns:1fr}.vm-field.full{grid-column:auto}.vm-filter-grid{grid-template-columns:1fr}.vm-partner-actions{display:grid!important;grid-template-columns:1fr 1fr}.vm-partner-actions .primary{grid-column:1/-1}.vm-rate-head{align-items:flex-start;flex-direction:column}.vm-rate-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.vm-rate-actions .vm-button:last-child{grid-column:1/-1}.vm-rate-summary{grid-template-columns:1fr}}
+          @media(max-width:680px){.vm-command{padding:16px}.vm-command-side{grid-template-columns:1fr 1fr}.vm-command-actions{grid-template-columns:1fr}.vm-head{align-items:stretch;flex-direction:column}.vm-actions{display:grid;grid-template-columns:1fr 1fr}.vm-grid{grid-template-columns:1fr}.vm-field.full{grid-column:auto}.vm-filter-grid{grid-template-columns:1fr}.vm-partner-actions{display:grid!important;grid-template-columns:1fr 1fr}.vm-partner-actions .primary{grid-column:1/-1}.vm-rate-head{align-items:flex-start;flex-direction:column}.vm-rate-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.vm-rate-actions .vm-button:last-child{grid-column:1/-1}.vm-rate-summary{grid-template-columns:1fr}.vm-all-stations-head{align-items:flex-start}.vm-all-stations-grid{max-height:180px;overflow:auto}.vm-dish-selector{min-width:180px}}
         `}</style>
 
         <header className="vm-command">
@@ -1544,20 +1620,81 @@ export default function VendorsPage() {
                   </div>
                 </div>
 
-                <datalist
-                  id={`vendor-dish-options-${selected.id}`}
-                >
-                  {vendorDishOptions.map(
-                    (dish) => (
-                      <option
-                        key={`${dish.category}::${dish.name}`}
-                        value={dish.name}
-                      >
-                        {dish.category}
-                      </option>
-                    ),
-                  )}
-                </datalist>
+                <section className="vm-all-stations">
+                  <div className="vm-all-stations-head">
+                    <div>
+                      <b>All Stations</b>
+                      <small>
+                        Click any station to add its rate. Every station stays available even if it is not selected in this vendor&apos;s specialties.
+                      </small>
+                    </div>
+                    <span>
+                      {stationOptions.length} stations
+                    </span>
+                  </div>
+
+                  <div className="vm-all-stations-grid">
+                    {stationOptions.map(
+                      (station) => {
+                        const savedRate =
+                          selected.rates.find(
+                            (rate) =>
+                              rate.scope ===
+                                'STATION' &&
+                              (
+                                rate.station ||
+                                rate.item
+                              )
+                                .trim()
+                                .toLocaleLowerCase(
+                                  'en-IN',
+                                ) ===
+                              station
+                                .trim()
+                                .toLocaleLowerCase(
+                                  'en-IN',
+                                ),
+                          );
+
+                        return (
+                          <button
+                            key={
+                              station
+                            }
+                            type="button"
+                            className={
+                              savedRate
+                                ? 'has-rate'
+                                : ''
+                            }
+                            onClick={() =>
+                              addStationRate(
+                                selected.id,
+                                station,
+                              )
+                            }
+                            title={
+                              savedRate
+                                ? `${station}: ${currency(savedRate.rate)} / ${savedRate.unit || 'plate'}`
+                                : `Add rate for ${station}`
+                            }
+                          >
+                            <span>
+                              {
+                                station
+                              }
+                            </span>
+                            <small>
+                              {savedRate
+                                ? `${currency(savedRate.rate)} / ${savedRate.unit || 'plate'}`
+                                : '+ rate'}
+                            </small>
+                          </button>
+                        );
+                      },
+                    )}
+                  </div>
+                </section>
 
                 <div className="vm-rate-table-wrap">
                   <table className="vm-rate-table vm-food-rate-table">
@@ -1581,6 +1718,55 @@ export default function VendorsPage() {
                             const scope =
                               rate.scope ||
                               'OTHER';
+
+                            const rateStationKey =
+                              (
+                                rate.station ||
+                                ''
+                              )
+                                .trim()
+                                .toLocaleLowerCase(
+                                  'en-IN',
+                                );
+
+                            const orderedDishGroups =
+                              [
+                                ...dishCategoryGroups,
+                              ].sort(
+                                (
+                                  left,
+                                  right,
+                                ) => {
+                                  const leftMatch =
+                                    left.category
+                                      .trim()
+                                      .toLocaleLowerCase(
+                                        'en-IN',
+                                      ) ===
+                                    rateStationKey;
+
+                                  const rightMatch =
+                                    right.category
+                                      .trim()
+                                      .toLocaleLowerCase(
+                                        'en-IN',
+                                      ) ===
+                                    rateStationKey;
+
+                                  if (
+                                    leftMatch !==
+                                    rightMatch
+                                  ) {
+                                    return leftMatch
+                                      ? -1
+                                      : 1;
+                                  }
+
+                                  return left.category.localeCompare(
+                                    right.category,
+                                  );
+                                },
+                              );
 
                             const vendorStationChoices =
                               Array.from(
@@ -1851,23 +2037,12 @@ export default function VendorsPage() {
                                     <span className="vm-rate-station-copy">
                                       Whole station / package rate
                                     </span>
-                                  ) : (
-                                    <input
-                                      className="vm-input vm-mini"
+                                  ) : scope ===
+                                    'DISH' ? (
+                                    <select
+                                      className="vm-select vm-mini vm-dish-selector"
                                       value={
                                         rate.item
-                                      }
-                                      list={
-                                        scope ===
-                                        'DISH'
-                                          ? `vendor-dish-options-${selected.id}`
-                                          : undefined
-                                      }
-                                      placeholder={
-                                        scope ===
-                                        'DISH'
-                                          ? 'Dish name e.g. Paneer Tikka'
-                                          : 'Waiter, transport, equipment…'
                                       }
                                       onChange={(event) => {
                                         const item =
@@ -1876,42 +2051,106 @@ export default function VendorsPage() {
                                             .value;
 
                                         const matchedDish =
-                                          scope ===
-                                          'DISH'
-                                            ? vendorDishOptions.find(
-                                                (
-                                                  dish,
-                                                ) =>
-                                                  dish.name
-                                                    .trim()
-                                                    .toLocaleLowerCase(
-                                                      'en-IN',
-                                                    ) ===
-                                                  item
-                                                    .trim()
-                                                    .toLocaleLowerCase(
-                                                      'en-IN',
-                                                    ),
-                                              )
-                                            : undefined;
+                                          vendorDishOptions.find(
+                                            (
+                                              dish,
+                                            ) =>
+                                              dish.name ===
+                                              item,
+                                          );
 
                                         updateRate(
                                           selected.id,
                                           rate.id,
                                           {
                                             item,
-                                            ...(scope ===
-                                              'DISH' &&
-                                            matchedDish &&
-                                            !rate.station
-                                              ? {
-                                                  station:
-                                                    matchedDish.category,
-                                                }
-                                              : {}),
+                                            kind:
+                                              'MENU',
+                                            scope:
+                                              'DISH',
+                                            station:
+                                              matchedDish?.category ||
+                                              rate.station ||
+                                              '',
+                                            unit:
+                                              rate.unit ||
+                                              'plate',
                                           },
                                         );
                                       }}
+                                    >
+                                      <option value="">
+                                        Select dish
+                                      </option>
+
+                                      {rate.item &&
+                                      !vendorDishOptions.some(
+                                        (
+                                          dish,
+                                        ) =>
+                                          dish.name ===
+                                          rate.item,
+                                      ) ? (
+                                        <option
+                                          value={
+                                            rate.item
+                                          }
+                                        >
+                                          {
+                                            rate.item
+                                          }
+                                        </option>
+                                      ) : null}
+
+                                      {orderedDishGroups.map(
+                                        (
+                                          group,
+                                        ) => (
+                                          <optgroup
+                                            key={
+                                              group.category
+                                            }
+                                            label={`${group.category} · ${group.dishes.length}`}
+                                          >
+                                            {group.dishes.map(
+                                              (
+                                                dish,
+                                              ) => (
+                                                <option
+                                                  key={`${dish.category}::${dish.name}`}
+                                                  value={
+                                                    dish.name
+                                                  }
+                                                >
+                                                  {
+                                                    dish.name
+                                                  }
+                                                </option>
+                                              ),
+                                            )}
+                                          </optgroup>
+                                        ),
+                                      )}
+                                    </select>
+                                  ) : (
+                                    <input
+                                      className="vm-input vm-mini"
+                                      value={
+                                        rate.item
+                                      }
+                                      placeholder="Waiter, transport, equipment…"
+                                      onChange={(event) =>
+                                        updateRate(
+                                          selected.id,
+                                          rate.id,
+                                          {
+                                            item:
+                                              event
+                                                .target
+                                                .value,
+                                          },
+                                        )
+                                      }
                                     />
                                   )}
                                 </td>
