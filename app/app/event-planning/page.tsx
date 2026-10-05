@@ -196,7 +196,7 @@ const TABS: Array<{
   kind: RequirementKind;
   label: string;
 }> = [
-  { kind: 'MENU', label: 'Menu Vendors' },
+  { kind: 'MENU', label: 'Menu Assign' },
   { kind: 'MANPOWER', label: 'Manpower Agencies' },
   { kind: 'DRESS', label: 'Dress & Uniform' },
   { kind: 'GROCERY', label: 'Grocery Suppliers' },
@@ -1336,6 +1336,35 @@ export default function EventPlanningPage() {
           nextWork.costingId,
           normalizedPlan,
         );
+
+        if (
+          JSON.stringify(
+            normalizedPlan,
+          ) !==
+          JSON.stringify(
+            serverPlan,
+          )
+        ) {
+          void fetch(
+            '/api/client/event-planning',
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body:
+                JSON.stringify({
+                  costingId:
+                    nextWork.costingId,
+                  plan:
+                    normalizedPlan,
+                }),
+            },
+          ).catch(() => {
+            // Local normalized plan remains available if migration save fails.
+          });
+        }
       }
     } catch {
       // Keep the local plan available if the server is temporarily unavailable.
@@ -7384,9 +7413,9 @@ export default function EventPlanningPage() {
               <section className="ep-menu-vendor-control">
                 <div className="ep-menu-vendor-head">
                   <div>
-                    <b>Vendor Assignment Workspace</b>
+                    <b>Dish-by-Dish Menu Assignment</b>
                     <span>
-                      Plan every menu category as an execution station. Split categories by dish when different vendors are responsible, and choose whether each vendor is With grocery or Without grocery. Vendor-supplied grocery is automatically removed from the generated ingredient list.
+                      Every dish has its own vendor or in-house assignment. Set covers, rate, grocery responsibility, reporting time and status separately for each dish.
                     </span>
                   </div>
 
@@ -7491,19 +7520,7 @@ export default function EventPlanningPage() {
                           row,
                           currentFunction,
                         );
-
-                      const isDishAssignment =
-                        row.menuAssignmentMode ===
-                          'DISH' ||
-                        (
-                          Array.isArray(
-                            row.menuDishIds,
-                          ) &&
-                          row.menuDishIds.length ===
-                            1
-                        );
-
-                      const functionCovers =
+const functionCovers =
                         Math.max(
                           0,
                           Number(
@@ -7559,7 +7576,7 @@ export default function EventPlanningPage() {
                         row.quantity >=
                           functionCovers;
 
-                      const stationReady =
+                      const dishReady =
                         hasAssignment &&
                         hasReportingTime &&
                         coversReady &&
@@ -7574,7 +7591,7 @@ export default function EventPlanningPage() {
                               hasAssignment
                                 ? 'assigned'
                                 : '',
-                              stationReady
+                              dishReady
                                 ? 'ready'
                                 : '',
                               !hasAssignment ||
@@ -7592,12 +7609,7 @@ export default function EventPlanningPage() {
                               <span>
                                 {'Dish ' + String(rowIndex + 1).padStart(2, '0')}
                               </span>
-                              <b>
-                                {category}
-                                {isDishAssignment && dishes[0]
-                                  ? ' · ' + dishes[0].name
-                                  : ''}
-                              </b>
+                              <b>{category}</b>
                             </div>
 
                             <span
@@ -8074,14 +8086,14 @@ export default function EventPlanningPage() {
                                     )
                                   }
                                 >
-                                  'Remove dish assignment'
+                                  Remove dish assignment
                                 </button>
                               </div>
 
                               <div className="ep-menu-ready-copy">
                                 <b>
-                                  {stationReady
-                                    ? 'Station ready'
+                                  {dishReady
+                                    ? 'Dish ready'
                                     : !hasAssignment
                                       ? 'Vendor needed'
                                       : !coversReady
@@ -8487,7 +8499,7 @@ export default function EventPlanningPage() {
             <footer className="ep-table-actions">
               <span className="ep-hint">
                 {tab === 'MENU'
-                  ? 'Menu categories come from the selected function menu. Matching food vendors are shown first; covers and vendor rates remain editable.'
+                  ? 'Every selected menu dish has one separate assignment. Add or remove dishes from Event & Menu; vendor, covers, rate and timing stay editable here.'
                   : tab === 'CROCKERY'
                     ? 'Choose crockery by photo, use the saved guest and buffer rules, then confirm quantities, rentals and return times for this function.'
                   : tab === 'EQUIPMENT'
@@ -8505,13 +8517,22 @@ export default function EventPlanningPage() {
                         : 'Suggestions come from the current menu, manpower and disposable data. Saved partners can auto-fill rates, and edits sync to PostgreSQL.'}
               </span>
 
-              <button
-                className="ep-button primary"
-                type="button"
-                onClick={addRequirement}
-              >
-                + Add Requirement
-              </button>
+              {tab === 'MENU' ? (
+                <Link
+                  className="ep-button primary"
+                  href="/app/event?resume=1"
+                >
+                  + Add Dish in Menu
+                </Link>
+              ) : (
+                <button
+                  className="ep-button primary"
+                  type="button"
+                  onClick={addRequirement}
+                >
+                  + Add Requirement
+                </button>
+              )}
             </footer>
           </section>
 
