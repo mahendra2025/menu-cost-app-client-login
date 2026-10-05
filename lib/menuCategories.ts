@@ -6,10 +6,10 @@ export const CATEGORIES = [
   'Hyderabadi', 'Andhra', 'Kerala', 'Goan', 'Dal / Kadhi', 'Rice',
   'Bread', 'Sweet', 'Ice Cream', 'Salad', 'Papad', 'Farsan', 'Beverage',
   'Live Counter', 'Snacks', 'Sandwich', 'Pizza', 'Pasta', 'Continental',
-  'Mexican', 'Thai', 'Lebanese', 'Sizzler', 'Street Food', 'Tandoor',
-  'Fusion', 'Main Course', 'Jain', 'Satvik', 'Vegan', 'Kids', 'Fruit',
-  'Bakery', 'Raita', 'Pickle', 'Dry Fruit', 'Paan', 'Mukhwas',
-  'Condiments', 'Other',
+  'Mexican', 'Thai', 'Japanese', 'Asian', 'Mongolian', 'Lebanese', 'Sizzler',
+  'Street Food', 'Tandoor', 'Fusion', 'Main Course', 'Jain', 'Satvik',
+  'Vegan', 'Kids', 'Party', 'Fruit', 'Dessert', 'Waffles', 'Bakery',
+  'Raita', 'Pickle', 'Dry Fruit', 'Paan', 'Mukhwas', 'Condiments', 'Other',
 ] as const;
 
 export type Category =
