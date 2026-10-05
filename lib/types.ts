@@ -157,6 +157,19 @@ export type MenuItem = {
   servicePax?: number;
 
   /*
+   * Grocery responsibility for outsourced menu production.
+   *
+   * CATERER = our grocery list includes this dish recipe.
+   * VENDOR  = assigned vendor/agency brings grocery, so this dish is
+   * excluded from generated grocery requirements.
+   *
+   * Older menu items default to CATERER.
+   */
+  groceryResponsibility?:
+    | 'CATERER'
+    | 'VENDOR';
+
+  /*
    * Service format for manpower planning.
    * Defaults to BUFFET for older costings.
    */
