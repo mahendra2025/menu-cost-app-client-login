@@ -170,6 +170,7 @@ export default function VendorsPage() {
   const [planningPlan, setPlanningPlan] = useState<PlanningPlan>({});
   const [currentEventName, setCurrentEventName] = useState('');
   const [planningLoading, setPlanningLoading] = useState(false);
+  const [customStationName, setCustomStationName] = useState('');
 
   useEffect(() => {
     const session = getSession();
@@ -350,6 +351,59 @@ export default function VendorsPage() {
     setMessage('');
   }
 
+  function addCustomMenuStation(
+    vendorId: string,
+  ) {
+    const station =
+      customStationName
+        .trim()
+        .replace(
+          /\s+/g,
+          ' ',
+        );
+
+    if (!station) {
+      return;
+    }
+
+    setVendors((current) =>
+      current.map((vendor) => {
+        if (vendor.id !== vendorId) {
+          return vendor;
+        }
+
+        const existing =
+          Array.isArray(
+            vendor.menuStations,
+          )
+            ? vendor.menuStations
+            : [];
+
+        const duplicate =
+          existing.some(
+            (item) =>
+              item.toLocaleLowerCase('en-IN') ===
+              station.toLocaleLowerCase('en-IN'),
+          );
+
+        return duplicate
+          ? vendor
+          : {
+              ...vendor,
+              menuStations: [
+                ...existing,
+                station,
+              ],
+            };
+      }),
+    );
+
+    setCustomStationName('');
+    setMessage(
+      `${station} station added.`,
+    );
+  }
+
   function removeVendor(id: string) {
     const next = vendors.filter(
       (vendor) => vendor.id !== id,
@@ -427,6 +481,28 @@ export default function VendorsPage() {
               .filter(Boolean),
           ),
         ).sort((a, b) => a.localeCompare(b)),
+      [vendors],
+    );
+
+  const stationOptions =
+    useMemo(
+      () =>
+        Array.from(
+          new Set([
+            ...MENU_STATION_OPTIONS,
+            ...vendors.flatMap(
+              (vendor) =>
+                Array.isArray(
+                  vendor.menuStations,
+                )
+                  ? vendor.menuStations
+                  : [],
+            ),
+          ]),
+        ).sort(
+          (a, b) =>
+            a.localeCompare(b),
+        ),
       [vendors],
     );
 
@@ -645,6 +721,9 @@ export default function VendorsPage() {
           .vm-station-grid button>span{display:grid;width:15px;height:15px;place-items:center;border-radius:5px;color:#72859a;background:#1b2632;font-size:8px}
           .vm-station-grid button.active{border-color:rgba(85,217,143,.28);color:#a8e4c0;background:rgba(85,217,143,.06)}
           .vm-station-grid button.active>span{color:#07170e;background:#58d78e}
+          .vm-station-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;margin-top:9px;padding-top:9px;border-top:1px solid rgba(148,163,184,.08)}
+          .vm-station-add .vm-input{min-height:34px}
+          .vm-station-add .vm-button{min-height:34px}
           .vm-rate-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #252c35}
           .vm-rate-head h3{margin:0;font-size:13px}
           .vm-rate-table-wrap{overflow:auto;margin-top:9px;border:1px solid #29313b;border-radius:11px}
@@ -981,7 +1060,7 @@ export default function VendorsPage() {
                     </div>
 
                     <div className="vm-station-grid">
-                      {MENU_STATION_OPTIONS.map((station) => {
+                      {stationOptions.map((station) => {
                         const active =
                           (selected.menuStations || []).includes(
                             station,
@@ -1007,6 +1086,45 @@ export default function VendorsPage() {
                           </button>
                         );
                       })}
+                    </div>
+
+                    <div className="vm-station-add">
+                      <input
+                        className="vm-input"
+                        value={customStationName}
+                        placeholder="New station name e.g. Gujarati Live"
+                        onChange={(event) =>
+                          setCustomStationName(
+                            event.target.value,
+                          )
+                        }
+                        onKeyDown={(event) => {
+                          if (
+                            event.key ===
+                            'Enter'
+                          ) {
+                            event.preventDefault();
+                            addCustomMenuStation(
+                              selected.id,
+                            );
+                          }
+                        }}
+                      />
+
+                      <button
+                        className="vm-button"
+                        type="button"
+                        disabled={
+                          !customStationName.trim()
+                        }
+                        onClick={() =>
+                          addCustomMenuStation(
+                            selected.id,
+                          )
+                        }
+                      >
+                        + Add Station
+                      </button>
                     </div>
                   </section>
 
