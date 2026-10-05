@@ -111,14 +111,13 @@ export function buildMenuCostBreakdown(
      * Malpua custom = 35%
      * 2 AUTO sweets -> remaining 65% -> 32.5% each.
      */
-    const remainingAutoPercent = Math.max(
-      0,
-      categoryStat.targetPercent - categoryStat.customTotal,
-    );
-    const automaticPortionPercent =
-      categoryStat.autoCount > 0
-        ? remainingAutoPercent / categoryStat.autoCount
-        : 0;
+    /*
+     * Dish Cost default = full 100% portion per dish.
+     * AUTO no longer divides one category target across multiple dishes.
+     * Users can still choose CUSTOM when a dish should cost at a lower
+     * or higher consumption percentage for a specific event.
+     */
+    const automaticPortionPercent = 100;
     const portionFactor =
       customPortion === null
         ? automaticPortionPercent / 100
