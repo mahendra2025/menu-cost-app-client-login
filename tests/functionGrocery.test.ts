@@ -266,3 +266,60 @@ test(
     );
   },
 );
+
+test(
+  'excludes recipe ingredients when the assigned vendor provides grocery',
+  () => {
+    const catererDish =
+      menuItem(
+        'lunch-paneer',
+        'Paneer Butter Masala',
+        'Lunch',
+        100,
+      );
+
+    const vendorDish = {
+      ...menuItem(
+        'sweet',
+        'Gulab Jamun',
+        'Lunch',
+        100,
+      ),
+      groceryResponsibility:
+        'VENDOR' as const,
+    };
+
+    const plan =
+      buildFunctionGroceryPlan(
+        makeWork([
+          catererDish,
+          vendorDish,
+        ]),
+        recipes,
+        rates,
+      );
+
+    assert.equal(
+      plan.combinedItems.some(
+        (item) =>
+          item.name === 'Sugar',
+      ),
+      false,
+    );
+
+    assert.equal(
+      plan.combinedItems.find(
+        (item) =>
+          item.name === 'Paneer',
+      )?.quantity,
+      8,
+    );
+
+    assert.equal(
+      plan.matchedDishes.includes(
+        'Gulab Jamun',
+      ),
+      false,
+    );
+  },
+);
