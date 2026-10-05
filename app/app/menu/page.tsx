@@ -1752,6 +1752,12 @@ export default function MenuCreationPage() {
       return;
     }
 
+    const categoryName =
+      customDish.category
+        .replace(/\s+/g, ' ')
+        .trim() ||
+      'Other';
+
     if (
       selectedNameKeys.has(
         normalize(name),
