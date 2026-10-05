@@ -263,6 +263,57 @@ function extractMenuDates(
   );
 }
 
+function dishVendorStationLabel(
+  vendor: DishVendor,
+  item: Pick<MenuItem, 'category'>,
+) {
+  const category =
+    String(
+      item.category ||
+      '',
+    ).trim();
+
+  const matchingStation =
+    Array.isArray(
+      vendor.menuStations,
+    )
+      ? vendor.menuStations.find(
+          (station) => {
+            const stationValue =
+              normalizeDishName(
+                station,
+              );
+            const categoryValue =
+              normalizeDishName(
+                category,
+              );
+
+            return Boolean(
+              stationValue &&
+              categoryValue &&
+              (
+                stationValue === categoryValue ||
+                stationValue.includes(
+                  categoryValue,
+                ) ||
+                categoryValue.includes(
+                  stationValue,
+                )
+              )
+            );
+          },
+        )
+      : undefined;
+
+  return (
+    matchingStation ||
+    vendor.menuStations?.[0] ||
+    vendor.category ||
+    category ||
+    'General'
+  );
+}
+
 export default function CostPage() {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
@@ -1991,7 +2042,7 @@ export default function CostPage() {
 
                                 return (
                                   <div className="dish-vendor-rate-control">
-                                    <span>Vendor / agency rate</span>
+                                    <span>Vendor / agency · {item.category} station</span>
                                     <select
                                       value={item.vendorId || ''}
                                       onChange={(event) =>
@@ -2337,7 +2388,7 @@ export default function CostPage() {
                             const options = vendorOptionsForDish(item);
                             return (
                               <div className="dish-vendor-rate-control mobile">
-                                <span>Vendor / agency rate</span>
+                                <span>Vendor / agency · {item.category} station</span>
                                 <select
                                   value={item.vendorId || ''}
                                   onChange={(event) =>
@@ -2355,7 +2406,7 @@ export default function CostPage() {
                                         const rate = matchingDishVendorRate(vendor, item);
                                         return (
                                           <option key={vendor.id} value={vendor.id}>
-                                            {vendor.name}
+                                            {vendor.name} · {dishVendorStationLabel(vendor, item)}
                                             {rate?.rate
                                               ? ` · ₹${Number(rate.rate).toLocaleString('en-IN')}/${rate.unit || 'plate'}`
                                               : ' · rate not saved'}
@@ -2368,7 +2419,7 @@ export default function CostPage() {
                                     <optgroup label="Other active partners">
                                       {options.other.map((vendor) => (
                                         <option key={vendor.id} value={vendor.id}>
-                                          {vendor.name}
+                                          {vendor.name} · {dishVendorStationLabel(vendor, item)}
                                         </option>
                                       ))}
                                     </optgroup>
