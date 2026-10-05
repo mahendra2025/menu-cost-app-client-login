@@ -151,7 +151,7 @@ export default function UnknownDishQueuePage() {
     useState<StatusCounts>(EMPTY_COUNTS);
 
   const [statusFilter, setStatusFilter] =
-    useState<QueueStatus>('PENDING');
+    useState<QueueStatus>('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] =
@@ -348,13 +348,26 @@ export default function UnknownDishQueuePage() {
       }
 
       const nextItems = Array.isArray(data.items)
-        ? (data.items as PendingDish[])
+        ? (data.items as PendingDish[]).filter(
+            (item) =>
+              item.status !== 'PENDING',
+          )
         : [];
+
+      const rawCounts = {
+        ...EMPTY_COUNTS,
+        ...(data.statusCounts || {}),
+      };
 
       setItems(nextItems);
       setStatusCounts({
-        ...EMPTY_COUNTS,
-        ...(data.statusCounts || {}),
+        ...rawCounts,
+        PENDING: 0,
+        ALL: Math.max(
+          0,
+          Number(rawCounts.ALL || 0) -
+            Number(rawCounts.PENDING || 0),
+        ),
       });
 
       setCheckedIds((current) => {
@@ -720,7 +733,6 @@ export default function UnknownDishQueuePage() {
     value: QueueStatus;
     label: string;
   }> = [
-    { value: 'PENDING', label: 'Pending' },
     { value: 'RECIPE_IN_PROGRESS', label: 'Recipe' },
     { value: 'GLOBAL_READY', label: 'Global Ready' },
     { value: 'MATCHED', label: 'Matched' },
@@ -736,7 +748,7 @@ export default function UnknownDishQueuePage() {
   return (
     <AppShell
       title="Dishes"
-      subtitle="Review unknown menu names and continuously improve Dish Master"
+      subtitle="Resolved unknown-dish history and Dish Master learning"
     >
       <section className="content-grid unknown-queue-page">
         <div className="glass-card queue-hero">
@@ -747,8 +759,8 @@ export default function UnknownDishQueuePage() {
               </div>
               <h2>Unknown Dish Queue</h2>
               <p className="muted">
-                Prioritize repeated or risky names, match spelling variants to Dish Master,
-                add genuinely new dishes globally, then complete their recipes before final sync.
+                Pending dishes are hidden from this page. Use this history to review matched,
+                recipe-in-progress, global-ready, recipe-needed and ignored dish records.
               </p>
             </div>
             <button
@@ -768,9 +780,9 @@ export default function UnknownDishQueuePage() {
 
           <div className="queue-stat-grid">
             <div className="queue-stat">
-              <span>Pending</span>
-              <b>{statusCounts.PENDING.toLocaleString('en-IN')}</b>
-              <small>Needs admin decision</small>
+              <span>Matched</span>
+              <b>{statusCounts.MATCHED.toLocaleString('en-IN')}</b>
+              <small>Linked to existing Dish Master</small>
             </div>
             <div className="queue-stat">
               <span>Recipe</span>
@@ -915,48 +927,13 @@ export default function UnknownDishQueuePage() {
           </div>
         </div>
 
-        {statusFilter === 'PENDING' && items.length ? (
-          <div className="glass-card queue-bulk-bar">
-            <label className="queue-check-all">
-              <input
-                type="checkbox"
-                checked={
-                  sortedItems.length > 0 &&
-                  sortedItems
-                    .filter((item) => item.status === 'PENDING')
-                    .every((item) => checkedIds.has(item.id))
-                }
-                onChange={toggleAllVisiblePending}
-              />
-              <span>Select visible pending items</span>
-            </label>
-            <div className="action-row">
-              <span className="muted">
-                {checkedVisibleCount} selected
-              </span>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={!checkedIds.size || busy}
-                onClick={() => void bulkIgnore()}
-              >
-                Ignore Selected
-              </button>
-            </div>
-          </div>
-        ) : null}
-
         <div className="glass-card">
           <div className="section-head">
             <div>
               <div className="section-kicker">
                 {statusLabel(statusFilter)}
               </div>
-              <h2>
-                {statusFilter === 'PENDING'
-                  ? 'Names waiting for review'
-                  : 'Review history'}
-              </h2>
+              <h2>Review history</h2>
             </div>
           </div>
 
@@ -964,15 +941,11 @@ export default function UnknownDishQueuePage() {
             <p className="muted">Loading unknown dishes…</p>
           ) : sortedItems.length === 0 ? (
             <div className="queue-empty">
-              <h3>
-                {statusFilter === 'PENDING'
-                  ? 'Queue is clear'
-                  : 'No items in this view'}
-              </h3>
+              <h3>No items in this view</h3>
               <p className="muted">
                 {search || categoryFilter !== 'ALL'
                   ? 'Try clearing the search or category filter.'
-                  : 'New unknown dish names will appear here automatically after customer menu uploads.'}
+                  : 'Resolved unknown-dish history will appear here.'}
               </p>
             </div>
           ) : (
