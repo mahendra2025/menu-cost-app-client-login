@@ -651,6 +651,12 @@ export default function VendorsPage() {
         Array.from(
           new Set([
             ...MENU_STATION_OPTIONS,
+            ...vendorDishOptions
+              .map(
+                (dish) =>
+                  dish.category.trim(),
+              )
+              .filter(Boolean),
             ...vendors.flatMap(
               (vendor) =>
                 Array.isArray(
@@ -664,7 +670,10 @@ export default function VendorsPage() {
           (a, b) =>
             a.localeCompare(b),
         ),
-      [vendors],
+      [
+        vendorDishOptions,
+        vendors,
+      ],
     );
 
   const dishCategoryGroups =
