@@ -22,9 +22,16 @@ type RequirementKind =
 type VendorRate = {
   id: string;
   kind: RequirementKind;
+  scope?: 'STATION' | 'DISH' | 'OTHER';
+  station?: string;
   item: string;
   unit: string;
   rate: number;
+};
+
+type VendorDishOption = {
+  name: string;
+  category: string;
 };
 
 type AssignmentStatus =
@@ -139,12 +146,26 @@ function blankVendor(): Vendor {
   };
 }
 
-function blankRate(): VendorRate {
+function blankRate(
+  scope: 'STATION' | 'DISH' | 'OTHER' = 'OTHER',
+  station = '',
+): VendorRate {
   return {
     id: uid('vendor_rate'),
-    kind: 'GENERAL',
-    item: '',
-    unit: 'unit',
+    kind:
+      scope === 'OTHER'
+        ? 'GENERAL'
+        : 'MENU',
+    scope,
+    station,
+    item:
+      scope === 'STATION'
+        ? station
+        : '',
+    unit:
+      scope === 'OTHER'
+        ? 'unit'
+        : 'plate',
     rate: 0,
   };
 }
@@ -171,6 +192,7 @@ export default function VendorsPage() {
   const [currentEventName, setCurrentEventName] = useState('');
   const [planningLoading, setPlanningLoading] = useState(false);
   const [customStationName, setCustomStationName] = useState('');
+  const [vendorDishOptions, setVendorDishOptions] = useState<VendorDishOption[]>([]);
 
   useEffect(() => {
     const session = getSession();
@@ -225,6 +247,87 @@ export default function VendorsPage() {
           setPlanningLoading(false);
         });
     }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    void fetch(
+      '/api/dishes',
+      {
+        cache: 'no-store',
+      },
+    )
+      .then((response) =>
+        response.json(),
+      )
+      .then((data) => {
+        if (!active) return;
+
+        const items =
+          Array.isArray(
+            data.items,
+          )
+            ? data.items
+                .map(
+                  (
+                    item: unknown,
+                  ) => {
+                    if (
+                      !item ||
+                      typeof item !==
+                        'object'
+                    ) {
+                      return null;
+                    }
+
+                    const row =
+                      item as Record<
+                        string,
+                        unknown
+                      >;
+
+                    const name =
+                      String(
+                        row.name ||
+                        '',
+                      ).trim();
+
+                    const category =
+                      String(
+                        row.category ||
+                        '',
+                      ).trim();
+
+                    return name
+                      ? {
+                          name,
+                          category,
+                        }
+                      : null;
+                  },
+                )
+                .filter(
+                  (
+                    item: VendorDishOption | null,
+                  ): item is VendorDishOption =>
+                    Boolean(item),
+                )
+            : [];
+
+        setVendorDishOptions(
+          items,
+        );
+      })
+      .catch(() => {
+        if (active) {
+          setVendorDishOptions([]);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function loadVendors() {
@@ -428,6 +531,62 @@ export default function VendorsPage() {
           : vendor,
       ),
     );
+  }
+
+  function addStationRate(
+    vendorId: string,
+  ) {
+    setVendors((current) =>
+      current.map((vendor) => {
+        if (vendor.id !== vendorId) {
+          return vendor;
+        }
+
+        const firstStation =
+          vendor.menuStations?.[0] ||
+          stationOptions[0] ||
+          '';
+
+        return {
+          ...vendor,
+          rates: [
+            ...vendor.rates,
+            blankRate(
+              'STATION',
+              firstStation,
+            ),
+          ],
+        };
+      }),
+    );
+
+    setMessage('');
+  }
+
+  function addDishRate(
+    vendorId: string,
+  ) {
+    setVendors((current) =>
+      current.map((vendor) => {
+        if (vendor.id !== vendorId) {
+          return vendor;
+        }
+
+        return {
+          ...vendor,
+          rates: [
+            ...vendor.rates,
+            blankRate(
+              'DISH',
+              vendor.menuStations?.[0] ||
+                '',
+            ),
+          ],
+        };
+      }),
+    );
+
+    setMessage('');
   }
 
   function updateRate(
