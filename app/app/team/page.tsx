@@ -32,6 +32,9 @@ import {
 import {
   MANPOWER_ROLE_MASTER,
 } from '../../../lib/manpowerMaster';
+import {
+  sortMenuItemsByCategoryPriority,
+} from '../../../lib/menuCategoryPriority';
 import type {
   ManpowerDepartment,
   ManpowerRow,
@@ -107,6 +110,123 @@ type MealPlan = {
   dishIds: string[];
 };
 
+const CATEGORY_PRODUCTION_ROLE_IDS = new Set([
+  'juice_mocktail',
+  'live_counter_cook',
+  'chaat_cook',
+  'chinese_cook',
+  'south_indian_cook',
+  'italian_cook',
+  'starter_cook',
+  'soup_cook',
+  'bread_cook',
+  'main_course_cook',
+  'farsan_cook',
+  'sweet_halwai',
+]);
+
+function categoryStationKey(value: unknown) {
+  return String(value || 'Other')
+    .trim()
+    .toLocaleLowerCase('en-IN')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'other';
+}
+
+function categoryProductionSpec(categoryRaw: string) {
+  const category = normalizePart(categoryRaw);
+  let roleId = 'main_course_cook';
+  let role = `${categoryRaw || 'Other'} Cook`;
+
+  if (
+    category.includes('welcome drink') ||
+    category.includes('mocktail') ||
+    category.includes('beverage') ||
+    category.includes('juice')
+  ) {
+    roleId = 'juice_mocktail';
+    role = `${categoryRaw || 'Beverage'} Staff`;
+  } else if (category.includes('starter')) {
+    roleId = 'starter_cook';
+    role = 'Starter Cook';
+  } else if (category.includes('soup')) {
+    roleId = 'soup_cook';
+    role = 'Soup Cook';
+  } else if (category.includes('sweet') || category.includes('dessert')) {
+    roleId = 'sweet_halwai';
+    role = 'Sweet / Halwai Cook';
+  } else if (category.includes('farsan')) {
+    roleId = 'farsan_cook';
+    role = 'Farsan Cook';
+  } else if (category.includes('bread') || category.includes('tandoor')) {
+    roleId = 'bread_cook';
+    role = 'Bread / Tandoor Cook';
+  } else if (category.includes('chaat')) {
+    roleId = 'chaat_cook';
+    role = 'Chaat Cook';
+  } else if (category.includes('chinese')) {
+    roleId = 'chinese_cook';
+    role = 'Chinese Cook';
+  } else if (category.includes('south indian')) {
+    roleId = 'south_indian_cook';
+    role = 'South Indian Cook';
+  } else if (
+    category.includes('italian') ||
+    category.includes('pasta') ||
+    category.includes('pizza')
+  ) {
+    roleId = 'italian_cook';
+    role = 'Italian / Pasta Cook';
+  } else if (
+    category.includes('live') ||
+    category.includes('street food') ||
+    category.includes('sizzler')
+  ) {
+    roleId = 'live_counter_cook';
+    role = `${categoryRaw || 'Live Counter'} Cook`;
+  } else if (category.includes('dal') || category.includes('kadhi')) {
+    role = `${categoryRaw || 'Dal'} Cook`;
+  } else if (category.includes('rice')) {
+    role = `${categoryRaw || 'Rice'} Cook`;
+  } else if (
+    category.includes('sabji') ||
+    category.includes('vegetable') ||
+    category.includes('paneer') ||
+    category.includes('main course') ||
+    category.includes('punjabi') ||
+    category.includes('gujarati') ||
+    category.includes('rajasthani') ||
+    category.includes('kathiyawadi')
+  ) {
+    role = `${categoryRaw || 'Main Course'} Cook`;
+  } else if (
+    category.includes('salad') ||
+    category.includes('fruit') ||
+    category.includes('raita')
+  ) {
+    roleId = 'main_course_cook';
+    role = `${categoryRaw || 'Preparation'} Prep`;
+  } else if (
+    category.includes('ice cream') ||
+    category.includes('bakery')
+  ) {
+    roleId = 'juice_mocktail';
+    role = `${categoryRaw || 'Dessert'} Staff`;
+  }
+
+  const master =
+    MANPOWER_ROLE_MASTER.find(
+      (item) => item.id === roleId,
+    );
+
+  return {
+    roleId,
+    role,
+    rate: Math.max(0, Number(master?.rate) || 0),
+  };
+}
+
 function normalizeRole(value: string) {
   return String(value || '')
     .trim()
@@ -121,6 +241,10 @@ const BUILT_IN_ROLE_NAMES = new Set(
 );
 
 function isCustomRole(row: ManpowerRow) {
+  if (row.autoDishAssignment) {
+    return false;
+  }
+
   return Boolean(row.customRole) || !BUILT_IN_ROLE_NAMES.has(normalizeRole(row.role));
 }
 
@@ -162,6 +286,10 @@ const DISH_ASSIGNABLE_DEPARTMENTS = new Set([
 ]);
 
 function canAssignDishes(row: ManpowerRow) {
+  if (row.autoDishAssignment) {
+    return true;
+  }
+
   const kitchenRole = /\b(cook|chef|halwai|helper|masi)\b/.test(
     normalizeRole(row.role),
   );
@@ -387,7 +515,194 @@ function buildMealManpowerRows(
         assignedDishIds: [],
       } satisfies ManpowerRow));
 
-    return [...builtInRows, ...eventCustomRows, ...permanentCustomRows];
+    const categoryRecommendations =
+      buildCategoryManpowerRecommendations(
+        mealMenu,
+        meal.pax,
+      );
+
+    const recommendationByCategory =
+      new Map(
+        categoryRecommendations.map(
+          (item) => [
+            normalizePart(
+              item.category,
+            ),
+            item,
+          ],
+        ),
+      );
+
+    const groupedMenu =
+      new Map<
+        string,
+        {
+          category: string;
+          dishes: MenuItem[];
+        }
+      >();
+
+    sortMenuItemsByCategoryPriority(
+      mealMenu,
+    ).forEach((dish) => {
+      const category =
+        String(
+          dish.category ||
+          'Other',
+        ).trim() ||
+        'Other';
+      const key =
+        normalizePart(
+          category,
+        ) ||
+        'other';
+      const current =
+        groupedMenu.get(
+          key,
+        );
+
+      if (current) {
+        current.dishes.push(
+          dish,
+        );
+      } else {
+        groupedMenu.set(
+          key,
+          {
+            category,
+            dishes: [
+              dish,
+            ],
+          },
+        );
+      }
+    });
+
+    const categoryRows:
+      ManpowerRow[] =
+      Array.from(
+        groupedMenu.entries(),
+      ).map(
+        ([categoryKey, group]) => {
+          const spec =
+            categoryProductionSpec(
+              group.category,
+            );
+
+          const id =
+            `${meal.key}::kitchen-category::${categoryStationKey(group.category)}`;
+
+          const existing =
+            safeRows.find(
+              (row) =>
+                row.id === id ||
+                (
+                  row.autoDishAssignment ===
+                    true &&
+                  rowBelongsToMeal(
+                    row,
+                    meal,
+                  ) &&
+                  normalizePart(
+                    row.stationLabel,
+                  ) ===
+                    categoryKey
+                ),
+            );
+
+          const recommendation =
+            recommendationByCategory.get(
+              categoryKey,
+            );
+
+          const suggestedQuantity =
+            Math.max(
+              1,
+              Number(
+                recommendation
+                  ?.recommendedCooks,
+              ) || 1,
+            );
+
+          return {
+            id,
+            role:
+              spec.role,
+            department:
+              'KITCHEN',
+            quantity:
+              Math.max(
+                0,
+                Number(
+                  existing
+                    ?.quantity,
+                ) || 0,
+              ),
+            recommendedQuantity:
+              suggestedQuantity,
+            rate:
+              Math.max(
+                0,
+                Number(
+                  existing?.rate,
+                ) ||
+                  spec.rate,
+              ),
+            calculationSource:
+              'MANUAL',
+            calculationReason:
+              recommendation
+                ?.reason ||
+              `${group.dishes.length} dish${group.dishes.length === 1 ? '' : 'es'} in ${group.category}`,
+            manualOverride:
+              true,
+            rateMode:
+              existing
+                ?.rateMode ??
+              'PER_MEAL',
+            serviceId:
+              meal.serviceId,
+            dayLabel:
+              meal.dayLabel ||
+              undefined,
+            mealLabel:
+              meal.mealLabel,
+            servicePax:
+              meal.pax,
+            assignedDishIds:
+              group.dishes.map(
+                (dish) =>
+                  dish.id,
+              ),
+            autoDishAssignment:
+              true,
+            autoStationHelper:
+              false,
+            stationLabel:
+              group.category,
+          } satisfies ManpowerRow;
+        },
+      );
+
+    const nonCategoryBuiltInRows =
+      builtInRows.filter(
+        (row) =>
+          !Array.from(
+            CATEGORY_PRODUCTION_ROLE_IDS,
+          ).some(
+            (roleId) =>
+              row.id.endsWith(
+                `::${roleId}`,
+              ),
+          ),
+      );
+
+    return [
+      ...categoryRows,
+      ...nonCategoryBuiltInRows,
+      ...eventCustomRows,
+      ...permanentCustomRows,
+    ];
   });
 }
 
@@ -1774,10 +2089,10 @@ export default function ManpowerPage() {
                 </div>
               </section>
 
-              {categoryRecommendations.length > 0 ? (
+              {mealRows.some((row) => row.autoDishAssignment) ? (
                 <section
                   className="no-print manpower-smart-recommendation"
-                  aria-label="Category manpower recommendations"
+                  aria-label="Category-wise kitchen production plan"
                   style={{
                     marginTop: 16,
                     padding: 16,
@@ -1797,20 +2112,50 @@ export default function ManpowerPage() {
                     }}
                   >
                     <div>
-                      <span className="section-kicker">Smart kitchen recommendation</span>
-                      <h3 style={{ margin: '4px 0' }}>Category chef &amp; helper plan</h3>
+                      <span className="section-kicker">Kitchen production plan</span>
+                      <h3 style={{ margin: '4px 0' }}>Menu category → dishes → cook quantity</h3>
                       <p className="muted" style={{ margin: 0 }}>
-                        Based on category, dish count, {meal.pax.toLocaleString('en-IN')} guests and live-counter workload.
+                        Every food category from this function is listed separately. Add the cook/staff quantity you actually want for each category.
                       </p>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <strong>{recommendedKitchenPeople} suggested kitchen people</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      <strong>
+                        {mealRows
+                          .filter((row) => row.autoDishAssignment)
+                          .reduce(
+                            (sum, row) =>
+                              sum +
+                              Math.max(
+                                0,
+                                Number(row.quantity) || 0,
+                              ),
+                            0,
+                          )} selected kitchen people
+                      </strong>
                       <button
                         className="secondary-button"
                         type="button"
-                        onClick={() => applyRecommendedMealManpower(meal)}
+                        onClick={() => {
+                          if (!work) return;
+                          persistRows(
+                            work.manpower.map((row) =>
+                              rowBelongsToMeal(row, meal) &&
+                              row.autoDishAssignment
+                                ? {
+                                    ...row,
+                                    quantity: Math.max(
+                                      0,
+                                      Number(row.recommendedQuantity) || 0,
+                                    ),
+                                    manualOverride: true,
+                                    calculationSource: 'MANUAL' as const,
+                                  }
+                                : row,
+                            ),
+                          );
+                        }}
                       >
-                        Apply all recommendations
+                        Use suggested quantities
                       </button>
                     </div>
                   </div>
@@ -1818,60 +2163,163 @@ export default function ManpowerPage() {
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                      gap: 10,
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                      gap: 12,
                     }}
                   >
-                    {categoryRecommendations.map((item) => {
-                      const roleRow = mealRows.find((row) =>
-                        row.id.endsWith(`::${item.cookRoleId}`),
-                      );
-                      const roleRecommended =
-                        Math.max(
-                          0,
-                          Number(roleRow?.recommendedQuantity) || 0,
-                        );
+                    {mealRows
+                      .filter((row) => row.autoDishAssignment)
+                      .map((row) => {
+                        const dishes =
+                          mealDishes.filter(
+                            (dish) =>
+                              (
+                                row.assignedDishIds ??
+                                []
+                              ).includes(
+                                dish.id,
+                              ),
+                          );
+                        const quantity =
+                          Math.max(
+                            0,
+                            Number(
+                              row.quantity,
+                            ) || 0,
+                          );
+                        const suggested =
+                          Math.max(
+                            0,
+                            Number(
+                              row.recommendedQuantity,
+                            ) || 0,
+                          );
 
-                      return (
-                        <article
-                          key={`${item.cookRoleId}::${item.category}`}
-                          style={{
-                            border: '1px solid var(--border)',
-                            borderRadius: 14,
-                            padding: 12,
-                            display: 'grid',
-                            gap: 8,
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                            <div>
-                              <small className="muted">{item.liveCounter ? 'Live / active station' : 'Kitchen category'}</small>
-                              <b style={{ display: 'block', marginTop: 2 }}>{item.category}</b>
-                            </div>
-                            <strong>{item.recommendedCooks} cook{item.recommendedCooks === 1 ? '' : 's'}</strong>
-                          </div>
-                          <small className="muted">
-                            {item.dishCount} dish{item.dishCount === 1 ? '' : 'es'} · workload {item.workloadScore.toFixed(1)}
-                            {item.recommendedHelpers > 0 ? ` · ${item.recommendedHelpers} helper${item.recommendedHelpers === 1 ? '' : 's'}` : ''}
-                          </small>
-                          <small>{item.reason}</small>
-                          {roleRow ? (
-                            <button
-                              className="ghost-button"
-                              type="button"
-                              onClick={() =>
-                                applyRecommendedMealManpower(
-                                  meal,
-                                  item.cookRoleId,
-                                )
-                              }
+                        return (
+                          <article
+                            key={row.id}
+                            style={{
+                              border: '1px solid var(--border)',
+                              borderRadius: 14,
+                              padding: 14,
+                              display: 'grid',
+                              gap: 12,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                gap: 12,
+                              }}
                             >
-                              Apply {item.cookRole} total: {roleRecommended}
-                            </button>
-                          ) : null}
-                        </article>
-                      );
-                    })}
+                              <div>
+                                <small className="muted">Menu category</small>
+                                <b style={{ display: 'block', marginTop: 2, fontSize: 16 }}>
+                                  {row.stationLabel || 'Other'}
+                                </b>
+                                <small style={{ display: 'block', marginTop: 3 }}>
+                                  {row.role}
+                                </small>
+                              </div>
+                              <span className="manpower-department-badge">
+                                {dishes.length} dish{dishes.length === 1 ? '' : 'es'}
+                              </span>
+                            </div>
+
+                            <div
+                              style={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 6,
+                              }}
+                            >
+                              {dishes.map((dish) => (
+                                <span
+                                  key={dish.id}
+                                  style={{
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 999,
+                                    padding: '5px 9px',
+                                    fontSize: 12,
+                                  }}
+                                >
+                                  {dish.name}
+                                </span>
+                              ))}
+                            </div>
+
+                            <div
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'minmax(0, 1fr) auto',
+                                gap: 12,
+                                alignItems: 'end',
+                              }}
+                            >
+                              <div>
+                                <small className="muted" style={{ display: 'block', marginBottom: 6 }}>
+                                  Cook / staff quantity
+                                </small>
+                                <QuantityControl
+                                  row={row}
+                                  onChange={(nextQuantity) =>
+                                    updateRow(
+                                      row.id,
+                                      {
+                                        quantity: nextQuantity,
+                                        manualOverride: true,
+                                        calculationSource: 'MANUAL',
+                                      },
+                                    )
+                                  }
+                                />
+                              </div>
+
+                              <div style={{ textAlign: 'right' }}>
+                                <small className="muted" style={{ display: 'block' }}>
+                                  Suggested {suggested}
+                                </small>
+                                <b>
+                                  {money(quantity * Math.max(0, Number(row.rate) || 0))}
+                                </b>
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                gap: 10,
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                              }}
+                            >
+                              <small className="muted">
+                                {money(Math.max(0, Number(row.rate) || 0))} / person
+                              </small>
+                              <button
+                                className="ghost-button"
+                                type="button"
+                                disabled={quantity === suggested}
+                                onClick={() =>
+                                  updateRow(
+                                    row.id,
+                                    {
+                                      quantity: suggested,
+                                      manualOverride: true,
+                                      calculationSource: 'MANUAL',
+                                    },
+                                  )
+                                }
+                              >
+                                Use suggested {suggested}
+                              </button>
+                            </div>
+                          </article>
+                        );
+                      })}
                   </div>
                 </section>
               ) : null}
