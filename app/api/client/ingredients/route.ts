@@ -17,7 +17,6 @@ import {
   type IngredientUnit,
 } from '../../../../lib/ingredientCatalog';
 import {
-  ingredientCityOptions,
   normalizeCityKey,
   normalizeCityName,
   resolveIngredientRate,
@@ -176,32 +175,32 @@ export async function GET(
         }),
       ]);
 
-    const url =
-      new URL(request.url);
-
-    const requestedCity =
-      normalizeCityName(
-        url.searchParams.get('city'),
-      );
-
+    // Client users are always scoped to the city saved on their
+    // caterer account. Ignore any ?city= query parameter so a client
+    // cannot browse another market's ingredient rates.
     const effectiveCity =
-      requestedCity ||
       normalizeCityName(
         tenant?.city,
       );
+
+    if (!effectiveCity) {
+      return NextResponse.json(
+        {
+          error:
+            'Your business city is not set. Ask Super Admin to update the caterer account.',
+        },
+        { status: 400 },
+      );
+    }
 
     const cityKey =
       normalizeCityKey(
         effectiveCity,
       );
 
-    const [
-      cityRates,
-      cityMaster,
-      legacyCities,
-    ] = await Promise.all([
+    const cityRates =
       cityKey
-        ? prisma.ingredientCityRate.findMany({
+        ? await prisma.ingredientCityRate.findMany({
             where: {
               cityKey,
             },
@@ -214,32 +213,7 @@ export async function GET(
               updatedAt: true,
             },
           })
-        : Promise.resolve([]),
-
-      prisma.ingredientCity.findMany({
-        where: {
-          active: true,
-        },
-        orderBy: {
-          city: 'asc',
-        },
-        select: {
-          city: true,
-          cityKey: true,
-        },
-      }),
-
-      prisma.ingredientCityRate.findMany({
-        distinct: ['cityKey'],
-        orderBy: {
-          city: 'asc',
-        },
-        select: {
-          city: true,
-          cityKey: true,
-        },
-      }),
-    ]);
+        : [];
 
     if (!catalog) {
       return NextResponse.json({
@@ -370,11 +344,14 @@ export async function GET(
         'GLOBAL',
       ],
 
-      cities:
-        ingredientCityOptions([
-          ...cityMaster,
-          ...legacyCities,
-        ]),
+      // Client UI receives only its own city. City-master
+      // browsing and editing stays on Super Admin pages.
+      cities: [
+        {
+          city: effectiveCity,
+          cityKey,
+        },
+      ],
 
       usage: Object.fromEntries(
         recipeIngredientUsage(
