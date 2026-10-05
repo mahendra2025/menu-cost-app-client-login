@@ -608,34 +608,31 @@ function seedRows(
   const rows: AssignmentRow[] = [];
   const pax = Math.max(0, fn.pax || Number(work.event.pax) || 0);
 
-  const byCategory = new Map<string, MenuItem[]>();
   fn.menu.forEach((item) => {
-    const category = item.category || 'Other';
-    const current = byCategory.get(category) || [];
-    current.push(item);
-    byCategory.set(category, current);
-  });
+    const category =
+      item.category ||
+      'Other';
 
-  byCategory.forEach((items, category) => {
     rows.push({
       ...newRow(
         'MENU',
-        `${category} station`,
-        items.map((item) => item.name).join(', '),
+        item.name,
+        category,
         pax,
         'cover',
       ),
       menuCategory:
         category,
-      menuDishIds:
-        items.map(
-          (item) =>
-            item.id,
-        ),
+      menuDishIds: [
+        item.id,
+      ],
       menuAssignmentMode:
-        'STATION',
+        'DISH',
       groceryResponsibility:
+        item.groceryResponsibility ||
         'CATERER',
+      photoUrl:
+        item.photoUrl,
     });
   });
 
@@ -798,6 +795,183 @@ function seedRows(
   );
 
   return rows;
+}
+
+
+function expandMenuAssignmentsByDish(
+  storedPlan: StoredPlan,
+  work: WorkState,
+): StoredPlan {
+  const functions =
+    buildFunctions(work);
+
+  const next: StoredPlan = {
+    ...storedPlan,
+  };
+
+  functions.forEach((fn) => {
+    const existingRows =
+      storedPlan[fn.key];
+
+    if (!existingRows) {
+      return;
+    }
+
+    const nonMenuRows =
+      existingRows.filter(
+        (row) =>
+          row.kind !==
+          'MENU',
+      );
+
+    const dishRows =
+      new Map<
+        string,
+        AssignmentRow
+      >();
+
+    existingRows
+      .filter(
+        (row) =>
+          row.kind ===
+          'MENU',
+      )
+      .forEach((row) => {
+        const dishes =
+          menuDishesForRow(
+            row,
+            fn,
+          );
+
+        dishes.forEach(
+          (
+            dish,
+            dishIndex,
+          ) => {
+            if (
+              dishRows.has(
+                dish.id,
+              )
+            ) {
+              return;
+            }
+
+            const category =
+              dish.category ||
+              menuCategoryFromRow(
+                row,
+              ) ||
+              'Other';
+
+            const alreadyDishRow =
+              row.menuAssignmentMode ===
+                'DISH' &&
+              Array.isArray(
+                row.menuDishIds,
+              ) &&
+              row.menuDishIds.length ===
+                1;
+
+            dishRows.set(
+              dish.id,
+              {
+                ...row,
+                id:
+                  alreadyDishRow
+                    ? row.id
+                    : `${row.id}__dish__${dish.id || dishIndex}`,
+                requirement:
+                  dish.name,
+                detail:
+                  category,
+                menuCategory:
+                  category,
+                menuDishIds: [
+                  dish.id,
+                ],
+                menuAssignmentMode:
+                  'DISH',
+                groceryResponsibility:
+                  dish.groceryResponsibility ||
+                  row.groceryResponsibility ||
+                  'CATERER',
+                photoUrl:
+                  dish.photoUrl ||
+                  row.photoUrl,
+              },
+            );
+          },
+        );
+      });
+
+    fn.menu.forEach(
+      (dish) => {
+        if (
+          dishRows.has(
+            dish.id,
+          )
+        ) {
+          return;
+        }
+
+        const category =
+          dish.category ||
+          'Other';
+
+        dishRows.set(
+          dish.id,
+          {
+            ...newRow(
+              'MENU',
+              dish.name,
+              category,
+              Math.max(
+                0,
+                Number(
+                  fn.pax,
+                ) || 0,
+              ),
+              'cover',
+            ),
+            menuCategory:
+              category,
+            menuDishIds: [
+              dish.id,
+            ],
+            menuAssignmentMode:
+              'DISH',
+            groceryResponsibility:
+              dish.groceryResponsibility ||
+              'CATERER',
+            photoUrl:
+              dish.photoUrl,
+          },
+        );
+      },
+    );
+
+    const orderedMenuRows =
+      fn.menu
+        .map(
+          (dish) =>
+            dishRows.get(
+              dish.id,
+            ),
+        )
+        .filter(
+          (
+            row,
+          ): row is AssignmentRow =>
+            Boolean(row),
+        );
+
+    next[fn.key] = [
+      ...orderedMenuRows,
+      ...nonMenuRows,
+    ];
+  });
+
+  return next;
 }
 
 function currency(value: number) {
@@ -1102,9 +1276,18 @@ export default function EventPlanningPage() {
     const sequence =
       ++eventLoadSequence.current;
     const localPlan =
-      safeReadPlan(nextWork.costingId);
+      expandMenuAssignmentsByDish(
+        safeReadPlan(
+          nextWork.costingId,
+        ),
+        nextWork,
+      );
 
     setPlan(localPlan);
+    writePlan(
+      nextWork.costingId,
+      localPlan,
+    );
     setSelectedFunction(
       buildFunctions(nextWork)[0]?.key ||
         'event',
@@ -1140,10 +1323,18 @@ export default function EventPlanningPage() {
         data.exists &&
         Object.keys(serverPlan).length
       ) {
-        setPlan(serverPlan);
+        const normalizedPlan =
+          expandMenuAssignmentsByDish(
+            serverPlan,
+            nextWork,
+          );
+
+        setPlan(
+          normalizedPlan,
+        );
         writePlan(
           nextWork.costingId,
-          serverPlan,
+          normalizedPlan,
         );
       }
     } catch {
@@ -1918,22 +2109,6 @@ export default function EventPlanningPage() {
             'MENU',
         ),
       [currentRows],
-    );
-
-  const menuVendorStationCount =
-    useMemo(
-      () =>
-        new Set(
-          menuVendorRows.map(
-            (row) =>
-              normalized(
-                menuCategoryFromRow(
-                  row,
-                ),
-              ),
-          ),
-        ).size,
-      [menuVendorRows],
     );
 
   const menuVendorSummary =
@@ -4506,248 +4681,6 @@ export default function EventPlanningPage() {
       eventDisposableQty(
         item,
       ),
-    );
-  }
-
-  function splitMenuStationByDish(
-    row: AssignmentRow,
-  ) {
-    if (!currentFunction) return;
-
-    const dishes =
-      menuDishesForRow(
-        row,
-        currentFunction,
-      );
-
-    if (dishes.length <= 1) {
-      return;
-    }
-
-    const category =
-      menuCategoryFromRow(
-        row,
-      );
-
-    const baseRows =
-      plan[currentFunction.key] ||
-      defaultRows;
-
-    const splitRows =
-      dishes.map(
-        (dish) => ({
-          ...row,
-          id:
-            uid(
-              'assignment',
-            ),
-          requirement:
-            `${category} · ${dish.name}`,
-          detail:
-            dish.name,
-          menuCategory:
-            category,
-          menuDishIds: [
-            dish.id,
-          ],
-          menuAssignmentMode:
-            'DISH' as const,
-          groceryResponsibility:
-            'CATERER' as const,
-          partnerId:
-            '',
-          assignedTo:
-            '',
-          partnerType:
-            'VENDOR' as const,
-          rate:
-            0,
-          paymentTerms:
-            '',
-          status:
-            'PENDING' as const,
-        }),
-      );
-
-    syncMenuGroceryResponsibilityByIds(
-      dishes.map(
-        (dish) =>
-          dish.id,
-      ),
-      'CATERER',
-    );
-
-    persistRows(
-      currentFunction.key,
-      baseRows.flatMap(
-        (item) =>
-          item.id === row.id
-            ? splitRows
-            : [item],
-      ),
-    );
-  }
-
-  function combineMenuDishAssignments(
-    row: AssignmentRow,
-  ) {
-    if (!currentFunction) return;
-
-    const category =
-      menuCategoryFromRow(
-        row,
-      );
-
-    const categoryKey =
-      normalized(
-        category,
-      );
-
-    const baseRows =
-      plan[currentFunction.key] ||
-      defaultRows;
-
-    const splitRows =
-      baseRows.filter(
-        (item) =>
-          item.kind ===
-            'MENU' &&
-          item.menuAssignmentMode ===
-            'DISH' &&
-          normalized(
-            menuCategoryFromRow(
-              item,
-            ),
-          ) ===
-            categoryKey,
-      );
-
-    if (!splitRows.length) {
-      return;
-    }
-
-    const dishes =
-      currentFunction.menu.filter(
-        (dish) =>
-          normalized(
-            dish.category ||
-              'Other',
-          ) ===
-            categoryKey,
-      );
-
-    const firstIndex =
-      baseRows.findIndex(
-        (item) =>
-          splitRows.some(
-            (split) =>
-              split.id ===
-              item.id,
-          ),
-      );
-
-    const combined: AssignmentRow = {
-      ...row,
-      id:
-        uid(
-          'assignment',
-        ),
-      requirement:
-        `${category} station`,
-      detail:
-        dishes
-          .map(
-            (dish) =>
-              dish.name,
-          )
-          .join(
-            ', ',
-          ),
-      quantity:
-        Math.max(
-          0,
-          Number(
-            currentFunction.pax,
-          ) || 0,
-        ) ||
-        Math.max(
-          0,
-          Number(
-            row.quantity,
-          ) || 0,
-        ),
-      unit:
-        'cover',
-      menuCategory:
-        category,
-      menuDishIds:
-        dishes.map(
-          (dish) =>
-            dish.id,
-        ),
-      menuAssignmentMode:
-        'STATION',
-      groceryResponsibility:
-        'CATERER',
-      partnerId:
-        '',
-      assignedTo:
-        '',
-      partnerType:
-        'VENDOR',
-      rate:
-        0,
-      paymentTerms:
-        '',
-      status:
-        'PENDING',
-    };
-
-    const splitIds =
-      new Set(
-        splitRows.map(
-          (item) =>
-            item.id,
-        ),
-      );
-
-    const remaining =
-      baseRows.filter(
-        (item) =>
-          !splitIds.has(
-            item.id,
-          ),
-      );
-
-    const insertAt =
-      Math.max(
-        0,
-        Math.min(
-          firstIndex,
-          remaining.length,
-        ),
-      );
-
-    syncMenuGroceryResponsibilityByIds(
-      dishes.map(
-        (dish) =>
-          dish.id,
-      ),
-      'CATERER',
-    );
-
-    persistRows(
-      currentFunction.key,
-      [
-        ...remaining.slice(
-          0,
-          insertAt,
-        ),
-        combined,
-        ...remaining.slice(
-          insertAt,
-        ),
-      ],
     );
   }
 
@@ -7497,8 +7430,8 @@ export default function EventPlanningPage() {
                       dishes
                     </span>
                     <span>
-                      <b>{menuVendorStationCount}</b>
-                      stations
+                      <b>{menuVendorRows.length}</b>
+                      dish assignments
                     </span>
                     <span>
                       <b>{menuVendorSummary.assigned}</b>
@@ -7509,8 +7442,8 @@ export default function EventPlanningPage() {
 
                 <div className="ep-menu-vendor-summary">
                   <article>
-                    <span>Stations</span>
-                    <b>{menuVendorStationCount}</b>
+                    <span>Dishes</span>
+                    <b>{menuVendorRows.length}</b>
                     <small>{menuVendorRows.length} vendor assignment{menuVendorRows.length === 1 ? '' : 's'}</small>
                   </article>
                   <article>
@@ -7531,13 +7464,13 @@ export default function EventPlanningPage() {
                   <article>
                     <span>Vendor Cost</span>
                     <b>{currency(menuVendorSummary.totalCost)}</b>
-                    <small>Assigned covers × station rate</small>
+                    <small>Assigned covers × dish rate</small>
                   </article>
                 </div>
 
                 <div className="ep-menu-vendor-progress">
                   <div>
-                    <span>Function vendor readiness</span>
+                    <span>Dish assignment readiness</span>
                     <b>{menuVendorSummary.readiness}%</b>
                   </div>
                   <span>
@@ -7657,7 +7590,7 @@ export default function EventPlanningPage() {
                           <div className="ep-menu-vendor-card-bar">
                             <div className="ep-menu-vendor-station">
                               <span>
-                                {(isDishAssignment ? 'Dish assignment ' : 'Station ') + String(rowIndex + 1).padStart(2, '0')}
+                                {'Dish ' + String(rowIndex + 1).padStart(2, '0')}
                               </span>
                               <b>
                                 {category}
@@ -7680,7 +7613,7 @@ export default function EventPlanningPage() {
                           <div className="ep-menu-vendor-card-main">
                             <div className="ep-menu-vendor-card-top">
                               <div>
-                                <span>{isDishAssignment ? 'Dish Assignment' : 'Menu Station'}</span>
+                                <span>Dish Assignment</span>
                                 <b>{row.requirement}</b>
                                 <small>
                                   {hasAssignment
@@ -8117,37 +8050,7 @@ export default function EventPlanningPage() {
                                     Match covers
                                   </button>
                                 ) : null}
-
-                                {!isDishAssignment &&
-                                dishes.length > 1 ? (
-                                  <button
-                                    className="ep-menu-mini-action primary"
-                                    type="button"
-                                    onClick={() =>
-                                      splitMenuStationByDish(
-                                        row,
-                                      )
-                                    }
-                                  >
-                                    Split by dish
-                                  </button>
-                                ) : null}
-
-                                {isDishAssignment ? (
-                                  <button
-                                    className="ep-menu-mini-action"
-                                    type="button"
-                                    onClick={() =>
-                                      combineMenuDishAssignments(
-                                        row,
-                                      )
-                                    }
-                                  >
-                                    Combine station
-                                  </button>
-                                ) : null}
-
-                                {hasAssignment ? (
+{hasAssignment ? (
                                   <button
                                     className="ep-menu-mini-action"
                                     type="button"
@@ -8171,9 +8074,7 @@ export default function EventPlanningPage() {
                                     )
                                   }
                                 >
-                                  {isDishAssignment
-                                    ? 'Remove dish assignment'
-                                    : 'Remove station'}
+                                  'Remove dish assignment'
                                 </button>
                               </div>
 
@@ -8201,7 +8102,7 @@ export default function EventPlanningPage() {
                   </div>
                 ) : (
                   <div className="ep-empty">
-                    No menu stations found for this function. Select dishes in the menu first, then return here to assign vendors.
+                    No menu dish assignments found for this function. Select dishes in the menu first, then return here to assign vendors.
                   </div>
                 )}
               </section>
