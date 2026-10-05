@@ -186,7 +186,8 @@ export default function IngredientRatesPage() {
                     : Math.max(
                         0,
                         Number(
-                          value.cityRate,
+                          value.globalRate ??
+                            value.rate,
                         ) || 0,
                       );
 
@@ -664,7 +665,7 @@ export default function IngredientRatesPage() {
 
     if (invalid) {
       setError(
-        `Enter a valid ${city || 'city'} rate for ${invalid.name}.`,
+        `Enter a valid rate for ${invalid.name}.`,
       );
       return;
     }
@@ -706,7 +707,7 @@ export default function IngredientRatesPage() {
       if (!response.ok) {
         throw new Error(
           data.error ||
-            'Could not save your city rates.',
+            'Could not save your ingredient rates.',
         );
       }
 
@@ -714,7 +715,7 @@ export default function IngredientRatesPage() {
       await loadIngredients();
 
       setMessage(
-        `Saved ${changedRows.length} ${city || 'city'} rate${changedRows.length === 1 ? '' : 's'}. Only your caterer account was updated.`,
+        `Saved ${changedRows.length} personal rate${changedRows.length === 1 ? '' : 's'}. Global master rates were not changed.`,
       );
     } catch (
       saveError
@@ -722,7 +723,7 @@ export default function IngredientRatesPage() {
       setError(
         saveError instanceof Error
           ? saveError.message
-          : 'Could not save your city rates.',
+          : 'Could not save your ingredient rates.',
       );
     } finally {
       setSaving(false);
@@ -829,7 +830,7 @@ export default function IngredientRatesPage() {
 
     setError('');
     setMessage(
-      `Applied ${updated} ${city || 'city'} rate${updated === 1 ? '' : 's'}. Review and save.`,
+      `Applied ${updated} personal rate${updated === 1 ? '' : 's'}. Review and save.`,
     );
   }
 
@@ -841,28 +842,28 @@ export default function IngredientRatesPage() {
   return (
     <AppShell
       title="Ingredient Rates"
-      subtitle="Your city ingredient prices for accurate event costing"
+      subtitle="Global ingredient rates with your own editable overrides"
       hidePageTitle
     >
       <section className="content-grid ingredient-city-page">
         <section className="ingredient-city-hero">
           <div>
             <span className="ingredient-city-eyebrow">
-              My city ingredient rates
+              My ingredient rates
             </span>
             <h1>
-              {city || 'Business city'} Rate Master
+              Global Rate Master
             </h1>
             <p>
-              You can view and update rates only for your own caterer account. Other cities, other caterers and Super Admin master rates are not editable here.
+              Global master rates are used by default. Edit any rate to save your own caterer-specific override without changing the Super Admin global master.
             </p>
           </div>
 
           <div className="ingredient-city-lock">
-            <span>City locked</span>
+            <span>Business city</span>
             <b>{city || 'Not set'}</b>
             <small>
-              Managed from your caterer account
+              Global rates are still the default
             </small>
           </div>
         </section>
@@ -871,7 +872,7 @@ export default function IngredientRatesPage() {
           <article>
             <span>City</span>
             <b>{city || '—'}</b>
-            <small>Only this market is visible</small>
+            <small>Account location</small>
           </article>
 
           <article>
@@ -1031,7 +1032,7 @@ export default function IngredientRatesPage() {
             </span>
 
             <span>
-              Editing: <b>{city || 'your city'}</b>
+              Editing: <b>my caterer rates</b>
             </span>
           </div>
 
@@ -1055,7 +1056,7 @@ export default function IngredientRatesPage() {
                 Fast update
               </span>
               <b>
-                Paste {city || 'city'} rates
+                Paste my rates
               </b>
               <small>
                 Format: Ingredient | Rate
@@ -1087,7 +1088,7 @@ export default function IngredientRatesPage() {
                 applyBulkRates
               }
             >
-              Apply to {city || 'My City'}
+              Apply My Rates
             </button>
           </div>
         </details>
@@ -1096,13 +1097,13 @@ export default function IngredientRatesPage() {
           <div className="ingredient-city-table-head">
             <div>
               <span>
-                My rate master
+                My editable rate master
               </span>
               <h2>
-                {city || 'City'} ingredient prices
+                Global defaults + my overrides
               </h2>
               <p>
-                Edit only the rate you actually pay in your market. Saved changes affect only your caterer account.
+                Every ingredient starts with the global master rate. Edit and save only where your actual purchase rate is different; changes affect only your caterer account.
               </p>
             </div>
 
@@ -1137,7 +1138,7 @@ export default function IngredientRatesPage() {
                       Ingredient
                     </th>
                     <th>
-                      My {city || 'City'} Rate
+                      My Rate
                     </th>
                     <th>
                       Current Event
@@ -1242,6 +1243,11 @@ export default function IngredientRatesPage() {
                                 row.myCityRate,
                               )}{' '}
                               per {row.unit}
+                              <span>
+                                {row.isCustomRate
+                                  ? 'My saved override'
+                                  : `Global default ${money(row.globalRate)}`}
+                              </span>
                             </div>
                           </td>
 
@@ -1311,7 +1317,7 @@ export default function IngredientRatesPage() {
               {changedCount} unsaved rate{changedCount === 1 ? '' : 's'}
             </strong>
             <span>
-              Saving updates only your {city || 'city'} rates.
+              Saving creates overrides only for your caterer account.
             </span>
           </div>
 
