@@ -25,20 +25,14 @@ type ClientFlowStep = {
 };
 
 function clientFlowForPath(pathname: string): ClientFlowStep | null {
-  if (pathname === '/app/menu') {
-    return {
-      step: 1,
-      label: 'Menu',
-      desktopStep: 1,
-      desktopLabel: 'Menu Creation',
-    };
-  }
-
-  if (pathname === '/app/event') {
+  if (
+    pathname === '/app/menu' ||
+    pathname === '/app/event'
+  ) {
     return {
       step: 1,
       label: 'Event',
-      desktopStep: 2,
+      desktopStep: 1,
       desktopLabel: 'Event & Menu',
     };
   }
@@ -47,7 +41,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 1,
       label: 'Event',
-      desktopStep: 3,
+      desktopStep: 2,
       desktopLabel: 'Dish Cost',
     };
   }
@@ -56,7 +50,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 1,
       label: 'Event',
-      desktopStep: 4,
+      desktopStep: 3,
       desktopLabel: 'Grocery',
     };
   }
@@ -65,7 +59,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 2,
       label: 'Team',
-      desktopStep: 5,
+      desktopStep: 4,
       desktopLabel: 'Manpower',
     };
   }
@@ -79,7 +73,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 3,
       label: 'Expenses',
-      desktopStep: 6,
+      desktopStep: 5,
       desktopLabel: 'Operations',
     };
   }
@@ -88,7 +82,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 4,
       label: 'Pricing',
-      desktopStep: 7,
+      desktopStep: 6,
       desktopLabel: 'Final Cost',
     };
   }
@@ -97,7 +91,7 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     return {
       step: 5,
       label: 'Quotation',
-      desktopStep: 8,
+      desktopStep: 7,
       desktopLabel: 'Quotation',
     };
   }
@@ -145,8 +139,7 @@ const adminNav =
   );
 
 const clientWorkflowNav = [
-  { href: '/app/menu', match: '/app/menu', label: 'Menu Creation', description: 'Build function-wise menu', icon: 'event' as ClientNavIcon },
-  { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Upload and review menu', icon: 'event' as ClientNavIcon },
+  { href: '/app/menu', match: '/app/menu', label: 'Event & Menu', description: 'Event, functions, dishes and import', icon: 'event' as ClientNavIcon },
   { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
   { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
   { href: '/app/team', match: '/app/team', label: 'Manpower', description: 'Manual staff costing', icon: 'team' as ClientNavIcon },
@@ -1131,6 +1124,10 @@ export default function AppShell({
               {clientWorkflowNav.map((item, index) => {
                 const isActive =
                   pathname === item.match ||
+                  (
+                    item.match === '/app/menu' &&
+                    pathname === '/app/event'
+                  ) ||
                   (item.match === '/app/operations' && pathname === '/app/disposable');
 
                 return (
