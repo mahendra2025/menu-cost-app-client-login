@@ -142,6 +142,7 @@ type ManualDishOption = {
   servingQuantity?: number;
   servingUnit?: string;
   pieceWeightGrams?: number;
+  hasRecipe?: boolean;
 };
 
 type NewEventDraft = {
@@ -2035,6 +2036,9 @@ export default function EventPage() {
                       row.pieceWeightGrams,
                     ) || 0,
                   ) || undefined,
+
+                hasRecipe:
+                  row.hasRecipe === true,
               },
             ];
           },
@@ -2827,7 +2831,11 @@ export default function EventPage() {
 
             costSource:
               rate > 0
-                ? 'catalog'
+                ? (
+                    dish.hasRecipe
+                      ? 'catalog_recipe'
+                      : 'catalog'
+                  )
                 : 'manual',
 
             coverageStatus:
@@ -2852,7 +2860,11 @@ export default function EventPage() {
 
             coverageReason:
               rate > 0
-                ? 'Dish Master cost available'
+                ? (
+                    dish.hasRecipe
+                      ? 'Global recipe cost available'
+                      : 'Dish Master cost available'
+                  )
                 : 'Manual rate required',
 
             costApprovalStatus:
@@ -2862,7 +2874,11 @@ export default function EventPage() {
 
             costApprovalReason:
               rate > 0
-                ? 'Dish Master rate'
+                ? (
+                    dish.hasRecipe
+                      ? 'Global recipe from Super Admin'
+                      : 'Dish Master rate'
+                  )
                 : 'Manual rate required',
           };
         },
