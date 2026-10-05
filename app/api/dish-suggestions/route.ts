@@ -98,10 +98,57 @@ export async function POST(request: Request) {
       });
     }
 
+    const masterDishes =
+      await prisma.dishMasterItem.findMany({
+        select: {
+          name: true,
+          aliases: true,
+        },
+      });
+
+    const knownKeys =
+      new Set<string>();
+
+    masterDishes.forEach((dish) => {
+      [
+        dish.name,
+        ...(
+          Array.isArray(
+            dish.aliases,
+          )
+            ? dish.aliases
+            : []
+        ),
+      ].forEach((value) => {
+        const key =
+          suggestionKey(
+            normalizeName(
+              value,
+            ),
+          );
+
+        if (key) {
+          knownKeys.add(key);
+        }
+      });
+    });
+
+    let queued = 0;
+    let skippedKnown = 0;
+
     for (const [
       normalizedName,
       candidate,
     ] of unique) {
+      if (
+        knownKeys.has(
+          normalizedName,
+        )
+      ) {
+        skippedKnown += 1;
+        continue;
+      }
+
       await prisma
         .pendingDishSuggestion
         .upsert({
@@ -127,11 +174,14 @@ export async function POST(request: Request) {
             },
           },
         });
+
+      queued += 1;
     }
 
     return NextResponse.json({
       ok: true,
-      queued: unique.size,
+      queued,
+      skippedKnown,
     });
   } catch {
     return NextResponse.json(
