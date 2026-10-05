@@ -2297,6 +2297,11 @@ export default function EventPlanningPage() {
         );
     }, [uniforms]);
 
+  const disposableRows = useMemo(
+    () => currentRows.filter((row) => row.kind === 'DISPOSABLE'),
+    [currentRows],
+  );
+
   const disposableCategoryGroups =
     useMemo(() => {
       const groups =
@@ -4873,54 +4878,53 @@ export default function EventPlanningPage() {
           .ep-uniform-assignment-grid{padding:0}.ep-uniform-assignment-photo{width:100%;height:160px;object-fit:contain;border-radius:10px;background:#18202a;padding:8px}
           @media(max-width:720px){.ep-uniform-master{padding:12px}.ep-uniform-master-head{flex-direction:column}.ep-uniform-master-head-actions{width:100%;justify-content:space-between}.ep-uniform-master-head-actions a{min-height:44px}.ep-uniform-master-grid{grid-template-columns:1fr;padding:10px}.ep-uniform-master-body{padding:12px}}
 
-          .ep-disposable-master{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
-          .ep-disposable-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-disposable-master{display:grid;gap:18px;padding:18px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-disposable-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
           .ep-disposable-master-head b,.ep-disposable-master-head span{display:block}
-          .ep-disposable-master-head b{color:#e6edf5;font-size:11px}
-          .ep-disposable-master-head span{margin-top:3px;max-width:700px;color:#748294;font-size:8px;line-height:1.45}
-          .ep-disposable-master-head-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}
-          .ep-disposable-master-head-actions>span{margin:0;color:#718095;font-size:7px;font-weight:850}
-          .ep-disposable-category-list{display:grid;gap:10px}
-          .ep-disposable-category{overflow:hidden;border:1px solid rgba(148,163,184,.09);border-radius:12px;background:#0f151c}
-          .ep-disposable-category-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.08);background:rgba(255,255,255,.018)}
-          .ep-disposable-category-head b,.ep-disposable-category-head span{display:block}
-          .ep-disposable-category-head b{color:#dfe8f2;font-size:10px}
-          .ep-disposable-category-head span{margin-top:2px;color:#718095;font-size:7px}
-          .ep-disposable-category-head strong{padding:4px 7px;border-radius:999px;color:#9dc9fa;background:rgba(74,156,255,.07);font-size:7px}
-          .ep-disposable-master-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;padding:9px}
-          .ep-disposable-master-card{overflow:hidden;border:1px solid #2b3440;border-radius:11px;background:#111820;transition:border-color .18s ease,transform .18s ease}
-          .ep-disposable-master-card:hover{border-color:#3b4755;transform:translateY(-1px)}
-          .ep-disposable-master-card.selected{border-color:rgba(74,156,255,.48);box-shadow:inset 0 0 0 1px rgba(74,156,255,.08)}
-          .ep-disposable-master-card.over{border-color:rgba(244,173,84,.42)}
-          .ep-disposable-master-card.inactive{opacity:.62}
-          .ep-disposable-master-photo{position:relative;aspect-ratio:16/8;overflow:hidden;background:#18202a}
-          .ep-disposable-master-photo img{width:100%;height:100%;display:block;object-fit:cover}
-          .ep-disposable-master-status{position:absolute;top:7px;right:7px;padding:4px 6px;border-radius:999px;color:#c3d0df;background:rgba(8,13,19,.78);font-size:6px;font-weight:900}
-          .ep-disposable-master-body{padding:9px}
-          .ep-disposable-master-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-disposable-master-head b{color:#edf4fb;font-size:16px}
+          .ep-disposable-master-head span{margin-top:6px;max-width:650px;color:#94a3b8;font-size:12px;line-height:1.6}
+          .ep-disposable-master-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+          .ep-disposable-master-head-actions>span{margin:0;color:#94a3b8;font-size:11px}
+          .ep-disposable-category-list{display:grid;gap:16px}
+          .ep-disposable-category{overflow:hidden;border:1px solid #293440;border-radius:16px;background:#0f151c}
+          .ep-disposable-category-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px;border-bottom:1px solid #293440}
+          .ep-disposable-category-head>div:first-child b,.ep-disposable-category-head>div:first-child span{display:block}
+          .ep-disposable-category-head>div:first-child b{color:#edf4fb;font-size:14px}
+          .ep-disposable-category-head>div:first-child span{margin-top:4px;color:#94a3b8;font-size:11px}
+          .ep-disposable-category-summary{display:flex;gap:8px;flex-wrap:wrap}
+          .ep-disposable-category-summary span{padding:7px 10px;border-radius:999px;color:#94a3b8;background:#18222e;font-size:11px}
+          .ep-disposable-category-summary b{color:#bfdbfe}.ep-disposable-category-summary .warn,.ep-disposable-category-summary .warn b{color:#fbbf77}
+          .ep-disposable-master-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px;padding:14px}
+          .ep-disposable-master-card{overflow:hidden;min-width:0;border:1px solid #2b3440;border-radius:14px;background:#111820}
+          .ep-disposable-master-card.selected{border-color:#3b82b9;box-shadow:inset 0 0 0 1px #1c3b59}.ep-disposable-master-card.over{border-color:#a57a40}
+          .ep-disposable-master-card.inactive{border-style:dashed}
+          .ep-disposable-master-photo{position:relative;aspect-ratio:16/9;overflow:hidden;background:#18202a}
+          .ep-disposable-master-photo img{width:100%;height:100%;display:block;object-fit:contain;padding:8px}
+          .ep-disposable-master-status{position:absolute;top:10px;right:10px;padding:6px 9px;border-radius:999px;color:#e2e8f0;background:rgba(8,13,19,.9);font-size:11px;font-weight:800}
+          .ep-disposable-master-body{display:grid;gap:12px;padding:16px}
+          .ep-disposable-master-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
           .ep-disposable-master-title b,.ep-disposable-master-title span{display:block}
-          .ep-disposable-master-title b{color:#e7eef6;font-size:9px}
-          .ep-disposable-master-title span{margin-top:2px;color:#758397;font-size:7px}
-          .ep-disposable-master-title>strong{color:#d3deea;font-size:8px;white-space:nowrap}
-          .ep-disposable-master-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
-          .ep-disposable-master-meta>span{padding:5px 6px;border-radius:7px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
-          .ep-disposable-master-meta>span b{display:block;margin-top:2px;color:#d7e1ec;font-size:8px}
-          .ep-disposable-master-meta>span.warn{color:#e7a653;background:rgba(244,173,84,.06)}
-          .ep-disposable-master-meta>span.warn b{color:#f1b361}
-          .ep-disposable-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
-          .ep-disposable-tags span{padding:4px 6px;border-radius:999px;color:#72849a;background:rgba(74,156,255,.04);font-size:6px;font-weight:800}
-          .ep-disposable-qty-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end;margin-top:9px}
-          .ep-disposable-qty-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
-          .ep-disposable-qty-editor>button:disabled{opacity:.35;cursor:not-allowed}
-          .ep-disposable-qty-editor label{display:grid;gap:3px}
-          .ep-disposable-qty-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-disposable-qty-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
-          .ep-disposable-event-qty{width:100%;min-height:30px;margin-top:6px;border:1px solid rgba(74,156,255,.16);border-radius:8px;color:#92c3fb;background:rgba(74,156,255,.045);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
-          .ep-disposable-event-qty:disabled{opacity:.35;cursor:not-allowed}
-          .ep-disposable-note{display:block;margin-top:7px;color:#69788b;font-size:6px;line-height:1.4}
-          .ep-disposable-note.warn{color:#c28e53}
-          @media(max-width:760px){.ep-disposable-master-head{align-items:stretch;flex-direction:column}.ep-disposable-master-head-actions{justify-content:space-between}.ep-disposable-master-grid{grid-template-columns:1fr 1fr}}
-          @media(max-width:520px){.ep-disposable-master-grid{grid-template-columns:1fr}}
+          .ep-disposable-master-title b{color:#edf4fb;font-size:15px;overflow-wrap:anywhere}.ep-disposable-master-title span{margin-top:5px;color:#94a3b8;font-size:11px;line-height:1.5}
+          .ep-disposable-master-title>strong{color:#d3deea;font-size:14px;white-space:nowrap}
+          .ep-disposable-master-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+          .ep-disposable-master-meta>span{padding:10px;border-radius:9px;color:#94a3b8;background:#19232f;font-size:10px}
+          .ep-disposable-master-meta>span b{display:block;margin-top:4px;color:#edf4fb;font-size:16px}.ep-disposable-master-meta>span.warn,.ep-disposable-master-meta>span.warn b{color:#fbbf77}
+          .ep-disposable-tags{display:flex;gap:6px;flex-wrap:wrap}.ep-disposable-tags span{padding:6px 8px;border-radius:8px;color:#aabdd2;background:#172436;font-size:11px;overflow-wrap:anywhere}
+          .ep-disposable-qty-editor{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:end}
+          .ep-disposable-qty-editor>button{height:44px;border:1px solid #445366;border-radius:9px;color:#e2e8f0;background:#19232f;font-size:20px;cursor:pointer}.ep-disposable-qty-editor>button:disabled{opacity:.4;cursor:not-allowed}
+          .ep-disposable-qty-editor label{display:grid;gap:6px}.ep-disposable-qty-editor label span{color:#94a3b8;font-size:11px;font-weight:800}
+          .ep-disposable-qty-editor input{width:100%;height:44px;border:1px solid #445366;border-radius:9px;color:#edf4fb;background:#151c25;font:inherit;font-size:16px;text-align:center}
+          .ep-disposable-event-qty{width:100%;min-height:44px;border:1px solid #315d8e;border-radius:9px;color:#bfdbfe;background:#152539;font:inherit;font-size:12px;cursor:pointer}.ep-disposable-event-qty:disabled{opacity:.4;cursor:not-allowed}
+          .ep-disposable-note{display:block;color:#94a3b8;font-size:11px;line-height:1.5}.ep-disposable-note.warn{color:#fbbf77}
+          .ep-disposable-master input:focus-visible,.ep-disposable-master button:focus-visible,.ep-disposable-master a:focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
+          .ep-disposable-master .ep-menu-function-context b{font-size:16px}.ep-disposable-master .ep-menu-function-context span,.ep-disposable-master .ep-menu-function-context small,.ep-disposable-master .ep-menu-function-chips span{font-size:11px}.ep-disposable-master .ep-menu-function-chips b{font-size:16px}
+          .ep-disposable-selected-head h2{margin:0;color:#edf4fb;font-size:16px}.ep-disposable-selected-head p{margin:6px 0 0;color:#94a3b8;font-size:12px;line-height:1.6}
+          .ep-disposable-assignment-grid{padding:0}.ep-disposable-assignment-photo{width:100%;height:160px;object-fit:contain;border-radius:10px;background:#18202a;padding:8px}
+          @media(max-width:720px){.ep-disposable-master{padding:12px}.ep-disposable-master-head{flex-direction:column}.ep-disposable-master-head-actions{width:100%;justify-content:space-between}.ep-disposable-master-head-actions a{min-height:44px}.ep-disposable-master-grid{grid-template-columns:1fr;padding:10px}.ep-disposable-master-body{padding:12px}}
+          .ep-disposable-category-head>strong{padding:7px 10px;border-radius:999px;color:#bfdbfe;background:#18222e;font-size:11px}
+          .ep-disposable-master .ep-empty{font-size:12px;line-height:1.6}
+          .ep-disposable-master-head-actions .ep-button{min-height:44px;font-size:12px}
+
           .ep-transport-control{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
           .ep-transport-control-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
           .ep-transport-control-head b,.ep-transport-control-head span{display:block}
@@ -5639,9 +5643,9 @@ export default function EventPlanningPage() {
               <section className="ep-disposable-master">
                 <div className="ep-disposable-master-head">
                   <div>
-                    <b>Saved Disposable Master</b>
+                    <b>Disposables Workspace</b>
                     <span>
-                      All saved disposable items are shown by category. Edit required quantity directly for this function and keep supplier, stock and rate linked to the master.
+                      Choose disposable items by photo, check stock and quantities, then manage supplier orders and deliveries below.
                     </span>
                   </div>
 
@@ -5658,19 +5662,21 @@ export default function EventPlanningPage() {
                   </div>
                 </div>
 
+                <div className="ep-menu-function-context">
+                  <div><span>Selected Function</span><b>{currentFunction.dayLabel} · {currentFunction.mealLabel}</b><small>{work.event.clientName || eventName} · {work.event.venue || work.event.city || 'Venue not set'}</small></div>
+                  <div className="ep-menu-function-chips">
+                    <span><b>{disposableRows.length}</b>selected items</span>
+                    <span><b>{disposableRows.filter((row) => row.assignedTo.trim()).length}/{disposableRows.length}</b>assigned</span>
+                    <span><b>{currency(disposableRows.reduce((sum, row) => sum + row.quantity * row.rate, 0))}</b>planned cost</span>
+                  </div>
+                </div>
+                <small className="ep-disposable-note">Event plan quantities come from the event’s disposables list. Choose the quantity needed for this function.</small>
+
                 {disposableCategoryGroups.length ? (
                   <div className="ep-disposable-category-list">
                     {disposableCategoryGroups.map(
                       (group) => {
-                        const categorySelected =
-                          group.items.reduce(
-                            (sum, item) =>
-                              sum +
-                              selectedDisposableQty(
-                                item.id,
-                              ),
-                            0,
-                          );
+                        const categorySelected = group.items.filter((item) => selectedDisposableQty(item.id) > 0).length;
 
                         return (
                           <section
@@ -5686,7 +5692,7 @@ export default function EventPlanningPage() {
                               </div>
 
                               <strong>
-                                {categorySelected} selected
+                                {categorySelected} items selected
                               </strong>
                             </div>
 
@@ -5771,12 +5777,13 @@ export default function EventPlanningPage() {
 
                                           <strong>
                                             {currency(item.defaultRate)}
+                                            <span>master / {item.unit || 'pcs'}</span>
                                           </strong>
                                         </div>
 
                                         <div className="ep-disposable-master-meta">
                                           <span>
-                                            Event Qty <b>{eventQty}</b>
+                                            Event Plan <b>{eventQty}</b>
                                           </span>
                                           <span>
                                             Available <b>{item.availableQty}</b>
@@ -5805,6 +5812,7 @@ export default function EventPlanningPage() {
                                           <button
                                             type="button"
                                             disabled={selected <= 0}
+                                            aria-label={'Decrease disposable quantity for ' + item.name}
                                             onClick={() =>
                                               setDisposableQuantity(
                                                 item,
@@ -5816,25 +5824,26 @@ export default function EventPlanningPage() {
                                           </button>
 
                                           <label>
-                                            <span>Qty</span>
+                                            <span>Selected Quantity</span>
                                             <input
                                               type="number"
                                               min="0"
                                               step="1"
                                               value={selected}
                                               disabled={disabled}
-                                              onChange={(event) =>
-                                                setDisposableQuantity(
-                                                  item,
-                                                  Number(event.target.value),
-                                                )
-                                              }
+                                              aria-label={'Disposable quantity for ' + item.name}
+                                              onChange={(event) => {
+                                                if (event.target.value !== '') {
+                                                  setDisposableQuantity(item, Number(event.target.value));
+                                                }
+                                              }}
                                             />
                                           </label>
 
                                           <button
                                             type="button"
                                             disabled={disabled}
+                                            aria-label={'Increase disposable quantity for ' + item.name}
                                             onClick={() =>
                                               addDisposableFromMaster(
                                                 item,
@@ -5856,13 +5865,13 @@ export default function EventPlanningPage() {
                                               )
                                             }
                                           >
-                                            Use Event Qty {eventQty}
+                                            Use event plan qty · {eventQty}
                                           </button>
                                         ) : null}
 
                                         {!item.active ? (
                                           <small className="ep-disposable-note warn">
-                                            Inactive in Disposable Master. Reactivate it there to add new quantity.
+                                            Inactive in Disposable Master. Existing selections remain editable; manage availability in Disposable Master.
                                           </small>
                                         ) : item.supplierName ? (
                                           <small className="ep-disposable-note">
@@ -5889,6 +5898,56 @@ export default function EventPlanningPage() {
                     No disposable items saved yet. Open Disposable Master and add your items first.
                   </div>
                 )}
+                <div className="ep-disposable-selected-head">
+                  <h2>Selected disposables · supplier & delivery plan</h2>
+                  <p>Manage every selected or custom item for this function. Rates and quantities remain editable.</p>
+                </div>
+                {disposableRows.length ? (
+                  <div className="ep-manpower-role-grid ep-disposable-assignment-grid">
+                    {disposableRows.map((row) => {
+                      const vendor = vendors.find((item) => item.id === row.partnerId);
+                      const hasAssignment = Boolean(row.assignedTo.trim());
+                      return (
+                        <article key={row.id} className="ep-manpower-role-card ep-disposable-assignment-card">
+                          {assignmentPhoto(row) ? <img className="ep-disposable-assignment-photo" src={assignmentPhoto(row)} alt={row.requirement} loading="lazy" /> : null}
+                          <div className="ep-manpower-role-title"><div><span>{row.partnerType === 'IN_HOUSE' ? 'In-house' : 'Supplier'}</span><b>{row.requirement}</b><small>{row.assignedTo || 'Supplier needed'}</small></div><strong>{currency(row.quantity * row.rate)}</strong></div>
+                          <label className="ep-menu-field"><span>Supplier / Team</span>
+                            <select value={row.partnerType === 'IN_HOUSE' && hasAssignment ? '__in_house' : row.partnerId || ''} onChange={(event) => assignPartner(row, event.target.value)} aria-label={'Supplier for ' + row.requirement}>
+                              <option value="">Choose saved supplier</option><option value="__in_house">In-house supply</option>
+                              {vendor && !vendor.active ? <option value={vendor.id}>{vendor.name} · Inactive</option> : null}
+                              {row.partnerId && !vendor ? <option value={row.partnerId}>{row.assignedTo} · Unavailable partner</option> : null}
+                              {vendors.filter((item) => item.active).map((item) => <option key={item.id} value={item.id}>{item.name} · {item.category || item.type}</option>)}
+                            </select>
+                          </label>
+                          <div className="ep-menu-field-grid">
+                            <label className="ep-menu-field"><span>Manual Supplier / Team</span><input value={row.partnerId || row.partnerType === 'IN_HOUSE' ? '' : row.assignedTo} placeholder="Enter supplier or team name" onChange={(event) => updateRow(row.id, { partnerId: '', assignedTo: event.target.value, partnerType: row.partnerType === 'IN_HOUSE' ? 'VENDOR' : row.partnerType })} aria-label={'Manual supplier for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Partner Type</span><select value={row.partnerType} onChange={(event) => updateRow(row.id, { partnerType: event.target.value as PartnerType })} aria-label={'Disposable partner type for ' + row.requirement}><option value="IN_HOUSE">In-house</option><option value="VENDOR">Vendor</option><option value="AGENCY">Agency</option></select></label>
+                          </div>
+                          {vendor ? <div className="ep-menu-contact"><div><span>Supplier Contact</span><b>{vendor.contactPerson || vendor.name}</b><small>{[vendor.phone, vendor.city].filter(Boolean).join(' · ') || 'No contact details saved'}</small></div>{vendor.phone ? <a href={'tel:' + vendor.phone} aria-label={'Call disposable supplier ' + vendor.name}>Call</a> : null}</div> : null}
+                          <div className="ep-menu-field-grid">
+                            <label className="ep-menu-field"><span>Quantity</span><input type="number" min="0" step="any" value={row.quantity} onChange={(event) => { if (event.target.value !== '') updateRow(row.id, { quantity: Math.max(0, Number(event.target.value) || 0) }); }} aria-label={'Selected quantity for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Rate / {row.unit || 'pcs'}</span><input type="number" min="0" step="0.01" value={row.rate} onChange={(event) => updateRow(row.id, { rate: Math.max(0, Number(event.target.value) || 0) })} aria-label={'Disposable rate for ' + row.requirement} /></label>
+                          </div>
+                          <div className="ep-menu-time-grid">
+                            <label className="ep-menu-field"><span>Delivery Time</span><input type="datetime-local" value={row.deliveryTime} onChange={(event) => updateRow(row.id, { deliveryTime: event.target.value })} aria-label={'Disposable delivery time for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Pickup / Return Time</span><input type="datetime-local" value={row.pickupTime || ''} onChange={(event) => updateRow(row.id, { pickupTime: event.target.value })} aria-label={'Disposable return time for ' + row.requirement} /></label>
+                          </div>
+                          <div className="ep-menu-status-actions" role="group" aria-label={'Disposable status for ' + row.requirement}>
+                            {(['PENDING', 'CONFIRMED', 'DELIVERED', 'CLOSED'] as AssignmentStatus[]).map((status) => <button key={status} type="button" className={row.status === status ? 'active' : ''} aria-pressed={row.status === status} onClick={() => updateRow(row.id, { status })}>{status === 'DELIVERED' ? 'Received' : status.charAt(0) + status.slice(1).toLowerCase()}</button>)}
+                          </div>
+                          <details className="ep-manpower-role-details"><summary>Item details & payment terms</summary><div>
+                            <label className="ep-menu-field"><span>Item Name</span><input value={row.requirement} onChange={(event) => updateRow(row.id, { requirement: event.target.value })} aria-label={'Disposable item name for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Instructions / Packing</span><textarea value={row.detail} onChange={(event) => updateRow(row.id, { detail: event.target.value })} aria-label={'Disposable instructions for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Unit</span><input value={row.unit} onChange={(event) => updateRow(row.id, { unit: event.target.value })} aria-label={'Disposable unit for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Payment Terms</span><input value={row.paymentTerms || ''} placeholder={vendor?.paymentTerms || 'Enter agreed terms'} onChange={(event) => updateRow(row.id, { paymentTerms: event.target.value })} aria-label={'Disposable payment terms for ' + row.requirement} /></label>
+                          </div></details>
+                          <div className="ep-menu-quick-row"><div>{hasAssignment ? <button type="button" className="ep-menu-mini-action" onClick={() => assignPartner(row, '')}>Clear supplier</button> : null}<button type="button" className="ep-menu-mini-action danger" onClick={() => removeRow(row.id)} aria-label={'Remove disposable ' + row.requirement}>Remove item</button></div></div>
+                          <div className="ep-manpower-role-footer"><b>{!hasAssignment ? 'Assign supplier or team' : !row.deliveryTime ? 'Set delivery time' : row.status === 'PENDING' ? 'Confirm order' : row.status === 'CLOSED' ? 'Order closed' : row.status === 'DELIVERED' ? 'Order received' : 'Order confirmed'}</b><small>{row.pickupTime ? 'Return ' + row.pickupTime.replace('T', ' ') : 'Return time not set'}</small></div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : <div className="ep-empty">Choose disposable items above or add a custom requirement below to start this function’s disposables plan.</div>}
               </section>
             ) : null}
 
@@ -7820,7 +7879,7 @@ export default function EventPlanningPage() {
               </section>
             ) : null}
 
-            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' ? (
+            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' && tab !== 'DISPOSABLE' ? (
               <div className="ep-table-wrap">
                 <table className="ep-table">
                   <thead>
@@ -8288,7 +8347,7 @@ export default function EventPlanningPage() {
                   </tbody>
                 </table>
               </div>
-            ) : tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' ? (
+            ) : tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' && tab !== 'DISPOSABLE' ? (
               <div className="ep-empty">
                 No requirements in this section yet.
               </div>
@@ -8298,6 +8357,8 @@ export default function EventPlanningPage() {
               <span className="ep-hint">
                 {tab === 'MENU'
                   ? 'Menu categories come from the selected function menu. Matching food vendors are shown first; covers and vendor rates remain editable.'
+                  : tab === 'DISPOSABLE'
+                    ? 'Choose items by photo, set quantities for this function, then confirm suppliers and delivery times.'
                   : tab === 'DRESS'
                     ? 'Choose dress by photo, set quantities for each staff role, then confirm suppliers, issue times and returns.'
                   : tab === 'GROCERY'
@@ -8455,5 +8516,6 @@ export default function EventPlanningPage() {
     </AppShell>
   );
 }
+
 
 
