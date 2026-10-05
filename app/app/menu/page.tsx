@@ -962,6 +962,12 @@ export default function MenuCreationPage() {
       ],
     );
 
+  const displayedDishes =
+    visibleDishes.slice(
+      0,
+      120,
+    );
+
   async function persist(
     nextWork: WorkState,
   ) {
@@ -1703,24 +1709,88 @@ export default function MenuCreationPage() {
       hidePageTitle
     >
       <section className="content-grid menu-create-page">
-        <section className="menu-create-hero">
-          <div>
+        <section className="menu-create-topbar">
+          <div className="menu-create-topbar-copy">
             <span className="menu-create-eyebrow">
-              Event & menu workspace
+              Event & Menu
             </span>
             <h1>
-              Build the complete event menu
+              {work.event.eventName ||
+                work.event.clientName ||
+                'Current Event'}
             </h1>
             <p>
-              {work.event.eventName ||
-                'Current event'} · {work.event.clientName ||
-                'Client'} · {totalDays} day{totalDays === 1 ? '' : 's'} · {functions.length} function{functions.length === 1 ? '' : 's'} · {work.menu.filter((item) => item.coverageStatus !== 'REJECTED').length} dishes
+              {work.event.clientName || 'Client not added'}
+              {work.event.eventDate ? ` · ${work.event.eventDate}` : ''}
+              {work.event.venue ? ` · ${work.event.venue}` : ''}
             </p>
+
+            <div className="menu-create-topbar-metrics">
+              <span><b>{totalDays}</b><small>Days</small></span>
+              <span><b>{functions.length}</b><small>Functions</small></span>
+              <span><b>{work.menu.filter((item) => item.coverageStatus !== 'REJECTED').length}</b><small>Dishes</small></span>
+              <span><b>{functions.reduce((total, fn) => total + Math.max(0, Number(fn.pax) || 0), 0).toLocaleString('en-IN')}</b><small>Function covers</small></span>
+            </div>
           </div>
 
-          <div className="menu-create-hero-actions">
+          <div className="menu-create-topbar-actions">
             <button
               className="secondary-button"
+              type="button"
+              onClick={() =>
+                window.location.assign(
+                  '/app/event?new=1',
+                )
+              }
+            >
+              + New Event
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() =>
+                window.location.assign(
+                  '/app/event?resume=1#menuInput',
+                )
+              }
+            >
+              Import Menu
+            </button>
+
+            <button
+              className="primary-button"
+              type="button"
+              onClick={() =>
+                openNewFunction(
+                  '',
+                )
+              }
+            >
+              + Function
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={
+                !work.menu.some(
+                  (item) =>
+                    item.coverageStatus !==
+                    'REJECTED',
+                )
+              }
+              onClick={() =>
+                window.location.assign(
+                  '/app/cost',
+                )
+              }
+            >
+              Dish Cost →
+            </button>
+
+            <button
+              className="menu-create-download-compact"
               type="button"
               disabled={
                 !work.menu.some(
@@ -1774,7 +1844,6 @@ export default function MenuCreationPage() {
                     setMessage(
                       'Premium menu downloaded and saved to History.',
                     );
-
                     setError('');
                   } catch (
                     pdfError
@@ -1789,69 +1858,8 @@ export default function MenuCreationPage() {
                 })();
               }}
             >
-              Download Premium Menu
+              Download Menu
             </button>
-
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() =>
-                window.location.assign(
-                  '/app/event?resume=1#menuDetectionPreview',
-                )
-              }
-            >
-              Import PDF / Photo
-            </button>
-
-            <button
-              className="primary-button"
-              type="button"
-              onClick={() =>
-                openNewFunction(
-                  '',
-                )
-              }
-            >
-              + Add Day / Function
-            </button>
-
-            <button
-              className="secondary-button"
-              type="button"
-              disabled={
-                !work.menu.some(
-                  (item) =>
-                    item.coverageStatus !==
-                    'REJECTED',
-                )
-              }
-              onClick={() =>
-                window.location.assign(
-                  '/app/cost',
-                )
-              }
-            >
-              Continue to Dish Cost →
-            </button>
-          </div>
-        </section>
-
-        <section className="menu-create-workflow-strip" aria-label="Event and menu progress">
-          <div className={work.event.clientName ? 'done' : 'active'}>
-            <span>1</span>
-            <b>Event Details</b>
-            <small>{work.event.clientName ? 'Client ready' : 'Add client & event'}</small>
-          </div>
-          <div className={functions.length ? 'done' : 'active'}>
-            <span>2</span>
-            <b>Functions</b>
-            <small>{functions.length ? `${functions.length} created` : 'Add meals / functions'}</small>
-          </div>
-          <div className={work.menu.length ? 'done' : 'active'}>
-            <span>3</span>
-            <b>Menu</b>
-            <small>{work.menu.length ? `${work.menu.length} dishes selected` : 'Select from Dish Master'}</small>
           </div>
         </section>
 
@@ -2393,8 +2401,14 @@ export default function MenuCreationPage() {
                 No dishes found in this station/search.
               </div>
             ) : (
-              <section className="menu-create-dish-grid">
-                {visibleDishes.map(
+              <>
+                {visibleDishes.length > 120 ? (
+                  <div className="menu-create-result-note">
+                    Showing first 120 of {visibleDishes.length} dishes · search or choose a station to narrow the list.
+                  </div>
+                ) : null}
+                <section className="menu-create-dish-grid">
+                {displayedDishes.map(
                   (
                     dish,
                   ) => {
@@ -2461,6 +2475,7 @@ export default function MenuCreationPage() {
                   },
                 )}
               </section>
+              </>
             )}
           </div>
         </section>
@@ -2857,8 +2872,22 @@ export default function MenuCreationPage() {
           @media(max-width:1050px){.menu-create-layout{grid-template-columns:1fr}.menu-create-selected{position:static}.menu-create-selected-groups{max-height:none}}
           @media(max-width:700px){.menu-create-day-group>header{align-items:flex-start;flex-direction:column}.menu-create-day-group>header button{width:100%}.menu-create-station-nav{grid-template-columns:1fr 1fr}.menu-create-station-nav>div{grid-column:1/-1;grid-row:1;text-align:left}.menu-create-hero{align-items:stretch;flex-direction:column}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-function-fields{grid-template-columns:1fr}.menu-create-dish-grid{grid-template-columns:1fr}.menu-create-selected-actions{grid-template-columns:1fr}.menu-create-toolbar{position:static}.menu-create-selected{position:static}.menu-create-function-strip>button{flex-basis:185px}}
 
-          @media(max-width:980px){.menu-create-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-          @media(max-width:700px){.menu-create-workflow-strip{grid-template-columns:1fr}.menu-create-event-head{align-items:stretch;flex-direction:column}.menu-create-event-grid{grid-template-columns:1fr}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-hero-actions>*{width:100%}}
+          .menu-create-page{width:100%;max-width:none;gap:10px}
+          .menu-create-topbar{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:13px 15px;border:1px solid rgba(74,156,255,.16);border-radius:14px;background:rgba(11,17,24,.96);backdrop-filter:blur(18px);box-shadow:0 10px 28px rgba(0,0,0,.18)}
+          .menu-create-topbar-copy h1{margin:3px 0 2px;color:#f3f7fb;font-size:20px;letter-spacing:-.035em}.menu-create-topbar-copy p{margin:0;color:#728398;font-size:8px}
+          .menu-create-topbar-metrics{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}.menu-create-topbar-metrics>span{display:grid;grid-template-columns:auto auto;gap:4px;align-items:baseline;padding:5px 7px;border:1px solid rgba(148,163,184,.09);border-radius:8px;background:rgba(255,255,255,.018)}
+          .menu-create-topbar-metrics b{color:#dfe8f2;font-size:9px}.menu-create-topbar-metrics small{color:#67788d;font-size:6px;text-transform:uppercase}
+          .menu-create-topbar-actions{display:grid;grid-template-columns:repeat(2,minmax(110px,1fr));gap:6px;min-width:270px}.menu-create-topbar-actions button{min-height:36px;padding:0 10px;font-size:8px}
+          .menu-create-download-compact{grid-column:1/-1;min-height:30px;border:0;color:#7790aa;background:transparent;font:inherit;font-size:7px;font-weight:850;cursor:pointer}.menu-create-download-compact:disabled{opacity:.35;cursor:not-allowed}
+          .menu-create-event-card{padding:11px 12px}.menu-create-event-head{padding-bottom:9px}.menu-create-event-head h2{font-size:14px}.menu-create-event-head p{display:none}
+          .menu-create-event-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:9px}.menu-create-event-grid input{min-height:36px}.menu-create-import-card{min-height:52px}
+          .menu-create-day-board{gap:7px}.menu-create-day-group{padding:9px;border-radius:12px}.menu-create-day-group>header{margin-bottom:7px}.menu-create-function-strip>button{flex-basis:180px;padding:9px 10px;border-radius:10px}
+          .menu-create-function-editor{padding:10px 12px}.menu-create-function-editor-head h2{font-size:14px}.menu-create-function-fields{margin-top:8px}.menu-create-function-fields input{min-height:36px}
+          .menu-create-toolbar{top:72px;padding:10px 11px;gap:7px}.menu-create-toolbar h2{font-size:14px}.menu-create-search{min-height:36px}.menu-create-category-tabs button{min-height:29px}
+          .menu-create-station-nav{padding:8px 10px}.menu-create-dish-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}.menu-create-dish-grid>button{min-height:62px;padding:8px;border-radius:10px}.menu-create-dish-icon{width:32px;height:32px;border-radius:9px}
+          .menu-create-result-note{padding:7px 9px;border:1px dashed rgba(148,163,184,.10);border-radius:9px;color:#687b90;background:rgba(255,255,255,.012);font-size:7px}
+          @media(max-width:980px){.menu-create-topbar{grid-template-columns:1fr}.menu-create-topbar-actions{grid-template-columns:repeat(4,minmax(0,1fr));min-width:0}.menu-create-download-compact{grid-column:auto}.menu-create-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+          @media(max-width:700px){.menu-create-topbar{position:static;padding:12px}.menu-create-topbar-actions{grid-template-columns:1fr 1fr}.menu-create-topbar-actions>*{width:100%}.menu-create-download-compact{grid-column:1/-1}.menu-create-event-head{align-items:stretch;flex-direction:column}.menu-create-event-grid{grid-template-columns:1fr}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-hero-actions>*{width:100%}}
         `}</style>
       </section>
     </AppShell>
