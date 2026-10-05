@@ -64,6 +64,12 @@ type FunctionDraft = {
   pax: string;
 };
 
+type MenuDayGroup = {
+  key: string;
+  label: string;
+  functions: MenuFunction[];
+};
+
 type CustomDishDraft = {
   name: string;
   category: Category;
@@ -626,6 +632,64 @@ export default function MenuCreationPage() {
         emptyFunctions,
       ],
     );
+
+  const dayGroups =
+    useMemo(
+      () => {
+        const groups =
+          new Map<
+            string,
+            MenuDayGroup
+          >();
+
+        functions.forEach(
+          (fn) => {
+            const rawLabel =
+              fn.dayLabel?.trim() ||
+              work?.event
+                .eventDate ||
+              'Event Day';
+
+            const key =
+              normalize(
+                rawLabel,
+              ) ||
+              'event-day';
+
+            const existing =
+              groups.get(key);
+
+            if (existing) {
+              existing.functions.push(
+                fn,
+              );
+              return;
+            }
+
+            groups.set(key, {
+              key,
+              label:
+                rawLabel,
+              functions: [
+                fn,
+              ],
+            });
+          },
+        );
+
+        return Array.from(
+          groups.values(),
+        );
+      },
+      [
+        functions,
+        work?.event
+          .eventDate,
+      ],
+    );
+
+  const totalDays =
+    dayGroups.length;
 
   useEffect(() => {
     if (
@@ -1204,11 +1268,23 @@ export default function MenuCreationPage() {
     );
   }
 
-  function openNewFunction() {
+  function openNewFunction(
+    requestedDay?:
+      unknown,
+  ) {
+    const dayLabel =
+      typeof requestedDay ===
+        'string'
+        ? requestedDay
+        : '';
+
     setFunctionDraft({
       id:
         uid('service'),
       dayLabel:
+        dayLabel ||
+        activeFunction
+          ?.dayLabel ||
         work?.event
           .eventDate ||
         '',
@@ -1218,9 +1294,14 @@ export default function MenuCreationPage() {
           Math.max(
             0,
             Number(
-              work?.event
-                .pax,
-            ) || 0,
+              activeFunction
+                ?.pax,
+            ) ||
+              Number(
+                work?.event
+                  .pax,
+              ) ||
+              0,
           ) ||
           '',
         ),
@@ -1294,7 +1375,7 @@ export default function MenuCreationPage() {
     );
 
     setMessage(
-      `${name} function ready. Select dishes to save it into the event.`,
+      `${name} added to ${next.dayLabel || 'Event Day'}. Select dishes for this function.`,
     );
 
     setError('');
@@ -1567,7 +1648,7 @@ export default function MenuCreationPage() {
             <p>
               {work.event.eventName ||
                 'Current event'} · {work.event.clientName ||
-                'Client'} · {functions.length} function{functions.length === 1 ? '' : 's'} · {work.menu.filter((item) => item.coverageStatus !== 'REJECTED').length} dishes
+                'Client'} · {totalDays} day{totalDays === 1 ? '' : 's'} · {functions.length} function{functions.length === 1 ? '' : 's'} · {work.menu.filter((item) => item.coverageStatus !== 'REJECTED').length} dishes
             </p>
           </div>
 
@@ -1623,11 +1704,13 @@ export default function MenuCreationPage() {
             <button
               className="primary-button"
               type="button"
-              onClick={
-                openNewFunction
+              onClick={() =>
+                openNewFunction(
+                  '',
+                )
               }
             >
-              + Add Function
+              + Add Day / Function
             </button>
           </div>
         </section>
@@ -1644,62 +1727,104 @@ export default function MenuCreationPage() {
           </div>
         ) : null}
 
-        <section className="menu-create-function-strip">
-          {functions.map(
+        <section className="menu-create-day-board">
+          {dayGroups.map(
             (
-              fn,
-              index,
+              day,
+              dayIndex,
             ) => (
-              <button
+              <section
+                className="menu-create-day-group"
                 key={
-                  fn.serviceId
+                  day.key
                 }
-                type="button"
-                className={
-                  fn.serviceId ===
-                  activeFunction
-                    ?.serviceId
-                    ? 'active'
-                    : ''
-                }
-                onClick={() => {
-                  setActiveFunctionId(
-                    fn.serviceId,
-                  );
-                  setMessage(
-                    '',
-                  );
-                  setError('');
-                }}
               >
-                <span>
-                  Function {index + 1}
-                </span>
+                <header>
+                  <div>
+                    <span>
+                      Day {dayIndex + 1}
+                    </span>
+                    <h2>
+                      {day.label}
+                    </h2>
+                    <small>
+                      {day.functions.length} function{day.functions.length === 1 ? '' : 's'}
+                    </small>
+                  </div>
 
-                <b>
-                  {fn.mealLabel ||
-                    'Event Menu'}
-                </b>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openNewFunction(
+                        day.label,
+                      )
+                    }
+                  >
+                    + Add Meal / Function
+                  </button>
+                </header>
 
-                <small>
-                  {fn.dayLabel ||
-                    'No date'} · {fn.pax.toLocaleString('en-IN')} guests · {fn.items.length} dishes
-                </small>
-              </button>
+                <div className="menu-create-function-strip">
+                  {day.functions.map(
+                    (
+                      fn,
+                      index,
+                    ) => (
+                      <button
+                        key={
+                          fn.serviceId
+                        }
+                        type="button"
+                        className={
+                          fn.serviceId ===
+                          activeFunction
+                            ?.serviceId
+                            ? 'active'
+                            : ''
+                        }
+                        onClick={() => {
+                          setActiveFunctionId(
+                            fn.serviceId,
+                          );
+                          setMessage(
+                            '',
+                          );
+                          setError('');
+                        }}
+                      >
+                        <span>
+                          Function {index + 1}
+                        </span>
+
+                        <b>
+                          {fn.mealLabel ||
+                            'Event Menu'}
+                        </b>
+
+                        <small>
+                          {fn.pax.toLocaleString('en-IN')} guests · {fn.items.length} dishes
+                        </small>
+                      </button>
+                    ),
+                  )}
+                </div>
+              </section>
             ),
           )}
 
           <button
             type="button"
-            className="add"
-            onClick={
-              openNewFunction
+            className="menu-create-add-day"
+            onClick={() =>
+              openNewFunction(
+                '',
+              )
             }
           >
             <span>＋</span>
-            <b>Add function</b>
+            <b>Add another day</b>
             <small>
-              Breakfast, Lunch, Dinner…
+              Create a new date/day and its first meal or function
             </small>
           </button>
         </section>
@@ -2221,10 +2346,10 @@ export default function MenuCreationPage() {
               <div className="menu-create-modal-head">
                 <div>
                   <span>
-                    New function
+                    Multi-day event
                   </span>
                   <h2>
-                    Add menu function
+                    Add meal / function
                   </h2>
                 </div>
 
@@ -2249,7 +2374,7 @@ export default function MenuCreationPage() {
                     functionDraft
                       .dayLabel
                   }
-                  placeholder="14.02.2027 or Day 1"
+                  placeholder="14.02.2027, 15.02.2027 or Day 2"
                   onChange={(
                     event,
                   ) =>
@@ -2278,7 +2403,8 @@ export default function MenuCreationPage() {
                     functionDraft
                       .mealLabel
                   }
-                  placeholder="Breakfast / Lunch / Dinner / Reception"
+                  placeholder="Breakfast / Haldi / Lunch / Hi-Tea / Dinner / Reception"
+                  list="menu-function-presets"
                   onChange={(
                     event,
                   ) =>
@@ -2295,6 +2421,19 @@ export default function MenuCreationPage() {
                     )
                   }
                 />
+                <datalist id="menu-function-presets">
+                  <option value="Breakfast" />
+                  <option value="Haldi" />
+                  <option value="Lunch" />
+                  <option value="Pool Party" />
+                  <option value="Mamera" />
+                  <option value="Hi-Tea" />
+                  <option value="DJ Night" />
+                  <option value="Dinner" />
+                  <option value="Barat Swagat" />
+                  <option value="Reception" />
+                  <option value="Late Night" />
+                </datalist>
               </label>
 
               <label>
@@ -2473,6 +2612,15 @@ export default function MenuCreationPage() {
           .menu-create-hero-actions{display:flex;gap:8px;flex-wrap:wrap}
           .menu-create-message{padding:10px 12px;border:1px solid rgba(85,217,143,.18);border-radius:10px;color:#8bdbad;background:rgba(85,217,143,.05);font-size:9px}
           .menu-create-message.error{border-color:rgba(255,98,89,.2);color:#ef9a95;background:rgba(255,98,89,.05)}
+          .menu-create-day-board{display:grid;gap:10px}
+          .menu-create-day-group{padding:12px;border:1px solid rgba(148,163,184,.11);border-radius:15px;background:#0e151e}
+          .menu-create-day-group>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+          .menu-create-day-group>header span{display:block;color:#75adf1;font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+          .menu-create-day-group>header h2{margin:2px 0;color:#e7eef6;font-size:14px}
+          .menu-create-day-group>header small{color:#6c7d90;font-size:7px}
+          .menu-create-day-group>header button{min-height:32px;padding:0 10px;border:1px solid rgba(74,156,255,.18);border-radius:8px;color:#9dc8f8;background:rgba(74,156,255,.05);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
+          .menu-create-add-day{display:grid;gap:3px;place-items:center;min-height:76px;border:1px dashed rgba(74,156,255,.25);border-radius:14px;color:#86b8ef;background:rgba(74,156,255,.03);font:inherit;cursor:pointer}
+          .menu-create-add-day span{font-size:15px}.menu-create-add-day b{font-size:10px}.menu-create-add-day small{color:#687a8f;font-size:7px}
           .menu-create-function-strip{display:flex;gap:8px;overflow:auto;padding-bottom:2px}
           .menu-create-function-strip>button{flex:0 0 210px;display:grid;gap:3px;padding:12px 13px;border:1px solid rgba(148,163,184,.12);border-radius:13px;color:#7c8da1;background:#101720;text-align:left;font:inherit;cursor:pointer}
           .menu-create-function-strip>button.active{border-color:rgba(74,156,255,.35);background:rgba(74,156,255,.07);box-shadow:inset 0 0 0 1px rgba(74,156,255,.08)}
@@ -2548,7 +2696,7 @@ export default function MenuCreationPage() {
           .menu-create-modal-head button{width:32px;height:32px;border:1px solid #303b47;border-radius:9px;color:#93a3b5;background:#121a23;font-size:18px;cursor:pointer}
           .menu-create-loading{padding:40px;text-align:center}
           @media(max-width:1050px){.menu-create-layout{grid-template-columns:1fr}.menu-create-selected{position:static}.menu-create-selected-groups{max-height:none}}
-          @media(max-width:700px){.menu-create-station-nav{grid-template-columns:1fr 1fr}.menu-create-station-nav>div{grid-column:1/-1;grid-row:1;text-align:left}.menu-create-hero{align-items:stretch;flex-direction:column}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-function-fields{grid-template-columns:1fr}.menu-create-dish-grid{grid-template-columns:1fr}.menu-create-selected-actions{grid-template-columns:1fr}.menu-create-toolbar{position:static}.menu-create-selected{position:static}.menu-create-function-strip>button{flex-basis:185px}}
+          @media(max-width:700px){.menu-create-day-group>header{align-items:flex-start;flex-direction:column}.menu-create-day-group>header button{width:100%}.menu-create-station-nav{grid-template-columns:1fr 1fr}.menu-create-station-nav>div{grid-column:1/-1;grid-row:1;text-align:left}.menu-create-hero{align-items:stretch;flex-direction:column}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-function-fields{grid-template-columns:1fr}.menu-create-dish-grid{grid-template-columns:1fr}.menu-create-selected-actions{grid-template-columns:1fr}.menu-create-toolbar{position:static}.menu-create-selected{position:static}.menu-create-function-strip>button{flex-basis:185px}}
         `}</style>
       </section>
     </AppShell>
