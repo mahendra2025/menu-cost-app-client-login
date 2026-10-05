@@ -938,16 +938,6 @@ export default function CostPage() {
         )
       : 0;
 
-  const rateReadyPercent =
-    work.menu.length > 0
-      ? Math.round(
-          (
-            costedDishCount /
-            work.menu.length
-          ) * 100,
-        )
-      : 0;
-
   return (
     <AppShell
       title="Dish Cost"
