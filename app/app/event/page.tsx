@@ -10106,17 +10106,6 @@ export default function EventPage() {
         .filter(Boolean),
     ).size;
 
-  const eventSetupChecks = [
-    Boolean(
-      work.event.clientName
-        .trim(),
-    ),
-    Number(
-      work.event.pax,
-    ) > 0,
-    savedMenuDishCount > 0,
-  ];
-
   const menuRateReadinessPercent =
     savedMenuDishCount > 0
       ? Math.round(
