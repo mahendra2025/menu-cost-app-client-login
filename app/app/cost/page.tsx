@@ -68,6 +68,8 @@ type AvailableDish = {
 type DishVendorRate = {
   id: string;
   kind: string;
+  scope?: 'STATION' | 'DISH' | 'OTHER';
+  station?: string;
   item: string;
   unit: string;
   rate: number;
@@ -92,10 +94,15 @@ function matchingDishVendorRate(
   vendor: DishVendor,
   item: Pick<MenuItem, 'name' | 'category'>,
 ) {
-  const names = [
-    normalizeDishName(item.name),
-    normalizeDishName(item.category),
-  ].filter(Boolean);
+  const dishName =
+    normalizeDishName(
+      item.name,
+    );
+
+  const category =
+    normalizeDishName(
+      item.category,
+    );
 
   const eligible =
     (vendor.rates || []).filter(
@@ -107,16 +114,93 @@ function matchingDishVendorRate(
         ),
     );
 
+  /*
+   * Vendor pricing priority:
+   * 1. Exact dish rate
+   * 2. Matching station/category rate
+   * 3. Legacy/untyped saved rate
+   */
+  const dishRate =
+    eligible.find(
+      (rate) =>
+        rate.scope ===
+          'DISH' &&
+        normalizeDishName(
+          rate.item || '',
+        ) === dishName,
+    );
+
+  if (dishRate) {
+    return dishRate;
+  }
+
+  const stationRate =
+    eligible.find(
+      (rate) => {
+        if (
+          rate.scope !==
+          'STATION'
+        ) {
+          return false;
+        }
+
+        const station =
+          normalizeDishName(
+            rate.station ||
+            rate.item ||
+            '',
+          );
+
+        return Boolean(
+          station &&
+          category &&
+          (
+            station ===
+              category ||
+            station.includes(
+              category,
+            ) ||
+            category.includes(
+              station,
+            )
+          )
+        );
+      },
+    );
+
+  if (stationRate) {
+    return stationRate;
+  }
+
+  const legacyNames =
+    [
+      dishName,
+      category,
+    ].filter(Boolean);
+
   return (
     eligible.find(
       (rate) =>
-        names.includes(
-          normalizeDishName(
-            rate.item || '',
-          ),
-        ),
+        !rate.scope ||
+        rate.scope ===
+          'OTHER'
+          ? legacyNames.includes(
+              normalizeDishName(
+                rate.item ||
+                '',
+              ),
+            )
+          : false,
     ) ||
     eligible.find((rate) => {
+      if (
+        rate.scope &&
+        rate.scope !==
+          'OTHER'
+      ) {
+        return false;
+      }
+
       const rateItem =
         normalizeDishName(
           rate.item || '',
@@ -124,12 +208,16 @@ function matchingDishVendorRate(
 
       return Boolean(
         rateItem &&
-        names.some(
+        legacyNames.some(
           (name) =>
             name &&
             (
-              rateItem.includes(name) ||
-              name.includes(rateItem)
+              rateItem.includes(
+                name,
+              ) ||
+              name.includes(
+                rateItem,
+              )
             ),
         ),
       );
