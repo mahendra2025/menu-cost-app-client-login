@@ -2260,6 +2260,11 @@ export default function EventPlanningPage() {
         );
     }, [crockery]);
 
+  const dressRows = useMemo(
+    () => currentRows.filter((row) => row.kind === 'DRESS'),
+    [currentRows],
+  );
+
   const uniformRoleGroups =
     useMemo(() => {
       const groups =
@@ -4820,56 +4825,50 @@ export default function EventPlanningPage() {
           .ep-crockery-inactive-note{color:#c28e53}
           @media(max-width:760px){.ep-crockery-master-head{align-items:stretch;flex-direction:column}.ep-crockery-master-head-actions{justify-content:space-between}.ep-crockery-master-grid{grid-template-columns:1fr 1fr}}
           @media(max-width:520px){.ep-crockery-master-grid{grid-template-columns:1fr}}
-          .ep-uniform-master{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
-          .ep-uniform-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-uniform-master{display:grid;gap:18px;padding:18px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-uniform-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
           .ep-uniform-master-head b,.ep-uniform-master-head span{display:block}
-          .ep-uniform-master-head b{color:#e6edf5;font-size:11px}
-          .ep-uniform-master-head span{margin-top:3px;max-width:700px;color:#748294;font-size:8px;line-height:1.45}
-          .ep-uniform-master-head-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}
-          .ep-uniform-master-head-actions>span{margin:0;color:#718095;font-size:7px;font-weight:850}
-          .ep-uniform-role-list{display:grid;gap:10px}
-          .ep-uniform-role{overflow:hidden;border:1px solid rgba(148,163,184,.09);border-radius:12px;background:#0f151c}
-          .ep-uniform-role-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.08);background:rgba(255,255,255,.018)}
+          .ep-uniform-master-head b{color:#edf4fb;font-size:16px}
+          .ep-uniform-master-head span{margin-top:6px;max-width:650px;color:#94a3b8;font-size:12px;line-height:1.6}
+          .ep-uniform-master-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+          .ep-uniform-master-head-actions>span{margin:0;color:#94a3b8;font-size:11px}
+          .ep-uniform-role-list{display:grid;gap:16px}
+          .ep-uniform-role{overflow:hidden;border:1px solid #293440;border-radius:16px;background:#0f151c}
+          .ep-uniform-role-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px;border-bottom:1px solid #293440}
           .ep-uniform-role-head>div:first-child b,.ep-uniform-role-head>div:first-child span{display:block}
-          .ep-uniform-role-head>div:first-child b{color:#dfe8f2;font-size:10px}
-          .ep-uniform-role-head>div:first-child span{margin-top:2px;color:#718095;font-size:7px}
-          .ep-uniform-role-summary{display:flex;gap:6px;flex-wrap:wrap}
-          .ep-uniform-role-summary span{padding:5px 7px;border-radius:999px;color:#718095;background:rgba(148,163,184,.06);font-size:6px;font-weight:800}
-          .ep-uniform-role-summary b{color:#a8cffc;font-size:7px}
-          .ep-uniform-master-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;padding:9px}
-          .ep-uniform-master-card{overflow:hidden;border:1px solid #2b3440;border-radius:11px;background:#111820;transition:border-color .18s ease,transform .18s ease}
-          .ep-uniform-master-card:hover{border-color:#3b4755;transform:translateY(-1px)}
-          .ep-uniform-master-card.selected{border-color:rgba(74,156,255,.48);box-shadow:inset 0 0 0 1px rgba(74,156,255,.08)}
-          .ep-uniform-master-card.over{border-color:rgba(244,173,84,.42)}
-          .ep-uniform-master-card.inactive{opacity:.62}
-          .ep-uniform-master-photo{position:relative;aspect-ratio:16/8;overflow:hidden;background:#18202a}
-          .ep-uniform-master-photo img{width:100%;height:100%;display:block;object-fit:cover}
-          .ep-uniform-master-status{position:absolute;top:7px;right:7px;padding:4px 6px;border-radius:999px;color:#c3d0df;background:rgba(8,13,19,.78);font-size:6px;font-weight:900}
-          .ep-uniform-master-body{padding:9px}
-          .ep-uniform-master-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-uniform-role-head>div:first-child b{color:#edf4fb;font-size:14px}
+          .ep-uniform-role-head>div:first-child span{margin-top:4px;color:#94a3b8;font-size:11px}
+          .ep-uniform-role-summary{display:flex;gap:8px;flex-wrap:wrap}
+          .ep-uniform-role-summary span{padding:7px 10px;border-radius:999px;color:#94a3b8;background:#18222e;font-size:11px}
+          .ep-uniform-role-summary b{color:#bfdbfe}.ep-uniform-role-summary .warn,.ep-uniform-role-summary .warn b{color:#fbbf77}
+          .ep-uniform-master-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px;padding:14px}
+          .ep-uniform-master-card{overflow:hidden;min-width:0;border:1px solid #2b3440;border-radius:14px;background:#111820}
+          .ep-uniform-master-card.selected{border-color:#3b82b9;box-shadow:inset 0 0 0 1px #1c3b59}.ep-uniform-master-card.over{border-color:#a57a40}
+          .ep-uniform-master-card.inactive{border-style:dashed}
+          .ep-uniform-master-photo{position:relative;aspect-ratio:16/9;overflow:hidden;background:#18202a}
+          .ep-uniform-master-photo img{width:100%;height:100%;display:block;object-fit:contain;padding:8px}
+          .ep-uniform-master-status{position:absolute;top:10px;right:10px;padding:6px 9px;border-radius:999px;color:#e2e8f0;background:rgba(8,13,19,.9);font-size:11px;font-weight:800}
+          .ep-uniform-master-body{display:grid;gap:12px;padding:16px}
+          .ep-uniform-master-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
           .ep-uniform-master-title b,.ep-uniform-master-title span{display:block}
-          .ep-uniform-master-title b{color:#e7eef6;font-size:9px}
-          .ep-uniform-master-title span{margin-top:2px;color:#758397;font-size:7px}
-          .ep-uniform-master-title>strong{color:#d3deea;font-size:8px;white-space:nowrap}
-          .ep-uniform-master-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
-          .ep-uniform-master-meta>span{padding:5px 6px;border-radius:7px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
-          .ep-uniform-master-meta>span b{display:block;margin-top:2px;color:#d7e1ec;font-size:8px}
-          .ep-uniform-master-meta>span.warn{color:#e7a653;background:rgba(244,173,84,.06)}
-          .ep-uniform-master-meta>span.warn b{color:#f1b361}
-          .ep-uniform-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
-          .ep-uniform-tags span{padding:4px 6px;border-radius:999px;color:#72849a;background:rgba(74,156,255,.04);font-size:6px;font-weight:800}
-          .ep-uniform-qty-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end;margin-top:9px}
-          .ep-uniform-qty-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
-          .ep-uniform-qty-editor>button:disabled{opacity:.35;cursor:not-allowed}
-          .ep-uniform-qty-editor label{display:grid;gap:3px}
-          .ep-uniform-qty-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-uniform-qty-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
-          .ep-uniform-required{width:100%;min-height:30px;margin-top:6px;border:1px solid rgba(74,156,255,.16);border-radius:8px;color:#92c3fb;background:rgba(74,156,255,.045);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
-          .ep-uniform-required:disabled{opacity:.35;cursor:not-allowed}
-          .ep-uniform-note{display:block;margin-top:7px;color:#69788b;font-size:6px;line-height:1.4}
-          .ep-uniform-note.warn{color:#c28e53}
-          @media(max-width:760px){.ep-uniform-master-head{align-items:stretch;flex-direction:column}.ep-uniform-master-head-actions{justify-content:space-between}.ep-uniform-master-grid{grid-template-columns:1fr 1fr}}
-          @media(max-width:520px){.ep-uniform-master-grid{grid-template-columns:1fr}}
+          .ep-uniform-master-title b{color:#edf4fb;font-size:15px;overflow-wrap:anywhere}.ep-uniform-master-title span{margin-top:5px;color:#94a3b8;font-size:11px;line-height:1.5}
+          .ep-uniform-master-title>strong{color:#d3deea;font-size:14px;white-space:nowrap}
+          .ep-uniform-master-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+          .ep-uniform-master-meta>span{padding:10px;border-radius:9px;color:#94a3b8;background:#19232f;font-size:10px}
+          .ep-uniform-master-meta>span b{display:block;margin-top:4px;color:#edf4fb;font-size:16px}.ep-uniform-master-meta>span.warn,.ep-uniform-master-meta>span.warn b{color:#fbbf77}
+          .ep-uniform-tags{display:flex;gap:6px;flex-wrap:wrap}.ep-uniform-tags span{padding:6px 8px;border-radius:8px;color:#aabdd2;background:#172436;font-size:11px;overflow-wrap:anywhere}
+          .ep-uniform-qty-editor{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:end}
+          .ep-uniform-qty-editor>button{height:44px;border:1px solid #445366;border-radius:9px;color:#e2e8f0;background:#19232f;font-size:20px;cursor:pointer}.ep-uniform-qty-editor>button:disabled{opacity:.4;cursor:not-allowed}
+          .ep-uniform-qty-editor label{display:grid;gap:6px}.ep-uniform-qty-editor label span{color:#94a3b8;font-size:11px;font-weight:800}
+          .ep-uniform-qty-editor input{width:100%;height:44px;border:1px solid #445366;border-radius:9px;color:#edf4fb;background:#151c25;font:inherit;font-size:16px;text-align:center}
+          .ep-uniform-required{width:100%;min-height:44px;border:1px solid #315d8e;border-radius:9px;color:#bfdbfe;background:#152539;font:inherit;font-size:12px;cursor:pointer}.ep-uniform-required:disabled{opacity:.4;cursor:not-allowed}
+          .ep-uniform-note{display:block;color:#94a3b8;font-size:11px;line-height:1.5}.ep-uniform-note.warn{color:#fbbf77}
+          .ep-uniform-master input:focus-visible,.ep-uniform-master button:focus-visible,.ep-uniform-master a:focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
+          .ep-uniform-master .ep-menu-function-context b{font-size:16px}.ep-uniform-master .ep-menu-function-context span,.ep-uniform-master .ep-menu-function-context small,.ep-uniform-master .ep-menu-function-chips span{font-size:11px}.ep-uniform-master .ep-menu-function-chips b{font-size:16px}
+          .ep-uniform-selected-head h2{margin:0;color:#edf4fb;font-size:16px}.ep-uniform-selected-head p{margin:6px 0 0;color:#94a3b8;font-size:12px;line-height:1.6}
+          .ep-uniform-assignment-grid{padding:0}.ep-uniform-assignment-photo{width:100%;height:160px;object-fit:contain;border-radius:10px;background:#18202a;padding:8px}
+          @media(max-width:720px){.ep-uniform-master{padding:12px}.ep-uniform-master-head{flex-direction:column}.ep-uniform-master-head-actions{width:100%;justify-content:space-between}.ep-uniform-master-head-actions a{min-height:44px}.ep-uniform-master-grid{grid-template-columns:1fr;padding:10px}.ep-uniform-master-body{padding:12px}}
+
           .ep-disposable-master{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
           .ep-disposable-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
           .ep-disposable-master-head b,.ep-disposable-master-head span{display:block}
@@ -5865,9 +5864,9 @@ export default function EventPlanningPage() {
               <section className="ep-uniform-master">
                 <div className="ep-uniform-master-head">
                   <div>
-                    <b>Saved Dress & Uniform Master</b>
+                    <b>Dress & Uniform Workspace</b>
                     <span>
-                      All saved uniforms are grouped by staff role. Required quantity comes from manpower assigned to this function, and you can override it anytime.
+                      Choose staff uniforms by photo, check role coverage and stock, then manage suppliers, issue times and returns below.
                     </span>
                   </div>
 
@@ -5878,6 +5877,15 @@ export default function EventPlanningPage() {
                     <Link className="ep-button" href="/app/uniforms">
                       Manage Uniforms
                     </Link>
+                  </div>
+                </div>
+
+                <div className="ep-menu-function-context">
+                  <div><span>Selected Function</span><b>{currentFunction.dayLabel} · {currentFunction.mealLabel}</b><small>{work.event.clientName || eventName} · {work.event.venue || work.event.city || 'Venue not set'}</small></div>
+                  <div className="ep-menu-function-chips">
+                    <span><b>{dressRows.length}</b>selected items</span>
+                    <span><b>{dressRows.reduce((sum, row) => sum + row.quantity, 0)}</b>sets / pieces</span>
+                    <span><b>{currency(dressRows.reduce((sum, row) => sum + row.quantity * row.rate, 0))}</b>planned cost</span>
                   </div>
                 </div>
 
@@ -5918,6 +5926,7 @@ export default function EventPlanningPage() {
                             <div className="ep-uniform-role-summary">
                               <span>Required <b>{roleRequired}</b></span>
                               <span>Selected <b>{roleSelected}</b></span>
+                              <span>Chosen options <b>{group.items.filter((item) => selectedUniformQty(item.id) > 0).length}</b></span>
                             </div>
                           </div>
 
@@ -5993,7 +6002,7 @@ export default function EventPlanningPage() {
                                           {item.components || item.unit || 'Uniform set'}
                                         </span>
                                       </div>
-                                      <strong>{currency(item.defaultRate)}</strong>
+                                      <strong>{currency(item.defaultRate)}<span>master / {item.unit || 'set'}</span></strong>
                                     </div>
 
                                     <div className="ep-uniform-master-meta">
@@ -6024,6 +6033,7 @@ export default function EventPlanningPage() {
                                       <button
                                         type="button"
                                         disabled={selected <= 0}
+                                        aria-label={'Decrease quantity for ' + item.name}
                                         onClick={() =>
                                           setUniformQuantity(
                                             item,
@@ -6035,25 +6045,26 @@ export default function EventPlanningPage() {
                                       </button>
 
                                       <label>
-                                        <span>Qty</span>
+                                        <span>Selected Quantity</span>
                                         <input
                                           type="number"
                                           min="0"
                                           step="1"
                                           value={selected}
                                           disabled={disabled}
-                                          onChange={(event) =>
-                                            setUniformQuantity(
-                                              item,
-                                              Number(event.target.value),
-                                            )
-                                          }
+                                          aria-label={'Uniform quantity for ' + item.name}
+                                          onChange={(event) => {
+                                            if (event.target.value !== '') {
+                                              setUniformQuantity(item, Number(event.target.value));
+                                            }
+                                          }}
                                         />
                                       </label>
 
                                       <button
                                         type="button"
                                         disabled={disabled}
+                                        aria-label={'Increase quantity for ' + item.name}
                                         onClick={() =>
                                           addUniformFromMaster(item)
                                         }
@@ -6070,12 +6081,12 @@ export default function EventPlanningPage() {
                                         useRequiredUniformQty(item)
                                       }
                                     >
-                                      Use Required {required}
+                                      Set to role requirement · {required}
                                     </button>
 
                                     {!item.active ? (
                                       <small className="ep-uniform-note warn">
-                                        Inactive in Uniform Master. Reactivate it there to add new quantity.
+                                        Inactive in Uniform Master. Existing selections remain editable; manage availability in Uniform Master.
                                       </small>
                                     ) : item.vendorName ? (
                                       <small className="ep-uniform-note">
@@ -6096,6 +6107,56 @@ export default function EventPlanningPage() {
                     No uniforms saved yet. Open Uniform Master and add staff dress first.
                   </div>
                 )}
+                <div className="ep-uniform-selected-head">
+                  <h2>Selected uniforms · supplier & return plan</h2>
+                  <p>Manage every selected or custom item for this function. Rates and quantities remain editable.</p>
+                </div>
+                {dressRows.length ? (
+                  <div className="ep-manpower-role-grid ep-uniform-assignment-grid">
+                    {dressRows.map((row) => {
+                      const vendor = vendors.find((item) => item.id === row.partnerId);
+                      const hasAssignment = Boolean(row.assignedTo.trim());
+                      return (
+                        <article key={row.id} className="ep-manpower-role-card ep-uniform-assignment-card">
+                          {assignmentPhoto(row) ? <img className="ep-uniform-assignment-photo" src={assignmentPhoto(row)} alt={row.requirement} loading="lazy" /> : null}
+                          <div className="ep-manpower-role-title"><div><span>{row.partnerType === 'IN_HOUSE' ? 'In-house' : 'Supplier'}</span><b>{row.requirement}</b><small>{row.assignedTo || 'Supplier needed'}</small></div><strong>{currency(row.quantity * row.rate)}</strong></div>
+                          <label className="ep-menu-field"><span>Supplier / Team</span>
+                            <select value={row.partnerType === 'IN_HOUSE' && hasAssignment ? '__in_house' : row.partnerId || ''} onChange={(event) => assignPartner(row, event.target.value)} aria-label={'Supplier for ' + row.requirement}>
+                              <option value="">Choose saved supplier</option><option value="__in_house">In-house wardrobe</option>
+                              {vendor && !vendor.active ? <option value={vendor.id}>{vendor.name} · Inactive</option> : null}
+                              {row.partnerId && !vendor ? <option value={row.partnerId}>{row.assignedTo} · Unavailable partner</option> : null}
+                              {vendors.filter((item) => item.active).map((item) => <option key={item.id} value={item.id}>{item.name} · {item.category || item.type}</option>)}
+                            </select>
+                          </label>
+                          <div className="ep-menu-field-grid">
+                            <label className="ep-menu-field"><span>Manual Supplier / Team</span><input value={row.partnerId || row.partnerType === 'IN_HOUSE' ? '' : row.assignedTo} placeholder="Enter supplier or team name" onChange={(event) => updateRow(row.id, { partnerId: '', assignedTo: event.target.value, partnerType: row.partnerType === 'IN_HOUSE' ? 'VENDOR' : row.partnerType })} aria-label={'Manual supplier for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Partner Type</span><select value={row.partnerType} onChange={(event) => updateRow(row.id, { partnerType: event.target.value as PartnerType })} aria-label={'Uniform partner type for ' + row.requirement}><option value="IN_HOUSE">In-house</option><option value="VENDOR">Vendor</option><option value="AGENCY">Agency</option></select></label>
+                          </div>
+                          {vendor ? <div className="ep-menu-contact"><div><span>Supplier Contact</span><b>{vendor.contactPerson || vendor.name}</b><small>{[vendor.phone, vendor.city].filter(Boolean).join(' · ') || 'No contact details saved'}</small></div>{vendor.phone ? <a href={'tel:' + vendor.phone} aria-label={'Call uniform supplier ' + vendor.name}>Call</a> : null}</div> : null}
+                          <div className="ep-menu-field-grid">
+                            <label className="ep-menu-field"><span>Quantity</span><input type="number" min="1" step="1" value={row.quantity} onChange={(event) => { if (event.target.value && Number(event.target.value) >= 1) updateRow(row.id, { quantity: Math.round(Number(event.target.value)) }); }} aria-label={'Selected quantity for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Rate / {row.unit || 'set'}</span><input type="number" min="0" step="0.01" value={row.rate} onChange={(event) => updateRow(row.id, { rate: Math.max(0, Number(event.target.value) || 0) })} aria-label={'Uniform rate for ' + row.requirement} /></label>
+                          </div>
+                          <div className="ep-menu-time-grid">
+                            <label className="ep-menu-field"><span>Issue / Reporting Time</span><input type="datetime-local" value={row.deliveryTime} onChange={(event) => updateRow(row.id, { deliveryTime: event.target.value })} aria-label={'Uniform issue time for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Pickup / Return Time</span><input type="datetime-local" value={row.pickupTime || ''} onChange={(event) => updateRow(row.id, { pickupTime: event.target.value })} aria-label={'Uniform return time for ' + row.requirement} /></label>
+                          </div>
+                          <div className="ep-menu-status-actions" role="group" aria-label={'Uniform status for ' + row.requirement}>
+                            {(['PENDING', 'CONFIRMED', 'DELIVERED', 'CLOSED'] as AssignmentStatus[]).map((status) => <button key={status} type="button" className={row.status === status ? 'active' : ''} aria-pressed={row.status === status} onClick={() => updateRow(row.id, { status })}>{status === 'DELIVERED' ? 'Issued' : status.charAt(0) + status.slice(1).toLowerCase()}</button>)}
+                          </div>
+                          <details className="ep-manpower-role-details"><summary>Item details & payment terms</summary><div>
+                            <label className="ep-menu-field"><span>Item Name</span><input value={row.requirement} onChange={(event) => updateRow(row.id, { requirement: event.target.value })} aria-label={'Uniform item name for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Instructions / Sizes</span><textarea value={row.detail} onChange={(event) => updateRow(row.id, { detail: event.target.value })} aria-label={'Uniform instructions for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Unit</span><input value={row.unit} onChange={(event) => updateRow(row.id, { unit: event.target.value })} aria-label={'Uniform unit for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Payment Terms</span><input value={row.paymentTerms || ''} placeholder={vendor?.paymentTerms || 'Enter agreed terms'} onChange={(event) => updateRow(row.id, { paymentTerms: event.target.value })} aria-label={'Uniform payment terms for ' + row.requirement} /></label>
+                          </div></details>
+                          <div className="ep-menu-quick-row"><div>{hasAssignment ? <button type="button" className="ep-menu-mini-action" onClick={() => assignPartner(row, '')}>Clear supplier</button> : null}<button type="button" className="ep-menu-mini-action danger" onClick={() => removeRow(row.id)} aria-label={'Remove uniform ' + row.requirement}>Remove item</button></div></div>
+                          <div className="ep-manpower-role-footer"><b>{!hasAssignment ? 'Assign supplier or team' : !row.deliveryTime ? 'Set issue time' : row.status === 'PENDING' ? 'Confirm uniform plan' : 'Uniform plan confirmed'}</b><small>{row.pickupTime ? 'Return ' + row.pickupTime.replace('T', ' ') : 'Return time not set'}</small></div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : <div className="ep-empty">Choose uniforms above or add a custom requirement below to start this function’s dress plan.</div>}
               </section>
             ) : null}
 
@@ -7727,7 +7788,7 @@ export default function EventPlanningPage() {
               </section>
             ) : null}
 
-            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' ? (
+            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' ? (
               <div className="ep-table-wrap">
                 <table className="ep-table">
                   <thead>
@@ -8195,7 +8256,7 @@ export default function EventPlanningPage() {
                   </tbody>
                 </table>
               </div>
-            ) : tab !== 'MENU' && tab !== 'MANPOWER' ? (
+            ) : tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' ? (
               <div className="ep-empty">
                 No requirements in this section yet.
               </div>
@@ -8205,6 +8266,8 @@ export default function EventPlanningPage() {
               <span className="ep-hint">
                 {tab === 'MENU'
                   ? 'Menu categories come from the selected function menu. Matching food vendors are shown first; covers and vendor rates remain editable.'
+                  : tab === 'DRESS'
+                    ? 'Choose dress by photo, set quantities for each staff role, then confirm suppliers, issue times and returns.'
                   : tab === 'GROCERY'
                     ? 'Grocery suppliers are separated into Grocery, Dairy, and Vegetables & Fruits. Matching vendor categories are shown first.'
                     : tab === 'MANPOWER'
