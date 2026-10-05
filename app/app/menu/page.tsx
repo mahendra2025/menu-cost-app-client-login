@@ -1664,26 +1664,63 @@ export default function MenuCreationPage() {
                 )
               }
               onClick={() => {
-                try {
-                  downloadMenuCreationPdf(
-                    work,
-                  );
+                void (async () => {
+                  try {
+                    const fileName =
+                      downloadMenuCreationPdf(
+                        work,
+                      );
 
-                  setMessage(
-                    'Menu PDF downloaded successfully.',
-                  );
+                    const response =
+                      await fetch(
+                        '/api/client/menu-history',
+                        {
+                          method:
+                            'POST',
+                          headers: {
+                            'Content-Type':
+                              'application/json',
+                          },
+                          body:
+                            JSON.stringify(
+                              {
+                                work,
+                                fileName,
+                              },
+                            ),
+                        },
+                      );
 
-                  setError('');
-                } catch (
-                  pdfError
-                ) {
-                  setError(
-                    pdfError instanceof
-                    Error
-                      ? pdfError.message
-                      : 'Could not download menu PDF.',
-                  );
-                }
+                    const data =
+                      await response
+                        .json()
+                        .catch(
+                          () => ({}),
+                        );
+
+                    if (!response.ok) {
+                      throw new Error(
+                        data.error ||
+                          'Menu downloaded, but could not save it to History.',
+                      );
+                    }
+
+                    setMessage(
+                      'Premium menu downloaded and saved to History.',
+                    );
+
+                    setError('');
+                  } catch (
+                    pdfError
+                  ) {
+                    setError(
+                      pdfError instanceof
+                      Error
+                        ? pdfError.message
+                        : 'Could not download menu PDF.',
+                    );
+                  }
+                })();
               }}
             >
               Download Premium Menu
