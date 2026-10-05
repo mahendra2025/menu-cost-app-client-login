@@ -2571,17 +2571,11 @@ export default function EventPage() {
         );
       }
 
-      const functionName =
-        importFunctionName.trim() ||
-        work?.event.functionType ||
-        'Event Menu';
-
-      if (!importFunctionName.trim()) {
-        setImportFunctionName(
-          functionName,
-        );
-      }
-
+      /*
+       * Keep Function / Meal empty by default.
+       * The user should explicitly choose/enter the function rather
+       * than receiving a generic "Event Menu" value.
+       */
       if (
         !importFunctionPax.trim() &&
         Number(
@@ -5929,7 +5923,7 @@ export default function EventPage() {
     const functionName =
       importFunctionName.trim() ||
       detectionWork.event.functionType ||
-      'Event Menu';
+      '';
     setDetecting(true);
 
     try {
@@ -7908,7 +7902,23 @@ export default function EventPage() {
     const functionName =
       importFunctionName.trim() ||
       work.event.functionType ||
-      'Event Menu';
+      '';
+
+    if (!functionName) {
+      setError(
+        'Enter a function or meal name before saving this menu.',
+      );
+      window.setTimeout(
+        () =>
+          document
+            .getElementById(
+              'importFunctionName',
+            )
+            ?.focus(),
+        20,
+      );
+      return;
+    }
 
     const { menu: nextMenu } =
       mergeFunctionMenu({
@@ -8094,7 +8104,7 @@ export default function EventPage() {
         String(
           detectedDetails.functionType ||
           work.event.functionType ||
-          'Event Menu',
+          '',
         ),
       );
     }
@@ -11251,7 +11261,7 @@ export default function EventPage() {
                     defaultValue={
                       newEventDraft.functionType
                     }
-                    placeholder="Breakfast, Lunch, Dinner, Reception"
+                    placeholder="Enter function: Breakfast, Lunch, Dinner, Reception"
                   />
                 </label>
 
@@ -12409,7 +12419,7 @@ export default function EventPage() {
                             );
                             setError('');
                           }}
-                          placeholder={t('e.g. Breakfast, Lunch, Reception')}
+                          placeholder={t('Enter function: Breakfast, Lunch, Reception')}
                         />
                         {addDishFunctionTarget ? (
                           <small>
