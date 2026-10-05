@@ -1004,52 +1004,6 @@ export default function CostPage() {
             </div>
           </div>
 
-          <aside className="cost-command-actions" aria-label="Costing next steps">
-            <div className="cost-rate-health">
-              <div
-                className="cost-rate-health-ring"
-                style={{
-                  background:
-                    `conic-gradient(${rateReadyPercent === 100 ? '#55d98f' : '#4a9cff'} ${rateReadyPercent * 3.6}deg, #25303d 0deg)`,
-                }}
-                aria-label={`Dish rate readiness ${rateReadyPercent}%`}
-              >
-                <span>
-                  <b>{rateReadyPercent}%</b>
-                  <small>Ready</small>
-                </span>
-              </div>
-
-              <div>
-                <span>Dish rate readiness</span>
-                <b>
-                  {costedDishCount}/{work.menu.length} costed
-                </b>
-                <small>
-                  {missingRateCount > 0
-                    ? 'Complete missing rates before final pricing.'
-                    : 'All dish rates are ready for the next step.'}
-                </small>
-              </div>
-            </div>
-
-            <div className={missingRateCount > 0 ? 'needs-attention' : 'is-ready'}>
-              <span aria-hidden="true">{missingRateCount > 0 ? '!' : '✓'}</span>
-              <div>
-                <b>{missingRateCount > 0 ? `${missingRateCount} ${missingRateCount === 1 ? 'rate needs' : 'rates need'} attention` : 'Food rates are ready'}</b>
-                <small>{missingRateCount > 0 ? 'Complete these before final pricing.' : 'Continue with team and operations.'}</small>
-              </div>
-            </div>
-            {missingRateCount > 0 ? (
-              <button type="button" className="cost-command-fix" onClick={() => {
-                setDishStatusFilter('MISSING');
-                document.querySelector('.dish-cost-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}>Fix missing rates</button>
-            ) : null}
-            <button type="button" onClick={() => router.push('/app/grocery')}>Open grocery <span aria-hidden="true">›</span></button>
-            <button type="button" onClick={() => router.push('/app/team')}>Review manpower <span aria-hidden="true">›</span></button>
-            <button type="button" onClick={() => router.push('/app/operations')}>Add expenses <span aria-hidden="true">›</span></button>
-          </aside>
         </section>
 
         <section className="cost-function-sheet" aria-labelledby="function-cost-title">
