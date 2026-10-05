@@ -123,6 +123,7 @@ type Vendor = {
   paymentTerms: string;
   notes: string;
   active: boolean;
+  menuStations?: string[];
   rates: VendorRate[];
 };
 
@@ -3437,7 +3438,35 @@ export default function EventPlanningPage() {
         ),
       );
 
+    const stationMatch =
+      Array.isArray(
+        vendor.menuStations,
+      ) &&
+      vendor.menuStations.some(
+        (station) => {
+          const stationValue =
+            normalized(
+              station,
+            );
+
+          return Boolean(
+            stationValue &&
+            category &&
+            (
+              stationValue === category ||
+              stationValue.includes(
+                category,
+              ) ||
+              category.includes(
+                stationValue,
+              )
+            )
+          );
+        },
+      );
+
     return Boolean(
+      stationMatch ||
       /food|catering|caterer|kitchen|chef|live counter|sweet|farsan|bakery/.test(
         vendorValue,
       ) ||
@@ -7680,14 +7709,14 @@ const functionCovers =
                                   </option>
 
                                   {matchingFoodVendors.length ? (
-                                    <optgroup label="Matching food vendors">
+                                    <optgroup label={'Matching ' + category + ' station vendors'}>
                                       {matchingFoodVendors.map(
                                         (vendor) => (
                                           <option
                                             key={vendor.id}
                                             value={vendor.id}
                                           >
-                                            {vendor.name} · {vendor.category || vendor.type}
+                                            {vendor.name} · {(vendor.menuStations || []).includes(category) ? category + ' station' : vendor.category || vendor.type}
                                           </option>
                                         ),
                                       )}
