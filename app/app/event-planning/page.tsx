@@ -2138,6 +2138,12 @@ export default function EventPlanningPage() {
       };
     }, [transportRows]);
 
+  const [equipmentQuery, setEquipmentQuery] = useState('');
+  const equipmentRows = useMemo(
+    () => currentRows.filter((row) => row.kind === 'EQUIPMENT'),
+    [currentRows],
+  );
+
   const equipmentCategoryGroups =
     useMemo(() => {
       const groups =
@@ -2198,6 +2204,16 @@ export default function EventPlanningPage() {
             ),
         );
     }, [equipment]);
+
+  const visibleEquipmentGroups = useMemo(() => {
+    const query = normalized(equipmentQuery);
+    return equipmentCategoryGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => !query || normalized(`${item.name} ${item.category} ${item.capacity} ${item.vendorName}`).includes(query)),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [equipmentCategoryGroups, equipmentQuery]);
 
   const crockeryCategoryGroups =
     useMemo(() => {
@@ -4735,52 +4751,60 @@ export default function EventPlanningPage() {
           .ep-equipment-card-body span{margin-top:3px;color:#7f8c9b;font-size:7px}
           .ep-equipment-card-body small{margin-top:5px;color:#71d99d;font-size:7px;font-weight:900}
           .ep-equipment-card.over small{color:#ffb35a}
-          .ep-equipment-master{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
-          .ep-equipment-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-equipment-master{display:grid;gap:18px;padding:18px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-equipment-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
           .ep-equipment-master-head b,.ep-equipment-master-head span{display:block}
-          .ep-equipment-master-head b{color:#e6edf5;font-size:11px}
-          .ep-equipment-master-head span{margin-top:3px;max-width:660px;color:#748294;font-size:8px;line-height:1.45}
-          .ep-equipment-master-head-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}
-          .ep-equipment-master-head-actions>span{margin:0;color:#718095;font-size:7px;font-weight:850}
-          .ep-equipment-category-list{display:grid;gap:10px}
-          .ep-equipment-category{overflow:hidden;border:1px solid rgba(148,163,184,.09);border-radius:12px;background:#0f151c}
-          .ep-equipment-category-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.08);background:rgba(255,255,255,.018)}
-          .ep-equipment-category-head b,.ep-equipment-category-head span{display:block}
-          .ep-equipment-category-head b{color:#dfe8f2;font-size:10px}
-          .ep-equipment-category-head span{margin-top:2px;color:#718095;font-size:7px}
-          .ep-equipment-category-head strong{padding:4px 7px;border-radius:999px;color:#9dc9fa;background:rgba(74,156,255,.07);font-size:7px}
-          .ep-equipment-master-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;padding:9px}
-          .ep-equipment-master-card{overflow:hidden;border:1px solid #2b3440;border-radius:11px;background:#111820;transition:border-color .18s ease,transform .18s ease}
-          .ep-equipment-master-card:hover{border-color:#3b4755;transform:translateY(-1px)}
-          .ep-equipment-master-card.selected{border-color:rgba(74,156,255,.48);box-shadow:inset 0 0 0 1px rgba(74,156,255,.08)}
-          .ep-equipment-master-card.over{border-color:rgba(244,173,84,.42)}
-          .ep-equipment-master-card.inactive{opacity:.62}
-          .ep-equipment-master-photo{position:relative;aspect-ratio:16/8;overflow:hidden;background:#18202a}
-          .ep-equipment-master-photo img{width:100%;height:100%;display:block;object-fit:cover}
-          .ep-equipment-master-status{position:absolute;top:7px;right:7px;padding:4px 6px;border-radius:999px;color:#c3d0df;background:rgba(8,13,19,.78);font-size:6px;font-weight:900;backdrop-filter:blur(8px)}
-          .ep-equipment-master-body{padding:9px}
-          .ep-equipment-master-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-equipment-master-head b{color:#edf4fb;font-size:16px}
+          .ep-equipment-master-head span{margin-top:6px;max-width:650px;color:#94a3b8;font-size:12px;line-height:1.6}
+          .ep-equipment-master-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+          .ep-equipment-master-head-actions>span{margin:0;color:#94a3b8;font-size:11px}
+          .ep-equipment-category-list{display:grid;gap:16px}
+          .ep-equipment-category{overflow:hidden;border:1px solid #293440;border-radius:16px;background:#0f151c}
+          .ep-equipment-category-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px;border-bottom:1px solid #293440}
+          .ep-equipment-category-head>div:first-child b,.ep-equipment-category-head>div:first-child span{display:block}
+          .ep-equipment-category-head>div:first-child b{color:#edf4fb;font-size:14px}
+          .ep-equipment-category-head>div:first-child span{margin-top:4px;color:#94a3b8;font-size:11px}
+          .ep-equipment-category-summary{display:flex;gap:8px;flex-wrap:wrap}
+          .ep-equipment-category-summary span{padding:7px 10px;border-radius:999px;color:#94a3b8;background:#18222e;font-size:11px}
+          .ep-equipment-category-summary b{color:#bfdbfe}.ep-equipment-category-summary .warn,.ep-equipment-category-summary .warn b{color:#fbbf77}
+          .ep-equipment-master-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:14px;padding:14px}
+          .ep-equipment-master-card{overflow:hidden;min-width:0;border:1px solid #2b3440;border-radius:14px;background:#111820}
+          .ep-equipment-master-card.selected{border-color:#3b82b9;box-shadow:inset 0 0 0 1px #1c3b59}.ep-equipment-master-card.over{border-color:#a57a40}
+          .ep-equipment-master-card.inactive{border-style:dashed}
+          .ep-equipment-master-photo{position:relative;aspect-ratio:16/9;overflow:hidden;background:#18202a}
+          .ep-equipment-master-photo img{width:100%;height:100%;display:block;object-fit:contain;padding:8px}
+          .ep-equipment-master-status{position:absolute;top:10px;right:10px;padding:6px 9px;border-radius:999px;color:#e2e8f0;background:rgba(8,13,19,.9);font-size:11px;font-weight:800}
+          .ep-equipment-master-body{display:grid;gap:12px;padding:16px}
+          .ep-equipment-master-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
           .ep-equipment-master-title b,.ep-equipment-master-title span{display:block}
-          .ep-equipment-master-title b{color:#e7eef6;font-size:9px}
-          .ep-equipment-master-title span{margin-top:2px;color:#758397;font-size:7px}
-          .ep-equipment-master-title>strong{color:#d3deea;font-size:8px;white-space:nowrap}
-          .ep-equipment-master-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
-          .ep-equipment-master-meta>span{padding:5px 6px;border-radius:7px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
-          .ep-equipment-master-meta>span b{display:block;margin-top:2px;color:#d7e1ec;font-size:8px}
-          .ep-equipment-master-meta>span.warn{color:#e7a653;background:rgba(244,173,84,.06)}
-          .ep-equipment-master-meta>span.warn b{color:#f1b361}
-          .ep-equipment-qty-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end;margin-top:9px}
-          .ep-equipment-qty-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
-          .ep-equipment-qty-editor>button:hover:not(:disabled){border-color:rgba(74,156,255,.45);color:#9dc9fa;background:rgba(74,156,255,.06)}
-          .ep-equipment-qty-editor>button:disabled{opacity:.35;cursor:not-allowed}
-          .ep-equipment-qty-editor label{display:grid;gap:3px}
-          .ep-equipment-qty-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-equipment-qty-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
-          .ep-equipment-qty-editor input:focus{border-color:rgba(74,156,255,.55);box-shadow:0 0 0 3px rgba(74,156,255,.08)}
-          .ep-equipment-inactive-note,.ep-equipment-vendor-note{display:block;margin-top:7px;color:#69788b;font-size:6px;line-height:1.4}
-          .ep-equipment-inactive-note{color:#c28e53}
-          @media(max-width:760px){.ep-equipment-master-head{align-items:stretch;flex-direction:column}.ep-equipment-master-head-actions{justify-content:space-between}.ep-equipment-master-grid{grid-template-columns:1fr 1fr}}
-          @media(max-width:520px){.ep-equipment-master-grid{grid-template-columns:1fr}}
+          .ep-equipment-master-title b{color:#edf4fb;font-size:15px;overflow-wrap:anywhere}.ep-equipment-master-title span{margin-top:5px;color:#94a3b8;font-size:11px;line-height:1.5}
+          .ep-equipment-master-title>strong{color:#d3deea;font-size:14px;white-space:nowrap}
+          .ep-equipment-master-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+          .ep-equipment-master-meta>span{padding:10px;border-radius:9px;color:#94a3b8;background:#19232f;font-size:10px}
+          .ep-equipment-master-meta>span b{display:block;margin-top:4px;color:#edf4fb;font-size:16px}.ep-equipment-master-meta>span.warn,.ep-equipment-master-meta>span.warn b{color:#fbbf77}
+          .ep-equipment-tags{display:flex;gap:6px;flex-wrap:wrap}.ep-equipment-tags span{padding:6px 8px;border-radius:8px;color:#aabdd2;background:#172436;font-size:11px;overflow-wrap:anywhere}
+          .ep-equipment-qty-editor{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:end}
+          .ep-equipment-qty-editor>button{height:44px;border:1px solid #445366;border-radius:9px;color:#e2e8f0;background:#19232f;font-size:20px;cursor:pointer}.ep-equipment-qty-editor>button:disabled{opacity:.4;cursor:not-allowed}
+          .ep-equipment-qty-editor label{display:grid;gap:6px}.ep-equipment-qty-editor label span{color:#94a3b8;font-size:11px;font-weight:800}
+          .ep-equipment-qty-editor input{width:100%;height:44px;border:1px solid #445366;border-radius:9px;color:#edf4fb;background:#151c25;font:inherit;font-size:16px;text-align:center}
+          .ep-equipment-event-qty{width:100%;min-height:44px;border:1px solid #315d8e;border-radius:9px;color:#bfdbfe;background:#152539;font:inherit;font-size:12px;cursor:pointer}.ep-equipment-event-qty:disabled{opacity:.4;cursor:not-allowed}
+          .ep-equipment-note{display:block;color:#94a3b8;font-size:11px;line-height:1.5}.ep-equipment-note.warn{color:#fbbf77}
+          .ep-equipment-master input:focus-visible,.ep-equipment-master button:focus-visible,.ep-equipment-master a:focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
+          .ep-equipment-master .ep-menu-function-context b{font-size:16px}.ep-equipment-master .ep-menu-function-context span,.ep-equipment-master .ep-menu-function-context small,.ep-equipment-master .ep-menu-function-chips span{font-size:11px}.ep-equipment-master .ep-menu-function-chips b{font-size:16px}
+          .ep-equipment-selected-head h2{margin:0;color:#edf4fb;font-size:16px}.ep-equipment-selected-head p{margin:6px 0 0;color:#94a3b8;font-size:12px;line-height:1.6}
+          .ep-equipment-assignment-grid{padding:0}.ep-equipment-assignment-photo{width:100%;height:160px;object-fit:contain;border-radius:10px;background:#18202a;padding:8px}
+          @media(max-width:720px){.ep-equipment-master{padding:12px}.ep-equipment-master-head{flex-direction:column}.ep-equipment-master-head-actions{width:100%;justify-content:space-between}.ep-equipment-master-head-actions a{min-height:44px}.ep-equipment-master-grid{grid-template-columns:1fr;padding:10px}.ep-equipment-master-body{padding:12px}}
+          .ep-equipment-category-head>strong{padding:7px 10px;border-radius:999px;color:#bfdbfe;background:#18222e;font-size:11px}
+          .ep-equipment-master .ep-empty{font-size:12px;line-height:1.6}
+          .ep-equipment-master-head-actions .ep-button{min-height:44px;font-size:12px}
+
+          .ep-equipment-note,.ep-equipment-inactive-note,.ep-equipment-vendor-note{display:block;color:#94a3b8;font-size:11px;line-height:1.5}.ep-equipment-note.warn,.ep-equipment-inactive-note{color:#fbbf77}
+          .ep-equipment-search{display:flex;align-items:end;gap:10px;flex-wrap:wrap;padding:14px;border:1px solid #293440;border-radius:12px;background:#10171f}
+          .ep-equipment-search label{display:grid;gap:6px;flex:1;min-width:180px;color:#94a3b8;font-size:12px}
+          .ep-equipment-search input{width:100%;height:44px;padding:10px;border:1px solid #445366;border-radius:9px;color:#edf4fb;background:#151c25;font:inherit;font-size:14px}
+          .ep-equipment-search>span{color:#94a3b8;font-size:11px;padding-bottom:14px}
+          @media(max-width:720px){.ep-equipment-search label{min-width:100%}.ep-equipment-search input{font-size:16px}}
+
           .ep-crockery-master{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
           .ep-crockery-master-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
           .ep-crockery-master-head b,.ep-crockery-master-head span{display:block}
@@ -6255,9 +6279,9 @@ export default function EventPlanningPage() {
               <section className="ep-equipment-master">
                 <div className="ep-equipment-master-head">
                   <div>
-                    <b>Saved Equipment Master</b>
+                    <b>Equipment Workspace</b>
                     <span>
-                      All equipment saved on the Equipment page is shown here by category. Edit quantity directly for this function.
+                      Choose equipment by photo, check stock and capacity, then manage in-house or rental assignments, delivery and return times below.
                     </span>
                   </div>
 
@@ -6274,19 +6298,25 @@ export default function EventPlanningPage() {
                   </div>
                 </div>
 
-                {equipmentCategoryGroups.length ? (
+                <div className="ep-menu-function-context">
+                  <div><span>Selected Function</span><b>{currentFunction.dayLabel} · {currentFunction.mealLabel}</b><small>{work.event.clientName || eventName} · {work.event.venue || work.event.city || 'Venue not set'}</small></div>
+                  <div className="ep-menu-function-chips">
+                    <span><b>{equipmentRows.length}</b>selected items</span>
+                    <span><b>{equipmentRows.filter((row) => row.assignedTo.trim()).length}/{equipmentRows.length}</b>assigned</span>
+                    <span><b>{currency(equipmentRows.reduce((sum, row) => sum + row.quantity * row.rate, 0))}</b>planned cost</span>
+                  </div>
+                </div>
+                <div className="ep-equipment-search">
+                  <label>Search saved equipment<input value={equipmentQuery} onChange={(event) => setEquipmentQuery(event.target.value)} placeholder="Name, category, capacity or rental vendor" type="search" /></label>
+                  {equipmentQuery ? <button className="ep-button" type="button" onClick={() => setEquipmentQuery('')}>Clear search</button> : null}
+                  <span>{visibleEquipmentGroups.reduce((sum, group) => sum + group.items.length, 0)} shown / {equipment.length} saved</span>
+                </div>
+
+                {visibleEquipmentGroups.length ? (
                   <div className="ep-equipment-category-list">
-                    {equipmentCategoryGroups.map(
+                    {visibleEquipmentGroups.map(
                       (group) => {
-                        const categorySelected =
-                          group.items.reduce(
-                            (sum, item) =>
-                              sum +
-                              selectedEquipmentQty(
-                                item.id,
-                              ),
-                            0,
-                          );
+                        const categorySelected = group.items.filter((item) => selectedEquipmentQty(item.id) > 0).length;
 
                         return (
                           <section
@@ -6302,7 +6332,7 @@ export default function EventPlanningPage() {
                               </div>
 
                               <strong>
-                                {categorySelected} selected
+                                {categorySelected} items selected
                               </strong>
                             </div>
 
@@ -6384,6 +6414,7 @@ export default function EventPlanningPage() {
 
                                           <strong>
                                             {currency(item.defaultRate)}
+                                            <span>master / {item.unit || 'unit'}</span>
                                           </strong>
                                         </div>
 
@@ -6421,19 +6452,19 @@ export default function EventPlanningPage() {
                                           </button>
 
                                           <label>
-                                            <span>Qty</span>
+                                            <span>Selected Quantity</span>
                                             <input
                                               type="number"
                                               min="0"
                                               step="1"
                                               value={selected}
                                               disabled={disabled}
-                                              onChange={(event) =>
-                                                setEquipmentQuantity(
-                                                  item,
-                                                  Number(event.target.value),
-                                                )
-                                              }
+                                              aria-label={'Equipment quantity for ' + item.name}
+                                              onChange={(event) => {
+                                                if (event.target.value !== '') {
+                                                  setEquipmentQuantity(item, Number(event.target.value));
+                                                }
+                                              }}
                                             />
                                           </label>
 
@@ -6453,7 +6484,7 @@ export default function EventPlanningPage() {
 
                                         {!item.active ? (
                                           <small className="ep-equipment-inactive-note">
-                                            Inactive in Equipment Master. Reactivate it there to add quantity.
+                                            Inactive in Equipment Master. Existing selections remain editable; manage availability in Equipment Master.
                                           </small>
                                         ) : item.vendorName ? (
                                           <small className="ep-equipment-vendor-note">
@@ -6473,9 +6504,59 @@ export default function EventPlanningPage() {
                   </div>
                 ) : (
                   <div className="ep-empty">
-                    No equipment saved yet. Open Equipment Master and add your equipment first.
+                    {equipment.length ? 'No saved equipment matches this search. Clear search to see all items.' : 'No equipment saved yet. Open Equipment Master and add your equipment first.'}
                   </div>
                 )}
+                <div className="ep-equipment-selected-head">
+                  <h2>Selected equipment · rental & return plan</h2>
+                  <p>Manage every selected or custom item for this function. Rates and quantities remain editable.</p>
+                </div>
+                {equipmentRows.length ? (
+                  <div className="ep-manpower-role-grid ep-equipment-assignment-grid">
+                    {equipmentRows.map((row) => {
+                      const vendor = vendors.find((item) => item.id === row.partnerId);
+                      const hasAssignment = Boolean(row.assignedTo.trim());
+                      return (
+                        <article key={row.id} className="ep-manpower-role-card ep-equipment-assignment-card">
+                          {assignmentPhoto(row) ? <img className="ep-equipment-assignment-photo" src={assignmentPhoto(row)} alt={row.requirement} loading="lazy" /> : null}
+                          <div className="ep-manpower-role-title"><div><span>{row.partnerType === 'IN_HOUSE' ? 'In-house' : 'Supplier'}</span><b>{row.requirement}</b><small>{row.assignedTo || 'Supplier needed'}</small></div><strong>{currency(row.quantity * row.rate)}</strong></div>
+                          <label className="ep-menu-field"><span>Supplier / Team</span>
+                            <select value={row.partnerType === 'IN_HOUSE' && hasAssignment ? '__in_house' : row.partnerId || ''} onChange={(event) => assignPartner(row, event.target.value)} aria-label={'Supplier for ' + row.requirement}>
+                              <option value="">Choose saved supplier</option><option value="__in_house">In-house equipment</option>
+                              {vendor && !vendor.active ? <option value={vendor.id}>{vendor.name} · Inactive</option> : null}
+                              {row.partnerId && !vendor ? <option value={row.partnerId}>{row.assignedTo} · Unavailable partner</option> : null}
+                              {vendors.filter((item) => item.active).map((item) => <option key={item.id} value={item.id}>{item.name} · {item.category || item.type}</option>)}
+                            </select>
+                          </label>
+                          <div className="ep-menu-field-grid">
+                            <label className="ep-menu-field"><span>Manual Supplier / Team</span><input value={row.partnerId || row.partnerType === 'IN_HOUSE' ? '' : row.assignedTo} placeholder="Enter supplier or team name" onChange={(event) => updateRow(row.id, { partnerId: '', assignedTo: event.target.value, partnerType: row.partnerType === 'IN_HOUSE' ? 'VENDOR' : row.partnerType })} aria-label={'Manual supplier for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Partner Type</span><select value={row.partnerType} onChange={(event) => updateRow(row.id, { partnerType: event.target.value as PartnerType })} aria-label={'Equipment partner type for ' + row.requirement}><option value="IN_HOUSE">In-house</option><option value="VENDOR">Vendor</option><option value="AGENCY">Agency</option></select></label>
+                          </div>
+                          {vendor ? <div className="ep-menu-contact"><div><span>Supplier Contact</span><b>{vendor.contactPerson || vendor.name}</b><small>{[vendor.phone, vendor.city].filter(Boolean).join(' · ') || 'No contact details saved'}</small></div>{vendor.phone ? <a href={'tel:' + vendor.phone} aria-label={'Call equipment supplier ' + vendor.name}>Call</a> : null}</div> : null}
+                          <div className="ep-menu-field-grid">
+                            <label className="ep-menu-field"><span>Quantity</span><input type="number" min="0" step="any" value={row.quantity} onChange={(event) => { if (event.target.value !== '') updateRow(row.id, { quantity: Math.max(0, Number(event.target.value) || 0) }); }} aria-label={'Selected quantity for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Rate / {row.unit || 'unit'}</span><input type="number" min="0" step="0.01" value={row.rate} onChange={(event) => updateRow(row.id, { rate: Math.max(0, Number(event.target.value) || 0) })} aria-label={'Equipment rate for ' + row.requirement} /></label>
+                          </div>
+                          <div className="ep-menu-time-grid">
+                            <label className="ep-menu-field"><span>Delivery Time</span><input type="datetime-local" value={row.deliveryTime} onChange={(event) => updateRow(row.id, { deliveryTime: event.target.value })} aria-label={'Equipment delivery time for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Pickup / Return Time</span><input type="datetime-local" value={row.pickupTime || ''} onChange={(event) => updateRow(row.id, { pickupTime: event.target.value })} aria-label={'Equipment return time for ' + row.requirement} /></label>
+                          </div>
+                          <div className="ep-menu-status-actions" role="group" aria-label={'Equipment status for ' + row.requirement}>
+                            {(['PENDING', 'CONFIRMED', 'DELIVERED', 'CLOSED'] as AssignmentStatus[]).map((status) => <button key={status} type="button" className={row.status === status ? 'active' : ''} aria-pressed={row.status === status} onClick={() => updateRow(row.id, { status })}>{status === 'DELIVERED' ? 'Received' : status.charAt(0) + status.slice(1).toLowerCase()}</button>)}
+                          </div>
+                          <details className="ep-manpower-role-details"><summary>Item details & payment terms</summary><div>
+                            <label className="ep-menu-field"><span>Item Name</span><input value={row.requirement} onChange={(event) => updateRow(row.id, { requirement: event.target.value })} aria-label={'Equipment item name for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Setup / Handling Instructions</span><textarea value={row.detail} onChange={(event) => updateRow(row.id, { detail: event.target.value })} aria-label={'Equipment instructions for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Unit</span><input value={row.unit} onChange={(event) => updateRow(row.id, { unit: event.target.value })} aria-label={'Equipment unit for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Payment Terms</span><input value={row.paymentTerms || ''} placeholder={vendor?.paymentTerms || 'Enter agreed terms'} onChange={(event) => updateRow(row.id, { paymentTerms: event.target.value })} aria-label={'Equipment payment terms for ' + row.requirement} /></label>
+                          </div></details>
+                          <div className="ep-menu-quick-row"><div>{hasAssignment ? <button type="button" className="ep-menu-mini-action" onClick={() => assignPartner(row, '')}>Clear supplier</button> : null}<button type="button" className="ep-menu-mini-action danger" onClick={() => removeRow(row.id)} aria-label={'Remove equipment ' + row.requirement}>Remove item</button></div></div>
+                          <div className="ep-manpower-role-footer"><b>{!hasAssignment ? 'Assign supplier or team' : !row.deliveryTime ? 'Set delivery time' : row.status === 'PENDING' ? 'Confirm assignment' : row.status === 'CLOSED' ? 'Assignment closed' : row.status === 'DELIVERED' ? 'Equipment delivered' : 'Assignment confirmed'}</b><small>{row.pickupTime ? 'Return ' + row.pickupTime.replace('T', ' ') : 'Return time not set'}</small></div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ) : <div className="ep-empty">Choose equipment above or add a custom requirement below to start this function’s equipment plan.</div>}
               </section>
             ) : null}
 
@@ -7879,7 +7960,7 @@ export default function EventPlanningPage() {
               </section>
             ) : null}
 
-            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' && tab !== 'DISPOSABLE' ? (
+            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' && tab !== 'DISPOSABLE' && tab !== 'EQUIPMENT' ? (
               <div className="ep-table-wrap">
                 <table className="ep-table">
                   <thead>
@@ -8347,7 +8428,7 @@ export default function EventPlanningPage() {
                   </tbody>
                 </table>
               </div>
-            ) : tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' && tab !== 'DISPOSABLE' ? (
+            ) : tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' && tab !== 'DISPOSABLE' && tab !== 'EQUIPMENT' ? (
               <div className="ep-empty">
                 No requirements in this section yet.
               </div>
@@ -8357,6 +8438,8 @@ export default function EventPlanningPage() {
               <span className="ep-hint">
                 {tab === 'MENU'
                   ? 'Menu categories come from the selected function menu. Matching food vendors are shown first; covers and vendor rates remain editable.'
+                  : tab === 'EQUIPMENT'
+                    ? 'Find saved equipment by photo or search, set quantities for this function, then confirm rental or in-house assignments and return times.'
                   : tab === 'DISPOSABLE'
                     ? 'Choose items by photo, set quantities for this function, then confirm suppliers and delivery times.'
                   : tab === 'DRESS'
@@ -8516,6 +8599,7 @@ export default function EventPlanningPage() {
     </AppShell>
   );
 }
+
 
 
 
