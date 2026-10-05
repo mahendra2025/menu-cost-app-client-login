@@ -4970,50 +4970,33 @@ export default function EventPlanningPage() {
           .ep-disposable-master .ep-empty{font-size:12px;line-height:1.6}
           .ep-disposable-master-head-actions .ep-button{min-height:44px;font-size:12px}
 
-          .ep-transport-control{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
-          .ep-transport-control-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-transport-control{display:grid;gap:18px;padding:18px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-transport-control-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
           .ep-transport-control-head b,.ep-transport-control-head span{display:block}
-          .ep-transport-control-head b{color:#e6edf5;font-size:11px}
-          .ep-transport-control-head span{margin-top:3px;max-width:720px;color:#748294;font-size:8px;line-height:1.45}
-          .ep-transport-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
-          .ep-transport-summary article{padding:9px 10px;border:1px solid rgba(148,163,184,.09);border-radius:10px;background:rgba(255,255,255,.018)}
+          .ep-transport-control-head b{color:#edf4fb;font-size:16px}
+          .ep-transport-control-head span{margin-top:6px;max-width:680px;color:#94a3b8;font-size:12px;line-height:1.6}
+          .ep-transport-control-head .ep-button{min-height:44px;font-size:12px;white-space:nowrap}
+          .ep-transport-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+          .ep-transport-summary article{min-width:0;padding:14px;border:1px solid #293440;border-radius:12px;background:#10171f}
           .ep-transport-summary span,.ep-transport-summary b,.ep-transport-summary small{display:block}
-          .ep-transport-summary span{color:#718094;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-transport-summary b{margin-top:4px;color:#e1eaf3;font-size:12px}
-          .ep-transport-summary small{margin-top:2px;color:#657487;font-size:6px}
-          .ep-transport-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
-          .ep-transport-preset{display:grid;gap:4px;min-height:78px;padding:10px;border:1px solid #2b3440;border-radius:10px;color:#8190a2;background:#101720;font:inherit;text-align:left;cursor:pointer}
-          .ep-transport-preset:hover{border-color:#3c4856;background:#121b25}
-          .ep-transport-preset.active{border-color:rgba(74,156,255,.38);background:rgba(74,156,255,.045)}
-          .ep-transport-preset span{color:#dbe5ef;font-size:9px;font-weight:900}
-          .ep-transport-preset small{color:#68778a;font-size:6px;line-height:1.4}
-          .ep-transport-preset b{align-self:end;color:#8fc2ff;font-size:7px}
-          .ep-transport-list{display:grid;gap:7px}
-          .ep-transport-card{padding:10px;border:1px solid #2b3440;border-radius:11px;background:#101720}
-          .ep-transport-card.ready{border-color:rgba(85,217,143,.18)}
-          .ep-transport-card.attention{border-color:rgba(244,173,84,.24)}
-          .ep-transport-card-main{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-          .ep-transport-card-main span,.ep-transport-card-main b,.ep-transport-card-main small{display:block}
-          .ep-transport-card-main span{color:#78b5ff;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-transport-card-main b{margin-top:3px;color:#e4edf6;font-size:10px}
-          .ep-transport-card-main small{margin-top:2px;color:#6e7c8e;font-size:7px}
-          .ep-transport-card-main>strong{color:#dce7f1;font-size:11px;white-space:nowrap}
-          .ep-transport-card-grid{display:grid;grid-template-columns:150px minmax(0,1fr);gap:9px;align-items:end;margin-top:9px}
-          .ep-transport-qty-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end}
-          .ep-transport-qty-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
-          .ep-transport-qty-editor>button:disabled{opacity:.35;cursor:not-allowed}
-          .ep-transport-qty-editor label{display:grid;gap:3px}
-          .ep-transport-qty-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-transport-qty-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
-          .ep-transport-card-meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
-          .ep-transport-card-meta>span{padding:6px;border-radius:8px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
-          .ep-transport-card-meta b{display:block;overflow:hidden;margin-top:3px;color:#d7e1ec;font-size:7px;text-overflow:ellipsis;white-space:nowrap}
-          .ep-transport-card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:7px;border-top:1px solid rgba(148,163,184,.07)}
-          .ep-transport-card-footer>span{padding:4px 7px;border-radius:999px;color:#f0b15f;background:rgba(244,173,84,.07);font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-transport-card-footer>span.confirmed,.ep-transport-card-footer>span.delivered,.ep-transport-card-footer>span.closed{color:#76dda2;background:rgba(85,217,143,.07)}
-          .ep-transport-card-footer small{color:#637285;font-size:6px}
-          @media(max-width:1100px){.ep-transport-summary{grid-template-columns:repeat(3,1fr)}.ep-transport-presets{grid-template-columns:1fr 1fr}.ep-transport-card-grid{grid-template-columns:1fr}.ep-transport-card-meta{grid-template-columns:1fr 1fr}}
-          @media(max-width:640px){.ep-transport-control-head{align-items:stretch;flex-direction:column}.ep-transport-summary{grid-template-columns:1fr 1fr}.ep-transport-presets{grid-template-columns:1fr}.ep-transport-card-meta{grid-template-columns:1fr}}
+          .ep-transport-summary span{color:#94a3b8;font-size:11px;font-weight:800}
+          .ep-transport-summary b{margin-top:7px;color:#edf4fb;font-size:21px;overflow-wrap:anywhere}
+          .ep-transport-summary small{margin-top:5px;color:#94a3b8;font-size:11px;line-height:1.5}
+          .ep-transport-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+          .ep-transport-preset{display:grid;gap:8px;min-height:142px;padding:16px;border:1px solid #354252;border-radius:14px;background:#101720;font:inherit;text-align:left;cursor:pointer}
+          .ep-transport-preset:hover{border-color:#6684a8;background:#152131}.ep-transport-preset.active{border-color:#3b82b9;background:#102034}
+          .ep-transport-preset span{color:#edf4fb;font-size:14px;font-weight:800}.ep-transport-preset small{color:#94a3b8;font-size:11px;line-height:1.6}.ep-transport-preset b{align-self:end;color:#bfdbfe;font-size:12px}
+          .ep-transport-assignment-grid{padding:0}.ep-transport-assignment-photo{width:100%;height:160px;object-fit:contain;border-radius:10px;background:#18202a;padding:8px}
+          .ep-transport-selected-head h2{margin:0;color:#edf4fb;font-size:16px}.ep-transport-selected-head p,.ep-transport-instructions{margin:6px 0 0;color:#94a3b8;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+          .ep-transport-qty-editor{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:end}
+          .ep-transport-qty-editor>button{height:44px;border:1px solid #445366;border-radius:9px;color:#e2e8f0;background:#19232f;font-size:20px;cursor:pointer}.ep-transport-qty-editor>button:disabled{opacity:.4;cursor:not-allowed}
+          .ep-transport-qty-editor label{display:grid;gap:6px}.ep-transport-qty-editor label span{color:#94a3b8;font-size:11px;font-weight:800}
+          .ep-transport-qty-editor input{width:100%;min-width:0;height:44px;border:1px solid #445366;border-radius:9px;color:#edf4fb;background:#151c25;font:inherit;font-size:16px;text-align:center}
+          .ep-transport-control .ep-menu-function-context b{font-size:16px}.ep-transport-control .ep-menu-function-context span,.ep-transport-control .ep-menu-function-context small,.ep-transport-control .ep-menu-function-chips span{font-size:11px}.ep-transport-control .ep-menu-function-chips b{font-size:16px}
+          .ep-transport-control .ep-empty{font-size:12px;line-height:1.6}.ep-transport-control input:focus-visible,.ep-transport-control select:focus-visible,.ep-transport-control textarea:focus-visible,.ep-transport-control button:focus-visible,.ep-transport-control a:focus-visible,.ep-transport-control summary:focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
+          @media(max-width:1100px){.ep-transport-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.ep-transport-presets{grid-template-columns:repeat(2,minmax(0,1fr))}}
+          @media(max-width:720px){.ep-transport-control{padding:12px}.ep-transport-control-head{flex-direction:column}.ep-transport-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.ep-transport-summary article{padding:12px}.ep-transport-presets{grid-template-columns:1fr}.ep-transport-preset{min-height:118px}.ep-transport-control-head .ep-button{width:100%}}
+
           .ep-manpower-agency-control{display:grid;gap:18px;padding:18px;border-bottom:1px solid #252c35;background:#0c1117}
           .ep-manpower-agency-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
           .ep-manpower-agency-head b,.ep-manpower-agency-head span{display:block}
@@ -7818,9 +7801,9 @@ export default function EventPlanningPage() {
               <section className="ep-transport-control">
                 <div className="ep-transport-control-head">
                   <div>
-                    <b>Transport Control</b>
+                    <b>Transport Assignment Workspace</b>
                     <span>
-                      Plan food, equipment, staff and extra trips separately for this function. Set vehicle/trip count, partner, rate, dispatch and return timing.
+                      Plan food, equipment, staff and extra trips for this function. Assign a vehicle partner, agree the rate and confirm dispatch and return times.
                     </span>
                   </div>
 
@@ -7830,6 +7813,11 @@ export default function EventPlanningPage() {
                   >
                     Transport Vendors
                   </Link>
+                </div>
+
+                <div className="ep-menu-function-context">
+                  <div><span>Selected Function</span><b>{currentFunction.dayLabel} · {currentFunction.mealLabel}</b><small>{work.event.clientName || eventName} · {work.event.venue || work.event.city || 'Venue not set'}</small></div>
+                  <div className="ep-menu-function-chips"><span><b>{Math.max(0, Number(currentFunction.pax) || 0).toLocaleString('en-IN')}</b> guests</span><span><b>{transportRows.length}</b> transport lines</span></div>
                 </div>
 
                 <div className="ep-transport-summary">
@@ -7844,14 +7832,14 @@ export default function EventPlanningPage() {
                     <small>In-house or vendor assigned</small>
                   </article>
                   <article>
-                    <span>Timing Ready</span>
+                    <span>Dispatch Time Set</span>
                     <b>{transportSummary.withTiming}/{transportRows.length}</b>
                     <small>Dispatch/reporting time entered</small>
                   </article>
                   <article>
                     <span>Confirmed</span>
                     <b>{transportSummary.confirmed}</b>
-                    <small>{transportSummary.readiness}% transport readiness</small>
+                    <small>{transportSummary.readiness}% confirmation progress</small>
                   </article>
                   <article>
                     <span>Transport Cost</span>
@@ -7902,622 +7890,71 @@ export default function EventPlanningPage() {
                         <small>{preset.detail}</small>
                         <b>
                           {quantity > 0
-                            ? `${quantity} trip${quantity === 1 ? '' : 's'}`
-                            : '+ Add'}
+                            ? `${quantity} planned · + Add trip`
+                            : '+ Add trip'}
                         </b>
                       </button>
                     );
                   })}
                 </div>
 
+                <div className="ep-transport-selected-head">
+                  <h2>Vehicle & trip assignments</h2>
+                  <p>Manage saved and custom transport lines here. Use trip details for vehicle requirements, route instructions and payment terms.</p>
+                </div>
                 {transportRows.length ? (
-                  <div className="ep-transport-list">
-                    {transportRows.map((row) => (
-                      <article
-                        className={
-                          [
-                            'ep-transport-card',
-                            row.status !== 'PENDING'
-                              ? 'ready'
-                              : '',
-                            !row.assignedTo.trim()
-                              ? 'attention'
-                              : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')
-                        }
-                        key={row.id}
-                      >
-                        <div className="ep-transport-card-main">
-                          <div>
-                            <span>
-                              {TRANSPORT_PRESETS.find(
-                                (preset) =>
-                                  preset.key ===
-                                  transportPresetKey(row),
-                              )?.label || 'Transport'}
-                            </span>
-                            <b>{row.requirement}</b>
-                            <small>{row.detail || 'Event transport movement'}</small>
+                  <div className="ep-manpower-role-grid ep-transport-assignment-grid">
+                    {transportRows.map((row) => {
+                      const vendor = vendors.find((item) => item.id === row.partnerId);
+                      const hasAssignment = Boolean(row.assignedTo.trim());
+                      return (
+                        <article key={row.id} className={['ep-manpower-role-card', 'ep-transport-assignment-card', !hasAssignment ? 'attention' : row.status !== 'PENDING' ? 'ready' : 'assigned'].join(' ')}>
+                          {assignmentPhoto(row) ? <img className="ep-transport-assignment-photo" src={assignmentPhoto(row)} alt={row.requirement} loading="lazy" /> : null}
+                          <div className="ep-manpower-role-title"><div><span>{TRANSPORT_PRESETS.find((preset) => preset.key === transportPresetKey(row))?.label || 'Transport'}</span><b>{row.requirement}</b><small>{row.assignedTo || 'Vehicle partner needed'}</small></div><strong>{currency(row.quantity * row.rate)}</strong></div>
+                          {row.detail ? <p className="ep-transport-instructions">{row.detail}</p> : null}
+                          <label className="ep-menu-field"><span>Vehicle Partner / Team</span>
+                            <select value={row.partnerType === 'IN_HOUSE' && hasAssignment ? '__in_house' : row.partnerId || ''} onChange={(event) => assignPartner(row, event.target.value)} aria-label={'Transport partner for ' + row.requirement}>
+                              <option value="">Choose saved partner</option><option value="__in_house">In-house transport</option>
+                              {vendor && !vendor.active ? <option value={vendor.id}>{vendor.name} · Inactive</option> : null}
+                              {row.partnerId && !vendor ? <option value={row.partnerId}>{row.assignedTo} · Unavailable partner</option> : null}
+                              <optgroup label="Transport vendors">{vendors.filter((item) => item.active && vendorMatchesTransport(item)).map((item) => <option key={item.id} value={item.id}>{item.name} · {item.category || item.type}</option>)}</optgroup>
+                              <optgroup label="Other active partners">{vendors.filter((item) => item.active && !vendorMatchesTransport(item)).map((item) => <option key={item.id} value={item.id}>{item.name} · {item.category || item.type}</option>)}</optgroup>
+                            </select>
+                          </label>
+                          <div className="ep-menu-field-grid">
+                            <label className="ep-menu-field"><span>Manual Partner / Team</span><input value={row.partnerId || row.partnerType === 'IN_HOUSE' ? '' : row.assignedTo} placeholder="Enter partner or team name" onChange={(event) => updateRow(row.id, { partnerId: '', assignedTo: event.target.value, partnerType: row.partnerType === 'IN_HOUSE' ? 'VENDOR' : row.partnerType })} aria-label={'Manual transport partner for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Partner Type</span><select value={row.partnerType} onChange={(event) => updateRow(row.id, { partnerType: event.target.value as PartnerType })} aria-label={'Transport partner type for ' + row.requirement}><option value="IN_HOUSE">In-house</option><option value="VENDOR">Vendor</option><option value="AGENCY">Agency</option></select></label>
                           </div>
-
-                          <strong>
-                            {currency(
-                              row.quantity *
-                                row.rate,
-                            )}
-                          </strong>
-                        </div>
-
-                        <div className="ep-transport-card-grid">
-                          <div className="ep-transport-qty-editor">
-                            <button
-                              type="button"
-                              disabled={row.quantity <= 1}
-                              onClick={() =>
-                                setTransportQuantity(
-                                  row,
-                                  row.quantity - 1,
-                                )
-                              }
-                            >
-                              −
-                            </button>
-
-                            <label>
-                              <span>Trips</span>
-                              <input
-                                type="number"
-                                min="1"
-                                step="1"
-                                value={row.quantity}
-                                onChange={(event) =>
-                                  setTransportQuantity(
-                                    row,
-                                    Number(
-                                      event.target.value,
-                                    ),
-                                  )
-                                }
-                              />
-                            </label>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setTransportQuantity(
-                                  row,
-                                  row.quantity + 1,
-                                )
-                              }
-                            >
-                              +
-                            </button>
+                          {vendor ? <div className="ep-menu-contact"><div><span>Partner Contact</span><b>{vendor.contactPerson || vendor.name}</b><small>{[vendor.phone, vendor.city].filter(Boolean).join(' · ') || 'No contact details saved'}</small></div>{vendor.phone ? <a href={'tel:' + vendor.phone} aria-label={'Call transport partner ' + vendor.name}>Call</a> : null}</div> : null}
+                          <div className="ep-menu-field-grid">
+                            <div className="ep-transport-qty-editor">
+                              <button type="button" disabled={row.quantity <= 1} onClick={() => setTransportQuantity(row, row.quantity - 1)} aria-label={'Decrease trips for ' + row.requirement}>−</button>
+                              <label><span>Trips / Vehicles</span><input type="number" min="1" step="1" value={row.quantity} onChange={(event) => { if (event.target.value !== '') setTransportQuantity(row, Number(event.target.value)); }} aria-label={'Transport quantity for ' + row.requirement} /></label>
+                              <button type="button" onClick={() => setTransportQuantity(row, row.quantity + 1)} aria-label={'Increase trips for ' + row.requirement}>+</button>
+                            </div>
+                            <label className="ep-menu-field"><span>Rate / {row.unit || 'trip'}</span><input type="number" min="0" step="0.01" value={row.rate} onChange={(event) => updateRow(row.id, { rate: Math.max(0, Number(event.target.value) || 0) })} aria-label={'Transport rate for ' + row.requirement} /></label>
                           </div>
-
-                          <div className="ep-transport-card-meta">
-                            <span>
-                              Assigned
-                              <b>
-                                {row.assignedTo || 'Not assigned'}
-                              </b>
-                            </span>
-                            <span>
-                              Rate
-                              <b>{currency(row.rate)} / {row.unit || 'trip'}</b>
-                            </span>
-                            <span>
-                              Dispatch
-                              <b>
-                                {row.deliveryTime
-                                  ? row.deliveryTime.replace('T', ' ')
-                                  : 'Not set'}
-                              </b>
-                            </span>
-                            <span>
-                              Return
-                              <b>
-                                {row.pickupTime
-                                  ? row.pickupTime.replace('T', ' ')
-                                  : 'Not set'}
-                              </b>
-                            </span>
+                          <div className="ep-menu-time-grid">
+                            <label className="ep-menu-field"><span>Dispatch / Reporting Time</span><input type="datetime-local" value={row.deliveryTime} onChange={(event) => updateRow(row.id, { deliveryTime: event.target.value })} aria-label={'Transport dispatch time for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Pickup / Return Time</span><input type="datetime-local" value={row.pickupTime || ''} onChange={(event) => updateRow(row.id, { pickupTime: event.target.value })} aria-label={'Transport return time for ' + row.requirement} /></label>
                           </div>
-                        </div>
-
-                        <div className="ep-transport-card-footer">
-                          <span className={row.status.toLowerCase()}>
-                            {row.status.replace(/_/g, ' ')}
-                          </span>
-
-                          <small>
-                            Use the detailed row below to edit vendor, rate, timing and status.
-                          </small>
-                        </div>
-                      </article>
-                    ))}
+                          <div className="ep-menu-status-actions" role="group" aria-label={'Transport status for ' + row.requirement}>
+                            {(['PENDING', 'CONFIRMED', 'DELIVERED', 'CLOSED'] as AssignmentStatus[]).map((status) => <button key={status} type="button" className={row.status === status ? 'active' : ''} aria-pressed={row.status === status} onClick={() => updateRow(row.id, { status })}>{status === 'DELIVERED' ? 'Delivered' : status.charAt(0) + status.slice(1).toLowerCase()}</button>)}
+                          </div>
+                          <details className="ep-manpower-role-details"><summary>Trip details & payment terms</summary><div>
+                            <label className="ep-menu-field"><span>Vehicle / Trip Name</span><input value={row.requirement} onChange={(event) => updateRow(row.id, { requirement: event.target.value })} aria-label={'Transport requirement for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Route / Vehicle Instructions</span><textarea value={row.detail} placeholder="Pickup, destination and vehicle requirements" onChange={(event) => updateRow(row.id, { detail: event.target.value })} aria-label={'Transport instructions for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Unit</span><input value={row.unit} onChange={(event) => updateRow(row.id, { unit: event.target.value })} aria-label={'Transport unit for ' + row.requirement} /></label>
+                            <label className="ep-menu-field"><span>Payment Terms</span><input value={row.paymentTerms || ''} placeholder={vendor?.paymentTerms || 'Enter agreed terms'} onChange={(event) => updateRow(row.id, { paymentTerms: event.target.value })} aria-label={'Transport payment terms for ' + row.requirement} /></label>
+                          </div></details>
+                          <div className="ep-menu-quick-row"><div>{hasAssignment ? <button type="button" className="ep-menu-mini-action" onClick={() => assignPartner(row, '')}>Clear assignment</button> : null}<button type="button" className="ep-menu-mini-action danger" onClick={() => removeRow(row.id)} aria-label={'Remove transport ' + row.requirement}>Remove transport</button></div></div>
+                          <div className="ep-manpower-role-footer"><b>{!hasAssignment ? 'Assign vehicle partner or team' : !row.deliveryTime ? 'Set dispatch time' : row.status === 'PENDING' ? 'Confirm assignment' : row.status === 'CLOSED' ? 'Assignment closed' : row.status === 'DELIVERED' ? 'Delivery completed' : 'Assignment confirmed'}</b><small>{row.pickupTime ? 'Return ' + row.pickupTime.replace('T', ' ') : 'Return time not set'}</small></div>
+                        </article>
+                      );
+                    })}
                   </div>
-                ) : (
-                  <div className="ep-empty">
-                    No transport planned yet. Add a transport type above.
-                  </div>
-                )}
+                ) : <div className="ep-empty">No transport planned yet. Add a transport type above or a custom requirement below.</div>}
               </section>
-            ) : null}
-
-            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' && tab !== 'DISPOSABLE' && tab !== 'EQUIPMENT' && tab !== 'CROCKERY' ? (
-              <div className="ep-table-wrap">
-                <table className="ep-table">
-                  <thead>
-                    <tr>
-                      <th>Photo</th>
-                      <th>Requirement</th>
-                      <th>Qty</th>
-                      <th>Assign To</th>
-                      <th>Type</th>
-                      <th>Rate</th>
-                      <th>Total</th>
-                      <th>Delivery / Reporting</th>
-                      <th>Pickup / Return</th>
-                      <th>Status</th>
-                      <th />
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {visibleRows.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <div className="ep-assignment-photo">
-                            {assignmentPhoto(row) ? (
-                              <img
-                                src={assignmentPhoto(row)}
-                                alt={row.requirement}
-                              />
-                            ) : (
-                              <div className="ep-assignment-photo-fallback">
-                                <b>
-                                  {row.requirement
-                                    .slice(0, 2)
-                                    .toUpperCase() || '—'}
-                                </b>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <input
-                            className="ep-field"
-                            value={row.requirement}
-                            onChange={(event) =>
-                              updateRow(row.id, {
-                                requirement:
-                                  event.target.value,
-                              })
-                            }
-                            aria-label="Requirement"
-                          />
-                          <textarea
-                            className="ep-field"
-                            value={row.detail}
-                            onChange={(event) =>
-                              updateRow(row.id, {
-                                detail:
-                                  event.target.value,
-                              })
-                            }
-                            aria-label="Requirement details"
-                          />
-                        </td>
-
-                        <td>
-                          <div style={{
-                            display: 'flex',
-                            gap: 4,
-                          }}>
-                            <input
-                              className="ep-field ep-num"
-                              type="number"
-                              min="0"
-                              value={row.quantity}
-                              onChange={(event) =>
-                                updateRow(row.id, {
-                                  quantity:
-                                    Math.max(
-                                      0,
-                                      Number(event.target.value) || 0,
-                                    ),
-                                })
-                              }
-                              aria-label="Quantity"
-                            />
-                            <input
-                              className="ep-field ep-num"
-                              value={row.unit}
-                              onChange={(event) =>
-                                updateRow(row.id, {
-                                  unit:
-                                    event.target.value,
-                                })
-                              }
-                              aria-label="Unit"
-                            />
-                          </div>
-                        </td>
-
-                        <td>
-                          <select
-                            className="ep-field"
-                            value={
-                              row.partnerType === 'IN_HOUSE'
-                                ? '__in_house'
-                                : row.partnerId || ''
-                            }
-                            onChange={(event) =>
-                              assignPartner(
-                                row,
-                                event.target.value,
-                              )
-                            }
-                            aria-label="Choose saved partner"
-                          >
-                            <option value="">
-                              Choose saved partner
-                            </option>
-                            <option value="__in_house">
-                              In-house
-                            </option>
-                            {row.kind === 'GROCERY' &&
-                            vendors.some(
-                              (vendor) =>
-                                vendor.active &&
-                                vendorMatchesGroceryGroup(
-                                  vendor,
-                                  row,
-                                ),
-                            ) ? (
-                              <>
-                                <optgroup label="Matching supplier category">
-                                  {vendors
-                                    .filter(
-                                      (vendor) =>
-                                        vendor.active &&
-                                        vendorMatchesGroceryGroup(
-                                          vendor,
-                                          row,
-                                        ),
-                                    )
-                                    .map((vendor) => (
-                                      <option
-                                        key={vendor.id}
-                                        value={vendor.id}
-                                      >
-                                        {vendor.name} · {vendor.category || vendor.type}
-                                      </option>
-                                    ))}
-                                </optgroup>
-
-                                <optgroup label="Other active partners">
-                                  {vendors
-                                    .filter(
-                                      (vendor) =>
-                                        vendor.active &&
-                                        !vendorMatchesGroceryGroup(
-                                          vendor,
-                                          row,
-                                        ),
-                                    )
-                                    .map((vendor) => (
-                                      <option
-                                        key={vendor.id}
-                                        value={vendor.id}
-                                      >
-                                        {vendor.name} · {vendor.category || vendor.type}
-                                      </option>
-                                    ))}
-                                </optgroup>
-                              </>
-                            ) : row.kind === 'MENU' &&
-                              vendors.some(
-                                (vendor) =>
-                                  vendor.active &&
-                                  vendorMatchesMenuRow(
-                                    vendor,
-                                    row,
-                                  ),
-                              ) ? (
-                              <>
-                                <optgroup label="Matching food vendors">
-                                  {vendors
-                                    .filter(
-                                      (vendor) =>
-                                        vendor.active &&
-                                        vendorMatchesMenuRow(
-                                          vendor,
-                                          row,
-                                        ),
-                                    )
-                                    .map((vendor) => (
-                                      <option
-                                        key={vendor.id}
-                                        value={vendor.id}
-                                      >
-                                        {vendor.name} · {vendor.category || vendor.type}
-                                      </option>
-                                    ))}
-                                </optgroup>
-
-                                <optgroup label="Other active partners">
-                                  {vendors
-                                    .filter(
-                                      (vendor) =>
-                                        vendor.active &&
-                                        !vendorMatchesMenuRow(
-                                          vendor,
-                                          row,
-                                        ),
-                                    )
-                                    .map((vendor) => (
-                                      <option
-                                        key={vendor.id}
-                                        value={vendor.id}
-                                      >
-                                        {vendor.name} · {vendor.category || vendor.type}
-                                      </option>
-                                    ))}
-                                </optgroup>
-                              </>
-                            ) : row.kind === 'MANPOWER' &&
-                              vendors.some(
-                                (vendor) =>
-                                  vendor.active &&
-                                  vendorMatchesManpowerAgency(
-                                    vendor,
-                                  ),
-                              ) ? (
-                              <>
-                                <optgroup label="Manpower agencies">
-                                  {vendors
-                                    .filter(
-                                      (vendor) =>
-                                        vendor.active &&
-                                        vendorMatchesManpowerAgency(
-                                          vendor,
-                                        ),
-                                    )
-                                    .map((vendor) => (
-                                      <option
-                                        key={vendor.id}
-                                        value={vendor.id}
-                                      >
-                                        {vendor.name} · {vendor.category || vendor.type}
-                                      </option>
-                                    ))}
-                                </optgroup>
-
-                                <optgroup label="Other active partners">
-                                  {vendors
-                                    .filter(
-                                      (vendor) =>
-                                        vendor.active &&
-                                        !vendorMatchesManpowerAgency(
-                                          vendor,
-                                        ),
-                                    )
-                                    .map((vendor) => (
-                                      <option
-                                        key={vendor.id}
-                                        value={vendor.id}
-                                      >
-                                        {vendor.name} · {vendor.category || vendor.type}
-                                      </option>
-                                    ))}
-                                </optgroup>
-                              </>
-                            ) : row.kind === 'TRANSPORT' &&
-                              vendors.some(
-                                (vendor) =>
-                                  vendor.active &&
-                                  vendorMatchesTransport(
-                                    vendor,
-                                  ),
-                              ) ? (
-                              <>
-                                <optgroup label="Transport vendors">
-                                  {vendors
-                                    .filter(
-                                      (vendor) =>
-                                        vendor.active &&
-                                        vendorMatchesTransport(
-                                          vendor,
-                                        ),
-                                    )
-                                    .map((vendor) => (
-                                      <option
-                                        key={vendor.id}
-                                        value={vendor.id}
-                                      >
-                                        {vendor.name} · {vendor.category || vendor.type}
-                                      </option>
-                                    ))}
-                                </optgroup>
-
-                                <optgroup label="Other active partners">
-                                  {vendors
-                                    .filter(
-                                      (vendor) =>
-                                        vendor.active &&
-                                        !vendorMatchesTransport(
-                                          vendor,
-                                        ),
-                                    )
-                                    .map((vendor) => (
-                                      <option
-                                        key={vendor.id}
-                                        value={vendor.id}
-                                      >
-                                        {vendor.name} · {vendor.category || vendor.type}
-                                      </option>
-                                    ))}
-                                </optgroup>
-                              </>
-                            ) : (
-                              vendors
-                                .filter(
-                                  (vendor) =>
-                                    vendor.active,
-                                )
-                                .map((vendor) => (
-                                  <option
-                                    key={vendor.id}
-                                    value={vendor.id}
-                                  >
-                                    {vendor.name} · {vendor.type}
-                                  </option>
-                                ))
-                            )}
-                          </select>
-                          <input
-                            className="ep-field"
-                            value={row.assignedTo}
-                            placeholder="Or type partner manually"
-                            onChange={(event) =>
-                              updateRow(row.id, {
-                                partnerId: '',
-                                assignedTo:
-                                  event.target.value,
-                              })
-                            }
-                            aria-label="Assigned partner name"
-                          />
-                        </td>
-
-                        <td>
-                          <select
-                            className="ep-field"
-                            value={row.partnerType}
-                            onChange={(event) =>
-                              updateRow(row.id, {
-                                partnerType:
-                                  event.target.value as PartnerType,
-                              })
-                            }
-                          >
-                            <option value="IN_HOUSE">
-                              In-house
-                            </option>
-                            <option value="VENDOR">
-                              Vendor
-                            </option>
-                            <option value="AGENCY">
-                              Agency
-                            </option>
-                          </select>
-                        </td>
-
-                        <td>
-                          <input
-                            className="ep-field ep-rate"
-                            type="number"
-                            min="0"
-                            value={row.rate}
-                            onChange={(event) =>
-                              updateRow(row.id, {
-                                rate:
-                                  Math.max(
-                                    0,
-                                    Number(event.target.value) || 0,
-                                  ),
-                              })
-                            }
-                            aria-label="Rate"
-                          />
-                        </td>
-
-                        <td className="ep-total">
-                          {currency(
-                            row.quantity * row.rate,
-                          )}
-                        </td>
-
-                        <td>
-                          <input
-                            className="ep-field"
-                            type="datetime-local"
-                            value={row.deliveryTime}
-                            onChange={(event) =>
-                              updateRow(row.id, {
-                                deliveryTime:
-                                  event.target.value,
-                              })
-                            }
-                            aria-label="Delivery or reporting time"
-                          />
-                        </td>
-
-                        <td>
-                          <input
-                            className="ep-field"
-                            type="datetime-local"
-                            value={row.pickupTime || ''}
-                            onChange={(event) =>
-                              updateRow(row.id, {
-                                pickupTime:
-                                  event.target.value,
-                              })
-                            }
-                            aria-label="Pickup or return time"
-                          />
-                        </td>
-
-                        <td>
-                          <select
-                            className="ep-field"
-                            value={row.status}
-                            onChange={(event) =>
-                              updateRow(row.id, {
-                                status:
-                                  event.target.value as AssignmentStatus,
-                              })
-                            }
-                          >
-                            <option value="PENDING">
-                              Pending
-                            </option>
-                            <option value="CONFIRMED">
-                              Confirmed
-                            </option>
-                            <option value="DELIVERED">
-                              Delivered
-                            </option>
-                            <option value="CLOSED">
-                              Closed
-                            </option>
-                          </select>
-                        </td>
-
-                        <td>
-                          <button
-                            className="ep-delete"
-                            type="button"
-                            onClick={() =>
-                              removeRow(row.id)
-                            }
-                            aria-label="Remove requirement"
-                          >
-                            ×
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' && tab !== 'DISPOSABLE' && tab !== 'EQUIPMENT' && tab !== 'CROCKERY' ? (
-              <div className="ep-empty">
-                No requirements in this section yet.
-              </div>
             ) : null}
 
             <footer className="ep-table-actions">
@@ -8537,7 +7974,7 @@ export default function EventPlanningPage() {
                     : tab === 'MANPOWER'
                       ? 'Roles come from the saved manpower plan. Agencies are shown first, and manual Event Planning quantity changes stay under your control.'
                       : tab === 'TRANSPORT'
-                        ? 'Transport is separated into food/kitchen, equipment/material, staff and additional trips. Transport vendors are shown first.'
+                        ? 'Add food, equipment, staff or extra trips, then manage partner, rate, dispatch, return and confirmation directly in each card.'
                         : 'Suggestions come from the current menu, manpower and disposable data. Saved partners can auto-fill rates, and edits sync to PostgreSQL.'}
               </span>
 
@@ -8687,6 +8124,7 @@ export default function EventPlanningPage() {
     </AppShell>
   );
 }
+
 
 
 
