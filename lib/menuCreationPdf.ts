@@ -724,7 +724,12 @@ export function downloadMenuCreationPdf(
     ) ||
     'premium-event-menu';
 
+  const fileName =
+    `${fileBase}-premium-menu.pdf`;
+
   doc.save(
-    `${fileBase}-premium-menu.pdf`,
+    fileName,
   );
+
+  return fileName;
 }
