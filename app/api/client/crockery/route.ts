@@ -22,6 +22,22 @@ function cleanPhoto(value: unknown) {
     : '';
 }
 
+function cleanCategories(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return Array.from(
+    new Map(
+      value
+        .map((item) => cleanText(item, 80))
+        .filter(Boolean)
+        .map((item) => [
+          item.toLocaleLowerCase('en-IN'),
+          item,
+        ]),
+    ).values(),
+  ).slice(0, 80);
+}
+
 function cleanItems(value: unknown) {
   if (!Array.isArray(value)) return [];
   return value.slice(0, MAX_ITEMS).flatMap((item, index) => {
@@ -61,14 +77,17 @@ export async function GET() {
     });
 
     if (!record || record.tenantId !== tenantId) {
-      return NextResponse.json({ crockery: [] });
+      return NextResponse.json({ crockery: [], categories: [] });
     }
 
     const data = record.workData && typeof record.workData === 'object' && !Array.isArray(record.workData)
       ? record.workData as Record<string, unknown>
       : {};
 
-    return NextResponse.json({ crockery: cleanItems(data.crockery) });
+    return NextResponse.json({
+      crockery: cleanItems(data.crockery),
+      categories: cleanCategories(data.categories),
+    });
   } catch (error) {
     console.error('Crockery master GET error:', error);
     return NextResponse.json({ error: 'Could not load crockery master' }, { status: 500 });
@@ -82,7 +101,12 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
     const crockery = cleanItems(body?.crockery);
-    const workData = { type: 'CROCKERY_MASTER', crockery } as Prisma.InputJsonValue;
+    const categories = cleanCategories(body?.categories);
+    const workData = {
+      type: 'CROCKERY_MASTER',
+      crockery,
+      categories,
+    } as Prisma.InputJsonValue;
 
     await prisma.menuWork.upsert({
       where: { id: recordId(tenantId) },
@@ -90,7 +114,11 @@ export async function PUT(request: Request) {
       update: { workData },
     });
 
-    return NextResponse.json({ ok: true, crockery });
+    return NextResponse.json({
+      ok: true,
+      crockery,
+      categories,
+    });
   } catch (error) {
     console.error('Crockery master PUT error:', error);
     return NextResponse.json({ error: 'Could not save crockery master' }, { status: 500 });
