@@ -70,6 +70,9 @@ type AssignmentRow = {
   availableQty?: number;
   unitsPerGuest?: number;
   bufferPercent?: number;
+  menuCategory?: string;
+  menuDishIds?: string[];
+  menuAssignmentMode?: 'STATION' | 'DISH';
   partnerType: PartnerType;
   rate: number;
   deliveryTime: string;
@@ -370,6 +373,16 @@ function manpowerDepartmentLabel(
 function menuCategoryFromRow(
   row: AssignmentRow,
 ) {
+  const explicit =
+    String(
+      row.menuCategory ||
+      '',
+    ).trim();
+
+  if (explicit) {
+    return explicit;
+  }
+
   return String(
     row.requirement || 'Menu',
   )
@@ -377,8 +390,54 @@ function menuCategoryFromRow(
       /\s+station$/i,
       '',
     )
+    .replace(
+      /\s+·\s+.+$/i,
+      '',
+    )
     .trim() ||
     'Menu';
+}
+
+function menuDishesForRow(
+  row: AssignmentRow,
+  fn: FunctionPlan,
+) {
+  const explicitIds =
+    Array.isArray(
+      row.menuDishIds,
+    )
+      ? new Set(
+          row.menuDishIds
+            .map((id) =>
+              String(id || '').trim(),
+            )
+            .filter(Boolean),
+        )
+      : new Set<string>();
+
+  if (explicitIds.size) {
+    return fn.menu.filter(
+      (item) =>
+        explicitIds.has(
+          item.id,
+        ),
+    );
+  }
+
+  const category =
+    normalized(
+      menuCategoryFromRow(
+        row,
+      ),
+    );
+
+  return fn.menu.filter(
+    (item) =>
+      normalized(
+        item.category ||
+          'Other',
+      ) === category,
+  );
 }
 
 function planKey(costingId: string) {
@@ -416,12 +475,30 @@ function matchingVendorRate(
   vendor: Vendor,
   row: AssignmentRow,
 ) {
-  const requirement = normalized(row.requirement);
+  const requirements =
+    Array.from(
+      new Set(
+        [
+          normalized(
+            row.requirement,
+          ),
+          row.kind === 'MENU'
+            ? normalized(
+                menuCategoryFromRow(
+                  row,
+                ),
+              )
+            : '',
+        ].filter(Boolean),
+      ),
+    );
 
   return (
     vendor.rates.find((rate) =>
       (rate.kind === row.kind || rate.kind === 'GENERAL') &&
-      normalized(rate.item) === requirement,
+      requirements.includes(
+        normalized(rate.item),
+      ),
     ) ||
     vendor.rates.find((rate) => {
       if (rate.kind !== row.kind && rate.kind !== 'GENERAL') {
@@ -429,10 +506,17 @@ function matchingVendorRate(
       }
 
       const item = normalized(rate.item);
+
       return Boolean(
         item &&
-        requirement &&
-        (item.includes(requirement) || requirement.includes(item)),
+        requirements.some(
+          (requirement) =>
+            requirement &&
+            (
+              item.includes(requirement) ||
+              requirement.includes(item)
+            ),
+        )
       );
     })
   );
@@ -532,15 +616,24 @@ function seedRows(
   });
 
   byCategory.forEach((items, category) => {
-    rows.push(
-      newRow(
+    rows.push({
+      ...newRow(
         'MENU',
         `${category} station`,
         items.map((item) => item.name).join(', '),
         pax,
         'cover',
       ),
-    );
+      menuCategory:
+        category,
+      menuDishIds:
+        items.map(
+          (item) =>
+            item.id,
+        ),
+      menuAssignmentMode:
+        'STATION',
+    });
   });
 
   const matchingManpower = work.manpower.filter((row) => {
@@ -1822,6 +1915,22 @@ export default function EventPlanningPage() {
             'MENU',
         ),
       [currentRows],
+    );
+
+  const menuVendorStationCount =
+    useMemo(
+      () =>
+        new Set(
+          menuVendorRows.map(
+            (row) =>
+              normalized(
+                menuCategoryFromRow(
+                  row,
+                ),
+              ),
+          ),
+        ).size,
+      [menuVendorRows],
     );
 
   const menuVendorSummary =
@@ -4225,6 +4334,228 @@ export default function EventPlanningPage() {
       eventDisposableQty(
         item,
       ),
+    );
+  }
+
+  function splitMenuStationByDish(
+    row: AssignmentRow,
+  ) {
+    if (!currentFunction) return;
+
+    const dishes =
+      menuDishesForRow(
+        row,
+        currentFunction,
+      );
+
+    if (dishes.length <= 1) {
+      return;
+    }
+
+    const category =
+      menuCategoryFromRow(
+        row,
+      );
+
+    const baseRows =
+      plan[currentFunction.key] ||
+      defaultRows;
+
+    const splitRows =
+      dishes.map(
+        (dish) => ({
+          ...row,
+          id:
+            uid(
+              'assignment',
+            ),
+          requirement:
+            `${category} · ${dish.name}`,
+          detail:
+            dish.name,
+          menuCategory:
+            category,
+          menuDishIds: [
+            dish.id,
+          ],
+          menuAssignmentMode:
+            'DISH' as const,
+          partnerId:
+            '',
+          assignedTo:
+            '',
+          partnerType:
+            'VENDOR' as const,
+          rate:
+            0,
+          paymentTerms:
+            '',
+          status:
+            'PENDING' as const,
+        }),
+      );
+
+    persistRows(
+      currentFunction.key,
+      baseRows.flatMap(
+        (item) =>
+          item.id === row.id
+            ? splitRows
+            : [item],
+      ),
+    );
+  }
+
+  function combineMenuDishAssignments(
+    row: AssignmentRow,
+  ) {
+    if (!currentFunction) return;
+
+    const category =
+      menuCategoryFromRow(
+        row,
+      );
+
+    const categoryKey =
+      normalized(
+        category,
+      );
+
+    const baseRows =
+      plan[currentFunction.key] ||
+      defaultRows;
+
+    const splitRows =
+      baseRows.filter(
+        (item) =>
+          item.kind ===
+            'MENU' &&
+          item.menuAssignmentMode ===
+            'DISH' &&
+          normalized(
+            menuCategoryFromRow(
+              item,
+            ),
+          ) ===
+            categoryKey,
+      );
+
+    if (!splitRows.length) {
+      return;
+    }
+
+    const dishes =
+      currentFunction.menu.filter(
+        (dish) =>
+          normalized(
+            dish.category ||
+              'Other',
+          ) ===
+            categoryKey,
+      );
+
+    const firstIndex =
+      baseRows.findIndex(
+        (item) =>
+          splitRows.some(
+            (split) =>
+              split.id ===
+              item.id,
+          ),
+      );
+
+    const combined: AssignmentRow = {
+      ...row,
+      id:
+        uid(
+          'assignment',
+        ),
+      requirement:
+        `${category} station`,
+      detail:
+        dishes
+          .map(
+            (dish) =>
+              dish.name,
+          )
+          .join(
+            ', ',
+          ),
+      quantity:
+        Math.max(
+          0,
+          Number(
+            currentFunction.pax,
+          ) || 0,
+        ) ||
+        Math.max(
+          0,
+          Number(
+            row.quantity,
+          ) || 0,
+        ),
+      unit:
+        'cover',
+      menuCategory:
+        category,
+      menuDishIds:
+        dishes.map(
+          (dish) =>
+            dish.id,
+        ),
+      menuAssignmentMode:
+        'STATION',
+      partnerId:
+        '',
+      assignedTo:
+        '',
+      partnerType:
+        'VENDOR',
+      rate:
+        0,
+      paymentTerms:
+        '',
+      status:
+        'PENDING',
+    };
+
+    const splitIds =
+      new Set(
+        splitRows.map(
+          (item) =>
+            item.id,
+        ),
+      );
+
+    const remaining =
+      baseRows.filter(
+        (item) =>
+          !splitIds.has(
+            item.id,
+          ),
+      );
+
+    const insertAt =
+      Math.max(
+        0,
+        Math.min(
+          firstIndex,
+          remaining.length,
+        ),
+      );
+
+    persistRows(
+      currentFunction.key,
+      [
+        ...remaining.slice(
+          0,
+          insertAt,
+        ),
+        combined,
+        ...remaining.slice(
+          insertAt,
+        ),
+      ],
     );
   }
 
@@ -6908,7 +7239,7 @@ export default function EventPlanningPage() {
                   <div>
                     <b>Vendor Assignment Workspace</b>
                     <span>
-                      Plan every menu category as an execution station. Assign a saved food vendor or in-house team, set covers and rate, confirm reporting time, and track status without leaving this function.
+                      Plan every menu category as an execution station. For categories with multiple dishes, use Split by dish to assign each dish to a different vendor or in-house team, then set covers, rate and reporting time separately.
                     </span>
                   </div>
 
@@ -6952,7 +7283,7 @@ export default function EventPlanningPage() {
                       dishes
                     </span>
                     <span>
-                      <b>{menuVendorRows.length}</b>
+                      <b>{menuVendorStationCount}</b>
                       stations
                     </span>
                     <span>
@@ -6965,8 +7296,8 @@ export default function EventPlanningPage() {
                 <div className="ep-menu-vendor-summary">
                   <article>
                     <span>Stations</span>
-                    <b>{menuVendorRows.length}</b>
-                    <small>{currentFunction.menu.length} selected dishes</small>
+                    <b>{menuVendorStationCount}</b>
+                    <small>{menuVendorRows.length} vendor assignment{menuVendorRows.length === 1 ? '' : 's'}</small>
                   </article>
                   <article>
                     <span>Assigned</span>
@@ -7009,15 +7340,20 @@ export default function EventPlanningPage() {
                         );
 
                       const dishes =
-                        currentFunction.menu.filter(
-                          (item) =>
-                            normalized(
-                              item.category ||
-                                'Other',
-                            ) ===
-                            normalized(
-                              category,
-                            ),
+                        menuDishesForRow(
+                          row,
+                          currentFunction,
+                        );
+
+                      const isDishAssignment =
+                        row.menuAssignmentMode ===
+                          'DISH' ||
+                        (
+                          Array.isArray(
+                            row.menuDishIds,
+                          ) &&
+                          row.menuDishIds.length ===
+                            1
                         );
 
                       const functionCovers =
@@ -7107,9 +7443,14 @@ export default function EventPlanningPage() {
                           <div className="ep-menu-vendor-card-bar">
                             <div className="ep-menu-vendor-station">
                               <span>
-                                {'Station ' + String(rowIndex + 1).padStart(2, '0')}
+                                {(isDishAssignment ? 'Dish assignment ' : 'Station ') + String(rowIndex + 1).padStart(2, '0')}
                               </span>
-                              <b>{category}</b>
+                              <b>
+                                {category}
+                                {isDishAssignment && dishes[0]
+                                  ? ' · ' + dishes[0].name
+                                  : ''}
+                              </b>
                             </div>
 
                             <span
@@ -7125,7 +7466,7 @@ export default function EventPlanningPage() {
                           <div className="ep-menu-vendor-card-main">
                             <div className="ep-menu-vendor-card-top">
                               <div>
-                                <span>Menu Station</span>
+                                <span>{isDishAssignment ? 'Dish Assignment' : 'Menu Station'}</span>
                                 <b>{row.requirement}</b>
                                 <small>
                                   {hasAssignment
@@ -7523,6 +7864,35 @@ export default function EventPlanningPage() {
                                   </button>
                                 ) : null}
 
+                                {!isDishAssignment &&
+                                dishes.length > 1 ? (
+                                  <button
+                                    className="ep-menu-mini-action primary"
+                                    type="button"
+                                    onClick={() =>
+                                      splitMenuStationByDish(
+                                        row,
+                                      )
+                                    }
+                                  >
+                                    Split by dish
+                                  </button>
+                                ) : null}
+
+                                {isDishAssignment ? (
+                                  <button
+                                    className="ep-menu-mini-action"
+                                    type="button"
+                                    onClick={() =>
+                                      combineMenuDishAssignments(
+                                        row,
+                                      )
+                                    }
+                                  >
+                                    Combine station
+                                  </button>
+                                ) : null}
+
                                 {hasAssignment ? (
                                   <button
                                     className="ep-menu-mini-action"
@@ -7547,7 +7917,9 @@ export default function EventPlanningPage() {
                                     )
                                   }
                                 >
-                                  Remove station
+                                  {isDishAssignment
+                                    ? 'Remove dish assignment'
+                                    : 'Remove station'}
                                 </button>
                               </div>
 
