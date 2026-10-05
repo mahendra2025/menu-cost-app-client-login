@@ -7915,8 +7915,8 @@ export default function EventPage() {
         return;
       }
 
-      // Continue directly to cost review.
-      window.location.assign('/app/cost');
+      // Return to the unified Event & Menu workspace after import.
+      window.location.assign('/app/menu?imported=1');
     } catch (saveError) {
       console.error(
         'Detected menu save failed:',
@@ -8395,7 +8395,7 @@ export default function EventPage() {
       await flushDraftToServer(session.tenantId, nextWork);
 
       window.location.assign(
-        '/app/event?resume=1',
+        '/app/menu',
       );
     } catch {
       setNewEventError('Could not create the event. Please try again.');
@@ -10141,7 +10141,7 @@ export default function EventPage() {
 
   return (
     <AppShell
-      title="Menu Selection"
+      title="Event & Menu Import"
       hidePageTitle
     >
       <style>{`
@@ -10167,6 +10167,53 @@ export default function EventPage() {
           max-width: 1180px;
           margin: 0 auto;
           gap: 14px;
+        }
+
+        .event-merge-backbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 10px 12px;
+          border: 1px solid rgba(74,156,255,.16);
+          border-radius: 12px;
+          background: rgba(74,156,255,.035);
+        }
+
+        .event-merge-backbar div {
+          min-width: 0;
+        }
+
+        .event-merge-backbar span,
+        .event-merge-backbar b {
+          display: block;
+        }
+
+        .event-merge-backbar span {
+          color: #75adf1;
+          font-size: 7px;
+          font-weight: 900;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+        }
+
+        .event-merge-backbar b {
+          margin-top: 2px;
+          color: #dfe8f3;
+          font-size: 10px;
+        }
+
+        .event-merge-backbar button {
+          min-height: 34px;
+          padding: 0 11px;
+          border: 1px solid #303b47;
+          border-radius: 9px;
+          color: #a8bbcf;
+          background: #111820;
+          font: inherit;
+          font-size: 8px;
+          font-weight: 900;
+          cursor: pointer;
         }
 
         .event-home-hero {
@@ -10637,11 +10684,28 @@ export default function EventPage() {
         }
       `}</style>
       <section className="content-grid event-simple-flow event-upload-only-page">
+        <div className="event-merge-backbar no-print">
+          <div>
+            <span>Event & Menu · Import</span>
+            <b>Upload, review, save, then return to the same menu workspace.</b>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              window.location.assign(
+                '/app/menu',
+              )
+            }
+          >
+            ← Back to Event & Menu
+          </button>
+        </div>
+
         <section className="event-home-hero no-print">
           <div className="event-home-copy">
             <span className="event-home-kicker">
               <i aria-hidden="true" />
-              Event Workspace
+              Menu Import
             </span>
 
             <h1>
@@ -10652,8 +10716,8 @@ export default function EventPage() {
 
             <p>
               {work.event.clientName
-                ? `Build the menu for ${work.event.clientName}. Keep this page simple: event details first, then choose dishes from Dish Master.`
-                : 'Start a new event, add the client details, then select the menu directly from Dish Master.'}
+                ? `Import a PDF, photo or pasted menu for ${work.event.clientName}. After review, you will return to Event & Menu.`
+                : 'Import a PDF, photo or pasted menu, review detected dishes, then return to Event & Menu.'}
             </p>
           </div>
 
