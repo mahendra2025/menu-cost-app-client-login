@@ -1492,7 +1492,7 @@ export default function CostPage() {
                           <th>Dish</th>
                           <th>Serving</th>
                           <th>Guests</th>
-                          <th>Base rate</th>
+                          <th>Manual rate / plate</th>
                           <th>Allocation</th>
                           <th>Final cost</th>
                         </tr>
@@ -1713,8 +1713,8 @@ export default function CostPage() {
                             </td>
                             <td className="dish-cost-number">{item.effectivePax.toLocaleString('en-IN')}</td>
                             <td>
-                              <span className={needsManualRate(item) ? 'dish-manual-rate-label' : 'dish-base-rate-label'}>
-                                {needsManualRate(item) ? 'Add manual rate' : 'Base cost'}
+                              <span className="dish-manual-rate-label">
+                                Manual rate / plate
                               </span>
                               <label className="dish-rate-input">
                                 <span aria-hidden="true">₹</span>
@@ -1725,13 +1725,18 @@ export default function CostPage() {
                                   inputMode="decimal"
                                   value={item.baseCostPerPlate}
                                   placeholder="0"
-                                  aria-label={`Base cost per plate for ${item.name}`}
+                                  aria-label={`Manual rate per plate for ${item.name}`}
                                   onFocus={(event) => {
                                     if (needsManualRate(item)) event.currentTarget.select();
                                   }}
                                   onChange={(event) => updateDishCost(item.id, Number(event.target.value))}
                                 />
                               </label>
+                              <small className="muted">
+                                {item.costSource === 'manual'
+                                  ? 'Manual rate active'
+                                  : 'Edit to override calculated / saved rate'}
+                              </small>
                             </td>
                             <td>
                               <div className="cost-portion-control">
@@ -1990,7 +1995,7 @@ export default function CostPage() {
 
                         <div className="field dish-cost-card-rate">
                           <label htmlFor={`mobile-rate-${item.id}`}>
-                            {needsManualRate(item) ? 'Add manual rate / plate' : 'Base cost / plate'}
+                            Manual rate / plate
                           </label>
                           <label className="dish-rate-input" htmlFor={`mobile-rate-${item.id}`}>
                             <span aria-hidden="true">₹</span>
@@ -2008,6 +2013,11 @@ export default function CostPage() {
                               onChange={(event) => updateDishCost(item.id, Number(event.target.value))}
                             />
                           </label>
+                          <small className="muted">
+                            {item.costSource === 'manual'
+                              ? 'Manual rate active for this event'
+                              : 'Enter any rate to override the calculated / saved dish cost'}
+                          </small>
                         </div>
                         <button
                           className="dish-remove-button dish-remove-button-mobile"
