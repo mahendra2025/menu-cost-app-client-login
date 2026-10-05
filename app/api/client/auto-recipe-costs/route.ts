@@ -5,7 +5,6 @@ import defaultRecipesData from '../../../../lib/defaultRecipes.json';
 import { requireClientTenantId } from '../../../../lib/billingAuth';
 import { normalizeIngredientRate } from '../../../../lib/ingredientCatalog';
 import {
-  normalizeCityKey,
   normalizeCityName,
 } from '../../../../lib/cityIngredientRates';
 
@@ -338,24 +337,6 @@ export async function POST(request: Request) {
         tenant?.city,
       );
 
-    const cityKey =
-      normalizeCityKey(
-        effectiveCity,
-      );
-
-    const cityRates =
-      cityKey
-        ? await prisma.ingredientCityRate.findMany({
-            where: {
-              cityKey,
-            },
-            select: {
-              ingredientId: true,
-              rate: true,
-            },
-          })
-        : [];
-
     let tenantDishMaster:
       Array<{
         normalizedName: string;
@@ -481,15 +462,6 @@ export async function POST(request: Request) {
     const overrideMap = new Map(
       overrides.map((item) => [item.ingredientId, item.rate]),
     );
-    const cityRateMap =
-      new Map(
-        cityRates.map(
-          (item) => [
-            item.ingredientId,
-            item.rate,
-          ],
-        ),
-      );
     const effectiveRateMap =
       new Map<string, number>();
     const effectiveRateSourceMap =
