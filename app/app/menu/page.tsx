@@ -25,7 +25,6 @@ import type {
 
 import {
   CATEGORIES,
-  type Category,
 } from '../../../lib/menuCategories';
 
 import {
@@ -73,7 +72,7 @@ type MenuDayGroup = {
 
 type CustomDishDraft = {
   name: string;
-  category: Category;
+  category: string;
 };
 
 type EditableEventKey =
@@ -153,6 +152,33 @@ function stationForCategory(category: string): MenuStation {
     label: `${cleanCategory} Station`,
     categories: [cleanCategory],
   };
+}
+
+function isCustomMenuItem(
+  item: MenuItem,
+) {
+  const reason =
+    String(
+      item.detectionReason ||
+      '',
+    ).toLocaleLowerCase(
+      'en-IN',
+    );
+
+  return Boolean(
+    item.detectionSource ===
+      'manual' &&
+    (
+      item.coverageStatus ===
+        'NEW_DISH_PENDING' ||
+      reason.includes(
+        'menu creation',
+      ) ||
+      reason.includes(
+        'custom dish',
+      )
+    )
+  );
 }
 
 function functionKey(
@@ -350,6 +376,26 @@ export default function MenuCreationPage() {
       name: '',
       category: 'Other',
     });
+
+  const [
+    editingCustomDishId,
+    setEditingCustomDishId,
+  ] = useState('');
+
+  const [
+    customCategories,
+    setCustomCategories,
+  ] = useState<string[]>([]);
+
+  const [
+    showCustomCategoryForm,
+    setShowCustomCategoryForm,
+  ] = useState(false);
+
+  const [
+    newCustomCategoryName,
+    setNewCustomCategoryName,
+  ] = useState('');
 
   const [
     message,
@@ -729,6 +775,73 @@ export default function MenuCreationPage() {
     functions[0] ||
     null;
 
+  const customCategoryOptions =
+    useMemo(
+      () =>
+        Array.from(
+          new Map(
+            [
+              ...CATEGORIES,
+              ...dishCatalog.map(
+                (dish) =>
+                  dish.category,
+              ),
+              ...(work?.menu || []).map(
+                (dish) =>
+                  dish.category,
+              ),
+              ...customCategories,
+            ]
+              .map(
+                (value) =>
+                  String(
+                    value ||
+                    '',
+                  )
+                    .replace(
+                      /\s+/g,
+                      ' ',
+                    )
+                    .trim(),
+              )
+              .filter(Boolean)
+              .map(
+                (value) => [
+                  normalize(
+                    value,
+                  ),
+                  value,
+                ],
+              ),
+          ).values(),
+        ).sort(
+          (left, right) =>
+            left.localeCompare(
+              right,
+            ),
+        ),
+      [
+        dishCatalog,
+        work?.menu,
+        customCategories,
+      ],
+    );
+
+  const activeCustomDishes =
+    useMemo(
+      () =>
+        (
+          activeFunction
+            ?.items ||
+          []
+        ).filter(
+          isCustomMenuItem,
+        ),
+      [
+        activeFunction,
+      ],
+    );
+
   const selectedNameKeys =
     useMemo(
       () =>
@@ -763,10 +876,19 @@ export default function MenuCreationPage() {
         const fallback =
           Array.from(
             new Map(
-              dishCatalog
-                .map((dish) =>
-                  stationForCategory(
+              [
+                ...dishCatalog.map(
+                  (dish) =>
                     dish.category,
+                ),
+                ...(work?.menu || []).map(
+                  (dish) =>
+                    dish.category,
+                ),
+              ]
+                .map((dishCategory) =>
+                  stationForCategory(
+                    dishCategory,
                   ),
                 )
                 .filter(
@@ -797,7 +919,10 @@ export default function MenuCreationPage() {
           ...fallback,
         ];
       },
-      [dishCatalog],
+      [
+        dishCatalog,
+        work?.menu,
+      ],
     );
 
   const stationMetrics =
@@ -1273,6 +1398,346 @@ export default function MenuCreationPage() {
     });
   }
 
+  function openCustomDishCreator() {
+    const preferredCategory =
+      activeStation
+        ?.categories?.[0] ||
+      'Other';
+
+    setEditingCustomDishId(
+      '',
+    );
+    setCustomDish({
+      name: '',
+      category:
+        customCategoryOptions.includes(
+          preferredCategory,
+        )
+          ? preferredCategory
+          : 'Other',
+    });
+    setShowCustomCategoryForm(
+      false,
+    );
+    setNewCustomCategoryName(
+      '',
+    );
+    setShowCustomDish(
+      true,
+    );
+    setError('');
+  }
+
+  function openCustomDishEditor(
+    item: MenuItem,
+  ) {
+    setEditingCustomDishId(
+      item.id,
+    );
+    setCustomDish({
+      name:
+        item.name,
+      category:
+        item.category ||
+        'Other',
+    });
+    setShowCustomCategoryForm(
+      false,
+    );
+    setNewCustomCategoryName(
+      '',
+    );
+    setShowCustomDish(
+      true,
+    );
+    setError('');
+  }
+
+  function closeCustomDishModal() {
+    setShowCustomDish(
+      false,
+    );
+    setEditingCustomDishId(
+      '',
+    );
+    setShowCustomCategoryForm(
+      false,
+    );
+    setNewCustomCategoryName(
+      '',
+    );
+  }
+
+  function addCustomCategory() {
+    const value =
+      newCustomCategoryName
+        .replace(
+          /\s+/g,
+          ' ',
+        )
+        .trim()
+        .slice(
+          0,
+          60,
+        );
+
+    if (!value) {
+      setError(
+        'Enter a category name.',
+      );
+      return;
+    }
+
+    const existing =
+      customCategoryOptions.find(
+        (item) =>
+          normalize(
+            item,
+          ) ===
+          normalize(
+            value,
+          ),
+      );
+
+    const finalValue =
+      existing ||
+      value;
+
+    if (!existing) {
+      setCustomCategories(
+        (current) =>
+          Array.from(
+            new Map(
+              [
+                ...current,
+                finalValue,
+              ].map(
+                (item) => [
+                  normalize(
+                    item,
+                  ),
+                  item,
+                ],
+              ),
+            ).values(),
+          ),
+      );
+    }
+
+    setCustomDish(
+      (current) => ({
+        ...current,
+        category:
+          finalValue,
+      }),
+    );
+    setNewCustomCategoryName(
+      '',
+    );
+    setShowCustomCategoryForm(
+      false,
+    );
+    setError('');
+  }
+
+  async function editCustomDish() {
+    if (
+      !work ||
+      !activeFunction ||
+      !editingCustomDishId
+    ) {
+      return;
+    }
+
+    const currentItem =
+      work.menu.find(
+        (item) =>
+          item.id ===
+          editingCustomDishId,
+      );
+
+    if (!currentItem) {
+      setError(
+        'Custom dish could not be found.',
+      );
+      return;
+    }
+
+    const name =
+      customDish.name
+        .replace(
+          /\s+/g,
+          ' ',
+        )
+        .trim();
+
+    const categoryName =
+      customDish.category
+        .replace(
+          /\s+/g,
+          ' ',
+        )
+        .trim() ||
+      'Other';
+
+    if (!name) {
+      setError(
+        'Enter a dish name.',
+      );
+      return;
+    }
+
+    const categoryName =
+      customDish.category
+        .replace(
+          /\s+/g,
+          ' ',
+        )
+        .trim() ||
+      'Other';
+
+    const duplicate =
+      activeFunction.items.some(
+        (item) =>
+          item.id !==
+            currentItem.id &&
+          normalize(
+            item.name,
+          ) ===
+            normalize(
+              name,
+            ),
+      );
+
+    if (duplicate) {
+      setError(
+        'Another dish with this name already exists in this function.',
+      );
+      return;
+    }
+
+    const knownDish =
+      dishCatalog.find(
+        (dish) =>
+          normalize(
+            dish.name,
+          ) ===
+          normalize(
+            name,
+          ),
+      );
+
+    if (knownDish) {
+      setError(
+        'This name already exists in Dish Master. Remove the custom dish and select the Dish Master item instead.',
+      );
+      return;
+    }
+
+    try {
+      const response =
+        await fetch(
+          '/api/dish-suggestions',
+          {
+            method:
+              'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+            body:
+              JSON.stringify({
+                sourceFileName:
+                  `Menu Creation Edit · ${work.event.eventName || work.event.clientName || activeFunction.mealLabel || 'Event'}`,
+                candidates: [
+                  {
+                    name,
+                    categoryHint:
+                      categoryName,
+                  },
+                ],
+              }),
+          },
+        );
+
+      const data =
+        await response
+          .json()
+          .catch(
+            () => ({}),
+          );
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+          'Could not update the custom dish review queue.',
+        );
+      }
+
+      await persist({
+        ...work,
+        menu:
+          work.menu.map(
+            (item) =>
+              item.id ===
+                currentItem.id
+                ? {
+                    ...item,
+                    name,
+                    category:
+                      categoryName,
+                    detectionSource:
+                      'manual',
+                    detectionConfidence:
+                      100,
+                    detectionReason:
+                      'Custom dish edited in Event & Menu and sent to Admin Unknown Dish Queue.',
+                    coverageStatus:
+                      item.coverageStatus ||
+                      'NEW_DISH_PENDING',
+                  }
+                : item,
+          ),
+        updatedAt:
+          new Date()
+            .toISOString(),
+      });
+
+      setCustomCategories(
+        (current) =>
+          current.some(
+            (item) =>
+              normalize(
+                item,
+              ) ===
+              normalize(
+                categoryName,
+              ),
+          )
+            ? current
+            : [
+                ...current,
+                categoryName,
+              ],
+      );
+
+      closeCustomDishModal();
+      setMessage(
+        `${name} updated in ${activeFunction.mealLabel}.`,
+      );
+      setError('');
+    } catch (
+      editError
+    ) {
+      setError(
+        editError instanceof
+        Error
+          ? editError.message
+          : 'Could not update the custom dish.',
+      );
+    }
+  }
+
   async function addCustomDish() {
     if (
       !work ||
@@ -1340,9 +1805,7 @@ export default function MenuCreationPage() {
         category: 'Other',
       });
 
-      setShowCustomDish(
-        false,
-      );
+      closeCustomDishModal();
 
       setMessage(
         `${knownDish.name} already exists in Dish Master and was added from the master instead.`,
@@ -1381,7 +1844,7 @@ export default function MenuCreationPage() {
                   {
                     name,
                     categoryHint:
-                      customDish.category,
+                      categoryName,
                   },
                 ],
               }),
@@ -1422,7 +1885,7 @@ export default function MenuCreationPage() {
             uid('menu'),
           name,
           category:
-            customDish.category,
+            categoryName,
           costPerPlate: 0,
           portionQuantity: 1,
           portionBaseQuantity: 1,
@@ -1479,14 +1942,30 @@ export default function MenuCreationPage() {
             .toISOString(),
       });
 
+      setCustomCategories(
+        (current) =>
+          current.some(
+            (item) =>
+              normalize(
+                item,
+              ) ===
+              normalize(
+                categoryName,
+              ),
+          )
+            ? current
+            : [
+                ...current,
+                categoryName,
+              ],
+      );
+
       setCustomDish({
         name: '',
         category: 'Other',
       });
 
-      setShowCustomDish(
-        false,
-      );
+      closeCustomDishModal();
 
       setError('');
 
@@ -2338,12 +2817,9 @@ export default function MenuCreationPage() {
                 disabled={
                   !activeFunction
                 }
-                onClick={() => {
-                  setShowCustomDish(
-                    true,
-                  );
-                  setError('');
-                }}
+                onClick={
+                  openCustomDishCreator
+                }
               >
                 + Custom Dish
               </button>
@@ -2422,6 +2898,83 @@ export default function MenuCreationPage() {
                   ),
                 )}
               </div>
+            </section>
+
+            <section className="glass-card menu-create-custom-dishes">
+              <div className="menu-create-custom-head">
+                <div>
+                  <span>
+                    Custom dishes
+                  </span>
+                  <h3>
+                    Event-only dishes & categories
+                  </h3>
+                  <small>
+                    Add a dish outside Dish Master, create a new category, or edit it later.
+                  </small>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={
+                    !activeFunction
+                  }
+                  onClick={
+                    openCustomDishCreator
+                  }
+                >
+                  + New Custom Dish
+                </button>
+              </div>
+
+              {activeCustomDishes.length ? (
+                <div className="menu-create-custom-list">
+                  {activeCustomDishes.map(
+                    (item) => (
+                      <article
+                        key={
+                          item.id
+                        }
+                      >
+                        <span>
+                          <b>
+                            {
+                              item.name
+                            }
+                          </b>
+                          <small>
+                            {
+                              item.category ||
+                              'Other'
+                            } · {
+                              Number(
+                                item.costPerPlate,
+                              ) > 0
+                                ? `₹${Number(item.costPerPlate).toLocaleString('en-IN')} / plate`
+                                : 'Rate pending'
+                            }
+                          </small>
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openCustomDishEditor(
+                              item,
+                            )
+                          }
+                        >
+                          Edit
+                        </button>
+                      </article>
+                    ),
+                  )}
+                </div>
+              ) : (
+                <div className="menu-create-custom-empty">
+                  No custom dishes in this function.
+                </div>
+              )}
             </section>
 
             {activeStation ? (
@@ -2786,10 +3339,8 @@ export default function MenuCreationPage() {
           <div
             className="menu-create-modal-backdrop"
             role="presentation"
-            onClick={() =>
-              setShowCustomDish(
-                false,
-              )
+            onClick={
+              closeCustomDishModal
             }
           >
             <section
@@ -2806,19 +3357,21 @@ export default function MenuCreationPage() {
               <div className="menu-create-modal-head">
                 <div>
                   <span>
-                    New dish
+                    {editingCustomDishId
+                      ? 'Edit custom dish'
+                      : 'New custom dish'}
                   </span>
                   <h2>
-                    Add & send for admin review
+                    {editingCustomDishId
+                      ? 'Update dish & category'
+                      : 'Add & send for admin review'}
                   </h2>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowCustomDish(
-                      false,
-                    )
+                  onClick={
+                    closeCustomDishModal
                   }
                 >
                   ×
@@ -2858,49 +3411,112 @@ export default function MenuCreationPage() {
                 <span>
                   Category
                 </span>
-                <select
-                  value={
-                    customDish
-                      .category
-                  }
-                  onChange={(
-                    event,
-                  ) =>
-                    setCustomDish(
-                      (
-                        current,
-                      ) => ({
-                        ...current,
-                        category:
-                          event
-                            .target
-                            .value as
-                            Category,
-                      }),
-                    )
-                  }
-                >
-                  {CATEGORIES.map(
-                    (item) => (
-                      <option
-                        key={item}
-                        value={item}
-                      >
-                        {item}
-                      </option>
-                    ),
-                  )}
-                </select>
+                <div className="menu-create-custom-category-row">
+                  <select
+                    value={
+                      customDish
+                        .category
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      setCustomDish(
+                        (
+                          current,
+                        ) => ({
+                          ...current,
+                          category:
+                            event
+                              .target
+                              .value,
+                        }),
+                      )
+                    }
+                  >
+                    {customCategoryOptions.map(
+                      (item) => (
+                        <option
+                          key={
+                            item
+                          }
+                          value={
+                            item
+                          }
+                        >
+                          {
+                            item
+                          }
+                        </option>
+                      ),
+                    )}
+                  </select>
+
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() =>
+                      setShowCustomCategoryForm(
+                        (current) =>
+                          !current,
+                      )
+                    }
+                  >
+                    + New Category
+                  </button>
+                </div>
+
+                {showCustomCategoryForm ? (
+                  <div className="menu-create-new-category">
+                    <input
+                      value={
+                        newCustomCategoryName
+                      }
+                      placeholder="New category e.g. Live Pasta"
+                      maxLength={60}
+                      onChange={(event) =>
+                        setNewCustomCategoryName(
+                          event.target.value,
+                        )
+                      }
+                      onKeyDown={(event) => {
+                        if (
+                          event.key ===
+                          'Enter'
+                        ) {
+                          event.preventDefault();
+                          addCustomCategory();
+                        }
+                      }}
+                    />
+
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      disabled={
+                        !newCustomCategoryName.trim()
+                      }
+                      onClick={
+                        addCustomCategory
+                      }
+                    >
+                      Add Category
+                    </button>
+                  </div>
+                ) : null}
               </label>
 
               <button
                 className="primary-button"
                 type="button"
                 onClick={() =>
-                  void addCustomDish()
+                  editingCustomDishId
+                    ? void editCustomDish()
+                    : void addCustomDish()
                 }
               >
-                Add to Menu + Queue
+                {editingCustomDishId
+                  ? 'Save Changes'
+                  : 'Add to Menu + Queue'}
               </button>
             </section>
           </div>
@@ -2969,6 +3585,24 @@ export default function MenuCreationPage() {
           .menu-create-category-tabs button span,.menu-create-category-tabs button small{display:block}
           .menu-create-category-tabs button small{margin-top:2px;color:#5f7085;font-size:6px;font-weight:800}
           .menu-create-category-tabs button.active small{color:#7faee2}
+          .menu-create-custom-dishes{display:grid;gap:9px;padding:11px 13px}
+          .menu-create-custom-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+          .menu-create-custom-head span,.menu-create-custom-head small{display:block}
+          .menu-create-custom-head span{color:#75adf1;font-size:7px;font-weight:900;text-transform:uppercase}
+          .menu-create-custom-head h3{margin:2px 0;color:#e7eef6;font-size:13px}
+          .menu-create-custom-head small{color:#65768a;font-size:7px}
+          .menu-create-custom-head>button{min-height:34px;padding:0 10px;border:1px solid rgba(74,156,255,.22);border-radius:9px;color:#a8d0ff;background:rgba(74,156,255,.06);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
+          .menu-create-custom-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px}
+          .menu-create-custom-list article{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 9px;border:1px solid rgba(148,163,184,.10);border-radius:9px;background:#101720}
+          .menu-create-custom-list article span b,.menu-create-custom-list article span small{display:block}
+          .menu-create-custom-list article span b{color:#dfe8f1;font-size:8px}
+          .menu-create-custom-list article span small{margin-top:2px;color:#68798c;font-size:6px}
+          .menu-create-custom-list article>button{min-height:28px;padding:0 8px;border:1px solid rgba(74,156,255,.18);border-radius:7px;color:#8ebcf1;background:rgba(74,156,255,.04);font:inherit;font-size:7px;font-weight:850;cursor:pointer}
+          .menu-create-custom-empty{padding:9px;border:1px dashed rgba(148,163,184,.10);border-radius:8px;color:#65768a;font-size:7px;text-align:center}
+          .menu-create-custom-category-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+          .menu-create-custom-category-row .secondary-button{min-height:40px;white-space:nowrap}
+          .menu-create-new-category{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;padding:9px;border:1px dashed rgba(74,156,255,.18);border-radius:9px;background:rgba(74,156,255,.025)}
+          .menu-create-new-category .secondary-button{min-height:40px}
           .menu-create-station-nav{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:11px 13px}
           .menu-create-station-nav>button{min-height:34px;padding:0 10px;border:1px solid #303b47;border-radius:9px;color:#8da0b5;background:#121a23;font:inherit;font-size:7px;font-weight:900;cursor:pointer}
           .menu-create-station-nav>div{text-align:center}
@@ -3022,7 +3656,7 @@ export default function MenuCreationPage() {
           .menu-create-modal-head button{width:32px;height:32px;border:1px solid #303b47;border-radius:9px;color:#93a3b5;background:#121a23;font-size:18px;cursor:pointer}
           .menu-create-loading{padding:40px;text-align:center}
           @media(max-width:1050px){.menu-create-layout{grid-template-columns:1fr}.menu-create-selected{position:static}.menu-create-selected-groups{max-height:none}}
-          @media(max-width:700px){.menu-create-day-group>header{align-items:flex-start;flex-direction:column}.menu-create-day-group>header button{width:100%}.menu-create-station-nav{grid-template-columns:1fr 1fr}.menu-create-station-nav>div{grid-column:1/-1;grid-row:1;text-align:left}.menu-create-hero{align-items:stretch;flex-direction:column}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-function-fields{grid-template-columns:1fr}.menu-create-dish-grid{grid-template-columns:1fr}.menu-create-selected-actions{grid-template-columns:1fr}.menu-create-toolbar{position:static}.menu-create-selected{position:static}.menu-create-function-strip>button{flex-basis:185px}}
+          @media(max-width:700px){.menu-create-custom-head{align-items:stretch;flex-direction:column}.menu-create-custom-head>button{width:100%}.menu-create-custom-list{grid-template-columns:1fr}.menu-create-custom-category-row,.menu-create-new-category{grid-template-columns:1fr}.menu-create-custom-category-row .secondary-button,.menu-create-new-category .secondary-button{width:100%}.menu-create-day-group>header{align-items:flex-start;flex-direction:column}.menu-create-day-group>header button{width:100%}.menu-create-station-nav{grid-template-columns:1fr 1fr}.menu-create-station-nav>div{grid-column:1/-1;grid-row:1;text-align:left}.menu-create-hero{align-items:stretch;flex-direction:column}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-function-fields{grid-template-columns:1fr}.menu-create-dish-grid{grid-template-columns:1fr}.menu-create-selected-actions{grid-template-columns:1fr}.menu-create-toolbar{position:static}.menu-create-selected{position:static}.menu-create-function-strip>button{flex-basis:185px}}
 
           .menu-create-page{width:100%;max-width:none;gap:10px}
           .menu-create-topbar{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:13px 15px;border:1px solid rgba(74,156,255,.16);border-radius:14px;background:rgba(11,17,24,.96);backdrop-filter:blur(18px);box-shadow:0 10px 28px rgba(0,0,0,.18)}
