@@ -22146,7 +22146,7 @@ body.client-sheet-open {
 
 .cost-command-sheet {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, .32fr);
+  grid-template-columns: 1fr;
   overflow: hidden;
   border: 1px solid #29384a;
   border-radius: 22px 22px 22px 6px;
