@@ -210,13 +210,15 @@ function stationRows(items: MenuItem[]) {
 function addFooter(
   doc: jsPDF,
   businessName: string,
+  tagline: string,
 ) {
   const pages = doc.getNumberOfPages();
 
   for (let page = 1; page <= pages; page += 1) {
     doc.setPage(page);
 
-    doc.setDrawColor(226, 232, 240);
+    doc.setDrawColor(193, 157, 87);
+    doc.setLineWidth(0.25);
     doc.line(
       PAGE_LEFT,
       FOOTER_Y,
@@ -224,16 +226,19 @@ function addFooter(
       FOOTER_Y,
     );
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(100, 116, 139);
+    doc.setFont('times', 'italic');
+    doc.setFontSize(7.2);
+    doc.setTextColor(112, 98, 78);
 
     doc.text(
-      `${businessName} · Event Menu`,
+      tagline || businessName,
       PAGE_LEFT,
       287,
     );
 
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(126, 126, 126);
     doc.text(
       `Page ${page} of ${pages}`,
       PAGE_RIGHT,
@@ -255,83 +260,84 @@ export function downloadMenuCreationPdf(
     work.profile.businessName ||
     'Catering Business';
 
+  const tagline =
+    work.profile.tagline?.trim() ||
+    'A CURATED CULINARY EXPERIENCE';
+
   const businessContact = [
     work.profile.phone,
     work.profile.email,
     work.profile.city,
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join('  ·  ');
 
   const functions = groupFunctions(work);
 
   doc.setProperties({
     title:
-      `Menu - ${work.event.eventName || work.event.clientName || 'Catering Event'}`,
+      `Premium Menu - ${work.event.eventName || work.event.clientName || 'Catering Event'}`,
     subject:
-      'Function-wise catering menu',
+      'Premium function-wise catering menu',
     author: businessName,
     creator: 'Menu Costing App',
   });
 
-  doc.setFillColor(12, 20, 31);
-  doc.rect(0, 0, 210, 44, 'F');
+  // Premium masthead.
+  doc.setFillColor(18, 24, 31);
+  doc.rect(0, 0, 210, 57, 'F');
 
-  doc.setFillColor(40, 125, 235);
-  doc.rect(0, 43, 210, 1, 'F');
+  doc.setDrawColor(193, 157, 87);
+  doc.setLineWidth(0.45);
+  doc.line(14, 9, 196, 9);
+  doc.setLineWidth(0.15);
+  doc.line(14, 11.2, 196, 11.2);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(19);
-  doc.setTextColor(255, 255, 255);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(248, 245, 238);
   doc.text(
-    businessName,
-    PAGE_LEFT,
-    16,
-  );
-
-  doc.setFontSize(13);
-  doc.text(
-    'EVENT MENU',
-    PAGE_LEFT,
-    26,
+    businessName.toUpperCase(),
+    105,
+    24,
+    { align: 'center' },
   );
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(174, 188, 206);
+  doc.setFontSize(7);
+  doc.setTextColor(205, 176, 116);
+  doc.text(
+    tagline.toUpperCase(),
+    105,
+    31,
+    { align: 'center' },
+  );
+
+  doc.setFont('times', 'italic');
+  doc.setFontSize(13);
+  doc.setTextColor(255, 255, 255);
+  doc.text(
+    'Curated Event Menu',
+    105,
+    42,
+    { align: 'center' },
+  );
 
   if (businessContact) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.6);
+    doc.setTextColor(174, 181, 190);
     doc.text(
       businessContact,
-      PAGE_LEFT,
-      34,
+      105,
+      50,
+      { align: 'center' },
     );
   }
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(150, 199, 255);
-  doc.text(
-    work.profile.tagline?.trim() ||
-      'PREMIUM EVENT CATERING',
-    PAGE_RIGHT,
-    17,
-    { align: 'right' },
-  );
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(174, 188, 206);
-  doc.text(
-    `Prepared ${new Date().toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })}`,
-    PAGE_RIGHT,
-    25,
-    { align: 'right' },
-  );
+  doc.setDrawColor(193, 157, 87);
+  doc.setLineWidth(0.25);
+  doc.line(14, 55, 196, 55);
 
   const eventName =
     work.event.eventName ||
@@ -345,198 +351,275 @@ export function downloadMenuCreationPdf(
       .join(', '),
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join('  ·  ');
 
-  autoTable(doc, {
-    startY: 51,
-    margin: {
-      left: PAGE_LEFT,
-      right: PAGE_LEFT,
-    },
-    theme: 'plain',
-    body: [
-      [
-        'Client',
-        work.event.clientName || '-',
-        'Event',
-        eventName,
-      ],
-      [
-        'Date / Venue',
-        eventMeta || '-',
-        'Functions',
-        String(functions.length || 1),
-      ],
-    ],
-    styles: {
-      font: 'helvetica',
-      fontSize: 8.5,
-      cellPadding: 2.5,
-      textColor: [51, 65, 85],
-    },
-    columnStyles: {
-      0: {
-        cellWidth: 25,
-        fontStyle: 'bold',
-        textColor: [100, 116, 139],
-      },
-      1: {
-        cellWidth: 66,
-      },
-      2: {
-        cellWidth: 25,
-        fontStyle: 'bold',
-        textColor: [100, 116, 139],
-      },
-      3: {
-        cellWidth: 66,
-      },
-    },
-  });
+  // Event details card.
+  doc.setFillColor(250, 247, 240);
+  doc.setDrawColor(227, 216, 194);
+  doc.roundedRect(
+    PAGE_LEFT,
+    64,
+    CONTENT_WIDTH,
+    30,
+    3,
+    3,
+    'FD',
+  );
 
-  const pdfWithTable = doc as jsPDF & {
-    lastAutoTable?: {
-      finalY: number;
-    };
-  };
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(154, 126, 72);
+  doc.text(
+    'PREPARED EXCLUSIVELY FOR',
+    20,
+    72,
+  );
 
-  let y =
-    (pdfWithTable.lastAutoTable?.finalY || 67) +
-    10;
+  doc.setFont('times', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(35, 38, 43);
+  doc.text(
+    work.event.clientName ||
+      'Our Esteemed Guest',
+    20,
+    81,
+  );
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.2);
+  doc.setTextColor(100, 100, 100);
+  doc.text(
+    eventName,
+    20,
+    88,
+  );
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(154, 126, 72);
+  doc.text(
+    'EVENT DETAILS',
+    190,
+    72,
+    { align: 'right' },
+  );
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.4);
+  doc.setTextColor(74, 74, 74);
+  const metaLines = doc.splitTextToSize(
+    eventMeta || 'Details to be finalized',
+    72,
+  );
+  doc.text(
+    metaLines,
+    190,
+    80,
+    { align: 'right' },
+  );
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(120, 120, 120);
+  doc.text(
+    `${functions.length || 1} function${functions.length === 1 ? '' : 's'}`,
+    190,
+    89,
+    { align: 'right' },
+  );
+
+  let y = 104;
 
   if (!functions.length) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(30, 41, 59);
+    doc.setFont('times', 'italic');
+    doc.setFontSize(13);
+    doc.setTextColor(85, 85, 85);
     doc.text(
-      'Menu',
-      PAGE_LEFT,
-      y,
-    );
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(100, 116, 139);
-    doc.text(
-      'No dishes selected yet.',
-      PAGE_LEFT,
-      y + 8,
+      'Your menu is being curated.',
+      105,
+      y + 12,
+      { align: 'center' },
     );
   } else {
     functions.forEach((fn, index) => {
-      if (y > 238) {
+      const rows = stationRows(fn.items);
+
+      if (y > 226) {
         doc.addPage();
         y = 20;
       }
 
-      doc.setFillColor(245, 249, 255);
-      doc.setDrawColor(219, 234, 254);
+      // Function heading.
+      doc.setFillColor(24, 30, 38);
       doc.roundedRect(
         PAGE_LEFT,
         y,
         CONTENT_WIDTH,
-        14,
+        17,
         2.5,
         2.5,
-        'FD',
+        'F',
+      );
+
+      doc.setFillColor(193, 157, 87);
+      doc.roundedRect(
+        PAGE_LEFT,
+        y,
+        3.2,
+        17,
+        1.5,
+        1.5,
+        'F',
       );
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(30, 64, 112);
-
-      const title = [
-        fn.dayLabel,
-        fn.mealLabel,
-      ]
-        .filter(Boolean)
-        .join(' · ') ||
-        `Function ${index + 1}`;
-
+      doc.setFontSize(6.2);
+      doc.setTextColor(204, 172, 109);
       doc.text(
-        title,
-        18,
-        y + 8.5,
+        `FUNCTION ${index + 1}`,
+        21,
+        y + 5.2,
       );
 
-      if (fn.pax > 0) {
+      doc.setFont('times', 'bold');
+      doc.setFontSize(12.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text(
+        fn.mealLabel || 'Event Menu',
+        21,
+        y + 12,
+      );
+
+      if (fn.dayLabel) {
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        doc.setTextColor(71, 102, 145);
+        doc.setFontSize(6.8);
+        doc.setTextColor(198, 203, 209);
         doc.text(
-          `${fn.pax.toLocaleString('en-IN')} guests`,
-          192,
-          y + 8.5,
+          fn.dayLabel,
+          191,
+          y + 6.2,
           { align: 'right' },
         );
       }
 
-      y += 17;
+      if (fn.pax > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.2);
+        doc.setTextColor(222, 227, 232);
+        doc.text(
+          `${fn.pax.toLocaleString('en-IN')} guests`,
+          191,
+          y + 12.3,
+          { align: 'right' },
+        );
+      }
+
+      y += 21;
 
       autoTable(doc, {
         startY: y,
         margin: {
           left: PAGE_LEFT,
           right: PAGE_LEFT,
-          bottom: 18,
+          bottom: 20,
         },
-        theme: 'grid',
-        head: [[
-          'Station',
-          'Menu Selection',
-        ]],
-        body: stationRows(fn.items),
+        theme: 'plain',
+        body: rows,
+        didParseCell: (data) => {
+          if (data.section !== 'body') return;
+
+          if (data.column.index === 0) {
+            data.cell.styles.font = 'times';
+            data.cell.styles.fontStyle = 'bold';
+            data.cell.styles.fontSize = 9;
+            data.cell.styles.textColor = [92, 72, 44];
+            data.cell.styles.fillColor =
+              data.row.index % 2 === 0
+                ? [250, 247, 240]
+                : [247, 243, 234];
+          } else {
+            data.cell.styles.font = 'helvetica';
+            data.cell.styles.fontStyle = 'normal';
+            data.cell.styles.fontSize = 8.4;
+            data.cell.styles.textColor = [55, 58, 62];
+            data.cell.styles.fillColor =
+              data.row.index % 2 === 0
+                ? [255, 254, 251]
+                : [252, 250, 245];
+          }
+
+          data.cell.styles.lineColor = [226, 218, 203];
+          data.cell.styles.lineWidth = {
+            top: 0,
+            right: 0,
+            bottom: 0.12,
+            left: 0,
+          };
+        },
         styles: {
-          font: 'helvetica',
-          fontSize: 8.2,
-          cellPadding: 2.5,
-          textColor: [51, 65, 85],
-          lineColor: [226, 232, 240],
-          lineWidth: 0.12,
+          cellPadding: {
+            top: 3.2,
+            right: 3.2,
+            bottom: 3.2,
+            left: 3.2,
+          },
           overflow: 'linebreak',
           valign: 'middle',
         },
-        headStyles: {
-          fillColor: [30, 41, 59],
-          textColor: [255, 255, 255],
-          fontStyle: 'bold',
-          fontSize: 7.5,
-        },
         columnStyles: {
           0: {
-            cellWidth: 47,
-            fontStyle: 'bold',
-            textColor: [71, 85, 105],
+            cellWidth: 50,
           },
           1: {
-            cellWidth: 135,
+            cellWidth: 132,
           },
-        },
-        alternateRowStyles: {
-          fillColor: [250, 251, 252],
         },
       });
 
+      const pdfWithTable = doc as jsPDF & {
+        lastAutoTable?: {
+          finalY: number;
+        };
+      };
+
       y =
         (pdfWithTable.lastAutoTable?.finalY || y) +
-        9;
+        11;
     });
+  }
+
+  // Closing note.
+  if (y < 255) {
+    doc.setDrawColor(193, 157, 87);
+    doc.setLineWidth(0.2);
+    doc.line(72, y + 3, 138, y + 3);
+
+    doc.setFont('times', 'italic');
+    doc.setFontSize(8.5);
+    doc.setTextColor(112, 98, 78);
+    doc.text(
+      'Crafted with care for a memorable celebration',
+      105,
+      y + 9,
+      { align: 'center' },
+    );
   }
 
   addFooter(
     doc,
     businessName,
+    tagline,
   );
 
   const fileBase =
     safeName(
       work.event.eventName ||
         work.event.clientName ||
-        'event-menu',
+        'premium-event-menu',
     ) ||
-    'event-menu';
+    'premium-event-menu';
 
   doc.save(
-    `${fileBase}-menu.pdf`,
+    `${fileBase}-premium-menu.pdf`,
   );
 }
