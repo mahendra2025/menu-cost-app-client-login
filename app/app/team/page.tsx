@@ -213,6 +213,19 @@ function categoryProductionSpec(categoryRaw: string) {
   ) {
     roleId = 'juice_mocktail';
     role = `${categoryRaw || 'Dessert'} Staff`;
+  } else if (
+    category.includes('papad') ||
+    category.includes('pickle') ||
+    category.includes('achar') ||
+    category.includes('condiment') ||
+    category.includes('chutney') ||
+    category.includes('mukhwas') ||
+    category.includes('paan') ||
+    category.includes('pan') ||
+    category.includes('water')
+  ) {
+    roleId = 'juice_mocktail';
+    role = `${categoryRaw || 'Service'} Staff`;
   }
 
   const master =
@@ -1300,36 +1313,6 @@ export default function ManpowerPage() {
     saveWork(session.tenantId, nextWork);
   }
 
-  function applyRecommendedMealManpower(
-    meal: MealPlan,
-    roleId?: string,
-  ) {
-    if (!work) return;
-
-    const nextRows = work.manpower.map((row) => {
-      if (!rowBelongsToMeal(row, meal)) return row;
-      if (isCustomRole(row)) return row;
-
-      const matchesRole =
-        !roleId ||
-        row.id.endsWith(`::${roleId}`);
-
-      if (!matchesRole) return row;
-
-      return {
-        ...row,
-        quantity: Math.max(
-          0,
-          Number(row.recommendedQuantity) || 0,
-        ),
-        manualOverride: true,
-        calculationSource: 'MANUAL' as const,
-      };
-    });
-
-    persistRows(nextRows);
-  }
-
   function updateRow(id: string, patch: Partial<ManpowerRow>) {
     if (!work) return;
 
@@ -1805,19 +1788,6 @@ export default function ManpowerPage() {
           const mealDishes = work.menu.filter((dish) =>
             meal.dishIds.includes(dish.id),
           );
-          const categoryRecommendations =
-            buildCategoryManpowerRecommendations(
-              mealDishes,
-              meal.pax,
-            );
-          const recommendedKitchenPeople =
-            categoryRecommendations.reduce(
-              (sum, item) =>
-                sum +
-                item.recommendedCooks +
-                item.recommendedHelpers,
-              0,
-            );
           const newRoleDraft = newRoleDrafts[meal.key] || { role: '', category: 'SERVICE', rate: '' };
           const mealTotal = calculateManpowerCost(mealRows);
           const mealPeople = mealRows.reduce(
