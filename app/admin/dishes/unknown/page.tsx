@@ -101,18 +101,6 @@ function emptyDraft(): ReviewDraft {
   };
 }
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-
-  return new Intl.DateTimeFormat('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
-}
-
 function percentValue(value: number | null | undefined) {
   const number = Number(value);
   if (!Number.isFinite(number) || number <= 0) return 0;
@@ -1059,7 +1047,6 @@ export default function UnknownDishQueuePage() {
                         {item.sourceFileName ? (
                           <span>{item.sourceFileName}</span>
                         ) : null}
-                        <span>{formatDate(item.updatedAt)}</span>
                       </div>
 
                       <div className="queue-row-insight">
@@ -1267,14 +1254,6 @@ export default function UnknownDishQueuePage() {
                 <div>
                   <span>Admin notes</span>
                   <b>{selected.adminNotes || '—'}</b>
-                </div>
-                <div>
-                  <span>Reviewed</span>
-                  <b>
-                    {formatDate(
-                      selected.analyzedAt || selected.updatedAt,
-                    )}
-                  </b>
                 </div>
                 {selected.status === 'MATCHED' ? (
                   <div>
