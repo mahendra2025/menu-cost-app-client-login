@@ -106,6 +106,8 @@ type PlanningEventOption = {
 type VendorRate = {
   id: string;
   kind: RequirementKind | 'GENERAL';
+  scope?: 'STATION' | 'DISH' | 'OTHER';
+  station?: string;
   item: string;
   unit: string;
   rate: number;
@@ -477,46 +479,134 @@ function matchingVendorRate(
   vendor: Vendor,
   row: AssignmentRow,
 ) {
+  const requirement =
+    normalized(
+      row.requirement,
+    );
+
+  const category =
+    row.kind === 'MENU'
+      ? normalized(
+          menuCategoryFromRow(
+            row,
+          ),
+        )
+      : '';
+
+  const eligible =
+    vendor.rates.filter(
+      (rate) =>
+        rate.kind === row.kind ||
+        rate.kind ===
+          'GENERAL',
+    );
+
+  if (row.kind === 'MENU') {
+    const dishRate =
+      eligible.find(
+        (rate) =>
+          rate.scope ===
+            'DISH' &&
+          normalized(
+            rate.item,
+          ) ===
+            requirement,
+      );
+
+    if (dishRate) {
+      return dishRate;
+    }
+
+    const stationRate =
+      eligible.find(
+        (rate) => {
+          if (
+            rate.scope !==
+            'STATION'
+          ) {
+            return false;
+          }
+
+          const station =
+            normalized(
+              rate.station ||
+              rate.item,
+            );
+
+          return Boolean(
+            station &&
+            category &&
+            (
+              station ===
+                category ||
+              station.includes(
+                category,
+              ) ||
+              category.includes(
+                station,
+              )
+            )
+          );
+        },
+      );
+
+    if (stationRate) {
+      return stationRate;
+    }
+  }
+
   const requirements =
     Array.from(
       new Set(
         [
-          normalized(
-            row.requirement,
-          ),
-          row.kind === 'MENU'
-            ? normalized(
-                menuCategoryFromRow(
-                  row,
-                ),
-              )
-            : '',
+          requirement,
+          category,
         ].filter(Boolean),
       ),
     );
 
   return (
-    vendor.rates.find((rate) =>
-      (rate.kind === row.kind || rate.kind === 'GENERAL') &&
-      requirements.includes(
-        normalized(rate.item),
-      ),
-    ) ||
-    vendor.rates.find((rate) => {
-      if (rate.kind !== row.kind && rate.kind !== 'GENERAL') {
+    eligible.find((rate) => {
+      if (
+        rate.scope &&
+        rate.scope !==
+          'OTHER'
+      ) {
         return false;
       }
 
-      const item = normalized(rate.item);
+      return requirements.includes(
+        normalized(
+          rate.item,
+        ),
+      );
+    }) ||
+    eligible.find((rate) => {
+      if (
+        rate.scope &&
+        rate.scope !==
+          'OTHER'
+      ) {
+        return false;
+      }
+
+      const item =
+        normalized(
+          rate.item,
+        );
 
       return Boolean(
         item &&
         requirements.some(
-          (requirement) =>
-            requirement &&
+          (required) =>
+            required &&
             (
-              item.includes(requirement) ||
-              requirement.includes(item)
+              item.includes(
+                required,
+              ) ||
+              required.includes(
+                item,
+              )
             ),
         )
       );
