@@ -34,7 +34,7 @@ type CrockeryItem = {
   active: boolean;
 };
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   'Dinner Plate',
   'Quarter Plate',
   'Bowl',
@@ -48,11 +48,11 @@ const CATEGORIES = [
   'Other',
 ];
 
-function blankItem(): CrockeryItem {
+function blankItem(category = 'Dinner Plate'): CrockeryItem {
   return {
     id: uid('crockery'),
     name: '',
-    category: 'Dinner Plate',
+    category,
     photoUrl: '',
     ownership: 'IN_HOUSE',
     availableQty: 1,
@@ -110,6 +110,9 @@ async function compressImage(file: File): Promise<string> {
 
 export default function CrockeryMasterPage() {
   const [items, setItems] = useState<CrockeryItem[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([
+    ...DEFAULT_CATEGORIES,
+  ]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [query, setQuery] = useState('');
@@ -147,7 +150,29 @@ export default function CrockeryMasterPage() {
         ? data.crockery as CrockeryItem[]
         : [];
 
+      const savedCategories = Array.isArray(data.categories)
+        ? data.categories
+            .map((value: unknown) => String(value || '').trim())
+            .filter(Boolean)
+        : [];
+
+      const mergedCategories = Array.from(
+        new Map(
+          [
+            ...DEFAULT_CATEGORIES,
+            ...savedCategories,
+            ...rows.map((item) => item.category),
+          ]
+            .filter(Boolean)
+            .map((value) => [
+              value.toLocaleLowerCase('en-IN'),
+              value,
+            ]),
+        ).values(),
+      );
+
       setItems(rows);
+      setCategoryOptions(mergedCategories);
       setSelectedId(rows[0]?.id || '');
 
       if (vendorResponse.ok) {
@@ -165,7 +190,10 @@ export default function CrockeryMasterPage() {
     }
   }
 
-  async function save(next = items) {
+  async function save(
+    next = items,
+    nextCategories = categoryOptions,
+  ) {
     setSaving(true);
     setError('');
     setMessage('');
@@ -174,7 +202,10 @@ export default function CrockeryMasterPage() {
       const response = await fetch('/api/client/crockery', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ crockery: next }),
+        body: JSON.stringify({
+          crockery: next,
+          categories: nextCategories,
+        }),
       });
 
       const data = await response.json();
@@ -185,6 +216,30 @@ export default function CrockeryMasterPage() {
         : next;
 
       setItems(saved);
+
+      const savedCategories = Array.isArray(data.categories)
+        ? data.categories
+            .map((value: unknown) => String(value || '').trim())
+            .filter(Boolean)
+        : nextCategories;
+
+      setCategoryOptions(
+        Array.from(
+          new Map(
+            [
+              ...DEFAULT_CATEGORIES,
+              ...savedCategories,
+              ...saved.map((item) => item.category),
+            ]
+              .filter(Boolean)
+              .map((value) => [
+                value.toLocaleLowerCase('en-IN'),
+                value,
+              ]),
+          ).values(),
+        ),
+      );
+
       setMessage('Crockery & cutlery master saved.');
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not save crockery');
@@ -194,7 +249,10 @@ export default function CrockeryMasterPage() {
   }
 
   function addItem() {
-    const item = blankItem();
+    const item = blankItem(
+      categoryOptions[0] ||
+        'Dinner Plate',
+    );
     setItems((current) => [item, ...current]);
     setSelectedId(item.id);
     setMessage('');
@@ -205,6 +263,50 @@ export default function CrockeryMasterPage() {
       current.map((item) => item.id === id ? { ...item, ...patch } : item),
     );
     setMessage('');
+  }
+
+  async function createCategory(itemId?: string) {
+    const entered = window.prompt(
+      'New crockery / cutlery category name',
+      '',
+    );
+
+    const clean = String(entered || '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .slice(0, 80);
+
+    if (!clean) return;
+
+    const existing = categoryOptions.find(
+      (item) =>
+        item.toLocaleLowerCase('en-IN') ===
+        clean.toLocaleLowerCase('en-IN'),
+    );
+
+    const categoryName = existing || clean;
+    const nextCategories = existing
+      ? categoryOptions
+      : [...categoryOptions, categoryName];
+
+    const nextItems = itemId
+      ? items.map((item) =>
+          item.id === itemId
+            ? { ...item, category: categoryName }
+            : item,
+        )
+      : items;
+
+    setCategoryOptions(nextCategories);
+    setItems(nextItems);
+
+    await save(nextItems, nextCategories);
+
+    setMessage(
+      existing
+        ? `${categoryName} selected.`
+        : `${categoryName} category created and saved.`,
+    );
   }
 
   function removeItem(id: string) {
