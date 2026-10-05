@@ -22145,8 +22145,9 @@ body.client-sheet-open {
 }
 
 .cost-command-sheet {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: block;
+  width: 100%;
+  max-width: none;
   overflow: hidden;
   border: 1px solid #29384a;
   border-radius: 22px 22px 22px 6px;
@@ -22155,6 +22156,7 @@ body.client-sheet-open {
 }
 
 .cost-command-main {
+  width: 100%;
   min-width: 0;
   padding: clamp(22px, 3.5vw, 38px);
   background:
@@ -30421,6 +30423,8 @@ body.client-sheet-open {
 
 /* Dish Cost visual system v2 ---------------------------------------------- */
 .client-theme .client-ui-system-v2 .cost-command-page {
+  width: 100%;
+  max-width: none;
   gap: 14px;
 }
 
