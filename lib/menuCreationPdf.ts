@@ -201,10 +201,16 @@ function stationRows(items: MenuItem[]) {
         )
       );
     })
-    .map((group) => [
-      group.station.label,
-      group.names.join(' · '),
-    ]);
+    .flatMap((group) =>
+      group.names.map(
+        (name, index) => [
+          index === 0
+            ? group.station.label
+            : '',
+          name,
+        ],
+      ),
+    );
 }
 
 function addFooter(
@@ -657,9 +663,9 @@ export function downloadMenuCreationPdf(
         },
         styles: {
           cellPadding: {
-            top: 3.2,
+            top: 2.4,
             right: 3.2,
-            bottom: 3.2,
+            bottom: 2.4,
             left: 3.2,
           },
           overflow: 'linebreak',
