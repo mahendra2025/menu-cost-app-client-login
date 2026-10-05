@@ -1329,6 +1329,21 @@ export default function EventPage() {
   ] = useState('Other');
 
   const [
+    showNewDishCategoryForm,
+    setShowNewDishCategoryForm,
+  ] = useState(false);
+
+  const [
+    newDishCategoryName,
+    setNewDishCategoryName,
+  ] = useState('');
+
+  const [
+    customDishCategories,
+    setCustomDishCategories,
+  ] = useState<string[]>([]);
+
+  const [
     addingUnknownDish,
     setAddingUnknownDish,
   ] = useState(false);
@@ -2389,6 +2404,86 @@ export default function EventPage() {
     manualDishSearch,
     showManualDishSelector,
   ]);
+
+  function addNewDishCategory() {
+    const category =
+      newDishCategoryName
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60);
+
+    if (!category) {
+      setError(
+        'Enter a category name first.',
+      );
+      return;
+    }
+
+    const existingCategory =
+      [
+        ...availableDishCategories,
+        ...customDishCategories,
+      ].find(
+        (item) =>
+          item
+            .trim()
+            .toLocaleLowerCase(
+              'en-IN',
+            ) ===
+          category.toLocaleLowerCase(
+            'en-IN',
+          ),
+      );
+
+    const finalCategory =
+      existingCategory ||
+      category;
+
+    if (!existingCategory) {
+      setCustomDishCategories(
+        (current) =>
+          Array.from(
+            new Map(
+              [
+                ...current,
+                finalCategory,
+              ].map(
+                (item) => [
+                  item
+                    .toLocaleLowerCase(
+                      'en-IN',
+                    ),
+                  item,
+                ],
+              ),
+            ).values(),
+          ).sort(
+            (left, right) =>
+              left.localeCompare(
+                right,
+              ),
+          ),
+      );
+    }
+
+    setUnknownDishCategory(
+      finalCategory,
+    );
+    setManualDishCategory(
+      finalCategory,
+    );
+    setNewDishCategoryName('');
+    setShowNewDishCategoryForm(
+      false,
+    );
+    setShowUnknownDishForm(
+      true,
+    );
+    setError('');
+    setManualDishNotice(
+      `${finalCategory} category ready. Enter the dish name and add it to this event.`,
+    );
+  }
 
   async function openManualDishSelector(
     target?: ExistingFunctionDishTarget,
@@ -8479,14 +8574,37 @@ export default function EventPage() {
 
   const manualDishCategories =
     Array.from(
-      new Set(
-        manualDishCatalog
-          .map(
+      new Map(
+        [
+          ...availableDishCategories,
+          ...customDishCategories,
+          ...manualDishCatalog.map(
             (dish) =>
               dish.category,
+          ),
+          ...work.menu.map(
+            (dish) =>
+              dish.category,
+          ),
+        ]
+          .map(
+            (category) =>
+              String(
+                category ||
+                '',
+              )
+                .replace(/\s+/g, ' ')
+                .trim(),
           )
-          .filter(Boolean),
-      ),
+          .filter(Boolean)
+          .map(
+            (category) => [
+              category.toLocaleLowerCase(
+                'en-IN',
+              ),
+              category,
+            ]),
+      ).values(),
     ).sort(
       (left, right) =>
         left.localeCompare(
@@ -12326,6 +12444,65 @@ export default function EventPage() {
                       )}
                     </select>
 
+                    <div className="event-dish-picker-create-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => {
+                          setShowUnknownDishForm(
+                            true,
+                          );
+                          setShowNewDishCategoryForm(
+                            false,
+                          );
+
+                          if (
+                            manualDishCategory !==
+                            'ALL'
+                          ) {
+                            setUnknownDishCategory(
+                              manualDishCategory,
+                            );
+                          } else if (
+                            !unknownDishCategory
+                          ) {
+                            setUnknownDishCategory(
+                              defaultDishCategory ||
+                              'Other',
+                            );
+                          }
+
+                          setManualSelectionView(
+                            'ALL',
+                          );
+                          setManualDishNotice(
+                            '',
+                          );
+                        }}
+                      >
+                        + New Dish
+                      </button>
+
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => {
+                          setShowNewDishCategoryForm(
+                            true,
+                          );
+                          setShowUnknownDishForm(
+                            true,
+                          );
+                          setManualSelectionView(
+                            'ALL',
+                          );
+                          setError('');
+                        }}
+                      >
+                        + New Category
+                      </button>
+                    </div>
+
                     <div
                       className="event-dish-picker-view"
                       role="group"
@@ -12376,6 +12553,144 @@ export default function EventPage() {
                       </button>
                     </div>
                   </div>
+
+                  {showUnknownDishForm ? (
+                    <div className="event-create-dish-inline event-create-dish-workspace">
+                      <div>
+                        <b>
+                          Add new dish
+                        </b>
+                        <small>
+                          Add a dish that is not in Dish Master. Its cost starts at ₹0 and goes to Super Admin for review.
+                        </small>
+                      </div>
+
+                      <div className="event-create-dish-form">
+                        <input
+                          className="input"
+                          value={manualDishSearch}
+                          placeholder="Dish name"
+                          aria-label="New dish name"
+                          onChange={(event) => {
+                            setManualDishSearch(
+                              event.target.value,
+                            );
+                            setManualDishNotice(
+                              '',
+                            );
+                          }}
+                        />
+
+                        <select
+                          className="select"
+                          value={
+                            unknownDishCategory
+                          }
+                          onChange={(event) =>
+                            setUnknownDishCategory(
+                              event.target.value,
+                            )
+                          }
+                          aria-label="New dish category"
+                        >
+                          {(
+                            manualDishCategories.length
+                              ? manualDishCategories
+                              : ['Other']
+                          ).map(
+                            (category) => (
+                              <option
+                                key={
+                                  category
+                                }
+                                value={
+                                  category
+                                }
+                              >
+                                {
+                                  category
+                                }
+                              </option>
+                            ),
+                          )}
+                        </select>
+
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          onClick={() =>
+                            setShowNewDishCategoryForm(
+                              (current) =>
+                                !current,
+                            )
+                          }
+                        >
+                          + New Category
+                        </button>
+
+                        <button
+                          className="primary-button"
+                          type="button"
+                          disabled={
+                            addingUnknownDish ||
+                            !manualDishSearch.trim()
+                          }
+                          onClick={() =>
+                            addDishFunctionTarget
+                              ? void addNewDishToExistingFunction()
+                              : void addUnknownDishToCurrentSelection()
+                          }
+                        >
+                          {addingUnknownDish
+                            ? 'Adding…'
+                            : addDishFunctionTarget
+                              ? 'Add Dish to Function'
+                              : 'Add Dish to Event'}
+                        </button>
+                      </div>
+
+                      {showNewDishCategoryForm ? (
+                        <div className="event-new-category-form">
+                          <input
+                            className="input"
+                            value={
+                              newDishCategoryName
+                            }
+                            placeholder="New category name e.g. Live Pasta"
+                            aria-label="New category name"
+                            maxLength={60}
+                            onChange={(event) =>
+                              setNewDishCategoryName(
+                                event.target.value,
+                              )
+                            }
+                            onKeyDown={(event) => {
+                              if (
+                                event.key ===
+                                'Enter'
+                              ) {
+                                event.preventDefault();
+                                addNewDishCategory();
+                              }
+                            }}
+                          />
+
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            disabled={
+                              !newDishCategoryName.trim()
+                            }
+                            onClick={
+                              addNewDishCategory
+                            }
+                          >
+                            Add Category
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <div className="event-dish-picker-results-head">
                     <div>
@@ -12595,6 +12910,7 @@ export default function EventPage() {
                   {manualSelectionView ===
                     'ALL' &&
                   manualDishSearch.trim() &&
+                  !showUnknownDishForm &&
                   !manualDishDatabaseChecking &&
                   filteredManualDishes.length ===
                     0 &&
