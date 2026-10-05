@@ -386,7 +386,9 @@ function buildFunctionGroups(
   work.menu.forEach((item) => {
     if (
       item.coverageStatus ===
-      'REJECTED'
+        'REJECTED' ||
+      item.groceryResponsibility ===
+        'VENDOR'
     ) {
       return;
     }
