@@ -34940,3 +34940,31 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 :where(input, textarea, select, button) {
   -webkit-font-smoothing: antialiased;
 }
+
+
+/* Full-width user Event & Menu workspace --------------------------------- */
+@media (min-width: 821px) {
+  .client-theme .menu-create-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .client-theme .menu-create-catalog {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .client-theme .event-menu-card {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    gap: 16px !important;
+  }
+
+  .client-theme .event-menu-card > .event-brief-strip,
+  .client-theme .event-menu-card > .form-grid {
+    grid-column: 1 / -1 !important;
+  }
+
+  .client-theme .event-desktop-summary {
+    display: none !important;
+  }
+}
