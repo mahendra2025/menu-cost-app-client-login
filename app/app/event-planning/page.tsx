@@ -614,6 +614,12 @@ function seedRows(
       item.category ||
       'Other';
 
+    const hasDishVendor =
+      Boolean(
+        item.vendorId ||
+        item.vendorName,
+      );
+
     rows.push({
       ...newRow(
         'MENU',
@@ -621,7 +627,26 @@ function seedRows(
         category,
         pax,
         'cover',
+        hasDishVendor
+          ? Math.max(
+              0,
+              Number(
+                item.costPerPlate,
+              ) || 0,
+            )
+          : 0,
       ),
+      partnerId:
+        item.vendorId ||
+        '',
+      assignedTo:
+        item.vendorName ||
+        '',
+      partnerType:
+        item.vendorType ===
+        'AGENCY'
+          ? 'AGENCY'
+          : 'VENDOR',
       menuCategory:
         category,
       menuDishIds: [
@@ -892,6 +917,39 @@ function expandMenuAssignmentsByDish(
                 ],
                 menuAssignmentMode:
                   'DISH',
+                partnerId:
+                  row.partnerId ||
+                  dish.vendorId ||
+                  '',
+                assignedTo:
+                  row.assignedTo ||
+                  dish.vendorName ||
+                  '',
+                partnerType:
+                  row.partnerId ||
+                  row.assignedTo
+                    ? row.partnerType
+                    : dish.vendorType ===
+                        'AGENCY'
+                      ? 'AGENCY'
+                      : 'VENDOR',
+                rate:
+                  Math.max(
+                    0,
+                    Number(
+                      row.rate,
+                    ) || 0,
+                  ) > 0
+                    ? row.rate
+                    : dish.vendorId ||
+                        dish.vendorName
+                      ? Math.max(
+                          0,
+                          Number(
+                            dish.costPerPlate,
+                          ) || 0,
+                        )
+                      : row.rate,
                 groceryResponsibility:
                   dish.groceryResponsibility ||
                   row.groceryResponsibility ||
@@ -934,6 +992,27 @@ function expandMenuAssignmentsByDish(
               ),
               'cover',
             ),
+            partnerId:
+              dish.vendorId ||
+              '',
+            assignedTo:
+              dish.vendorName ||
+              '',
+            partnerType:
+              dish.vendorType ===
+              'AGENCY'
+                ? 'AGENCY'
+                : 'VENDOR',
+            rate:
+              dish.vendorId ||
+              dish.vendorName
+                ? Math.max(
+                    0,
+                    Number(
+                      dish.costPerPlate,
+                    ) || 0,
+                  )
+                : 0,
             menuCategory:
               category,
             menuDishIds: [
