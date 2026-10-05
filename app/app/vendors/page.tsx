@@ -61,6 +61,7 @@ type Vendor = {
   serviceArea: string;
   confirmationStatus: 'OPEN' | 'CONFIRMED' | 'ON_HOLD';
   paymentStatus: 'NOT_SET' | 'PENDING' | 'PARTIAL' | 'PAID';
+  menuStations: string[];
   rates: VendorRate[];
 };
 
@@ -77,6 +78,43 @@ const KIND_OPTIONS: Array<{
   { value: 'TRANSPORT', label: 'Transport' },
   { value: 'GENERAL', label: 'General' },
 ];
+
+const MENU_STATION_OPTIONS = [
+  'Welcome Drink',
+  'Starter',
+  'Soup',
+  'Sweet',
+  'Farsan',
+  'Sabji',
+  'Paneer',
+  'Main Course',
+  'Bread',
+  'Tandoor',
+  'Dal / Kadhi',
+  'Rice',
+  'Salad',
+  'Raita',
+  'Papad',
+  'Pickle',
+  'Chaat',
+  'Chinese',
+  'South Indian',
+  'Punjabi',
+  'North Indian',
+  'Japanese',
+  'Mexican',
+  'Thai',
+  'Asian',
+  'Mongolian',
+  'Dessert',
+  'Bakery',
+  'Waffles',
+  'Ice Cream',
+  'Fruit',
+  'Beverage',
+  'Mukhwas',
+  'Paan',
+] as const;
 
 function blankVendor(): Vendor {
   return {
@@ -96,6 +134,7 @@ function blankVendor(): Vendor {
     serviceArea: '',
     confirmationStatus: 'OPEN',
     paymentStatus: 'NOT_SET',
+    menuStations: [],
     rates: [],
   };
 }
@@ -281,6 +320,36 @@ export default function VendorsPage() {
     setMessage('');
   }
 
+  function toggleMenuStation(
+    vendorId: string,
+    station: string,
+  ) {
+    setVendors((current) =>
+      current.map((vendor) => {
+        if (vendor.id !== vendorId) return vendor;
+
+        const currentStations =
+          Array.isArray(vendor.menuStations)
+            ? vendor.menuStations
+            : [];
+
+        const exists =
+          currentStations.includes(station);
+
+        return {
+          ...vendor,
+          menuStations: exists
+            ? currentStations.filter(
+                (item) => item !== station,
+              )
+            : [...currentStations, station],
+        };
+      }),
+    );
+
+    setMessage('');
+  }
+
   function removeVendor(id: string) {
     const next = vendors.filter(
       (vendor) => vendor.id !== id,
@@ -403,6 +472,7 @@ export default function VendorsPage() {
         vendor.phone,
         vendor.city,
         vendor.serviceArea,
+        ...(Array.isArray(vendor.menuStations) ? vendor.menuStations : []),
       ]
         .join(' ')
         .toLowerCase()
@@ -566,6 +636,15 @@ export default function VendorsPage() {
           .vm-field{display:grid;gap:5px}
           .vm-field.full{grid-column:1/-1}
           .vm-field>span{color:#8290a1;font-size:8px;font-weight:850;text-transform:uppercase}
+          .vm-station-field{padding:11px;border:1px solid rgba(74,156,255,.13);border-radius:11px;background:rgba(74,156,255,.025)}
+          .vm-station-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+          .vm-station-head>span{color:#8290a1;font-size:8px;font-weight:850;text-transform:uppercase}
+          .vm-station-head small{color:#6f8094;font-size:7px}
+          .vm-station-grid{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+          .vm-station-grid button{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 8px;border:1px solid #303945;border-radius:8px;color:#8fa0b3;background:#131b24;font:inherit;font-size:7px;font-weight:850;cursor:pointer}
+          .vm-station-grid button>span{display:grid;width:15px;height:15px;place-items:center;border-radius:5px;color:#72859a;background:#1b2632;font-size:8px}
+          .vm-station-grid button.active{border-color:rgba(85,217,143,.28);color:#a8e4c0;background:rgba(85,217,143,.06)}
+          .vm-station-grid button.active>span{color:#07170e;background:#58d78e}
           .vm-rate-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #252c35}
           .vm-rate-head h3{margin:0;font-size:13px}
           .vm-rate-table-wrap{overflow:auto;margin-top:9px;border:1px solid #29313b;border-radius:11px}
@@ -733,6 +812,8 @@ export default function VendorsPage() {
                       <small>
                         {vendor.rates.length} rate{vendor.rates.length === 1 ? '' : 's'}
                         {' · '}
+                        {(vendor.menuStations || []).length} station{(vendor.menuStations || []).length === 1 ? '' : 's'}
+                        {' · '}
                         {assignmentCountForVendor(vendor)} current assignment{assignmentCountForVendor(vendor) === 1 ? '' : 's'}
                         {vendor.preferred ? ' · Preferred' : ''}
                       </small>
@@ -888,6 +969,46 @@ export default function VendorsPage() {
                       }
                     />
                   </label>
+
+                  <section className="vm-field full vm-station-field">
+                    <div className="vm-station-head">
+                      <span>Food Stations / Specialties</span>
+                      <small>
+                        {(selected.menuStations || []).length
+                          ? `${(selected.menuStations || []).length} selected · Event Planning will match this partner station-wise.`
+                          : 'Optional · choose every station this vendor or agency can handle.'}
+                      </small>
+                    </div>
+
+                    <div className="vm-station-grid">
+                      {MENU_STATION_OPTIONS.map((station) => {
+                        const active =
+                          (selected.menuStations || []).includes(
+                            station,
+                          );
+
+                        return (
+                          <button
+                            key={station}
+                            type="button"
+                            className={active ? 'active' : ''}
+                            aria-pressed={active}
+                            onClick={() =>
+                              toggleMenuStation(
+                                selected.id,
+                                station,
+                              )
+                            }
+                          >
+                            <span aria-hidden="true">
+                              {active ? '✓' : '+'}
+                            </span>
+                            {station}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
 
                   <label className="vm-field">
                     <span>Contact Person</span>
