@@ -76,6 +76,15 @@ type CustomDishDraft = {
   category: Category;
 };
 
+type EditableEventKey =
+  | 'clientName'
+  | 'eventName'
+  | 'eventDate'
+  | 'venue'
+  | 'city'
+  | 'functionType'
+  | 'pax';
+
 function normalize(
   value: unknown,
 ) {
@@ -979,6 +988,43 @@ export default function MenuCreationPage() {
     );
   }
 
+  function updateEventField(
+    key: EditableEventKey,
+    value: string | number,
+  ) {
+    if (!work || !session) {
+      return;
+    }
+
+    const nextWork: WorkState = {
+      ...work,
+      event: {
+        ...work.event,
+        [key]: value,
+      },
+      updatedAt:
+        new Date()
+          .toISOString(),
+    };
+
+    setWork(nextWork);
+    saveWork(
+      session.tenantId,
+      nextWork,
+    );
+    flushWorkSave(
+      session.tenantId,
+    );
+  }
+
+  async function commitEventDetails() {
+    if (!work) return;
+    await persist(work);
+    setMessage(
+      'Event details saved.',
+    );
+  }
+
   function activeMetadata() {
     if (!activeFunction) {
       return null;
@@ -1735,8 +1781,8 @@ export default function MenuCreationPage() {
   if (!work) {
     return (
       <AppShell
-        title="Menu Creation"
-        subtitle="Build function-wise menus"
+        title="Event & Menu"
+        subtitle="Event details, functions and menu"
       >
         <div className="glass-card menu-create-loading">
           Loading event menu…
@@ -1747,18 +1793,18 @@ export default function MenuCreationPage() {
 
   return (
     <AppShell
-      title="Menu Creation"
-      subtitle="Build and edit every event function from Dish Master"
+      title="Event & Menu"
+      subtitle="One workspace for event details, functions, dishes and import"
       hidePageTitle
     >
       <section className="content-grid menu-create-page">
         <section className="menu-create-hero">
           <div>
             <span className="menu-create-eyebrow">
-              Event menu builder
+              Event & menu workspace
             </span>
             <h1>
-              Build function-wise menus
+              Build the complete event menu
             </h1>
             <p>
               {work.event.eventName ||
@@ -1863,6 +1909,208 @@ export default function MenuCreationPage() {
               }
             >
               + Add Day / Function
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={
+                !work.menu.some(
+                  (item) =>
+                    item.coverageStatus !==
+                    'REJECTED',
+                )
+              }
+              onClick={() =>
+                window.location.assign(
+                  '/app/cost',
+                )
+              }
+            >
+              Continue to Dish Cost →
+            </button>
+          </div>
+        </section>
+
+        <section className="menu-create-workflow-strip" aria-label="Event and menu progress">
+          <div className={work.event.clientName ? 'done' : 'active'}>
+            <span>1</span>
+            <b>Event Details</b>
+            <small>{work.event.clientName ? 'Client ready' : 'Add client & event'}</small>
+          </div>
+          <div className={functions.length ? 'done' : 'active'}>
+            <span>2</span>
+            <b>Functions</b>
+            <small>{functions.length ? `${functions.length} created` : 'Add meals / functions'}</small>
+          </div>
+          <div className={work.menu.length ? 'done' : 'active'}>
+            <span>3</span>
+            <b>Menu</b>
+            <small>{work.menu.length ? `${work.menu.length} dishes selected` : 'Select from Dish Master'}</small>
+          </div>
+        </section>
+
+        <section className="glass-card menu-create-event-card">
+          <div className="menu-create-event-head">
+            <div>
+              <span>Event setup</span>
+              <h2>Client & event details</h2>
+              <p>Keep the event brief here. Changes save automatically when you leave a field.</p>
+            </div>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() =>
+                window.location.assign(
+                  '/app/event?new=1',
+                )
+              }
+            >
+              + New Event
+            </button>
+          </div>
+
+          <div className="menu-create-event-grid">
+            <label>
+              <span>Client Name</span>
+              <input
+                value={work.event.clientName}
+                placeholder="Client name"
+                onChange={(event) =>
+                  updateEventField(
+                    'clientName',
+                    event.target.value,
+                  )
+                }
+                onBlur={() =>
+                  void commitEventDetails()
+                }
+              />
+            </label>
+
+            <label>
+              <span>Event Name</span>
+              <input
+                value={work.event.eventName}
+                placeholder="Wedding / Reception / Corporate Event"
+                onChange={(event) =>
+                  updateEventField(
+                    'eventName',
+                    event.target.value,
+                  )
+                }
+                onBlur={() =>
+                  void commitEventDetails()
+                }
+              />
+            </label>
+
+            <label>
+              <span>Event Date</span>
+              <input
+                type="date"
+                value={work.event.eventDate}
+                onChange={(event) =>
+                  updateEventField(
+                    'eventDate',
+                    event.target.value,
+                  )
+                }
+                onBlur={() =>
+                  void commitEventDetails()
+                }
+              />
+            </label>
+
+            <label>
+              <span>Venue</span>
+              <input
+                value={work.event.venue}
+                placeholder="Venue"
+                onChange={(event) =>
+                  updateEventField(
+                    'venue',
+                    event.target.value,
+                  )
+                }
+                onBlur={() =>
+                  void commitEventDetails()
+                }
+              />
+            </label>
+
+            <label>
+              <span>City</span>
+              <input
+                value={work.event.city}
+                placeholder="City"
+                onChange={(event) =>
+                  updateEventField(
+                    'city',
+                    event.target.value,
+                  )
+                }
+                onBlur={() =>
+                  void commitEventDetails()
+                }
+              />
+            </label>
+
+            <label>
+              <span>Main Function Type</span>
+              <input
+                value={work.event.functionType}
+                placeholder="Wedding / Lunch / Dinner"
+                onChange={(event) =>
+                  updateEventField(
+                    'functionType',
+                    event.target.value,
+                  )
+                }
+                onBlur={() =>
+                  void commitEventDetails()
+                }
+              />
+            </label>
+
+            <label>
+              <span>Default Guests</span>
+              <input
+                type="number"
+                min="0"
+                value={work.event.pax || ''}
+                placeholder="400"
+                onChange={(event) =>
+                  updateEventField(
+                    'pax',
+                    Math.max(
+                      0,
+                      Math.round(
+                        Number(
+                          event.target.value,
+                        ) || 0,
+                      ),
+                    ),
+                  )
+                }
+                onBlur={() =>
+                  void commitEventDetails()
+                }
+              />
+            </label>
+
+            <button
+              className="menu-create-import-card"
+              type="button"
+              onClick={() =>
+                window.location.assign(
+                  '/app/event?resume=1#menuInput',
+                )
+              }
+            >
+              <span>Quick import</span>
+              <b>PDF / Photo / Paste Menu</b>
+              <small>Detect dishes, review them, then return here automatically.</small>
             </button>
           </div>
         </section>
@@ -2758,6 +3006,22 @@ export default function MenuCreationPage() {
         <style>{`
           .menu-create-page{gap:12px}
           .menu-create-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px;border:1px solid rgba(74,156,255,.15);border-radius:18px;background:linear-gradient(135deg,rgba(18,28,42,.98),rgba(10,14,20,.98));box-shadow:0 16px 38px rgba(0,0,0,.2)}
+          .menu-create-workflow-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+          .menu-create-workflow-strip>div{display:grid;grid-template-columns:30px 1fr;gap:2px 8px;align-items:center;padding:11px 12px;border:1px solid rgba(148,163,184,.12);border-radius:12px;background:#0f161f}
+          .menu-create-workflow-strip>div>span{grid-row:1/3;display:grid;width:30px;height:30px;place-items:center;border-radius:9px;color:#9bacbf;background:#1a2430;font-size:8px;font-weight:900}
+          .menu-create-workflow-strip b{color:#e4ebf3;font-size:9px}.menu-create-workflow-strip small{color:#697a8f;font-size:7px}
+          .menu-create-workflow-strip .done{border-color:rgba(85,217,143,.18);background:rgba(85,217,143,.035)}
+          .menu-create-workflow-strip .done>span{color:#9de0b9;background:rgba(85,217,143,.10)}
+          .menu-create-event-card{padding:14px 15px}
+          .menu-create-event-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid rgba(148,163,184,.10)}
+          .menu-create-event-head>div>span{display:block;color:#75adf1;font-size:7px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+          .menu-create-event-head h2{margin:3px 0;color:#eaf1f8;font-size:16px}.menu-create-event-head p{margin:0;color:#708095;font-size:8px}
+          .menu-create-event-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+          .menu-create-event-grid label{display:grid;gap:4px}.menu-create-event-grid label>span{color:#718196;font-size:7px;font-weight:900;text-transform:uppercase}
+          .menu-create-event-grid input{width:100%;min-height:40px;padding:0 10px;border:1px solid #303b47;border-radius:9px;outline:0;color:#e8eff7;background:#111820;font:inherit;font-size:9px}
+          .menu-create-event-grid input:focus{border-color:rgba(74,156,255,.52);box-shadow:0 0 0 3px rgba(74,156,255,.07)}
+          .menu-create-import-card{display:grid;gap:2px;align-content:center;min-height:62px;padding:10px 12px;border:1px dashed rgba(74,156,255,.30);border-radius:10px;color:#dce9f8;background:rgba(74,156,255,.04);text-align:left;font:inherit;cursor:pointer}
+          .menu-create-import-card span{color:#79b7ff;font-size:7px;font-weight:900;text-transform:uppercase}.menu-create-import-card b{font-size:9px}.menu-create-import-card small{color:#6f8094;font-size:7px;line-height:1.35}
           .menu-create-eyebrow{display:block;color:#75adf1;font-size:8px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
           .menu-create-hero h1{margin:5px 0;color:#f4f8fc;font-size:27px;letter-spacing:-.035em}
           .menu-create-hero p{margin:0;color:#7d8da1;font-size:10px}
@@ -2849,6 +3113,9 @@ export default function MenuCreationPage() {
           .menu-create-loading{padding:40px;text-align:center}
           @media(max-width:1050px){.menu-create-layout{grid-template-columns:1fr}.menu-create-selected{position:static}.menu-create-selected-groups{max-height:none}}
           @media(max-width:700px){.menu-create-day-group>header{align-items:flex-start;flex-direction:column}.menu-create-day-group>header button{width:100%}.menu-create-station-nav{grid-template-columns:1fr 1fr}.menu-create-station-nav>div{grid-column:1/-1;grid-row:1;text-align:left}.menu-create-hero{align-items:stretch;flex-direction:column}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-function-fields{grid-template-columns:1fr}.menu-create-dish-grid{grid-template-columns:1fr}.menu-create-selected-actions{grid-template-columns:1fr}.menu-create-toolbar{position:static}.menu-create-selected{position:static}.menu-create-function-strip>button{flex-basis:185px}}
+
+          @media(max-width:980px){.menu-create-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+          @media(max-width:700px){.menu-create-workflow-strip{grid-template-columns:1fr}.menu-create-event-head{align-items:stretch;flex-direction:column}.menu-create-event-grid{grid-template-columns:1fr}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-hero-actions>*{width:100%}}
         `}</style>
       </section>
     </AppShell>
