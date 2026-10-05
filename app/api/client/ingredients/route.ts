@@ -183,16 +183,6 @@ export async function GET(
         tenant?.city,
       );
 
-    if (!effectiveCity) {
-      return NextResponse.json(
-        {
-          error:
-            'Your business city is not set. Ask Super Admin to update the caterer account.',
-        },
-        { status: 400 },
-      );
-    }
-
     const cityKey =
       normalizeCityKey(
         effectiveCity,
@@ -269,16 +259,12 @@ export async function GET(
           resolveIngredientRate({
             tenantRate:
               custom?.rate,
-            cityRate:
-              cityRate?.rate,
             globalRate:
               master.rate,
           });
 
         const fallback =
           resolveIngredientRate({
-            cityRate:
-              cityRate?.rate,
             globalRate:
               master.rate,
           });
@@ -310,8 +296,8 @@ export async function GET(
             cityRate?.updatedAt ??
             null,
 
-          // Resetting a personal rate should fall back to
-          // the event/tenant city rate before the global master.
+          // User-side rates start from the global master.
+          // Saving creates a tenant-only override; resetting falls back to global.
           defaultRate:
             fallback.rate,
 
@@ -325,8 +311,7 @@ export async function GET(
             Boolean(custom),
 
           isCityRate:
-            !custom &&
-            Boolean(cityRate),
+            false,
 
           customUpdatedAt:
             custom?.updatedAt ??
@@ -340,18 +325,19 @@ export async function GET(
         effectiveCity || '',
       ratePriority: [
         'TENANT',
-        'CITY',
         'GLOBAL',
       ],
 
       // Client UI receives only its own city. City-master
       // browsing and editing stays on Super Admin pages.
-      cities: [
-        {
-          city: effectiveCity,
-          cityKey,
-        },
-      ],
+      cities: effectiveCity
+        ? [
+            {
+              city: effectiveCity,
+              cityKey,
+            },
+          ]
+        : [],
 
       usage: Object.fromEntries(
         recipeIngredientUsage(
