@@ -11196,7 +11196,7 @@ export default function EventPage() {
                     defaultValue={
                       newEventDraft.clientName
                     }
-                    onInput={() =>
+                    onFocus={() =>
                       setNewEventError(
                         '',
                       )
