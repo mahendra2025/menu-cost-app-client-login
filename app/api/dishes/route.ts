@@ -558,8 +558,7 @@ export async function GET() {
         tenantSavedDishes
           .filter(
             (item) =>
-              item.name.trim() &&
-              Number(item.rate) > 0,
+              item.name.trim(),
           )
           .map(
             (item) => [
@@ -801,14 +800,11 @@ export async function POST(
         ) || 0,
       );
 
-    if (
-      !name ||
-      !(rate > 0)
-    ) {
+    if (!name) {
       return NextResponse.json(
         {
           error:
-            'Dish name and a valid rate are required.',
+            'Dish name is required.',
         },
         {
           status: 400,
@@ -820,6 +816,39 @@ export async function POST(
       normalizeRecipeName(
         name,
       );
+
+    const previousName =
+      String(
+        body.previousName ||
+        '',
+      )
+        .normalize('NFKC')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 120);
+
+    const previousNormalizedName =
+      previousName
+        ? normalizeRecipeName(
+            previousName,
+          )
+        : '';
+
+    if (
+      previousNormalizedName &&
+      previousNormalizedName !==
+        normalizedName
+    ) {
+      await prisma
+        .tenantDishMasterItem
+        .deleteMany({
+          where: {
+            tenantId,
+            normalizedName:
+              previousNormalizedName,
+          },
+        });
+    }
 
     const servingQuantity =
       Math.max(
