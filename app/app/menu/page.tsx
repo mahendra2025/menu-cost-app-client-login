@@ -722,6 +722,105 @@ export default function MenuCreationPage() {
       [dishCatalog],
     );
 
+  const stationMetrics =
+    useMemo(
+      () => {
+        const metrics =
+          new Map<
+            string,
+            {
+              available: number;
+              selected: number;
+            }
+          >();
+
+        for (const station of stations) {
+          const available =
+            dishCatalog.filter(
+              (dish) =>
+                stationForCategory(
+                  dish.category,
+                ).key ===
+                station.key,
+            ).length;
+
+          const selected =
+            (
+              activeFunction
+                ?.items ||
+              []
+            ).filter(
+              (item) =>
+                stationForCategory(
+                  item.category,
+                ).key ===
+                station.key,
+            ).length;
+
+          metrics.set(
+            station.key,
+            {
+              available,
+              selected,
+            },
+          );
+        }
+
+        return metrics;
+      },
+      [
+        stations,
+        dishCatalog,
+        activeFunction,
+      ],
+    );
+
+  const activeStationIndex =
+    category === 'ALL'
+      ? -1
+      : stations.findIndex(
+          (station) =>
+            station.key ===
+            category,
+        );
+
+  const activeStation =
+    activeStationIndex >= 0
+      ? stations[
+          activeStationIndex
+        ]
+      : null;
+
+  function moveStation(
+    direction: -1 | 1,
+  ) {
+    if (!stations.length) {
+      return;
+    }
+
+    const start =
+      activeStationIndex >= 0
+        ? activeStationIndex
+        : direction > 0
+          ? -1
+          : 0;
+
+    const nextIndex =
+      (
+        start +
+        direction +
+        stations.length
+      ) %
+      stations.length;
+
+    setCategory(
+      stations[nextIndex]
+        .key,
+    );
+
+    setSearch('');
+  }
+
   const visibleDishes =
     useMemo(
       () => {
@@ -1732,7 +1831,10 @@ export default function MenuCreationPage() {
                     )
                   }
                 >
-                  All
+                  <span>All Stations</span>
+                  <small>
+                    {activeFunction?.items.length || 0}/{dishCatalog.length}
+                  </small>
                 </button>
 
                 {stations.map(
@@ -1754,12 +1856,63 @@ export default function MenuCreationPage() {
                         )
                       }
                     >
-                      {station.label}
+                      <span>
+                        {station.label}
+                      </span>
+                      <small>
+                        {stationMetrics.get(
+                          station.key,
+                        )?.selected || 0}/{
+                          stationMetrics.get(
+                            station.key,
+                          )?.available || 0
+                        }
+                      </small>
                     </button>
                   ),
                 )}
               </div>
             </section>
+
+            {activeStation ? (
+              <section className="glass-card menu-create-station-nav">
+                <button
+                  type="button"
+                  onClick={() =>
+                    moveStation(-1)
+                  }
+                >
+                  ← Previous
+                </button>
+
+                <div>
+                  <span>
+                    Building station
+                  </span>
+                  <h3>
+                    {activeStation.label}
+                  </h3>
+                  <small>
+                    {stationMetrics.get(
+                      activeStation.key,
+                    )?.selected || 0} selected · {
+                      stationMetrics.get(
+                        activeStation.key,
+                      )?.available || 0
+                    } available
+                  </small>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    moveStation(1)
+                  }
+                >
+                  Next →
+                </button>
+              </section>
+            ) : null}
 
             {loadingCatalog ? (
               <div className="glass-card menu-create-empty">
@@ -2306,6 +2459,16 @@ export default function MenuCreationPage() {
           .menu-create-category-tabs{grid-column:1/-1;display:flex;gap:5px;overflow:auto;padding-bottom:2px}
           .menu-create-category-tabs button{flex:0 0 auto;min-height:31px;padding:0 9px;border:1px solid #303b47;border-radius:8px;color:#7b8ca1;background:#121a23;font:inherit;font-size:7px;font-weight:850;cursor:pointer}
           .menu-create-category-tabs button.active{border-color:rgba(74,156,255,.32);color:#a8d0ff;background:rgba(74,156,255,.08)}
+          .menu-create-category-tabs button span,.menu-create-category-tabs button small{display:block}
+          .menu-create-category-tabs button small{margin-top:2px;color:#5f7085;font-size:6px;font-weight:800}
+          .menu-create-category-tabs button.active small{color:#7faee2}
+          .menu-create-station-nav{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:11px 13px}
+          .menu-create-station-nav>button{min-height:34px;padding:0 10px;border:1px solid #303b47;border-radius:9px;color:#8da0b5;background:#121a23;font:inherit;font-size:7px;font-weight:900;cursor:pointer}
+          .menu-create-station-nav>div{text-align:center}
+          .menu-create-station-nav span,.menu-create-station-nav small{display:block}
+          .menu-create-station-nav span{color:#6f8094;font-size:6px;font-weight:900;text-transform:uppercase}
+          .menu-create-station-nav h3{margin:2px 0;color:#e7eef6;font-size:13px}
+          .menu-create-station-nav small{color:#65768a;font-size:7px}
           .menu-create-dish-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
           .menu-create-dish-grid>button{display:grid;grid-template-columns:36px minmax(0,1fr) 26px;gap:9px;align-items:center;min-height:70px;padding:10px;border:1px solid rgba(148,163,184,.11);border-radius:12px;color:inherit;background:#101720;text-align:left;font:inherit;cursor:pointer}
           .menu-create-dish-grid>button:hover{border-color:rgba(74,156,255,.22)}
@@ -2345,7 +2508,7 @@ export default function MenuCreationPage() {
           .menu-create-modal-head button{width:32px;height:32px;border:1px solid #303b47;border-radius:9px;color:#93a3b5;background:#121a23;font-size:18px;cursor:pointer}
           .menu-create-loading{padding:40px;text-align:center}
           @media(max-width:1050px){.menu-create-layout{grid-template-columns:1fr}.menu-create-selected{position:static}.menu-create-selected-groups{max-height:none}}
-          @media(max-width:700px){.menu-create-hero{align-items:stretch;flex-direction:column}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-function-fields{grid-template-columns:1fr}.menu-create-dish-grid{grid-template-columns:1fr}.menu-create-selected-actions{grid-template-columns:1fr}.menu-create-toolbar{position:static}.menu-create-selected{position:static}.menu-create-function-strip>button{flex-basis:185px}}
+          @media(max-width:700px){.menu-create-station-nav{grid-template-columns:1fr 1fr}.menu-create-station-nav>div{grid-column:1/-1;grid-row:1;text-align:left}.menu-create-hero{align-items:stretch;flex-direction:column}.menu-create-hero-actions{display:grid;grid-template-columns:1fr 1fr}.menu-create-function-fields{grid-template-columns:1fr}.menu-create-dish-grid{grid-template-columns:1fr}.menu-create-selected-actions{grid-template-columns:1fr}.menu-create-toolbar{position:static}.menu-create-selected{position:static}.menu-create-function-strip>button{flex-basis:185px}}
         `}</style>
       </section>
     </AppShell>
