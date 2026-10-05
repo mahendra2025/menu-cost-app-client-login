@@ -1540,6 +1540,133 @@ export default function MenuCreationPage() {
     setError('');
   }
 
+  async function saveDishToUserMenuStation(
+    input: {
+      name: string;
+      category: string;
+      rate: number;
+      previousName?: string;
+    },
+  ) {
+    const response =
+      await fetch(
+        '/api/dishes',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body:
+            JSON.stringify({
+              name:
+                input.name,
+              category:
+                input.category,
+              rate:
+                Math.max(
+                  0,
+                  Number(
+                    input.rate,
+                  ) || 0,
+                ),
+              servingQuantity:
+                1,
+              servingUnit:
+                'serving',
+              previousName:
+                input.previousName ||
+                '',
+            }),
+        },
+      );
+
+    const data =
+      await response
+        .json()
+        .catch(
+          () => ({}),
+        );
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        'Could not save dish to your Menu Station.',
+      );
+    }
+
+    const saved =
+      data.item as
+        | DishOption
+        | undefined;
+
+    if (!saved?.name) {
+      throw new Error(
+        'Dish was not returned after saving to your Menu Station.',
+      );
+    }
+
+    setDishCatalog(
+      (current) => {
+        const previousKey =
+          normalize(
+            input.previousName ||
+            input.name,
+          );
+
+        const next =
+          current.filter(
+            (dish) =>
+              !(
+                dish.source ===
+                  'tenant' &&
+                normalize(
+                  dish.name,
+                ) ===
+                  previousKey
+              ),
+          );
+
+        const savedKey =
+          normalize(
+            saved.name,
+          );
+
+        const withoutSaved =
+          next.filter(
+            (dish) =>
+              !(
+                dish.source ===
+                  'tenant' &&
+                normalize(
+                  dish.name,
+                ) ===
+                  savedKey
+              ),
+          );
+
+        return [
+          ...withoutSaved,
+          {
+            ...saved,
+            source:
+              'tenant',
+          },
+        ].sort(
+          (left, right) =>
+            left.category.localeCompare(
+              right.category,
+            ) ||
+            left.name.localeCompare(
+              right.name,
+            ),
+        );
+      },
+    );
+
+    return saved;
+  }
+
   async function editCustomDish() {
     if (
       !work ||
@@ -1618,7 +1745,19 @@ export default function MenuCreationPage() {
           ),
       );
 
-    if (knownDish) {
+    if (
+      knownDish &&
+      !(
+        knownDish.source ===
+          'tenant' &&
+        normalize(
+          knownDish.name,
+        ) ===
+          normalize(
+            currentItem.name,
+          )
+      )
+    ) {
       setError(
         'This name already exists in Dish Master. Remove the custom dish and select the Dish Master item instead.',
       );
@@ -1664,6 +1803,21 @@ export default function MenuCreationPage() {
           'Could not update the custom dish review queue.',
         );
       }
+
+      await saveDishToUserMenuStation({
+        name,
+        category:
+          categoryName,
+        rate:
+          Math.max(
+            0,
+            Number(
+              currentItem.costPerPlate,
+            ) || 0,
+          ),
+        previousName:
+          currentItem.name,
+      });
 
       await persist({
         ...work,
@@ -1714,7 +1868,7 @@ export default function MenuCreationPage() {
 
       closeCustomDishModal();
       setMessage(
-        `${name} updated in ${activeFunction.mealLabel}.`,
+        `${name} updated in ${activeFunction.mealLabel} and saved in your Menu Station.`,
       );
       setError('');
     } catch (
@@ -1876,6 +2030,13 @@ export default function MenuCreationPage() {
         );
       }
 
+      await saveDishToUserMenuStation({
+        name,
+        category:
+          categoryName,
+        rate: 0,
+      });
+
       const item:
         MenuItem = {
           id:
@@ -1967,7 +2128,7 @@ export default function MenuCreationPage() {
       setError('');
 
       setMessage(
-        `${name} added to the menu and sent to Admin Unknown Dish Queue for review.`,
+        `${name} added to the event, saved in your Menu Station, and sent to Admin Unknown Dish Queue for review.`,
       );
     } catch (
       queueError
