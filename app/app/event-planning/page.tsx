@@ -73,6 +73,7 @@ type AssignmentRow = {
   menuCategory?: string;
   menuDishIds?: string[];
   menuAssignmentMode?: 'STATION' | 'DISH';
+  groceryResponsibility?: 'CATERER' | 'VENDOR';
   partnerType: PartnerType;
   rate: number;
   deliveryTime: string;
@@ -633,6 +634,8 @@ function seedRows(
         ),
       menuAssignmentMode:
         'STATION',
+      groceryResponsibility:
+        'CATERER',
     });
   });
 
@@ -3250,6 +3253,122 @@ export default function EventPlanningPage() {
     );
   }
 
+  function syncMenuGroceryResponsibilityByIds(
+    dishIds: string[],
+    responsibility:
+      | 'CATERER'
+      | 'VENDOR',
+  ) {
+    if (!work || !dishIds.length) {
+      return;
+    }
+
+    const ids =
+      new Set(
+        dishIds
+          .map((id) =>
+            String(id || '').trim(),
+          )
+          .filter(Boolean),
+      );
+
+    if (!ids.size) {
+      return;
+    }
+
+    let changed = false;
+
+    const menu =
+      work.menu.map(
+        (item) => {
+          if (!ids.has(item.id)) {
+            return item;
+          }
+
+          const current =
+            item.groceryResponsibility ||
+            'CATERER';
+
+          if (
+            current ===
+            responsibility
+          ) {
+            return item;
+          }
+
+          changed = true;
+
+          return {
+            ...item,
+            groceryResponsibility:
+              responsibility,
+          };
+        },
+      );
+
+    if (!changed) {
+      return;
+    }
+
+    const nextWork: WorkState = {
+      ...work,
+      menu,
+      updatedAt:
+        new Date()
+          .toISOString(),
+    };
+
+    setWork(
+      nextWork,
+    );
+
+    const session =
+      getSession();
+
+    if (session) {
+      saveWork(
+        session.tenantId,
+        nextWork,
+      );
+      flushWorkSave(
+        session.tenantId,
+      );
+    }
+  }
+
+  function setMenuGroceryResponsibility(
+    row: AssignmentRow,
+    responsibility:
+      | 'CATERER'
+      | 'VENDOR',
+  ) {
+    if (!currentFunction) {
+      return;
+    }
+
+    const dishes =
+      menuDishesForRow(
+        row,
+        currentFunction,
+      );
+
+    updateRow(
+      row.id,
+      {
+        groceryResponsibility:
+          responsibility,
+      },
+    );
+
+    syncMenuGroceryResponsibilityByIds(
+      dishes.map(
+        (dish) =>
+          dish.id,
+      ),
+      responsibility,
+    );
+  }
+
   function assignPartner(
     row: AssignmentRow,
     value: string,
@@ -3259,7 +3378,23 @@ export default function EventPlanningPage() {
         partnerId: '',
         assignedTo: 'In-house',
         partnerType: 'IN_HOUSE',
+        groceryResponsibility:
+          'CATERER',
       });
+
+      if (currentFunction) {
+        syncMenuGroceryResponsibilityByIds(
+          menuDishesForRow(
+            row,
+            currentFunction,
+          ).map(
+            (dish) =>
+              dish.id,
+          ),
+          'CATERER',
+        );
+      }
+
       return;
     }
 
@@ -3271,7 +3406,23 @@ export default function EventPlanningPage() {
       updateRow(row.id, {
         partnerId: '',
         assignedTo: '',
+        groceryResponsibility:
+          'CATERER',
       });
+
+      if (currentFunction) {
+        syncMenuGroceryResponsibilityByIds(
+          menuDishesForRow(
+            row,
+            currentFunction,
+          ).map(
+            (dish) =>
+              dish.id,
+          ),
+          'CATERER',
+        );
+      }
+
       return;
     }
 
@@ -4380,6 +4531,8 @@ export default function EventPlanningPage() {
           ],
           menuAssignmentMode:
             'DISH' as const,
+          groceryResponsibility:
+            'CATERER' as const,
           partnerId:
             '',
           assignedTo:
@@ -4394,6 +4547,14 @@ export default function EventPlanningPage() {
             'PENDING' as const,
         }),
       );
+
+    syncMenuGroceryResponsibilityByIds(
+      dishes.map(
+        (dish) =>
+          dish.id,
+      ),
+      'CATERER',
+    );
 
     persistRows(
       currentFunction.key,
@@ -4505,6 +4666,8 @@ export default function EventPlanningPage() {
         ),
       menuAssignmentMode:
         'STATION',
+      groceryResponsibility:
+        'CATERER',
       partnerId:
         '',
       assignedTo:
@@ -4543,6 +4706,14 @@ export default function EventPlanningPage() {
           remaining.length,
         ),
       );
+
+    syncMenuGroceryResponsibilityByIds(
+      dishes.map(
+        (dish) =>
+          dish.id,
+      ),
+      'CATERER',
+    );
 
     persistRows(
       currentFunction.key,
@@ -5438,6 +5609,8 @@ export default function EventPlanningPage() {
           .ep-menu-field>span{color:#728196;font-size:6px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
           .ep-menu-field select,.ep-menu-field input{width:100%;min-height:40px;padding:0 10px;border:1px solid #33404d;border-radius:9px;outline:0;color:#e5edf6;background:#151d26;font:inherit;font-size:9px;color-scheme:dark}
           .ep-menu-field select:focus,.ep-menu-field input:focus{border-color:rgba(74,156,255,.65);box-shadow:0 0 0 3px rgba(74,156,255,.08)}
+          .ep-menu-field select:disabled{opacity:.58;cursor:not-allowed}
+          .ep-menu-grocery-choice small{color:#708197;font-size:7px;line-height:1.45}
           .ep-menu-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
           .ep-menu-contact{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 9px;border:1px solid rgba(148,163,184,.07);border-radius:9px;background:rgba(255,255,255,.02)}
           .ep-menu-contact>div span,.ep-menu-contact>div b,.ep-menu-contact>div small{display:block}
@@ -7239,7 +7412,7 @@ export default function EventPlanningPage() {
                   <div>
                     <b>Vendor Assignment Workspace</b>
                     <span>
-                      Plan every menu category as an execution station. For categories with multiple dishes, use Split by dish to assign each dish to a different vendor or in-house team, then set covers, rate and reporting time separately.
+                      Plan every menu category as an execution station. Split categories by dish when different vendors are responsible, and choose whether each vendor is With grocery or Without grocery. Vendor-supplied grocery is automatically removed from the generated ingredient list.
                     </span>
                   </div>
 
@@ -7622,6 +7795,46 @@ export default function EventPlanningPage() {
                                   </select>
                                 </label>
                               </div>
+
+                              <label className="ep-menu-field ep-menu-grocery-choice">
+                                <span>Grocery</span>
+                                <select
+                                  value={
+                                    row.groceryResponsibility ||
+                                    'CATERER'
+                                  }
+                                  disabled={
+                                    !hasAssignment ||
+                                    row.partnerType ===
+                                      'IN_HOUSE'
+                                  }
+                                  onChange={(event) =>
+                                    setMenuGroceryResponsibility(
+                                      row,
+                                      event.target.value as
+                                        | 'CATERER'
+                                        | 'VENDOR',
+                                    )
+                                  }
+                                  aria-label={'Grocery responsibility for ' + row.requirement}
+                                >
+                                  <option value="CATERER">
+                                    Without grocery · Our team buys ingredients
+                                  </option>
+                                  <option value="VENDOR">
+                                    With grocery · Vendor brings ingredients
+                                  </option>
+                                </select>
+                                <small>
+                                  {row.groceryResponsibility === 'VENDOR'
+                                    ? 'This dish is removed from the generated grocery requirement.'
+                                    : row.partnerType === 'IN_HOUSE'
+                                      ? 'In-house production always uses our grocery.'
+                                      : !hasAssignment
+                                        ? 'Assign a vendor or agency first.'
+                                        : 'Recipe ingredients remain in our grocery list.'}
+                                </small>
+                              </label>
 
                               {assignedVendor ? (
                                 <div className="ep-menu-contact">
