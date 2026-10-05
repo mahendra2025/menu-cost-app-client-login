@@ -75,6 +75,66 @@ function normalize(
     .replace(/\s+/g, ' ');
 }
 
+type MenuStation = {
+  key: string;
+  label: string;
+  categories: string[];
+};
+
+const MENU_STATIONS: MenuStation[] = [
+  { key: 'welcome-drinks', label: 'Welcome Drinks Station', categories: ['Welcome Drink', 'Mocktail'] },
+  { key: 'starters', label: 'Starters Station', categories: ['Starter', 'Snacks'] },
+  { key: 'soup', label: 'Soup Station', categories: ['Soup'] },
+  { key: 'sweets', label: 'Sweets Station', categories: ['Sweet'] },
+  { key: 'farsan', label: 'Farsan Station', categories: ['Farsan'] },
+  { key: 'vegetable', label: 'Vegetable Station', categories: ['Sabji', 'Paneer', 'Main Course'] },
+  { key: 'indian-bread', label: 'Indian Bread Station', categories: ['Bread', 'Tandoor'] },
+  { key: 'dal-rice', label: 'Dal & Rice Station', categories: ['Dal / Kadhi', 'Rice'] },
+  { key: 'salad', label: 'Salad Station', categories: ['Salad', 'Raita'] },
+  { key: 'papad', label: 'Papad Station', categories: ['Papad'] },
+  { key: 'achar', label: 'Achar Station', categories: ['Pickle', 'Condiments'] },
+  { key: 'chaat', label: 'Chaat Station', categories: ['Chaat', 'Street Food'] },
+  { key: 'chinese', label: 'Chinese Station', categories: ['Chinese'] },
+  { key: 'south-indian', label: 'South Indian Station', categories: ['South Indian'] },
+  { key: 'punjabi', label: 'Punjabi Station', categories: ['Punjabi'] },
+  { key: 'north-indian', label: 'North Indian Station', categories: ['North Indian'] },
+  { key: 'japanese', label: 'Japanese Station', categories: ['Japanese'] },
+  { key: 'mexican', label: 'Mexican Station', categories: ['Mexican'] },
+  { key: 'thai', label: 'Thai Station', categories: ['Thai'] },
+  { key: 'asian', label: 'Asian Station', categories: ['Asian'] },
+  { key: 'mongolian', label: 'Mongolian Station', categories: ['Mongolian'] },
+  { key: 'dessert', label: 'Dessert Station', categories: ['Dessert', 'Bakery'] },
+  { key: 'waffles', label: 'Waffles Station', categories: ['Waffles'] },
+  { key: 'party', label: 'Party Station', categories: ['Party'] },
+  { key: 'ice-cream', label: 'Ice Cream Station', categories: ['Ice Cream'] },
+  { key: 'fruit', label: 'Fruit Station', categories: ['Fruit'] },
+  { key: 'beverage', label: 'Beverage Station', categories: ['Beverage'] },
+  { key: 'mukhwas', label: 'Mukhwas Station', categories: ['Mukhwas'] },
+  { key: 'paan', label: 'Paan Station', categories: ['Paan'] },
+];
+
+function stationForCategory(category: string): MenuStation {
+  const normalizedCategory = normalize(category);
+
+  const configured = MENU_STATIONS.find((station) =>
+    station.categories.some(
+      (value) => normalize(value) === normalizedCategory,
+    ),
+  );
+
+  if (configured) {
+    return configured;
+  }
+
+  const cleanCategory = String(category || 'Other').trim() || 'Other';
+
+  return {
+    key: `other::${normalizedCategory || 'other'}`,
+    label: `${cleanCategory} Station`,
+    categories: [cleanCategory],
+  };
+}
+
 function functionKey(
   item: MenuItem,
 ) {
@@ -611,27 +671,54 @@ export default function MenuCreationPage() {
       ],
     );
 
-  const categories =
+  const stations =
     useMemo(
-      () =>
-        Array.from(
+      () => {
+        const configuredKeys =
           new Set(
-            dishCatalog
-              .map(
-                (dish) =>
-                  dish.category,
-              )
-              .filter(Boolean),
-          ),
-        ).sort(
-          (
-            left,
-            right,
-          ) =>
-            left.localeCompare(
-              right,
+            MENU_STATIONS.map(
+              (station) =>
+                station.key,
             ),
-        ),
+          );
+
+        const fallback =
+          Array.from(
+            new Map(
+              dishCatalog
+                .map((dish) =>
+                  stationForCategory(
+                    dish.category,
+                  ),
+                )
+                .filter(
+                  (station) =>
+                    !configuredKeys.has(
+                      station.key,
+                    ),
+                )
+                .map(
+                  (station) => [
+                    station.key,
+                    station,
+                  ] as const,
+                ),
+            ).values(),
+          ).sort(
+            (
+              left,
+              right,
+            ) =>
+              left.label.localeCompare(
+                right.label,
+              ),
+          );
+
+        return [
+          ...MENU_STATIONS,
+          ...fallback,
+        ];
+      },
       [dishCatalog],
     );
 
@@ -649,7 +736,9 @@ export default function MenuCreationPage() {
               const matchesCategory =
                 category ===
                   'ALL' ||
-                dish.category ===
+                stationForCategory(
+                  dish.category,
+                ).key ===
                   category;
 
               const matchesSearch =
@@ -1249,13 +1338,16 @@ export default function MenuCreationPage() {
     );
   }
 
-  const selectedByCategory =
+  const selectedByStation =
     useMemo(
       () => {
         const groups =
           new Map<
             string,
-            MenuItem[]
+            {
+              station: MenuStation;
+              items: MenuItem[];
+            }
           >();
 
         (
@@ -1264,27 +1356,76 @@ export default function MenuCreationPage() {
           []
         ).forEach(
           (item) => {
-            const group =
-              item.category ||
-              'Other';
+            const station =
+              stationForCategory(
+                item.category,
+              );
+
+            const current =
+              groups.get(
+                station.key,
+              );
 
             groups.set(
-              group,
-              [
-                ...(
-                  groups.get(
-                    group,
-                  ) ||
-                  []
-                ),
-                item,
-              ],
+              station.key,
+              {
+                station,
+                items: [
+                  ...(
+                    current
+                      ?.items ||
+                    []
+                  ),
+                  item,
+                ],
+              },
             );
           },
         );
 
+        const order =
+          new Map(
+            MENU_STATIONS.map(
+              (
+                station,
+                index,
+              ) => [
+                station.key,
+                index,
+              ],
+            ),
+          );
+
         return Array.from(
-          groups.entries(),
+          groups.values(),
+        ).sort(
+          (
+            left,
+            right,
+          ) => {
+            const leftOrder =
+              order.get(
+                left.station
+                  .key,
+              ) ??
+              999;
+
+            const rightOrder =
+              order.get(
+                right.station
+                  .key,
+              ) ??
+              999;
+
+            return (
+              leftOrder -
+                rightOrder ||
+              left.station.label.localeCompare(
+                right.station
+                  .label,
+              )
+            );
+          },
         );
       },
       [
@@ -1594,24 +1735,26 @@ export default function MenuCreationPage() {
                   All
                 </button>
 
-                {categories.map(
-                  (item) => (
+                {stations.map(
+                  (station) => (
                     <button
-                      key={item}
+                      key={
+                        station.key
+                      }
                       type="button"
                       className={
                         category ===
-                        item
+                        station.key
                           ? 'active'
                           : ''
                       }
                       onClick={() =>
                         setCategory(
-                          item,
+                          station.key,
                         )
                       }
                     >
-                      {item}
+                      {station.label}
                     </button>
                   ),
                 )}
@@ -1624,7 +1767,7 @@ export default function MenuCreationPage() {
               </div>
             ) : !visibleDishes.length ? (
               <div className="glass-card menu-create-empty">
-                No dishes match this search.
+                No dishes found in this station/search.
               </div>
             ) : (
               <section className="menu-create-dish-grid">
@@ -1673,7 +1816,9 @@ export default function MenuCreationPage() {
                           </b>
 
                           <small>
-                            {dish.category}
+                            {stationForCategory(
+                              dish.category,
+                            ).label}
                           </small>
 
                           <em>
@@ -1728,19 +1873,19 @@ export default function MenuCreationPage() {
               </div>
             ) : (
               <div className="menu-create-selected-groups">
-                {selectedByCategory.map(
-                  ([
-                    group,
+                {selectedByStation.map(
+                  ({
+                    station,
                     items,
-                  ]) => (
+                  }) => (
                     <section
                       key={
-                        group
+                        station.key
                       }
                     >
                       <div>
                         <b>
-                          {group}
+                          {station.label}
                         </b>
                         <span>
                           {items.length}
