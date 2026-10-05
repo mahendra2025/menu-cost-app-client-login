@@ -1686,7 +1686,7 @@ export default function MenuCreationPage() {
                 }
               }}
             >
-              Download Menu PDF
+              Download Premium Menu
             </button>
 
             <button
