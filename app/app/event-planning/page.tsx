@@ -4653,24 +4653,28 @@ export default function EventPlanningPage() {
           .ep-tabs{display:flex;gap:4px;overflow:auto;padding:8px 10px;border-bottom:1px solid #252c35;background:#0e1319}
           .ep-tab{min-height:33px;padding:0 10px;border:0;border-radius:8px;color:#8290a0;background:transparent;font:inherit;font-size:9px;font-weight:850;white-space:nowrap;cursor:pointer}
           .ep-tab.active{color:#9bc8ff;background:rgba(74,156,255,.11)}
-          .ep-grocery-supplier-panel{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
-          .ep-grocery-supplier-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+          .ep-grocery-supplier-panel{display:grid;gap:18px;padding:18px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-grocery-supplier-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
           .ep-grocery-supplier-head b,.ep-grocery-supplier-head span{display:block}
-          .ep-grocery-supplier-head b{color:#e6edf5;font-size:11px}
-          .ep-grocery-supplier-head span{margin-top:3px;color:#758397;font-size:8px}
-          .ep-grocery-supplier-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
-          .ep-grocery-supplier-card{padding:10px;border:1px solid #29333f;border-radius:11px;background:linear-gradient(180deg,#101720,#0d141b)}
-          .ep-grocery-supplier-card.ready{border-color:rgba(85,217,143,.16);background:rgba(85,217,143,.035)}
-          .ep-grocery-supplier-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-          .ep-grocery-supplier-card-top span,.ep-grocery-supplier-card-top b{display:block}
-          .ep-grocery-supplier-card-top span{color:#8fc2ff;font-size:7px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
-          .ep-grocery-supplier-card-top b{margin-top:4px;color:#e4edf6;font-size:10px;line-height:1.3}
-          .ep-grocery-supplier-card-top strong{padding:4px 6px;border-radius:999px;color:#91a0b2;background:rgba(148,163,184,.08);font-size:7px}
-          .ep-grocery-supplier-card.ready .ep-grocery-supplier-card-top strong{color:#7fe0a8;background:rgba(85,217,143,.08)}
-          .ep-grocery-supplier-card p{min-height:28px;margin:8px 0;color:#6f7d8e;font-size:7px;line-height:1.45}
-          .ep-grocery-supplier-card-meta{display:flex;gap:5px;flex-wrap:wrap}
-          .ep-grocery-supplier-card-meta span{padding:4px 6px;border-radius:999px;color:#7f8ea1;background:rgba(148,163,184,.06);font-size:6px;font-weight:800}
-          @media(max-width:900px){.ep-grocery-supplier-grid{grid-template-columns:1fr}.ep-grocery-supplier-head{align-items:stretch;flex-direction:column}}
+          .ep-grocery-supplier-head b{color:#edf4fb;font-size:16px}
+          .ep-grocery-supplier-head span{margin-top:6px;max-width:650px;color:#94a3b8;font-size:12px;line-height:1.6}
+          .ep-grocery-category-list{display:grid;gap:18px}
+          .ep-grocery-category{min-width:0;overflow:hidden;border:1px solid #293440;border-radius:16px;background:#0f151c}
+          .ep-grocery-category-head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px;border-bottom:1px solid #293440}
+          .ep-grocery-category-head b,.ep-grocery-category-head small{display:block}
+          .ep-grocery-category-head b{color:#edf4fb;font-size:15px}.ep-grocery-category-head small{margin-top:5px;max-width:600px;color:#94a3b8;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+          .ep-grocery-category-meta{display:flex;gap:8px;flex-wrap:wrap}
+          .ep-grocery-category-meta span{padding:7px 10px;border-radius:999px;color:#94a3b8;background:#18222e;font-size:11px}
+          .ep-grocery-category-meta b{display:inline;color:#bfdbfe;font-size:11px}
+          .ep-grocery-category-meta .warn,.ep-grocery-category-meta .warn b{color:#fbbf77}
+          .ep-grocery-category-progress{display:flex;align-items:center;gap:12px;padding:12px 16px;color:#94a3b8;font-size:11px}
+          .ep-grocery-category-progress>span{flex:1;height:5px;background:#1a232d;overflow:hidden;border-radius:999px}.ep-grocery-category-progress i{display:block;height:100%;background:#63d7a0;border-radius:inherit}
+          .ep-grocery-supplier-panel .ep-menu-function-context b{font-size:16px}.ep-grocery-supplier-panel .ep-menu-function-context span,.ep-grocery-supplier-panel .ep-menu-function-context small,.ep-grocery-supplier-panel .ep-menu-function-chips span{font-size:11px}.ep-grocery-supplier-panel .ep-menu-function-chips b{font-size:16px}
+          .ep-grocery-row-card .ep-menu-field-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+          .ep-grocery-order-photo{width:100%;height:140px;object-fit:contain;padding:8px;border-radius:10px;background:#18202a}
+          .ep-grocery-supplier-panel .ep-button{min-height:44px;font-size:12px}.ep-grocery-supplier-panel .ep-empty{font-size:12px;line-height:1.6}
+          @media(max-width:720px){.ep-grocery-supplier-panel{padding:12px}.ep-grocery-supplier-head{flex-direction:column}.ep-grocery-supplier-head>.ep-button{width:100%;justify-content:center}.ep-grocery-category-progress{flex-wrap:wrap}.ep-grocery-row-card .ep-menu-field-grid.three{grid-template-columns:1fr}}
+
           .ep-table-wrap{overflow:auto}
           .ep-table{width:100%;min-width:980px;border-collapse:collapse}
           .ep-table th{padding:8px 9px;border-bottom:1px solid #28313c;color:#718094;background:#0c1117;font-size:7px;font-weight:900;letter-spacing:.04em;text-align:left;text-transform:uppercase}
@@ -5539,66 +5543,94 @@ export default function EventPlanningPage() {
               <section className="ep-grocery-supplier-panel">
                 <div className="ep-grocery-supplier-head">
                   <div>
-                    <b>Grocery supplier categories</b>
-                    <span>
-                      Assign separate suppliers for Grocery, Dairy, and Vegetables & Fruits.
-                    </span>
+                    <b>Grocery Suppliers Workspace</b>
+                    <span>Plan separate supplier orders for Grocery, Dairy, and Vegetables & Fruits. Set quantities, rates and delivery times for this function.</span>
                   </div>
-
-                  <Link
-                    className="ep-button"
-                    href="/app/vendors"
-                  >
-                    Manage Suppliers
-                  </Link>
+                  <Link className="ep-button" href="/app/vendors">Manage Suppliers</Link>
                 </div>
-
-                <div className="ep-grocery-supplier-grid">
-                  {grocerySupplierSummary.map(
-                    (group) => (
-                      <article
-                        className={
-                          group.readiness >= 80
-                            ? 'ep-grocery-supplier-card ready'
-                            : 'ep-grocery-supplier-card'
-                        }
-                        key={group.key}
-                      >
-                        <div className="ep-grocery-supplier-card-top">
-                          <div>
-                            <span>
-                              {group.label}
-                            </span>
-                            <b>
-                              {group.suppliers.length
-                                ? group.suppliers.join(', ')
-                                : 'Supplier not assigned'}
-                            </b>
-                          </div>
-
-                          <strong>
-                            {group.readiness}%
-                          </strong>
+                <div className="ep-menu-function-context">
+                  <div>
+                    <span>Selected Function</span>
+                    <b>{currentFunction.dayLabel} · {currentFunction.mealLabel}</b>
+                    <small>{work.event.clientName || eventName} · {work.event.venue || work.event.city || 'Venue not set'}</small>
+                  </div>
+                  <div className="ep-menu-function-chips">
+                    <span><b>{grocerySupplierSummary.reduce((sum, group) => sum + group.rows.length, 0)}</b>order lines</span>
+                    <span><b>{grocerySupplierSummary.reduce((sum, group) => sum + group.assignedCount, 0)}</b>assigned</span>
+                    <span><b>{currency(grocerySupplierSummary.reduce((sum, group) => sum + group.cost, 0))}</b>planned cost</span>
+                  </div>
+                </div>
+                <div className="ep-grocery-category-list">
+                  {grocerySupplierSummary.map((group) => (
+                    <section className="ep-grocery-category" key={group.key} aria-label={group.label + ' supplier orders'}>
+                      <div className="ep-grocery-category-head">
+                        <div><b>{group.label}</b><small>{group.detail}</small><small>{group.suppliers.length ? group.suppliers.join(' · ') : group.rows.length ? 'Choose a supplier for this category' : 'No orders planned'}</small></div>
+                        <div className="ep-grocery-category-meta">
+                          <span className={group.assignedCount < group.rows.length ? 'warn' : ''}>Assigned <b>{group.assignedCount}/{group.rows.length}</b></span>
+                          <span>Scheduled <b>{group.rows.filter((row) => row.deliveryTime).length}/{group.rows.length}</b></span>
+                          <span>Cost <b>{currency(group.cost)}</b></span>
                         </div>
-
-                        <p>
-                          {group.detail}
-                        </p>
-
-                        <div className="ep-grocery-supplier-card-meta">
-                          <span>
-                            {group.assignedCount}/{group.rows.length || 1} assigned
-                          </span>
-                          <span>
-                            {group.confirmedCount} confirmed
-                          </span>
-                          <span>
-                            {currency(group.cost)}
-                          </span>
+                      </div>
+                      {group.rows.length ? <div className="ep-grocery-category-progress">
+                        <b>{group.readiness}% confirmed</b>
+                        <span role="progressbar" aria-label={group.label + ' confirmation progress'} aria-valuemin={0} aria-valuemax={100} aria-valuenow={group.readiness}><i style={{ width: group.readiness + '%' }} /></span>
+                      </div> : null}
+                      {group.rows.length ? (
+                        <div className="ep-manpower-role-grid">
+                          {group.rows.map((row) => {
+                            const vendor = vendors.find((item) => item.id === row.partnerId);
+                            const hasAssignment = Boolean(row.assignedTo.trim());
+                            const matchingSuppliers = vendors.filter((item) => item.active && vendorMatchesGroceryGroup(item, row));
+                            const otherSuppliers = vendors.filter((item) => item.active && !vendorMatchesGroceryGroup(item, row));
+                            const orderReady = hasAssignment && Boolean(row.deliveryTime) && row.status !== 'PENDING';
+                            return (
+                              <article key={row.id} className={['ep-manpower-role-card', 'ep-grocery-row-card', hasAssignment ? 'assigned' : '', orderReady ? 'ready' : ''].filter(Boolean).join(' ')}>
+                                {assignmentPhoto(row) ? <img className="ep-grocery-order-photo" src={assignmentPhoto(row)} alt={row.requirement} loading="lazy" /> : null}
+                                <div className="ep-manpower-role-title">
+                                  <div><span>{group.label}</span><b>{row.requirement}</b><small>{row.assignedTo || 'Supplier needed'}</small></div>
+                                  <strong>{currency(row.quantity * row.rate)}</strong>
+                                </div>
+                                <label className="ep-menu-field">
+                                  <span>Supplier / Team</span>
+                                  <select value={row.partnerType === 'IN_HOUSE' && hasAssignment ? '__in_house' : row.partnerId || ''} onChange={(event) => assignPartner(row, event.target.value)} aria-label={'Grocery supplier for ' + row.requirement}>
+                                    <option value="">Choose saved supplier</option><option value="__in_house">In-house supply</option>
+                                    {vendor && !vendor.active ? <option value={vendor.id}>{vendor.name} · Inactive</option> : null}
+                                    {row.partnerId && !vendor ? <option value={row.partnerId}>{row.assignedTo} · Unavailable partner</option> : null}
+                                    {matchingSuppliers.length ? <optgroup label={'Matching ' + group.label + ' suppliers'}>{matchingSuppliers.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.category || item.type}</option>)}</optgroup> : null}
+                                    {otherSuppliers.length ? <optgroup label="Other active partners">{otherSuppliers.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.category || item.type}</option>)}</optgroup> : null}
+                                  </select>
+                                </label>
+                                <div className="ep-menu-field-grid">
+                                  <label className="ep-menu-field"><span>Manual Supplier / Team</span><input value={row.partnerId || row.partnerType === 'IN_HOUSE' ? '' : row.assignedTo} placeholder="Enter supplier or team name" onChange={(event) => updateRow(row.id, { partnerId: '', assignedTo: event.target.value, partnerType: row.partnerType === 'IN_HOUSE' ? 'VENDOR' : row.partnerType })} aria-label={'Manual grocery supplier for ' + row.requirement} /></label>
+                                  <label className="ep-menu-field"><span>Partner Type</span><select value={row.partnerType} onChange={(event) => updateRow(row.id, { partnerType: event.target.value as PartnerType })} aria-label={'Grocery partner type for ' + row.requirement}><option value="VENDOR">Vendor</option><option value="AGENCY">Agency</option><option value="IN_HOUSE">In-house</option></select></label>
+                                </div>
+                                {vendor ? <div className="ep-menu-contact"><div><span>Supplier Contact</span><b>{vendor.contactPerson || vendor.name}</b><small>{[vendor.phone, vendor.city].filter(Boolean).join(' · ') || 'No contact details saved'}</small></div>{vendor.phone ? <a href={'tel:' + vendor.phone} aria-label={'Call grocery supplier ' + vendor.name}>Call</a> : null}</div> : null}
+                                <div className="ep-menu-field-grid three">
+                                  <label className="ep-menu-field"><span>Order Quantity</span><input type="number" min="0" step="any" value={row.quantity} onChange={(event) => { if (event.target.value !== '') updateRow(row.id, { quantity: Math.max(0, Number(event.target.value) || 0) }); }} aria-label={'Grocery order quantity for ' + row.requirement} /></label>
+                                  <label className="ep-menu-field"><span>Unit</span><input value={row.unit} placeholder="kg / litre / lot" onChange={(event) => updateRow(row.id, { unit: event.target.value })} aria-label={'Grocery order unit for ' + row.requirement} /></label>
+                                  <label className="ep-menu-field"><span>Rate / {row.unit || 'unit'}</span><input type="number" min="0" step="0.01" value={row.rate} onChange={(event) => updateRow(row.id, { rate: Math.max(0, Number(event.target.value) || 0) })} aria-label={'Grocery rate for ' + row.requirement} /></label>
+                                </div>
+                                <div className="ep-menu-time-grid">
+                                  <label className="ep-menu-field"><span>Delivery Time</span><input type="datetime-local" value={row.deliveryTime} onChange={(event) => updateRow(row.id, { deliveryTime: event.target.value })} aria-label={'Grocery delivery time for ' + row.requirement} /></label>
+                                  <label className="ep-menu-field"><span>Pickup / Return Time</span><input type="datetime-local" value={row.pickupTime || ''} onChange={(event) => updateRow(row.id, { pickupTime: event.target.value })} aria-label={'Grocery return time for ' + row.requirement} /></label>
+                                </div>
+                                <div className="ep-menu-status-actions" role="group" aria-label={'Grocery order status for ' + row.requirement}>
+                                  {(['PENDING', 'CONFIRMED', 'DELIVERED', 'CLOSED'] as AssignmentStatus[]).map((status) => <button key={status} type="button" className={row.status === status ? 'active' : ''} aria-pressed={row.status === status} onClick={() => updateRow(row.id, { status })}>{status === 'DELIVERED' ? 'Received' : status.charAt(0) + status.slice(1).toLowerCase()}</button>)}
+                                </div>
+                                <details className="ep-manpower-role-details"><summary>Order details & payment terms</summary><div>
+                                  <label className="ep-menu-field"><span>Requirement</span><input value={row.requirement} onChange={(event) => updateRow(row.id, { requirement: event.target.value })} aria-label={'Grocery requirement for ' + row.requirement} /></label>
+                                  <label className="ep-menu-field"><span>Order Notes / Items</span><textarea value={row.detail} onChange={(event) => updateRow(row.id, { detail: event.target.value })} aria-label={'Grocery order notes for ' + row.requirement} /></label>
+                                  <label className="ep-menu-field"><span>Payment Terms</span><input value={row.paymentTerms || ''} placeholder={vendor?.paymentTerms || 'Enter agreed terms'} onChange={(event) => updateRow(row.id, { paymentTerms: event.target.value })} aria-label={'Grocery payment terms for ' + row.requirement} /></label>
+                                </div></details>
+                                <div className="ep-menu-quick-row"><div>{hasAssignment ? <button type="button" className="ep-menu-mini-action" onClick={() => assignPartner(row, '')}>Clear supplier</button> : null}<button type="button" className="ep-menu-mini-action danger" onClick={() => removeRow(row.id)} aria-label={'Remove grocery order ' + row.requirement}>Remove order</button></div></div>
+                                <div className="ep-manpower-role-footer"><b>{orderReady ? row.status === 'CLOSED' ? 'Order closed' : row.status === 'DELIVERED' ? 'Order received' : 'Order confirmed' : !hasAssignment ? 'Supplier needed' : !row.deliveryTime ? 'Set delivery time' : 'Confirm order'}</b><small>{row.deliveryTime ? 'Delivery ' + row.deliveryTime.replace('T', ' ') : 'Delivery time not set'}{row.paymentTerms ? ' · ' + row.paymentTerms : ''}</small></div>
+                              </article>
+                            );
+                          })}
                         </div>
-                      </article>
-                    ),
-                  )}
+                      ) : <div className="ep-empty">No orders in {group.label}. Add a requirement below when needed.</div>}
+                    </section>
+                  ))}
                 </div>
               </section>
             ) : null}
@@ -7788,7 +7820,7 @@ export default function EventPlanningPage() {
               </section>
             ) : null}
 
-            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' ? (
+            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' ? (
               <div className="ep-table-wrap">
                 <table className="ep-table">
                   <thead>
@@ -8256,7 +8288,7 @@ export default function EventPlanningPage() {
                   </tbody>
                 </table>
               </div>
-            ) : tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' ? (
+            ) : tab !== 'MENU' && tab !== 'MANPOWER' && tab !== 'DRESS' && tab !== 'GROCERY' ? (
               <div className="ep-empty">
                 No requirements in this section yet.
               </div>
@@ -8423,4 +8455,5 @@ export default function EventPlanningPage() {
     </AppShell>
   );
 }
+
 
