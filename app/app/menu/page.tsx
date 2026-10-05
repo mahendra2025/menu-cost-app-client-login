@@ -1645,13 +1645,16 @@ export default function MenuCreationPage() {
               ),
           );
 
-        return [
-          ...withoutSaved,
-          {
+        const savedDish:
+          DishOption = {
             ...saved,
             source:
               'tenant',
-          },
+          };
+
+        return [
+          ...withoutSaved,
+          savedDish,
         ].sort(
           (left, right) =>
             left.category.localeCompare(
