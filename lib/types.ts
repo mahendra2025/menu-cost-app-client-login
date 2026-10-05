@@ -170,6 +170,20 @@ export type MenuItem = {
     | 'VENDOR';
 
   /*
+   * Optional vendor/agency selected for this dish on the Dish Cost page.
+   * The rate can come from the vendor master or be manually overridden
+   * while preserving the selected partner for Event Planning.
+   */
+  vendorId?: string;
+  vendorName?: string;
+  vendorType?:
+    | 'VENDOR'
+    | 'AGENCY'
+    | 'INDIVIDUAL';
+  vendorRateId?: string;
+  vendorRateUnit?: string;
+
+  /*
    * Service format for manpower planning.
    * Defaults to BUFFET for older costings.
    */
@@ -197,6 +211,7 @@ export type MenuItem = {
     | 'catalog_recipe'
     | 'ai_recipe'
     | 'category_estimate'
+    | 'vendor'
     | 'manual';
 
   coverageStatus?:
