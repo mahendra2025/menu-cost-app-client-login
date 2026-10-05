@@ -2542,9 +2542,20 @@ export default function EventPlanningPage() {
         )
       : [];
 
+  const groceryMenuItems =
+    activeMenuItems.filter(
+      (item) =>
+        item.groceryResponsibility !==
+        'VENDOR',
+    );
+
+  const vendorGroceryDishCount =
+    activeMenuItems.length -
+    groceryMenuItems.length;
+
   const uniqueMenuDishCount =
     new Set(
-      activeMenuItems.map(
+      groceryMenuItems.map(
         (item) =>
           normalized(
             item.name,
@@ -2585,7 +2596,10 @@ export default function EventPlanningPage() {
             ) * 100,
           ),
         )
-      : 0;
+      : vendorGroceryDishCount > 0 &&
+          activeMenuItems.length > 0
+        ? 100
+        : 0;
 
   const ingredientCount =
     eventGroceryPlan
@@ -2607,7 +2621,10 @@ export default function EventPlanningPage() {
             ) * 100,
           ),
         )
-      : 0;
+      : vendorGroceryDishCount > 0 &&
+          uniqueMenuDishCount === 0
+        ? 100
+        : 0;
 
   const groceryReadinessScore =
     uniqueMenuDishCount > 0
@@ -2708,7 +2725,9 @@ export default function EventPlanningPage() {
         detail:
           uniqueMenuDishCount > 0
             ? `${recipeMatchedCount}/${uniqueMenuDishCount} linked`
-            : 'No dishes',
+            : vendorGroceryDishCount > 0
+              ? `${vendorGroceryDishCount} vendor grocery`
+              : 'No dishes',
       },
       {
         key: 'grocery',
@@ -2718,7 +2737,9 @@ export default function EventPlanningPage() {
         detail:
           ingredientCount > 0
             ? `${eventGroceryPlan?.pricedIngredientCount || 0}/${ingredientCount} rates`
-            : 'No ingredients',
+            : vendorGroceryDishCount > 0
+              ? 'Vendor supplied'
+              : 'No ingredients',
       },
       {
         key: 'manpower',
