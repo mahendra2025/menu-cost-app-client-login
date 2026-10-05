@@ -32,6 +32,7 @@ type Vendor = {
   serviceArea: string;
   confirmationStatus: 'OPEN' | 'CONFIRMED' | 'ON_HOLD';
   paymentStatus: 'NOT_SET' | 'PENDING' | 'PARTIAL' | 'PAID';
+  menuStations: string[];
   rates: VendorRate[];
 };
 
@@ -41,6 +42,18 @@ function recordId(tenantId: string) {
 
 function text(value: unknown, max = 160) {
   return String(value || '').trim().replace(/\s+/g, ' ').slice(0, max);
+}
+
+function cleanStations(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  return Array.from(
+    new Set(
+      value
+        .map((item) => text(item, 80))
+        .filter(Boolean),
+    ),
+  ).slice(0, 40);
 }
 
 function cleanRates(value: unknown): VendorRate[] {
@@ -125,6 +138,7 @@ function cleanVendors(value: unknown): Vendor[] {
       serviceArea: text(row.serviceArea, 180),
       confirmationStatus,
       paymentStatus,
+      menuStations: cleanStations(row.menuStations),
       rates: cleanRates(row.rates),
     }];
   });
