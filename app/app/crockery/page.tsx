@@ -400,7 +400,7 @@ export default function CrockeryMasterPage() {
           .ck-field{display:grid;gap:5px}.ck-field.full{grid-column:1/-1}.ck-field>span{font-size:8px;font-weight:850;color:#8290a1;text-transform:uppercase}
           .ck-foot{display:flex;justify-content:flex-end;gap:7px;margin-top:14px;padding-top:12px;border-top:1px solid #252c35}
           @media(max-width:1050px){.ck-layout{grid-template-columns:1fr}.ck-stats{grid-template-columns:1fr 1fr}}
-          @media(max-width:700px){.ck-head{align-items:stretch;flex-direction:column}.ck-actions{display:grid;grid-template-columns:1fr 1fr}.ck-toolbar{grid-template-columns:1fr}.ck-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ck-form{grid-template-columns:1fr}.ck-field.full{grid-column:auto}}
+          @media(max-width:700px){.ck-head{align-items:stretch;flex-direction:column}.ck-actions{display:grid;grid-template-columns:repeat(3,1fr)}.ck-toolbar{grid-template-columns:1fr}.ck-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ck-form{grid-template-columns:1fr}.ck-field.full{grid-column:auto}}
         `}</style>
 
         <header className="ck-head">
@@ -411,6 +411,13 @@ export default function CrockeryMasterPage() {
           </div>
 
           <div className="ck-actions">
+            <button
+              className="ck-button"
+              type="button"
+              onClick={() => void createCategory()}
+            >
+              + Category
+            </button>
             <button className="ck-button" type="button" onClick={addItem}>
               + Add Item
             </button>
@@ -436,7 +443,7 @@ export default function CrockeryMasterPage() {
               <input className="ck-input" value={query} placeholder="Search plate, bowl, glass…" onChange={(event) => setQuery(event.target.value)} />
               <select className="ck-select" value={category} onChange={(event) => setCategory(event.target.value)}>
                 <option value="ALL">All categories</option>
-                {CATEGORIES.map((item) => <option key={item} value={item}>{item}</option>)}
+                {categoryOptions.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </div>
 
@@ -514,7 +521,32 @@ export default function CrockeryMasterPage() {
 
                 <div className="ck-form">
                   <label className="ck-field full"><span>Item Name</span><input className="ck-input" value={selected.name} onChange={(event) => updateItem(selected.id, { name: event.target.value })} /></label>
-                  <label className="ck-field"><span>Category</span><select className="ck-select" value={selected.category} onChange={(event) => updateItem(selected.id, { category: event.target.value })}>{CATEGORIES.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+                  <label className="ck-field">
+                    <span>Category</span>
+                    <select
+                      className="ck-select"
+                      value={selected.category}
+                      onChange={(event) => {
+                        if (event.target.value === '__CREATE_CATEGORY__') {
+                          void createCategory(selected.id);
+                          return;
+                        }
+
+                        updateItem(selected.id, {
+                          category: event.target.value,
+                        });
+                      }}
+                    >
+                      {categoryOptions.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                      <option value="__CREATE_CATEGORY__">
+                        ＋ Create New Category
+                      </option>
+                    </select>
+                  </label>
                   <label className="ck-field"><span>Size / Type</span><input className="ck-input" value={selected.sizeType} placeholder="12 inch / premium white" onChange={(event) => updateItem(selected.id, { sizeType: event.target.value })} /></label>
                   <label className="ck-field"><span>Ownership</span><select className="ck-select" value={selected.ownership} onChange={(event) => updateItem(selected.id, { ownership: event.target.value as CrockeryItem['ownership'] })}><option value="IN_HOUSE">In-house</option><option value="RENTAL">Rental / Vendor</option></select></label>
                   <label className="ck-field"><span>Available Qty</span><input className="ck-input" type="number" min="0" value={selected.availableQty} onChange={(event) => updateItem(selected.id, { availableQty: Math.max(0, Math.round(Number(event.target.value) || 0)) })} /></label>
