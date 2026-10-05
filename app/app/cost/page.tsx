@@ -65,8 +65,122 @@ type AvailableDish = {
   aliases?: string[];
 };
 
+type DishVendorRate = {
+  id: string;
+  kind: string;
+  item: string;
+  unit: string;
+  rate: number;
+};
+
+type DishVendor = {
+  id: string;
+  name: string;
+  type: 'VENDOR' | 'AGENCY' | 'INDIVIDUAL';
+  category: string;
+  active: boolean;
+  menuStations?: string[];
+  rates: DishVendorRate[];
+};
+
 function normalizeDishName(value: string) {
   return value.trim().toLocaleLowerCase('en-IN').replace(/\s+/g, ' ');
+}
+
+
+function matchingDishVendorRate(
+  vendor: DishVendor,
+  item: Pick<MenuItem, 'name' | 'category'>,
+) {
+  const names = [
+    normalizeDishName(item.name),
+    normalizeDishName(item.category),
+  ].filter(Boolean);
+
+  const eligible =
+    (vendor.rates || []).filter(
+      (rate) =>
+        ['MENU', 'GENERAL'].includes(
+          String(rate.kind || '')
+            .trim()
+            .toUpperCase(),
+        ),
+    );
+
+  return (
+    eligible.find(
+      (rate) =>
+        names.includes(
+          normalizeDishName(
+            rate.item || '',
+          ),
+        ),
+    ) ||
+    eligible.find((rate) => {
+      const rateItem =
+        normalizeDishName(
+          rate.item || '',
+        );
+
+      return Boolean(
+        rateItem &&
+        names.some(
+          (name) =>
+            name &&
+            (
+              rateItem.includes(name) ||
+              name.includes(rateItem)
+            ),
+        ),
+      );
+    }) ||
+    null
+  );
+}
+
+function vendorMatchesDishStation(
+  vendor: DishVendor,
+  item: Pick<MenuItem, 'name' | 'category'>,
+) {
+  const category =
+    normalizeDishName(
+      item.category,
+    );
+
+  const stationMatch =
+    Array.isArray(
+      vendor.menuStations,
+    ) &&
+    vendor.menuStations.some(
+      (station) => {
+        const stationValue =
+          normalizeDishName(
+            station,
+          );
+
+        return Boolean(
+          stationValue &&
+          category &&
+          (
+            stationValue === category ||
+            stationValue.includes(
+              category,
+            ) ||
+            category.includes(
+              stationValue,
+            )
+          )
+        );
+      },
+    );
+
+  return Boolean(
+    stationMatch ||
+    matchingDishVendorRate(
+      vendor,
+      item,
+    )
+  );
 }
 
 
@@ -162,6 +276,7 @@ export default function CostPage() {
   const [availableDishCategories, setAvailableDishCategories] =
     useState<string[]>([]);
   const [availableDishes, setAvailableDishes] = useState<AvailableDish[]>([]);
+  const [dishVendors, setDishVendors] = useState<DishVendor[]>([]);
 
   const [
     showAddDish,
@@ -234,6 +349,35 @@ export default function CostPage() {
           setAvailableDishes([]);
           setAvailableDishCategories([]);
         }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    void fetch('/api/client/vendors', { cache: 'no-store' })
+      .then((response) => response.json())
+      .then((data) => {
+        if (!active) return;
+        setDishVendors(
+          Array.isArray(data.vendors)
+            ? data.vendors.filter(
+                (item: unknown): item is DishVendor =>
+                  Boolean(
+                    item &&
+                    typeof item === 'object' &&
+                    String((item as DishVendor).name || '').trim(),
+                  ),
+              )
+            : [],
+        );
+      })
+      .catch(() => {
+        if (active) setDishVendors([]);
       });
 
     return () => {
@@ -749,6 +893,158 @@ export default function CostPage() {
           : item,
       ),
     });
+  }
+
+  function assignDishVendorRate(
+    id: string,
+    vendorId: string,
+  ) {
+    if (!work) return;
+
+    const menuItem =
+      work.menu.find(
+        (item) =>
+          item.id === id,
+      );
+
+    if (!menuItem) return;
+
+    if (!vendorId) {
+      persist({
+        ...work,
+        menu: work.menu.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                vendorId: undefined,
+                vendorName: undefined,
+                vendorType: undefined,
+                vendorRateId: undefined,
+                vendorRateUnit: undefined,
+                costSource:
+                  item.costSource === 'vendor'
+                    ? 'manual'
+                    : item.costSource,
+                coverageReason:
+                  item.costSource === 'vendor'
+                    ? 'Vendor cleared; retained event rate'
+                    : item.coverageReason,
+              }
+            : item,
+        ),
+      });
+      return;
+    }
+
+    const vendor =
+      dishVendors.find(
+        (item) =>
+          item.id === vendorId,
+      );
+
+    if (!vendor) return;
+
+    const matchedRate =
+      matchingDishVendorRate(
+        vendor,
+        menuItem,
+      );
+
+    const vendorRate =
+      Math.max(
+        0,
+        Number(matchedRate?.rate) || 0,
+      );
+
+    persist({
+      ...work,
+      menu: work.menu.map((item) => {
+        if (item.id !== id) return item;
+
+        const nextRate =
+          vendorRate > 0
+            ? vendorRate
+            : Math.max(
+                0,
+                Number(item.costPerPlate) || 0,
+              );
+
+        return {
+          ...item,
+          vendorId: vendor.id,
+          vendorName: vendor.name,
+          vendorType: vendor.type,
+          vendorRateId: matchedRate?.id,
+          vendorRateUnit: matchedRate?.unit,
+          costPerPlate: nextRate,
+          costSource:
+            vendorRate > 0
+              ? 'vendor'
+              : item.costSource,
+          coverageStatus:
+            nextRate > 0
+              ? 'COSTED'
+              : item.coverageStatus,
+          costQualityStatus:
+            nextRate > 0
+              ? 'READY'
+              : item.costQualityStatus,
+          costConfidence:
+            nextRate > 0
+              ? 100
+              : item.costConfidence,
+          rateCoveragePercent:
+            nextRate > 0
+              ? 100
+              : item.rateCoveragePercent,
+          coverageReason:
+            vendorRate > 0
+              ? `Vendor rate from ${vendor.name}`
+              : `${vendor.name} assigned; enter vendor rate manually`,
+          costApprovalStatus:
+            nextRate > 0
+              ? 'APPROVED'
+              : item.costApprovalStatus,
+          costApprovedAt:
+            nextRate > 0
+              ? new Date().toISOString()
+              : item.costApprovedAt,
+          costApprovalReason:
+            vendorRate > 0
+              ? 'Saved vendor rate selected on Dish Cost page'
+              : item.costApprovalReason,
+        };
+      }),
+    });
+  }
+
+  function vendorOptionsForDish(
+    item: Pick<MenuItem, 'name' | 'category'>,
+  ) {
+    const active =
+      dishVendors.filter(
+        (vendor) =>
+          vendor.active !== false,
+      );
+
+    return {
+      matching:
+        active.filter(
+          (vendor) =>
+            vendorMatchesDishStation(
+              vendor,
+              item,
+            ),
+        ),
+      other:
+        active.filter(
+          (vendor) =>
+            !vendorMatchesDishStation(
+              vendor,
+              item,
+            ),
+        ),
+    };
   }
 
   function updateDishServing(
@@ -1677,10 +1973,82 @@ export default function CostPage() {
                                 />
                               </label>
                               <small className="muted">
-                                {item.costSource === 'manual'
-                                  ? 'Manual rate active'
-                                  : 'Edit to override calculated / saved rate'}
+                                {item.costSource === 'vendor'
+                                  ? `Vendor rate · ${item.vendorName || 'assigned partner'}`
+                                  : item.costSource === 'manual'
+                                    ? 'Manual rate active'
+                                    : 'Edit to override calculated / saved rate'}
                               </small>
+
+                              {(() => {
+                                const options = vendorOptionsForDish(item);
+                                const selectedVendor =
+                                  item.vendorId
+                                    ? dishVendors.find(
+                                        (vendor) => vendor.id === item.vendorId,
+                                      )
+                                    : null;
+
+                                return (
+                                  <div className="dish-vendor-rate-control">
+                                    <span>Vendor / agency rate</span>
+                                    <select
+                                      value={item.vendorId || ''}
+                                      onChange={(event) =>
+                                        assignDishVendorRate(
+                                          item.id,
+                                          event.target.value,
+                                        )
+                                      }
+                                      aria-label={`Vendor rate for ${item.name}`}
+                                    >
+                                      <option value="">No vendor rate</option>
+                                      {selectedVendor && !selectedVendor.active ? (
+                                        <option value={selectedVendor.id}>
+                                          {selectedVendor.name} · inactive
+                                        </option>
+                                      ) : null}
+                                      {options.matching.length ? (
+                                        <optgroup label={`${item.category} station matches`}>
+                                          {options.matching.map((vendor) => {
+                                            const rate = matchingDishVendorRate(vendor, item);
+                                            return (
+                                              <option key={vendor.id} value={vendor.id}>
+                                                {vendor.name}
+                                                {rate?.rate
+                                                  ? ` · ₹${Number(rate.rate).toLocaleString('en-IN')}/${rate.unit || 'plate'}`
+                                                  : ' · rate not saved'}
+                                              </option>
+                                            );
+                                          })}
+                                        </optgroup>
+                                      ) : null}
+                                      {options.other.length ? (
+                                        <optgroup label="Other active partners">
+                                          {options.other.map((vendor) => {
+                                            const rate = matchingDishVendorRate(vendor, item);
+                                            return (
+                                              <option key={vendor.id} value={vendor.id}>
+                                                {vendor.name}
+                                                {rate?.rate
+                                                  ? ` · ₹${Number(rate.rate).toLocaleString('en-IN')}/${rate.unit || 'plate'}`
+                                                  : ''}
+                                              </option>
+                                            );
+                                          })}
+                                        </optgroup>
+                                      ) : null}
+                                    </select>
+                                    <small>
+                                      {item.vendorId
+                                        ? item.vendorRateId
+                                          ? 'Saved vendor rate applied. You can still edit the rate above.'
+                                          : 'Vendor assigned. Enter or edit the rate above.'
+                                        : 'Choose a saved vendor/agency to apply its dish or station rate.'}
+                                    </small>
+                                  </div>
+                                );
+                              })()}
                             </td>
                             <td>
                               <div className="cost-portion-control">
@@ -1958,10 +2326,64 @@ export default function CostPage() {
                             />
                           </label>
                           <small className="muted">
-                            {item.costSource === 'manual'
-                              ? 'Manual rate active for this event'
-                              : 'Enter any rate to override the calculated / saved dish cost'}
+                            {item.costSource === 'vendor'
+                              ? `Vendor rate · ${item.vendorName || 'assigned partner'}`
+                              : item.costSource === 'manual'
+                                ? 'Manual rate active for this event'
+                                : 'Enter any rate to override the calculated / saved dish cost'}
                           </small>
+
+                          {(() => {
+                            const options = vendorOptionsForDish(item);
+                            return (
+                              <div className="dish-vendor-rate-control mobile">
+                                <span>Vendor / agency rate</span>
+                                <select
+                                  value={item.vendorId || ''}
+                                  onChange={(event) =>
+                                    assignDishVendorRate(
+                                      item.id,
+                                      event.target.value,
+                                    )
+                                  }
+                                  aria-label={`Vendor rate for ${item.name}`}
+                                >
+                                  <option value="">No vendor rate</option>
+                                  {options.matching.length ? (
+                                    <optgroup label={`${item.category} station matches`}>
+                                      {options.matching.map((vendor) => {
+                                        const rate = matchingDishVendorRate(vendor, item);
+                                        return (
+                                          <option key={vendor.id} value={vendor.id}>
+                                            {vendor.name}
+                                            {rate?.rate
+                                              ? ` · ₹${Number(rate.rate).toLocaleString('en-IN')}/${rate.unit || 'plate'}`
+                                              : ' · rate not saved'}
+                                          </option>
+                                        );
+                                      })}
+                                    </optgroup>
+                                  ) : null}
+                                  {options.other.length ? (
+                                    <optgroup label="Other active partners">
+                                      {options.other.map((vendor) => (
+                                        <option key={vendor.id} value={vendor.id}>
+                                          {vendor.name}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  ) : null}
+                                </select>
+                                <small>
+                                  {item.vendorId
+                                    ? item.vendorRateId
+                                      ? 'Saved vendor rate applied.'
+                                      : 'Vendor assigned · edit the rate above.'
+                                    : 'Select a partner to use its saved rate.'}
+                                </small>
+                              </div>
+                            );
+                          })()}
                         </div>
                         <button
                           className="dish-remove-button dish-remove-button-mobile"
