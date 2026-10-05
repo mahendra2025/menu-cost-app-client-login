@@ -5202,7 +5202,7 @@ export default function EventPlanningPage() {
           .ep-function b{color:#e5ecf4;font-size:11px}
           .ep-function span{margin-top:3px;color:#7f8b9a;font-size:8px}
           .ep-function small{margin-top:7px;color:#72dd9e;font-size:8px;font-weight:900}
-          .ep-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px;align-items:start}
+          .ep-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
           .ep-panel{border:1px solid #282f39;border-radius:15px;background:#10151c}
           .ep-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:15px;border-bottom:1px solid #252c35}
           .ep-panel-head h2{margin:0;font-size:18px;letter-spacing:-.03em}
@@ -5799,6 +5799,26 @@ export default function EventPlanningPage() {
           </div>
 
           <div className="ep-hero-actions">
+            <EventFilePanel
+              key={work.costingId}
+              work={work}
+              disabled={eventLoading}
+              functions={functions.map((fn) => ({
+                ...fn,
+                rows: (plan[fn.key] || seedRows(fn, work)).map((row) => {
+                  const vendor = vendors.find((item) => item.id === row.partnerId);
+                  return {
+                    ...row,
+                    contactDetails: vendor
+                      ? [vendor.contactPerson, vendor.phone, vendor.city]
+                          .filter(Boolean)
+                          .join(' / ')
+                      : '',
+                  };
+                }),
+              }))}
+            />
+
             <Link className="ep-button" href="/app/vendors">
               Vendor Master
             </Link>
@@ -8594,137 +8614,7 @@ export default function EventPlanningPage() {
             </footer>
           </section>
 
-          <aside className="ep-side">
-            <EventFilePanel key={work.costingId} work={work} disabled={eventLoading} functions={functions.map(fn => ({ ...fn, rows: (plan[fn.key] || seedRows(fn, work)).map(row => { const vendor = vendors.find(v => v.id === row.partnerId); return { ...row, contactDetails: vendor ? [vendor.contactPerson, vendor.phone, vendor.city].filter(Boolean).join(' / ') : '' }; }) }))} />
-            <section className="ep-side-card">
-              <h3>Function Readiness</h3>
-              <div className="ep-progress">
-                {TABS.map((item) => {
-                  const rows = currentRows.filter(
-                    (row) => row.kind === item.kind,
-                  );
-                  const score =
-                    operationalReadiness(
-                      rows,
-                    );
-
-                  return (
-                    <button
-                      type="button"
-                      className="ep-progress-row ep-progress-button"
-                      key={item.kind}
-                      onClick={() =>
-                        setTab(
-                          item.kind,
-                        )
-                      }
-                    >
-                      <span>{item.label}</span>
-                      <div className="ep-progress-track">
-                        <div
-                          className={
-                            score >= 80
-                              ? 'ep-progress-fill'
-                              : 'ep-progress-fill warn'
-                          }
-                          style={{
-                            width: `${score}%`,
-                          }}
-                        />
-                      </div>
-                      <b>{score}%</b>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="ep-side-card">
-              <h3>Pending Attention</h3>
-              <div className="ep-pending">
-                {currentFunctionBlockers
-                  .slice(0, 9)
-                  .map((item) => (
-                    <button
-                      type="button"
-                      className={
-                        item.severity === 'BLOCKED'
-                          ? 'ep-pending-row ep-pending-button blocked'
-                          : 'ep-pending-row ep-pending-button'
-                      }
-                      key={item.key}
-                      onClick={() =>
-                        setTab(
-                          item.kind,
-                        )
-                      }
-                    >
-                      <b>{item.label}</b>
-                      <span>{item.detail}</span>
-                    </button>
-                  ))}
-
-                {!currentFunctionBlockers.length ? (
-                  <div className="ep-hint">
-                    No open execution issues for this function.
-                  </div>
-                ) : null}
-              </div>
-            </section>
-
-            <section className="ep-side-card">
-              <h3>Assignment Cost</h3>
-              <div className="ep-costs">
-                {TABS.map((item) => {
-                  const total = currentRows
-                    .filter(
-                      (row) =>
-                        row.kind === item.kind,
-                    )
-                    .reduce(
-                      (sum, row) =>
-                        sum +
-                        row.quantity *
-                          row.rate,
-                      0,
-                    );
-
-                  return (
-                    <div
-                      className="ep-cost-row"
-                      key={item.kind}
-                    >
-                      <span>{item.label}</span>
-                      <b>{currency(total)}</b>
-                    </div>
-                  );
-                })}
-
-                <div
-                  className="ep-cost-row"
-                  style={{
-                    marginTop: 5,
-                    paddingTop: 9,
-                    borderTop:
-                      '1px solid #29313b',
-                  }}
-                >
-                  <span>Function total</span>
-                  <b>
-                    {currency(
-                      currentRows.reduce(
-                        (sum, row) =>
-                          sum +
-                          row.quantity *
-                            row.rate,
-                        0,
-                      ),
-                    )}
-                  </b>
-                </div>
-              </div>
-            </section>
-          </aside>
+          
         </div>
       </section>
     </AppShell>
