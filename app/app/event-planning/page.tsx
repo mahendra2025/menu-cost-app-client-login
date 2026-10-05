@@ -2139,7 +2139,7 @@ export default function EventPlanningPage() {
     }, [transportRows]);
 
   const [equipmentQuery, setEquipmentQuery] = useState('');
-  const equipmentRows = useMemo(
+  const selectedEquipmentRows = useMemo(
     () => currentRows.filter((row) => row.kind === 'EQUIPMENT'),
     [currentRows],
   );
@@ -6301,9 +6301,9 @@ export default function EventPlanningPage() {
                 <div className="ep-menu-function-context">
                   <div><span>Selected Function</span><b>{currentFunction.dayLabel} · {currentFunction.mealLabel}</b><small>{work.event.clientName || eventName} · {work.event.venue || work.event.city || 'Venue not set'}</small></div>
                   <div className="ep-menu-function-chips">
-                    <span><b>{equipmentRows.length}</b>selected items</span>
-                    <span><b>{equipmentRows.filter((row) => row.assignedTo.trim()).length}/{equipmentRows.length}</b>assigned</span>
-                    <span><b>{currency(equipmentRows.reduce((sum, row) => sum + row.quantity * row.rate, 0))}</b>planned cost</span>
+                    <span><b>{selectedEquipmentRows.length}</b>selected items</span>
+                    <span><b>{selectedEquipmentRows.filter((row) => row.assignedTo.trim()).length}/{selectedEquipmentRows.length}</b>assigned</span>
+                    <span><b>{currency(selectedEquipmentRows.reduce((sum, row) => sum + row.quantity * row.rate, 0))}</b>planned cost</span>
                   </div>
                 </div>
                 <div className="ep-equipment-search">
@@ -6511,9 +6511,9 @@ export default function EventPlanningPage() {
                   <h2>Selected equipment · rental & return plan</h2>
                   <p>Manage every selected or custom item for this function. Rates and quantities remain editable.</p>
                 </div>
-                {equipmentRows.length ? (
+                {selectedEquipmentRows.length ? (
                   <div className="ep-manpower-role-grid ep-equipment-assignment-grid">
-                    {equipmentRows.map((row) => {
+                    {selectedEquipmentRows.map((row) => {
                       const vendor = vendors.find((item) => item.id === row.partnerId);
                       const hasAssignment = Boolean(row.assignedTo.trim());
                       return (
