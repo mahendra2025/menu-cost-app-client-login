@@ -5781,30 +5781,6 @@ export default function EventPlanningPage() {
               }))}
             />
 
-            <Link className="ep-button" href="/app/vendors">
-              Vendor Master
-            </Link>
-            <Link className="ep-button" href="/app/equipment">
-              Equipment Master
-            </Link>
-            <Link className="ep-button" href="/app/crockery">
-              Crockery Master
-            </Link>
-            <Link className="ep-button" href="/app/uniforms">
-              Dress Master
-            </Link>
-            <Link className="ep-button" href="/app/disposable-master">
-              Disposable Master
-            </Link>
-            <Link className="ep-button" href="/app/work-orders">
-              Work Orders
-            </Link>
-            <Link className="ep-button" href="/app/event?resume=1">
-              Edit Event & Menu
-            </Link>
-            <Link className="ep-button primary" href="/app/final-costing">
-              Open Final Cost
-            </Link>
           </div>
         </header>
 
