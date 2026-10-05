@@ -4962,56 +4962,58 @@ export default function EventPlanningPage() {
           .ep-transport-card-footer small{color:#637285;font-size:6px}
           @media(max-width:1100px){.ep-transport-summary{grid-template-columns:repeat(3,1fr)}.ep-transport-presets{grid-template-columns:1fr 1fr}.ep-transport-card-grid{grid-template-columns:1fr}.ep-transport-card-meta{grid-template-columns:1fr 1fr}}
           @media(max-width:640px){.ep-transport-control-head{align-items:stretch;flex-direction:column}.ep-transport-summary{grid-template-columns:1fr 1fr}.ep-transport-presets{grid-template-columns:1fr}.ep-transport-card-meta{grid-template-columns:1fr}}
-          .ep-manpower-agency-control{display:grid;gap:10px;padding:12px;border-bottom:1px solid #252c35;background:#0c1117}
-          .ep-manpower-agency-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+          .ep-manpower-agency-control{display:grid;gap:18px;padding:18px;border-bottom:1px solid #252c35;background:#0c1117}
+          .ep-manpower-agency-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
           .ep-manpower-agency-head b,.ep-manpower-agency-head span{display:block}
-          .ep-manpower-agency-head b{color:#e6edf5;font-size:11px}
-          .ep-manpower-agency-head span{margin-top:3px;max-width:760px;color:#748294;font-size:8px;line-height:1.45}
-          .ep-manpower-agency-head-actions{display:flex;gap:6px;flex-wrap:wrap}
-          .ep-manpower-agency-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
-          .ep-manpower-agency-summary article{padding:9px 10px;border:1px solid rgba(148,163,184,.09);border-radius:10px;background:rgba(255,255,255,.018)}
+          .ep-manpower-agency-head b{color:#edf4fb;font-size:16px}
+          .ep-manpower-agency-head span{margin-top:6px;max-width:650px;color:#94a3b8;font-size:12px;line-height:1.6}
+          .ep-manpower-agency-head-actions{display:flex;gap:8px;flex-wrap:wrap}
+          .ep-manpower-agency-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+          .ep-manpower-agency-summary article{padding:14px;border:1px solid #293440;border-radius:12px;background:#10171f}
           .ep-manpower-agency-summary span,.ep-manpower-agency-summary b,.ep-manpower-agency-summary small{display:block}
-          .ep-manpower-agency-summary span{color:#718094;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-manpower-agency-summary b{margin-top:4px;color:#e1eaf3;font-size:12px}
-          .ep-manpower-agency-summary small{margin-top:2px;color:#657487;font-size:6px}
-          .ep-manpower-department-list{display:grid;gap:10px}
-          .ep-manpower-department{overflow:hidden;border:1px solid rgba(148,163,184,.09);border-radius:12px;background:#0f151c}
-          .ep-manpower-department-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid rgba(148,163,184,.08);background:rgba(255,255,255,.018)}
+          .ep-manpower-agency-summary span{color:#94a3b8;font-size:10px;font-weight:800}
+          .ep-manpower-agency-summary b{margin-top:6px;color:#edf4fb;font-size:20px}
+          .ep-manpower-agency-summary small{margin-top:5px;color:#94a3b8;font-size:10px;line-height:1.5}
+          .ep-manpower-department-list{display:grid;gap:18px}
+          .ep-manpower-department{overflow:hidden;border:1px solid #293440;border-radius:16px;background:#0f151c}
+          .ep-manpower-department-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid #293440}
           .ep-manpower-department-head>div:first-child b,.ep-manpower-department-head>div:first-child span{display:block}
-          .ep-manpower-department-head>div:first-child b{color:#dfe8f2;font-size:10px}
-          .ep-manpower-department-head>div:first-child span{margin-top:2px;color:#718095;font-size:7px}
-          .ep-manpower-department-summary{display:flex;gap:6px;flex-wrap:wrap}
-          .ep-manpower-department-summary span{padding:5px 7px;border-radius:999px;color:#718095;background:rgba(148,163,184,.06);font-size:6px;font-weight:800}
-          .ep-manpower-department-summary b{color:#a8cffc;font-size:7px}
-          .ep-manpower-role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:8px;padding:9px}
-          .ep-manpower-role-card{padding:9px;border:1px solid #2b3440;border-radius:11px;background:#111820}
-          .ep-manpower-role-card.assigned{border-color:rgba(74,156,255,.28)}
-          .ep-manpower-role-card.ready{border-color:rgba(85,217,143,.20)}
-          .ep-manpower-role-card.attention{border-color:rgba(244,173,84,.35)}
-          .ep-manpower-role-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+          .ep-manpower-department-head>div:first-child b{color:#edf4fb;font-size:14px}
+          .ep-manpower-department-head>div:first-child span{margin-top:4px;color:#94a3b8;font-size:11px}
+          .ep-manpower-department-summary{display:flex;gap:8px;flex-wrap:wrap}
+          .ep-manpower-department-summary span{padding:7px 10px;border-radius:999px;color:#94a3b8;background:#18222e;font-size:11px}
+          .ep-manpower-department-summary b{color:#bfdbfe}
+          .ep-manpower-role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px;padding:14px}
+          .ep-manpower-role-card{display:grid;align-content:start;gap:14px;min-width:0;padding:16px;border:1px solid #2b3440;border-radius:14px;background:#111820}
+          .ep-manpower-role-card.assigned{border-color:#315d8e}.ep-manpower-role-card.ready{border-color:#367556}.ep-manpower-role-card.attention{border-color:#93673a}
+          .ep-manpower-role-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
           .ep-manpower-role-title span,.ep-manpower-role-title b,.ep-manpower-role-title small{display:block}
-          .ep-manpower-role-title span{color:#78b5ff;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-manpower-role-title b{margin-top:3px;color:#e6edf5;font-size:9px}
-          .ep-manpower-role-title small{margin-top:3px;color:#6e7c8e;font-size:6px}
-          .ep-manpower-role-title>strong{color:#d9e4ef;font-size:9px;white-space:nowrap}
-          .ep-manpower-role-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:8px}
-          .ep-manpower-role-meta>span{padding:5px 6px;border-radius:7px;color:#718095;background:rgba(148,163,184,.05);font-size:6px}
-          .ep-manpower-role-meta>span b{display:block;margin-top:2px;color:#d7e1ec;font-size:8px}
-          .ep-manpower-role-meta>span.warn{color:#e7a653;background:rgba(244,173,84,.06)}
-          .ep-manpower-role-meta>span.warn b{color:#f1b361}
-          .ep-manpower-qty-editor{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;gap:6px;align-items:end;margin-top:8px}
-          .ep-manpower-qty-editor>button{height:36px;border:1px solid #34404d;border-radius:8px;color:#c8d5e2;background:#161e28;font-size:18px;font-weight:800;cursor:pointer}
-          .ep-manpower-qty-editor>button:disabled{opacity:.35;cursor:not-allowed}
-          .ep-manpower-qty-editor label{display:grid;gap:3px}
-          .ep-manpower-qty-editor label span{color:#718095;font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-manpower-qty-editor input{width:100%;height:36px;border:1px solid #34404d;border-radius:8px;outline:0;color:#e3edf7;background:#151c25;font:inherit;font-size:11px;font-weight:900;text-align:center}
-          .ep-manpower-use-required{width:100%;min-height:30px;margin-top:6px;border:1px solid rgba(74,156,255,.16);border-radius:8px;color:#92c3fb;background:rgba(74,156,255,.045);font:inherit;font-size:7px;font-weight:900;cursor:pointer}
-          .ep-manpower-role-footer{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(148,163,184,.07)}
-          .ep-manpower-role-footer>span{padding:4px 7px;border-radius:999px;color:#f0b15f;background:rgba(244,173,84,.07);font-size:6px;font-weight:900;text-transform:uppercase}
-          .ep-manpower-role-footer>span.confirmed,.ep-manpower-role-footer>span.delivered,.ep-manpower-role-footer>span.closed{color:#76dda2;background:rgba(85,217,143,.07)}
-          .ep-manpower-role-footer small{color:#637285;font-size:6px}
-          @media(max-width:1100px){.ep-manpower-agency-summary{grid-template-columns:repeat(3,1fr)}}
-          @media(max-width:680px){.ep-manpower-agency-head{align-items:stretch;flex-direction:column}.ep-manpower-agency-summary{grid-template-columns:1fr 1fr}.ep-manpower-role-grid{grid-template-columns:1fr}}
+          .ep-manpower-role-title span{color:#93c5fd;font-size:10px;font-weight:800}
+          .ep-manpower-role-title b{margin-top:5px;color:#edf4fb;font-size:16px;overflow-wrap:anywhere}
+          .ep-manpower-role-title small{margin-top:5px;color:#94a3b8;font-size:11px;line-height:1.5}
+          .ep-manpower-role-title>strong{color:#edf4fb;font-size:16px;white-space:nowrap}
+          .ep-manpower-role-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+          .ep-manpower-role-meta>span{padding:10px;border-radius:9px;color:#94a3b8;background:#19232f;font-size:10px}
+          .ep-manpower-role-meta>span b{display:block;margin-top:4px;color:#edf4fb;font-size:15px}
+          .ep-manpower-role-meta>span.warn,.ep-manpower-role-meta>span.warn b{color:#fbbf77}
+          .ep-manpower-qty-editor{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:end}
+          .ep-manpower-qty-editor>button{height:44px;border:1px solid #445366;border-radius:9px;color:#e2e8f0;background:#19232f;font-size:20px;cursor:pointer}
+          .ep-manpower-qty-editor>button:disabled{opacity:.4;cursor:not-allowed}
+          .ep-manpower-qty-editor label{display:grid;gap:6px}.ep-manpower-qty-editor label span{color:#94a3b8;font-size:11px;font-weight:800}
+          .ep-manpower-qty-editor input{width:100%;height:44px;border:1px solid #445366;border-radius:9px;color:#edf4fb;background:#151c25;font:inherit;font-size:16px;text-align:center}
+          .ep-manpower-use-required{width:100%;min-height:44px;border:1px solid #315d8e;border-radius:9px;color:#bfdbfe;background:#152539;font:inherit;font-size:12px;cursor:pointer}
+          .ep-manpower-role-footer{display:grid;gap:6px;padding-top:12px;border-top:1px solid #293440}
+          .ep-manpower-role-footer b{color:#bfdbfe;font-size:12px}.ep-manpower-role-footer small{color:#94a3b8;font-size:11px;line-height:1.5}
+          .ep-manpower-role-card .ep-menu-field>span,.ep-manpower-role-card .ep-menu-block-title>span,.ep-manpower-role-card .ep-menu-contact span{font-size:11px}
+          .ep-manpower-role-card .ep-menu-field input,.ep-manpower-role-card .ep-menu-field select,.ep-manpower-role-card .ep-menu-field textarea{width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid #445366;border-radius:9px;color:#edf4fb;background:#151c25;font:inherit;font-size:13px}
+          .ep-manpower-role-card .ep-menu-contact b{font-size:13px}.ep-manpower-role-card .ep-menu-contact small{font-size:11px;overflow-wrap:anywhere}
+          .ep-manpower-role-card .ep-menu-contact a,.ep-manpower-role-card .ep-menu-mini-action,.ep-manpower-role-card .ep-menu-status-actions button{min-height:44px;font-size:11px}
+          .ep-manpower-role-card .ep-menu-field:focus-within{color:#bfdbfe}.ep-manpower-role-card input:focus-visible,.ep-manpower-role-card select:focus-visible,.ep-manpower-role-card textarea:focus-visible,.ep-manpower-agency-control button:focus-visible,.ep-manpower-agency-control a:focus-visible,.ep-manpower-role-card summary:focus-visible{outline:2px solid #93c5fd;outline-offset:3px}
+          .ep-manpower-role-details{border-top:1px solid #293440;padding-top:12px}.ep-manpower-role-details summary{cursor:pointer;color:#94a3b8;font-size:12px;min-height:36px}.ep-manpower-role-details>div{display:grid;gap:12px;padding-top:10px}
+          .ep-manpower-agency-control .ep-menu-function-context b{font-size:16px}.ep-manpower-agency-control .ep-menu-function-context span,.ep-manpower-agency-control .ep-menu-function-context small,.ep-manpower-agency-control .ep-menu-function-chips span{font-size:11px}.ep-manpower-agency-control .ep-menu-function-chips b{font-size:16px}
+          .ep-manpower-agency-control .ep-menu-vendor-progress>div,.ep-manpower-agency-control .ep-menu-vendor-progress>div b{font-size:12px}
+          @media(max-width:1100px){.ep-manpower-agency-summary{grid-template-columns:repeat(3,minmax(0,1fr))}}
+          @media(max-width:720px){.ep-manpower-agency-control{padding:12px}.ep-manpower-agency-head{flex-direction:column}.ep-manpower-agency-head-actions{width:100%}.ep-manpower-agency-head-actions a{flex:1;min-height:44px;justify-content:center}.ep-manpower-agency-summary{grid-template-columns:1fr 1fr}.ep-manpower-role-grid{grid-template-columns:1fr;padding:10px}.ep-manpower-department-head{flex-wrap:wrap}.ep-manpower-role-card{padding:12px}.ep-manpower-role-card .ep-menu-field input,.ep-manpower-role-card .ep-menu-field select,.ep-manpower-role-card .ep-menu-field textarea{font-size:16px}.ep-manpower-role-card .ep-menu-quick-row>div{width:100%}.ep-manpower-role-card .ep-menu-mini-action{flex:1}}
           .ep-menu-vendor-control{display:grid;gap:14px;padding:14px;border-bottom:1px solid #252c35;background:#0c1117}
           .ep-menu-vendor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
           .ep-menu-vendor-head b,.ep-menu-vendor-head span{display:block}
@@ -7281,9 +7283,9 @@ export default function EventPlanningPage() {
               <section className="ep-manpower-agency-control">
                 <div className="ep-manpower-agency-head">
                   <div>
-                    <b>Manpower Agency Planning</b>
+                    <b>Manpower Agencies Workspace</b>
                     <span>
-                      Staffing roles come from your saved Manpower plan. No automatic role selection is added here—only agency assignment and execution quantities for this function.
+                      Assign your planned team, confirm headcounts and set reporting times for this function.
                     </span>
                   </div>
 
@@ -7301,6 +7303,19 @@ export default function EventPlanningPage() {
                     >
                       Agencies
                     </Link>
+                  </div>
+                </div>
+
+                <div className="ep-menu-function-context">
+                  <div>
+                    <span>Selected Function</span>
+                    <b>{currentFunction.dayLabel} · {currentFunction.mealLabel}</b>
+                    <small>{work.event.clientName || eventName} · {work.event.venue || work.event.city || 'Venue not set'}</small>
+                  </div>
+                  <div className="ep-menu-function-chips">
+                    <span><b>{currentFunction.pax.toLocaleString('en-IN')}</b>covers</span>
+                    <span><b>{manpowerAgencyRows.length}</b>roles</span>
+                    <span><b>{manpowerAgencySummary.totalPeople}</b>people</span>
                   </div>
                 </div>
 
@@ -7330,6 +7345,13 @@ export default function EventPlanningPage() {
                     <b>{currency(manpowerAgencySummary.totalCost)}</b>
                     <small>People × role rate</small>
                   </article>
+                </div>
+
+                <div className="ep-menu-vendor-progress">
+                  <div><span>Team confirmation progress</span><b>{manpowerAgencySummary.readiness}%</b></div>
+                  <span role="progressbar" aria-label="Manpower assignment readiness" aria-valuemin={0} aria-valuemax={100} aria-valuenow={manpowerAgencySummary.readiness}>
+                    <i style={{ width: manpowerAgencySummary.readiness + '%' }} />
+                  </span>
                 </div>
 
                 {manpowerAgencyGroups.length ? (
@@ -7392,153 +7414,71 @@ export default function EventPlanningPage() {
 
                           <div className="ep-manpower-role-grid">
                             {group.rows.map((row) => {
-                              const required =
-                                requiredManpowerQty(
-                                  row,
-                                );
-
-                              const variance =
-                                row.quantity -
-                                required;
-
+                              const required = requiredManpowerQty(row);
+                              const variance = row.quantity - required;
+                              const assignedVendor = vendors.find((vendor) => vendor.id === row.partnerId);
+                              const hasAssignment = Boolean(row.assignedTo.trim());
+                              const short = required > 0 && variance < 0;
+                              const roleReady = hasAssignment && !short && Boolean(row.deliveryTime) && row.status !== 'PENDING';
+                              const agencyOptions = vendors.filter((vendor) => vendor.active && vendorMatchesManpowerAgency(vendor));
+                              const otherOptions = vendors.filter((vendor) => vendor.active && !vendorMatchesManpowerAgency(vendor));
                               return (
-                                <article
-                                  className={
-                                    [
-                                      'ep-manpower-role-card',
-                                      row.assignedTo.trim()
-                                        ? 'assigned'
-                                        : '',
-                                      row.status !== 'PENDING'
-                                        ? 'ready'
-                                        : '',
-                                      required > 0 &&
-                                      row.quantity < required
-                                        ? 'attention'
-                                        : '',
-                                    ]
-                                      .filter(Boolean)
-                                      .join(' ')
-                                  }
-                                  key={row.id}
-                                >
+                                <article className={['ep-manpower-role-card', hasAssignment ? 'assigned' : '', roleReady ? 'ready' : '', short ? 'attention' : ''].filter(Boolean).join(' ')} key={row.id}>
                                   <div className="ep-manpower-role-title">
-                                    <div>
-                                      <span>
-                                        {group.department}
-                                      </span>
-                                      <b>
-                                        {row.requirement}
-                                      </b>
-                                      <small>
-                                        {row.assignedTo ||
-                                          'Agency not assigned'}
-                                      </small>
-                                    </div>
-
-                                    <strong>
-                                      {currency(
-                                        row.quantity *
-                                          row.rate,
-                                      )}
-                                    </strong>
+                                    <div><span>{group.department}</span><b>{row.requirement}</b><small>{row.assignedTo || 'Choose an agency or your in-house team'}</small></div>
+                                    <strong>{currency(row.quantity * row.rate)}</strong>
                                   </div>
-
                                   <div className="ep-manpower-role-meta">
-                                    <span>
-                                      Required
-                                      <b>{required}</b>
-                                    </span>
-                                    <span>
-                                      Selected
-                                      <b>{row.quantity}</b>
-                                    </span>
-                                    <span
-                                      className={
-                                        variance < 0
-                                          ? 'warn'
-                                          : ''
-                                      }
-                                    >
-                                      Variance
-                                      <b>
-                                        {variance > 0
-                                          ? `+${variance}`
-                                          : variance}
-                                      </b>
-                                    </span>
+                                    <span>Required<b>{required}</b></span>
+                                    <span>Selected<b>{row.quantity}</b></span>
+                                    <span className={short ? 'warn' : ''}>Coverage<b>{required <= 0 ? 'Custom' : variance === 0 ? 'Matched' : variance > 0 ? `+${variance} extra` : `${Math.abs(variance)} short`}</b></span>
                                   </div>
-
-                                  <div className="ep-manpower-qty-editor">
-                                    <button
-                                      type="button"
-                                      disabled={row.quantity <= 1}
-                                      onClick={() =>
-                                        setManpowerAgencyQuantity(
-                                          row,
-                                          row.quantity - 1,
-                                        )
-                                      }
-                                    >
-                                      −
-                                    </button>
-
-                                    <label>
-                                      <span>People</span>
-                                      <input
-                                        type="number"
-                                        min="1"
-                                        step="1"
-                                        value={row.quantity}
-                                        onChange={(event) =>
-                                          setManpowerAgencyQuantity(
-                                            row,
-                                            Number(
-                                              event.target.value,
-                                            ),
-                                          )
-                                        }
-                                      />
-                                    </label>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setManpowerAgencyQuantity(
-                                          row,
-                                          row.quantity + 1,
-                                        )
-                                      }
-                                    >
-                                      +
-                                    </button>
+                                  <label className="ep-menu-field">
+                                    <span>Agency / Team</span>
+                                    <select value={row.partnerType === 'IN_HOUSE' && hasAssignment ? '__in_house' : row.partnerId || ''} onChange={(event) => assignPartner(row, event.target.value)} aria-label={'Assign agency for ' + row.requirement}>
+                                      <option value="">Choose saved agency</option>
+                                      <option value="__in_house">In-house team</option>
+                                      {assignedVendor && !assignedVendor.active ? <option value={assignedVendor.id}>{assignedVendor.name} · Inactive</option> : null}
+                                      {row.partnerId && !assignedVendor ? <option value={row.partnerId}>{row.assignedTo} · Unavailable partner</option> : null}
+                                      {agencyOptions.length ? <optgroup label="Manpower agencies">{agencyOptions.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name} · {vendor.category || vendor.type}</option>)}</optgroup> : null}
+                                      {otherOptions.length ? <optgroup label="Other active partners">{otherOptions.map((vendor) => <option key={vendor.id} value={vendor.id}>{vendor.name} · {vendor.category || vendor.type}</option>)}</optgroup> : null}
+                                    </select>
+                                  </label>
+                                  <div className="ep-menu-field-grid">
+                                    <label className="ep-menu-field"><span>Manual Agency / Team</span><input value={row.partnerId || row.partnerType === 'IN_HOUSE' ? '' : row.assignedTo} placeholder="Enter agency or supervisor name" onChange={(event) => updateRow(row.id, { partnerId: '', assignedTo: event.target.value, partnerType: row.partnerType === 'IN_HOUSE' ? 'AGENCY' : row.partnerType })} aria-label={'Manual agency for ' + row.requirement} /></label>
+                                    <label className="ep-menu-field"><span>Partner Type</span><select value={row.partnerType} onChange={(event) => updateRow(row.id, { partnerType: event.target.value as PartnerType })} aria-label={'Partner type for ' + row.requirement}><option value="AGENCY">Agency</option><option value="VENDOR">Vendor</option><option value="IN_HOUSE">In-house</option></select></label>
                                   </div>
-
-                                  {required > 0 ? (
-                                    <button
-                                      className="ep-manpower-use-required"
-                                      type="button"
-                                      onClick={() =>
-                                        useRequiredManpowerQty(
-                                          row,
-                                        )
-                                      }
-                                    >
-                                      Use Required {required}
-                                    </button>
-                                  ) : null}
-
-                                  <div className="ep-manpower-role-footer">
-                                    <span className={row.status.toLowerCase()}>
-                                      {row.status}
-                                    </span>
-
-                                    <small>
-                                      {row.deliveryTime
-                                        ? `Reports ${row.deliveryTime.replace('T', ' ')}`
-                                        : 'Reporting time not set'}
-                                    </small>
+                                  {assignedVendor ? <div className="ep-menu-contact"><div><span>Agency Contact</span><b>{assignedVendor.contactPerson || assignedVendor.name}</b><small>{[assignedVendor.phone, assignedVendor.city].filter(Boolean).join(' · ') || 'No contact details saved'}</small></div>{assignedVendor.phone ? <a href={'tel:' + assignedVendor.phone} aria-label={'Call ' + assignedVendor.name}>Call</a> : null}</div> : null}
+                                  <div className="ep-menu-field-grid">
+                                    <div className="ep-manpower-qty-editor">
+                                      <button type="button" disabled={row.quantity <= 1} aria-label={'Decrease people for ' + row.requirement} onClick={() => setManpowerAgencyQuantity(row, row.quantity - 1)}>−</button>
+                                      <label><span>People</span><input type="number" min="1" step="1" value={row.quantity} onChange={(event) => { if (event.target.value && Number(event.target.value) >= 1) setManpowerAgencyQuantity(row, Number(event.target.value)); }} aria-label={'People for ' + row.requirement} /></label>
+                                      <button type="button" aria-label={'Increase people for ' + row.requirement} onClick={() => setManpowerAgencyQuantity(row, row.quantity + 1)}>+</button>
+                                    </div>
+                                    <label className="ep-menu-field"><span>Rate / {row.unit || 'person'}</span><input type="number" min="0" step="0.01" value={row.rate} onChange={(event) => updateRow(row.id, { rate: Math.max(0, Number(event.target.value) || 0) })} aria-label={'Rate for ' + row.requirement} /></label>
                                   </div>
+                                  {required > 0 && variance !== 0 ? <button className="ep-manpower-use-required" type="button" onClick={() => useRequiredManpowerQty(row)}>Match required headcount · {required} people</button> : null}
+                                  <div className="ep-menu-time-grid">
+                                    <label className="ep-menu-field"><span>Reporting Time</span><input type="datetime-local" value={row.deliveryTime} onChange={(event) => updateRow(row.id, { deliveryTime: event.target.value })} aria-label={'Reporting time for ' + row.requirement} /></label>
+                                    <label className="ep-menu-field"><span>Release / Return Time</span><input type="datetime-local" value={row.pickupTime || ''} onChange={(event) => updateRow(row.id, { pickupTime: event.target.value })} aria-label={'Release time for ' + row.requirement} /></label>
+                                  </div>
+                                  <div className="ep-menu-status-actions" role="group" aria-label={'Staff status for ' + row.requirement}>
+                                    {(['PENDING', 'CONFIRMED', 'DELIVERED', 'CLOSED'] as AssignmentStatus[]).map((status) => <button key={status} type="button" className={row.status === status ? 'active' : ''} aria-pressed={row.status === status} onClick={() => updateRow(row.id, { status })}>{status === 'DELIVERED' ? 'Reported' : status.charAt(0) + status.slice(1).toLowerCase()}</button>)}
+                                  </div>
+                                  <details className="ep-manpower-role-details">
+                                    <summary>Role details & payment terms</summary>
+                                    <div>
+                                      <label className="ep-menu-field"><span>Role</span><input value={row.requirement} onChange={(event) => updateRow(row.id, { requirement: event.target.value })} aria-label={'Role name for ' + row.requirement} /></label>
+                                      <label className="ep-menu-field"><span>Instructions / Duty</span><textarea value={row.detail} onChange={(event) => updateRow(row.id, { detail: event.target.value })} aria-label={'Duty instructions for ' + row.requirement} /></label>
+                                      <label className="ep-menu-field"><span>Rate Unit</span><input value={row.unit} onChange={(event) => updateRow(row.id, { unit: event.target.value })} aria-label={'Rate unit for ' + row.requirement} /></label>
+                                      <label className="ep-menu-field"><span>Payment Terms</span><input value={row.paymentTerms || ''} placeholder={assignedVendor?.paymentTerms || 'Enter agreed terms'} onChange={(event) => updateRow(row.id, { paymentTerms: event.target.value })} aria-label={'Payment terms for ' + row.requirement} /></label>
+                                    </div>
+                                  </details>
+                                  <div className="ep-menu-quick-row"><div>
+                                    {hasAssignment ? <button className="ep-menu-mini-action" type="button" onClick={() => assignPartner(row, '')}>Clear assignment</button> : null}
+                                    <button className="ep-menu-mini-action danger" type="button" onClick={() => removeRow(row.id)} aria-label={'Remove role ' + row.requirement}>Remove role</button>
+                                  </div></div>
+                                  <div className="ep-manpower-role-footer"><b>{roleReady ? 'Team ready' : !hasAssignment ? 'Agency needed' : short ? `${Math.abs(variance)} more people needed` : !row.deliveryTime ? 'Set reporting time' : 'Confirm team'}</b><small>{row.deliveryTime ? 'Reports ' + row.deliveryTime.replace('T', ' ') : 'Reporting time not set'}{row.paymentTerms ? ' · ' + row.paymentTerms : ''}</small></div>
                                 </article>
                               );
                             })}
@@ -7787,7 +7727,7 @@ export default function EventPlanningPage() {
               </section>
             ) : null}
 
-            {visibleRows.length && tab !== 'MENU' ? (
+            {visibleRows.length && tab !== 'MENU' && tab !== 'MANPOWER' ? (
               <div className="ep-table-wrap">
                 <table className="ep-table">
                   <thead>
@@ -8255,11 +8195,11 @@ export default function EventPlanningPage() {
                   </tbody>
                 </table>
               </div>
-            ) : (
+            ) : tab !== 'MENU' && tab !== 'MANPOWER' ? (
               <div className="ep-empty">
                 No requirements in this section yet.
               </div>
-            )}
+            ) : null}
 
             <footer className="ep-table-actions">
               <span className="ep-hint">
@@ -8420,3 +8360,4 @@ export default function EventPlanningPage() {
     </AppShell>
   );
 }
+
