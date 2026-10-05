@@ -32,6 +32,10 @@ import {
   sortMenuItemsByCategoryPriority,
 } from '../../../lib/menuCategoryPriority';
 
+import {
+  downloadMenuCreationPdf,
+} from '../../../lib/menuCreationPdf';
+
 type DishOption = {
   name: string;
   category: string;
@@ -1568,6 +1572,42 @@ export default function MenuCreationPage() {
           </div>
 
           <div className="menu-create-hero-actions">
+            <button
+              className="secondary-button"
+              type="button"
+              disabled={
+                !work.menu.some(
+                  (item) =>
+                    item.coverageStatus !==
+                    'REJECTED',
+                )
+              }
+              onClick={() => {
+                try {
+                  downloadMenuCreationPdf(
+                    work,
+                  );
+
+                  setMessage(
+                    'Menu PDF downloaded successfully.',
+                  );
+
+                  setError('');
+                } catch (
+                  pdfError
+                ) {
+                  setError(
+                    pdfError instanceof
+                    Error
+                      ? pdfError.message
+                      : 'Could not download menu PDF.',
+                  );
+                }
+              }}
+            >
+              Download Menu PDF
+            </button>
+
             <button
               className="secondary-button"
               type="button"
