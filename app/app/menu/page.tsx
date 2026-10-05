@@ -45,6 +45,7 @@ type DishOption = {
   servingUnit?: string;
   pieceWeightGrams?: number;
   hasRecipe?: boolean;
+  aliases?: string[];
   source?: 'global' | 'tenant';
 };
 
@@ -1182,6 +1183,50 @@ export default function MenuCreationPage() {
       return;
     }
 
+    const knownDish =
+      dishCatalog.find(
+        (dish) => {
+          const key =
+            normalize(name);
+
+          return (
+            normalize(
+              dish.name,
+            ) === key ||
+            (
+              dish.aliases ||
+              []
+            ).some(
+              (alias) =>
+                normalize(
+                  alias,
+                ) === key,
+            )
+          );
+        },
+      );
+
+    if (knownDish) {
+      await toggleDish(
+        knownDish,
+      );
+
+      setCustomDish({
+        name: '',
+        category: 'Other',
+      });
+
+      setShowCustomDish(
+        false,
+      );
+
+      setMessage(
+        `${knownDish.name} already exists in Dish Master and was added from the master instead.`,
+      );
+
+      return;
+    }
+
     const metadata =
       activeMetadata();
 
@@ -1189,83 +1234,153 @@ export default function MenuCreationPage() {
       return;
     }
 
-    const item:
-      MenuItem = {
-        id:
-          uid('menu'),
-        name,
-        category:
-          customDish.category,
-        costPerPlate: 0,
-        portionQuantity: 1,
-        portionBaseQuantity: 1,
-        portionUnit:
-          'serving',
-        serviceId:
-          metadata.serviceId,
-        dayLabel:
-          metadata.dayLabel,
-        mealLabel:
-          metadata.mealLabel,
-        servicePax:
-          metadata.pax,
-        portionPercent: 100,
-        portionMode:
-          'AUTO',
-        detectionSource:
-          'manual',
-        detectionConfidence:
-          100,
-        detectionReason:
-          'Custom dish added manually in Menu Creation.',
-        costSource:
-          'manual',
-        coverageStatus:
-          'UNRESOLVED',
-        costQualityStatus:
-          'BLOCKED',
-        costConfidence: 0,
-        rateCoveragePercent: 0,
-        coverageReason:
-          'Custom dish needs a Dish Master rate or recipe.',
-        groceryResponsibility:
-          'CATERER',
-      };
-
-    setEmptyFunctions(
-      (current) =>
-        current.filter(
-          (fn) =>
-            fn.id !==
-            metadata.serviceId,
-        ),
-    );
-
-    await persist({
-      ...work,
-      menu: [
-        ...work.menu,
-        item,
-      ],
-      updatedAt:
-        new Date()
-          .toISOString(),
-    });
-
-    setCustomDish({
-      name: '',
-      category: 'Other',
-    });
-
-    setShowCustomDish(
-      false,
-    );
-
     setError('');
-
     setMessage(
-      `${name} added as a custom dish. Add its recipe/rate later if needed.`,
+      'Sending new dish to Admin Unknown Dish Queue…',
     );
+
+    try {
+      const queueResponse =
+        await fetch(
+          '/api/dish-suggestions',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+            body:
+              JSON.stringify({
+                sourceFileName:
+                  `Menu Creation · ${work.event.eventName || work.event.clientName || activeFunction.mealLabel || 'Event'}`,
+                candidates: [
+                  {
+                    name,
+                    categoryHint:
+                      customDish.category,
+                  },
+                ],
+              }),
+          },
+        );
+
+      const queueData =
+        await queueResponse
+          .json()
+          .catch(
+            () => ({}),
+          );
+
+      if (!queueResponse.ok) {
+        throw new Error(
+          queueData.error ||
+            'Could not send new dish to Admin Unknown Dish Queue.',
+        );
+      }
+
+      const queued =
+        Math.max(
+          0,
+          Number(
+            queueData.queued,
+          ) || 0,
+        );
+
+      if (!queued) {
+        throw new Error(
+          'This dish now exists in Dish Master. Refresh Menu Creation and select it from the master.',
+        );
+      }
+
+      const item:
+        MenuItem = {
+          id:
+            uid('menu'),
+          name,
+          category:
+            customDish.category,
+          costPerPlate: 0,
+          portionQuantity: 1,
+          portionBaseQuantity: 1,
+          portionUnit:
+            'serving',
+          serviceId:
+            metadata.serviceId,
+          dayLabel:
+            metadata.dayLabel,
+          mealLabel:
+            metadata.mealLabel,
+          servicePax:
+            metadata.pax,
+          portionPercent: 100,
+          portionMode:
+            'AUTO',
+          detectionSource:
+            'manual',
+          detectionConfidence:
+            100,
+          detectionReason:
+            'New dish added in Menu Creation and sent to Admin Unknown Dish Queue.',
+          costSource:
+            'manual',
+          coverageStatus:
+            'NEW_DISH_PENDING',
+          costQualityStatus:
+            'BLOCKED',
+          costConfidence: 0,
+          rateCoveragePercent: 0,
+          coverageReason:
+            'Waiting for Super Admin review, Dish Master rate and recipe.',
+          groceryResponsibility:
+            'CATERER',
+        };
+
+      setEmptyFunctions(
+        (current) =>
+          current.filter(
+            (fn) =>
+              fn.id !==
+              metadata.serviceId,
+          ),
+      );
+
+      await persist({
+        ...work,
+        menu: [
+          ...work.menu,
+          item,
+        ],
+        updatedAt:
+          new Date()
+            .toISOString(),
+      });
+
+      setCustomDish({
+        name: '',
+        category: 'Other',
+      });
+
+      setShowCustomDish(
+        false,
+      );
+
+      setError('');
+
+      setMessage(
+        `${name} added to the menu and sent to Admin Unknown Dish Queue for review.`,
+      );
+    } catch (
+      queueError
+    ) {
+      setMessage('');
+
+      setError(
+        queueError instanceof
+        Error
+          ? queueError.message
+          : 'Could not queue the new dish.',
+      );
+    }
   }
 
   function openNewFunction(
@@ -2540,10 +2655,10 @@ export default function MenuCreationPage() {
               <div className="menu-create-modal-head">
                 <div>
                   <span>
-                    Event-only dish
+                    New dish
                   </span>
                   <h2>
-                    Add custom dish
+                    Add & send for admin review
                   </h2>
                 </div>
 
@@ -2634,7 +2749,7 @@ export default function MenuCreationPage() {
                   void addCustomDish()
                 }
               >
-                Add to Menu
+                Add to Menu + Queue
               </button>
             </section>
           </div>
