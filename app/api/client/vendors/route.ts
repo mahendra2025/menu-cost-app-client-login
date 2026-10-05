@@ -10,6 +10,8 @@ const MAX_RATES = 120;
 type VendorRate = {
   id: string;
   kind: string;
+  scope: 'STATION' | 'DISH' | 'OTHER';
+  station: string;
   item: string;
   unit: string;
   rate: number;
@@ -63,14 +65,42 @@ function cleanRates(value: unknown): VendorRate[] {
     if (!item || typeof item !== 'object' || Array.isArray(item)) return [];
 
     const row = item as Record<string, unknown>;
-    const itemName = text(row.item, 140);
+    const rawScope = text(row.scope, 20).toUpperCase();
+    const scope: VendorRate['scope'] =
+      rawScope === 'STATION'
+        ? 'STATION'
+        : rawScope === 'DISH'
+          ? 'DISH'
+          : 'OTHER';
+    const station = text(row.station, 80);
+    const itemName =
+      text(row.item, 140) ||
+      (scope === 'STATION'
+        ? station
+        : '');
     if (!itemName) return [];
 
     return [{
       id: text(row.id, 160) || `rate_${index + 1}`,
-      kind: text(row.kind, 40).toUpperCase() || 'GENERAL',
+      kind:
+        scope === 'STATION' ||
+        scope === 'DISH'
+          ? 'MENU'
+          : text(row.kind, 40).toUpperCase() || 'GENERAL',
+      scope,
+      station:
+        scope === 'STATION'
+          ? station || itemName
+          : station,
       item: itemName,
-      unit: text(row.unit, 40) || 'unit',
+      unit:
+        text(row.unit, 40) ||
+        (
+          scope === 'STATION' ||
+          scope === 'DISH'
+            ? 'plate'
+            : 'unit'
+        ),
       rate: Math.max(0, Number(row.rate) || 0),
     }];
   });
