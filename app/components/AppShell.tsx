@@ -25,11 +25,20 @@ type ClientFlowStep = {
 };
 
 function clientFlowForPath(pathname: string): ClientFlowStep | null {
+  if (pathname === '/app/menu') {
+    return {
+      step: 1,
+      label: 'Menu',
+      desktopStep: 1,
+      desktopLabel: 'Menu Creation',
+    };
+  }
+
   if (pathname === '/app/event') {
     return {
       step: 1,
       label: 'Event',
-      desktopStep: 1,
+      desktopStep: 2,
       desktopLabel: 'Event & Menu',
     };
   }
@@ -136,6 +145,7 @@ const adminNav =
   );
 
 const clientWorkflowNav = [
+  { href: '/app/menu', match: '/app/menu', label: 'Menu Creation', description: 'Build function-wise menu', icon: 'event' as ClientNavIcon },
   { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Upload and review menu', icon: 'event' as ClientNavIcon },
   { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
   { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
