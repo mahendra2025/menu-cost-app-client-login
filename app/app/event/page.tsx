@@ -10117,17 +10117,6 @@ export default function EventPage() {
     savedMenuDishCount > 0,
   ];
 
-  const eventSetupReadinessPercent =
-    Math.round(
-      (
-        eventSetupChecks.filter(
-          Boolean,
-        ).length /
-        eventSetupChecks.length
-      ) *
-        100,
-    );
-
   const menuRateReadinessPercent =
     savedMenuDishCount > 0
       ? Math.round(
@@ -10141,7 +10130,7 @@ export default function EventPage() {
 
   return (
     <AppShell
-      title="Event & Menu Import"
+      title="Menu Import"
       hidePageTitle
     >
       <style>{`
@@ -10647,7 +10636,109 @@ export default function EventPage() {
           text-align: center;
         }
 
+        .event-upload-only-page {
+          width: 100%;
+          max-width: none;
+          gap: 10px;
+        }
+
+        .event-import-topbar {
+          position: sticky;
+          top: 0;
+          z-index: 12;
+          display: grid;
+          grid-template-columns: minmax(0,1fr) auto;
+          gap: 14px;
+          align-items: center;
+          padding: 12px 14px;
+          border: 1px solid rgba(74,156,255,.16);
+          border-radius: 14px;
+          background: rgba(11,17,24,.96);
+          backdrop-filter: blur(18px);
+          box-shadow: 0 10px 28px rgba(0,0,0,.18);
+        }
+
+        .event-import-topbar-copy span {
+          display: block;
+          color: #75adf1;
+          font-size: 7px;
+          font-weight: 900;
+          letter-spacing: .09em;
+          text-transform: uppercase;
+        }
+
+        .event-import-topbar-copy h1 {
+          margin: 3px 0 2px;
+          color: #f3f7fb;
+          font-size: 20px;
+          line-height: 1.1;
+          letter-spacing: -.035em;
+        }
+
+        .event-import-topbar-copy p {
+          margin: 0;
+          color: #718297;
+          font-size: 8px;
+        }
+
+        .event-import-topbar-actions {
+          display: flex;
+          gap: 7px;
+          align-items: center;
+        }
+
+        .event-import-topbar-actions button {
+          min-height: 36px;
+          padding-inline: 11px;
+          font-size: 8px;
+        }
+
+        .event-details-card {
+          padding: 12px !important;
+          border-radius: 13px !important;
+        }
+
+        .event-details-card .event-section-heading {
+          margin-bottom: 8px;
+        }
+
+        .event-details-card .event-section-heading h2 {
+          font-size: 14px;
+        }
+
+        .event-details-card .event-section-heading p {
+          display: none;
+        }
+
+        .event-upload-simple-card {
+          min-height: 170px;
+          padding: 17px;
+          border-radius: 14px;
+        }
+
+        .event-upload-copy h2 {
+          font-size: 18px;
+        }
+
+        .event-upload-copy p {
+          margin-top: 4px;
+        }
+
         @media (max-width: 760px) {
+          .event-import-topbar {
+            position: static;
+            grid-template-columns: 1fr;
+          }
+
+          .event-import-topbar-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .event-import-topbar-actions button {
+            width: 100%;
+          }
+
           .event-home-hero {
             grid-template-columns: 1fr;
             padding: 16px;
@@ -10684,126 +10775,49 @@ export default function EventPage() {
         }
       `}</style>
       <section className="content-grid event-simple-flow event-upload-only-page">
-        <div className="event-merge-backbar no-print">
-          <div>
-            <span>Event & Menu · Import</span>
-            <b>Upload, review, save, then return to the same menu workspace.</b>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              window.location.assign(
-                '/app/menu',
-              )
-            }
-          >
-            ← Back to Event & Menu
-          </button>
-        </div>
-
-        <section className="event-home-hero no-print">
-          <div className="event-home-copy">
-            <span className="event-home-kicker">
-              <i aria-hidden="true" />
-              Menu Import
-            </span>
-
+        <section className="event-import-topbar no-print">
+          <div className="event-import-topbar-copy">
+            <span>Menu Import</span>
             <h1>
               {work.event.eventName ||
                 work.event.clientName ||
-                'Create your next event'}
+                'Current Event'}
             </h1>
-
             <p>
-              {work.event.clientName
-                ? `Import a PDF, photo or pasted menu for ${work.event.clientName}. After review, you will return to Event & Menu.`
-                : 'Import a PDF, photo or pasted menu, review detected dishes, then return to Event & Menu.'}
+              {work.event.clientName || 'Client not added'}
+              {work.event.eventDate ? ` · ${work.event.eventDate}` : ''}
+              {Number(work.event.pax) > 0
+                ? ` · ${Number(work.event.pax).toLocaleString('en-IN')} guests`
+                : ''}
+              {work.menu.length > 0
+                ? ` · ${work.menu.length} dishes saved`
+                : ''}
             </p>
           </div>
 
-          <div className="event-home-actions">
-            <div className="event-home-readiness">
-              <div
-                className="event-home-readiness-ring"
-                style={{
-                  background:
-                    `conic-gradient(${eventSetupReadinessPercent === 100 ? '#55d98f' : '#4a9cff'} ${eventSetupReadinessPercent * 3.6}deg, #25303d 0deg)`,
-                }}
-                aria-label={`Event setup readiness ${eventSetupReadinessPercent}%`}
-              >
-                <span>
-                  <b>
-                    {eventSetupReadinessPercent}%
-                  </b>
-                  <small>
-                    Ready
-                  </small>
-                </span>
-              </div>
-
-              <div>
-                <span>
-                  Event setup
-                </span>
-                <b>
-                  {eventSetupReadinessPercent === 100
-                    ? 'Ready for costing'
-                    : 'Complete setup'}
-                </b>
-                <small>
-                  Client · guests · menu
-                </small>
-              </div>
-            </div>
+          <div className="event-import-topbar-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() =>
+                window.location.assign(
+                  '/app/menu',
+                )
+              }
+            >
+              ← Event & Menu
+            </button>
 
             <button
-              className="primary-button event-new-button"
+              className="primary-button"
               type="button"
               onClick={openNewEventForm}
             >
-              <span aria-hidden="true">＋</span>
-              New Event
+              + New Event
             </button>
           </div>
-
-          <div className="event-home-stats">
-            <article className="event-home-stat">
-              <span>Client</span>
-              <b>
-                {work.event.clientName ||
-                  'Not added'}
-              </b>
-            </article>
-
-            <article className="event-home-stat">
-              <span>Date</span>
-              <b>
-                {work.event.eventDate ||
-                  'Not added'}
-              </b>
-            </article>
-
-            <article className="event-home-stat">
-              <span>Guests</span>
-              <b>
-                {Number(work.event.pax) > 0
-                  ? Number(
-                      work.event.pax,
-                    ).toLocaleString('en-IN')
-                  : 'Not added'}
-              </b>
-            </article>
-
-            <article className="event-home-stat">
-              <span>Menu</span>
-              <b>
-                {work.menu.length > 0
-                  ? `${work.menu.length} dishes · ${savedMenuCategoryCount} categories`
-                  : 'Not selected'}
-              </b>
-            </article>
-          </div>
         </section>
+
         <div className="event-page-topbar no-print">
           <div className="event-page-heading">
             <span className="event-page-step">
