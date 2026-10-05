@@ -344,35 +344,34 @@ export function downloadMenuCreationPdf(
     work.event.functionType ||
     'Event';
 
-  const eventMeta = [
-    formatDate(work.event.eventDate),
-    [work.event.venue, work.event.city]
-      .filter(Boolean)
-      .join(', '),
-  ]
-    .filter(Boolean)
-    .join('  ·  ');
+  // Premium client + event detail cards.
+  const cardTop = 64;
+  const cardHeight = 46;
+  const gap = 6;
+  const cardWidth = (CONTENT_WIDTH - gap) / 2;
+  const leftCardX = PAGE_LEFT;
+  const rightCardX = PAGE_LEFT + cardWidth + gap;
 
-  // Event details card.
+  // Client details.
   doc.setFillColor(250, 247, 240);
   doc.setDrawColor(227, 216, 194);
   doc.roundedRect(
-    PAGE_LEFT,
-    64,
-    CONTENT_WIDTH,
-    30,
+    leftCardX,
+    cardTop,
+    cardWidth,
+    cardHeight,
     3,
     3,
     'FD',
   );
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
+  doc.setFontSize(6.4);
   doc.setTextColor(154, 126, 72);
   doc.text(
-    'PREPARED EXCLUSIVELY FOR',
-    20,
-    72,
+    'CLIENT DETAILS',
+    leftCardX + 6,
+    cardTop + 8,
   );
 
   doc.setFont('times', 'bold');
@@ -381,54 +380,154 @@ export function downloadMenuCreationPdf(
   doc.text(
     work.event.clientName ||
       'Our Esteemed Guest',
-    20,
-    81,
-  );
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.2);
-  doc.setTextColor(100, 100, 100);
-  doc.text(
-    eventName,
-    20,
-    88,
-  );
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(6.5);
-  doc.setTextColor(154, 126, 72);
-  doc.text(
-    'EVENT DETAILS',
-    190,
-    72,
-    { align: 'right' },
-  );
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.4);
-  doc.setTextColor(74, 74, 74);
-  const metaLines = doc.splitTextToSize(
-    eventMeta || 'Details to be finalized',
-    72,
-  );
-  doc.text(
-    metaLines,
-    190,
-    80,
-    { align: 'right' },
+    leftCardX + 6,
+    cardTop + 18,
   );
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
-  doc.setTextColor(120, 120, 120);
+  doc.setTextColor(125, 125, 125);
   doc.text(
-    `${functions.length || 1} function${functions.length === 1 ? '' : 's'}`,
-    190,
-    89,
-    { align: 'right' },
+    'Event',
+    leftCardX + 6,
+    cardTop + 28,
   );
 
-  let y = 104;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.2);
+  doc.setTextColor(66, 66, 66);
+  const clientEventLines =
+    doc.splitTextToSize(
+      eventName,
+      cardWidth - 12,
+    );
+  doc.text(
+    clientEventLines,
+    leftCardX + 6,
+    cardTop + 34,
+  );
+
+  // Event details.
+  doc.setFillColor(255, 254, 251);
+  doc.setDrawColor(227, 216, 194);
+  doc.roundedRect(
+    rightCardX,
+    cardTop,
+    cardWidth,
+    cardHeight,
+    3,
+    3,
+    'FD',
+  );
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.4);
+  doc.setTextColor(154, 126, 72);
+  doc.text(
+    'EVENT DETAILS',
+    rightCardX + 6,
+    cardTop + 8,
+  );
+
+  const eventDetailRows: Array<
+    [string, string]
+  > = [
+    [
+      'Date',
+      formatDate(
+        work.event.eventDate,
+      ) ||
+        functions[0]?.dayLabel ||
+        '-',
+    ],
+    [
+      'Venue',
+      work.event.venue ||
+        '-',
+    ],
+    [
+      'City',
+      work.event.city ||
+        '-',
+    ],
+    [
+      'Event Type',
+      work.event.functionType ||
+        eventName ||
+        '-',
+    ],
+    [
+      'Guests',
+      Math.max(
+        0,
+        Number(work.event.pax) || 0,
+      ) > 0
+        ? Math.max(
+            0,
+            Number(work.event.pax) || 0,
+          ).toLocaleString('en-IN')
+        : '-',
+    ],
+    [
+      'Functions',
+      String(
+        functions.length || 1,
+      ),
+    ],
+  ];
+
+  let detailY =
+    cardTop + 15;
+
+  eventDetailRows.forEach(
+    ([label, value]) => {
+      doc.setFont(
+        'helvetica',
+        'normal',
+      );
+      doc.setFontSize(6.3);
+      doc.setTextColor(
+        130,
+        130,
+        130,
+      );
+      doc.text(
+        label,
+        rightCardX + 6,
+        detailY,
+      );
+
+      doc.setFont(
+        'helvetica',
+        'bold',
+      );
+      doc.setFontSize(6.8);
+      doc.setTextColor(
+        62,
+        62,
+        62,
+      );
+
+      const valueLines =
+        doc.splitTextToSize(
+          value,
+          cardWidth - 32,
+        );
+
+      doc.text(
+        valueLines,
+        rightCardX + cardWidth - 6,
+        detailY,
+        {
+          align: 'right',
+        },
+      );
+
+      detailY += 5.2;
+    },
+  );
+
+  let y = cardTop + cardHeight + 10;
 
   if (!functions.length) {
     doc.setFont('times', 'italic');
