@@ -151,7 +151,7 @@ export default function UnknownDishQueuePage() {
     useState<StatusCounts>(EMPTY_COUNTS);
 
   const [statusFilter, setStatusFilter] =
-    useState<QueueStatus>('ALL');
+    useState<QueueStatus>('PENDING');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] =
@@ -348,10 +348,7 @@ export default function UnknownDishQueuePage() {
       }
 
       const nextItems = Array.isArray(data.items)
-        ? (data.items as PendingDish[]).filter(
-            (item) =>
-              item.status !== 'PENDING',
-          )
+        ? (data.items as PendingDish[])
         : [];
 
       const rawCounts = {
@@ -360,15 +357,7 @@ export default function UnknownDishQueuePage() {
       };
 
       setItems(nextItems);
-      setStatusCounts({
-        ...rawCounts,
-        PENDING: 0,
-        ALL: Math.max(
-          0,
-          Number(rawCounts.ALL || 0) -
-            Number(rawCounts.PENDING || 0),
-        ),
-      });
+      setStatusCounts(rawCounts);
 
       setCheckedIds((current) => {
         const valid = new Set(
@@ -733,6 +722,7 @@ export default function UnknownDishQueuePage() {
     value: QueueStatus;
     label: string;
   }> = [
+    { value: 'PENDING', label: 'Pending' },
     { value: 'RECIPE_IN_PROGRESS', label: 'Recipe' },
     { value: 'GLOBAL_READY', label: 'Global Ready' },
     { value: 'MATCHED', label: 'Matched' },
@@ -748,7 +738,7 @@ export default function UnknownDishQueuePage() {
   return (
     <AppShell
       title="Dishes"
-      subtitle="Resolved unknown-dish history and Dish Master learning"
+      subtitle="Review new unknown dishes and Dish Master learning"
     >
       <section className="content-grid unknown-queue-page">
         <div className="glass-card queue-hero">
@@ -759,8 +749,8 @@ export default function UnknownDishQueuePage() {
               </div>
               <h2>Unknown Dish Queue</h2>
               <p className="muted">
-                Pending dishes are hidden from this page. Use this history to review matched,
-                recipe-in-progress, global-ready, recipe-needed and ignored dish records.
+                New dishes from Menu Creation appear here in Pending. Review them, match an existing dish,
+                add a new Global Dish Master item, start its recipe, or ignore non-dish text.
               </p>
             </div>
             <button
@@ -780,9 +770,9 @@ export default function UnknownDishQueuePage() {
 
           <div className="queue-stat-grid">
             <div className="queue-stat">
-              <span>Matched</span>
-              <b>{statusCounts.MATCHED.toLocaleString('en-IN')}</b>
-              <small>Linked to existing Dish Master</small>
+              <span>Pending</span>
+              <b>{statusCounts.PENDING.toLocaleString('en-IN')}</b>
+              <small>New dishes waiting for admin review</small>
             </div>
             <div className="queue-stat">
               <span>Recipe</span>
@@ -933,7 +923,7 @@ export default function UnknownDishQueuePage() {
               <div className="section-kicker">
                 {statusLabel(statusFilter)}
               </div>
-              <h2>Review history</h2>
+              <h2>{statusFilter === 'PENDING' ? 'Review new dishes' : 'Review history'}</h2>
             </div>
           </div>
 
@@ -945,7 +935,9 @@ export default function UnknownDishQueuePage() {
               <p className="muted">
                 {search || categoryFilter !== 'ALL'
                   ? 'Try clearing the search or category filter.'
-                  : 'Resolved unknown-dish history will appear here.'}
+                  : statusFilter === 'PENDING'
+                    ? 'New dishes from Menu Creation will appear here automatically.'
+                    : 'Resolved unknown-dish history will appear here.'}
               </p>
             </div>
           ) : (
