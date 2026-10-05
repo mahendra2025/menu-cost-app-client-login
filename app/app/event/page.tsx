@@ -2466,6 +2466,31 @@ export default function EventPage() {
       );
     }
 
+    setAvailableDishCategories(
+      (current) =>
+        Array.from(
+          new Map(
+            [
+              ...current,
+              finalCategory,
+            ].map(
+              (item) => [
+                item
+                  .toLocaleLowerCase(
+                    'en-IN',
+                  ),
+                item,
+              ],
+            ),
+          ).values(),
+        ).sort(
+          (left, right) =>
+            left.localeCompare(
+              right,
+            ),
+        ),
+    );
+
     setUnknownDishCategory(
       finalCategory,
     );
