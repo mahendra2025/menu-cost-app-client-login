@@ -718,6 +718,13 @@ export function calculateEventGas(
 
   menu.forEach(
     (item) => {
+      if (
+        item.vendorId &&
+        item.groceryResponsibility === 'VENDOR'
+      ) {
+        return;
+      }
+
       const serviceKey =
         serviceIdentity(
           item,
