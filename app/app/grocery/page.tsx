@@ -1433,7 +1433,7 @@ export default function GroceryPage() {
               type="button"
               onClick={() =>
                 router.push(
-                  '/app/event?resume=1',
+                  '/app/menu',
                 )
               }
             >
