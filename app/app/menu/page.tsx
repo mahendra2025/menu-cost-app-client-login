@@ -9,6 +9,7 @@ import {
 import AppShell from '../../components/AppShell';
 
 import {
+  createEmptyWorkState,
   flushDraftToServer,
   flushWorkSave,
   getSession,
@@ -420,10 +421,55 @@ export default function MenuCreationPage() {
       return;
     }
 
-    const currentWork =
+    const savedWork =
       loadWork(
         current.tenantId,
       );
+
+    const isNewEvent =
+      new URLSearchParams(
+        window.location.search,
+      ).get('new') === '1';
+
+    const currentWork =
+      isNewEvent
+        ? {
+            ...createEmptyWorkState(
+              current,
+            ),
+            profile: {
+              ...savedWork.profile,
+            },
+            event: {
+              ...createEmptyWorkState(
+                current,
+              ).event,
+              city:
+                savedWork.profile.city ||
+                savedWork.event.city ||
+                '',
+            },
+          }
+        : savedWork;
+
+    if (isNewEvent) {
+      saveWork(
+        current.tenantId,
+        currentWork,
+      );
+      flushWorkSave(
+        current.tenantId,
+      );
+      void flushDraftToServer(
+        current.tenantId,
+        currentWork,
+      );
+      window.history.replaceState(
+        window.history.state,
+        '',
+        '/app/menu',
+      );
+    }
 
     setSession(current);
     setWork(
@@ -2451,7 +2497,7 @@ export default function MenuCreationPage() {
               type="button"
               onClick={() =>
                 window.location.assign(
-                  '/app/event?new=1',
+                  '/app/menu?new=1',
                 )
               }
             >
@@ -2587,7 +2633,7 @@ export default function MenuCreationPage() {
               type="button"
               onClick={() =>
                 window.location.assign(
-                  '/app/event?new=1',
+                  '/app/menu?new=1',
                 )
               }
             >
