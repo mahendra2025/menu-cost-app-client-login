@@ -1667,3 +1667,78 @@
   resize: vertical;
   line-height: 1.45;
 }
+
+
+/* Live PDF settings reflected in Menu Preview */
+.previewBrandLogo {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 8px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: rgba(255,255,255,.75);
+}
+
+.previewMenuTitle {
+  margin: 12px auto 14px;
+  color: #6f4d13;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  font-style: italic;
+  text-align: center;
+}
+
+.previewEventMeta {
+  display: flex;
+  gap: 5px 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 7px;
+}
+
+.previewEventMeta span {
+  color: #887a67;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.previewTerms {
+  margin-top: 16px;
+  padding: 11px 12px;
+  border-top: 1px solid #ead9b5;
+  border-bottom: 1px solid #ead9b5;
+  text-align: left;
+  background: rgba(255,250,240,.72);
+}
+
+.previewTerms b {
+  display: block;
+  margin-bottom: 5px;
+  color: #7b1024;
+  font-size: 8px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.previewTerms p {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: #786d5e;
+  font-size: 8px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.pdfEditorPreview em {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 8px;
+  color: #7b1024;
+  font-size: 8px;
+  font-style: normal;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}

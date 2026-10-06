@@ -1087,19 +1087,83 @@ export default function MenuStudioPage() {
 
             <div className={styles.menuPaper}>
               <div className={styles.menuOrnament}>✦</div>
+
               <div className={styles.brand}>
-                <small>{work.profile.tagline || 'Premium Event Catering'}</small>
-                <h3>{work.profile.businessName || session.businessName || 'Catering Business'}</h3>
+                {work.profile.logoUrl ? (
+                  <img
+                    className={styles.previewBrandLogo}
+                    src={work.profile.logoUrl}
+                    alt=""
+                  />
+                ) : null}
+
+                <small>
+                  {pdfOptions.tagline ||
+                    work.profile.tagline ||
+                    'Premium Event Catering'}
+                </small>
+
+                <h3>
+                  {work.profile.businessName ||
+                    session.businessName ||
+                    'Catering Business'}
+                </h3>
+              </div>
+
+              <div className={styles.previewMenuTitle}>
+                {pdfOptions.menuTitle || 'Curated Event Menu'}
               </div>
 
               <div className={styles.clientBlock}>
                 <b>{work.event.clientName || 'Client Name'}</b>
-                <span>{work.event.eventName || work.event.functionType || 'Celebration'}</span>
-                <small>
-                  {[formatDate(activeFunction?.dayLabel || work.event.eventDate), activeFunction?.pax ? activeFunction.pax.toLocaleString('en-IN') + ' guests' : '']
-                    .filter(Boolean)
-                    .join(' · ')}
-                </small>
+                <span>
+                  {work.event.eventName ||
+                    work.event.functionType ||
+                    'Celebration'}
+                </span>
+
+                {(
+                  pdfOptions.showDate !== false ||
+                  pdfOptions.showGuests !== false
+                ) ? (
+                  <small>
+                    {[
+                      pdfOptions.showDate !== false
+                        ? formatDate(
+                            activeFunction?.dayLabel ||
+                              work.event.eventDate,
+                          )
+                        : '',
+                      pdfOptions.showGuests !== false &&
+                      activeFunction?.pax
+                        ? activeFunction.pax.toLocaleString('en-IN') +
+                          ' guests'
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </small>
+                ) : null}
+
+                <div className={styles.previewEventMeta}>
+                  {pdfOptions.showVenue !== false &&
+                  work.event.venue ? (
+                    <span>Venue: {work.event.venue}</span>
+                  ) : null}
+                  {pdfOptions.showCity !== false &&
+                  work.event.city ? (
+                    <span>City: {work.event.city}</span>
+                  ) : null}
+                  {pdfOptions.showEventType !== false &&
+                  work.event.functionType ? (
+                    <span>Type: {work.event.functionType}</span>
+                  ) : null}
+                  {pdfOptions.showFunctionCount !== false ? (
+                    <span>
+                      Functions: {functions.length || 1}
+                    </span>
+                  ) : null}
+                </div>
               </div>
 
               <div className={styles.previewFunction}>{activeFunction?.mealLabel || 'Event Menu'}</div>
@@ -1121,7 +1185,24 @@ export default function MenuStudioPage() {
                 <div className={styles.previewEmpty}>Add dishes to build the client menu.</div>
               ) : null}
 
-              <div className={styles.paperFooter}>Crafted with care for a memorable celebration</div>
+              {pdfOptions.showTerms !== false &&
+              (
+                pdfOptions.termsAndConditions?.trim() ||
+                work.profile.menuTerms?.trim()
+              ) ? (
+                <div className={styles.previewTerms}>
+                  <b>Terms & Conditions</b>
+                  <p>
+                    {pdfOptions.termsAndConditions?.trim() ||
+                      work.profile.menuTerms?.trim()}
+                  </p>
+                </div>
+              ) : null}
+
+              <div className={styles.paperFooter}>
+                {pdfOptions.footerNote ||
+                  'Crafted with care for a memorable celebration'}
+              </div>
             </div>
           </aside>
         </div>
@@ -1245,7 +1326,7 @@ export default function MenuStudioPage() {
               </div>
 
               <div className={styles.pdfEditorPreview}>
-                <span>PREVIEW SETTINGS</span>
+                <span>LIVE PREVIEW</span>
                 <b>{pdfOptions.menuTitle || 'Curated Event Menu'}</b>
                 <small>
                   {pdfOptions.tagline ||
@@ -1256,6 +1337,18 @@ export default function MenuStudioPage() {
                   {pdfOptions.footerNote ||
                     'Crafted with care for a memorable celebration'}
                 </p>
+                {pdfOptions.showTerms !== false &&
+                (
+                  pdfOptions.termsAndConditions?.trim() ||
+                  work.profile.menuTerms?.trim()
+                ) ? (
+                  <em>
+                    Terms: {
+                      pdfOptions.termsAndConditions?.trim() ||
+                      work.profile.menuTerms?.trim()
+                    }
+                  </em>
+                ) : null}
               </div>
 
               <div className={styles.pickerFooter}>
