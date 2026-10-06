@@ -531,12 +531,9 @@ export default function AppShell({
       return;
     }
 
-    void loadActiveEventOptions(current);
-
     /*
-     * Existing browsers from the former SaaS model may not yet
-     * have the owner/master-data cookie. Upgrade only the retained
-     * workspace; reject stale secondary-account sessions.
+     * Validate the cookie in the background, but do not make the user wait
+     * for history/draft queries before the workspace is usable.
      */
     void fetch(
       '/api/client/session',
@@ -557,6 +554,21 @@ export default function AppShell({
       .catch(() => {
         // Keep the local workspace available during a temporary network issue.
       });
+
+    const loadOptions = () => {
+      void loadActiveEventOptions(current);
+    };
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(loadOptions, {
+        timeout: 1200,
+      });
+
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timer = window.setTimeout(loadOptions, 250);
+    return () => window.clearTimeout(timer);
   }, [router]);
 
   useEffect(() => {
