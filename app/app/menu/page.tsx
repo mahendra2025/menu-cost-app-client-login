@@ -128,6 +128,7 @@ export default function MenuStudioPage() {
   const [work, setWork] = useState<WorkState | null>(null);
   const [activeFunctionKey, setActiveFunctionKey] = useState('');
   const [selectedStationKey, setSelectedStationKey] = useState('welcome');
+  const [stationOrder, setStationOrder] = useState<string[]>([]);
   const [hideEmpty, setHideEmpty] = useState(false);
   const [stationSearch, setStationSearch] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
@@ -158,6 +159,25 @@ export default function MenuStudioPage() {
     if (!current) return;
     const loaded = loadWork(current.tenantId);
     setWork(loaded);
+
+    const savedStationOrder = window.localStorage.getItem(
+      `menu-studio-station-order:${current.tenantId}`,
+    );
+
+    if (savedStationOrder) {
+      try {
+        const parsed = JSON.parse(savedStationOrder);
+        if (Array.isArray(parsed)) {
+          setStationOrder(
+            parsed
+              .map((value) => String(value || '').trim())
+              .filter(Boolean),
+          );
+        }
+      } catch {
+        // Use default order if an older saved preference is invalid.
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -294,27 +314,49 @@ export default function MenuStudioPage() {
     return [...known, ...discovered];
   }, [customStations, work]);
 
-  useEffect(() => {
-    if (!stations.some((station) => station.key === selectedStationKey)) {
-      setSelectedStationKey(stations[0]?.key || 'welcome');
-    }
-  }, [selectedStationKey, stations]);
+  const orderedStations = useMemo(() => {
+    if (!stationOrder.length) return stations;
 
-  const activeStation = stations.find((station) => station.key === selectedStationKey) || stations[0];
+    const rank = new Map(
+      stationOrder.map((key, index) => [key, index]),
+    );
+
+    return [...stations].sort((left, right) => {
+      const leftRank = rank.get(left.key);
+      const rightRank = rank.get(right.key);
+
+      if (leftRank === undefined && rightRank === undefined) {
+        return stations.indexOf(left) - stations.indexOf(right);
+      }
+      if (leftRank === undefined) return 1;
+      if (rightRank === undefined) return -1;
+      return leftRank - rightRank;
+    });
+  }, [stationOrder, stations]);
+
+  useEffect(() => {
+    if (!orderedStations.some((station) => station.key === selectedStationKey)) {
+      setSelectedStationKey(orderedStations[0]?.key || 'welcome');
+    }
+  }, [orderedStations, selectedStationKey]);
+
+  const activeStation =
+    orderedStations.find((station) => station.key === selectedStationKey) ||
+    orderedStations[0];
 
   const stationCounts = useMemo(() => {
     const counts = new Map<string, number>();
     if (!activeFunction) return counts;
 
     activeFunction.items.forEach((item) => {
-      const station = stationForItem(item, stations);
+      const station = stationForItem(item, orderedStations);
       counts.set(station.key, (counts.get(station.key) || 0) + 1);
     });
 
     return counts;
-  }, [activeFunction, stations]);
+  }, [activeFunction, orderedStations]);
 
-  const visibleStations = stations.filter((station) => {
+  const visibleStations = orderedStations.filter((station) => {
     const matchesSearch = norm(station.label).includes(norm(stationSearch));
     const hasItems = (stationCounts.get(station.key) || 0) > 0;
     return matchesSearch && (!hideEmpty || hasItems);
@@ -395,6 +437,34 @@ export default function MenuStudioPage() {
       ...work,
       menu: work.menu.filter((item) => item.id !== itemId),
     });
+  }
+
+  function moveStation(stationKey: string, direction: -1 | 1) {
+    if (!session) return;
+
+    const currentKeys = orderedStations.map((station) => station.key);
+    const currentIndex = currentKeys.indexOf(stationKey);
+    const targetIndex = currentIndex + direction;
+
+    if (
+      currentIndex < 0 ||
+      targetIndex < 0 ||
+      targetIndex >= currentKeys.length
+    ) return;
+
+    const next = [...currentKeys];
+    [next[currentIndex], next[targetIndex]] = [
+      next[targetIndex],
+      next[currentIndex],
+    ];
+
+    setStationOrder(next);
+    window.localStorage.setItem(
+      `menu-studio-station-order:${session.tenantId}`,
+      JSON.stringify(next),
+    );
+    setSaveStatus('Station order saved');
+    window.setTimeout(() => setSaveStatus(''), 1400);
   }
 
   function moveDish(itemId: string, direction: -1 | 1) {
@@ -574,6 +644,21 @@ export default function MenuStudioPage() {
       categories: [label],
     };
     setCustomStations((current) => [...current, next]);
+    setStationOrder((current) => {
+      const base = current.length
+        ? current
+        : orderedStations.map((station) => station.key);
+      const nextOrder = [...base.filter((key) => key !== next.key), next.key];
+
+      if (session) {
+        window.localStorage.setItem(
+          `menu-studio-station-order:${session.tenantId}`,
+          JSON.stringify(nextOrder),
+        );
+      }
+
+      return nextOrder;
+    });
     setSelectedStationKey(next.key);
     setDishCategory(label);
     setStationName('');
@@ -638,7 +723,12 @@ export default function MenuStudioPage() {
             <button
               type="button"
               className={styles.pdfButton}
-              onClick={() => downloadMenuCreationPdf(work)}
+              onClick={() =>
+                downloadMenuCreationPdf(
+                  work,
+                  orderedStations.flatMap((station) => station.categories),
+                )
+              }
               disabled={!work.menu.length}
             >
               Download PDF
@@ -730,21 +820,53 @@ export default function MenuStudioPage() {
             <div className={styles.stationList}>
               {visibleStations.map((station) => {
                 const count = stationCounts.get(station.key) || 0;
+                const stationIndex = orderedStations.findIndex(
+                  (item) => item.key === station.key,
+                );
+
                 return (
-                  <button
+                  <div
                     key={station.key}
-                    type="button"
-                    className={station.key === activeStation?.key ? styles.stationActive : styles.station}
-                    onClick={() => {
-                      setSelectedStationKey(station.key);
-                      setDishCategory(station.categories[0] || station.label);
-                    }}
+                    className={
+                      station.key === activeStation?.key
+                        ? styles.stationRowActive
+                        : styles.stationRow
+                    }
                   >
-                    <span className={styles.dragDots}>⋮⋮</span>
-                    <b>{station.label}</b>
-                    <small>{count || ''}</small>
-                    <span className={styles.chevron}>›</span>
-                  </button>
+                    <button
+                      type="button"
+                      className={styles.stationSelect}
+                      onClick={() => {
+                        setSelectedStationKey(station.key);
+                        setDishCategory(station.categories[0] || station.label);
+                      }}
+                    >
+                      <span className={styles.dragDots}>⋮⋮</span>
+                      <b>{station.label}</b>
+                      <small>{count || ''}</small>
+                    </button>
+
+                    <div className={styles.stationMoveActions}>
+                      <button
+                        type="button"
+                        disabled={stationIndex <= 0}
+                        onClick={() => moveStation(station.key, -1)}
+                        aria-label={`Move ${station.label} up`}
+                        title="Move station up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        disabled={stationIndex === orderedStations.length - 1}
+                        onClick={() => moveStation(station.key, 1)}
+                        aria-label={`Move ${station.label} down`}
+                        title="Move station down"
+                      >
+                        ↓
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -883,7 +1005,7 @@ export default function MenuStudioPage() {
               <div className={styles.previewFunction}>{activeFunction?.mealLabel || 'Event Menu'}</div>
 
               <div className={styles.previewStations}>
-                {stations.map((station) => {
+                {orderedStations.map((station) => {
                   const items = activeFunction?.items.filter((item) => categoryInStation(item.category, station)) || [];
                   if (!items.length) return null;
                   return (

@@ -158,7 +158,10 @@ function groupFunctions(work: WorkState): FunctionMenu[] {
   return Array.from(groups.values());
 }
 
-function stationRows(items: MenuItem[]) {
+function stationRows(
+  items: MenuItem[],
+  categoryOrder: string[] = [],
+) {
   const groups = new Map<
     string,
     {
@@ -180,19 +183,36 @@ function stationRows(items: MenuItem[]) {
     });
   });
 
-  const order = new Map(
+  const defaultOrder = new Map(
     MENU_STATIONS.map((station, index) => [
       station.key,
       index,
     ]),
   );
 
+  const customCategoryOrder = new Map(
+    categoryOrder.map((category, index) => [
+      normalize(category),
+      index,
+    ]),
+  );
+
+  const stationRank = (station: MenuStation) => {
+    const customRanks = station.categories
+      .map((category) => customCategoryOrder.get(normalize(category)))
+      .filter((value): value is number => value !== undefined);
+
+    if (customRanks.length) {
+      return Math.min(...customRanks);
+    }
+
+    return 1000 + (defaultOrder.get(station.key) ?? 999);
+  };
+
   return Array.from(groups.values())
     .sort((left, right) => {
-      const leftOrder =
-        order.get(left.station.key) ?? 999;
-      const rightOrder =
-        order.get(right.station.key) ?? 999;
+      const leftOrder = stationRank(left.station);
+      const rightOrder = stationRank(right.station);
 
       return (
         leftOrder - rightOrder ||
@@ -256,6 +276,7 @@ function addFooter(
 
 export function downloadMenuCreationPdf(
   work: WorkState,
+  categoryOrder: string[] = [],
 ) {
   const doc = new jsPDF({
     unit: 'mm',
@@ -547,7 +568,10 @@ export function downloadMenuCreationPdf(
     );
   } else {
     functions.forEach((fn, index) => {
-      const rows = stationRows(fn.items);
+      const rows = stationRows(
+        fn.items,
+        categoryOrder,
+      );
 
       if (y > 226) {
         doc.addPage();
