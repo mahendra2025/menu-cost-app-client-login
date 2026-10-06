@@ -1,7 +1,8 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { SESSION_KEY } from '../../lib/store';
 import styles from './page.module.css';
 
@@ -17,11 +18,17 @@ function BrandMark() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    router.prefetch('/app/event?resume=1');
+    router.prefetch('/admin/dishes');
+  }, [router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -53,7 +60,7 @@ export default function LoginPage() {
           }),
         );
 
-        window.location.assign('/admin/dishes');
+        router.replace('/admin/dishes');
         return;
       }
 
@@ -68,7 +75,7 @@ export default function LoginPage() {
         }),
       );
 
-      window.location.assign('/app');
+      router.replace('/app/event?resume=1');
     } catch {
       setError('We could not reach the server. Check your connection and try again.');
     } finally {
