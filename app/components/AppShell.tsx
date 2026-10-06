@@ -15,7 +15,7 @@ import type { Session, WorkState } from '../../lib/types';
 import { useLanguage } from './LanguageProvider';
 
 type NavIcon = 'profile' | 'clients' | 'dishes' | 'ingredients';
-type ClientNavIcon = 'event' | 'cost' | 'grocery' | 'team' | 'expenses' | 'pricing' | 'quotation' | 'history' | 'ingredients' | 'profile' | 'more';
+type ClientNavIcon = 'event' | 'cost' | 'grocery' | 'team' | 'expenses' | 'pricing' | 'quotation' | 'history' | 'dishes' | 'ingredients' | 'profile' | 'more';
 
 type ClientFlowStep = {
   step: number;
@@ -150,6 +150,7 @@ const clientWorkflowNav = [
 
 const clientWorkspaceNav = [
   { href: '/app/event-planning', match: '/app/event-planning', label: 'Event Planning', description: 'Vendors, agencies and readiness', icon: 'event' as ClientNavIcon },
+  { href: '/app/dish-master', match: '/app/dish-master', label: 'My Dish Master', description: 'My dishes, rates and categories', icon: 'dishes' as ClientNavIcon },
   { href: '/app/history', match: '/app/history', label: 'History', description: 'Saved events', icon: 'history' as ClientNavIcon },
   { href: '/app/vendors', match: '/app/vendors', label: 'Vendors & Agencies', description: 'Supplier and rate master', icon: 'team' as ClientNavIcon },
   { href: '/app/equipment', match: '/app/equipment', label: 'Equipment Master', description: 'Photo catalog and availability', icon: 'expenses' as ClientNavIcon },
@@ -224,6 +225,12 @@ function ClientNavIconMark({ icon }: { icon: ClientNavIcon }) {
       <>
         <path d="M4 12a8 8 0 1 0 2.3-5.7L4 8.6" />
         <path d="M4 4v4.6h4.6M12 8v5l3 2" />
+      </>
+    ),
+    dishes: (
+      <>
+        <path d="M4 16.5h16M6.5 16.5a5.5 5.5 0 0 1 11 0M12 8V5.5" />
+        <path d="M3 20h18" />
       </>
     ),
     ingredients: (
