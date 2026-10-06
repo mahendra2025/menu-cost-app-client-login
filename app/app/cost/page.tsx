@@ -1445,7 +1445,7 @@ export default function CostPage() {
               <h2 id="function-cost-title">Function-wise food cost</h2>
               <p>Each function uses its own guest count and menu.</p>
             </div>
-            <button type="button" onClick={() => router.push('/app/menu')}>Edit event menu</button>
+            <button type="button" onClick={() => router.push('/app/event?resume=1')}>Edit event menu</button>
           </div>
 
           <div className="cost-function-list">
@@ -1499,7 +1499,7 @@ export default function CostPage() {
                 className="ghost-button"
                 type="button"
                 onClick={() =>
-                  router.push('/app/menu')
+                  router.push('/app/event?resume=1')
                 }
               >
                 + Import Function
@@ -1794,7 +1794,7 @@ export default function CostPage() {
                 <h3>Add dishes to calculate food cost</h3>
                 <p>Paste or type the event menu, review the detected dishes, then return here for the complete cost.</p>
               </div>
-              <button className="primary-button" type="button" onClick={() => router.push('/app/menu')}>Open Event</button>
+              <button className="primary-button" type="button" onClick={() => router.push('/app/event?resume=1')}>Open Event</button>
             </div>
           ) : (
             <>
@@ -1824,7 +1824,7 @@ export default function CostPage() {
                     {dishCategories.map((category) => <option key={category} value={category}>{category}</option>)}
                   </select>
                 </div>
-                <button className="ghost-button" type="button" onClick={() => router.push('/app/menu')}>Edit menu</button>
+                <button className="ghost-button" type="button" onClick={() => router.push('/app/event?resume=1')}>Edit menu</button>
               </div>
 
               <div className="dish-portion-note dish-cost-index-guide">
@@ -2558,7 +2558,7 @@ export default function CostPage() {
           <button
             className="ghost-button"
             type="button"
-            onClick={() => router.push('/app/menu')}
+            onClick={() => router.push('/app/event?resume=1')}
           >
             Back to Event & Menu
           </button>
