@@ -1418,16 +1418,27 @@
 }
 
 
-/* Station ordering controls */
+/* Station drag-and-drop ordering */
 .stationRow,
 .stationRowActive {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 5px;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 4px;
   align-items: center;
   min-height: 44px;
-  padding: 3px 4px 3px 2px;
+  padding: 3px 5px 3px 3px;
+  border: 1px solid transparent;
   border-radius: 10px;
+  transition:
+    opacity .14s ease,
+    transform .14s ease,
+    border-color .14s ease,
+    background .14s ease,
+    box-shadow .14s ease;
+}
+
+.stationRow {
+  background: transparent;
 }
 
 .stationRow:hover {
@@ -1438,9 +1449,39 @@
   background: linear-gradient(90deg, #fbefd7, #fff9ec);
 }
 
+.stationRowDragging {
+  opacity: .45;
+  transform: scale(.985);
+}
+
+.stationRowDropTarget {
+  border-color: rgba(195, 141, 39, .72);
+  background: #fff8e8;
+  box-shadow: 0 0 0 2px rgba(195, 141, 39, .11);
+}
+
+.stationDragHandle {
+  display: grid;
+  width: 24px;
+  height: 32px;
+  place-items: center;
+  color: #9da4ae;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -3px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.stationRow:active .stationDragHandle,
+.stationRowActive:active .stationDragHandle {
+  cursor: grabbing;
+}
+
 .stationSelect {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   min-width: 0;
@@ -1467,56 +1508,22 @@
   font-weight: 800;
 }
 
-.stationMoveActions {
-  display: grid;
-  grid-template-columns: 26px 26px;
-  gap: 3px;
-}
-
-.stationMoveActions button {
-  display: grid;
-  width: 26px;
-  height: 28px;
-  place-items: center;
-  padding: 0;
-  border: 1px solid #e1e5ea;
-  border-radius: 7px;
-  color: #69717c;
-  background: rgba(255,255,255,.82);
-  font-size: 11px;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.stationMoveActions button:hover:not(:disabled) {
-  border-color: rgba(195, 141, 39, .55);
-  color: #8b5d0e;
-  background: #fffaf0;
-}
-
-.stationMoveActions button:disabled {
-  cursor: not-allowed;
-  opacity: .25;
-}
-
 @media (max-width: 860px) {
+  .stationList {
+    display: grid;
+    gap: 3px;
+    overflow: visible;
+  }
+
   .stationRow,
   .stationRowActive {
-    min-width: max-content;
-    grid-template-columns: auto auto;
-    flex: 0 0 auto;
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: 28px minmax(0, 1fr);
   }
 
-  .stationSelect {
-    grid-template-columns: minmax(0, auto) auto;
-    padding: 0 8px;
-  }
-
-  .stationSelect .dragDots {
-    display: none;
-  }
-
-  .stationMoveActions {
-    grid-template-columns: 25px 25px;
+  .stationDragHandle {
+    width: 26px;
+    height: 34px;
   }
 }

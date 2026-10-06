@@ -129,6 +129,8 @@ export default function MenuStudioPage() {
   const [activeFunctionKey, setActiveFunctionKey] = useState('');
   const [selectedStationKey, setSelectedStationKey] = useState('welcome');
   const [stationOrder, setStationOrder] = useState<string[]>([]);
+  const [draggingStationKey, setDraggingStationKey] = useState('');
+  const [stationDropTargetKey, setStationDropTargetKey] = useState('');
   const [hideEmpty, setHideEmpty] = useState(false);
   const [stationSearch, setStationSearch] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
@@ -439,24 +441,8 @@ export default function MenuStudioPage() {
     });
   }
 
-  function moveStation(stationKey: string, direction: -1 | 1) {
+  function persistStationOrder(next: string[]) {
     if (!session) return;
-
-    const currentKeys = orderedStations.map((station) => station.key);
-    const currentIndex = currentKeys.indexOf(stationKey);
-    const targetIndex = currentIndex + direction;
-
-    if (
-      currentIndex < 0 ||
-      targetIndex < 0 ||
-      targetIndex >= currentKeys.length
-    ) return;
-
-    const next = [...currentKeys];
-    [next[currentIndex], next[targetIndex]] = [
-      next[targetIndex],
-      next[currentIndex],
-    ];
 
     setStationOrder(next);
     window.localStorage.setItem(
@@ -465,6 +451,26 @@ export default function MenuStudioPage() {
     );
     setSaveStatus('Station order saved');
     window.setTimeout(() => setSaveStatus(''), 1400);
+  }
+
+  function moveStationByDrop(draggedKey: string, targetKey: string) {
+    if (
+      !draggedKey ||
+      !targetKey ||
+      draggedKey === targetKey
+    ) return;
+
+    const currentKeys = orderedStations.map((station) => station.key);
+    const fromIndex = currentKeys.indexOf(draggedKey);
+    const toIndex = currentKeys.indexOf(targetKey);
+
+    if (fromIndex < 0 || toIndex < 0) return;
+
+    const next = [...currentKeys];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+
+    persistStationOrder(next);
   }
 
   function moveDish(itemId: string, direction: -1 | 1) {
@@ -820,19 +826,66 @@ export default function MenuStudioPage() {
             <div className={styles.stationList}>
               {visibleStations.map((station) => {
                 const count = stationCounts.get(station.key) || 0;
-                const stationIndex = orderedStations.findIndex(
-                  (item) => item.key === station.key,
-                );
+                const isDragging = draggingStationKey === station.key;
+                const isDropTarget =
+                  stationDropTargetKey === station.key &&
+                  draggingStationKey !== station.key;
+
+                const rowClassName = [
+                  station.key === activeStation?.key
+                    ? styles.stationRowActive
+                    : styles.stationRow,
+                  isDragging ? styles.stationRowDragging : '',
+                  isDropTarget ? styles.stationRowDropTarget : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ');
 
                 return (
                   <div
                     key={station.key}
-                    className={
-                      station.key === activeStation?.key
-                        ? styles.stationRowActive
-                        : styles.stationRow
-                    }
+                    className={rowClassName}
+                    draggable
+                    onDragStart={(event) => {
+                      setDraggingStationKey(station.key);
+                      setStationDropTargetKey('');
+                      event.dataTransfer.effectAllowed = 'move';
+                      event.dataTransfer.setData(
+                        'text/plain',
+                        station.key,
+                      );
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = 'move';
+
+                      if (draggingStationKey !== station.key) {
+                        setStationDropTargetKey(station.key);
+                      }
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const draggedKey =
+                        event.dataTransfer.getData('text/plain') ||
+                        draggingStationKey;
+
+                      moveStationByDrop(draggedKey, station.key);
+                      setDraggingStationKey('');
+                      setStationDropTargetKey('');
+                    }}
+                    onDragEnd={() => {
+                      setDraggingStationKey('');
+                      setStationDropTargetKey('');
+                    }}
                   >
+                    <span
+                      className={styles.stationDragHandle}
+                      aria-hidden="true"
+                      title="Drag station"
+                    >
+                      ⋮⋮
+                    </span>
+
                     <button
                       type="button"
                       className={styles.stationSelect}
@@ -841,31 +894,9 @@ export default function MenuStudioPage() {
                         setDishCategory(station.categories[0] || station.label);
                       }}
                     >
-                      <span className={styles.dragDots}>⋮⋮</span>
                       <b>{station.label}</b>
                       <small>{count || ''}</small>
                     </button>
-
-                    <div className={styles.stationMoveActions}>
-                      <button
-                        type="button"
-                        disabled={stationIndex <= 0}
-                        onClick={() => moveStation(station.key, -1)}
-                        aria-label={`Move ${station.label} up`}
-                        title="Move station up"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        disabled={stationIndex === orderedStations.length - 1}
-                        onClick={() => moveStation(station.key, 1)}
-                        aria-label={`Move ${station.label} down`}
-                        title="Move station down"
-                      >
-                        ↓
-                      </button>
-                    </div>
                   </div>
                 );
               })}
