@@ -266,14 +266,18 @@ export default function MyDishMasterPage() {
               )
           : [];
 
-      const categories =
+      const categories:
+        string[] =
         Array.isArray(
           data.categories,
         )
-          ? data.categories
+          ? (
+              data.categories as
+                unknown[]
+            )
               .map(
                 (
-                  value: unknown,
+                  value,
                 ) =>
                   cleanText(
                     String(
@@ -282,17 +286,28 @@ export default function MyDishMasterPage() {
                     60,
                   ),
               )
-              .filter(Boolean)
+              .filter(
+                (
+                  value,
+                ): value is string =>
+                  Boolean(
+                    value,
+                  ),
+              )
           : [];
 
-      const personalCategories =
+      const personalCategories:
+        string[] =
         Array.isArray(
           data.personalCategories,
         )
-          ? data.personalCategories
+          ? (
+              data.personalCategories as
+                unknown[]
+            )
               .map(
                 (
-                  value: unknown,
+                  value,
                 ) =>
                   cleanText(
                     String(
@@ -301,7 +316,14 @@ export default function MyDishMasterPage() {
                     60,
                   ),
               )
-              .filter(Boolean)
+              .filter(
+                (
+                  value,
+                ): value is string =>
+                  Boolean(
+                    value,
+                  ),
+              )
           : [];
 
       setDishes(
