@@ -13,9 +13,8 @@ import {
 } from '../../../lib/store';
 import type { MenuItem, Session, WorkState } from '../../../lib/types';
 import { CATEGORIES } from '../../../lib/menuCategories';
-import {
-  downloadMenuCreationPdf,
-  type MenuCreationPdfOptions,
+import type {
+  MenuCreationPdfOptions,
 } from '../../../lib/menuCreationPdf';
 
 import styles from './page.module.css';
@@ -727,14 +726,196 @@ export default function MenuStudioPage() {
     window.setTimeout(() => setSaveStatus(''), 1400);
   }
 
-  function downloadEditedPdf() {
+  async function downloadCurrentPreviewPdf() {
     if (!work) return;
 
-    downloadMenuCreationPdf(
-      work,
-      orderedStations.flatMap((station) => station.categories),
-      pdfOptions,
-    );
+    const preview =
+      document.getElementById(
+        'menu-live-preview-paper',
+      );
+
+    if (!preview) {
+      setSaveStatus('Preview not ready');
+      return;
+    }
+
+    setSaveStatus('Preparing PDF…');
+
+    try {
+      if ('fonts' in document) {
+        await document.fonts.ready;
+      }
+
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => resolve());
+      });
+
+      const [
+        { default: html2canvas },
+        { jsPDF },
+      ] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+
+      const canvas =
+        await html2canvas(preview, {
+          scale: 2,
+          backgroundColor: '#fffdf7',
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: -window.scrollY,
+          windowWidth:
+            document.documentElement.clientWidth,
+        });
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+      });
+
+      const pageWidthMm = 210;
+      const pageHeightMm = 297;
+      const marginMm = 8;
+      const printableWidthMm =
+        pageWidthMm - marginMm * 2;
+      const printableHeightMm =
+        pageHeightMm - marginMm * 2;
+      const pixelsPerMm =
+        canvas.width / printableWidthMm;
+      const pageHeightPx =
+        Math.max(
+          1,
+          Math.floor(
+            printableHeightMm *
+              pixelsPerMm,
+          ),
+        );
+
+      let sourceY = 0;
+      let pageIndex = 0;
+
+      while (sourceY < canvas.height) {
+        const sliceHeight =
+          Math.min(
+            pageHeightPx,
+            canvas.height - sourceY,
+          );
+
+        const pageCanvas =
+          document.createElement('canvas');
+
+        pageCanvas.width =
+          canvas.width;
+        pageCanvas.height =
+          sliceHeight;
+
+        const context =
+          pageCanvas.getContext('2d');
+
+        if (!context) {
+          throw new Error(
+            'Could not render PDF preview.',
+          );
+        }
+
+        context.fillStyle =
+          '#fffdf7';
+        context.fillRect(
+          0,
+          0,
+          pageCanvas.width,
+          pageCanvas.height,
+        );
+
+        context.drawImage(
+          canvas,
+          0,
+          sourceY,
+          canvas.width,
+          sliceHeight,
+          0,
+          0,
+          canvas.width,
+          sliceHeight,
+        );
+
+        const imageData =
+          pageCanvas.toDataURL(
+            'image/jpeg',
+            0.94,
+          );
+
+        const imageHeightMm =
+          sliceHeight /
+          pixelsPerMm;
+
+        if (pageIndex > 0) {
+          pdf.addPage();
+        }
+
+        pdf.addImage(
+          imageData,
+          'JPEG',
+          marginMm,
+          marginMm,
+          printableWidthMm,
+          imageHeightMm,
+          undefined,
+          'FAST',
+        );
+
+        sourceY +=
+          sliceHeight;
+        pageIndex += 1;
+      }
+
+      const fileBase =
+        (
+          work.event.eventName ||
+          work.event.clientName ||
+          'event-menu'
+        )
+          .trim()
+          .toLowerCase()
+          .replace(
+            /[^a-z0-9]+/g,
+            '-',
+          )
+          .replace(
+            /^-+|-+$/g,
+            '',
+          )
+          .slice(0, 45) ||
+        'event-menu';
+
+      pdf.save(
+        `${fileBase}-menu.pdf`,
+      );
+
+      setSaveStatus(
+        'PDF downloaded from current preview',
+      );
+      window.setTimeout(
+        () => setSaveStatus(''),
+        1800,
+      );
+    } catch (error) {
+      console.error(
+        'Menu preview PDF:',
+        error,
+      );
+      setSaveStatus(
+        'Could not create preview PDF',
+      );
+      window.setTimeout(
+        () => setSaveStatus(''),
+        2200,
+      );
+    }
   }
 
   async function saveNow() {
@@ -803,10 +984,10 @@ export default function MenuStudioPage() {
             <button
               type="button"
               className={styles.pdfButton}
-              onClick={downloadEditedPdf}
+              onClick={() => void downloadCurrentPreviewPdf()}
               disabled={!work.menu.length}
             >
-              Download PDF
+              Download Current Preview
             </button>
           </div>
         </header>
@@ -1085,7 +1266,10 @@ export default function MenuStudioPage() {
               <small>{activeFunction?.items.length || 0} dishes</small>
             </div>
 
-            <div className={styles.menuPaper}>
+            <div
+              className={styles.menuPaper}
+              id="menu-live-preview-paper"
+            >
               <div className={styles.menuOrnament}>✦</div>
 
               <div className={styles.brand}>
@@ -1224,7 +1408,7 @@ export default function MenuStudioPage() {
                 <div>
                   <span className={styles.modalEyebrow}>CLIENT PDF</span>
                   <h2>Edit PDF</h2>
-                  <p>Change what your client sees before downloading.</p>
+                  <p>What you see in Live Menu Preview is exactly what will be downloaded.</p>
                 </div>
                 <button
                   type="button"
@@ -1390,7 +1574,7 @@ export default function MenuStudioPage() {
                     className={styles.saveButton}
                     onClick={() => {
                       savePdfOptions();
-                      downloadEditedPdf();
+                      void downloadCurrentPreviewPdf();
                     }}
                   >
                     Download PDF
