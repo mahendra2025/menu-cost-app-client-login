@@ -35175,3 +35175,132 @@ body.client-sheet-open {
 .client-theme .client-ui-system-v2 .dish-vendor-rate-control.mobile {
   margin-top: 10px;
 }
+
+
+/* User-side permanent dish categories ----------------------------------- */
+.event-category-manager {
+  display: grid;
+  gap: 10px;
+}
+
+.event-my-categories {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(74, 156, 255, .14);
+  border-radius: 10px;
+  background: rgba(74, 156, 255, .025);
+}
+
+.event-my-categories-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.event-my-categories-head b,
+.event-my-categories-head small {
+  display: block;
+}
+
+.event-my-categories-head b {
+  color: #dceaff;
+  font-size: 10px;
+}
+
+.event-my-categories-head small {
+  margin-top: 2px;
+  color: #71849a;
+  font-size: 8px;
+}
+
+.event-my-categories-head strong {
+  min-width: 28px;
+  padding: 5px 7px;
+  border-radius: 999px;
+  color: #9bc8fb;
+  background: rgba(74, 156, 255, .08);
+  font-size: 8px;
+  text-align: center;
+}
+
+.event-my-category-list {
+  display: grid;
+  gap: 6px;
+}
+
+.event-my-category-row {
+  min-width: 0;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid rgba(148, 163, 184, .10);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .018);
+}
+
+.event-my-category-row > span {
+  min-width: 0;
+  flex: 1;
+}
+
+.event-my-category-row > span b,
+.event-my-category-row > span small {
+  display: block;
+}
+
+.event-my-category-row > span b {
+  overflow: hidden;
+  color: #dce5ef;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-my-category-row > span small {
+  margin-top: 2px;
+  color: #697b91;
+  font-size: 7px;
+}
+
+.event-my-category-row > .input {
+  min-width: 0;
+  flex: 1;
+}
+
+.event-my-category-row > .secondary-button,
+.event-my-category-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 8px;
+}
+
+.event-my-category-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 620px) {
+  .event-my-category-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .event-my-category-row > .input {
+    grid-column: 1 / -1;
+  }
+
+  .event-my-category-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .event-my-category-actions button {
+    width: 100%;
+  }
+}
