@@ -27512,6 +27512,78 @@ body.client-sheet-open {
   border-color: rgba(74, 156, 255, .20);
 }
 
+.event-dish-picker-results-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.event-dish-picker-results-actions > button {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid rgba(148, 163, 184, .11);
+  border-radius: 8px;
+  color: #8fa0b4;
+  background: rgba(255, 255, 255, .018);
+  font: inherit;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.event-dish-picker-results-actions > button:first-child {
+  color: #a9cffb;
+  border-color: rgba(74, 156, 255, .22);
+  background: rgba(74, 156, 255, .055);
+}
+
+.event-dish-picker-results-actions > button:hover {
+  color: #dfe9f4;
+  border-color: rgba(74, 156, 255, .30);
+}
+
+.event-personal-dish-editor {
+  display: grid;
+  grid-template-columns: minmax(170px, 1.3fr) minmax(140px, .9fr) minmax(120px, .65fr) auto;
+  gap: 8px;
+  align-items: end;
+  padding: 11px;
+  border: 1px solid rgba(74, 156, 255, .20);
+  border-radius: 11px;
+  background: rgba(74, 156, 255, .045);
+}
+
+.event-personal-dish-editor > div:first-child {
+  grid-column: 1 / -1;
+}
+
+.event-personal-dish-editor b,
+.event-personal-dish-editor small {
+  display: block;
+}
+
+.event-personal-dish-editor b {
+  color: #dcecff;
+  font-size: 10px;
+}
+
+.event-personal-dish-editor small {
+  margin-top: 2px;
+  color: #788ba1;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.event-personal-dish-editor-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.event-personal-dish-editor-actions button {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
 .event-dish-picker-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
@@ -27840,6 +27912,20 @@ body.client-sheet-open {
 
   .event-dish-picker-results-head {
     align-items: flex-start;
+  }
+
+  .event-dish-picker-results-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .event-personal-dish-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .event-personal-dish-editor-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .event-dish-picker-card {
