@@ -690,26 +690,50 @@ export async function GET() {
         ),
       );
 
+    const categories =
+      Array.from(
+        new Map(
+          [
+            ...(
+              Array.isArray(
+                categoryCatalog?.categories,
+              )
+                ? categoryCatalog.categories
+                : []
+            ),
+            ...catalogItems.map(
+              (item) =>
+                item.category,
+            ),
+          ]
+            .map((category) =>
+              String(
+                category || '',
+              )
+                .replace(/\s+/g, ' ')
+                .trim(),
+            )
+            .filter(Boolean)
+            .map(
+              (category) => [
+                category.toLocaleLowerCase(
+                  'en-IN',
+                ),
+                category,
+              ],
+            ),
+        ).values(),
+      ).sort(
+        (left, right) =>
+          left.localeCompare(
+            right,
+          ),
+      );
+
     return NextResponse.json({
       items:
         catalogItems,
-      categories: Array.isArray(
-        categoryCatalog?.categories,
-      )
-        ? categoryCatalog.categories
-            .map((category) =>
-              String(category || '').trim(),
-            )
-            .filter(Boolean)
-        : Array.from(
-            new Set(
-              catalogItems
-                .map((item) =>
-                  String(item.category || '').trim(),
-                )
-                .filter(Boolean),
-            ),
-          ),
+      categories,
       personalized:
         Boolean(
           tenantId &&
