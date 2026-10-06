@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  type ChangeEvent,
   useEffect,
   useState,
 } from 'react';
@@ -17,6 +18,7 @@ import {
   clearWork,
   getSession,
   loadWork,
+  saveBusinessProfile,
   saveWork,
 } from '../../../lib/store';
 import type {
@@ -124,6 +126,11 @@ export default function ProfilePage() {
       session.tenantId,
       next,
     );
+
+    saveBusinessProfile(
+      session.tenantId,
+      next.profile,
+    );
   }
 
   function patchProfile(
@@ -139,6 +146,59 @@ export default function ProfilePage() {
       },
     });
     setMessage('');
+  }
+
+  function handleLogoUpload(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file =
+      event.target.files?.[0];
+
+    if (!file) return;
+
+    if (
+      ![
+        'image/png',
+        'image/jpeg',
+        'image/webp',
+      ].includes(file.type)
+    ) {
+      setMessage(
+        'Logo must be PNG, JPG or WebP.',
+      );
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 500 * 1024) {
+      setMessage(
+        'Logo must be smaller than 500 KB.',
+      );
+      event.target.value = '';
+      return;
+    }
+
+    const reader =
+      new FileReader();
+
+    reader.onload = () => {
+      const logoUrl =
+        typeof reader.result === 'string'
+          ? reader.result
+          : '';
+
+      if (logoUrl) {
+        patchProfile({
+          logoUrl,
+        });
+        setMessage(
+          'Logo added. Save Business Profile to confirm.',
+        );
+      }
+    };
+
+    reader.readAsDataURL(file);
+    event.target.value = '';
   }
 
   function saveProfile() {
@@ -307,6 +367,8 @@ export default function ProfilePage() {
     work.profile.email,
     work.profile.address,
     work.profile.gstin,
+    work.profile.fssai,
+    work.profile.logoUrl,
   ].filter(
     (value) =>
       Boolean(
@@ -367,8 +429,8 @@ export default function ProfilePage() {
 
               <article>
                 <span>Client identity</span>
-                <b>{optionalIdentityCount}/3</b>
-                <small>Email · Address · GSTIN</small>
+                <b>{optionalIdentityCount}/5</b>
+                <small>Logo · Address · GSTIN · FSSAI</small>
               </article>
             </div>
           </div>
@@ -389,7 +451,17 @@ export default function ProfilePage() {
             </div>
 
             <div className="profile-brand-preview">
-              <div className="profile-brand-mark">{logoText}</div>
+              <div className="profile-brand-mark">
+                {work.profile.logoUrl ? (
+                  <img
+                    src={work.profile.logoUrl}
+                    alt=""
+                    className="profile-brand-logo"
+                  />
+                ) : (
+                  logoText
+                )}
+              </div>
               <div>
                 <b>{work.profile.businessName || 'Business Name'}</b>
                 <span>
@@ -517,7 +589,15 @@ export default function ProfilePage() {
               </div>
 
               <div className="profile-brand-mark large">
-                {logoText}
+                {work.profile.logoUrl ? (
+                  <img
+                    src={work.profile.logoUrl}
+                    alt=""
+                    className="profile-brand-logo"
+                  />
+                ) : (
+                  logoText
+                )}
               </div>
             </div>
 
@@ -579,6 +659,46 @@ export default function ProfilePage() {
                 />
               </label>
 
+              <label className="field full profile-logo-field">
+                <span>Business Logo</span>
+                <div className="profile-logo-upload">
+                  <div className="profile-logo-preview">
+                    {work.profile.logoUrl ? (
+                      <img
+                        src={work.profile.logoUrl}
+                        alt="Business logo preview"
+                      />
+                    ) : (
+                      <b>{logoText}</b>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      className="input"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={handleLogoUpload}
+                    />
+                    <small>
+                      PNG, JPG or WebP · maximum 500 KB
+                    </small>
+                    {work.profile.logoUrl ? (
+                      <button
+                        type="button"
+                        className="ghost-button profile-remove-logo"
+                        onClick={() =>
+                          patchProfile({
+                            logoUrl: '',
+                          })
+                        }
+                      >
+                        Remove Logo
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </label>
+
               <label className="field">
                 <span>Phone</span>
                 <input
@@ -635,6 +755,48 @@ export default function ProfilePage() {
                 />
               </label>
 
+              <label className="field">
+                <span>FSSAI Number</span>
+                <input
+                  className="input"
+                  value={work.profile.fssai || ''}
+                  placeholder="Optional"
+                  onChange={(event) =>
+                    patchProfile({
+                      fssai: event.target.value.toUpperCase(),
+                    })
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>Website</span>
+                <input
+                  className="input"
+                  value={work.profile.website || ''}
+                  placeholder="www.yourcaterer.com"
+                  onChange={(event) =>
+                    patchProfile({
+                      website: event.target.value,
+                    })
+                  }
+                />
+              </label>
+
+              <label className="field">
+                <span>Instagram</span>
+                <input
+                  className="input"
+                  value={work.profile.instagram || ''}
+                  placeholder="@yourcaterer"
+                  onChange={(event) =>
+                    patchProfile({
+                      instagram: event.target.value,
+                    })
+                  }
+                />
+              </label>
+
               <label className="field full">
                 <span>Business Address</span>
                 <textarea
@@ -648,6 +810,23 @@ export default function ProfilePage() {
                   }
                 />
               </label>
+
+              <label className="field full">
+                <span>Default Menu PDF Terms & Conditions</span>
+                <textarea
+                  className="input profile-textarea profile-terms-textarea"
+                  value={work.profile.menuTerms || ''}
+                  placeholder="Enter the default terms that should appear on every Menu PDF."
+                  onChange={(event) =>
+                    patchProfile({
+                      menuTerms: event.target.value,
+                    })
+                  }
+                />
+                <small>
+                  These terms are reused automatically in Menu Studio PDFs and can still be changed for one event in PDF Edit.
+                </small>
+              </label>
             </div>
 
             <div className="action-row">
@@ -656,7 +835,7 @@ export default function ProfilePage() {
                 type="button"
                 onClick={saveProfile}
               >
-                Save Business Profile
+                Save Caterer Details
               </button>
             </div>
           </div>

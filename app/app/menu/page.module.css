@@ -1659,3 +1659,11 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+
+.pdfTermsInput {
+  min-height: 112px !important;
+  padding: 10px 11px !important;
+  resize: vertical;
+  line-height: 1.45;
+}

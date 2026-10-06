@@ -406,6 +406,11 @@ export type BusinessProfile = {
   email?: string;
   address?: string;
   gstin?: string;
+  fssai?: string;
+  website?: string;
+  instagram?: string;
+  logoUrl?: string;
+  menuTerms?: string;
 
   /** Defaults used when a brand-new client quotation is created. */
   quotationValidityDays?: number;

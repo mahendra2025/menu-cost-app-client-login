@@ -35728,3 +35728,74 @@ body.client-sheet-open {
     max-width: none;
   }
 }
+
+
+/* Caterer profile logo and PDF master details */
+.profile-brand-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+}
+
+.profile-logo-field {
+  gap: 10px;
+}
+
+.profile-logo-upload {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255,255,255,.56);
+}
+
+.profile-logo-preview {
+  display: grid;
+  width: 82px;
+  height: 82px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.profile-logo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.profile-logo-preview b {
+  font-size: 22px;
+}
+
+.profile-logo-upload > div:last-child {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-logo-upload small,
+.profile-terms-textarea + small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.profile-remove-logo {
+  justify-self: start;
+}
+
+.profile-terms-textarea {
+  min-height: 132px;
+}
+
+@media (max-width: 620px) {
+  .profile-logo-upload {
+    grid-template-columns: 1fr;
+  }
+}

@@ -26,6 +26,8 @@ export type MenuCreationPdfOptions = {
   menuTitle?: string;
   tagline?: string;
   footerNote?: string;
+  termsAndConditions?: string;
+  showTerms?: boolean;
   showDate?: boolean;
   showGuests?: boolean;
   showVenue?: boolean;
@@ -313,6 +315,14 @@ export function downloadMenuCreationPdf(
     options.footerNote?.trim() ||
     'Crafted with care for a memorable celebration';
 
+  const termsAndConditions =
+    options.termsAndConditions?.trim() ||
+    work.profile.menuTerms?.trim() ||
+    '';
+
+  const showTerms =
+    options.showTerms !== false;
+
   const showDate = options.showDate !== false;
   const showGuests = options.showGuests !== false;
   const showVenue = options.showVenue !== false;
@@ -324,7 +334,21 @@ export function downloadMenuCreationPdf(
   const businessContact = [
     work.profile.phone,
     work.profile.email,
+    work.profile.website,
+    work.profile.instagram,
     work.profile.city,
+  ]
+    .filter(Boolean)
+    .join('  ·  ');
+
+  const businessLegal = [
+    work.profile.address,
+    work.profile.gstin
+      ? `GSTIN: ${work.profile.gstin}`
+      : '',
+    work.profile.fssai
+      ? `FSSAI: ${work.profile.fssai}`
+      : '',
   ]
     .filter(Boolean)
     .join('  ·  ');
@@ -349,6 +373,20 @@ export function downloadMenuCreationPdf(
   doc.line(14, 9, 196, 9);
   doc.setLineWidth(0.15);
   doc.line(14, 11.2, 196, 11.2);
+
+  if (work.profile.logoUrl) {
+    try {
+      doc.addImage(
+        work.profile.logoUrl,
+        17,
+        16,
+        25,
+        25,
+      );
+    } catch {
+      // Keep the PDF usable even if an older logo image is invalid.
+    }
+  }
 
   doc.setFont('times', 'bold');
   doc.setFontSize(22);
@@ -778,6 +816,127 @@ export function downloadMenuCreationPdf(
       105,
       y + 9,
       { align: 'center' },
+    );
+  }
+
+  if (
+    showTerms &&
+    termsAndConditions
+  ) {
+    doc.addPage();
+
+    doc.setFillColor(18, 24, 31);
+    doc.rect(0, 0, 210, 36, 'F');
+
+    if (work.profile.logoUrl) {
+      try {
+        doc.addImage(
+          work.profile.logoUrl,
+          15,
+          8,
+          20,
+          20,
+        );
+      } catch {
+        // Ignore invalid logo data.
+      }
+    }
+
+    doc.setFont('times', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(248, 245, 238);
+    doc.text(
+      businessName,
+      work.profile.logoUrl ? 41 : PAGE_LEFT,
+      18,
+    );
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(205, 176, 116);
+    doc.text(
+      'TERMS & CONDITIONS',
+      work.profile.logoUrl ? 41 : PAGE_LEFT,
+      26,
+    );
+
+    let termsY = 48;
+
+    if (businessLegal) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(98, 98, 98);
+
+      const legalLines =
+        doc.splitTextToSize(
+          businessLegal,
+          CONTENT_WIDTH,
+        );
+
+      doc.text(
+        legalLines,
+        PAGE_LEFT,
+        termsY,
+      );
+
+      termsY +=
+        Math.max(10, legalLines.length * 4) +
+        5;
+    }
+
+    doc.setDrawColor(193, 157, 87);
+    doc.setLineWidth(0.25);
+    doc.line(
+      PAGE_LEFT,
+      termsY,
+      PAGE_RIGHT,
+      termsY,
+    );
+
+    termsY += 10;
+
+    const termParagraphs =
+      termsAndConditions
+        .split(/\n+/)
+        .map((value) => value.trim())
+        .filter(Boolean);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(56, 58, 62);
+
+    termParagraphs.forEach(
+      (paragraph, index) => {
+        const text =
+          termParagraphs.length > 1
+            ? `${index + 1}. ${paragraph}`
+            : paragraph;
+
+        const lines =
+          doc.splitTextToSize(
+            text,
+            CONTENT_WIDTH,
+          );
+
+        if (
+          termsY +
+            lines.length * 5 >
+          270
+        ) {
+          doc.addPage();
+          termsY = 24;
+        }
+
+        doc.text(
+          lines,
+          PAGE_LEFT,
+          termsY,
+        );
+
+        termsY +=
+          lines.length * 5 +
+          5;
+      },
     );
   }
 

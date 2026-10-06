@@ -157,6 +157,8 @@ export default function MenuStudioPage() {
     menuTitle: 'Curated Event Menu',
     tagline: '',
     footerNote: 'Crafted with care for a memorable celebration',
+    termsAndConditions: '',
+    showTerms: true,
     showDate: true,
     showGuests: true,
     showVenue: true,
@@ -1186,12 +1188,34 @@ export default function MenuStudioPage() {
                     placeholder="Crafted with care for a memorable celebration"
                   />
                 </label>
+
+                <label className={styles.pdfEditorFull}>
+                  <span>Terms override for this event</span>
+                  <textarea
+                    className={styles.pdfTermsInput}
+                    value={pdfOptions.termsAndConditions || ''}
+                    onChange={(event) =>
+                      updatePdfOption(
+                        'termsAndConditions',
+                        event.target.value,
+                      )
+                    }
+                    placeholder={
+                      work.profile.menuTerms ||
+                      'Leave blank to use the default Caterer Profile terms.'
+                    }
+                  />
+                  <small>
+                    Leave blank to use the default Terms & Conditions saved in Caterer Profile.
+                  </small>
+                </label>
               </div>
 
               <div className={styles.pdfVisibility}>
                 <span>SHOW ON PDF</span>
                 <div className={styles.pdfToggleGrid}>
                   {[
+                    ['showTerms', 'Terms & Conditions'],
                     ['showDate', 'Date'],
                     ['showGuests', 'Guests'],
                     ['showVenue', 'Venue'],
@@ -1244,6 +1268,8 @@ export default function MenuStudioPage() {
                       tagline: '',
                       footerNote:
                         'Crafted with care for a memorable celebration',
+                      termsAndConditions: '',
+                      showTerms: true,
                       showDate: true,
                       showGuests: true,
                       showVenue: true,

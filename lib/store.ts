@@ -317,6 +317,10 @@ function workKey(tenantId: string): string {
   return `menu_cost_work_${tenantId}_v1`;
 }
 
+function businessProfileKey(tenantId: string): string {
+  return `menu_cost_business_profile_${tenantId}_v1`;
+}
+
 function customManpowerRolesKey(tenantId: string): string {
   return `menu_cost_custom_manpower_roles_${tenantId}_v1`;
 }
@@ -882,6 +886,31 @@ function ensureWorkSaveFlushListeners() {
   });
 }
 
+export function loadBusinessProfile(
+  tenantId: string,
+): Partial<WorkState['profile']> {
+  if (typeof window === 'undefined') return {};
+
+  return safeJsonParse<Partial<WorkState['profile']>>(
+    window.localStorage.getItem(
+      businessProfileKey(tenantId),
+    ),
+    {},
+  );
+}
+
+export function saveBusinessProfile(
+  tenantId: string,
+  profile: WorkState['profile'],
+): void {
+  if (typeof window === 'undefined') return;
+
+  window.localStorage.setItem(
+    businessProfileKey(tenantId),
+    JSON.stringify(profile),
+  );
+}
+
 export function createEmptyWorkState(
   session?: Session | null,
 ): WorkState {
@@ -916,6 +945,12 @@ export function createEmptyWorkState(
       email: '',
       address: '',
       gstin: '',
+      fssai: '',
+      website: '',
+      instagram: '',
+      logoUrl: '',
+      menuTerms:
+        'Booking is confirmed after advance payment. Final guest count and menu changes must be confirmed before the event. Additional services or quantities will be charged separately.',
       quotationValidityDays: 7,
       quotationAdvancePercent: 50,
       quotationGstPercent: 0,
@@ -956,9 +991,23 @@ export function loadWork(
     null,
   );
 
+  const masterProfile =
+    loadBusinessProfile(tenantId);
+
   if (!savedWork) {
-    cachedWorkByTenant.set(tenantId, fallback);
-    return fallback;
+    const freshWithProfile: WorkState = {
+      ...fallback,
+      profile: {
+        ...fallback.profile,
+        ...masterProfile,
+      },
+    };
+
+    cachedWorkByTenant.set(
+      tenantId,
+      freshWithProfile,
+    );
+    return freshWithProfile;
   }
 
   const savedStaffCost = Math.max(
@@ -1055,6 +1104,7 @@ export function loadWork(
     profile: {
       ...fallback.profile,
       ...savedWork.profile,
+      ...masterProfile,
     },
   };
 
