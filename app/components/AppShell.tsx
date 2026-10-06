@@ -559,16 +559,15 @@ export default function AppShell({
       void loadActiveEventOptions(current);
     };
 
-    if ('requestIdleCallback' in window) {
-      const idleId = window.requestIdleCallback(loadOptions, {
-        timeout: 1200,
-      });
+    const timer = window.setTimeout(
+      loadOptions,
+      250,
+    );
 
-      return () => window.cancelIdleCallback(idleId);
-    }
-
-    const timer = window.setTimeout(loadOptions, 250);
-    return () => window.clearTimeout(timer);
+    return () =>
+      window.clearTimeout(
+        timer,
+      );
   }, [router]);
 
   useEffect(() => {
