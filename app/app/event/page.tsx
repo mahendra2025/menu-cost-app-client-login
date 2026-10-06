@@ -2810,7 +2810,60 @@ export default function EventPage() {
     showManualDishSelector,
   ]);
 
-  function addNewDishCategory() {
+  async function saveDishCategoryRecord(
+    nameRaw: string,
+    previousName = '',
+  ) {
+    const name =
+      nameRaw
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60);
+
+    if (!name) {
+      throw new Error(
+        'Category name is required.',
+      );
+    }
+
+    const response =
+      await fetch(
+        '/api/dish-categories',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body:
+            JSON.stringify({
+              name,
+              previousName,
+            }),
+        },
+      );
+
+    const data =
+      await response
+        .json()
+        .catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          'Could not save your category.',
+      );
+    }
+
+    return String(
+      data.category ||
+      name,
+    )
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  async function addNewDishCategory() {
     const category =
       newDishCategoryName
         .replace(/\s+/g, ' ')
@@ -2824,40 +2877,34 @@ export default function EventPage() {
       return;
     }
 
-    const existingCategory =
-      [
-        ...availableDishCategories,
-        ...customDishCategories,
-      ].find(
-        (item) =>
-          item
-            .trim()
-            .toLocaleLowerCase(
-              'en-IN',
-            ) ===
-          category.toLocaleLowerCase(
-            'en-IN',
-          ),
+    setSavingDishCategory(
+      true,
+    );
+    setError('');
+
+    try {
+      const savedCategory =
+        await saveDishCategoryRecord(
+          category,
+        );
+
+      await loadManualDishCatalog(
+        true,
+        true,
       );
 
-    const finalCategory =
-      existingCategory ||
-      category;
-
-    if (!existingCategory) {
-      setCustomDishCategories(
+      setAvailableDishCategories(
         (current) =>
           Array.from(
             new Map(
               [
                 ...current,
-                finalCategory,
+                savedCategory,
               ].map(
                 (item) => [
-                  item
-                    .toLocaleLowerCase(
-                      'en-IN',
-                    ),
+                  item.toLocaleLowerCase(
+                    'en-IN',
+                  ),
                   item,
                 ],
               ),
@@ -2869,50 +2916,236 @@ export default function EventPage() {
               ),
           ),
       );
+
+      setUnknownDishCategory(
+        savedCategory,
+      );
+      setManualDishCategory(
+        savedCategory,
+      );
+      setNewDishCategoryName('');
+      setShowNewDishCategoryForm(
+        false,
+      );
+      setShowUnknownDishForm(
+        true,
+      );
+      setManualDishNotice(
+        `${savedCategory} saved permanently in My Categories. You can use it in this event or any future event.`,
+      );
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Could not save your category.',
+      );
+    } finally {
+      setSavingDishCategory(
+        false,
+      );
+    }
+  }
+
+  function beginDishCategoryEdit(
+    category: string,
+  ) {
+    setEditingDishCategory(
+      category,
+    );
+    setEditingDishCategoryName(
+      category,
+    );
+    setError('');
+  }
+
+  async function saveDishCategoryEdit() {
+    if (
+      !editingDishCategory
+    ) {
+      return;
     }
 
-    setAvailableDishCategories(
-      (current) =>
-        Array.from(
-          new Map(
-            [
-              ...current,
-              finalCategory,
-            ].map(
-              (item) => [
-                item
-                  .toLocaleLowerCase(
-                    'en-IN',
-                  ),
-                item,
-              ],
-            ),
-          ).values(),
-        ).sort(
-          (left, right) =>
-            left.localeCompare(
-              right,
-            ),
-        ),
-    );
+    const previousCategory =
+      editingDishCategory;
 
-    setUnknownDishCategory(
-      finalCategory,
-    );
-    setManualDishCategory(
-      finalCategory,
-    );
-    setNewDishCategoryName('');
-    setShowNewDishCategoryForm(
-      false,
-    );
-    setShowUnknownDishForm(
+    const nextName =
+      editingDishCategoryName
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60);
+
+    if (!nextName) {
+      setError(
+        'Category name cannot be empty.',
+      );
+      return;
+    }
+
+    setSavingDishCategory(
       true,
     );
     setError('');
-    setManualDishNotice(
-      `${finalCategory} category ready. Add the dish and this category will be saved in your Dish Master for future events.`,
-    );
+
+    try {
+      const savedCategory =
+        await saveDishCategoryRecord(
+          nextName,
+          previousCategory,
+        );
+
+      await loadManualDishCatalog(
+        true,
+        true,
+      );
+
+      setManualDishCatalog(
+        (current) =>
+          current.map(
+            (dish) =>
+              dish.source ===
+                'tenant' &&
+              dish.category ===
+                previousCategory
+                ? {
+                    ...dish,
+                    category:
+                      savedCategory,
+                  }
+                : dish,
+          ),
+      );
+
+      setAvailableDishCategories(
+        (current) =>
+          Array.from(
+            new Map(
+              current
+                .map(
+                  (category) =>
+                    category ===
+                      previousCategory
+                      ? savedCategory
+                      : category,
+                )
+                .concat(
+                  savedCategory,
+                )
+                .map(
+                  (category) => [
+                    category.toLocaleLowerCase(
+                      'en-IN',
+                    ),
+                    category,
+                  ],
+                ),
+            ).values(),
+          ).sort(
+            (left, right) =>
+              left.localeCompare(
+                right,
+              ),
+          ),
+      );
+
+      setUnknownDishCategory(
+        (current) =>
+          current ===
+            previousCategory
+            ? savedCategory
+            : current,
+      );
+
+      setManualDishCategory(
+        (current) =>
+          current ===
+            previousCategory
+            ? savedCategory
+            : current,
+      );
+
+      setPersonalDishEditCategory(
+        (current) =>
+          current ===
+            previousCategory
+            ? savedCategory
+            : current,
+      );
+
+      setEditDetectionCategory(
+        (current) =>
+          String(current) ===
+            previousCategory
+            ? savedCategory as Category
+            : current,
+      );
+
+      setNewDetectionDishCategory(
+        (current) =>
+          String(current) ===
+            previousCategory
+            ? savedCategory as Category
+            : current,
+      );
+
+      if (
+        work &&
+        session &&
+        work.menu.some(
+          (item) =>
+            item.category ===
+            previousCategory,
+        )
+      ) {
+        const nextWork:
+          WorkState = {
+            ...work,
+            menu:
+              work.menu.map(
+                (item) =>
+                  item.category ===
+                    previousCategory
+                    ? {
+                        ...item,
+                        category:
+                          savedCategory as Category,
+                      }
+                    : item,
+              ),
+          };
+
+        persistWork(
+          nextWork,
+        );
+        flushWorkSave(
+          session.tenantId,
+        );
+        await flushDraftToServer(
+          session.tenantId,
+          nextWork,
+        );
+      }
+
+      setEditingDishCategory(
+        null,
+      );
+      setEditingDishCategoryName(
+        '',
+      );
+
+      setManualDishNotice(
+        `${previousCategory} renamed to ${savedCategory}. Your saved dishes and current event were updated.`,
+      );
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Could not update your category.',
+      );
+    } finally {
+      setSavingDishCategory(
+        false,
+      );
+    }
   }
 
   async function openManualDishSelector(
