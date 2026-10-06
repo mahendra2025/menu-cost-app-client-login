@@ -23,3 +23,23 @@ ALTER TABLE "TenantDishCategory"
 ADD CONSTRAINT "TenantDishCategory_tenantId_fkey"
 FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id")
 ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Preserve categories already used by tenant-private dishes.
+INSERT INTO "TenantDishCategory" (
+  "id",
+  "tenantId",
+  "normalizedName",
+  "name",
+  "createdAt",
+  "updatedAt"
+)
+SELECT
+  md5(random()::text || clock_timestamp()::text || "tenantId" || "category"),
+  "tenantId",
+  lower(trim(regexp_replace("category", '\\s+', ' ', 'g'))),
+  trim(regexp_replace("category", '\\s+', ' ', 'g')),
+  CURRENT_TIMESTAMP,
+  CURRENT_TIMESTAMP
+FROM "TenantDishMasterItem"
+WHERE trim("category") <> ''
+ON CONFLICT ("tenantId", "normalizedName") DO NOTHING;
