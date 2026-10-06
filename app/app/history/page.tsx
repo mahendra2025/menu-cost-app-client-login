@@ -268,7 +268,7 @@ export default function HistoryPage() {
     await syncCurrent(session);
 
     clearWork(session.tenantId);
-    window.location.assign('/app/event?new=1');
+    window.location.assign('/app/menu?new=1');
   }
 
   async function loadIntoWorkspace(work: WorkState, path: string) {
@@ -287,7 +287,7 @@ export default function HistoryPage() {
       const response = await fetch(`/api/client/drafts?costingId=${encodeURIComponent(costingId)}`, { cache: 'no-store' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not open draft');
-      await loadIntoWorkspace(data.draft.workData as WorkState, '/app/event?draft=1');
+      await loadIntoWorkspace(data.draft.workData as WorkState, '/app/menu?draft=1');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open draft.');
       setBusy('');
@@ -319,7 +319,7 @@ export default function HistoryPage() {
         }),
       });
 
-      await loadIntoWorkspace(work, '/app/event?reopen=1');
+      await loadIntoWorkspace(work, '/app/menu?reopen=1');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open costing.');
       setBusy('');
@@ -431,7 +431,7 @@ export default function HistoryPage() {
       }
 
       setDuplicateDraft(null);
-      await loadIntoWorkspace(duplicatedWork, '/app/event?duplicated=1');
+      await loadIntoWorkspace(duplicatedWork, '/app/menu?duplicated=1');
     } catch (e) {
       setDuplicateError(e instanceof Error ? e.message : 'Could not duplicate costing.');
       setBusy('');
