@@ -680,14 +680,41 @@ export async function GET() {
       },
     );
 
-    const catalogItems =
+    /*
+     * Global category visibility is controlled by Super Admin,
+     * but a caterer's private dishes must never disappear just
+     * because their personal category is not in the global list.
+     */
+    const globalCatalogItems =
       filterDishCatalogByStoredCategories(
-        personalizedItems,
+        personalizedItems.filter(
+          (item) =>
+            item.source !==
+            'tenant',
+        ),
         categoryCatalog?.categories,
         readDeletedDishCategories(
           categoryCatalog
             ?.subcategories,
         ),
+      );
+
+    const tenantCatalogItems =
+      personalizedItems.filter(
+        (item) =>
+          item.source ===
+          'tenant',
+      );
+
+    const catalogItems =
+      [
+        ...globalCatalogItems,
+        ...tenantCatalogItems,
+      ].sort(
+        (left, right) =>
+          left.name.localeCompare(
+            right.name,
+          ),
       );
 
     const categories =
