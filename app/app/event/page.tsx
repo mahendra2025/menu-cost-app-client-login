@@ -4320,6 +4320,49 @@ export default function EventPage() {
     }
   }
 
+  function updateSavedMenuFunction(
+    itemIds: string[],
+    patch: {
+      dayLabel?: string;
+      mealLabel?: string;
+    },
+  ) {
+    if (!work || !itemIds.length) {
+      return;
+    }
+
+    const ids =
+      new Set(itemIds);
+
+    const nextMenu =
+      work.menu.map(
+        (item) =>
+          ids.has(item.id)
+            ? {
+                ...item,
+                ...(patch.dayLabel !== undefined
+                  ? {
+                      dayLabel:
+                        patch.dayLabel.trim(),
+                    }
+                  : {}),
+                ...(patch.mealLabel !== undefined
+                  ? {
+                      mealLabel:
+                        patch.mealLabel.trim() ||
+                        'Event Menu',
+                    }
+                  : {}),
+              }
+            : item,
+      );
+
+    persistWork({
+      ...work,
+      menu: nextMenu,
+    });
+  }
+
   function detectionGroupKeyForItem(
     item: Pick<
       MenuItem,
@@ -11124,6 +11167,27 @@ export default function EventPage() {
           gap: 14px;
         }
 
+        .event-menu-editor-function-edit {
+          display: grid;
+          grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+          gap: 12px;
+          margin-bottom: 14px;
+          padding: 14px;
+          border: 1px solid rgba(15, 23, 42, .08);
+          border-radius: 14px;
+          background: rgba(248, 250, 252, .72);
+        }
+
+        .event-menu-editor-function-edit .field {
+          margin: 0;
+        }
+
+        @media (max-width: 720px) {
+          .event-menu-editor-function-edit {
+            grid-template-columns: 1fr;
+          }
+        }
+
         .event-merge-backbar {
           display: flex;
           align-items: center;
@@ -12599,6 +12663,58 @@ export default function EventPage() {
                         </summary>
 
                         <div className="event-menu-editor-function-body">
+                          <div className="event-menu-editor-function-edit">
+                            <label className="field">
+                              <span>Date / day</span>
+                              <input
+                                className="input"
+                                type="text"
+                                defaultValue={group.dayLabel || ''}
+                                placeholder="15.02.2027 or Day 1"
+                                onBlur={(event) => {
+                                  const value = event.currentTarget.value.trim();
+                                  if (value !== String(group.dayLabel || '')) {
+                                    updateSavedMenuFunction(
+                                      group.items.map((item) => item.id),
+                                      { dayLabel: value },
+                                    );
+                                  }
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    event.currentTarget.blur();
+                                  }
+                                }}
+                              />
+                            </label>
+
+                            <label className="field">
+                              <span>Function</span>
+                              <input
+                                className="input"
+                                type="text"
+                                defaultValue={group.mealLabel || ''}
+                                placeholder="Breakfast, Lunch, Dinner, Reception"
+                                onBlur={(event) => {
+                                  const value = event.currentTarget.value.trim();
+                                  if (value !== String(group.mealLabel || '')) {
+                                    updateSavedMenuFunction(
+                                      group.items.map((item) => item.id),
+                                      { mealLabel: value },
+                                    );
+                                  }
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    event.currentTarget.blur();
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+
                           <div className="event-menu-editor-function-actions">
                             <button
                               className="primary-button"
