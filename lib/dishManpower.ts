@@ -19,7 +19,15 @@ export function buildDishManpowerAssignments(
   const activeRows = (Array.isArray(manpower) ? manpower : [])
     .filter((row) => Math.max(0, Number(row.quantity) || 0) > 0);
 
-  return (Array.isArray(menu) ? menu : []).map((dish) => ({
+  return (Array.isArray(menu) ? menu : [])
+    .filter(
+      (dish) =>
+        !(
+          dish.vendorId &&
+          dish.groceryResponsibility === 'VENDOR'
+        ),
+    )
+    .map((dish) => ({
     dishId: dish.id,
     dishName: dish.name || 'Unnamed dish',
     category: dish.category || 'Other',
@@ -36,7 +44,7 @@ export function buildDishManpowerAssignments(
         role: row.role || 'Staff',
         quantity: Math.max(0, Number(row.quantity) || 0),
       })),
-  }));
+    }));
 }
 
 export function assignedDishNames(
@@ -44,7 +52,15 @@ export function assignedDishNames(
   menu: MenuItem[],
 ) {
   const menuNameById = new Map(
-    (Array.isArray(menu) ? menu : []).map((dish) => [dish.id, dish.name]),
+    (Array.isArray(menu) ? menu : [])
+      .filter(
+        (dish) =>
+          !(
+            dish.vendorId &&
+            dish.groceryResponsibility === 'VENDOR'
+          ),
+      )
+      .map((dish) => [dish.id, dish.name]),
   );
 
   return (Array.isArray(row.assignedDishIds) ? row.assignedDishIds : [])
