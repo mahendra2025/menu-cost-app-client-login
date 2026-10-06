@@ -101,26 +101,11 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
 
 const adminNavGroups = [
   {
-    label: 'Platform',
+    label: 'Admin',
     items: [
-      { href: '/admin/users', label: 'Caterer Accounts', mobileLabel: 'Users', description: 'Create, disable and reset tenant accounts', icon: 'clients' as NavIcon },
-    ],
-  },
-  {
-    label: 'Catalog',
-    items: [
-      { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish master and selling rates', icon: 'dishes' as NavIcon },
-    ],
-  },
-  {
-    label: 'Cost Masters',
-    items: [
-    ],
-  },
-  {
-    label: 'Workspace',
-    items: [
-      { href: '/app/profile', label: 'Profile', mobileLabel: 'Profile', description: 'Business and workspace settings', icon: 'profile' as NavIcon },
+      { href: '/admin/users', label: 'Caterer Accounts', mobileLabel: 'Users', description: 'Create, disable and reset caterer accounts', icon: 'clients' as NavIcon },
+      { href: '/admin/dishes', label: 'Dish Master', mobileLabel: 'Dishes', description: 'Manage global dishes, categories and rates', icon: 'dishes' as NavIcon },
+      { href: '/app/profile', label: 'Settings', mobileLabel: 'Settings', description: 'Business and account settings', icon: 'profile' as NavIcon },
     ],
   },
 ];
@@ -1074,9 +1059,9 @@ export default function AppShell({
         {isAdmin ? (
           <aside className="app-sidebar admin-desktop-sidebar no-print">
             <div className="sidebar-heading admin-sidebar-heading">
-              <span>Business controls</span>
-              <b>Master Data</b>
-              <small>Dishes, ingredients, gas and manpower</small>
+              <span>Super Admin</span>
+              <b>Menu Costing</b>
+              <small>Accounts, dishes and settings</small>
             </div>
 
             <nav className="sidebar-nav admin-sidebar-nav" aria-label="Admin navigation">
@@ -1208,13 +1193,13 @@ export default function AppShell({
                 </div>
 
                 <h1>{title}</h1>
-                <p>{subtitle ?? 'Manage master data for this catering business.'}</p>
+                <p>{subtitle ?? 'Manage Menu Costing administration.'}</p>
               </div>
 
               <div className="admin-page-context">
-                <span>Owner workspace</span>
+                <span>Admin workspace</span>
                 <b>{activeAdminItem?.label || title}</b>
-                <small>Single-business master data</small>
+                <small>Accounts, dishes and settings</small>
               </div>
             </section>
           ) : null}
