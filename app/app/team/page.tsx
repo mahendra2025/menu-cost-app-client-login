@@ -1621,53 +1621,6 @@ export default function ManpowerPage() {
           </div>
         </div>
 
-        <section className="manpower-command-strip no-print" aria-label="Manpower event health">
-          <article>
-            <span>Total people</span>
-            <b>{totalPeople}</b>
-            <small>{activeManpowerRows.length} active roles</small>
-          </article>
-          <article>
-            <span>Service</span>
-            <b>{servicePeople}</b>
-            <small>Waiters, captains & service</small>
-          </article>
-          <article>
-            <span>Counter</span>
-            <b>{counterPeople}</b>
-            <small>Live & buffet counter staff</small>
-          </article>
-          <article>
-            <span>Kitchen</span>
-            <b>{kitchenPeople}</b>
-            <small>Cooks, chefs & helpers</small>
-          </article>
-          <article>
-            <span>Utility</span>
-            <b>{utilityPeople}</b>
-            <small>Cleaning & dishwashing</small>
-          </article>
-          <article>
-            <span>Dish coverage</span>
-            <b className={dishCoveragePercent < 100 ? 'needs-attention' : 'is-ready'}>
-              {dishCoveragePercent}%
-            </b>
-            <small>{staffedMenuDishCount}/{work.menu.length} dishes staffed</small>
-          </article>
-          <article className={manpowerRateCoveragePercent < 100 ? 'attention' : 'ready'}>
-            <span>Rate coverage</span>
-            <b>{manpowerRateCoveragePercent}%</b>
-            <small>{rateReadyRoleCount}/{activeManpowerRows.length} active roles priced</small>
-          </article>
-          <article className={manpowerAttentionCount > 0 ? 'attention' : 'ready'}>
-            <span>Needs attention</span>
-            <b>{manpowerAttentionCount}</b>
-            <small>
-              {unassignedMenuDishCount} dish · {zeroQuantityAssignedRoleCount} qty · {missingRateRoleCount} rate · {recommendationGapCount} plan
-            </small>
-          </article>
-        </section>
-
         <section className="manpower-meal-selector" aria-label="Choose a meal to staff">
           <div className="manpower-meal-selector-head">
             <div>
