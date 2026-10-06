@@ -7596,7 +7596,7 @@ export default function EventPlanningPage() {
                   <div className="ep-menu-vendor-head-actions">
                     <Link
                       className="ep-button"
-                      href="/app/menu"
+                      href="/app/event?resume=1"
                     >
                       Edit Menu
                     </Link>
@@ -8694,7 +8694,7 @@ const functionCovers =
               {tab === 'MENU' ? (
                 <Link
                   className="ep-button primary"
-                  href="/app/menu"
+                  href="/app/event?resume=1"
                 >
                   + Add Dish in Menu
                 </Link>
