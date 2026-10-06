@@ -291,12 +291,18 @@ function canAssignDishes(row: ManpowerRow) {
     return true;
   }
 
+  // Every user-created role can optionally handle one or more menu dishes.
+  // This keeps dish responsibility manual and works for custom cooks,
+  // helpers, counter staff or any other role the caterer creates.
+  if (isCustomRole(row)) {
+    return true;
+  }
+
   const kitchenRole = /\b(cook|chef|halwai|helper|masi)\b/.test(
     normalizeRole(row.role),
   );
 
   if (!kitchenRole) return false;
-  if (isCustomRole(row)) return true;
 
   return Boolean(
     row.department && DISH_ASSIGNABLE_DEPARTMENTS.has(row.department),
@@ -1437,6 +1443,16 @@ export default function ManpowerPage() {
       newRow.department,
     );
     persistRows([...work.manpower, newRow]);
+
+    // Keep the newly added role visible so the next action can be
+    // assigning one or multiple dishes from the Dishes column.
+    setDepartmentFilter(
+      draft.category,
+    );
+    setRoleStatus(
+      'ACTIVE',
+    );
+
     setNewRoleDrafts((current) => ({
       ...current,
       [meal.key]: { role: '', category: 'SERVICE', rate: '' },
@@ -2312,7 +2328,7 @@ export default function ManpowerPage() {
               >
                 <div className="manpower-add-role-copy">
                   <b>Add staff role</b>
-                  <small>Saved for this event and future events.</small>
+                  <small>Add the role, then assign one or multiple dishes from the Dishes column.</small>
                 </div>
                 <label className="field">
                   <span>Role name</span>
@@ -2320,7 +2336,7 @@ export default function ManpowerPage() {
                     className="input"
                     value={newRoleDraft.role}
                     onChange={(event) => updateNewRoleDraft(meal.key, { role: event.target.value })}
-                    placeholder="e.g. Security"
+                    placeholder="e.g. Dessert Helper"
                   />
                 </label>
                 <label className="field">
