@@ -992,3 +992,427 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Menu Studio Dish Picker */
+.dishHeaderActions {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.customDishButton {
+  min-height: 42px;
+  padding: 0 13px;
+  border: 1px solid #e2e5ea;
+  border-radius: 11px;
+  color: #626a75;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.addDishRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.addDishRow .addDishWide {
+  margin-top: 0;
+}
+
+.customDishWide {
+  min-height: 50px;
+  padding: 0 15px;
+  border: 1px solid #e1e5eb;
+  border-radius: 12px;
+  color: #626a75;
+  background: #fff;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.pickerModal {
+  width: min(760px, 100%);
+  padding: 18px;
+}
+
+.pickerHead {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.pickerHead h2 {
+  margin-bottom: 4px;
+}
+
+.pickerHead p {
+  margin: 0;
+  color: #737b86;
+  font-size: 10px;
+}
+
+.pickerClose {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e3e6eb;
+  border-radius: 10px;
+  color: #6f7680;
+  background: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pickerSearchBar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 0 11px;
+  border: 1px solid #dde2e8;
+  border-radius: 12px;
+  background: #f8f9fb;
+}
+
+.pickerSearchBar > span {
+  color: #8e96a2;
+  font-size: 19px;
+}
+
+.pickerSearchBar input {
+  min-width: 0;
+  height: 45px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+}
+
+.pickerSearchBar button {
+  border: 0;
+  color: #7b1024;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.pickerToolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 7px 2px 5px;
+}
+
+.pickerToolbar div {
+  color: #7a818c;
+  font-size: 10px;
+}
+
+.pickerToolbar b {
+  color: #23272d;
+  font-size: 12px;
+}
+
+.pickerToolbar strong {
+  display: inline-flex;
+  margin-left: 9px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: #7b1024;
+  background: #faedf0;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.pickerToolbar button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #e0e4e9;
+  border-radius: 8px;
+  color: #555d68;
+  background: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pickerToolbar button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.pickerList {
+  max-height: min(52vh, 500px);
+  overflow-y: auto;
+  border: 1px solid #e7eaf0;
+  border-radius: 13px;
+  background: #fbfcfd;
+}
+
+.pickerRow,
+.pickerRowSelected,
+.pickerRowDisabled {
+  display: grid;
+  grid-template-columns: 20px 42px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 62px;
+  padding: 8px 11px;
+  border-bottom: 1px solid #edf0f3;
+  cursor: pointer;
+}
+
+.pickerRow:last-child,
+.pickerRowSelected:last-child,
+.pickerRowDisabled:last-child {
+  border-bottom: 0;
+}
+
+.pickerRow {
+  background: #fff;
+}
+
+.pickerRow:hover {
+  background: #fffaf0;
+}
+
+.pickerRowSelected {
+  background: linear-gradient(90deg, #fff6e6, #fffdf8);
+  box-shadow: inset 3px 0 0 #c38d27;
+}
+
+.pickerRowDisabled {
+  cursor: default;
+  opacity: .62;
+  background: #f7f8fa;
+}
+
+.pickerRow input,
+.pickerRowSelected input,
+.pickerRowDisabled input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #7b1024;
+}
+
+.pickerDishMark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 10px;
+  color: #825a14;
+  background: linear-gradient(135deg, #f6e4bd, #fff8e9);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.pickerDishCopy {
+  min-width: 0;
+}
+
+.pickerDishCopy b,
+.pickerDishCopy small {
+  display: block;
+}
+
+.pickerDishCopy b {
+  overflow: hidden;
+  color: #292d33;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerDishCopy small {
+  margin-top: 3px;
+  color: #8a919c;
+  font-size: 8px;
+}
+
+.pickerBadges {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.pickerBadges i {
+  display: inline-flex;
+  min-height: 21px;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.myDishBadge {
+  color: #6c4a0e;
+  background: #fff0cc;
+}
+
+.recipeBadge {
+  color: #397449;
+  background: #edf8f0;
+}
+
+.addedBadge {
+  color: #69717c;
+  background: #e9edf1;
+}
+
+.pickerEmpty {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 28px;
+  text-align: center;
+  color: #858d98;
+  font-size: 10px;
+}
+
+.pickerEmpty b {
+  color: #49505a;
+  font-size: 12px;
+}
+
+.pickerError {
+  margin-bottom: 8px;
+  padding: 9px 11px;
+  border: 1px solid #f2cccc;
+  border-radius: 9px;
+  color: #a42727;
+  background: #fff5f5;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.pickerFooter {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.pickerFooter > div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.pickerFooter button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #dde1e7;
+  border-radius: 10px;
+  color: #4f5661;
+  background: #fff;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.pickerFooter .saveButton {
+  border-color: #7b1024;
+  color: #fff;
+  background: linear-gradient(180deg, #86142a, #6d0d20);
+}
+
+.pickerFooter .saveButton:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.pickerCustomAction {
+  color: #8b5d0e !important;
+  border-color: rgba(195, 141, 39, .45) !important;
+  background: #fffaf0 !important;
+}
+
+@media (max-width: 560px) {
+  .dishHeaderActions {
+    width: 100%;
+  }
+
+  .dishHeaderActions button {
+    flex: 1;
+  }
+
+  .dishesHeader {
+    flex-wrap: wrap;
+  }
+
+  .addDishRow {
+    grid-template-columns: 1fr;
+  }
+
+  .pickerModal {
+    max-height: calc(100vh - 24px);
+    padding: 14px;
+  }
+
+  .pickerList {
+    max-height: 48vh;
+  }
+
+  .pickerRow,
+  .pickerRowSelected,
+  .pickerRowDisabled {
+    grid-template-columns: 20px 36px minmax(0, 1fr);
+    min-height: 58px;
+    padding: 8px;
+  }
+
+  .pickerDishMark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .pickerBadges {
+    grid-column: 3;
+    justify-content: flex-start;
+  }
+
+  .pickerFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pickerFooter > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pickerFooter button {
+    width: 100%;
+  }
+}

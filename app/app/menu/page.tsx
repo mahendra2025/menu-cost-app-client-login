@@ -32,6 +32,19 @@ type Station = {
   categories: string[];
 };
 
+type CatalogDish = {
+  name: string;
+  category: string;
+  subcategory?: string;
+  rate: number;
+  source: 'global' | 'tenant';
+  servingQuantity: number;
+  servingUnit: string;
+  pieceWeightGrams?: number;
+  gasKgPer100?: number;
+  hasRecipe?: boolean;
+};
+
 const DEFAULT_STATIONS: Station[] = [
   { key: 'welcome', label: 'Welcome Drink', categories: ['Welcome Drink', 'Mocktail', 'Beverage'] },
   { key: 'starter', label: 'Starter', categories: ['Starter', 'Snacks'] },
@@ -52,6 +65,10 @@ const DEFAULT_STATIONS: Station[] = [
 
 function norm(value: unknown) {
   return String(value || '').trim().toLocaleLowerCase('en-IN');
+}
+
+function catalogDishKey(dish: Pick<CatalogDish, 'name' | 'category'>) {
+  return `${norm(dish.category)}::${norm(dish.name)}`;
 }
 
 function functionGroups(work: WorkState): FunctionGroup[] {
@@ -125,6 +142,14 @@ export default function MenuStudioPage() {
   const [stationName, setStationName] = useState('');
   const [customStations, setCustomStations] = useState<Station[]>([]);
   const [draftFunctions, setDraftFunctions] = useState<FunctionGroup[]>([]);
+  const [catalogDishes, setCatalogDishes] = useState<CatalogDish[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState('');
+  const [showDishPicker, setShowDishPicker] = useState(false);
+  const [dishPickerQuery, setDishPickerQuery] = useState('');
+  const [selectedCatalogDishKeys, setSelectedCatalogDishKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   useEffect(() => {
     const current = getSession();
@@ -134,6 +159,85 @@ export default function MenuStudioPage() {
     const loaded = loadWork(current.tenantId);
     setWork(loaded);
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+
+    let cancelled = false;
+
+    async function loadDishCatalog() {
+      setCatalogLoading(true);
+      setCatalogError('');
+
+      try {
+        const response = await fetch('/api/dishes', {
+          cache: 'no-store',
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Could not load Dish Master.');
+        }
+
+        const items: CatalogDish[] = Array.isArray(data.items)
+          ? data.items
+              .filter(
+                (value: unknown) =>
+                  value &&
+                  typeof value === 'object' &&
+                  !Array.isArray(value),
+              )
+              .map((value: unknown) => {
+                const row = value as Record<string, unknown>;
+
+                return {
+                  name: String(row.name || '').trim(),
+                  category: String(row.category || 'Other').trim() || 'Other',
+                  subcategory: String(row.subcategory || '').trim(),
+                  rate: Math.max(0, Number(row.rate) || 0),
+                  source: String(row.source || 'global') === 'tenant'
+                    ? 'tenant'
+                    : 'global',
+                  servingQuantity: Math.max(0.01, Number(row.servingQuantity) || 1),
+                  servingUnit: String(row.servingUnit || 'serving').trim() || 'serving',
+                  pieceWeightGrams:
+                    Math.max(0, Number(row.pieceWeightGrams) || 0) || undefined,
+                  gasKgPer100:
+                    row.gasKgPer100 === null ||
+                    row.gasKgPer100 === undefined ||
+                    String(row.gasKgPer100).trim() === ''
+                      ? undefined
+                      : Math.max(0, Number(row.gasKgPer100) || 0),
+                  hasRecipe: Boolean(row.hasRecipe),
+                };
+              })
+              .filter((item: CatalogDish) => Boolean(item.name))
+          : [];
+
+        if (!cancelled) {
+          setCatalogDishes(items);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setCatalogError(
+            error instanceof Error
+              ? error.message
+              : 'Could not load Dish Master.',
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setCatalogLoading(false);
+        }
+      }
+    }
+
+    void loadDishCatalog();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
 
   const savedFunctions = useMemo(
     () => (work ? functionGroups(work) : []),
@@ -220,6 +324,44 @@ export default function MenuStudioPage() {
     ? activeFunction.items.filter((item) => categoryInStation(item.category, activeStation))
     : [];
 
+  const activeFunctionDishNames = useMemo(
+    () =>
+      new Set(
+        (activeFunction?.items || []).map((item) => norm(item.name)),
+      ),
+    [activeFunction],
+  );
+
+  const pickerDishes = useMemo(() => {
+    if (!activeStation) return [];
+
+    const query = norm(dishPickerQuery);
+
+    return catalogDishes
+      .filter((dish) => categoryInStation(dish.category, activeStation))
+      .filter((dish) => {
+        if (!query) return true;
+
+        return norm(
+          [dish.name, dish.category, dish.subcategory || ''].join(' '),
+        ).includes(query);
+      })
+      .sort(
+        (left, right) =>
+          Number(right.source === 'tenant') -
+            Number(left.source === 'tenant') ||
+          left.name.localeCompare(right.name),
+      );
+  }, [activeStation, catalogDishes, dishPickerQuery]);
+
+  const selectedPickerDishes = useMemo(
+    () =>
+      catalogDishes.filter((dish) =>
+        selectedCatalogDishKeys.has(catalogDishKey(dish)),
+      ),
+    [catalogDishes, selectedCatalogDishKeys],
+  );
+
   function commit(next: WorkState) {
     if (!session) return;
     setWork(next);
@@ -269,6 +411,112 @@ export default function MenuStudioPage() {
     const nextMenu = [...work.menu];
     [nextMenu[sourceIndex], nextMenu[targetIndex]] = [nextMenu[targetIndex], nextMenu[sourceIndex]];
     commit({ ...work, menu: nextMenu });
+  }
+
+  function openDishPicker() {
+    setDishPickerQuery('');
+    setSelectedCatalogDishKeys(new Set());
+    setCatalogError('');
+    setShowDishPicker(true);
+  }
+
+  function toggleCatalogDish(dish: CatalogDish) {
+    const key = catalogDishKey(dish);
+
+    setSelectedCatalogDishKeys((current) => {
+      const next = new Set(current);
+
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+
+      return next;
+    });
+  }
+
+  function selectAllVisiblePickerDishes() {
+    const selectableKeys = pickerDishes
+      .filter((dish) => !activeFunctionDishNames.has(norm(dish.name)))
+      .map(catalogDishKey);
+
+    setSelectedCatalogDishKeys((current) => {
+      const allSelected =
+        selectableKeys.length > 0 &&
+        selectableKeys.every((key) => current.has(key));
+
+      if (allSelected) {
+        return new Set(
+          Array.from(current).filter((key) => !selectableKeys.includes(key)),
+        );
+      }
+
+      return new Set([...current, ...selectableKeys]);
+    });
+  }
+
+  function addSelectedCatalogDishes() {
+    if (!work || !activeFunction || !selectedPickerDishes.length) return;
+
+    const existingNames = new Set(
+      activeFunction.items.map((item) => norm(item.name)),
+    );
+    const selected = selectedPickerDishes.filter(
+      (dish) => !existingNames.has(norm(dish.name)),
+    );
+
+    if (!selected.length) {
+      setShowDishPicker(false);
+      return;
+    }
+
+    const serviceId =
+      activeFunction.key === 'event-menu'
+        ? uid('service')
+        : activeFunction.key;
+
+    const nextItems: MenuItem[] = selected.map((dish) => ({
+      id: uid('menu'),
+      name: dish.name,
+      category: dish.category,
+      costPerPlate: dish.rate,
+      portionQuantity: dish.servingQuantity,
+      portionBaseQuantity: dish.servingQuantity,
+      portionUnit: dish.servingUnit,
+      pieceWeightGrams: dish.pieceWeightGrams,
+      gasKgPer100: dish.gasKgPer100,
+      serviceId,
+      dayLabel: activeFunction.dayLabel || work.event.eventDate,
+      mealLabel:
+        activeFunction.mealLabel ||
+        work.event.functionType ||
+        'Event Menu',
+      servicePax: Math.max(
+        0,
+        Number(activeFunction.pax) ||
+          Number(work.event.pax) ||
+          0,
+      ),
+      detectionSource: 'manual',
+      costSource: dish.rate > 0 ? 'catalog' : undefined,
+      coverageStatus: dish.rate > 0 ? 'COSTED' : 'NEW_DISH_PENDING',
+      costQualityStatus: dish.rate > 0 ? 'READY' : undefined,
+      costConfidence: dish.rate > 0 ? 100 : 0,
+      rateCoveragePercent: dish.rate > 0 ? 100 : 0,
+      coverageReason: dish.hasRecipe
+        ? 'Selected from Dish Master with linked recipe'
+        : 'Selected from Dish Master',
+    }));
+
+    commit({
+      ...work,
+      menu: [...work.menu, ...nextItems],
+    });
+    setActiveFunctionKey(serviceId);
+    setSelectedCatalogDishKeys(new Set());
+    setDishPickerQuery('');
+    setShowDishPicker(false);
   }
 
   function addDish() {
@@ -509,16 +757,25 @@ export default function MenuStudioPage() {
                 <h2>{activeStation?.label || 'Menu'}</h2>
                 <p>Add and arrange dishes for this station.</p>
               </div>
-              <button
-                type="button"
-                className={styles.addDishTop}
-                onClick={() => {
-                  setDishCategory(activeStation?.categories[0] || 'Other');
-                  setShowDishForm(true);
-                }}
-              >
-                + Add Dish
-              </button>
+              <div className={styles.dishHeaderActions}>
+                <button
+                  type="button"
+                  className={styles.addDishTop}
+                  onClick={openDishPicker}
+                >
+                  + Dish Picker
+                </button>
+                <button
+                  type="button"
+                  className={styles.customDishButton}
+                  onClick={() => {
+                    setDishCategory(activeStation?.categories[0] || 'Other');
+                    setShowDishForm(true);
+                  }}
+                >
+                  + Custom
+                </button>
+              </div>
             </div>
 
             {stationItems.length ? (
@@ -576,16 +833,25 @@ export default function MenuStudioPage() {
               </div>
             )}
 
-            <button
-              type="button"
-              className={styles.addDishWide}
-              onClick={() => {
-                setDishCategory(activeStation?.categories[0] || 'Other');
-                setShowDishForm(true);
-              }}
-            >
-              + Add Dish
-            </button>
+            <div className={styles.addDishRow}>
+              <button
+                type="button"
+                className={styles.addDishWide}
+                onClick={openDishPicker}
+              >
+                + Add from Dish Master
+              </button>
+              <button
+                type="button"
+                className={styles.customDishWide}
+                onClick={() => {
+                  setDishCategory(activeStation?.categories[0] || 'Other');
+                  setShowDishForm(true);
+                }}
+              >
+                + Custom Dish
+              </button>
+            </div>
           </main>
 
           <aside className={styles.previewPanel} id="menu-live-preview">
@@ -637,6 +903,171 @@ export default function MenuStudioPage() {
             </div>
           </aside>
         </div>
+
+        {showDishPicker ? (
+          <div
+            className={styles.modalLayer}
+            role="presentation"
+            onMouseDown={() => setShowDishPicker(false)}
+          >
+            <section
+              className={`${styles.modal} ${styles.pickerModal}`}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Dish picker"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className={styles.pickerHead}>
+                <div>
+                  <span className={styles.modalEyebrow}>
+                    {activeFunction?.mealLabel || 'MENU'} · {activeStation?.label || 'STATION'}
+                  </span>
+                  <h2>Dish Picker</h2>
+                  <p>Select multiple dishes and add them together.</p>
+                </div>
+                <button
+                  type="button"
+                  className={styles.pickerClose}
+                  onClick={() => setShowDishPicker(false)}
+                  aria-label="Close Dish Picker"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className={styles.pickerSearchBar}>
+                <span aria-hidden="true">⌕</span>
+                <input
+                  autoFocus
+                  value={dishPickerQuery}
+                  onChange={(event) => setDishPickerQuery(event.target.value)}
+                  placeholder={`Search ${activeStation?.label || 'dishes'}…`}
+                />
+                {dishPickerQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setDishPickerQuery('')}
+                  >
+                    Clear
+                  </button>
+                ) : null}
+              </div>
+
+              <div className={styles.pickerToolbar}>
+                <div>
+                  <b>{pickerDishes.length}</b>
+                  <span> available</span>
+                  {selectedCatalogDishKeys.size > 0 ? (
+                    <strong>{selectedCatalogDishKeys.size} selected</strong>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={selectAllVisiblePickerDishes}
+                  disabled={!pickerDishes.length}
+                >
+                  Select visible
+                </button>
+              </div>
+
+              {catalogError ? (
+                <div className={styles.pickerError}>{catalogError}</div>
+              ) : null}
+
+              <div className={styles.pickerList}>
+                {catalogLoading ? (
+                  <div className={styles.pickerEmpty}>
+                    Loading Dish Master…
+                  </div>
+                ) : pickerDishes.length ? (
+                  pickerDishes.map((dish) => {
+                    const key = catalogDishKey(dish);
+                    const alreadyAdded =
+                      activeFunctionDishNames.has(norm(dish.name));
+                    const selected = selectedCatalogDishKeys.has(key);
+
+                    return (
+                      <label
+                        key={key}
+                        className={
+                          alreadyAdded
+                            ? styles.pickerRowDisabled
+                            : selected
+                              ? styles.pickerRowSelected
+                              : styles.pickerRow
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          disabled={alreadyAdded}
+                          onChange={() => toggleCatalogDish(dish)}
+                        />
+                        <span className={styles.pickerDishMark}>
+                          {dish.name.slice(0, 1).toUpperCase()}
+                        </span>
+                        <span className={styles.pickerDishCopy}>
+                          <b>{dish.name}</b>
+                          <small>
+                            {[dish.category, dish.subcategory]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </small>
+                        </span>
+                        <span className={styles.pickerBadges}>
+                          {dish.source === 'tenant' ? (
+                            <i className={styles.myDishBadge}>My Dish</i>
+                          ) : null}
+                          {dish.hasRecipe ? (
+                            <i className={styles.recipeBadge}>Recipe</i>
+                          ) : null}
+                          {alreadyAdded ? (
+                            <i className={styles.addedBadge}>Added</i>
+                          ) : null}
+                        </span>
+                      </label>
+                    );
+                  })
+                ) : (
+                  <div className={styles.pickerEmpty}>
+                    <b>No dishes found in {activeStation?.label || 'this station'}.</b>
+                    <span>Use Custom Dish to add a new item.</span>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.pickerFooter}>
+                <button
+                  type="button"
+                  className={styles.pickerCustomAction}
+                  onClick={() => {
+                    setShowDishPicker(false);
+                    setDishCategory(activeStation?.categories[0] || 'Other');
+                    setShowDishForm(true);
+                  }}
+                >
+                  + Custom Dish
+                </button>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDishPicker(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.saveButton}
+                    onClick={addSelectedCatalogDishes}
+                    disabled={!selectedPickerDishes.length}
+                  >
+                    Add {selectedPickerDishes.length || ''} Dish{selectedPickerDishes.length === 1 ? '' : 'es'}
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        ) : null}
 
         {showDishForm ? (
           <div className={styles.modalLayer} role="presentation" onMouseDown={() => setShowDishForm(false)}>
