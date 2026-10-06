@@ -1060,6 +1060,7 @@ export default function CostPage() {
                 vendorType: undefined,
                 vendorRateId: undefined,
                 vendorRateUnit: undefined,
+                groceryResponsibility: 'CATERER',
                 costSource:
                   item.costSource === 'vendor'
                     ? 'manual'
@@ -1115,6 +1116,7 @@ export default function CostPage() {
           vendorType: vendor.type,
           vendorRateId: matchedRate?.id,
           vendorRateUnit: matchedRate?.unit,
+          groceryResponsibility: 'VENDOR',
           costPerPlate: nextRate,
           costSource:
             vendorRate > 0
@@ -1154,6 +1156,12 @@ export default function CostPage() {
               : item.costApprovalReason,
         };
       }),
+      manpower: work.manpower.map((row) => ({
+        ...row,
+        assignedDishIds: Array.isArray(row.assignedDishIds)
+          ? row.assignedDishIds.filter((dishId) => dishId !== id)
+          : row.assignedDishIds,
+      })),
     });
   }
 
@@ -2180,9 +2188,7 @@ export default function CostPage() {
                                     </select>
                                     <small>
                                       {item.vendorId
-                                        ? item.vendorRateId
-                                          ? 'Saved vendor rate applied. You can still edit the rate above.'
-                                          : 'Vendor assigned. Enter or edit the rate above.'
+                                        ? 'Vendor full-production active · raw material, cooking manpower and gas are excluded from your internal production cost.'
                                         : 'Choose a saved vendor/agency to apply its dish or station rate.'}
                                     </small>
                                   </div>
@@ -2513,9 +2519,7 @@ export default function CostPage() {
                                 </select>
                                 <small>
                                   {item.vendorId
-                                    ? item.vendorRateId
-                                      ? 'Saved vendor rate applied.'
-                                      : 'Vendor assigned · edit the rate above.'
+                                    ? 'Vendor full-production · raw material, cooking manpower and gas excluded internally.'
                                     : 'Select a partner to use its saved rate.'}
                                 </small>
                               </div>
