@@ -110,7 +110,6 @@ const adminNavGroups = [
     label: 'Catalog',
     items: [
       { href: '/admin/dishes', label: 'Dishes', mobileLabel: 'Dishes', description: 'Dish master and selling rates', icon: 'dishes' as NavIcon },
-      { href: '/admin/ingredients', label: 'Ingredients', mobileLabel: 'Items', description: 'Ingredient rates and categories', icon: 'ingredients' as NavIcon },
     ],
   },
   {
@@ -157,7 +156,6 @@ const clientWorkspaceNav = [
   { href: '/app/work-orders', match: '/app/work-orders', label: 'Work Orders', description: 'Printable vendor assignments', icon: 'quotation' as ClientNavIcon },
   { href: '/app/uniforms', match: '/app/uniforms', label: 'Dress & Uniform', description: 'Photo uniform stock and role mapping', icon: 'team' as ClientNavIcon },
   { href: '/app/disposable-master', match: '/app/disposable-master', label: 'Disposable Master', description: 'Photo catalog and supplier defaults', icon: 'expenses' as ClientNavIcon },
-  { href: '/app/ingredients', match: '/app/ingredients', label: 'Ingredient Rates', description: 'Business + city + global rates', icon: 'ingredients' as ClientNavIcon },
   { href: '/app/disposable-rates', match: '/app/disposable-rates', label: 'Plastic Rates', description: 'Reusable disposable purchase rates', icon: 'expenses' as ClientNavIcon },
   { href: '/app/manpower-rates', match: '/app/manpower-rates', label: 'Manpower Rates', description: 'Reusable staff rates', icon: 'team' as ClientNavIcon },
   { href: '/app/profile', match: '/app/profile', label: 'Profile', description: 'Business settings', icon: 'profile' as ClientNavIcon },
