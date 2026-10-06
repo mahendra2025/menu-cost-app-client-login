@@ -150,9 +150,9 @@ const clientWorkflowNav = [
 
 const clientWorkspaceNav = [
   { href: '/app/event-planning', match: '/app/event-planning', label: 'Event Planning', description: 'Vendors, agencies and readiness', icon: 'event' as ClientNavIcon },
-  { href: '/app/dish-master', match: '/app/dish-master', label: 'My Dish Master', description: 'My dishes, rates and categories', icon: 'dishes' as ClientNavIcon },
   { href: '/app/history', match: '/app/history', label: 'History', description: 'Saved events', icon: 'history' as ClientNavIcon },
   { href: '/app/vendors', match: '/app/vendors', label: 'Vendors & Agencies', description: 'Supplier and rate master', icon: 'team' as ClientNavIcon },
+  { href: '/app/dish-master', match: '/app/dish-master', label: 'My Dish Master', description: 'All dishes, my rates and categories', icon: 'dishes' as ClientNavIcon },
   { href: '/app/equipment', match: '/app/equipment', label: 'Equipment Master', description: 'Photo catalog and availability', icon: 'expenses' as ClientNavIcon },
   { href: '/app/crockery', match: '/app/crockery', label: 'Crockery & Cutlery', description: 'Photo stock and guest quantities', icon: 'expenses' as ClientNavIcon },
   { href: '/app/work-orders', match: '/app/work-orders', label: 'Work Orders', description: 'Printable vendor assignments', icon: 'quotation' as ClientNavIcon },
