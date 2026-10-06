@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { SESSION_KEY } from '../../lib/store';
 import styles from './page.module.css';
 
@@ -18,7 +17,6 @@ function BrandMark() {
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -55,7 +53,7 @@ export default function LoginPage() {
           }),
         );
 
-        router.push('/admin/dishes');
+        window.location.assign('/admin/dishes');
         return;
       }
 
@@ -70,7 +68,7 @@ export default function LoginPage() {
         }),
       );
 
-      router.push('/app/event');
+      window.location.assign('/app');
     } catch {
       setError('We could not reach the server. Check your connection and try again.');
     } finally {
