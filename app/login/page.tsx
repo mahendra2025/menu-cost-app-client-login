@@ -70,7 +70,7 @@ export default function LoginPage() {
         }),
       );
 
-      router.push('/app/event');
+      router.push('/app/menu');
     } catch {
       setError('We could not reach the server. Check your connection and try again.');
     } finally {
