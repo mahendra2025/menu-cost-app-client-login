@@ -21,6 +21,9 @@ import {
 import {
   prisma,
 } from '../../../lib/prisma';
+import {
+  shouldUseSecureSessionCookie,
+} from '../../../lib/sessionCookie';
 
 function safeMatch(
   received: string,
@@ -87,6 +90,7 @@ function clientLoginResponse(
     name: string;
     email: string;
   },
+  request: Request,
 ) {
   const response =
     NextResponse.json({
@@ -116,8 +120,9 @@ function clientLoginResponse(
     httpOnly: true,
     sameSite: 'lax',
     secure:
-      process.env.NODE_ENV ===
-      'production',
+      shouldUseSecureSessionCookie(
+        request,
+      ),
     path: '/',
   });
 
@@ -305,6 +310,7 @@ export async function POST(
 
       return clientLoginResponse(
         workspace,
+        request,
       );
     }
 
@@ -358,6 +364,7 @@ export async function POST(
 
       return clientLoginResponse(
         created,
+        request,
       );
     }
 
