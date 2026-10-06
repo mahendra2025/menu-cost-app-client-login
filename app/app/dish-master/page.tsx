@@ -488,6 +488,43 @@ export default function MyDishMasterPage() {
         pricedCount,
     );
 
+  function openCategoryManager() {
+    setEditingCategory(
+      null,
+    );
+    setCategoryName(
+      '',
+    );
+    setMessage('');
+    setError('');
+
+    window.setTimeout(
+      () => {
+        document
+          .getElementById(
+            'myCategoryManager',
+          )
+          ?.scrollIntoView({
+            behavior:
+              'smooth',
+            block:
+              'start',
+          });
+
+        window.setTimeout(
+          () =>
+            document
+              .getElementById(
+                'newCategoryName',
+              )
+              ?.focus(),
+          250,
+        );
+      },
+      20,
+    );
+  }
+
   function openNewDish() {
     setDishDraft(
       emptyDish(
@@ -938,6 +975,16 @@ export default function MyDishMasterPage() {
             <button
               className="secondary-button"
               type="button"
+              onClick={
+                openCategoryManager
+              }
+            >
+              + Add Category
+            </button>
+
+            <button
+              className="secondary-button"
+              type="button"
               onClick={() =>
                 router.push(
                   '/app/event?resume=1',
@@ -1270,23 +1317,27 @@ export default function MyDishMasterPage() {
             </button>
           </section>
 
-          <section className="glass-card my-category-manager">
+          <section
+            className="glass-card my-category-manager"
+            id="myCategoryManager"
+          >
             <div className="my-dish-section-head">
               <div>
                 <span>
                   Categories
                 </span>
                 <h2>
-                  My Categories
+                  Add / Edit Categories
                 </h2>
                 <p>
-                  Add once, reuse in all future events, and rename whenever needed.
+                  Add a new category permanently. Use Edit beside any of your saved categories to rename it for future events.
                 </p>
               </div>
             </div>
 
             <div className="my-category-add">
               <input
+                id="newCategoryName"
                 className="input"
                 value={
                   newCategoryName
