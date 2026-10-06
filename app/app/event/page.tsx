@@ -1344,6 +1344,23 @@ export default function EventPage() {
   ] = useState<string[]>([]);
 
   const [
+    editingDishCategory,
+    setEditingDishCategory,
+  ] = useState<string | null>(
+    null,
+  );
+
+  const [
+    editingDishCategoryName,
+    setEditingDishCategoryName,
+  ] = useState('');
+
+  const [
+    savingDishCategory,
+    setSavingDishCategory,
+  ] = useState(false);
+
+  const [
     addingUnknownDish,
     setAddingUnknownDish,
   ] = useState(false);
@@ -1977,6 +1994,43 @@ export default function EventPage() {
               ),
             ) as string[]
           : [];
+
+      const loadedPersonalCategories =
+        Array.isArray(
+          data.personalCategories,
+        )
+          ? Array.from(
+              new Map(
+                data.personalCategories
+                  .map(
+                    (category: unknown) =>
+                      String(
+                        category || '',
+                      )
+                        .replace(/\s+/g, ' ')
+                        .trim(),
+                  )
+                  .filter(Boolean)
+                  .map(
+                    (category: string) => [
+                      category.toLocaleLowerCase(
+                        'en-IN',
+                      ),
+                      category,
+                    ],
+                  ),
+              ).values(),
+            ) as string[]
+          : [];
+
+      setCustomDishCategories(
+        loadedPersonalCategories.sort(
+          (left, right) =>
+            left.localeCompare(
+              right,
+            ),
+        ),
+      );
 
       const cleaned:
         ManualDishOption[] =
