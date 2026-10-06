@@ -297,6 +297,10 @@ export function buildGroceryList(work: WorkState): GroceryList {
   >();
 
   work.menu.forEach((menuItem) => {
+    if (menuItem.groceryResponsibility === 'VENDOR') {
+      return;
+    }
+
     const menuItemName = menuItem.name.trim();
 
     if (!menuItemName) {
