@@ -1959,3 +1959,28 @@ test('saved Thai dish gas still wins over Thai starter', () => {
     0.8,
   );
 });
+
+
+test('vendor-supplied dish does not add internal LPG cost', () => {
+  const vendorDish = dish(
+    'vendor-paneer',
+    'Paneer Tikka',
+    'Paneer',
+    'dinner',
+    'Dinner',
+    100,
+  );
+
+  vendorDish.vendorId = 'vendor_1';
+  vendorDish.vendorName = 'Vendor One';
+  vendorDish.groceryResponsibility = 'VENDOR';
+
+  const result = calculateEventGas(
+    makeWork([vendorDish]),
+    defaultGasCostMaster(),
+  );
+
+  assert.equal(result.rows.length, 0);
+  assert.equal(result.totalGasKg, 0);
+  assert.equal(result.totalGasCost, 0);
+});
