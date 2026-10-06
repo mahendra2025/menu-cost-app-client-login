@@ -1024,19 +1024,6 @@ export default function OperationsCostPage() {
 
           <button
             type="button"
-            onClick={() =>
-              router.push(
-                '/app/team',
-              )
-            }
-          >
-            <span>02</span>
-            <b>Manpower</b>
-            <small>Team & dish duties</small>
-          </button>
-
-          <button
-            type="button"
             className={
               savedDisposableTotal > 0
                 ? 'is-complete'
@@ -1048,7 +1035,7 @@ export default function OperationsCostPage() {
               )
             }
           >
-            <span>03</span>
+            <span>02</span>
             <b>Disposable</b>
             <small>
               {savedDisposableTotal > 0
@@ -1071,7 +1058,7 @@ export default function OperationsCostPage() {
               )
             }
           >
-            <span>04</span>
+            <span>03</span>
             <b>Final Cost</b>
             <small>Review event profit</small>
           </button>
@@ -1707,9 +1694,9 @@ export default function OperationsCostPage() {
             <button
               className="operations-desktop-back"
               type="button"
-              onClick={() => router.push('/app/team')}
+              onClick={() => router.push('/app/grocery')}
             >
-              Back to Manpower
+              Back to Grocery
             </button>
           </aside>
         </div>
@@ -1720,8 +1707,8 @@ export default function OperationsCostPage() {
               ? 'Save & Continue to Final Cost'
               : 'Save & Continue to Plastic & Disposable'}
           </button>
-          <button className="ghost-button" type="button" onClick={() => window.location.assign('/app/team')}>
-            Back to Manpower
+          <button className="ghost-button" type="button" onClick={() => window.location.assign('/app/grocery')}>
+            Back to Grocery
           </button>
         </div>
 
