@@ -8046,7 +8046,7 @@ export default function EventPage() {
       }
 
       // Return to the unified Event & Menu workspace after import.
-      window.location.assign('/app/menu?imported=1');
+      window.location.assign('/app/event?resume=1&imported=1');
     } catch (saveError) {
       console.error(
         'Detected menu save failed:',
@@ -8527,7 +8527,7 @@ export default function EventPage() {
       await flushDraftToServer(session.tenantId, nextWork);
 
       window.location.assign(
-        '/app/menu',
+        '/app/event?resume=1',
       );
     } catch {
       setNewEventError('Could not create the event. Please try again.');
@@ -10977,7 +10977,7 @@ export default function EventPage() {
               className="secondary-button"
               onClick={() =>
                 window.location.assign(
-                  '/app/menu',
+                  '/app/event?resume=1',
                 )
               }
             >
