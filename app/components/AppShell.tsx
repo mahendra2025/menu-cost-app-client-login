@@ -55,15 +55,6 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     };
   }
 
-  if (pathname === '/app/team') {
-    return {
-      step: 2,
-      label: 'Team',
-      desktopStep: 4,
-      desktopLabel: 'Manpower',
-    };
-  }
-
   if (
     pathname === '/app/operations' ||
     pathname === '/app/disposable' ||
@@ -71,27 +62,27 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     pathname === '/app/disposable-rates'
   ) {
     return {
-      step: 3,
+      step: 2,
       label: 'Expenses',
-      desktopStep: 5,
+      desktopStep: 4,
       desktopLabel: 'Operations',
     };
   }
 
   if (pathname === '/app/final-costing') {
     return {
-      step: 4,
+      step: 3,
       label: 'Pricing',
-      desktopStep: 6,
+      desktopStep: 5,
       desktopLabel: 'Final Cost',
     };
   }
 
   if (pathname === '/app/quotation') {
     return {
-      step: 5,
+      step: 4,
       label: 'Quotation',
-      desktopStep: 7,
+      desktopStep: 6,
       desktopLabel: 'Quotation',
     };
   }
@@ -123,7 +114,6 @@ const clientWorkflowNav = [
   { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Event, functions, dishes and import', icon: 'event' as ClientNavIcon },
   { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
   { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
-  { href: '/app/team', match: '/app/team', label: 'Manpower', description: 'Manual staff costing', icon: 'team' as ClientNavIcon },
   { href: '/app/operations', match: '/app/operations', label: 'Operations', description: 'Gas, transport and extras', icon: 'expenses' as ClientNavIcon },
   { href: '/app/final-costing', match: '/app/final-costing', label: 'Final Cost', description: 'Cost per plate and margin', icon: 'pricing' as ClientNavIcon },
   { href: '/app/quotation', match: '/app/quotation', label: 'Quotation', description: 'Client-facing quote', icon: 'quotation' as ClientNavIcon },
@@ -1374,7 +1364,7 @@ export default function AppShell({
                 <div className="client-desktop-page-step">
                   <span>{t('Workflow')}</span>
                   <b>{t(clientFlow.desktopLabel)}</b>
-                  <small>{t(`Step ${clientFlow.desktopStep} of 7`)}</small>
+                  <small>{t(`Step ${clientFlow.desktopStep} of 6`)}</small>
                 </div>
               ) : null}
             </section>
@@ -1386,11 +1376,11 @@ export default function AppShell({
               aria-label={t('Costing progress')}
             >
               <div className="client-flow-progress-copy">
-                <span>{t(`Step ${clientFlow.step} of 5`)}</span>
+                <span>{t(`Step ${clientFlow.step} of 4`)}</span>
                 <b>{t(clientFlow.label)}</b>
               </div>
               <div className="client-flow-progress-track" aria-hidden="true">
-                {[1, 2, 3, 4, 5].map((step) => (
+                {[1, 2, 3, 4].map((step) => (
                   <i
                     key={step}
                     className={
@@ -1423,19 +1413,10 @@ export default function AppShell({
               <small>{t('Event')}</small>
             </Link>
 
-            <a
-              href="/app/team"
-              className={clientFlow?.step === 2 ? 'active' : ''}
-              aria-current={clientFlow?.step === 2 ? 'page' : undefined}
-            >
-              <ClientNavIconMark icon="team" />
-              <small>{t('Team')}</small>
-            </a>
-
             <Link
               href="/app/operations"
-              className={clientFlow?.step === 3 ? 'active' : ''}
-              aria-current={clientFlow?.step === 3 ? 'page' : undefined}
+              className={clientFlow?.step === 2 ? 'active' : ''}
+              aria-current={clientFlow?.step === 2 ? 'page' : undefined}
             >
               <ClientNavIconMark icon="expenses" />
               <small>{t('Expenses')}</small>
@@ -1443,8 +1424,8 @@ export default function AppShell({
 
             <Link
               href="/app/final-costing"
-              className={clientFlow?.step === 4 ? 'active' : ''}
-              aria-current={clientFlow?.step === 4 ? 'page' : undefined}
+              className={clientFlow?.step === 3 ? 'active' : ''}
+              aria-current={clientFlow?.step === 3 ? 'page' : undefined}
             >
               <ClientNavIconMark icon="pricing" />
               <small>{t('Pricing')}</small>
@@ -1509,10 +1490,6 @@ export default function AppShell({
                     <b>{t('Cost Review')}</b>
                     <small>{t('Dish costs')}</small>
                   </Link>
-                  <a href="/app/team">
-                    <b>{t('Manpower')}</b>
-                    <small>{t('Meal-wise staff cost')}</small>
-                  </a>
                   <Link href="/app/quotation">
                     <b>{t('Quotation')}</b>
                     <small>{t('Client quote')}</small>
