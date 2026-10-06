@@ -424,7 +424,21 @@ export default function MyDishMasterPage() {
             'en-IN',
           );
 
-      return myDishes.filter(
+      return dishes
+        .slice()
+        .sort(
+          (
+            left,
+            right,
+          ) =>
+            left.category.localeCompare(
+              right.category,
+            ) ||
+            left.name.localeCompare(
+              right.name,
+            ),
+        )
+        .filter(
         (dish) => {
           const matchesCategory =
             categoryFilter ===
@@ -456,13 +470,13 @@ export default function MyDishMasterPage() {
         },
       );
     }, [
-      myDishes,
+      dishes,
       query,
       categoryFilter,
     ]);
 
   const pricedCount =
-    myDishes.filter(
+    dishes.filter(
       (dish) =>
         dish.rate > 0,
     ).length;
@@ -470,7 +484,7 @@ export default function MyDishMasterPage() {
   const missingRateCount =
     Math.max(
       0,
-      myDishes.length -
+      dishes.length -
         pricedCount,
     );
 
@@ -906,7 +920,7 @@ export default function MyDishMasterPage() {
               Dish Master
             </h1>
             <p>
-              Add your own dishes, maintain cost per plate, edit dish details and keep private categories ready for every future event.
+              See the complete Dish Master here. Use global dishes, add your own dishes, set your own rates, edit dish details and keep private categories ready for every future event.
             </p>
           </div>
 
@@ -938,13 +952,13 @@ export default function MyDishMasterPage() {
         <section className="my-dish-master-stats">
           <article>
             <span>
-              My dishes
+              All dishes
             </span>
             <b>
-              {myDishes.length}
+              {dishes.length}
             </b>
             <small>
-              Reusable in every event
+              Global + my dishes
             </small>
           </article>
 
@@ -959,7 +973,7 @@ export default function MyDishMasterPage() {
               Rates ready
             </span>
             <b>
-              {pricedCount}/{myDishes.length}
+              {pricedCount}/{dishes.length}
             </b>
             <small>
               {missingRateCount}
@@ -1458,13 +1472,13 @@ export default function MyDishMasterPage() {
           <div className="my-dish-list-head">
             <div>
               <span>
-                Saved dishes
+                Complete dish catalog
               </span>
               <h2>
-                My Dish Master
+                All Dishes
               </h2>
               <p>
-                Only your private dishes are editable here. Super Admin global dishes remain unchanged.
+                Global dishes and your personal dishes are shown together. Editing a global dish saves a private rate/detail override for your account without changing Super Admin master data.
               </p>
             </div>
 
@@ -1518,7 +1532,7 @@ export default function MyDishMasterPage() {
 
               {Array.from(
                 new Set(
-                  myDishes.map(
+                  dishes.map(
                     (dish) =>
                       dish.category,
                   ),
@@ -1578,8 +1592,18 @@ export default function MyDishMasterPage() {
                         </small>
                       </div>
 
-                      <span>
-                        My dish
+                      <span
+                        className={
+                          dish.source ===
+                          'tenant'
+                            ? 'personal'
+                            : 'global'
+                        }
+                      >
+                        {dish.source ===
+                        'tenant'
+                          ? 'My dish'
+                          : 'Global'}
                       </span>
                     </div>
 
@@ -1620,7 +1644,10 @@ export default function MyDishMasterPage() {
                         )
                       }
                     >
-                      Edit Dish & Rate
+                      {dish.source ===
+                      'tenant'
+                        ? 'Edit Dish & Rate'
+                        : 'Set My Rate / Edit'}
                     </button>
                   </article>
                 ),
@@ -1630,12 +1657,12 @@ export default function MyDishMasterPage() {
             <div className="empty-state">
               <div>
                 <h3>
-                  {myDishes.length
+                  {dishes.length
                     ? 'No matching dishes'
-                    : 'Your Dish Master is empty'}
+                    : 'Dish Master is empty'}
                 </h3>
                 <p>
-                  {myDishes.length
+                  {dishes.length
                     ? 'Clear the search or category filter.'
                     : 'Add your first reusable dish and rate above.'}
                 </p>
@@ -2040,6 +2067,16 @@ export default function MyDishMasterPage() {
           font-size: 7px;
           font-weight: 900;
           text-transform: uppercase;
+        }
+
+        .my-dish-card-head > span.global {
+          color: #9aa8b8;
+          background: rgba(148,163,184,.08);
+        }
+
+        .my-dish-card-head > span.personal {
+          color: #9dc7f7;
+          background: rgba(74,156,255,.08);
         }
 
         .my-dish-card-metrics {
