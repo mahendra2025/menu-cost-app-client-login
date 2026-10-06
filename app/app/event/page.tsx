@@ -13386,6 +13386,18 @@ export default function EventPage() {
                         </button>
 
                         <button
+                          className="secondary-button"
+                          type="button"
+                          onClick={() =>
+                            window.location.assign(
+                              '/app/dish-master',
+                            )
+                          }
+                        >
+                          Manage Dish Master
+                        </button>
+
+                        <button
                           className="primary-button"
                           type="button"
                           disabled={
