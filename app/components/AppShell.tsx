@@ -37,47 +37,6 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
     };
   }
 
-  if (pathname === '/app/cost') {
-    return {
-      step: 1,
-      label: 'Event',
-      desktopStep: 2,
-      desktopLabel: 'Dish Cost',
-    };
-  }
-
-  if (pathname === '/app/grocery') {
-    return {
-      step: 1,
-      label: 'Event',
-      desktopStep: 3,
-      desktopLabel: 'Grocery',
-    };
-  }
-
-  if (
-    pathname === '/app/operations' ||
-    pathname === '/app/disposable' ||
-    pathname === '/app/disposable-master' ||
-    pathname === '/app/disposable-rates'
-  ) {
-    return {
-      step: 2,
-      label: 'Expenses',
-      desktopStep: 4,
-      desktopLabel: 'Operations',
-    };
-  }
-
-  if (pathname === '/app/final-costing') {
-    return {
-      step: 3,
-      label: 'Pricing',
-      desktopStep: 5,
-      desktopLabel: 'Final Cost',
-    };
-  }
-
   if (pathname === '/app/quotation') {
     return {
       step: 4,
@@ -112,10 +71,6 @@ const adminNav =
 
 const clientWorkflowNav = [
   { href: '/app/menu', match: '/app/menu', label: 'Menu Studio', description: 'Create the client-facing menu', icon: 'quotation' as ClientNavIcon },
-  { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
-  { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
-  { href: '/app/operations', match: '/app/operations', label: 'Operations', description: 'Gas, transport and extras', icon: 'expenses' as ClientNavIcon },
-  { href: '/app/final-costing', match: '/app/final-costing', label: 'Final Cost', description: 'Cost per plate and margin', icon: 'pricing' as ClientNavIcon },
   { href: '/app/quotation', match: '/app/quotation', label: 'Quotation', description: 'Client-facing quote', icon: 'quotation' as ClientNavIcon },
 ];
 
@@ -1110,9 +1065,7 @@ export default function AppShell({
 
             <nav className="sidebar-nav client-desktop-nav" aria-label={t('Costing workflow')}>
               {clientWorkflowNav.map((item, index) => {
-                const isActive =
-                  pathname === item.match ||
-                  (item.match === '/app/operations' && pathname === '/app/disposable');
+                const isActive = pathname === item.match;
 
                 return (
                   <Link
@@ -1379,21 +1332,12 @@ export default function AppShell({
             </Link>
 
             <Link
-              href="/app/operations"
-              className={clientFlow?.step === 2 ? 'active' : ''}
-              aria-current={clientFlow?.step === 2 ? 'page' : undefined}
+              href="/app/quotation"
+              className={clientFlow?.step === 4 ? 'active' : ''}
+              aria-current={clientFlow?.step === 4 ? 'page' : undefined}
             >
-              <ClientNavIconMark icon="expenses" />
-              <small>{t('Expenses')}</small>
-            </Link>
-
-            <Link
-              href="/app/final-costing"
-              className={clientFlow?.step === 3 ? 'active' : ''}
-              aria-current={clientFlow?.step === 3 ? 'page' : undefined}
-            >
-              <ClientNavIconMark icon="pricing" />
-              <small>{t('Pricing')}</small>
+              <ClientNavIconMark icon="quotation" />
+              <small>{t('Quotation')}</small>
             </Link>
 
             <button
@@ -1454,10 +1398,6 @@ export default function AppShell({
                   <Link href="/app/history">
                     <b>{t('History')}</b>
                     <small>{t('Saved work')}</small>
-                  </Link>
-                  <Link href="/app/cost">
-                    <b>{t('Cost Review')}</b>
-                    <small>{t('Dish costs')}</small>
                   </Link>
                   <Link href="/app/quotation">
                     <b>{t('Quotation')}</b>
