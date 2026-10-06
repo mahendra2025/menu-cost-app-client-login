@@ -27,7 +27,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     router.prefetch('/app/event?resume=1');
-    router.prefetch('/admin/dishes');
+    router.prefetch('/admin/users');
   }, [router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -60,7 +60,7 @@ export default function LoginPage() {
           }),
         );
 
-        router.replace('/admin/dishes');
+        router.replace('/admin/users');
         return;
       }
 
