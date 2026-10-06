@@ -67,3 +67,28 @@ test('returns assigned dish names in menu order', () => {
     'Paneer Tikka Masala',
   ]);
 });
+
+
+test('vendor-produced dish is excluded from kitchen dish manpower assignments', () => {
+  const vendorMenu: MenuItem[] = menu.map((dish) =>
+    dish.id === 'dish_paneer'
+      ? {
+          ...dish,
+          vendorId: 'vendor_1',
+          vendorName: 'Vendor One',
+          groceryResponsibility: 'VENDOR',
+        }
+      : dish,
+  );
+
+  const assignments = buildDishManpowerAssignments(vendorMenu, manpower);
+
+  assert.deepEqual(
+    assignments.map((item) => item.dishId),
+    ['dish_roti'],
+  );
+  assert.deepEqual(
+    assignedDishNames(manpower[0], vendorMenu),
+    [],
+  );
+});
