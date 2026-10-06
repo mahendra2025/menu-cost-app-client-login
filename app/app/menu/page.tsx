@@ -13,7 +13,10 @@ import {
 } from '../../../lib/store';
 import type { MenuItem, Session, WorkState } from '../../../lib/types';
 import { CATEGORIES } from '../../../lib/menuCategories';
-import { downloadMenuCreationPdf } from '../../../lib/menuCreationPdf';
+import {
+  downloadMenuCreationPdf,
+  type MenuCreationPdfOptions,
+} from '../../../lib/menuCreationPdf';
 
 import styles from './page.module.css';
 
@@ -149,6 +152,18 @@ export default function MenuStudioPage() {
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogError, setCatalogError] = useState('');
   const [showDishPicker, setShowDishPicker] = useState(false);
+  const [showPdfEditor, setShowPdfEditor] = useState(false);
+  const [pdfOptions, setPdfOptions] = useState<MenuCreationPdfOptions>({
+    menuTitle: 'Curated Event Menu',
+    tagline: '',
+    footerNote: 'Crafted with care for a memorable celebration',
+    showDate: true,
+    showGuests: true,
+    showVenue: true,
+    showCity: true,
+    showEventType: true,
+    showFunctionCount: true,
+  });
   const [dishPickerQuery, setDishPickerQuery] = useState('');
   const [selectedCatalogDishKeys, setSelectedCatalogDishKeys] = useState<Set<string>>(
     () => new Set(),
@@ -178,6 +193,24 @@ export default function MenuStudioPage() {
         }
       } catch {
         // Use default order if an older saved preference is invalid.
+      }
+    }
+
+    const savedPdfOptions = window.localStorage.getItem(
+      `menu-studio-pdf-options:${current.tenantId}`,
+    );
+
+    if (savedPdfOptions) {
+      try {
+        const parsed =
+          JSON.parse(savedPdfOptions) as MenuCreationPdfOptions;
+
+        setPdfOptions((currentOptions) => ({
+          ...currentOptions,
+          ...parsed,
+        }));
+      } catch {
+        // Use default PDF settings if an older saved preference is invalid.
       }
     }
   }, []);
@@ -671,6 +704,37 @@ export default function MenuStudioPage() {
     setShowStationForm(false);
   }
 
+  function updatePdfOption<K extends keyof MenuCreationPdfOptions>(
+    key: K,
+    value: MenuCreationPdfOptions[K],
+  ) {
+    setPdfOptions((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  function savePdfOptions() {
+    if (!session) return;
+
+    window.localStorage.setItem(
+      `menu-studio-pdf-options:${session.tenantId}`,
+      JSON.stringify(pdfOptions),
+    );
+    setSaveStatus('PDF settings saved');
+    window.setTimeout(() => setSaveStatus(''), 1400);
+  }
+
+  function downloadEditedPdf() {
+    if (!work) return;
+
+    downloadMenuCreationPdf(
+      work,
+      orderedStations.flatMap((station) => station.categories),
+      pdfOptions,
+    );
+  }
+
   async function saveNow() {
     if (!session || !work) return;
     setSaveStatus('Saving…');
@@ -728,13 +792,16 @@ export default function MenuStudioPage() {
             </button>
             <button
               type="button"
+              className={styles.secondaryButton}
+              onClick={() => setShowPdfEditor(true)}
+              disabled={!work.menu.length}
+            >
+              PDF Edit
+            </button>
+            <button
+              type="button"
               className={styles.pdfButton}
-              onClick={() =>
-                downloadMenuCreationPdf(
-                  work,
-                  orderedStations.flatMap((station) => station.categories),
-                )
-              }
+              onClick={downloadEditedPdf}
               disabled={!work.menu.length}
             >
               Download PDF
@@ -1056,6 +1123,164 @@ export default function MenuStudioPage() {
             </div>
           </aside>
         </div>
+
+        {showPdfEditor ? (
+          <div
+            className={styles.modalLayer}
+            role="presentation"
+            onMouseDown={() => setShowPdfEditor(false)}
+          >
+            <section
+              className={`${styles.modal} ${styles.pdfEditorModal}`}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Edit PDF"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className={styles.pickerHead}>
+                <div>
+                  <span className={styles.modalEyebrow}>CLIENT PDF</span>
+                  <h2>Edit PDF</h2>
+                  <p>Change what your client sees before downloading.</p>
+                </div>
+                <button
+                  type="button"
+                  className={styles.pickerClose}
+                  onClick={() => setShowPdfEditor(false)}
+                  aria-label="Close PDF editor"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className={styles.pdfEditorGrid}>
+                <label>
+                  <span>PDF title</span>
+                  <input
+                    value={pdfOptions.menuTitle || ''}
+                    onChange={(event) =>
+                      updatePdfOption('menuTitle', event.target.value)
+                    }
+                    placeholder="Curated Event Menu"
+                  />
+                </label>
+
+                <label>
+                  <span>Tagline</span>
+                  <input
+                    value={pdfOptions.tagline || ''}
+                    onChange={(event) =>
+                      updatePdfOption('tagline', event.target.value)
+                    }
+                    placeholder={work.profile.tagline || 'A CURATED CULINARY EXPERIENCE'}
+                  />
+                </label>
+
+                <label className={styles.pdfEditorFull}>
+                  <span>Footer note</span>
+                  <input
+                    value={pdfOptions.footerNote || ''}
+                    onChange={(event) =>
+                      updatePdfOption('footerNote', event.target.value)
+                    }
+                    placeholder="Crafted with care for a memorable celebration"
+                  />
+                </label>
+              </div>
+
+              <div className={styles.pdfVisibility}>
+                <span>SHOW ON PDF</span>
+                <div className={styles.pdfToggleGrid}>
+                  {[
+                    ['showDate', 'Date'],
+                    ['showGuests', 'Guests'],
+                    ['showVenue', 'Venue'],
+                    ['showCity', 'City'],
+                    ['showEventType', 'Event Type'],
+                    ['showFunctionCount', 'Function Count'],
+                  ].map(([key, label]) => (
+                    <label key={key}>
+                      <input
+                        type="checkbox"
+                        checked={
+                          pdfOptions[
+                            key as keyof MenuCreationPdfOptions
+                          ] !== false
+                        }
+                        onChange={(event) =>
+                          updatePdfOption(
+                            key as keyof MenuCreationPdfOptions,
+                            event.target.checked,
+                          )
+                        }
+                      />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.pdfEditorPreview}>
+                <span>PREVIEW SETTINGS</span>
+                <b>{pdfOptions.menuTitle || 'Curated Event Menu'}</b>
+                <small>
+                  {pdfOptions.tagline ||
+                    work.profile.tagline ||
+                    'A CURATED CULINARY EXPERIENCE'}
+                </small>
+                <p>
+                  {pdfOptions.footerNote ||
+                    'Crafted with care for a memorable celebration'}
+                </p>
+              </div>
+
+              <div className={styles.pickerFooter}>
+                <button
+                  type="button"
+                  className={styles.pickerCustomAction}
+                  onClick={() => {
+                    setPdfOptions({
+                      menuTitle: 'Curated Event Menu',
+                      tagline: '',
+                      footerNote:
+                        'Crafted with care for a memorable celebration',
+                      showDate: true,
+                      showGuests: true,
+                      showVenue: true,
+                      showCity: true,
+                      showEventType: true,
+                      showFunctionCount: true,
+                    });
+                  }}
+                >
+                  Reset
+                </button>
+
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      savePdfOptions();
+                      setShowPdfEditor(false);
+                    }}
+                  >
+                    Save Settings
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.saveButton}
+                    onClick={() => {
+                      savePdfOptions();
+                      downloadEditedPdf();
+                    }}
+                  >
+                    Download PDF
+                  </button>
+                </div>
+              </div>
+            </section>
+          </div>
+        ) : null}
 
         {showDishPicker ? (
           <div

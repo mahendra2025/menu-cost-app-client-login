@@ -22,6 +22,18 @@ type FunctionMenu = {
   items: MenuItem[];
 };
 
+export type MenuCreationPdfOptions = {
+  menuTitle?: string;
+  tagline?: string;
+  footerNote?: string;
+  showDate?: boolean;
+  showGuests?: boolean;
+  showVenue?: boolean;
+  showCity?: boolean;
+  showEventType?: boolean;
+  showFunctionCount?: boolean;
+};
+
 const PAGE_LEFT = 14;
 const PAGE_RIGHT = 196;
 const CONTENT_WIDTH = 182;
@@ -277,6 +289,7 @@ function addFooter(
 export function downloadMenuCreationPdf(
   work: WorkState,
   categoryOrder: string[] = [],
+  options: MenuCreationPdfOptions = {},
 ) {
   const doc = new jsPDF({
     unit: 'mm',
@@ -288,8 +301,25 @@ export function downloadMenuCreationPdf(
     'Catering Business';
 
   const tagline =
+    options.tagline?.trim() ||
     work.profile.tagline?.trim() ||
     'A CURATED CULINARY EXPERIENCE';
+
+  const menuTitle =
+    options.menuTitle?.trim() ||
+    'Curated Event Menu';
+
+  const footerNote =
+    options.footerNote?.trim() ||
+    'Crafted with care for a memorable celebration';
+
+  const showDate = options.showDate !== false;
+  const showGuests = options.showGuests !== false;
+  const showVenue = options.showVenue !== false;
+  const showCity = options.showCity !== false;
+  const showEventType = options.showEventType !== false;
+  const showFunctionCount =
+    options.showFunctionCount !== false;
 
   const businessContact = [
     work.profile.phone,
@@ -344,7 +374,7 @@ export function downloadMenuCreationPdf(
   doc.setFontSize(13);
   doc.setTextColor(255, 255, 255);
   doc.text(
-    'Curated Event Menu',
+    menuTitle,
     105,
     42,
     { align: 'center' },
@@ -458,32 +488,46 @@ export function downloadMenuCreationPdf(
 
   const eventDetailRows: Array<
     [string, string]
-  > = [
-    [
+  > = [];
+
+  if (showDate) {
+    eventDetailRows.push([
       'Date',
       formatDate(
         work.event.eventDate,
       ) ||
         functions[0]?.dayLabel ||
         '-',
-    ],
-    [
+    ]);
+  }
+
+  if (showVenue) {
+    eventDetailRows.push([
       'Venue',
       work.event.venue ||
         '-',
-    ],
-    [
+    ]);
+  }
+
+  if (showCity) {
+    eventDetailRows.push([
       'City',
       work.event.city ||
         '-',
-    ],
-    [
+    ]);
+  }
+
+  if (showEventType) {
+    eventDetailRows.push([
       'Event Type',
       work.event.functionType ||
         eventName ||
         '-',
-    ],
-    [
+    ]);
+  }
+
+  if (showGuests) {
+    eventDetailRows.push([
       'Guests',
       Math.max(
         0,
@@ -494,14 +538,17 @@ export function downloadMenuCreationPdf(
             Number(work.event.pax) || 0,
           ).toLocaleString('en-IN')
         : '-',
-    ],
-    [
+    ]);
+  }
+
+  if (showFunctionCount) {
+    eventDetailRows.push([
       'Functions',
       String(
         functions.length || 1,
       ),
-    ],
-  ];
+    ]);
+  }
 
   let detailY =
     cardTop + 15;
@@ -619,7 +666,7 @@ export function downloadMenuCreationPdf(
         y + 12,
       );
 
-      if (fn.dayLabel) {
+      if (showDate && fn.dayLabel) {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(6.8);
         doc.setTextColor(198, 203, 209);
@@ -631,7 +678,7 @@ export function downloadMenuCreationPdf(
         );
       }
 
-      if (fn.pax > 0) {
+      if (showGuests && fn.pax > 0) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.2);
         doc.setTextColor(222, 227, 232);
@@ -727,7 +774,7 @@ export function downloadMenuCreationPdf(
     doc.setFontSize(8.5);
     doc.setTextColor(112, 98, 78);
     doc.text(
-      'Crafted with care for a memorable celebration',
+      footerNote,
       105,
       y + 9,
       { align: 'center' },

@@ -1527,3 +1527,135 @@
     height: 34px;
   }
 }
+
+
+/* PDF editor */
+.pdfEditorModal {
+  width: min(720px, 100%);
+}
+
+.pdfEditorGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.pdfEditorGrid label {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.pdfEditorGrid label > span,
+.pdfVisibility > span,
+.pdfEditorPreview > span {
+  color: #8a919b;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.pdfEditorGrid input {
+  min-height: 44px;
+  padding: 0 11px;
+  border: 1px solid #dde2e8;
+  border-radius: 10px;
+  outline: 0;
+  color: #262b31;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+}
+
+.pdfEditorGrid input:focus {
+  border-color: rgba(123,16,36,.45);
+  box-shadow: 0 0 0 3px rgba(123,16,36,.08);
+}
+
+.pdfEditorFull {
+  grid-column: 1 / -1;
+}
+
+.pdfVisibility {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #edf0f3;
+}
+
+.pdfToggleGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.pdfToggleGrid label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 38px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid #e5e8ed;
+  border-radius: 9px;
+  color: #555d68;
+  background: #fafbfc;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.pdfToggleGrid input {
+  width: 16px;
+  height: 16px;
+  accent-color: #7b1024;
+}
+
+.pdfEditorPreview {
+  display: grid;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #ead9b5;
+  border-radius: 12px;
+  text-align: center;
+  background: linear-gradient(180deg, #fffdf8, #fff8e9);
+}
+
+.pdfEditorPreview b {
+  margin-top: 4px;
+  color: #6f4d13;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 18px;
+}
+
+.pdfEditorPreview small {
+  color: #a0782d;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.pdfEditorPreview p {
+  margin: 8px 0 0;
+  color: #82735f;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 10px;
+  font-style: italic;
+}
+
+@media (max-width: 560px) {
+  .pdfEditorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .pdfEditorFull {
+    grid-column: auto;
+  }
+
+  .pdfToggleGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
