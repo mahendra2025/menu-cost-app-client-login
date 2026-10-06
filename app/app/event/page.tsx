@@ -13407,43 +13407,169 @@ export default function EventPage() {
                       </div>
 
                       {showNewDishCategoryForm ? (
-                        <div className="event-new-category-form">
-                          <input
-                            className="input"
-                            value={
-                              newDishCategoryName
-                            }
-                            placeholder="New category name e.g. Live Pasta"
-                            aria-label="New category name"
-                            maxLength={60}
-                            onChange={(event) =>
-                              setNewDishCategoryName(
-                                event.target.value,
-                              )
-                            }
-                            onKeyDown={(event) => {
-                              if (
-                                event.key ===
-                                'Enter'
-                              ) {
-                                event.preventDefault();
-                                addNewDishCategory();
+                        <div className="event-category-manager">
+                          <div className="event-new-category-form">
+                            <input
+                              className="input"
+                              value={
+                                newDishCategoryName
                               }
-                            }}
-                          />
+                              placeholder="New category name e.g. Live Pasta"
+                              aria-label="New category name"
+                              maxLength={60}
+                              onChange={(event) =>
+                                setNewDishCategoryName(
+                                  event.target.value,
+                                )
+                              }
+                              onKeyDown={(event) => {
+                                if (
+                                  event.key ===
+                                  'Enter'
+                                ) {
+                                  event.preventDefault();
+                                  void addNewDishCategory();
+                                }
+                              }}
+                            />
 
-                          <button
-                            className="secondary-button"
-                            type="button"
-                            disabled={
-                              !newDishCategoryName.trim()
-                            }
-                            onClick={
-                              addNewDishCategory
-                            }
-                          >
-                            Add Category
-                          </button>
+                            <button
+                              className="secondary-button"
+                              type="button"
+                              disabled={
+                                savingDishCategory ||
+                                !newDishCategoryName.trim()
+                              }
+                              onClick={() =>
+                                void addNewDishCategory()
+                              }
+                            >
+                              {savingDishCategory
+                                ? 'Saving…'
+                                : 'Save Category'}
+                            </button>
+                          </div>
+
+                          {customDishCategories.length ? (
+                            <div className="event-my-categories">
+                              <div className="event-my-categories-head">
+                                <div>
+                                  <b>
+                                    My Categories
+                                  </b>
+                                  <small>
+                                    Saved permanently for every event
+                                  </small>
+                                </div>
+                                <strong>
+                                  {customDishCategories.length}
+                                </strong>
+                              </div>
+
+                              <div className="event-my-category-list">
+                                {customDishCategories.map(
+                                  (category) => (
+                                    <div
+                                      className="event-my-category-row"
+                                      key={
+                                        category
+                                      }
+                                    >
+                                      {editingDishCategory ===
+                                      category ? (
+                                        <>
+                                          <input
+                                            className="input"
+                                            value={
+                                              editingDishCategoryName
+                                            }
+                                            maxLength={60}
+                                            aria-label="Edit category name"
+                                            onChange={(event) =>
+                                              setEditingDishCategoryName(
+                                                event.target.value,
+                                              )
+                                            }
+                                            onKeyDown={(event) => {
+                                              if (
+                                                event.key ===
+                                                'Enter'
+                                              ) {
+                                                event.preventDefault();
+                                                void saveDishCategoryEdit();
+                                              }
+                                            }}
+                                          />
+
+                                          <div className="event-my-category-actions">
+                                            <button
+                                              type="button"
+                                              className="ghost-button"
+                                              disabled={
+                                                savingDishCategory
+                                              }
+                                              onClick={() => {
+                                                setEditingDishCategory(
+                                                  null,
+                                                );
+                                                setEditingDishCategoryName(
+                                                  '',
+                                                );
+                                              }}
+                                            >
+                                              Cancel
+                                            </button>
+
+                                            <button
+                                              type="button"
+                                              className="primary-button"
+                                              disabled={
+                                                savingDishCategory ||
+                                                !editingDishCategoryName.trim()
+                                              }
+                                              onClick={() =>
+                                                void saveDishCategoryEdit()
+                                              }
+                                            >
+                                              {savingDishCategory
+                                                ? 'Saving…'
+                                                : 'Save'}
+                                            </button>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span>
+                                            <b>
+                                              {category}
+                                            </b>
+                                            <small>
+                                              My category
+                                            </small>
+                                          </span>
+
+                                          <button
+                                            type="button"
+                                            className="secondary-button"
+                                            disabled={
+                                              savingDishCategory
+                                            }
+                                            onClick={() =>
+                                              beginDishCategoryEdit(
+                                                category,
+                                              )
+                                            }
+                                          >
+                                            Edit
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>
