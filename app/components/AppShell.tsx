@@ -139,7 +139,7 @@ const adminNav =
   );
 
 const clientWorkflowNav = [
-  { href: '/app/menu', match: '/app/menu', label: 'Event & Menu', description: 'Event, functions, dishes and import', icon: 'event' as ClientNavIcon },
+  { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Event, functions, dishes and import', icon: 'event' as ClientNavIcon },
   { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
   { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
   { href: '/app/team', match: '/app/team', label: 'Manpower', description: 'Manual staff costing', icon: 'team' as ClientNavIcon },
@@ -709,7 +709,7 @@ export default function AppShell({
   return (
     <main className={`page-shell app-frame admin-theme ${isAdmin ? 'admin-workspace-shell' : 'client-theme'}`}>
       <header className="topbar no-print">
-        <Link href={isAdmin ? '/admin/users' : '/app/menu'} className="brand-chip">
+        <Link href={isAdmin ? '/admin/users' : '/app/event?resume=1'} className="brand-chip">
           <span className="brand-logo">MC</span>
           <span className="brand-copy">
             <b>Menu Costing</b>
@@ -1417,7 +1417,7 @@ export default function AppShell({
             aria-label={t('Main navigation')}
           >
             <Link
-              href="/app/menu"
+              href="/app/event?resume=1"
               className={clientFlow?.step === 1 ? 'active' : ''}
               aria-current={clientFlow?.step === 1 ? 'page' : undefined}
             >
