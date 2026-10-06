@@ -1681,9 +1681,8 @@ export default function ManpowerPage() {
                   type="button"
                   key={meal.key}
                   onClick={() => {
-                      setSelectedMealKey(meal.key);
-                      setDishCoverageFilter('ALL');
-                    }}
+                    setSelectedMealKey(meal.key);
+                  }}
                   aria-pressed={meal.key === activeMealKey}
                 >
                   <span className="manpower-meal-tab-icon">{index + 1}</span>
