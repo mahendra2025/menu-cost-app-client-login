@@ -1021,9 +1021,11 @@ export default function QuotationPage() {
         quotation?.totalCovers,
       ) ||
         numberValue(
-          calculate(
-            work,
-          ).totalCovers,
+          work
+            ? calculate(
+                work,
+              ).totalCovers
+            : 0,
         ) ||
         numberValue(
           work?.event.pax,
