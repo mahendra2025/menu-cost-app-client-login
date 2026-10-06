@@ -115,7 +115,6 @@ const adminNavGroups = [
   {
     label: 'Cost Masters',
     items: [
-      { href: '/admin/gas', label: 'Gas Cost', mobileLabel: 'Gas', description: 'LPG rates and dish gas profiles', icon: 'ingredients' as NavIcon },
       { href: '/admin/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Automatic staffing rules', icon: 'clients' as NavIcon },
     ],
   },
