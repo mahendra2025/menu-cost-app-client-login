@@ -470,6 +470,13 @@ function buildMealManpowerRows(
 
   return meals.flatMap((meal, mealIndex) => {
     const mealMenu = work.menu.filter((dish) => meal.dishIds.includes(dish.id));
+    const inHouseMealMenu = mealMenu.filter(
+      (dish) =>
+        !(
+          dish.vendorId &&
+          dish.groceryResponsibility === 'VENDOR'
+        ),
+    );
     const builtInRows = generateMealManpowerRows({
       mealKey: meal.key,
       menu: mealMenu,
@@ -530,7 +537,7 @@ function buildMealManpowerRows(
 
     const categoryRecommendations =
       buildCategoryManpowerRecommendations(
-        mealMenu,
+        inHouseMealMenu,
         meal.pax,
       );
 
@@ -556,7 +563,7 @@ function buildMealManpowerRows(
       >();
 
     sortMenuItemsByCategoryPriority(
-      mealMenu,
+      inHouseMealMenu,
     ).forEach((dish) => {
       const category =
         String(
@@ -783,15 +790,23 @@ function ManpowerMultiDishSelector({
     );
 
   const visibleDishes =
-    dishes.filter(
-      (dish) =>
-        assignedIds.has(
-          dish.id,
-        ) ||
-        !unavailableDishIds.has(
-          dish.id,
-        ),
-    );
+    dishes
+      .filter(
+        (dish) =>
+          !(
+            dish.vendorId &&
+            dish.groceryResponsibility === 'VENDOR'
+          ),
+      )
+      .filter(
+        (dish) =>
+          assignedIds.has(
+            dish.id,
+          ) ||
+          !unavailableDishIds.has(
+            dish.id,
+          ),
+      );
 
   const assignedCount =
     visibleDishes.filter(
