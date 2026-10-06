@@ -1360,37 +1360,6 @@ export default function AppShell({
                 <h1>{title}</h1>
                 <p>{subtitle ?? t('Plan and cost this event from one workspace.')}</p>
               </div>
-              {clientFlow ? (
-                <div className="client-desktop-page-step">
-                  <span>{t('Workflow')}</span>
-                  <b>{t(clientFlow.desktopLabel)}</b>
-                  <small>{t(`Step ${clientFlow.desktopStep} of 6`)}</small>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-
-          {!isAdmin && clientFlow ? (
-            <section
-              className="client-flow-progress no-print"
-              aria-label={t('Costing progress')}
-            >
-              <div className="client-flow-progress-copy">
-                <span>{t(`Step ${clientFlow.step} of 4`)}</span>
-                <b>{t(clientFlow.label)}</b>
-              </div>
-              <div className="client-flow-progress-track" aria-hidden="true">
-                {[1, 2, 3, 4].map((step) => (
-                  <i
-                    key={step}
-                    className={
-                      step <= clientFlow.step
-                        ? 'is-complete'
-                        : ''
-                    }
-                  />
-                ))}
-              </div>
             </section>
           ) : null}
 
