@@ -34,6 +34,56 @@ import {
 const CATALOG_ID = 'global';
 const CATEGORY_CATALOG_ID = 'global';
 
+const REMOVED_RECIPE_CATEGORIES =
+  new Set(['chaat']);
+
+function isRemovedRecipeCategory(
+  value: unknown,
+) {
+  return REMOVED_RECIPE_CATEGORIES.has(
+    String(value || '')
+      .trim()
+      .toLocaleLowerCase('en-IN'),
+  );
+}
+
+function removeHiddenRecipeCategories<
+  T extends {
+    dishes: unknown[];
+    rates: unknown[];
+    deletedDishIds: string[];
+    catalogVersion: number;
+  },
+>(
+  catalog: T,
+): T {
+  return {
+    ...catalog,
+    dishes:
+      catalog.dishes.filter(
+        (dishValue) => {
+          if (
+            !dishValue ||
+            typeof dishValue !== 'object' ||
+            Array.isArray(dishValue)
+          ) {
+            return true;
+          }
+
+          const dish =
+            dishValue as Record<
+              string,
+              unknown
+            >;
+
+          return !isRemovedRecipeCategory(
+            dish.category,
+          );
+        },
+      ),
+  };
+}
+
 function normalizeRecipeIngredientUnit(
   value: unknown,
 ): IngredientUnit | null {
@@ -195,6 +245,14 @@ async function catalogForCaterersOsSync(
     );
 
   for (const recipe of generatedRecipes) {
+    if (
+      isRemovedRecipeCategory(
+        recipe.category,
+      )
+    ) {
+      continue;
+    }
+
     const normalizedName =
       recipe.normalizedName ||
       normalizedRecipeName(
@@ -261,12 +319,14 @@ async function catalogForCaterersOsSync(
         catalog.catalogVersion,
     });
 
-  return normalized ||
-    {
-      ...catalog,
-      dishes:
-        mergedDishes,
-    };
+  return removeHiddenRecipeCategories(
+    normalized ||
+      {
+        ...catalog,
+        dishes:
+          mergedDishes,
+      },
+  );
 }
 
 function readCatalogPayload(value: unknown) {
@@ -898,9 +958,30 @@ export async function GET(request: Request) {
     ]);
 
     const catalogDishes =
-      Array.isArray(catalog?.dishes)
-        ? catalog.dishes as unknown[]
-        : [];
+      (
+        Array.isArray(catalog?.dishes)
+          ? catalog.dishes as unknown[]
+          : []
+      ).filter(
+        (dishValue) => {
+          if (
+            !dishValue ||
+            typeof dishValue !== 'object' ||
+            Array.isArray(dishValue)
+          ) {
+            return true;
+          }
+
+          return !isRemovedRecipeCategory(
+            (
+              dishValue as Record<
+                string,
+                unknown
+              >
+            ).category,
+          );
+        },
+      );
     const existingRecipeNames = new Set(
       catalogDishes
         .map((value) => {
@@ -918,6 +999,14 @@ export async function GET(request: Request) {
     const visibleGeneratedRecipes: unknown[] = [];
 
     for (const recipe of generatedRecipes) {
+      if (
+        isRemovedRecipeCategory(
+          recipe.category,
+        )
+      ) {
+        continue;
+      }
+
       if (
         !recipe.normalizedName ||
         existingRecipeNames.has(recipe.normalizedName)
@@ -989,6 +1078,12 @@ export async function GET(request: Request) {
                 ),
             )
             .filter(Boolean)
+            .filter(
+              (category) =>
+                !isRemovedRecipeCategory(
+                  category,
+                ),
+            )
             .map(
               (category) => [
                 category.toLowerCase(),
@@ -1095,7 +1190,7 @@ export async function POST() {
       });
     }
 
-    const catalog =
+    const parsedCatalog =
       readCatalogPayload({
         dishes:
           stored.dishes,
@@ -1107,7 +1202,7 @@ export async function POST() {
           stored.catalogVersion,
       });
 
-    if (!catalog) {
+    if (!parsedCatalog) {
       return NextResponse.json(
         {
           error:
@@ -1118,6 +1213,11 @@ export async function POST() {
         },
       );
     }
+
+    const catalog =
+      removeHiddenRecipeCategories(
+        parsedCatalog,
+      );
 
     const syncedDishes =
       await prisma.$transaction(
@@ -1185,10 +1285,15 @@ export async function PUT(request: Request) {
     const authError = await requireAdmin();
     if (authError) return authError;
 
-    const catalog = readCatalogPayload(await request.json());
-    if (!catalog) {
+    const parsedCatalog = readCatalogPayload(await request.json());
+    if (!parsedCatalog) {
       return NextResponse.json({ error: 'Invalid recipe catalog' }, { status: 400 });
     }
+
+    const catalog =
+      removeHiddenRecipeCategories(
+        parsedCatalog,
+      );
 
     // Persist the recipe catalog first. Dish Master sync is intentionally
     // best-effort so a sync problem can never roll back ingredient changes.
