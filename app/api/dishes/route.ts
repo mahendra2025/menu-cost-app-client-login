@@ -325,6 +325,12 @@ export async function GET() {
     let privateDishMasterAvailable =
       true;
 
+    let tenantSavedCategories:
+      string[] = [];
+
+    let privateCategoryMasterAvailable =
+      true;
+
     if (tenantId) {
       try {
         tenantSavedDishes =
@@ -359,6 +365,38 @@ export async function GET() {
         console.warn(
           'Tenant Dish Master unavailable; using global catalog only:',
           privateCatalogError,
+        );
+      }
+
+      try {
+        tenantSavedCategories =
+          (
+            await prisma
+              .tenantDishCategory
+              .findMany({
+                where: {
+                  tenantId,
+                },
+                orderBy: {
+                  name: 'asc',
+                },
+                select: {
+                  name: true,
+                },
+              })
+          )
+            .map(
+              (item) =>
+                item.name.trim(),
+            )
+            .filter(Boolean);
+      } catch (privateCategoryError) {
+        privateCategoryMasterAvailable =
+          false;
+
+        console.warn(
+          'Tenant dish categories unavailable; using dish-derived categories only:',
+          privateCategoryError,
         );
       }
     }
@@ -728,6 +766,7 @@ export async function GET() {
                 ? categoryCatalog.categories
                 : []
             ),
+            ...tenantSavedCategories,
             ...catalogItems.map(
               (item) =>
                 item.category,
@@ -761,12 +800,15 @@ export async function GET() {
       items:
         catalogItems,
       categories,
+      personalCategories:
+        tenantSavedCategories,
       personalized:
         Boolean(
           tenantId &&
           privateDishMasterAvailable,
         ),
       privateDishMasterAvailable,
+      privateCategoryMasterAvailable,
     });
   } catch (error) {
     console.error(
