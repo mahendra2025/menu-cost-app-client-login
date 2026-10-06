@@ -31,9 +31,9 @@ function clientFlowForPath(pathname: string): ClientFlowStep | null {
   ) {
     return {
       step: 1,
-      label: 'Event',
+      label: 'Menu',
       desktopStep: 1,
-      desktopLabel: 'Event & Menu',
+      desktopLabel: 'Menu Studio',
     };
   }
 
@@ -111,7 +111,6 @@ const adminNav =
   );
 
 const clientWorkflowNav = [
-  { href: '/app/event?resume=1', match: '/app/event', label: 'Event', description: 'Event details, functions and import', icon: 'event' as ClientNavIcon },
   { href: '/app/menu', match: '/app/menu', label: 'Menu Studio', description: 'Create the client-facing menu', icon: 'quotation' as ClientNavIcon },
   { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
   { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
@@ -698,7 +697,7 @@ export default function AppShell({
   return (
     <main className={`page-shell app-frame admin-theme ${isAdmin ? 'admin-workspace-shell' : 'client-theme'}`}>
       <header className="topbar no-print">
-        <Link href={isAdmin ? '/admin/users' : '/app/event?resume=1'} className="brand-chip">
+        <Link href={isAdmin ? '/admin/users' : '/app/menu'} className="brand-chip">
           <span className="brand-logo">MC</span>
           <span className="brand-copy">
             <b>Menu Costing</b>
@@ -1371,12 +1370,12 @@ export default function AppShell({
             aria-label={t('Main navigation')}
           >
             <Link
-              href="/app/event?resume=1"
+              href="/app/menu"
               className={clientFlow?.step === 1 ? 'active' : ''}
               aria-current={clientFlow?.step === 1 ? 'page' : undefined}
             >
-              <ClientNavIconMark icon="event" />
-              <small>{t('Event')}</small>
+              <ClientNavIconMark icon="quotation" />
+              <small>{t('Menu')}</small>
             </Link>
 
             <Link

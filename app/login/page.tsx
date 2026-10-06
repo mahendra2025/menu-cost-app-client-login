@@ -26,7 +26,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    router.prefetch('/app/event?resume=1');
+    router.prefetch('/app/menu');
     router.prefetch('/admin/users');
   }, [router]);
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
         }),
       );
 
-      router.replace('/app/event?resume=1');
+      router.replace('/app/menu');
     } catch {
       setError('We could not reach the server. Check your connection and try again.');
     } finally {
