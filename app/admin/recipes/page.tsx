@@ -106,6 +106,53 @@ type RecipeCatalog = {
 const RECIPE_CACHE_KEY = 'admin_recipe_catalog_v2';
 const RECIPE_DISH_SYNC_KEY =
   'admin_recipe_dish_sync_v1';
+
+const REMOVED_RECIPE_CATEGORIES =
+  new Set(['chaat']);
+
+function isVisibleRecipeCategory(
+  value: unknown,
+) {
+  return !REMOVED_RECIPE_CATEGORIES.has(
+    String(value || '')
+      .trim()
+      .toLocaleLowerCase('en-IN'),
+  );
+}
+
+function cleanRecipeCatalog(
+  catalog: RecipeCatalog,
+): RecipeCatalog {
+  const categories =
+    catalog.categories.filter(
+      isVisibleRecipeCategory,
+    );
+
+  const subcategories =
+    Object.fromEntries(
+      Object.entries(
+        catalog.subcategories,
+      ).filter(
+        ([category]) =>
+          isVisibleRecipeCategory(
+            category,
+          ),
+      ),
+    );
+
+  return {
+    ...catalog,
+    dishes:
+      catalog.dishes.filter(
+        (dish) =>
+          isVisibleRecipeCategory(
+            dish.category,
+          ),
+      ),
+    categories,
+    subcategories,
+  };
+}
 const BULK_RECIPE_DRAFT_KEY =
   'menu_cost_bulk_recipe_draft_v1';
 
@@ -2040,26 +2087,31 @@ export default function RecipesPage() {
               : {},
         };
 
+      const cleanedCatalog =
+        cleanRecipeCatalog(
+          nextCatalog,
+        );
+
       setCatalog(
-        nextCatalog,
+        cleanedCatalog,
       );
 
       memoryRecipeCatalog =
-        nextCatalog;
+        cleanedCatalog;
 
       memoryRecipeCatalogLoadedAt =
         Date.now();
 
       setSelectedIndex(
         requestedRecipeIndex(
-          nextCatalog.dishes,
+          cleanedCatalog.dishes,
         ),
       );
 
       try {
         localStorage.setItem(
           RECIPE_CACHE_KEY,
-          JSON.stringify(nextCatalog),
+          JSON.stringify(cleanedCatalog),
         );
       } catch {
         // Cache is optional.
@@ -2146,13 +2198,21 @@ export default function RecipesPage() {
 
   useEffect(() => {
     if (memoryRecipeCatalog) {
+      const cleanedMemoryCatalog =
+        cleanRecipeCatalog(
+          memoryRecipeCatalog,
+        );
+
+      memoryRecipeCatalog =
+        cleanedMemoryCatalog;
+
       setCatalog(
-        memoryRecipeCatalog,
+        cleanedMemoryCatalog,
       );
 
       setSelectedIndex(
         requestedRecipeIndex(
-          memoryRecipeCatalog.dishes,
+          cleanedMemoryCatalog.dishes,
         ),
       );
 
@@ -2183,17 +2243,31 @@ export default function RecipesPage() {
           Array.isArray(cached.dishes) &&
           Array.isArray(cached.rates)
         ) {
+          const cleanedCachedCatalog =
+            cleanRecipeCatalog(
+              cached,
+            );
+
           memoryRecipeCatalog =
-            cached;
+            cleanedCachedCatalog;
 
           memoryRecipeCatalogLoadedAt =
             0;
 
-          setCatalog(cached);
+          setCatalog(
+            cleanedCachedCatalog,
+          );
 
           setSelectedIndex(
             requestedRecipeIndex(
-              cached.dishes,
+              cleanedCachedCatalog.dishes,
+            ),
+          );
+
+          localStorage.setItem(
+            RECIPE_CACHE_KEY,
+            JSON.stringify(
+              cleanedCachedCatalog,
             ),
           );
 
@@ -2821,11 +2895,18 @@ export default function RecipesPage() {
               )
               .filter(
                 Boolean,
+              )
+              .filter(
+                isVisibleRecipeCategory,
               ),
 
             'Other',
           ]),
-        ).sort(
+        )
+          .filter(
+            isVisibleRecipeCategory,
+          )
+          .sort(
           (a, b) =>
             a.localeCompare(
               b,
