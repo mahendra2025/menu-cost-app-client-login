@@ -4251,6 +4251,26 @@ export default function EventPage() {
     }
   }
 
+  function openEditEventDetails() {
+    const section =
+      document.getElementById(
+        'active-event-details',
+      );
+
+    section?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+
+    window.setTimeout(() => {
+      document
+        .getElementById(
+          'active-event-client-name',
+        )
+        ?.focus();
+    }, 250);
+  }
+
   function updateEvent(
     key: keyof WorkState['event'],
     value: string | number,
@@ -11836,12 +11856,16 @@ export default function EventPage() {
           </div>
         </div>
 
-        <section className="glass-card event-details-card" aria-labelledby="active-event-details-title" style={{ order: 0 }}>
+        <section id="active-event-details" className="glass-card event-details-card" aria-labelledby="active-event-details-title" style={{ order: 0 }}>
           <div className="event-section-heading">
             <div>
               <h2 id="active-event-details-title">Event details</h2>
-              <p>Review or update your event details. Changes save automatically.</p>
+              <p>Edit the current event here. Changes save automatically without creating a new event.</p>
             </div>
+            <span className="event-saved-status">
+              <i aria-hidden="true">✓</i>
+              Auto-save
+            </span>
           </div>
           <div className="new-event-form-grid event-fast-entry-grid">
             {([
@@ -11856,6 +11880,7 @@ export default function EventPage() {
                 <span>{label}</span>
                 <input
                   key={`${work.costingId}:${key}:${String(work.event[key] || '')}`}
+                  id={key === 'clientName' ? 'active-event-client-name' : undefined}
                   className="input"
                   type={type}
                   defaultValue={work.event[key]}
@@ -12416,7 +12441,7 @@ export default function EventPage() {
             <button
               className="event-desktop-edit-details"
               type="button"
-              onClick={openNewEventForm}
+              onClick={openEditEventDetails}
             >
               Edit event details
             </button>
