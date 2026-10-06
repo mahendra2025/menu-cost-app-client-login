@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
-export default function ManpowerPage() {
-  redirect('/app/team');
+export default function RemovedManpowerPage() {
+  redirect('/app/operations');
 }
