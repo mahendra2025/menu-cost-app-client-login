@@ -115,7 +115,6 @@ const adminNavGroups = [
   {
     label: 'Cost Masters',
     items: [
-      { href: '/admin/manpower', label: 'Manpower', mobileLabel: 'Team', description: 'Automatic staffing rules', icon: 'clients' as NavIcon },
     ],
   },
   {
