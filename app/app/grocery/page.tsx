@@ -2585,11 +2585,11 @@ export default function GroceryPage() {
                 }
                 onClick={() =>
                   router.push(
-                    '/app/team',
+                    '/app/operations',
                   )
                 }
               >
-                Continue to Manpower
+                Continue to Operations
                 <span aria-hidden="true">
                   →
                 </span>
@@ -2618,11 +2618,11 @@ export default function GroceryPage() {
               type="button"
               onClick={() =>
                 router.push(
-                  '/app/team',
+                  '/app/operations',
                 )
               }
             >
-              Next: Manpower
+              Next: Operations
             </button>
 
             <button
