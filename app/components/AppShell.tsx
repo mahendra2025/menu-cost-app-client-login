@@ -111,7 +111,8 @@ const adminNav =
   );
 
 const clientWorkflowNav = [
-  { href: '/app/event?resume=1', match: '/app/event', label: 'Event & Menu', description: 'Event, functions, dishes and import', icon: 'event' as ClientNavIcon },
+  { href: '/app/event?resume=1', match: '/app/event', label: 'Event', description: 'Event details, functions and import', icon: 'event' as ClientNavIcon },
+  { href: '/app/menu', match: '/app/menu', label: 'Menu Studio', description: 'Create the client-facing menu', icon: 'quotation' as ClientNavIcon },
   { href: '/app/cost', match: '/app/cost', label: 'Dish Cost', description: 'Review food cost', icon: 'cost' as ClientNavIcon },
   { href: '/app/grocery', match: '/app/grocery', label: 'Grocery', description: 'Ingredient requirement', icon: 'grocery' as ClientNavIcon },
   { href: '/app/operations', match: '/app/operations', label: 'Operations', description: 'Gas, transport and extras', icon: 'expenses' as ClientNavIcon },
@@ -1112,10 +1113,6 @@ export default function AppShell({
               {clientWorkflowNav.map((item, index) => {
                 const isActive =
                   pathname === item.match ||
-                  (
-                    item.match === '/app/menu' &&
-                    pathname === '/app/event'
-                  ) ||
                   (item.match === '/app/operations' && pathname === '/app/disposable');
 
                 return (
@@ -1447,6 +1444,10 @@ export default function AppShell({
                 </div>
 
                 <div className="client-more-grid">
+                  <Link href="/app/menu">
+                    <b>{t('Menu Studio')}</b>
+                    <small>{t('Create and preview client menu')}</small>
+                  </Link>
                   <Link href="/app/event-planning">
                     <b>{t('Event Planning')}</b>
                     <small>{t('Vendors, agencies and readiness')}</small>
