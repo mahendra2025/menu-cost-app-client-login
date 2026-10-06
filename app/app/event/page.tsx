@@ -1416,6 +1416,33 @@ export default function EventPage() {
     () => new Set(),
   );
 
+  const [
+    editingPersonalDish,
+    setEditingPersonalDish,
+  ] = useState<ManualDishOption | null>(
+    null,
+  );
+
+  const [
+    personalDishEditName,
+    setPersonalDishEditName,
+  ] = useState('');
+
+  const [
+    personalDishEditCategory,
+    setPersonalDishEditCategory,
+  ] = useState('Other');
+
+  const [
+    personalDishEditRate,
+    setPersonalDishEditRate,
+  ] = useState('');
+
+  const [
+    savingPersonalDishEdit,
+    setSavingPersonalDishEdit,
+  ] = useState(false);
+
   useEffect(() => {
     const currentSession = getSession();
 
@@ -2170,6 +2197,299 @@ export default function EventPage() {
     }
   }
 
+  async function savePersonalDishRecord({
+    name,
+    category,
+    rate = 0,
+    servingQuantity = 1,
+    servingUnit = 'serving',
+    previousName = '',
+  }: {
+    name: string;
+    category: string;
+    rate?: number;
+    servingQuantity?: number;
+    servingUnit?: string;
+    previousName?: string;
+  }) {
+    const response =
+      await fetch(
+        '/api/dishes',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body:
+            JSON.stringify({
+              name,
+              previousName,
+              category:
+                category ||
+                'Other',
+              rate:
+                Math.max(
+                  0,
+                  Number(rate) || 0,
+                ),
+              servingQuantity:
+                Math.max(
+                  0.01,
+                  Number(
+                    servingQuantity,
+                  ) || 1,
+                ),
+              servingUnit:
+                servingUnit ||
+                'serving',
+            }),
+        },
+      );
+
+    const data =
+      await response
+        .json()
+        .catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          'Could not save dish to your Dish Master.',
+      );
+    }
+
+    const saved =
+      data.item &&
+      typeof data.item ===
+        'object'
+        ? data.item as Record<
+            string,
+            unknown
+          >
+        : {};
+
+    return {
+      name:
+        String(
+          saved.name ||
+          name,
+        ).trim() ||
+        name,
+      category:
+        String(
+          saved.category ||
+          category ||
+          'Other',
+        ).trim() ||
+        'Other',
+      subcategory:
+        String(
+          saved.subcategory ||
+          '',
+        ).trim(),
+      rate:
+        Math.max(
+          0,
+          Number(
+            saved.rate,
+          ) || 0,
+        ),
+      servingQuantity:
+        Math.max(
+          0.01,
+          Number(
+            saved.servingQuantity,
+          ) || servingQuantity || 1,
+        ),
+      servingUnit:
+        String(
+          saved.servingUnit ||
+          servingUnit ||
+          'serving',
+        ).trim() ||
+        'serving',
+      source:
+        'tenant' as const,
+    } satisfies ManualDishOption;
+  }
+
+  function beginPersonalDishEdit(
+    dish: ManualDishOption,
+  ) {
+    if (
+      dish.source !==
+      'tenant'
+    ) {
+      return;
+    }
+
+    setEditingPersonalDish(
+      dish,
+    );
+    setPersonalDishEditName(
+      dish.name,
+    );
+    setPersonalDishEditCategory(
+      dish.category ||
+      'Other',
+    );
+    setPersonalDishEditRate(
+      String(
+        Math.max(
+          0,
+          Number(
+            dish.rate,
+          ) || 0,
+        ),
+      ),
+    );
+    setError('');
+  }
+
+  async function savePersonalDishEdit() {
+    if (!editingPersonalDish) {
+      return;
+    }
+
+    const name =
+      personalDishEditName
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const category =
+      personalDishEditCategory
+        .replace(/\s+/g, ' ')
+        .trim() ||
+      'Other';
+
+    if (!name) {
+      setError(
+        'Dish name cannot be empty.',
+      );
+      return;
+    }
+
+    setSavingPersonalDishEdit(
+      true,
+    );
+    setError('');
+
+    try {
+      const previousKey =
+        dishNameKey(
+          editingPersonalDish.name,
+        );
+
+      const savedDish =
+        await savePersonalDishRecord({
+          name,
+          previousName:
+            editingPersonalDish.name,
+          category,
+          rate:
+            Math.max(
+              0,
+              Number(
+                personalDishEditRate,
+              ) || 0,
+            ),
+          servingQuantity:
+            editingPersonalDish
+              .servingQuantity ||
+            1,
+          servingUnit:
+            editingPersonalDish
+              .servingUnit ||
+            'serving',
+        });
+
+      const nextKey =
+        dishNameKey(
+          savedDish.name,
+        );
+
+      setSelectedManualDishKeys(
+        (current) => {
+          if (
+            !current.has(
+              previousKey,
+            )
+          ) {
+            return current;
+          }
+
+          const next =
+            new Set(current);
+
+          next.delete(
+            previousKey,
+          );
+          next.add(
+            nextKey,
+          );
+
+          return next;
+        },
+      );
+
+      const refreshed =
+        await loadManualDishCatalog(
+          true,
+          true,
+        );
+
+      setManualDishCatalog(
+        refreshed,
+      );
+
+      setSavedPersonalDishKeys(
+        (current) => {
+          const next =
+            new Set(current);
+
+          next.delete(
+            previousKey,
+          );
+          next.add(
+            nextKey,
+          );
+
+          return next;
+        },
+      );
+
+      setManualDishNotice(
+        `${savedDish.name} updated in My Dish Master. The change is available in every event.`,
+      );
+
+      setEditingPersonalDish(
+        null,
+      );
+
+      void saveTenantDishLearning({
+        aliasName:
+          editingPersonalDish.name,
+        canonicalName:
+          savedDish.name,
+        category:
+          savedDish.category,
+        action:
+          'MAP',
+      });
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : 'Could not update your saved dish.',
+      );
+    } finally {
+      setSavingPersonalDishEdit(
+        false,
+      );
+    }
+  }
+
   function findManualDishMatch(
     dishes: ManualDishOption[],
     rawName: string,
@@ -2275,20 +2595,26 @@ export default function EventPage() {
         ).trim() ||
         'Other';
 
-      await queueUnknownDishSuggestion(
-        name,
-        category,
-      );
-
-      const provisional:
-        ManualDishOption = {
+      const provisional =
+        await savePersonalDishRecord({
           name,
           category,
-          subcategory: '',
           rate: 0,
           servingQuantity: 1,
-          servingUnit: 'serving',
-        };
+          servingUnit:
+            'serving',
+        });
+
+      void queueUnknownDishSuggestion(
+        name,
+        category,
+      ).catch(
+        (queueError) =>
+          console.warn(
+            'Could not queue personal dish for Super Admin review:',
+            queueError,
+          ),
+      );
 
       setManualDishCatalog(
         (current) =>
@@ -2324,8 +2650,33 @@ export default function EventPage() {
       setShowUnknownDishForm(
         false,
       );
+      setSavedPersonalDishKeys(
+        (current) =>
+          new Set([
+            ...current,
+            dishNameKey(
+              provisional.name,
+            ),
+          ]),
+      );
+
+      setAvailableDishCategories(
+        (current) =>
+          Array.from(
+            new Set([
+              ...current,
+              provisional.category,
+            ]),
+          ).sort(
+            (left, right) =>
+              left.localeCompare(
+                right,
+              ),
+          ),
+      );
+
       setManualDishNotice(
-        'Added to this event with cost pending and sent to Super Admin → Unknown Dish Queue.',
+        'Saved permanently in My Dish Master and selected for this event. You can reuse or edit it in future events.',
       );
     } catch (unknownDishError) {
       setError(
@@ -2506,7 +2857,7 @@ export default function EventPage() {
     );
     setError('');
     setManualDishNotice(
-      `${finalCategory} category ready. Enter the dish name and add it to this event.`,
+      `${finalCategory} category ready. Add the dish and this category will be saved in your Dish Master for future events.`,
     );
   }
 
@@ -2692,15 +3043,35 @@ export default function EventPage() {
           ) as Category;
 
     try {
-      await queueUnknownDishSuggestion(
+      await savePersonalDishRecord({
         name,
         category,
+        rate: 0,
+        servingQuantity: 1,
+        servingUnit:
+          'serving',
+      });
+
+      await loadManualDishCatalog(
+        true,
+        true,
       );
-    } catch (queueError) {
+
+      void queueUnknownDishSuggestion(
+        name,
+        category,
+      ).catch(
+        (queueError) =>
+          console.warn(
+            'Could not queue personal dish for Super Admin review:',
+            queueError,
+          ),
+      );
+    } catch (saveError) {
       setError(
-        queueError instanceof Error
-          ? queueError.message
-          : 'Could not send this dish for Super Admin review.',
+        saveError instanceof Error
+          ? saveError.message
+          : 'Could not save this dish to your Dish Master.',
       );
       return;
     }
@@ -8847,6 +9218,18 @@ export default function EventPage() {
   const manualSelectedCount =
     selectedManualDishKeys.size;
 
+  const selectedPersonalDish =
+    manualDishCatalog.find(
+      (dish) =>
+        dish.source ===
+          'tenant' &&
+        selectedManualDishKeys.has(
+          dishNameKey(
+            dish.name,
+          ),
+        ),
+    );
+
   const exactManualCatalogDish =
     manualDishSearch.trim()
       ? findManualDishMatch(
@@ -12801,18 +13184,142 @@ export default function EventPage() {
                     </div>
 
                     {manualSelectedCount > 0 ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedManualDishKeys(
-                            new Set(),
+                      <div className="event-dish-picker-results-actions">
+                        {selectedPersonalDish ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              beginPersonalDishEdit(
+                                selectedPersonalDish,
+                              )
+                            }
+                          >
+                            Edit My Dish
+                          </button>
+                        ) : null}
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedManualDishKeys(
+                              new Set(),
+                            )
+                          }
+                        >
+                          Clear selected
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {editingPersonalDish ? (
+                    <div className="event-personal-dish-editor">
+                      <div>
+                        <b>
+                          Edit My Dish
+                        </b>
+                        <small>
+                          Changes are saved permanently for your account and used in future events.
+                        </small>
+                      </div>
+
+                      <input
+                        className="input"
+                        value={
+                          personalDishEditName
+                        }
+                        placeholder="Dish name"
+                        onChange={(event) =>
+                          setPersonalDishEditName(
+                            event.target.value,
+                          )
+                        }
+                      />
+
+                      <select
+                        className="select"
+                        value={
+                          personalDishEditCategory
+                        }
+                        onChange={(event) =>
+                          setPersonalDishEditCategory(
+                            event.target.value,
                           )
                         }
                       >
-                        Clear selected
-                      </button>
-                    ) : null}
-                  </div>
+                        {Array.from(
+                          new Set([
+                            ...manualDishCategories,
+                            personalDishEditCategory,
+                          ]),
+                        )
+                          .filter(Boolean)
+                          .map(
+                            (category) => (
+                              <option
+                                key={
+                                  category
+                                }
+                                value={
+                                  category
+                                }
+                              >
+                                {category}
+                              </option>
+                            ),
+                          )}
+                      </select>
+
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={
+                          personalDishEditRate
+                        }
+                        placeholder="Cost / plate"
+                        onChange={(event) =>
+                          setPersonalDishEditRate(
+                            event.target.value,
+                          )
+                        }
+                      />
+
+                      <div className="event-personal-dish-editor-actions">
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          disabled={
+                            savingPersonalDishEdit
+                          }
+                          onClick={() =>
+                            setEditingPersonalDish(
+                              null,
+                            )
+                          }
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                          type="button"
+                          className="primary-button"
+                          disabled={
+                            savingPersonalDishEdit ||
+                            !personalDishEditName.trim()
+                          }
+                          onClick={() =>
+                            void savePersonalDishEdit()
+                          }
+                        >
+                          {savingPersonalDishEdit
+                            ? 'Saving…'
+                            : 'Save My Dish'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
 
                   {manualDishLoading ? (
                     <div className="event-dish-picker-loading">
@@ -13008,7 +13515,7 @@ export default function EventPage() {
                           Not in Dish Master: {manualDishSearch.trim()}
                         </b>
                         <small>
-                          Add it to this event now. It will also go to Super Admin → Unknown Dish Queue for recipe, costing and Global Dish Master approval.
+                          Save it to My Dish Master and use it in this event. It stays private to your account, can be edited later, and is also sent to Super Admin for optional global recipe approval.
                         </small>
                       </div>
 
@@ -13062,7 +13569,7 @@ export default function EventPage() {
                           >
                             {addingUnknownDish
                               ? 'Adding…'
-                              : 'Add to Event & Send to Admin'}
+                              : 'Save My Dish & Add'}
                           </button>
                         </div>
                       ) : (
