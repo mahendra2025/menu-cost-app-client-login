@@ -1646,6 +1646,50 @@ export default function EventPage() {
     );
   }
 
+  async function removeSavedMenuDish(
+    itemId: string,
+    dishName: string,
+  ) {
+    if (!work || !session) {
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `Remove ${dishName} from this event menu?`,
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const nextWork: WorkState = {
+      ...work,
+      menu: work.menu.filter(
+        (item) =>
+          item.id !== itemId,
+      ),
+      updatedAt:
+        new Date().toISOString(),
+    };
+
+    persistWork(nextWork);
+    flushWorkSave(
+      session.tenantId,
+    );
+
+    try {
+      await flushDraftToServer(
+        session.tenantId,
+        nextWork,
+      );
+    } catch {
+      setError(
+        'Dish was removed locally, but the event draft could not sync. Please try again.',
+      );
+    }
+  }
+
   async function refreshGlobalDishUpdates(
     tenantId: string,
   ) {
@@ -10857,6 +10901,94 @@ export default function EventPage() {
       ).values(),
     );
 
+  const savedMenuEditorGroups =
+    savedMenuFunctionGroups.map(
+      (group) => {
+        const items =
+          sortMenuItemsByCategoryPriority(
+            work.menu.filter(
+              (item) =>
+                detectionGroupKeyForItem(
+                  item,
+                ) === group.key,
+            ),
+          );
+
+        const categoryMap =
+          new Map<
+            string,
+            MenuItem[]
+          >();
+
+        items.forEach(
+          (item) => {
+            const category =
+              String(
+                item.category ||
+                  'Other',
+              ).trim() ||
+              'Other';
+
+            const current =
+              categoryMap.get(
+                category,
+              );
+
+            if (current) {
+              current.push(
+                item,
+              );
+            } else {
+              categoryMap.set(
+                category,
+                [item],
+              );
+            }
+          },
+        );
+
+        return {
+          ...group,
+          items,
+          categoryGroups:
+            Array.from(
+              categoryMap,
+              (
+                [
+                  category,
+                  categoryItems,
+                ],
+              ) => ({
+                category,
+                items:
+                  categoryItems,
+              }),
+            ),
+          missingRateCount:
+            items.filter(
+              (item) =>
+                !(
+                  Number(
+                    item.costPerPlate,
+                  ) > 0
+                ),
+            ).length,
+          costPerPlate:
+            items.reduce(
+              (sum, item) =>
+                sum +
+                Math.max(
+                  0,
+                  Number(
+                    item.costPerPlate,
+                  ) || 0,
+                ),
+              0,
+            ),
+        };
+      },
+    );
+
   const savedMenuDishCount =
     work.menu.length;
 
@@ -12291,6 +12423,269 @@ export default function EventPage() {
           </aside>
 
           <div className="form-grid">
+            {work.menu.length > 0 ? (
+              <section
+                className="event-menu-editor-v2 no-print"
+                aria-label="Edit saved menu"
+              >
+                <div className="event-menu-editor-v2-head">
+                  <div>
+                    <span className="section-kicker">
+                      Edit Menu
+                    </span>
+                    <h2>
+                      Manage menu by function
+                    </h2>
+                    <p>
+                      Open any function to review dishes category-wise, add another dish, or remove a dish from this event.
+                    </p>
+                  </div>
+
+                  <div className="event-menu-editor-v2-head-actions">
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() =>
+                        void openManualDishSelector(
+                          undefined,
+                          true,
+                        )
+                      }
+                    >
+                      + Add Function
+                    </button>
+
+                    <a
+                      className="primary-button"
+                      href="/app/cost"
+                    >
+                      Dish Cost
+                      <span aria-hidden="true">
+                        →
+                      </span>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="event-menu-editor-v2-summary">
+                  <div>
+                    <span>Functions</span>
+                    <b>
+                      {savedMenuEditorGroups.length}
+                    </b>
+                  </div>
+                  <div>
+                    <span>Dishes</span>
+                    <b>
+                      {savedMenuDishCount}
+                    </b>
+                  </div>
+                  <div>
+                    <span>Categories</span>
+                    <b>
+                      {savedMenuCategoryCount}
+                    </b>
+                  </div>
+                  <div
+                    className={
+                      savedMenuMissingRateCount > 0
+                        ? 'attention'
+                        : 'ready'
+                    }
+                  >
+                    <span>Missing rates</span>
+                    <b>
+                      {savedMenuMissingRateCount}
+                    </b>
+                  </div>
+                </div>
+
+                <div className="event-menu-editor-v2-functions">
+                  {savedMenuEditorGroups.map(
+                    (
+                      group,
+                      index,
+                    ) => (
+                      <details
+                        className="event-menu-editor-function"
+                        key={
+                          group.key
+                        }
+                        open={
+                          savedMenuEditorGroups.length ===
+                          1
+                            ? true
+                            : undefined
+                        }
+                      >
+                        <summary>
+                          <span className="event-menu-editor-function-index">
+                            {index + 1}
+                          </span>
+
+                          <span className="event-menu-editor-function-title">
+                            <small>
+                              {group.dayLabel ||
+                                'Function'}
+                            </small>
+                            <b>
+                              {group.mealLabel}
+                            </b>
+                            <em>
+                              {group.servicePax.toLocaleString(
+                                'en-IN',
+                              )}{' '}
+                              guests ·{' '}
+                              {group.dishCount}{' '}
+                              dishes ·{' '}
+                              {group.categoryGroups.length}{' '}
+                              categories
+                            </em>
+                          </span>
+
+                          <span className="event-menu-editor-function-health">
+                            <b>
+                              ₹
+                              {group.costPerPlate.toFixed(
+                                2,
+                              )}
+                            </b>
+                            <small
+                              className={
+                                group.missingRateCount >
+                                0
+                                  ? 'attention'
+                                  : 'ready'
+                              }
+                            >
+                              {group.missingRateCount >
+                              0
+                                ? `${group.missingRateCount} rate${group.missingRateCount === 1 ? '' : 's'} missing`
+                                : 'Rates ready'}
+                            </small>
+                          </span>
+
+                          <span
+                            className="event-menu-editor-chevron"
+                            aria-hidden="true"
+                          >
+                            ⌄
+                          </span>
+                        </summary>
+
+                        <div className="event-menu-editor-function-body">
+                          <div className="event-menu-editor-function-actions">
+                            <button
+                              className="primary-button"
+                              type="button"
+                              onClick={() =>
+                                void openManualDishSelector({
+                                  key:
+                                    group.key,
+                                  serviceId:
+                                    group.serviceId,
+                                  dayLabel:
+                                    group.dayLabel,
+                                  mealLabel:
+                                    group.mealLabel,
+                                  servicePax:
+                                    group.servicePax,
+                                })
+                              }
+                            >
+                              + Add Dish
+                            </button>
+
+                            <span>
+                              Changes save to this event menu.
+                            </span>
+                          </div>
+
+                          <div className="event-menu-editor-categories">
+                            {group.categoryGroups.map(
+                              (
+                                categoryGroup,
+                              ) => (
+                                <section
+                                  className="event-menu-editor-category"
+                                  key={
+                                    categoryGroup.category
+                                  }
+                                >
+                                  <div className="event-menu-editor-category-head">
+                                    <b>
+                                      {categoryGroup.category}
+                                    </b>
+                                    <span>
+                                      {categoryGroup.items.length}
+                                    </span>
+                                  </div>
+
+                                  <div className="event-menu-editor-dishes">
+                                    {categoryGroup.items.map(
+                                      (item) => {
+                                        const rate =
+                                          Math.max(
+                                            0,
+                                            Number(
+                                              item.costPerPlate,
+                                            ) || 0,
+                                          );
+
+                                        return (
+                                          <article
+                                            className={
+                                              rate >
+                                              0
+                                                ? ''
+                                                : 'needs-rate'
+                                            }
+                                            key={
+                                              item.id
+                                            }
+                                          >
+                                            <span>
+                                              <b>
+                                                {item.name}
+                                              </b>
+                                              <small>
+                                                {rate >
+                                                0
+                                                  ? `₹${rate.toFixed(2)} / plate`
+                                                  : 'Rate needed'}
+                                              </small>
+                                            </span>
+
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                void removeSavedMenuDish(
+                                                  item.id,
+                                                  item.name,
+                                                )
+                                              }
+                                              aria-label={`Remove ${item.name} from menu`}
+                                              title="Remove dish"
+                                            >
+                                              ×
+                                            </button>
+                                          </article>
+                                        );
+                                      },
+                                    )}
+                                  </div>
+                                </section>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      </details>
+                    ),
+                  )}
+                </div>
+              </section>
+            ) : null}
+
             {work.menu.length > 0 &&
             savedMenuFunctionGroups.length > 0 ? (
               <section
