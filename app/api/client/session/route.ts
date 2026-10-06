@@ -7,8 +7,9 @@ import {
   readClientSessionToken,
 } from '../../../../lib/clientAuth';
 import { prisma } from '../../../../lib/prisma';
+import { shouldUseSecureSessionCookie } from '../../../../lib/sessionCookie';
 
-export async function POST() {
+export async function POST(request: Request) {
   const cookieStore = await cookies();
   const tenantId = readClientSessionToken(
     cookieStore.get(getClientCookieName())?.value,
@@ -66,7 +67,7 @@ export async function POST() {
     value: createClientSessionToken(tenant.id),
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: shouldUseSecureSessionCookie(request),
     path: '/',
   });
 
